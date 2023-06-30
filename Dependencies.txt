@@ -1,8 +1,0 @@
-*all install with brew*
-brew install sdl
-brew install sdl_mixer
-brew install sdl_image
-brew install sdl_ttf
-
-gem install rsdl
-gem install graphics -v 1.0.0b1 --pre
