@@ -169,9 +169,11 @@ const Canvas: React.FC = () => {
             console.log("Canvas.tsx: start animation");
             // marchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
             marchers.forEach((marcher) => {
+                const matrix = marcher?.calcTransformMatrix();
+                console.log(matrix);
                 marcher?.animate({
-                    left: "+=0",
-                    top: "+=100",
+                    left: `${matrix![4]}`,
+                    top: `${matrix![5]}+100`,
                 }, {
                     duration: 1000,
                     onChange: canvas!.renderAll.bind(canvas),

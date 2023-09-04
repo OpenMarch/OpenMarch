@@ -48,6 +48,7 @@
     ]
   },
   "devDependencies": {
-    "@types/fabric": "^5.3.3"
+    "@types/fabric": "^5.3.3",
+    "@babel/plugin-proposal-private-property-in-object": "^7.16.7"
   }
 }
