@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_04_010402) do
+ActiveRecord::Schema[7.0].define(version: 2023_09_13_193131) do
   create_table "marcher_pages", force: :cascade do |t|
     t.integer "marcher_id", null: false
     t.integer "page_id", null: false
@@ -26,6 +26,9 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_04_010402) do
     t.text "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "instrument"
+    t.integer "drill_number"
+    t.string "drill_prefix"
   end
 
   create_table "pages", force: :cascade do |t|

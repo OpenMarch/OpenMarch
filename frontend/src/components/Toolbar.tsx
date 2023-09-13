@@ -10,23 +10,32 @@ const Toolbar: React.FC = () => {
     const togglePlay = () => { setPlaying(!playing) };
 
     return (
-        <ButtonGroup aria-label="Basic example">
-            <Button variant="secondary">
-                <FaFastBackward />
-            </Button>
-            <Button variant="secondary">
-                <FaBackward />
-            </Button>
-            <Button variant="secondary" onClick={togglePlay}>
-                {playing ? <FaPause /> : <FaPlay />}
-            </Button>
-            <Button variant="secondary">
-                <FaForward />
-            </Button>
-            <Button variant="secondary">
-                <FaFastForward />
-            </Button>
-        </ButtonGroup>
+        <>
+            <div className="container-xl">
+                <div className="row">
+                    <div className="col">
+                        <h1>Toolbar</h1>
+                    </div>
+                </div>
+            </div>
+            <ButtonGroup aria-label="Basic example">
+                <Button variant="secondary">
+                    <FaFastBackward />
+                </Button>
+                <Button variant="secondary">
+                    <FaBackward />
+                </Button>
+                <Button variant="secondary" onClick={togglePlay}>
+                    {playing ? <FaPause /> : <FaPlay />}
+                </Button>
+                <Button variant="secondary">
+                    <FaForward />
+                </Button>
+                <Button variant="secondary">
+                    <FaFastForward />
+                </Button>
+            </ButtonGroup>
+        </>
     );
 };
 
