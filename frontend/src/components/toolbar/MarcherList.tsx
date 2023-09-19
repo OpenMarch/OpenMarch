@@ -12,10 +12,10 @@ export function MarcherList() {
     const handleMarcherClick = (marcher: Marcher) => {
         const curSelectedMarcher = selectedMarcher;
         if (curSelectedMarcher) {
-            document.getElementById(curSelectedMarcher.id)!.className = "";
+            document.getElementById(curSelectedMarcher.custom_id)!.className = "";
         }
         setSelectedMarcher(marcher);
-        document.getElementById(marcher.id)!.className = "table-info";
+        document.getElementById(marcher.custom_id)!.className = "table-info";
     };
 
     useEffect(() => {
@@ -32,7 +32,7 @@ export function MarcherList() {
             {isLoading ? (<p>Loading...</p>) : (
                 marchers.length === 0 ? <p>No marchers found</p> :
                     marchers.map((marcher) => (
-                        <tr key={marcher.id} id={marcher.id} onClick={() => handleMarcherClick(marcher)}>
+                        <tr key={marcher.custom_id} id={marcher.custom_id} onClick={() => handleMarcherClick(marcher)}>
                             <td scope="row">{marcher.name}</td>
                             {/* <td>{marcher.}</td> */}
                         </tr>

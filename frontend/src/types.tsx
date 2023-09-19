@@ -5,7 +5,8 @@ export const typeIndentifiers = {
 type TypeIdentifiers = typeof typeIndentifiers;
 
 export type Page = {
-    id: string;
+    id: number;
+    custom_id: string;
     name: string;
     counts: number;
     order: number;
@@ -13,7 +14,8 @@ export type Page = {
 };
 
 export type Marcher = {
-    id: string;
+    id: number;
+    custom_id: string;
     name: string;
     instrument: string;
     drillNumber: number;
@@ -22,7 +24,8 @@ export type Marcher = {
 };
 
 export type MarcherPage = {
-    id: string;
+    id: number;
+    custom_id: string;
     marcherId: number;
     pageId: number;
     x: number;

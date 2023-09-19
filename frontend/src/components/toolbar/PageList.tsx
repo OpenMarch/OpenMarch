@@ -12,10 +12,10 @@ export function PageList() {
     const handlePageClick = (page: Page) => {
         const curSelectedPage = selectedPage;
         if (curSelectedPage) {
-            document.getElementById(curSelectedPage.id)!.className = "";
+            document.getElementById(curSelectedPage.custom_id)!.className = "";
         }
         setSelectedPage(page);
-        document.getElementById(page.id)!.className = "table-info";
+        document.getElementById(page.custom_id)!.className = "table-info";
     };
 
     useEffect(() => {
@@ -33,7 +33,7 @@ export function PageList() {
             {isLoading ? (<p>Loading...</p>) : (
                 pages.length === 0 ? <p>No pages found</p> :
                     pages.map((page) => (
-                        <tr id={page.id} key={page.id} onClick={() => handlePageClick(page)}>
+                        <tr id={page.custom_id} key={page.custom_id} onClick={() => handlePageClick(page)}>
                             <td scope="row">{page.name}</td>
                             <td>{page.counts}</td>
                         </tr>

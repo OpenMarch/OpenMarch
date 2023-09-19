@@ -8,8 +8,9 @@ class Page < ApplicationRecord
   validates :name, uniqueness: true
 
   # when a new page is created, add a new MarcherPage for each marcher
+  # and set the prefix of the id to page_
   before_create :set_order
-  after_create :create_marcher_pages
+  after_create :create_marcher_pages, :prefix_id
 
   private
     def create_marcher_pages
@@ -29,6 +30,11 @@ class Page < ApplicationRecord
 
       # Set the order of the new page to be one higher than the highest order
       self.order = highest_order.to_i + 1
+    end
+
+    # Create a custom id to avoid conflicts between other tables
+    def prefix_id
+      self.custom_id = "page_#{self.id}"
     end
 
 end
