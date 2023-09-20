@@ -21,11 +21,6 @@ $toolbarColor: #58aeff;
 }
 
 .sidebar {
-  /* position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 300px; */
   width: $sideWidth;
   height:  calc(100% - #{$topHeight});
   // flex-grow: 1;
@@ -48,7 +43,7 @@ $toolbarColor: #58aeff;
   height: 100%;
 }
 
-.marcher-list, .page-list, .page-details {
+.list-container {
   // flex: 1;
   background-color: #f0f0f0;
   // border: 1px solid #ccc;

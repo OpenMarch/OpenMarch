@@ -26,10 +26,16 @@ import { typeIndentifiers } from '../../types';
 //         document.getElementById(item.id)!.className = "table-info";
 //     }
 // };
+let childData: { header: string, attributes: string[] } | null = null;
+export const handleChildData = (data: { header: string, attributes: string[] }) => {
+    childData = data;
+};
 
 export function ListContainer({ children, header }: { children: ReactNode, header: string }) {
     const [pages, setPages] = useState<Page[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    // TODO does this need to be a state function if the child data never changes?
+    // const [childData, setChildData] = useState<{ header: string, attributes: string[] } | null>();
 
     useEffect(() => {
         getPages().then((pagesResponse: Page[]) => {
@@ -43,10 +49,13 @@ export function ListContainer({ children, header }: { children: ReactNode, heade
 
     return (
         <>
-            <h2>{header}</h2>
-            <div className="page-list">
+            <h2>{childData?.header}</h2>
+            <div className="list-container">
                 <div className="conatiner text-left --bs-primary">
                     <div className="row">
+                        {childData?.attributes.map((attribute) => (
+                            <div className="col table-header">{attribute}</div>
+                        ))}
                         <div className="col table-header">#</div>
                         <div className="col table-header">Counts</div>
                     </div>
@@ -69,3 +78,4 @@ export function ListContainer({ children, header }: { children: ReactNode, heade
         </>
     );
 }
+
