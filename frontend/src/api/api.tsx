@@ -39,16 +39,17 @@ export async function getMarcherPage(marcher_id: number, page_id: number) {
  * @returns A list of all the marcherPages or those for either a given marcher or page.
  */
 export async function getMarcherPages(id_for_html: string | void) {
-  // TODO do I need to make this type specific or should I make the state global and then filter it when mapping?
   var arg_string = '';
+
   if (id_for_html) {
-    // Trim te marcher_ or page_ prefix off the id
-    const id = id_for_html.substring(id_for_html.indexOf('_') + id_for_html.length);
-    if (id.includes('marcher'))
+    // Trim the "marcher_" or "page_" prefix off the html id
+    const id = id_for_html.substring(id_for_html.indexOf('_') + 1);
+    if (id_for_html.includes('marcher'))
       arg_string = `/${m_table}/${id}`;
-    else if (id.includes('page'))
+    else if (id_for_html.includes('page'))
       arg_string = `/${p_table}/${id}`;
   }
+
   const response = await axios.get(API_URL + arg_string + '/marcher_pages');
   return response.data;
 }
