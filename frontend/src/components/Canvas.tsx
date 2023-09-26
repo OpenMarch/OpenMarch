@@ -1,4 +1,3 @@
-import { useObserver } from "mobx-react-lite";
 import React, { useRef, useEffect } from "react";
 import { fabric } from "fabric";
 import { FaSmile } from "react-icons/fa";

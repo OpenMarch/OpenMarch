@@ -1,7 +1,6 @@
 import React from "react";
 import Button from "react-bootstrap/Button";
 import ButtonGroup from "react-bootstrap/ButtonGroup";
-import { useObserver } from "mobx-react-lite";
 import { FaPlay, FaBackward, FaFastBackward, FaForward, FaFastForward, FaPause } from "react-icons/fa";
 
 const Toolbar: React.FC = () => {

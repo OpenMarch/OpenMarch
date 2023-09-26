@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext, useState } from 'react';
-import { Page } from '../types';
+import { Page } from '../Interfaces';
 
 // Define the type for the context value
 type SelectedPageContextProps = {

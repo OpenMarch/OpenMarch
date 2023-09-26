@@ -1,5 +1,5 @@
 import { ReactNode, createContext, useContext, useState } from 'react';
-import { Marcher } from '../types';
+import { Marcher } from '../Interfaces';
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {
