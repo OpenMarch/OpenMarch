@@ -1,13 +1,15 @@
-/* ------- GLOBAL STYLES ------- */
+/* ================= GLOBAL STYLES ================= */
 html, body, #root, .app {
   height: 100%;
 }
 
 
-/* ------- TOOLBAR STYLES ------- */
+/* ================= TOOLBAR STYLES ================= */
 $topHeight: 150px;
 $sideWidth: 250px;
 $toolbarColor: #58aeff;
+
+/* ------------ Top Toolbar ------------ */
 .topbar {
   /* position: fixed;
   top: 0;
@@ -20,6 +22,7 @@ $toolbarColor: #58aeff;
   background-color: $toolbarColor;
 }
 
+/* ------------ Side Toolbar ------------ */
 .sidebar {
   width: $sideWidth;
   height:  calc(100% - #{$topHeight});
@@ -28,13 +31,12 @@ $toolbarColor: #58aeff;
 }
 
 .sidebar h2 {
-  color: #fff;
+  color: #ffffff;
   text-align: center;
   font-size: 2rem;
   font-weight: 400;
-  padding: 5px;
+  padding-bottom: -10px;
 }
-
 
 /* Container to hold both toolbars and ensure they stack vertically */
 .toolbar-container, .sidebar {
@@ -45,7 +47,7 @@ $toolbarColor: #58aeff;
 
 .list-container {
   // flex: 1;
-  background-color: #f0f0f0;
+  background-color: #ffffff;
   // border: 1px solid #ccc;
   // border-radius: 5px;
   width: 80%;
@@ -53,6 +55,10 @@ $toolbarColor: #58aeff;
   box-sizing: border-box;
   margin: auto;
   // overflow-y: auto;
+}
+
+.table-hover {
+  cursor: pointer;
 }
 
 .table-header
@@ -63,4 +69,8 @@ $toolbarColor: #58aeff;
 .scrollable {
   height: 100%;
   overflow-y: auto;
+}
+
+th {
+  text-align: left;
 }
