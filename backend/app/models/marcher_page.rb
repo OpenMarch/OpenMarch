@@ -7,6 +7,6 @@ class MarcherPage < ApplicationRecord
   private
     # Create a custom id to avoid conflicts between other tables
     def prefix_id
-      self.custom_id = "marcherPage_#{self.id}"
+      update(id_for_html: "marcherPage_#{self.id}")
     end
 end
