@@ -19,6 +19,6 @@ class Api::V1::MarchersController < ApplicationController
   end
 
   def marcher_params
-    params.require(:marcher).permit(:name, :instrument, :drill_number, :drill_prefix)
+    params.require(:marcher).permit(:name, :instrument, :drill_order, :drill_prefix)
   end
 end

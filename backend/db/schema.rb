@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_19_024417) do
+ActiveRecord::Schema[7.0].define(version: 2023_09_21_032519) do
   create_table "marcher_pages", force: :cascade do |t|
     t.integer "marcher_id", null: false
     t.integer "page_id", null: false
@@ -18,7 +18,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_19_024417) do
     t.integer "y"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "custom_id"
+    t.string "id_for_html"
     t.index ["marcher_id"], name: "index_marcher_pages_on_marcher_id"
     t.index ["page_id"], name: "index_marcher_pages_on_page_id"
   end
@@ -28,9 +28,10 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_19_024417) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "instrument"
-    t.integer "drill_number"
+    t.integer "drill_order"
     t.string "drill_prefix"
-    t.string "custom_id"
+    t.string "id_for_html"
+    t.string "drill_number"
   end
 
   create_table "pages", force: :cascade do |t|
@@ -39,7 +40,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_09_19_024417) do
     t.datetime "updated_at", null: false
     t.integer "order"
     t.integer "counts"
-    t.string "custom_id"
+    t.string "id_for_html"
   end
 
   add_foreign_key "marcher_pages", "marchers"

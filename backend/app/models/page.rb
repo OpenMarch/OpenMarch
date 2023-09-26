@@ -34,8 +34,7 @@ class Page < ApplicationRecord
 
     # Create a custom id to avoid conflicts between other tables
     def prefix_id
-      self.custom_id = "page_#{self.id}"
+      update(id_for_html: "page_#{self.id}")
     end
 
 end
-
