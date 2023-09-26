@@ -35,7 +35,7 @@ export function PageList() {
 
     return (
         <>
-            <h2>Marchers</h2>
+            <h2>Pages</h2>
             <div className="list-container">
                 <div className="conatiner text-left --bs-primary">
                     <div className={bsconfig.tableHeader}>
