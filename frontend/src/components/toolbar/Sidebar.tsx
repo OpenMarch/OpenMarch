@@ -1,13 +1,12 @@
 import { MarcherList } from "./MarcherList";
-import { PageDetails } from "./PageDetails";
+import { MarcherPageContainer } from "./marcherPage/MarcherPageContainer";
 import { PageList } from "./PageList";
 
 export function Sidebar() {
     return (
         <div className="sidebar">
             <MarcherList />
-
-            <PageDetails />
+            <MarcherPageContainer />
             <PageList />
         </div>
     );
