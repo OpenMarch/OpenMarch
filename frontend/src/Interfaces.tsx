@@ -1,8 +1,11 @@
 // A collection of interfaces and types used throughout the application
 export const InterfaceConst = {
     PageTableName: "pages",
+    PagePrefix: "page",
     MarcherTableName: "marchers",
-    MarcherPageTableName: "marcher_pages"
+    MarcherPrefix: "marcher",
+    MarcherPageTableName: "marcher_pages",
+    MarcherPagePrefix: "mp"
 } as const;
 type InterfaceConstType = typeof InterfaceConst;
 
@@ -13,6 +16,7 @@ export interface Page {
     counts: number;
     order: number;
     tableName: InterfaceConstType["PageTableName"];
+    prefix: InterfaceConstType["PagePrefix"];
 };
 
 export interface Marcher {
@@ -20,9 +24,11 @@ export interface Marcher {
     id_for_html: string;
     name: string;
     instrument: string;
-    drill_number: number;
+    drill_number: string;
     drill_prefix: string;
+    drill_order: number;
     tableName: InterfaceConstType["MarcherTableName"];
+    prefix: InterfaceConstType["MarcherPrefix"];
 };
 
 export interface MarcherPage {
@@ -33,4 +39,5 @@ export interface MarcherPage {
     x: number;
     y: number;
     tableName: InterfaceConstType["MarcherPageTableName"];
+    prefix: InterfaceConstType["MarcherPagePrefix"];
 }

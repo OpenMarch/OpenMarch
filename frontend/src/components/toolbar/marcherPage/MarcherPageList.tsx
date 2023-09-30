@@ -5,6 +5,7 @@ import { bsconfig } from "../../../styles/bootstrapClasses";
 import { useMarcherStore, usePageStore } from "../../../stores/Store";
 import { MarcherPage } from "../../../Interfaces";
 import { getMarcherPages } from "../../../api/api";
+import { Container, Row, Col, Table } from "react-bootstrap";
 
 export function MarcherPageList() {
     const [isLoading, setIsLoading] = useState(true);
@@ -13,6 +14,8 @@ export function MarcherPageList() {
     const marchers = useMarcherStore(state => state.marchers);
     const pages = usePageStore(state => state.pages);
     const [marcherPages, setMarcherPages] = useState<MarcherPage[]>([]);
+    const [attributes, setAttributes] = useState<string[]>
+        ([selectedMarcher?.drill_number || "Pg " + selectedPage?.name || "Name", "X", "Y"]);
 
     // Load marcherPage(s) from selected marcher/page
     useEffect(() => {
@@ -28,6 +31,11 @@ export function MarcherPageList() {
             });
         }
         setIsLoading(false);
+        const newAttributes = attributes;
+        newAttributes[0] = selectedMarcher?.drill_number || selectedPage?.name || "Name";
+        if (selectedPage)
+            newAttributes[0] = "Pg " + newAttributes[0];
+        setAttributes(newAttributes);
     }
         , [selectedPage, selectedMarcher]);
 
@@ -47,15 +55,17 @@ export function MarcherPageList() {
     }
     return (
         <>
-            <div className="conatiner text-left --bs-primary">
-                <div className={bsconfig.tableHeader}>
-                    <div className="col table-header">{selectedPage ? "Marcher" : "Page"}</div>
-                    <div className="col table-header">X</div>
-                    <div className="col table-header">Y</div>
-                </div>
-            </div>
+            <Container className="text-left --bs-primary">
+                <Row className={bsconfig.tableHeader}>
+                    {attributes.map((attribute) => (
+                        <Col className="table-header" key={"pageHeader-" + attribute}>
+                            {attribute}
+                        </Col>
+                    ))}
+                </Row>
+            </Container>
             <div className="scrollable">
-                <table className={bsconfig.table}>
+                <Table className="user-select-none">
                     <tbody>
                         {isLoading ? (<tr><td>Loading...</td></tr>) : (
                             marcherPages.length === 0 ? <tr><td>No marchers found</td></tr> :
@@ -72,7 +82,7 @@ export function MarcherPageList() {
                                 ))
                         )}
                     </tbody>
-                </table>
+                </Table>
             </div>
         </>
     );

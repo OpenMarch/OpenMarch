@@ -8,7 +8,7 @@ interface MarcherStoreActions {
     fetchMarchers: () => Promise<void>;
 }
 export const useMarcherStore = create<MarcherStoreState & MarcherStoreActions>()((set) => ({
-    marchers: [{ id: 0, id_for_html: "asdf", name: "jeff", instrument: "", drill_number: 0, drill_prefix: "", tableName: Types.InterfaceConst.MarcherTableName }],
+    marchers: [],
 
     fetchMarchers: async () => {
         const marchers = await api.getMarchers();

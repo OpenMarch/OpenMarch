@@ -1,31 +1,11 @@
 import { useState, useEffect } from "react";
-import { Page } from "../../Interfaces";
-import { useSelectedPage } from "../../context/SelectedPageContext";
-import { bsconfig } from "../../styles/bootstrapClasses";
 import { usePageStore } from "../../stores/Store";
-import { Col, Container, Row, Table } from "react-bootstrap";
+import ListContainer from "./ListContainer";
 
 function PageList() {
     const { pages, fetchPages } = usePageStore();
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const [headerRowAttributes, setHeaderRowAttributes] = useState<string[]>(["#", "Counts"]);
     const [isLoading, setIsLoading] = useState(true);
-
-    // TODO this is a duplicate of the one in the Marcher component. Find a way to combine?
-    const handlePageClick = (page: Page) => {
-        const curSelectedPage = selectedPage;
-        if (curSelectedPage) {
-            document.getElementById(curSelectedPage.id_for_html)!.className = "";
-        }
-
-        // Deselect if already selected
-        if (curSelectedPage?.id_for_html === page.id_for_html) {
-            setSelectedPage(null);
-        } else {
-            setSelectedPage(page);
-            document.getElementById(page.id_for_html)!.className = "table-info";
-        }
-    };
 
     useEffect(() => {
         fetchPages().finally(() => {
@@ -37,33 +17,7 @@ function PageList() {
     return (
         <>
             <h2>Pages</h2>
-            <div className="list-container">
-                <Container className="text-left --bs-primary">
-                    <Row className={bsconfig.tableHeader}>
-                        {headerRowAttributes.map((attribute) => (
-                            <Col className="table-header" key={"pageHeader-" + attribute}>
-                                {attribute}
-                            </Col>
-                        ))}
-                    </Row>
-                </Container>
-                <div className="scrollable">
-                    <Table hover size="sm">
-                        <tbody>
-                            {isLoading ? (<tr><td>Loading...</td></tr>) : (
-                                pages.length === 0 ? <tr><td>No pages found</td></tr> :
-                                    pages.map((page) => (
-                                        <tr id={page.id_for_html} key={page.id_for_html}
-                                            onClick={() => handlePageClick(page)}>
-                                            <td scope="row">{page.name}</td>
-                                            <td>{page.counts}</td>
-                                        </tr>
-                                    ))
-                            )}
-                        </tbody>
-                    </Table>
-                </div>
-            </div >
+            <ListContainer isLoading={isLoading} attributes={headerRowAttributes} content={pages} />
         </>
     );
 }
