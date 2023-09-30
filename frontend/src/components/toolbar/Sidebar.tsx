@@ -1,8 +1,8 @@
-import { MarcherList } from "./MarcherList";
-import { MarcherPageContainer } from "./marcherPage/MarcherPageContainer";
-import { PageList } from "./PageList";
+import MarcherList from "./MarcherList";
+import PageList from "./PageList";
+import MarcherPageContainer from "./marcherPage/MarcherPageContainer";
 
-export function Sidebar() {
+function Sidebar() {
     return (
         <div className="sidebar">
             <MarcherList />
@@ -11,3 +11,5 @@ export function Sidebar() {
         </div>
     );
 }
+
+export default Sidebar;

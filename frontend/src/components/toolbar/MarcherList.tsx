@@ -4,7 +4,7 @@ import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
 import { bsconfig } from "../../styles/bootstrapClasses";
 import { useMarcherStore } from "../../stores/Store";
 
-export function MarcherList() {
+function MarcherList() {
     const { marchers, fetchMarchers } = useMarcherStore();
     const [isLoading, setIsLoading] = useState(true);
     const [headerRowAttributes, setHeaderRowAttributes] = useState<string[]>(["Name"]);
@@ -64,3 +64,5 @@ export function MarcherList() {
         </>
     );
 }
+
+export default MarcherList;

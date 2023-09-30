@@ -3,8 +3,9 @@ import { Page } from "../../Interfaces";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { bsconfig } from "../../styles/bootstrapClasses";
 import { usePageStore } from "../../stores/Store";
+import { Col, Container, Row, Table } from "react-bootstrap";
 
-export function PageList() {
+function PageList() {
     const { pages, fetchPages } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const [headerRowAttributes, setHeaderRowAttributes] = useState<string[]>(["#", "Counts"]);
@@ -37,16 +38,17 @@ export function PageList() {
         <>
             <h2>Pages</h2>
             <div className="list-container">
-                <div className="conatiner text-left --bs-primary">
-                    <div className={bsconfig.tableHeader}>
+                <Container className="text-left --bs-primary">
+                    <Row className={bsconfig.tableHeader}>
                         {headerRowAttributes.map((attribute) => (
-                            <div className="col table-header"
-                                key={"pageHeader-" + attribute}>{attribute}</div>
+                            <Col className="table-header" key={"pageHeader-" + attribute}>
+                                {attribute}
+                            </Col>
                         ))}
-                    </div>
-                </div>
+                    </Row>
+                </Container>
                 <div className="scrollable">
-                    <table className={bsconfig.table}>
+                    <Table hover size="sm">
                         <tbody>
                             {isLoading ? (<tr><td>Loading...</td></tr>) : (
                                 pages.length === 0 ? <tr><td>No pages found</td></tr> :
@@ -59,9 +61,11 @@ export function PageList() {
                                     ))
                             )}
                         </tbody>
-                    </table>
+                    </Table>
                 </div>
             </div >
         </>
     );
 }
+
+export default PageList;

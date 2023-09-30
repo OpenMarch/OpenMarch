@@ -1,12 +1,11 @@
-import { FileControls } from './FileControls';
-import { PlaybackControls } from './PlaybackControls';
-import { NewMarcherForm } from './NewMarcherForm';
-import { NewPageForm } from './NewPageForm';
+import FileControls from './FileControls';
+import PlaybackControls from './PlaybackControls';
+import NewMarcherForm from './NewMarcherForm';
+import EditPageForm from './EditPageForm';
 
-export function Topbar() {
+function Topbar() {
     return (
-        <div className="topbar">
-            Jeff
+        <div className="topbar conatiner h-10">
             <div className="toolbar-left">
                 <FileControls />
                 <PlaybackControls />
@@ -14,8 +13,10 @@ export function Topbar() {
 
             <div className="toolbar-right">
                 <NewMarcherForm />
-                <NewPageForm />
+                <EditPageForm />
             </div>
         </div>
     );
 }
+
+export default Topbar;

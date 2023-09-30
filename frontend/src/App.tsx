@@ -5,8 +5,8 @@ import './styles/global.scss';
 import Toolbar from './components/Toolbar';
 import Canvas from './components/Canvas';
 import { fabric } from 'fabric';
-import { Topbar } from './components/toolbar/Topbar';
-import { Sidebar } from './components/toolbar/Sidebar';
+import Topbar from './components/toolbar/Topbar';
+import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
 
