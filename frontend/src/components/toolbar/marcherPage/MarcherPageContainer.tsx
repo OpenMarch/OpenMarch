@@ -4,7 +4,7 @@ import { MarcherPageDetails } from "./MarcherPageDeatils";
 import { MarcherPageList } from "./MarcherPageList";
 // import { useMarcherPageStore } from "../../stores/Store";
 
-export function MarcherPageContainer() {
+function MarcherPageContainer() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
     // const { marcherPages, fetchMarcherPages } = useMarcherPageStore();
@@ -25,3 +25,5 @@ export function MarcherPageContainer() {
         </>
     );
 }
+
+export default MarcherPageContainer;
