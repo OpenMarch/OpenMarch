@@ -14,7 +14,16 @@ class Api::V1::MarchersController < ApplicationController
     if @marcher.save
       render json: @marcher
     else
-      render error: @marcher.errors, status: :unprocessable_entity
+      render json: { error: @marcher.errors}, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    @marcher = Marcher.find(params[:id])
+    if @marcher.update(marcher_params)
+      render json: @marcher
+    else
+      render json: {error: @marcher.errors}, status: :unprocessable_entity
     end
   end
 

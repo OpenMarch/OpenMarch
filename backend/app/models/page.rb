@@ -1,6 +1,4 @@
 class Page < ApplicationRecord
-  belongs_to :previous_page , class_name: 'Page', optional: true
-  belongs_to :next_page, class_name: 'Page', optional: true
   has_many :marcher_pages
   has_many :marchers, through: :marcher_pages
 
