@@ -19,6 +19,15 @@ class Api::V1::PagesController < ApplicationController
     end
   end
 
+  def update
+    @page = Page.find(params[:id])
+    if @page.update(page_params)
+      render json: @page
+    else
+      render json: { errors: @page.errors }, status: :unprocessable_entity
+    end
+  end
+
   def page_params
     params.require(:page).permit(:name, :counts)
   end

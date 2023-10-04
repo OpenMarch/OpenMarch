@@ -1,21 +1,55 @@
 import axios from 'axios';
-import { InterfaceConst } from '../Interfaces';
+import { NewPage, Page } from '../Interfaces';
+import { useMarcherStore, usePageStore } from '../stores/Store';
+import { Constants } from '../Constants';
 
-const m_table = InterfaceConst.MarcherTableName;
-const p_table = InterfaceConst.PageTableName;
+const m_table = Constants.MarcherTableName;
+const p_table = Constants.PageTableName;
 
 const API_URL = 'http://localhost:3001/api/v1';
-
-export async function getPages() {
-  const response = await axios.get(API_URL + '/pages');
-  // console.log(response.data);
-  return response.data;
-}
 
 export async function getMarchers() {
   const response = await axios.get(API_URL + '/marchers');
   return response.data;
 }
+
+/* ====================== Page ====================== */
+
+/**
+ * @returns a list of all pages.
+ */
+export async function getPages() {
+  const response = await axios.get(API_URL + '/pages');
+  return response.data;
+}
+
+export async function createPage(page: Page) {
+  const newPage: NewPage = {
+    name: page.name,
+    counts: page.counts
+  };
+  console.log("newPage JSOn: " + JSON.stringify(newPage));
+  const response = await axios.post(API_URL + '/pages', JSON.stringify(newPage), {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  return response.data;
+}
+
+/**
+ * Updates the counts for a given page.
+ *
+ * @param {number} id - pageObj.id: The id of the page. Do not use id_for_html.
+ * @param {number} counts - The new amount of counts for the page to be.
+ * @returns Response data from the server.
+ */
+export async function updatePageCounts(id: number, counts: number) {
+  const response = await axios.patch(API_URL + `/pages/${id}`, { counts });
+  return response.data;
+};
+
+/* ====================== Marcher ====================== */
 
 /* ====================== MarcherPage ====================== */
 

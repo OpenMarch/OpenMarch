@@ -2,8 +2,9 @@ import { Container, Row, Col, Table } from "react-bootstrap";
 import { bsconfig } from "../../styles/bootstrapClasses";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
-import { InterfaceConst, Marcher, Page } from "../../Interfaces";
-import { useEffect } from "react";
+import { Marcher, Page } from "../../Interfaces";
+import { Constants } from "../../Constants";
+import { useEffect, useState } from "react";
 
 interface ListContainerProps {
     isLoading: boolean;
@@ -14,45 +15,55 @@ interface ListContainerProps {
 function ListContainer({ isLoading, attributes, content }: ListContainerProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
-    var isSameItem = false;
+    const [prevSelectedMarcher, setPrevSelectedMarcher] = useState<Marcher | null>(null);
+    const [prevSelectedPage, setPrevSelectedPage] = useState<Page | null>(null);
 
-    const handlePageClick = (selectedItem: Marcher | Page | any) => {
+    const handleRowClick = (selectedItem: Marcher | Page | any) => {
         const idArr = selectedItem.id_for_html.split("_");
 
-        if (idArr[0] === InterfaceConst.MarcherPrefix) {
-            if (selectedMarcher) {
-                console.log("selectedMarcher: ", selectedMarcher);
-                document.getElementById(selectedMarcher.id_for_html)!.className = "";
-            }
-
+        // Marcher
+        if (idArr[0] === Constants.MarcherPrefix) {
+            setPrevSelectedMarcher(selectedMarcher);
             // Deselect if already selected
-            if (selectedMarcher?.id_for_html === selectedItem.id_for_html) {
+            if (selectedMarcher?.id_for_html === selectedItem.id_for_html)
                 setSelectedMarcher(null);
-                isSameItem = true;
-            }
             else
                 setSelectedMarcher(selectedItem);
         }
-        else if (idArr[0] === InterfaceConst.PagePrefix) {
-            if (selectedPage) {
-                document.getElementById(selectedPage.id_for_html)!.className = "";
-            }
-
+        // Page
+        else if (idArr[0] === Constants.PagePrefix) {
+            setPrevSelectedPage(selectedPage);
             // Deselect if already selected
-            if (selectedPage?.id_for_html === selectedItem.id_for_html) {
+            if (selectedPage?.id_for_html === selectedItem.id_for_html)
                 setSelectedPage(null);
-                isSameItem = true;
-            }
             else
                 setSelectedPage(selectedItem);
         }
-
-        if (!isSameItem)
-            document.getElementById(selectedItem.id_for_html)!.className = "table-info";
     };
 
+    const updateSelection = (prevSelectedItem: any, selectedItem: any, setPrevSelectedItem: any) => {
+        if (prevSelectedItem && document.getElementById(prevSelectedItem.id_for_html))
+            document.getElementById(prevSelectedItem.id_for_html)!.className = "";
+
+        if (selectedItem && document.getElementById(selectedItem.id_for_html))
+            document.getElementById(selectedItem!.id_for_html)!.className = "table-info";
+
+        // This is for the case where a new Item is added and the list is re-rendered.
+        setPrevSelectedItem(selectedItem);
+    };
+
+    // Update Marcher selection visually.
+    useEffect(() => {
+        updateSelection(prevSelectedMarcher, selectedMarcher, setPrevSelectedMarcher);
+    }, [selectedMarcher]);
+
+    // Update Page selection visually.
+    useEffect(() => {
+        updateSelection(prevSelectedPage, selectedPage, setPrevSelectedPage);
+    }, [selectedPage]);
+
     return (
-        <div className="list-container">
+        <div className="list-container bg-light">
             <Container className="text-left --bs-primary">
                 <Row className={bsconfig.tableHeader}>
                     {attributes.map((attribute) => (
@@ -69,7 +80,7 @@ function ListContainer({ isLoading, attributes, content }: ListContainerProps) {
                             content.length === 0 ? <tr><td>No pages found</td></tr> :
                                 content.map((page) => (
                                     <tr id={page.id_for_html} key={page.id_for_html}
-                                        onClick={() => handlePageClick(page)}>
+                                        onClick={() => handleRowClick(page)}>
                                         <td scope="row">{page.name}</td>
                                         <td>{page.counts}</td>
                                     </tr>

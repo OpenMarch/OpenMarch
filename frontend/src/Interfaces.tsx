@@ -1,13 +1,6 @@
 // A collection of interfaces and types used throughout the application
-export const InterfaceConst = {
-    PageTableName: "pages",
-    PagePrefix: "page",
-    MarcherTableName: "marchers",
-    MarcherPrefix: "marcher",
-    MarcherPageTableName: "marcher_pages",
-    MarcherPagePrefix: "mp"
-} as const;
-type InterfaceConstType = typeof InterfaceConst;
+import { Constants } from "./Constants";
+type InterfaceConstType = typeof Constants;
 
 export interface Page {
     id: number;
@@ -17,6 +10,11 @@ export interface Page {
     order: number;
     tableName: InterfaceConstType["PageTableName"];
     prefix: InterfaceConstType["PagePrefix"];
+};
+
+export interface NewPage {
+    name: string;
+    counts: number;
 };
 
 export interface Marcher {

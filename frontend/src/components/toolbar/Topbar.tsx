@@ -2,20 +2,17 @@ import FileControls from './FileControls';
 import PlaybackControls from './PlaybackControls';
 import NewMarcherForm from './NewMarcherForm';
 import EditPageForm from './EditPageForm';
+import { Container } from 'react-bootstrap';
 
 function Topbar() {
     return (
-        <div className="topbar conatiner h-10">
-            <div className="toolbar-left">
-                <FileControls />
-                <PlaybackControls />
-            </div>
+        <Container fluid className="topbar p-3">
+            <FileControls />
+            <PlaybackControls />
 
-            <div className="toolbar-right">
-                <NewMarcherForm />
-                <EditPageForm />
-            </div>
-        </div>
+            <NewMarcherForm />
+            <EditPageForm />
+        </Container>
     );
 }
 

@@ -1,37 +1,53 @@
+@import 'bootstrap/scss/bootstrap';
+
 /* ================= GLOBAL STYLES ================= */
 html, body, #root, .app {
   height: 100%;
 }
 
-
 /* ================= TOOLBAR STYLES ================= */
-$topHeight: 150px;
-$sideWidth: 250px;
-$toolbarColor: #58aeff;
+$topHeight: 125px;
+$sideWidth: 200px;
+$toolbarColor: $primary;
 
 /* ------------ Top Toolbar ------------ */
+$editFormWidth: 150px;
+
 .topbar {
-  /* position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999; Keep on top. Is this the best way?
-  height: 50px;
-  width: 100%; */
   height: $topHeight;
   background-color: $toolbarColor;
+}
+
+.topbar Form {
+  // display: flex;
+  // flex-direction: column;
+  // align-items: center;
+  // justify-content: center;
+  position: relative;
+  height: 100%;
+  width: $editFormWidth;
+  background-color: $light;
+}
+
+.edit-form-button {
+  margin: 5px;
+}
+
+.edit-form-button-container {
+ display: flex;
+ justify-content: flex-end;
 }
 
 /* ------------ Side Toolbar ------------ */
 .sidebar {
   width: $sideWidth;
-  height:  calc(100% - #{$topHeight});
+  max-height:  calc(100vh - #{$topHeight});
   // flex-grow: 1;
   background-color: $toolbarColor;
 }
 
 .sidebar h2 {
-  color: #ffffff;
+  color: $light;
   text-align: center;
   font-size: 2rem;
   font-weight: 400;
@@ -46,15 +62,10 @@ $toolbarColor: #58aeff;
 }
 
 .list-container {
-  // flex: 1;
-  background-color: #ffffff;
-  // border: 1px solid #ccc;
-  // border-radius: 5px;
+  background-color: $light;
   width: 80%;
   height: 25%;
-  box-sizing: border-box;
   margin: auto;
-  // overflow-y: auto;
 }
 
 .table-hover {
@@ -71,6 +82,6 @@ $toolbarColor: #58aeff;
   overflow-y: auto;
 }
 
-th {
+.sidebar th {
   text-align: left;
 }
