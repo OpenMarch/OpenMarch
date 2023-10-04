@@ -4,16 +4,19 @@ import ListContainer from "./ListContainer";
 import { Page } from "../../Interfaces";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { Constants } from "../../Constants";
-import { type } from "@testing-library/user-event/dist/type";
 import { Button } from "react-bootstrap";
 import { FaPlus } from "react-icons/fa";
 
 function PageList() {
     const { pages, fetchPages } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const [headerRowAttributes, setHeaderRowAttributes] = useState<string[]>(["#", "Counts"]);
+    const [headerRowAttributes, setHeaderRowAttributes] = useState<string[]>(["name", "counts"]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
+    const rowAttributeText = {
+        counts: "Counts",
+        name: "#"
+    }
 
     useEffect(() => {
         fetchPages().finally(() => {
@@ -48,6 +51,7 @@ function PageList() {
             <ListContainer
                 isLoading={isLoading}
                 attributes={headerRowAttributes}
+                attributesText={rowAttributeText}
                 content={pages}
             />
             <Button disabled={isAdding} onClick={() => handleAddPage()}>

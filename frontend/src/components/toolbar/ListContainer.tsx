@@ -9,10 +9,11 @@ import { useEffect, useState } from "react";
 interface ListContainerProps {
     isLoading: boolean;
     attributes: string[];
+    attributesText?: any;
     content: any[];
 }
 
-function ListContainer({ isLoading, attributes, content }: ListContainerProps) {
+function ListContainer({ isLoading, attributes, attributesText, content }: ListContainerProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
     const [prevSelectedMarcher, setPrevSelectedMarcher] = useState<Marcher | null>(null);
@@ -68,7 +69,10 @@ function ListContainer({ isLoading, attributes, content }: ListContainerProps) {
                 <Row className={bsconfig.tableHeader}>
                     {attributes.map((attribute) => (
                         <Col className="table-header" key={"pageHeader-" + attribute}>
-                            {attribute}
+                            {/* I know this looks weird. Checks if the array exists and if the item exists. */}
+                            {!attributesText ? attribute :
+                                attributesText[attribute] ?
+                                    attributesText[attribute] : attribute}
                         </Col>
                     ))}
                 </Row>
@@ -77,12 +81,18 @@ function ListContainer({ isLoading, attributes, content }: ListContainerProps) {
                 <Table hover size="sm">
                     <tbody>
                         {isLoading ? (<tr><td>Loading...</td></tr>) : (
-                            content.length === 0 ? <tr><td>No pages found</td></tr> :
-                                content.map((page) => (
-                                    <tr id={page.id_for_html} key={page.id_for_html}
-                                        onClick={() => handleRowClick(page)}>
-                                        <td scope="row">{page.name}</td>
-                                        <td>{page.counts}</td>
+                            content.length === 0 ? <tr><td>Nothing found</td></tr> :
+                                content.map((item) => (
+                                    <tr id={item.id_for_html} key={item.id_for_html}
+                                        onClick={() => handleRowClick(item)}
+                                    >
+                                        {attributes.map((attribute) => (
+                                            <td key={item.id_for_html + "-" + attribute}>
+                                                {item[attribute]}
+                                            </td>
+                                        ))}
+                                        {/* <td scope="row">{item.name}</td>
+                                        <td>{item.counts}</td> */}
                                     </tr>
                                 ))
                         )}
