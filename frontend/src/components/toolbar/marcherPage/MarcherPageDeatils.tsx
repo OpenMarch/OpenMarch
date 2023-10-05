@@ -3,30 +3,33 @@ import { MarcherPage } from "../../../Interfaces";
 import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
 import { useSelectedPage } from "../../../context/SelectedPageContext";
 import { bsconfig } from "../../../styles/bootstrapClasses";
-import { getMarcherPage } from "../../../api/api";
+import { useMarcherPageStore } from "../../../stores/Store";
 
 export function MarcherPageDetails() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
 
     // Load marcherPage(s) from selected marcher/page
     useEffect(() => {
         setMarcherPage(null);
-        setIsLoading(true);
+        // setIsLoading(true);
         // If both a marcher and page is selected return a single marcherPage
         if (selectedPage && selectedMarcher) {
-            // This is an array access because the response is an array of length 1
-            getMarcherPage(selectedMarcher.id, selectedPage.id).then((marcherPageResponse: MarcherPage[]) => {
-                setMarcherPage(marcherPageResponse[0]);
-            }).finally(() => {
-                setIsLoading(false)
-            });
-            setIsLoading(false);
+            setMarcherPage(marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher.id &&
+                marcherPage.page_id === selectedPage.id) || null);
         }
     }
-        , [selectedPage, selectedMarcher]);
+        , [selectedPage, selectedMarcher, marcherPages]);
+
+    useEffect(() => {
+        fetchMarcherPages().finally(() => {
+            setIsLoading(false)
+        });
+    }, [fetchMarcherPages]);
+
     return (
         <>
             {isLoading ? <p>Loading...</p> : <>
@@ -51,10 +54,10 @@ export function MarcherPageDetails() {
                         </tr>
                         <tr>
                             <th scope="row" className="text-start">Counts</th>
-                            {/* <td>{singleMarcherPage?.y}</td> */}
+                            <td>{selectedPage?.counts}</td>
                         </tr>
                     </tbody>
-                </table></>}
-        </>
+                </table></>
+            }</>
     )
 }

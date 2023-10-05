@@ -3,6 +3,7 @@ import PlaybackControls from './PlaybackControls';
 import NewMarcherForm from './NewMarcherForm';
 import EditPageForm from './EditPageForm';
 import { Container } from 'react-bootstrap';
+import EditMarcherPage from './marcherPage/EditMarcherPage';
 
 function Topbar() {
     return (
@@ -12,6 +13,7 @@ function Topbar() {
 
             <NewMarcherForm />
             <EditPageForm />
+            <EditMarcherPage />
         </Container>
     );
 }

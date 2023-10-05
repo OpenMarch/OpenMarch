@@ -1,5 +1,6 @@
 // A collection of interfaces and types used throughout the application
 import { Constants } from "./Constants";
+import { updateMarcherPage } from "./api/api";
 type InterfaceConstType = typeof Constants;
 
 export interface Page {
@@ -38,4 +39,9 @@ export interface MarcherPage {
     y: number;
     tableName: InterfaceConstType["MarcherPageTableName"];
     prefix: InterfaceConstType["MarcherPagePrefix"];
+}
+
+export interface UpdateMarcherPage {
+    x: number;
+    y: number;
 }

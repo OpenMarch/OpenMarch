@@ -1,4 +1,4 @@
-import { Button, Form, InputGroup } from "react-bootstrap";
+import { Form, InputGroup } from "react-bootstrap";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { createPage, updatePageCounts } from "../../api/api";
@@ -53,7 +53,7 @@ function EditPageForm() {
     return (
         <>
             <Form
-                // className="justify-content-center align-items-center"
+                className="mx-2"
                 id="pageForm"
                 onSubmit={handleSubmit}
             >
@@ -62,7 +62,7 @@ function EditPageForm() {
                         Page {selectedPage?.name}
                     </Form.Label>
                     <InputGroup size="sm" className="mb-12 text-right">
-                        <InputGroup.Text id={`Form-${selectedPage?.id_for_html}`}>
+                        <InputGroup.Text id={"counts-label"}>
                             Counts
                         </InputGroup.Text>
                         <Form.Control

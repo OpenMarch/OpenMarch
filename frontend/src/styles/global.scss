@@ -11,11 +11,12 @@ $sideWidth: 200px;
 $toolbarColor: $primary;
 
 /* ------------ Top Toolbar ------------ */
-$editFormWidth: 150px;
+$editFormWidth: 200px;
 
 .topbar {
   height: $topHeight;
   background-color: $toolbarColor;
+  display: flex;
 }
 
 .topbar Form {

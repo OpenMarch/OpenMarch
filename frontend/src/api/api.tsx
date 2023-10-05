@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { NewPage, Page } from '../Interfaces';
+import { MarcherPage, NewPage, Page, UpdateMarcherPage } from '../Interfaces';
 import { useMarcherStore, usePageStore } from '../stores/Store';
 import { Constants } from '../Constants';
 
@@ -85,6 +85,21 @@ export async function getMarcherPages(id_for_html: string | void) {
   }
 
   const response = await axios.get(API_URL + arg_string + '/marcher_pages');
+  return response.data;
+}
+
+export async function updateMarcherPage(marcher_id: number, page_id: number, x: number, y: number) {
+  const updateMarcherPage: UpdateMarcherPage = {
+    x: x,
+    y: y
+  };
+  console.log("JSON: " + JSON.stringify({ x, y }));
+  const response = await axios.patch(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`,
+    JSON.stringify({ x, y }), {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
   return response.data;
 }
 

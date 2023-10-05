@@ -36,11 +36,10 @@ function PageList() {
         };
 
         tempPage.name = (parseInt(tempPage.name) + 1).toString();
-
         setSelectedPage(tempPage);
-        console.log("ADDING A PAGE");
     };
 
+    // Checks if the selected page is a new one.
     useEffect(() => {
         setIsAdding(selectedPage?.id_for_html === Constants.NewPageId);
     }, [selectedPage]);
@@ -66,7 +65,4 @@ function PageList() {
 }
 
 export default PageList;
-function setSelectedPage(tempPage: Page) {
-    throw new Error("Function not implemented.");
-}
 
