@@ -1,19 +1,51 @@
 @import 'bootstrap/scss/bootstrap';
 
 /* ================= GLOBAL STYLES ================= */
-html, body, #root, .app {
+html, body  {
+  margin: 0;
+  padding: 0;
   height: 100%;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
 }
+
+.app, #root {
+  height: 100%;
+  width: 100%;
+}
+
+.app-container {
+  text-align: center;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.secondary-container {
+  display: flex;
+  flex-direction: row;
+  // flex: 1;
+}
+
+/* ================= CANVAS STYLES ================= */
+
 
 /* ================= TOOLBAR STYLES ================= */
 $topHeight: 125px;
 $sideWidth: 200px;
 $toolbarColor: $primary;
 
+.toolbar-container {
+  display: flex;
+  flex: 1;
+}
+
 /* ------------ Top Toolbar ------------ */
 $editFormWidth: 200px;
 
 .topbar {
+  width: 100%;
   height: $topHeight;
   background-color: $toolbarColor;
   display: flex;
@@ -52,11 +84,11 @@ $editFormWidth: 200px;
   text-align: center;
   font-size: 2rem;
   font-weight: 400;
-  padding-bottom: -10px;
+  margin-bottom: -50px;
 }
 
 /* Container to hold both toolbars and ensure they stack vertically */
-.toolbar-container, .sidebar {
+.app-container, .sidebar {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -65,7 +97,8 @@ $editFormWidth: 200px;
 .list-container {
   background-color: $light;
   width: 80%;
-  height: 25%;
+  max-height: 22%;
+  height: 22%;
   margin: auto;
 }
 
