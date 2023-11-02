@@ -2,10 +2,11 @@ import { create } from "zustand";
 import * as api from "../api/api";
 import * as Types from "../Interfaces";
 
-interface MarcherStoreState { marchers: Types.Marcher[] }
+interface MarcherStoreState { marchers: Types.Marcher[], marchersAreLoading: boolean }
 interface MarcherStoreActions {
     // Why void?
     fetchMarchers: () => Promise<void>;
+    setMarchersAreLoading: (isLoading: boolean) => void;
 }
 export const useMarcherStore = create<MarcherStoreState & MarcherStoreActions>()((set) => ({
     marchers: [],
@@ -15,6 +16,12 @@ export const useMarcherStore = create<MarcherStoreState & MarcherStoreActions>()
         set({ marchers });
     },
 
+    marchersAreLoading: true,
+
+    setMarchersAreLoading: (isLoading) => {
+        set({ marchersAreLoading: isLoading });
+    }
+
     // addMarcher: async (marcher) => {
     //     await addMarcher(marcher);
     //     set(state => ({
@@ -23,9 +30,10 @@ export const useMarcherStore = create<MarcherStoreState & MarcherStoreActions>()
     //   }
 }));
 
-interface PageStoreState { pages: Types.Page[] }
+interface PageStoreState { pages: Types.Page[], pagesAreLoading: boolean }
 interface PageStoreActions {
     fetchPages: () => Promise<void>;
+    setPagesAreLoading: (isLoading: boolean) => void;
 }
 export const usePageStore = create<PageStoreState & PageStoreActions>()((set) => ({
     pages: [],
@@ -35,6 +43,12 @@ export const usePageStore = create<PageStoreState & PageStoreActions>()((set) =>
         set({ pages });
     },
 
+    pagesAreLoading: true,
+
+    setPagesAreLoading: (isLoading) => {
+        set({ pagesAreLoading: isLoading });
+    }
+
     // addPage: async (page) => {
     //     await addPage(page);
     //     set(state => ({
@@ -43,9 +57,10 @@ export const usePageStore = create<PageStoreState & PageStoreActions>()((set) =>
     //   }
 }));
 
-interface MarcherPageStoreState { marcherPages: Types.MarcherPage[] }
+interface MarcherPageStoreState { marcherPages: Types.MarcherPage[], marcherPagesAreLoading: boolean }
 interface MarcherPageStoreActions {
     fetchMarcherPages: () => Promise<void>;
+    setMarcherPagesAreLoading: (isLoading: boolean) => void;
 }
 export const useMarcherPageStore = create<MarcherPageStoreState & MarcherPageStoreActions>()((set) => ({
     marcherPages: [],
@@ -54,6 +69,12 @@ export const useMarcherPageStore = create<MarcherPageStoreState & MarcherPageSto
         const marcherPages = await api.getMarcherPages();
         set({ marcherPages });
     },
+
+    marcherPagesAreLoading: true,
+
+    setMarcherPagesAreLoading: (isLoading) => {
+        set({ marcherPagesAreLoading: isLoading });
+    }
 
     // addMarcherPage: async (marcherPage) => {
     //     await addMarcherPage(marcherPage);

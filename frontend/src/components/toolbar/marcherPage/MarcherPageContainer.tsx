@@ -8,11 +8,12 @@ import { useMarcherPageStore } from "../../../stores/Store";
 function MarcherPageContainer() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
-    const { fetchMarcherPages } = useMarcherPageStore()!;
+    const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
 
     useEffect(() => {
-        fetchMarcherPages();
-        // Should I have some sort of loading thing?
+        fetchMarcherPages().finally(() => {
+            setMarcherPagesAreLoading(false)
+        });
     }, [fetchMarcherPages]);
 
 

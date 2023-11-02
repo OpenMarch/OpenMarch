@@ -60,7 +60,7 @@ function EditMarcherPage() {
         else
             setIsEditing(false);
         resetForm();
-    }, [selectedPage]);
+    }, [selectedPage, selectedMarcher]);
 
     return (
         <>
@@ -71,7 +71,7 @@ function EditMarcherPage() {
             >
                 {selectedPage && selectedMarcher ? <>
                     <Form.Label htmlFor={marcherPageFormId}>
-                        Page {selectedPage?.name} | {selectedMarcher?.drill_number}
+                        Page {selectedPage?.name} | {selectedMarcher?.drill_number || "nil"}
                     </Form.Label>
                     <InputGroup size="sm" className="mb-12 text-right">
                         <InputGroup.Text id={"x-label"}>
@@ -82,8 +82,8 @@ function EditMarcherPage() {
                             id={xForm}
                             defaultValue={marcherPage?.x}
                             type="number"
-                            min={0}
-                            step={.25}
+                        // min={0}
+                        // step={.25}
                         />
                         <InputGroup.Text id={"y-label"}>
                             Y
@@ -93,8 +93,8 @@ function EditMarcherPage() {
                             id={yForm}
                             defaultValue={marcherPage?.y}
                             type="number"
-                            min={0}
-                            step={.25}
+                        // min={0}
+                        // step={.25}
                         />
                     </InputGroup>
 
