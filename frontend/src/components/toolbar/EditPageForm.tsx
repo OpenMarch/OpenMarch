@@ -19,7 +19,6 @@ function EditPageForm() {
         event.preventDefault();
         const form = event.currentTarget;
         const counts = form[countsInputId].value;
-        console.log(counts);
 
         // Refresh pages in the PageStore after making changes
         if (selectedPage?.id_for_html === Constants.NewPageId) {

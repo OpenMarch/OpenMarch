@@ -28,7 +28,7 @@ export async function createPage(page: Page) {
     name: page.name,
     counts: page.counts
   };
-  console.log("newPage JSOn: " + JSON.stringify(newPage));
+  // console.log("newPage JSOn: " + JSON.stringify(newPage));
   const response = await axios.post(API_URL + '/pages', JSON.stringify(newPage), {
     headers: {
       'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ export async function updateMarcherPage(marcher_id: number, page_id: number, x: 
     x: x,
     y: y
   };
-  console.log("JSON: " + JSON.stringify({ x, y }));
+  // console.log("JSON: " + JSON.stringify({ x, y }));
   const response = await axios.patch(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`,
     JSON.stringify({ x, y }), {
     headers: {
