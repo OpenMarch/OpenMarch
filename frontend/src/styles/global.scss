@@ -6,7 +6,7 @@ html, body  {
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden;
+  // overflow: hidden;
   display: flex;
 }
 
@@ -30,6 +30,29 @@ html, body  {
 
 /* ================= CANVAS STYLES ================= */
 
+.canvas-container {
+  position: relative;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.field-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.marcher-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
 
 /* ================= TOOLBAR STYLES ================= */
 $topHeight: 125px;

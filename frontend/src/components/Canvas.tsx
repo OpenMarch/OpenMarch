@@ -3,7 +3,6 @@ import { fabric } from "fabric";
 import { FaSmile } from "react-icons/fa";
 import { Button } from "react-bootstrap";
 import { linearEasing } from "../utils";
-import * as PIXI from "pixi.js";
 import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarcher } from "../context/SelectedMarcherContext";
@@ -15,31 +14,62 @@ interface Dimension {
     actualHeight: number;
 }
 
+interface CanvasMarcher {
+    fabricObject: fabric.Object | null;
+    x: number;
+    y: number;
+    drill_number: string;
+    id_for_html: string;
+    marcher_id: number;
+}
+
 // All dimensions are in tenth steps (2.25 inches)
 const canvasDimensions = {
     footballField: { width: 1600, height: 854, name: "Football Field", actualHeight: 840 },
 };
 
 function Canvas() {
-    const { marchers, fetchMarchers } = useMarcherStore()!;
-    const { pages, fetchPages } = usePageStore()!;
-    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
+    const { marchers, marchersAreLoading } = useMarcherStore()!;
+    const { pages, pagesAreLoading } = usePageStore()!;
+    const { marcherPages, marcherPagesAreLoading } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarcher } = useSelectedMarcher()!;
+    const [canvas, setCanvas] = React.useState<fabric.Canvas>();
+    const [isLoading, setIsLoading] = React.useState<boolean>(true);
+    const [canvasMarchers, setCanvasMarchers] = React.useState<CanvasMarcher[]>([]);
 
-    type CanvasMarcher = fabric.Circle | fabric.Rect | null;
+    // type CanvasMarcher = fabric.Circle | fabric.Rect | null;
 
+    // Parent canvas
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const canvasEl = canvasRef.current;
-    let canvas: fabric.Canvas | null = null;
-    let legacyMarchers: CanvasMarcher[] = [];
+    // let canvasMarchers: CanvasMarcher[] = [];
     //   const rootStore = useStore();
     //   const { UIStore } = rootStore;
 
+    // Set Loading
     useEffect(() => {
-        if (canvasRef.current) {
-            canvas = new fabric.Canvas(canvasRef.current, {});
+        setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
+    }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
 
+
+    // Create the canvas
+    useEffect(() => {
+        if (!canvas && selectedPage && canvasRef.current) {
+            console.log("Canvas.tsx: useEffect: create canvas");
+            setCanvas(new fabric.Canvas(canvasRef.current, {}));
+
+            // Handle window resize event
+            // window.addEventListener("resize", buildField);
+
+            // Clean up event listener on component unmount
+            // return () => {
+            //     window.removeEventListener("resize", buildField);
+            // };‰
+        }
+    }, [selectedPage, pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
+
+    useEffect(() => {
+        if (canvas) {
             // Set canvas size
             canvas.setDimensions(canvasDimensions.footballField);
 
@@ -51,29 +81,22 @@ function Canvas() {
             // set initial canvas size
             const staticGrid = buildField(canvasDimensions.footballField);
             canvas.add(staticGrid);
-
-            // const rect = new fabric.Rect({
-            //     left: 100,
-            //     top: 100,
-            //     fill: "red",
-            //     width: 20,
-            //     height: 20,
-            // });
-
-
-            // canvas.add(rect);
-
-            // Handle window resize event
-            // window.addEventListener("resize", buildField);
-
-            createDefaultMarchers();
-
-            // Clean up event listener on component unmount
-            // return () => {
-            //     window.removeEventListener("resize", buildField);
-            // };‰
         }
-    }, []);
+    }, [canvas]);
+
+    useEffect(() => {
+        if (canvas && !isLoading) {
+            console.log("canvas", canvas);
+            renderMarchers();
+            // canvas?.renderAll();
+        }
+    }, [marchers, pages, marcherPages, selectedPage, isLoading]);
+
+    // useEffect(() => {
+    //     if (selectedMarcher != null)
+    //         canvas?.clear();
+    //     canvas?.renderAll();
+    // }, [selectedMarcher]);
 
     const buildField = (dimensions: Dimension) => {
         const fieldArray: fabric.Object[] = [];
@@ -151,48 +174,12 @@ function Canvas() {
     };
 
     // MOTION FUNCTIONS
-    const createMarcher = (x: number, y: number, label?: string): CanvasMarcher => {
-        let radius = 8;
-        const newMarcher = new fabric.Circle({
-            left: x - radius,
-            top: y - radius,
-            fill: "red",
-            radius: radius,
-            hasControls: false,
-            // hasBorders: false,
-            lockRotation: true
-        });
-        let labelOffset = 0;
-        const labelLength = label ? label.length : 3;
-        labelOffset = Math.floor(labelLength / 2) * 12 + 6;
-        const marcherLabel = new fabric.Text(label || "nil", {
-            left: x - labelOffset,
-            top: y - 30,
-            // textAlign: "center",
-            fontFamily: "courier",
-            fontSize: 20,
-        });
-        legacyMarchers.push(newMarcher);
-        canvas?.add(newMarcher);
-        canvas?.add(marcherLabel);
-
-        return newMarcher;
-    };
-
-    const createDefaultMarchers = () => {
-        for (let i = 0; i < 10; i++) {
-            createMarcher((i + 4) * 50, 50);
-        }
-    };
-
     const startAnimation = () => {
         if (canvas) {
-            console.log("Canvas.tsx: start animation");
-            // legacyMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
-            legacyMarchers.forEach((CanvasMarcher) => {
-                const matrix = CanvasMarcher?.calcTransformMatrix();
-                console.log(matrix);
-                CanvasMarcher?.animate({
+            // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
+            canvasMarchers.forEach((CanvasMarcher) => {
+                const matrix = CanvasMarcher?.fabricObject?.calcTransformMatrix();
+                CanvasMarcher?.fabricObject?.animate({
                     left: `${matrix![4]}`,
                     top: `${matrix![5]}+100`,
                 }, {
@@ -204,38 +191,87 @@ function Canvas() {
         }
     };
 
-    const renderMarchers = () => {
-        console.log("Canvas.tsx: renderMarchers");
-        const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
-        var x = 100;
-        var y = 100;
-        curMarcherPages.forEach((marcherPage) => {
-            const drillNumber = marchers.find((marcher) => marcher.id === marcherPage.marcher_id)?.drill_number;
-            console.log("Drill Number", drillNumber);
-            createMarcher(x, y, drillNumber);
-            x += 50;
+    // ----------- Marcher Functions -----------
+    const createMarcher = (x: number, y: number, id_for_html: string, marcher_id: number, label?: string): CanvasMarcher => {
+        let radius = 8;
+
+        const newMarcherCircle = new fabric.Circle({
+            left: x - radius,
+            top: y - radius,
+            fill: "red",
+            radius: radius,
         });
+
+        let labelOffset = 0;
+        const labelLength = label ? label.length : 3;
+        labelOffset = Math.floor(labelLength / 2) * 12 + 6;
+        const marcherLabel = new fabric.Text(label || "nil", {
+            left: x - labelOffset,
+            top: y - 30,
+            // textAlign: "center",
+            fontFamily: "courier",
+            fontSize: 20,
+        });
+
+        const marcherGroup = new fabric.Group([newMarcherCircle, marcherLabel], {
+            hasControls: false,
+            hasBorders: false,
+            lockRotation: true
+        });
+
+        const newMarcher = {
+            fabricObject: marcherGroup,
+            x: x,
+            y: y,
+            id_for_html: id_for_html,
+            drill_number: label || "nil",
+            marcher_id: marcher_id
+        }
+        canvasMarchers.push(newMarcher);
+        canvas!.add(marcherGroup);
+        return newMarcher;
     };
 
-    const clearMarchers = () => {
-        // console.log("Canvas.tsx: clearMarchers");
-        // legacyMarchers.forEach((CanvasMarcher) => {
-        //     canvas?.remove(CanvasMarcher);
-        // });
-        // legacyMarchers = [];
-    }
+    // Create new marchers based on the selected page if they haven't been created yet
+    // Moves the current marchers to the new page
+    const renderMarchers = () => {
+        const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
+        curMarcherPages.forEach((marcherPage) => {
+            // CavnasMarcher does not exist
+            if (!canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id)) {
+                const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
+                if (curMarcher)
+                    createMarcher(
+                        marcherPage.x, marcherPage.y, curMarcher.id_for_html, curMarcher.id, curMarcher.drill_number);
+                else
+                    throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
+            }
+            else {
+                const canvasMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
+                if (canvasMarcher && canvasMarcher.fabricObject) {
+                    canvasMarcher.fabricObject!.left = marcherPage.x;
+                    canvasMarcher.fabricObject!.top = marcherPage.y;
+                } else
+                    throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
+            }
+        });
+        canvas!.renderAll();
+    };
 
-    useEffect(() => {
-        renderMarchers();
-    }, [marchers, pages, marcherPages, selectedPage]);
+    const createDefaultMarchers = () => {
+        for (let i = 0; i < 10; i++) {
+            createMarcher((i + 4) * 50, 50, "defaultMarcher_" + i.toString(), i);
+        }
+    };
 
     return (
         <div className="canvas-container">
-            <canvas ref={canvasRef} id="c" />
+            <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
             <Button
-                variant="secondary" onClick={startAnimation}>
+                variant="secondary" onClick={createDefaultMarchers}>
                 <FaSmile />
             </ Button>
+
         </div>
     );
 };

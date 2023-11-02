@@ -20,31 +20,45 @@ function ListContainer({ isLoading, attributes, attributesText, content }: ListC
     const [prevSelectedPage, setPrevSelectedPage] = useState<Page | null>(null);
 
     const handleRowClick = (selectedItem: Marcher | Page | any) => {
-        const idArr = selectedItem.id_for_html.split("_");
+        if (selectedItem) {
+            // Splits id like "marcher_1" into ["marcher", "1"]
+            const idSplit = selectedItem?.id_for_html.split("_");
 
-        // Marcher
-        if (idArr[0] === Constants.MarcherPrefix) {
-            setPrevSelectedMarcher(selectedMarcher);
-            // Deselect if already selected
-            if (selectedMarcher?.id_for_html === selectedItem.id_for_html)
-                setSelectedMarcher(null);
-            else
-                setSelectedMarcher(selectedItem);
-        }
-        // Page
-        else if (idArr[0] === Constants.PagePrefix) {
-            setPrevSelectedPage(selectedPage);
-            // Deselect if already selected
-            if (selectedPage?.id_for_html === selectedItem.id_for_html)
-                setSelectedPage(null);
-            else
+            // Marcher
+            if (idSplit[0] === Constants.MarcherPrefix) {
+                setPrevSelectedMarcher(selectedMarcher);
+                // Deselect if already selected
+                if (selectedMarcher?.id_for_html === selectedItem.id_for_html)
+                    setSelectedMarcher(null);
+                else
+                    setSelectedMarcher(selectedItem);
+            }
+            // Page
+            else if (idSplit[0] === Constants.PagePrefix) {
+                setPrevSelectedPage(selectedPage);
+                // Deselect if already selected
+                // if (selectedPage?.id_for_html === selectedItem.id_for_html)
+                //     setSelectedPage(null);
+                // else
                 setSelectedPage(selectedItem);
+            }
         }
     };
 
     const updateSelection = (prevSelectedItem: any, selectedItem: any, setPrevSelectedItem: any) => {
-        if (prevSelectedItem && document.getElementById(prevSelectedItem.id_for_html))
-            document.getElementById(prevSelectedItem.id_for_html)!.className = "";
+        if (prevSelectedItem) {
+            // Splits id like "marcher_1" into ["marcher", "1"]
+            const idSplit = prevSelectedItem.id_for_html.split("_");
+
+            // Visually deselect the previous item. Deselects the current item if clicked again.
+            // Total deselection is not implemented for page because you always need a page selected.
+            if ((idSplit[0] === Constants.MarcherPrefix || // item is a marcher
+                (idSplit[0] === Constants.PagePrefix && selectedItem)) && // item is a page and a new page is selected
+                prevSelectedItem && document.getElementById(prevSelectedItem.id_for_html)
+            ) {
+                document.getElementById(prevSelectedItem.id_for_html)!.className = "";
+            }
+        }
 
         if (selectedItem && document.getElementById(selectedItem.id_for_html))
             document.getElementById(selectedItem!.id_for_html)!.className = "table-info";
