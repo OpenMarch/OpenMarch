@@ -6,6 +6,7 @@ import { linearEasing } from "../utils";
 import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarcher } from "../context/SelectedMarcherContext";
+import { IGroupOptions } from "fabric/fabric-impl";
 
 interface Dimension {
     width: number;
@@ -23,6 +24,10 @@ interface CanvasMarcher {
     marcher_id: number;
 }
 
+interface IGroupOptionsWithId extends IGroupOptions {
+    id_for_html: string | number;
+}
+
 // All dimensions are in tenth steps (2.25 inches)
 const canvasDimensions = {
     footballField: { width: 1600, height: 854, name: "Football Field", actualHeight: 840 },
@@ -33,26 +38,22 @@ function Canvas() {
     const { pages, pagesAreLoading } = usePageStore()!;
     const { marcherPages, marcherPagesAreLoading } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
-    const { selectedMarcher } = useSelectedMarcher()!;
+    const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
     const [canvas, setCanvas] = React.useState<fabric.Canvas>();
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers, setCanvasMarchers] = React.useState<CanvasMarcher[]>([]);
-
-    // type CanvasMarcher = fabric.Circle | fabric.Rect | null;
-
-    // Parent canvas
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    // let canvasMarchers: CanvasMarcher[] = [];
+
     //   const rootStore = useStore();
     //   const { UIStore } = rootStore;
 
+    // ------------- useEffects -------------
     // Set Loading
     useEffect(() => {
         setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
     }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
 
-
-    // Create the canvas
+    // Initialize the canvas.
     useEffect(() => {
         if (!canvas && selectedPage && canvasRef.current) {
             console.log("Canvas.tsx: useEffect: create canvas");
@@ -66,8 +67,9 @@ function Canvas() {
             //     window.removeEventListener("resize", buildField);
             // };‰
         }
-    }, [selectedPage, pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
+    }, [selectedPage]);
 
+    // Create the canvas and field
     useEffect(() => {
         if (canvas) {
             // Set canvas size
@@ -81,23 +83,49 @@ function Canvas() {
             // set initial canvas size
             const staticGrid = buildField(canvasDimensions.footballField);
             canvas.add(staticGrid);
+
+            canvas.on('selection:updated', handleElement);
+            canvas.on('selection:created', handleElement);
+            canvas.on('selection:cleared', handleElement);
+
+            // Cleanup
+            return () => {
+                canvas.off('selection:updated');
+                canvas.off('selection:created');
+                canvas.off('selection:cleared');
+            }
         }
     }, [canvas]);
 
+    // Render the marchers when the canvas and marchers are loaded
     useEffect(() => {
-        if (canvas && !isLoading) {
-            console.log("canvas", canvas);
-            renderMarchers();
-            // canvas?.renderAll();
-        }
+        if (canvas && !isLoading) { renderMarchers(); }
     }, [marchers, pages, marcherPages, selectedPage, isLoading]);
 
-    // useEffect(() => {
-    //     if (selectedMarcher != null)
-    //         canvas?.clear();
-    //     canvas?.renderAll();
-    // }, [selectedMarcher]);
+    useEffect(() => {
+        if (canvas && !isLoading && canvasMarchers.length > 0 && selectedMarcher) {
+            const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarcher.id);
+            if (curMarcher && curMarcher.fabricObject) {
+                canvas.setActiveObject(curMarcher.fabricObject);
+                canvas.renderAll();
+            }
+            else
+                throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
+        }
+    }, [selectedMarcher]);
 
+    // Set the selected marcher when selected element changes
+    const handleElement = (e: any) => {
+        // Check if it is a single selected element rather than a group
+        if (e.selected?.length === 1 && e.selected[0].id_for_html) {
+            const id_for_html = e.selected[0].id_for_html;
+            console.log("handleElement", id_for_html);
+            setSelectedMarcher(marchers.find((marcher) => marcher.id_for_html === id_for_html) || null);
+        }
+        else if (e.deselected) { setSelectedMarcher(null); }
+    };
+
+    // ------------- Field Functions -------------
     const buildField = (dimensions: Dimension) => {
         const fieldArray: fabric.Object[] = [];
         if (canvas) {
@@ -169,11 +197,14 @@ function Canvas() {
             fieldArray.push(new fabric.Line([0, height - 1, width, height - 1], borderProps));
             fieldArray.push(new fabric.Line([width - 1, 0, width - 1, height], borderProps));
         }
-        const field = new fabric.Group(fieldArray, { selectable: false });
+        const field = new fabric.Group(fieldArray, {
+            selectable: false,
+            hoverCursor: "default",
+        });
         return field;
     };
 
-    // MOTION FUNCTIONS
+    // ------------- Animation Functions -------------
     const startAnimation = () => {
         if (canvas) {
             // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
@@ -214,10 +245,12 @@ function Canvas() {
         });
 
         const marcherGroup = new fabric.Group([newMarcherCircle, marcherLabel], {
+            id_for_html: id_for_html,
             hasControls: false,
-            hasBorders: false,
-            lockRotation: true
-        });
+            hasBorders: true,
+            lockRotation: true,
+            hoverCursor: "pointer",
+        } as IGroupOptionsWithId);
 
         const newMarcher = {
             fabricObject: marcherGroup,
@@ -251,6 +284,7 @@ function Canvas() {
                 if (canvasMarcher && canvasMarcher.fabricObject) {
                     canvasMarcher.fabricObject!.left = marcherPage.x;
                     canvasMarcher.fabricObject!.top = marcherPage.y;
+                    canvasMarcher.fabricObject!.setCoords();
                 } else
                     throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
             }
@@ -271,7 +305,6 @@ function Canvas() {
                 variant="secondary" onClick={createDefaultMarchers}>
                 <FaSmile />
             </ Button>
-
         </div>
     );
 };
