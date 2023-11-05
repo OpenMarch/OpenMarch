@@ -56,6 +56,7 @@ function Canvas() {
     }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
 
     // Initialize the canvas.
+    // Update the objectModified listener when the selected page changes
     useEffect(() => {
         if (!canvas && selectedPage && canvasRef.current) {
             console.log("Canvas.tsx: useEffect: create canvas");
@@ -68,6 +69,9 @@ function Canvas() {
             // return () => {
             //     window.removeEventListener("resize", buildField);
             // };‰
+        }
+        if (canvas) {
+            refreshListeners();
         }
     }, [selectedPage]);
 
@@ -123,6 +127,15 @@ function Canvas() {
         }
     };
 
+    const refreshListeners = () => {
+        if (canvas) {
+            // Updates the objectModified listener so it is on the correct page
+            // TODO is there a better way to do this?
+            canvas.off('object:modified');
+            canvas.on('object:modified', handleObjectModified);
+        }
+    };
+
     const cleanupListeners = () => {
         if (canvas) {
             canvas.off('object:modified');
@@ -135,7 +148,7 @@ function Canvas() {
 
     const handleObjectModified = (e: any) => {
         console.log("handleObjectModified:", e.target);
-        console.log('selectedPage:', getSelectedPage());
+        console.log('selectedPage:', selectedPage);
         const target = e.target;
         if (e.target?.id_for_html && e.target?.left && e.target?.top) {
             const id = idForHtmlToId(e.target.id_for_html);
