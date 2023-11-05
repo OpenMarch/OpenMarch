@@ -7,6 +7,8 @@ import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/St
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarcher } from "../context/SelectedMarcherContext";
 import { IGroupOptions } from "fabric/fabric-impl";
+import { idForHtmlToId } from "../Constants";
+import { updateMarcherPage } from "../api/api";
 
 interface Dimension {
     width: number;
@@ -36,7 +38,7 @@ const canvasDimensions = {
 function Canvas() {
     const { marchers, marchersAreLoading } = useMarcherStore()!;
     const { pages, pagesAreLoading } = usePageStore()!;
-    const { marcherPages, marcherPagesAreLoading } = useMarcherPageStore()!;
+    const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
     const [canvas, setCanvas] = React.useState<fabric.Canvas>();
@@ -47,7 +49,7 @@ function Canvas() {
     //   const rootStore = useStore();
     //   const { UIStore } = rootStore;
 
-    // ------------- useEffects -------------
+    // -------------------------- useEffects --------------------------
     // Set Loading
     useEffect(() => {
         setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
@@ -84,48 +86,87 @@ function Canvas() {
             const staticGrid = buildField(canvasDimensions.footballField);
             canvas.add(staticGrid);
 
-            canvas.on('selection:updated', handleElement);
-            canvas.on('selection:created', handleElement);
-            canvas.on('selection:cleared', handleElement);
+            intitiateListeners();
 
             // Cleanup
-            return () => {
-                canvas.off('selection:updated');
-                canvas.off('selection:created');
-                canvas.off('selection:cleared');
-            }
+            return () => { cleanupListeners(); }
         }
     }, [canvas]);
 
     // Render the marchers when the canvas and marchers are loaded
     useEffect(() => {
+        console.log("UseEffect: renderMarchers", selectedPage);
         if (canvas && !isLoading) { renderMarchers(); }
     }, [marchers, pages, marcherPages, selectedPage, isLoading]);
 
+    // Change the active object when the selected marcher changes
     useEffect(() => {
         if (canvas && !isLoading && canvasMarchers.length > 0 && selectedMarcher) {
             const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarcher.id);
             if (curMarcher && curMarcher.fabricObject) {
                 canvas.setActiveObject(curMarcher.fabricObject);
-                canvas.renderAll();
             }
             else
                 throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
         }
     }, [selectedMarcher]);
 
+    // -------------------------- Listener Functions --------------------------
+
+    const intitiateListeners = () => {
+        if (canvas) {
+            canvas.on('object:modified', handleObjectModified);
+
+            canvas.on('selection:updated', handleSelect);
+            canvas.on('selection:created', handleSelect);
+            canvas.on('selection:cleared', handleDeselect);
+        }
+    };
+
+    const cleanupListeners = () => {
+        if (canvas) {
+            canvas.off('object:modified');
+
+            canvas.off('selection:updated');
+            canvas.off('selection:created');
+            canvas.off('selection:cleared');
+        }
+    };
+
+    const handleObjectModified = (e: any) => {
+        console.log("handleObjectModified:", e.target);
+        console.log('selectedPage:', getSelectedPage());
+        const target = e.target;
+        if (e.target?.id_for_html && e.target?.left && e.target?.top) {
+            const id = idForHtmlToId(e.target.id_for_html);
+            // const marcherPage = marcherPages.find((marcherPage) => marcherPage.marcher_id === id);
+            updateMarcherPage(id, selectedPage!.id, target.left, target.top).then(() => { fetchMarcherPages() });
+        }
+    };
+
     // Set the selected marcher when selected element changes
-    const handleElement = (e: any) => {
+    const handleSelect = (e: any) => {
+        // console.log("handleSelect:", e.selected);
+
         // Check if it is a single selected element rather than a group
         if (e.selected?.length === 1 && e.selected[0].id_for_html) {
             const id_for_html = e.selected[0].id_for_html;
-            console.log("handleElement", id_for_html);
             setSelectedMarcher(marchers.find((marcher) => marcher.id_for_html === id_for_html) || null);
         }
-        else if (e.deselected) { setSelectedMarcher(null); }
     };
 
-    // ------------- Field Functions -------------
+    // Deselect the marcher when the selection is cleared
+    const handleDeselect = (e: any) => {
+        // console.log("handleDeselect:", e.deselected);
+
+        if (e.deselected) { setSelectedMarcher(null); }
+    };
+
+    const getSelectedPage = () => {
+        return selectedPage;
+    };
+
+    // -------------------------- Field Functions --------------------------
     const buildField = (dimensions: Dimension) => {
         const fieldArray: fabric.Object[] = [];
         if (canvas) {
@@ -204,7 +245,7 @@ function Canvas() {
         return field;
     };
 
-    // ------------- Animation Functions -------------
+    // -------------------------- Animation Functions --------------------------
     const startAnimation = () => {
         if (canvas) {
             // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
@@ -222,7 +263,7 @@ function Canvas() {
         }
     };
 
-    // ----------- Marcher Functions -----------
+    // ------------------------ Marcher Functions ------------------------
     const createMarcher = (x: number, y: number, id_for_html: string, marcher_id: number, label?: string): CanvasMarcher => {
         let radius = 8;
 
@@ -280,7 +321,8 @@ function Canvas() {
                     throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
             }
             else {
-                const canvasMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
+                const canvasMarcher = canvasMarchers.find(
+                    (canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
                 if (canvasMarcher && canvasMarcher.fabricObject) {
                     canvasMarcher.fabricObject!.left = marcherPage.x;
                     canvasMarcher.fabricObject!.top = marcherPage.y;

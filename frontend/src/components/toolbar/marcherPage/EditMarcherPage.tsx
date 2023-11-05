@@ -19,6 +19,30 @@ function EditMarcherPage() {
     const xForm = "xForm";
     const yForm = "yForm";
 
+    /* -------------------------------------- USE EFFECTS --------------------------------------*/
+    // TODO this is duplicate code from MarcherPageDetails.tsx Should this be a context instead?
+    // Load marcherPage(s) from selected marcher/page
+    useEffect(() => {
+        setMarcherPage(null);
+
+        // If both a marcher and page is selected return a single marcherPage
+        if (selectedPage && selectedMarcher) {
+            setMarcherPage(marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher.id &&
+                marcherPage.page_id === selectedPage.id) || null);
+        }
+    }, [selectedPage, selectedMarcher]);
+
+    // Change the set the form to edit mode when creating a new page
+    // Otherwise, disable edit mode when a different marcher or page is selected
+    useEffect(() => {
+        if (selectedPage?.id_for_html === Constants.NewPageId)
+            setIsEditing(true);
+        else
+            setIsEditing(false);
+        resetForm();
+    }, [selectedPage, selectedMarcher]);
+
+    /* -------------------------------------- HANDLERS --------------------------------------*/
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         setIsEditing(false);
         event.preventDefault();
@@ -41,27 +65,6 @@ function EditMarcherPage() {
         form.reset();
     };
 
-    // TODO this is duplicate code from MarcherPageDetails.tsx Should this be a context instead?
-    // Load marcherPage(s) from selected marcher/page
-    useEffect(() => {
-        setMarcherPage(null);
-
-        // If both a marcher and page is selected return a single marcherPage
-        if (selectedPage && selectedMarcher) {
-            setMarcherPage(marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher.id &&
-                marcherPage.page_id === selectedPage.id) || null);
-        }
-    }
-        , [selectedPage, selectedMarcher]);
-
-    useEffect(() => {
-        if (selectedPage?.id_for_html === Constants.NewPageId)
-            setIsEditing(true);
-        else
-            setIsEditing(false);
-        resetForm();
-    }, [selectedPage, selectedMarcher]);
-
     return (
         <>
             <Form
@@ -82,8 +85,6 @@ function EditMarcherPage() {
                             id={xForm}
                             defaultValue={marcherPage?.x}
                             type="number"
-                        // min={0}
-                        // step={.25}
                         />
                         <InputGroup.Text id={"y-label"}>
                             Y
@@ -93,8 +94,6 @@ function EditMarcherPage() {
                             id={yForm}
                             defaultValue={marcherPage?.y}
                             type="number"
-                        // min={0}
-                        // step={.25}
                         />
                     </InputGroup>
 
