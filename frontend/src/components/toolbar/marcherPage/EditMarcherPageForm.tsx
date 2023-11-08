@@ -8,7 +8,7 @@ import FormButtons from "../FormButtons";
 import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
 import { MarcherPage } from "../../../Interfaces";
 
-function EditMarcherPage() {
+function EditMarcherPageForm() {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
@@ -30,17 +30,15 @@ function EditMarcherPage() {
             setMarcherPage(marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher.id &&
                 marcherPage.page_id === selectedPage.id) || null);
         }
-    }, [selectedPage, selectedMarcher]);
 
-    // Change the set the form to edit mode when creating a new page
-    // Otherwise, disable edit mode when a different marcher or page is selected
-    useEffect(() => {
+        // Change the set the form to edit mode when creating a new page
+        // Otherwise, disable edit mode when a different marcher or page is selected
         if (selectedPage?.id_for_html === Constants.NewPageId)
             setIsEditing(true);
         else
             setIsEditing(false);
         resetForm();
-    }, [selectedPage, selectedMarcher]);
+    }, [selectedPage, selectedMarcher, marcherPages]);
 
     /* -------------------------------------- HANDLERS --------------------------------------*/
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -113,4 +111,4 @@ function EditMarcherPage() {
     );
 }
 
-export default EditMarcherPage;
+export default EditMarcherPageForm;
