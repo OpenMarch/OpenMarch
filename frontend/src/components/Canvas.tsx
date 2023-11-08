@@ -97,11 +97,45 @@ function Canvas() {
         }
     }, [canvas]);
 
+    // TODO These are only separated for debugging purposes. They should be combined
     // Render the marchers when the canvas and marchers are loaded
     useEffect(() => {
-        console.log("UseEffect: renderMarchers", selectedPage);
-        if (canvas && !isLoading) { renderMarchers(); }
-    }, [marchers, pages, marcherPages, selectedPage, isLoading]);
+        // console.log("UseEffect: renderMarchers - marchers", selectedPage);
+        if (canvas && !isLoading) {
+            if (canvasMarchers.length == marchers.length)
+                updateMarcherLabels();
+            else
+                renderMarchers();
+        }
+    }, [marchers]);
+    useEffect(() => {
+        // console.log("UseEffect: renderMarchers - pages", selectedPage);
+        if (canvas && !isLoading) {
+            // console.log("Rendering canvas - pages");
+            renderMarchers();
+        }
+    }, [pages]);
+    useEffect(() => {
+        // console.log("UseEffect: renderMarchers - marcherPages", selectedPage);
+        if (canvas && !isLoading) {
+            // console.log("Rendering canvas - marcherPages");
+            renderMarchers();
+        }
+    }, [marcherPages]);
+    useEffect(() => {
+        // console.log("UseEffect: renderMarchers - selected page", selectedPage);
+        if (canvas && !isLoading) {
+            // console.log("Rendering canvas - selectedPage");
+            renderMarchers();
+        }
+    }, [selectedPage]);
+    useEffect(() => {
+        // console.log("UseEffect: renderMarchers - isLoading", selectedPage);
+        // console.log("loading:", isLoading, "marchersHaveBeenModified:", marchersHaveBeenModified, "canvas", canvas !== null);
+        if (canvas && !isLoading) {
+            renderMarchers();
+        }
+    }, [isLoading]);
 
     // Change the active object when the selected marcher changes
     useEffect(() => {
@@ -147,8 +181,8 @@ function Canvas() {
     };
 
     const handleObjectModified = (e: any) => {
-        console.log("handleObjectModified:", e.target);
-        console.log('selectedPage:', selectedPage);
+        // console.log("handleObjectModified:", e.target);
+        // console.log('selectedPage:', selectedPage);
         const target = e.target;
         if (e.target?.id_for_html && e.target?.left && e.target?.top) {
             const id = idForHtmlToId(e.target.id_for_html);
@@ -287,16 +321,12 @@ function Canvas() {
             radius: radius,
         });
 
-        let labelOffset = 0;
-        const labelLength = label ? label.length : 3;
-        labelOffset = Math.floor(labelLength / 2) * 12 + 6;
         const marcherLabel = new fabric.Text(label || "nil", {
-            left: x - labelOffset,
             top: y - 30,
-            // textAlign: "center",
             fontFamily: "courier",
             fontSize: 20,
         });
+        marcherLabel.left = x - marcherLabel!.width! / 2;
 
         const marcherGroup = new fabric.Group([newMarcherCircle, marcherLabel], {
             id_for_html: id_for_html,
@@ -322,9 +352,10 @@ function Canvas() {
     // Create new marchers based on the selected page if they haven't been created yet
     // Moves the current marchers to the new page
     const renderMarchers = () => {
+        // console.log("renderMarchers:", selectedPage);
         const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
         curMarcherPages.forEach((marcherPage) => {
-            // CavnasMarcher does not exist
+            // Marcher does not exist on the Canvas, create a new one
             if (!canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id)) {
                 const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
                 if (curMarcher)
@@ -333,9 +364,11 @@ function Canvas() {
                 else
                     throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
             }
+            // Marcher does exist on the Canvas, move it to the new location if it has changed
             else {
                 const canvasMarcher = canvasMarchers.find(
                     (canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
+
                 if (canvasMarcher && canvasMarcher.fabricObject) {
                     canvasMarcher.fabricObject!.left = marcherPage.x;
                     canvasMarcher.fabricObject!.top = marcherPage.y;
@@ -345,6 +378,19 @@ function Canvas() {
             }
         });
         canvas!.renderAll();
+    };
+
+    const updateMarcherLabels = () => {
+        canvasMarchers.forEach((canvasMarcher) => {
+            if (canvasMarcher.fabricObject instanceof fabric.Group) {
+                canvasMarcher.drill_number =
+                    marchers.find((marcher) => marcher.id === canvasMarcher.marcher_id)?.drill_number || "nil";
+                const textObject = canvasMarcher.fabricObject._objects[1] as fabric.Text;
+                if (textObject.text !== canvasMarcher.drill_number)
+                    textObject.set({ text: canvasMarcher.drill_number });
+            }
+        });
+        canvas?.renderAll();
     };
 
     const createDefaultMarchers = () => {

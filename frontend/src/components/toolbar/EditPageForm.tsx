@@ -1,6 +1,6 @@
 import { Form, InputGroup } from "react-bootstrap";
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPage, updatePageCounts } from "../../api/api";
 import { usePageStore } from "../../stores/Store";
 import FormButtons from "./FormButtons";
@@ -14,6 +14,16 @@ function EditPageForm() {
 
     const countsInputId = "countsForm";
 
+    /* -------------------------------------- USE EFFECTS --------------------------------------*/
+    useEffect(() => {
+        if (selectedPage?.id_for_html === Constants.NewPageId)
+            setIsEditing(true);
+        else
+            setIsEditing(false);
+        resetForm();
+    }, [selectedPage]);
+
+    /* -------------------------------------- HANDLERS --------------------------------------*/
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         setIsEditing(false);
         event.preventDefault();
@@ -29,31 +39,23 @@ function EditPageForm() {
             updatePageCounts(selectedPage!.id, counts).then(() => fetchPages());
     };
 
-    const handleCancel = () => {
+    const handleCancel = useCallback(() => {
         setIsEditing(false);
         setSelectedPage(null);
         const form = document.getElementById(pageFormId) as HTMLFormElement;
         form.reset();
-    };
+    }, []);
 
     const resetForm = () => {
         const form = document.getElementById(pageFormId) as HTMLFormElement;
         form.reset();
     };
 
-    useEffect(() => {
-        if (selectedPage?.id_for_html === Constants.NewPageId)
-            setIsEditing(true);
-        else
-            setIsEditing(false);
-        resetForm();
-    }, [selectedPage]);
-
     return (
         <>
             <Form
                 className="mx-2"
-                id="pageForm"
+                id={pageFormId}
                 onSubmit={handleSubmit}
             >
                 {!selectedPage ? <p>Select a page to view details</p> : <>

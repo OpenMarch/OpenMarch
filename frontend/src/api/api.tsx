@@ -8,11 +8,6 @@ const p_table = Constants.PageTableName;
 
 const API_URL = 'http://localhost:3001/api/v1';
 
-export async function getMarchers() {
-  const response = await axios.get(API_URL + '/marchers');
-  return response.data;
-}
-
 /* ====================== Page ====================== */
 
 /**
@@ -50,6 +45,29 @@ export async function updatePageCounts(id: number, counts: number) {
 };
 
 /* ====================== Marcher ====================== */
+
+/**
+ * @returns a list of all marchers
+ */
+export async function getMarchers() {
+  const response = await axios.get(API_URL + '/marchers');
+  return response.data;
+}
+
+
+/**
+ * Updates the drill number for a given marcher.
+ * A drill number cannot be updated as one string, "B1" for example. It must be updated as a prefix "B" and order 1.
+ *
+ * @param {number} id - marcherObj.id: The id of the marcher. Do not use id_for_html.
+ * @param {string} drill_prefix - (B1 -> "B") The drill prefix for the marcher to be.
+ * @param {number} drill_order - (B1 -> 1) The drill order for the marcher to be.
+ * @returns Response data from the server.
+ */
+export async function updateMarcherDrillNumber(id: number, drill_prefix: string, drill_order: number) {
+  const response = await axios.patch(API_URL + `/marchers/${id}`, { drill_prefix, drill_order });
+  return response.data;
+};
 
 /* ====================== MarcherPage ====================== */
 
