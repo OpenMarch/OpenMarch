@@ -1,27 +1,11 @@
 /* A collection of utility functions to translate raw coordinates into readable coordinates */
 
-export interface ReadableCoords {
-    yardLine: number;
-    side: number;
-    hash: string;
-    xDescription: string;
-    yDescription: string;
-    xSteps: number;
-    ySteps: number;
-}
-interface fieldProperties {
-    frontSideline: number;
-    frontHash: number;
-    backHash: number;
-    backSideline: number;
-    origin: { x: number, y: number };
-    pixelsPerStep: number;
-    roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1
-}
+import { ReadableCoords, fieldProperties } from "../Interfaces";
+
+
 
 // The "origin" of a football field is on the 50 yard line on the front hash.
 const V1_ORIGIN = { x: 782, y: 505 };
-const CURRENT_ORIGIN = V1_ORIGIN;
 export const V1_COLLEGE_PROPERTIES: fieldProperties = {
     frontSideline: 32,
     frontHash: 0,
@@ -101,7 +85,7 @@ export function coordsToCollege(x: number, y: number, props: fieldProperties = V
         switch (output.hash) {
             case "front sideline":
                 if (tempYSteps < props.frontSideline) {
-                    output.ySteps = tempYSteps - half_FSL_to_FH;
+                    output.ySteps = tempYSteps - props.frontSideline;
                     output.yDescription = behind;
                 } else {
                     output.ySteps = tempYSteps - props.frontSideline;
@@ -122,7 +106,7 @@ export function coordsToCollege(x: number, y: number, props: fieldProperties = V
                     output.ySteps = props.backHash - tempYSteps;
                     output.yDescription = behind;
                 } else {
-                    output.ySteps = tempYSteps + props.backHash;
+                    output.ySteps = tempYSteps - props.backHash;
                     output.yDescription = inFront;
                 }
                 break;
@@ -139,22 +123,68 @@ export function coordsToCollege(x: number, y: number, props: fieldProperties = V
         // ensure ySteps is positive
         output.ySteps = Math.abs(output.ySteps);
     }
-    // else if (tempYSteps % 4 < 2) {
-    //     output.ySteps = tempYSteps % 4;
-    //     output.yDescription = "outside";
-    // }
-    // else {
-    //     output.ySteps = 4 - (tempYSteps % 4);
-    //     output.yDescription = "inside";
-    // }
-
-    // Determine how many steps inside or outside the hash the marcher is
-    switch (output.hash) {
-        case "front sideline":
-    }
-
     return output;
 }
+
+/**
+ * A utility toString function to create a verbose description of a marcher's X position.
+ *
+ * @param rCoords A ReadableCoords object to create a verbose string out of.
+ * @param steps Whether or not to include the amount of steps the marcher is from the nearest yard line. (default true)
+ * @returns A string description of the marcher's readable x coordinate.
+ * ("3 steps inside the 35 yard line side 1", "on the 40 yard line side 2")
+ */
+export function xToVerboseString(rCoords: ReadableCoords, steps: boolean = true) {
+    return (rCoords.xSteps === 0 || !steps ? "" : (rCoords.xSteps + " steps "))
+        + rCoords.xDescription + " the "
+        + rCoords.yardLine + " yard line side " + rCoords.side;
+}
+
+/**
+ * A utility toString function to create a terse description of a marcher's X position.
+ *
+ * @param rCoords A ReadableCoords object to create a verbose string out of.
+ * @param steps Whether or not to include the amount of steps the marcher is from the nearest yard line. (default true)
+ * @returns An abbreviated string description of the marcher's readable x coordinate.
+ * ("3 in 35 S1" ," 2 out 0 S2" , "on 20 S1")
+ */
+export function xToTerseString(rCoords: ReadableCoords, steps: boolean = true) {
+    const newDescription = rCoords.xSteps === 0 ? "on" : (rCoords.xDescription === "inside" ? "in" : "out");
+    return (rCoords.xSteps === 0 || !steps ? "" : (rCoords.xSteps + " "))
+        + newDescription + " " + rCoords.yardLine + " S" + rCoords.side;
+}
+
+/**
+ * A utility toString function to create a verbose description of a marcher's Y position.
+ *
+ * @param rCoords A ReadableCoords object to create a verbose string out of.
+ * @param steps Whether or not to include the amount of steps the marcher is from the nearest yard line. (default true)
+ * @returns A string description of the marcher's readable y coordinate.
+ * ("5 steps behind the front hash", "on the front sideline")
+ */
+export function yToVerboseString(rCoords: ReadableCoords, steps: boolean = true) {
+    return (rCoords.xSteps === 0 || !steps ? "" : (rCoords.ySteps + " steps "))
+        + rCoords.yDescription + " the " + rCoords.hash;
+}
+
+/**
+ * A utility toString function to create a terse description of a marcher's Y position.
+ *
+ * @param rCoords A ReadableCoords object to create a verbose string out of.
+ * @param steps Whether or not to include the amount of steps the marcher is from the nearest yard line. (default true)
+ * @returns An abbreviated string description of the marcher's readable y coordinate.
+ * ("9 FBH" -> 9 steps in front of the back hash , "12 BFSL" -> 12 steps behind front sideline , "on FH")
+ */
+export function yToTerseString(rCoords: ReadableCoords, steps: boolean = true) {
+    const newDescription = rCoords.ySteps === 0 ? "on " : (rCoords.yDescription === "behind" ? "B" : "F");
+    const newHash = rCoords.hash === "front sideline" ? "FSL"
+        : (rCoords.hash === "front hash" ? "FH"
+            : (rCoords.hash === "back hash" ? "BH"
+                : "BSL"));
+    return (rCoords.ySteps === 0 || !steps ? "" : (rCoords.ySteps + " ")) + " " + newDescription + newHash;
+}
+
+// const newHash = rCoords.hash === "front sideline" ? "FSL" : (rCoords.hash === "front hash" ? "FH" : (rCoords.hash === "back hash" ? "BH" : "BSL"));
 
 function findHalfway(a: number, b: number) {
     return (a + b) / 2;
