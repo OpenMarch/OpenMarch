@@ -8,27 +8,22 @@ import { Button } from "react-bootstrap";
 import { FaPlus } from "react-icons/fa";
 
 function PageList() {
-    const { pages, fetchPages, pagesAreLoading, setPagesAreLoading } = usePageStore();
+    const { pages, pagesAreLoading, } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const [headerRowAttributes, setHeaderRowAttributes] = useState<string[]>(["name", "counts"]);
     // const [isLoading, setIsLoading] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
+
+    const headerRowAttributes = ["name", "counts"];
     const rowAttributeText = {
         counts: "Counts",
         name: "#"
     }
 
-    useEffect(() => {
-        fetchPages().finally(() => {
-            setPagesAreLoading(false);
-        });
-    }, [fetchPages]);
-
     // Select the first page if none are selected. Intended to activate at the iniital loading of a webpage
     useEffect(() => {
         if (selectedPage == null && pages.length > 0)
             setSelectedPage(pages[0]);
-    }, [pages]);
+    }, [pages, selectedPage, setSelectedPage]);
 
     const handleAddPage = () => {
         const tempPage: Page = {

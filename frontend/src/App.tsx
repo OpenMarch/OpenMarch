@@ -5,12 +5,14 @@ import Topbar from './components/toolbar/Topbar';
 import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
+import StateInitializer from './StateInitializer';
 
 function App() {
   return (
     // Context for the selected page. Will change when more specialized
     <SelectedPageProvider>
       <SelectedMarcherProvider>
+        <StateInitializer />
         <div className="app-container">
           {/* <div className="toolbar-container"> */}
           <Topbar />

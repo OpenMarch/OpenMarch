@@ -11,16 +11,15 @@ export function MarcherPageDetails() {
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
     // eslint-disable-next-line
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [readableCoords, setReadableCoords] = useState<ReadableCoords>();
-    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
+    const { marcherPages, marcherPagesAreLoading } = useMarcherPageStore()!;
 
     // Load marcherPage(s) from selected marcher/page
     useEffect(() => {
         setMarcherPage(null);
         // setIsLoading(true);
         // If both a marcher and page is selected return a single marcherPage
-        if (selectedPage && selectedMarcher) {
+        if (!marcherPagesAreLoading && selectedPage && selectedMarcher) {
             const newMarcherPage: MarcherPage | null = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher.id &&
                 marcherPage.page_id === selectedPage.id) || null;
             if (newMarcherPage) {
@@ -29,17 +28,11 @@ export function MarcherPageDetails() {
             }
         }
     }
-        , [selectedPage, selectedMarcher, marcherPages]);
-
-    useEffect(() => {
-        fetchMarcherPages().finally(() => {
-            setIsLoading(false)
-        });
-    }, [fetchMarcherPages]);
+        , [selectedPage, selectedMarcher, marcherPages, marcherPagesAreLoading]);
 
     return (
         <>
-            {isLoading ? <p>Loading...</p> : <>
+            {marcherPagesAreLoading ? <p>Loading...</p> : <>
                 <div className={bsconfig.tableHeader}>
                     <div className="col table-header">Pg {selectedPage?.name || "nil"}</div>
                     <div className="col table-header">{selectedMarcher?.drill_number?.toString() || "nil"}</div>
