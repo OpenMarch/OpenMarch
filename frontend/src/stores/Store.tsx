@@ -16,14 +16,8 @@ export const useMarcherStore = create<MarcherStoreState & MarcherStoreActions>()
     marchersAreLoading: true,
 
     fetchMarchers: async () => {
-        try {
-            const newMarchers = await api.getMarchers();
-            set({ marchers: newMarchers, marchersAreLoading: false });
-        } catch (error) {
-            // Handle error if needed
-            console.error("Error fetching marchers:", error);
-            set({ marchersAreLoading: false });
-        }
+        const newMarchers = await api.getMarchers();
+        set({ marchers: newMarchers });
     },
 
 
@@ -52,14 +46,8 @@ export const usePageStore = create<PageStoreState & PageStoreActions>()((set) =>
     pagesAreLoading: true,
 
     fetchPages: async () => {
-        try {
-            const newPages = await api.getPages();
-            set({ pages: newPages, pagesAreLoading: false });
-        } catch (error) {
-            // Handle error if needed
-            console.error("Error fetching pages:", error);
-            set({ pagesAreLoading: false });
-        }
+        const newPages = await api.getPages();
+        set({ pages: newPages });
     },
 
     setPagesAreLoading: (isLoading) => {
@@ -87,14 +75,8 @@ export const useMarcherPageStore = create<MarcherPageStoreState & MarcherPageSto
     marcherPagesAreLoading: true,
 
     fetchMarcherPages: async () => {
-        try {
-            const newMarcherPages = await api.getMarcherPages();
-            set({ marcherPages: newMarcherPages, marcherPagesAreLoading: false });
-        } catch (error) {
-            // Handle error if needed
-            console.error("Error fetching marcherPages:", error);
-            set({ marcherPagesAreLoading: false });
-        }
+        const newMarcherPages = await api.getMarcherPages();
+        set({ marcherPages: newMarcherPages });
     },
 
     setMarcherPagesAreLoading: (isLoading) => {
