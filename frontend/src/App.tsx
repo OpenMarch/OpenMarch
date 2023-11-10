@@ -1,15 +1,10 @@
-import React from 'react';
-// import logo from './logo.svg';
 import './App.css';
 import './styles/global.scss';
-import Toolbar from './components/Toolbar';
 import Canvas from './components/Canvas';
-import { fabric } from 'fabric';
 import Topbar from './components/toolbar/Topbar';
 import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
-import PixiCanvas from './components/PixiCanvas';
 
 function App() {
   return (
@@ -22,7 +17,6 @@ function App() {
           <div className="secondary-container">
             <Sidebar />
             <Canvas />
-            {/* <PixiCanvas /> */}
           </div>
         </div>
         <div className="canvas-container">

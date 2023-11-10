@@ -10,15 +10,7 @@ import { IGroupOptions } from "fabric/fabric-impl";
 import { idForHtmlToId } from "../Constants";
 import { updateMarcherPage } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
-
-interface CanvasMarcher {
-    fabricObject: fabric.Object | null;
-    x: number;
-    y: number;
-    drill_number: string;
-    id_for_html: string;
-    marcher_id: number;
-}
+import { CanvasMarcher } from "../Interfaces";
 
 interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
@@ -35,7 +27,7 @@ function Canvas() {
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
-    const [canvas, setCanvas] = React.useState<fabric.Canvas>();
+    const [canvas, setCanvas] = React.useState<fabric.Canvas | any>();
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -92,20 +84,10 @@ function Canvas() {
         }
     }, [canvas]);
 
-    const intitiateListeners = useCallback(() => {
-        if (canvas) {
-            canvas.on('object:modified', handleObjectModified);
-
-            canvas.on('selection:updated', handleSelect);
-            canvas.on('selection:created', handleSelect);
-            canvas.on('selection:cleared', handleDeselect);
-        }
-    }, [canvas, handleObjectModified, handleSelect, handleDeselect]);
-
     /* ------------------------ Marcher Functions ------------------------ */
     const createMarcher = useCallback((x: number, y: number, id_for_html: string, marcher_id: number, label?: string):
         CanvasMarcher => {
-        let radius = 8;
+        let radius = 5;
 
         const newMarcherCircle = new fabric.Circle({
             left: x - radius,
@@ -115,9 +97,9 @@ function Canvas() {
         });
 
         const marcherLabel = new fabric.Text(label || "nil", {
-            top: y - 30,
+            top: y - 22,
             fontFamily: "courier",
-            fontSize: 20,
+            fontSize: 14,
         });
         marcherLabel.left = x - marcherLabel!.width! / 2;
 
@@ -222,26 +204,74 @@ function Canvas() {
             canvas.backgroundColor = "white";
             canvas.selectionColor = "white";
             canvas.selectionLineWidth = 8;
+            canvas.crisp = true;
 
             // set initial canvas size
             const staticGrid = CanvasUtils.buildField(canvasDimensions.footballField);
             canvas.add(staticGrid);
 
-            intitiateListeners();
+            // const cleanupListenersCall = () => initCanvasCallack.current();
+
+            // Initiate listeners
+            canvas.on('object:modified', handleObjectModified);
+            canvas.on('selection:updated', handleSelect);
+            canvas.on('selection:created', handleSelect);
+            canvas.on('selection:cleared', handleDeselect);
+            canvas.on('mouse:down', function (opt: any) {
+                var evt = opt.e;
+                if (evt.altKey) {
+                    canvas.isDragging = true;
+                    canvas.selection = false;
+                    canvas.lastPosX = evt.clientX;
+                    canvas.lastPosY = evt.clientY;
+                }
+            });
+            canvas.on('mouse:move', function (opt: any) {
+                if (canvas.isDragging) {
+                    var e = opt.e;
+                    var vpt = canvas.viewportTransform;
+                    vpt[4] += e.clientX - canvas.lastPosX;
+                    vpt[5] += e.clientY - canvas.lastPosY;
+                    canvas.requestRenderAll();
+                    canvas.lastPosX = e.clientX;
+                    canvas.lastPosY = e.clientY;
+                }
+            });
+            canvas.on('mouse:up', function (opt: any) {
+                // on mouse up we want to recalculate new interaction
+                // for all objects, so we call setViewportTransform
+                canvas.setViewportTransform(canvas.viewportTransform);
+                canvas.isDragging = false;
+                canvas.selection = true;
+            });
+            canvas.on('mouse:wheel', function (opt: any) {
+                // if (opt.e.shiftKey)
+                //     opt.e.preventDefault();
+                var delta = opt.e.deltaY;
+                var zoom = canvas.getZoom();
+                zoom *= 0.999 ** delta;
+                if (zoom > 20) zoom = 20;
+                if (zoom < 0.01) zoom = 0.01;
+                canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+                opt.e.preventDefault();
+                opt.e.stopPropagation();
+            });
 
             // Cleanup
-            return () => { cleanupListeners(); }
+            return () => {
+                canvas.clear();
+                cleanupListeners();
+            }
         }
-    }, [canvas, intitiateListeners, cleanupListeners]);
+    }, [canvas, handleObjectModified, handleSelect, handleDeselect, cleanupListeners]);
 
     // Render the marchers when the canvas and marchers are loaded
     useEffect(() => {
         // console.log("UseEffect: renderMarchers - marchers", selectedPage);
         if (canvas && !isLoading) {
             updateMarcherLabels();
-            renderMarchers();
         }
-    }, [marchers, canvas, isLoading, renderMarchers, updateMarcherLabels]);
+    }, [marchers, canvas, isLoading, updateMarcherLabels]);
 
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
@@ -250,7 +280,7 @@ function Canvas() {
             // console.log("Rendering canvas - pages");
             renderMarchers();
         }
-    }, [canvas, marcherPages, selectedPage, isLoading, renderMarchers]);
+    }, [canvas, marchers, marcherPages, selectedPage, isLoading, renderMarchers]);
 
     // Change the active object when the selected marcher changes
     useEffect(() => {

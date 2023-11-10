@@ -1,21 +1,6 @@
 
 import { fabric } from "fabric";
-
-export interface Dimension {
-    width: number;
-    height: number;
-    name: string;
-    actualHeight: number;
-}
-
-export interface CanvasMarcher {
-    fabricObject: fabric.Object | null;
-    x: number;
-    y: number;
-    drill_number: string;
-    id_for_html: string;
-    marcher_id: number;
-}
+import { Dimension } from "../Interfaces";
 
 // -------------------------- Field Functions --------------------------
 export const buildField = (dimensions: Dimension) => {

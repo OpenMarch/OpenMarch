@@ -135,6 +135,7 @@ export function coordsToCollege(x: number, y: number, props: fieldProperties = V
  * ("3 steps inside the 35 yard line side 1", "on the 40 yard line side 2")
  */
 export function xToVerboseString(rCoords: ReadableCoords, steps: boolean = true) {
+    if (!rCoords) return "Error getting coordinate details";
     return (rCoords.xSteps === 0 || !steps ? "" : (rCoords.xSteps + " steps "))
         + rCoords.xDescription + " the "
         + rCoords.yardLine + " yard line side " + rCoords.side;
@@ -149,6 +150,7 @@ export function xToVerboseString(rCoords: ReadableCoords, steps: boolean = true)
  * ("3 in 35 S1" ," 2 out 0 S2" , "on 20 S1")
  */
 export function xToTerseString(rCoords: ReadableCoords, steps: boolean = true) {
+    if (!rCoords) return "Error getting coordinate details";
     const newDescription = rCoords.xSteps === 0 ? "on" : (rCoords.xDescription === "inside" ? "in" : "out");
     return (rCoords.xSteps === 0 || !steps ? "" : (rCoords.xSteps + " "))
         + newDescription + " " + rCoords.yardLine + " S" + rCoords.side;
@@ -163,6 +165,7 @@ export function xToTerseString(rCoords: ReadableCoords, steps: boolean = true) {
  * ("5 steps behind the front hash", "on the front sideline")
  */
 export function yToVerboseString(rCoords: ReadableCoords, steps: boolean = true) {
+    if (!rCoords) return "Error getting coordinate details";
     return (rCoords.xSteps === 0 || !steps ? "" : (rCoords.ySteps + " steps "))
         + rCoords.yDescription + " the " + rCoords.hash;
 }
@@ -176,6 +179,7 @@ export function yToVerboseString(rCoords: ReadableCoords, steps: boolean = true)
  * ("9 FBH" -> 9 steps in front of the back hash , "12 BFSL" -> 12 steps behind front sideline , "on FH")
  */
 export function yToTerseString(rCoords: ReadableCoords, steps: boolean = true) {
+    if (!rCoords) return "Error getting coordinate details";
     const newDescription = rCoords.ySteps === 0 ? "on " : (rCoords.yDescription === "behind" ? "B" : "F");
     const newHash = rCoords.hash === "front sideline" ? "FSL"
         : (rCoords.hash === "front hash" ? "FH"

@@ -102,3 +102,23 @@ export interface fieldProperties {
      */
     roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1
 }
+
+
+export interface Dimension {
+    width: number;
+    height: number;
+    name: string;
+    actualHeight: number;
+}
+
+/**
+ * An interface to use for the marcher objects on the canvas.
+ */
+export interface CanvasMarcher {
+    fabricObject: fabric.Object | null;
+    x: number;
+    y: number;
+    drill_number: string;
+    id_for_html: string;
+    marcher_id: number;
+}
