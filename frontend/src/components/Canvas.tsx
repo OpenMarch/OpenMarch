@@ -211,7 +211,12 @@ function Canvas() {
             canvas.add(staticGrid);
 
             // const cleanupListenersCall = () => initCanvasCallack.current();
+        }
+    }, [canvas]);
 
+    // Initiate listeners
+    useEffect(() => {
+        if (canvas) {
             // Initiate listeners
             canvas.on('object:modified', handleObjectModified);
             canvas.on('selection:updated', handleSelect);
@@ -259,11 +264,11 @@ function Canvas() {
 
             // Cleanup
             return () => {
-                canvas.clear();
                 cleanupListeners();
             }
         }
     }, [canvas, handleObjectModified, handleSelect, handleDeselect, cleanupListeners]);
+
 
     // Render the marchers when the canvas and marchers are loaded
     useEffect(() => {
