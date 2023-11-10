@@ -1,21 +1,15 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
 import { FaSmile } from "react-icons/fa";
 import { Button } from "react-bootstrap";
-import { linearEasing } from "../utils";
+// import { linearEasing } from "../utils";
 import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarcher } from "../context/SelectedMarcherContext";
 import { IGroupOptions } from "fabric/fabric-impl";
 import { idForHtmlToId } from "../Constants";
 import { updateMarcherPage } from "../api/api";
-
-interface Dimension {
-    width: number;
-    height: number;
-    name: string;
-    actualHeight: number;
-}
+import * as CanvasUtils from "../utilities/CanvasUtils";
 
 interface CanvasMarcher {
     fabricObject: fabric.Object | null;
@@ -37,150 +31,20 @@ const canvasDimensions = {
 
 function Canvas() {
     const { marchers, marchersAreLoading } = useMarcherStore()!;
-    const { pages, pagesAreLoading } = usePageStore()!;
+    const { pagesAreLoading } = usePageStore()!;
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
     const [canvas, setCanvas] = React.useState<fabric.Canvas>();
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
-    const [canvasMarchers, setCanvasMarchers] = React.useState<CanvasMarcher[]>([]);
+    const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     //   const rootStore = useStore();
     //   const { UIStore } = rootStore;
 
-    // -------------------------- useEffects --------------------------
-    // Set Loading
-    useEffect(() => {
-        setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
-    }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
-
-    // Initialize the canvas.
-    // Update the objectModified listener when the selected page changes
-    useEffect(() => {
-        if (!canvas && selectedPage && canvasRef.current) {
-            console.log("Canvas.tsx: useEffect: create canvas");
-            setCanvas(new fabric.Canvas(canvasRef.current, {}));
-
-            // Handle window resize event
-            // window.addEventListener("resize", buildField);
-
-            // Clean up event listener on component unmount
-            // return () => {
-            //     window.removeEventListener("resize", buildField);
-            // };‰
-        }
-        if (canvas) {
-            refreshListeners();
-        }
-    }, [selectedPage]);
-
-    // Create the canvas and field
-    useEffect(() => {
-        if (canvas) {
-            // Set canvas size
-            canvas.setDimensions(canvasDimensions.footballField);
-
-            // Set canvas configuration options
-            canvas.backgroundColor = "white";
-            canvas.selectionColor = "white";
-            canvas.selectionLineWidth = 8;
-
-            // set initial canvas size
-            const staticGrid = buildField(canvasDimensions.footballField);
-            canvas.add(staticGrid);
-
-            intitiateListeners();
-
-            // Cleanup
-            return () => { cleanupListeners(); }
-        }
-    }, [canvas]);
-
-    // TODO These are only separated for debugging purposes. They should be combined
-    // Render the marchers when the canvas and marchers are loaded
-    useEffect(() => {
-        // console.log("UseEffect: renderMarchers - marchers", selectedPage);
-        if (canvas && !isLoading) {
-            if (canvasMarchers.length == marchers.length)
-                updateMarcherLabels();
-            else
-                renderMarchers();
-        }
-    }, [marchers]);
-    useEffect(() => {
-        // console.log("UseEffect: renderMarchers - pages", selectedPage);
-        if (canvas && !isLoading) {
-            // console.log("Rendering canvas - pages");
-            renderMarchers();
-        }
-    }, [pages]);
-    useEffect(() => {
-        // console.log("UseEffect: renderMarchers - marcherPages", selectedPage);
-        if (canvas && !isLoading) {
-            // console.log("Rendering canvas - marcherPages");
-            renderMarchers();
-        }
-    }, [marcherPages]);
-    useEffect(() => {
-        // console.log("UseEffect: renderMarchers - selected page", selectedPage);
-        if (canvas && !isLoading) {
-            // console.log("Rendering canvas - selectedPage");
-            renderMarchers();
-        }
-    }, [selectedPage]);
-    useEffect(() => {
-        // console.log("UseEffect: renderMarchers - isLoading", selectedPage);
-        // console.log("loading:", isLoading, "marchersHaveBeenModified:", marchersHaveBeenModified, "canvas", canvas !== null);
-        if (canvas && !isLoading) {
-            renderMarchers();
-        }
-    }, [isLoading]);
-
-    // Change the active object when the selected marcher changes
-    useEffect(() => {
-        if (canvas && !isLoading && canvasMarchers.length > 0 && selectedMarcher) {
-            const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarcher.id);
-            if (curMarcher && curMarcher.fabricObject) {
-                canvas.setActiveObject(curMarcher.fabricObject);
-            }
-            else
-                throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
-        }
-    }, [selectedMarcher]);
-
-    // -------------------------- Listener Functions --------------------------
-
-    const intitiateListeners = () => {
-        if (canvas) {
-            canvas.on('object:modified', handleObjectModified);
-
-            canvas.on('selection:updated', handleSelect);
-            canvas.on('selection:created', handleSelect);
-            canvas.on('selection:cleared', handleDeselect);
-        }
-    };
-
-    const refreshListeners = () => {
-        if (canvas) {
-            // Updates the objectModified listener so it is on the correct page
-            // TODO is there a better way to do this?
-            canvas.off('object:modified');
-            canvas.on('object:modified', handleObjectModified);
-        }
-    };
-
-    const cleanupListeners = () => {
-        if (canvas) {
-            canvas.off('object:modified');
-
-            canvas.off('selection:updated');
-            canvas.off('selection:created');
-            canvas.off('selection:cleared');
-        }
-    };
-
-    const handleObjectModified = (e: any) => {
+    /* -------------------------- Listener Functions -------------------------- */
+    const handleObjectModified = useCallback((e: any) => {
         // console.log("handleObjectModified:", e.target);
         // console.log('selectedPage:', selectedPage);
         const target = e.target;
@@ -189,10 +53,10 @@ function Canvas() {
             // const marcherPage = marcherPages.find((marcherPage) => marcherPage.marcher_id === id);
             updateMarcherPage(id, selectedPage!.id, target.left, target.top).then(() => { fetchMarcherPages() });
         }
-    };
+    }, [selectedPage, fetchMarcherPages]);
 
     // Set the selected marcher when selected element changes
-    const handleSelect = (e: any) => {
+    const handleSelect = useCallback((e: any) => {
         // console.log("handleSelect:", e.selected);
 
         // Check if it is a single selected element rather than a group
@@ -200,118 +64,47 @@ function Canvas() {
             const id_for_html = e.selected[0].id_for_html;
             setSelectedMarcher(marchers.find((marcher) => marcher.id_for_html === id_for_html) || null);
         }
-    };
+    }, [marchers, setSelectedMarcher]);
 
     // Deselect the marcher when the selection is cleared
-    const handleDeselect = (e: any) => {
+    const handleDeselect = useCallback((e: any) => {
         // console.log("handleDeselect:", e.deselected);
 
         if (e.deselected) { setSelectedMarcher(null); }
-    };
+    }, [setSelectedMarcher]);
 
-    const getSelectedPage = () => {
-        return selectedPage;
-    };
-
-    // -------------------------- Field Functions --------------------------
-    const buildField = (dimensions: Dimension) => {
-        const fieldArray: fabric.Object[] = [];
+    const refreshListeners = useCallback(() => {
         if (canvas) {
-            const width = dimensions.width;
-            const height = dimensions.height;
-            const actualHeight = dimensions.actualHeight;
-            const top = height - actualHeight;
-
-            // Build the grid lines. This is only for a football field right now.
-            const borderProps = { stroke: "black", strokeWidth: 3, selectable: false };
-            const yardLineProps = { stroke: "black", strokeWidth: 1.2, selectable: false };
-            const halfLineProps = { stroke: "#AAAAAA", selectable: false };
-            const gridProps = { stroke: "#DDDDDD", selectable: false };
-            const hashProps = { stroke: "black", strokeWidth: 3, selectable: false };
-            const numberProps = { fontSize: 40, fill: "#888888", selectable: false };
-
-            // Grid lines
-            for (let i = 10; i < width; i += 10)
-                fieldArray.push(new fabric.Line([i, top, i, height], gridProps));
-            for (let i = height - 10; i > top; i -= 10)
-                fieldArray.push(new fabric.Line([0, i, width, i], gridProps));
-
-            // --- Numbers ---
-            // Bottom numbers
-            for (let i = 1; i <= 19; i += 1) {
-                const num = (i * 5 > 50) ? (100 - i * 5) : (i * 5);
-                fieldArray.push(new fabric.Text(num.toString(), {
-                    left: 0 + (i * 80 - (num > 5 ? 20 : 10)),
-                    top: height - 142,
-                    ...numberProps
-                }));
-            }
-            // Top numbers
-            for (let i = 1; i <= 19; i += 1) {
-                const num = (i * 5 > 50) ? (100 - i * 5) : (i * 5);
-                fieldArray.push(new fabric.Text(num.toString(), {
-                    left: 0 + (i * 80 - (num > 5 ? 20 : 10)),
-                    top: height - (80 * 9) - 15,
-                    flipY: true,
-                    flipX: true,
-                    ...numberProps
-                }));
-            }
-
-            // Half lines and endzones
-            for (let i = 40; i < width; i += 80)
-                fieldArray.push(new fabric.Line([i, top, i, height], halfLineProps));
-            fieldArray.push(new fabric.Line([80, top, 80, height], halfLineProps));
-            fieldArray.push(new fabric.Line([width - 80, top, width - 80, height],
-                halfLineProps));
-
-            // Verical lines
-            for (let i = height - 40; i > 0; i -= 40)
-                fieldArray.push(new fabric.Line([0, i, width, i], halfLineProps));
-
-            // Yard lines
-            for (let i = 0; i < width; i += 80)
-                fieldArray.push(new fabric.Line([i, top, i, height], yardLineProps));
-
-            // Hashes (college)
-            for (let i = 0; i < width + 1; i += 80)
-                fieldArray.push(new fabric.Line([i - 10, height - 320, i + 10, height - 320], hashProps));
-            for (let i = 0; i < width + 1; i += 80)
-                fieldArray.push(new fabric.Line([i - 10, height - 520, i + 10, height - 520], hashProps));
-
-            // Border
-            fieldArray.push(new fabric.Line([0, 0, 0, height], borderProps));
-            fieldArray.push(new fabric.Line([0, height - 840, width, height - 840], borderProps));
-            fieldArray.push(new fabric.Line([0, height - 1, width, height - 1], borderProps));
-            fieldArray.push(new fabric.Line([width - 1, 0, width - 1, height], borderProps));
+            // Updates the objectModified listener so it is on the correct page
+            // TODO is there a better way to do this?
+            canvas.off('object:modified');
+            canvas.on('object:modified', handleObjectModified);
         }
-        const field = new fabric.Group(fieldArray, {
-            selectable: false,
-            hoverCursor: "default",
-        });
-        return field;
-    };
+    }, [canvas, handleObjectModified]);
 
-    // -------------------------- Animation Functions --------------------------
-    const startAnimation = () => {
+    const cleanupListeners = useCallback(() => {
         if (canvas) {
-            // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
-            canvasMarchers.forEach((CanvasMarcher) => {
-                const matrix = CanvasMarcher?.fabricObject?.calcTransformMatrix();
-                CanvasMarcher?.fabricObject?.animate({
-                    left: `${matrix![4]}`,
-                    top: `${matrix![5]}+100`,
-                }, {
-                    duration: 1000,
-                    onChange: canvas!.renderAll.bind(canvas),
-                    easing: linearEasing,
-                });
-            });
-        }
-    };
+            canvas.off('object:modified');
 
-    // ------------------------ Marcher Functions ------------------------
-    const createMarcher = (x: number, y: number, id_for_html: string, marcher_id: number, label?: string): CanvasMarcher => {
+            canvas.off('selection:updated');
+            canvas.off('selection:created');
+            canvas.off('selection:cleared');
+        }
+    }, [canvas]);
+
+    const intitiateListeners = useCallback(() => {
+        if (canvas) {
+            canvas.on('object:modified', handleObjectModified);
+
+            canvas.on('selection:updated', handleSelect);
+            canvas.on('selection:created', handleSelect);
+            canvas.on('selection:cleared', handleDeselect);
+        }
+    }, [canvas, handleObjectModified, handleSelect, handleDeselect]);
+
+    /* ------------------------ Marcher Functions ------------------------ */
+    const createMarcher = useCallback((x: number, y: number, id_for_html: string, marcher_id: number, label?: string):
+        CanvasMarcher => {
         let radius = 8;
 
         const newMarcherCircle = new fabric.Circle({
@@ -347,11 +140,11 @@ function Canvas() {
         canvasMarchers.push(newMarcher);
         canvas!.add(marcherGroup);
         return newMarcher;
-    };
+    }, [canvas, canvasMarchers]);
 
-    // Create new marchers based on the selected page if they haven't been created yet
+    /* Create new marchers based on the selected page if they haven't been created yet */
     // Moves the current marchers to the new page
-    const renderMarchers = () => {
+    const renderMarchers = useCallback(() => {
         // console.log("renderMarchers:", selectedPage);
         const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
         curMarcherPages.forEach((marcherPage) => {
@@ -378,9 +171,9 @@ function Canvas() {
             }
         });
         canvas!.renderAll();
-    };
+    }, [marchers, canvasMarchers, canvas, marcherPages, selectedPage, createMarcher]);
 
-    const updateMarcherLabels = () => {
+    const updateMarcherLabels = useCallback(() => {
         canvasMarchers.forEach((canvasMarcher) => {
             if (canvasMarcher.fabricObject instanceof fabric.Group) {
                 canvasMarcher.drill_number =
@@ -391,19 +184,108 @@ function Canvas() {
             }
         });
         canvas?.renderAll();
-    };
+    }, [marchers, canvasMarchers, canvas]);
 
-    const createDefaultMarchers = () => {
-        for (let i = 0; i < 10; i++) {
-            createMarcher((i + 4) * 50, 50, "defaultMarcher_" + i.toString(), i);
+    /* -------------------------- useEffects -------------------------- */
+    // Set Loading
+    useEffect(() => {
+        setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
+    }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
+
+    /* Initialize the canvas */
+    // Update the objectModified listener when the selected page changes
+    useEffect(() => {
+        if (!canvas && selectedPage && canvasRef.current) {
+            console.log("Canvas.tsx: useEffect: create canvas");
+            setCanvas(new fabric.Canvas(canvasRef.current, {}));
+
+            // Handle window resize event
+            // window.addEventListener("resize", buildField);
+
+            // Clean up event listener on component unmount
+            // return () => {
+            //     window.removeEventListener("resize", buildField);
+            // };‰
         }
-    };
+        if (canvas) {
+            refreshListeners();
+        }
+    }, [selectedPage, canvas, refreshListeners]);
+
+    // Create the canvas and field
+    useEffect(() => {
+        if (canvas) {
+            // Set canvas size
+            canvas.setDimensions(canvasDimensions.footballField);
+
+            // Set canvas configuration options
+            canvas.backgroundColor = "white";
+            canvas.selectionColor = "white";
+            canvas.selectionLineWidth = 8;
+
+            // set initial canvas size
+            const staticGrid = CanvasUtils.buildField(canvasDimensions.footballField);
+            canvas.add(staticGrid);
+
+            intitiateListeners();
+
+            // Cleanup
+            return () => { cleanupListeners(); }
+        }
+    }, [canvas, intitiateListeners, cleanupListeners]);
+
+    // Render the marchers when the canvas and marchers are loaded
+    useEffect(() => {
+        // console.log("UseEffect: renderMarchers - marchers", selectedPage);
+        if (canvas && !isLoading) {
+            updateMarcherLabels();
+            renderMarchers();
+        }
+    }, [marchers, canvas, isLoading, renderMarchers, updateMarcherLabels]);
+
+    // Update/render the marchers when the selected page or the marcher pages change
+    useEffect(() => {
+        // console.log("UseEffect: renderMarchers - pages", selectedPage);
+        if (canvas && !isLoading) {
+            // console.log("Rendering canvas - pages");
+            renderMarchers();
+        }
+    }, [canvas, marcherPages, selectedPage, isLoading, renderMarchers]);
+
+    // Change the active object when the selected marcher changes
+    useEffect(() => {
+        if (canvas && !isLoading && canvasMarchers.length > 0 && selectedMarcher) {
+            const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarcher.id);
+            if (curMarcher && curMarcher.fabricObject) {
+                canvas.setActiveObject(curMarcher.fabricObject);
+            }
+            else
+                throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
+        }
+    }, [selectedMarcher, canvas, isLoading, canvasMarchers]);
+
+    // -------------------------- Animation Functions --------------------------
+    // const startAnimation = () => {
+    //     if (canvas) {
+    //         // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
+    //         canvasMarchers.forEach((CanvasMarcher) => {
+    //             const matrix = CanvasMarcher?.fabricObject?.calcTransformMatrix();
+    //             CanvasMarcher?.fabricObject?.animate({
+    //                 left: `${matrix![4]}`,
+    //                 top: `${matrix![5]}+100`,
+    //             }, {
+    //                 duration: 1000,
+    //                 onChange: canvas!.renderAll.bind(canvas),
+    //                 easing: linearEasing,
+    //             });
+    //         });
+    //     }
+    // };
 
     return (
         <div className="canvas-container">
             <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
-            <Button
-                variant="secondary" onClick={createDefaultMarchers}>
+            <Button variant="secondary" >
                 <FaSmile />
             </ Button>
         </div>
