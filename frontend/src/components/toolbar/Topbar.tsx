@@ -10,12 +10,13 @@ function Topbar() {
     return (
         <Container fluid className="topbar p-3">
             <FileControls />
-            <PlaybackControls />
 
             <NewMarcherForm />
             <EditPageForm />
             <EditMarcherPageForm />
             <EditMarcherForm />
+
+            <PlaybackControls />
         </Container>
     );
 }

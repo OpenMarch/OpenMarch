@@ -127,8 +127,8 @@ function Canvas() {
     /* Create new marchers based on the selected page if they haven't been created yet */
     // Moves the current marchers to the new page
     const renderMarchers = useCallback(() => {
-        // console.log("renderMarchers:", selectedPage);
         const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
+        console.log("renderMarchers:", canvasMarchers, marcherPages, selectedPage, curMarcherPages);
         curMarcherPages.forEach((marcherPage) => {
             // Marcher does not exist on the Canvas, create a new one
             if (!canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id)) {
@@ -320,9 +320,6 @@ function Canvas() {
     return (
         <div className="canvas-container">
             <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
-            <Button variant="secondary" >
-                <FaSmile />
-            </ Button>
         </div>
     );
 };
