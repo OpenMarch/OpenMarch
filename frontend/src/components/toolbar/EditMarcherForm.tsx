@@ -6,7 +6,7 @@ import FormButtons from "./FormButtons";
 import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
 
 function EditMarcherForm() {
-    const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
+    const { selectedMarcher } = useSelectedMarcher()!;
     const [isEditing, setIsEditing] = useState(false);
     const { fetchMarchers } = useMarcherStore();
 
@@ -28,12 +28,11 @@ function EditMarcherForm() {
         const prefix = form[drillPrefixInputId].value;
         const order = form[drillOrderInputId].value;
 
-        const newMarcher = updateMarcherDrillNumber(selectedMarcher!.id, prefix, order).then(() => fetchMarchers());
+        updateMarcherDrillNumber(selectedMarcher!.id, prefix, order).then(() => fetchMarchers());
     };
 
     const handleCancel = useCallback(() => {
         setIsEditing(false);
-        setSelectedMarcher(null);
         const form = document.getElementById(marcherFormId) as HTMLFormElement;
         form?.reset();
     }, []);
@@ -56,7 +55,7 @@ function EditMarcherForm() {
                     </Form.Label>
                     <InputGroup size="sm" className="mb-12 text-right">
                         <InputGroup.Text id={"counts-label"}>
-                            Prefix
+                            Drill Number
                         </InputGroup.Text>
                         <Form.Control
                             disabled={!isEditing}

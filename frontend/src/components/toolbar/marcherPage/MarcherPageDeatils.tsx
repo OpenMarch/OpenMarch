@@ -9,6 +9,7 @@ import { V1_COLLEGE_PROPERTIES, coordsToCollege, xToTerseString, yToTerseString 
 export function MarcherPageDetails() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
+    // eslint-disable-next-line
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [readableCoords, setReadableCoords] = useState<ReadableCoords>();

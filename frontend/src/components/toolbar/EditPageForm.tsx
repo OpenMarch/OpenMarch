@@ -10,7 +10,7 @@ function EditPageForm() {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const [isEditing, setIsEditing] = useState(false);
     const pageFormId = "pageForm";
-    const { fetchPages } = usePageStore()!;
+    const { pages, fetchPages } = usePageStore()!;
 
     const countsInputId = "countsForm";
 
@@ -34,17 +34,17 @@ function EditPageForm() {
         if (selectedPage?.id_for_html === Constants.NewPageId) {
             selectedPage.counts = counts;
             createPage(selectedPage!).then(() => fetchPages());
-        }
-        else
+        } else
             updatePageCounts(selectedPage!.id, counts).then(() => fetchPages());
     };
 
     const handleCancel = useCallback(() => {
         setIsEditing(false);
-        setSelectedPage(null);
+        if (selectedPage?.id_for_html === Constants.NewPageId)
+            setSelectedPage(pages[0]);
         const form = document.getElementById(pageFormId) as HTMLFormElement;
         form.reset();
-    }, []);
+    }, [selectedPage, pages, setSelectedPage]);
 
     const resetForm = () => {
         const form = document.getElementById(pageFormId) as HTMLFormElement;
