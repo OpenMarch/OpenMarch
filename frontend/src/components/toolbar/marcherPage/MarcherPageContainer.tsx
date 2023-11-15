@@ -14,7 +14,7 @@ function MarcherPageContainer() {
         fetchMarcherPages().finally(() => {
             setMarcherPagesAreLoading(false)
         });
-    }, [fetchMarcherPages]);
+    }, [fetchMarcherPages, setMarcherPagesAreLoading]);
 
 
     return (

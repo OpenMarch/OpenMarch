@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMarcherStore } from "../../stores/Store";
 import ListContainer from "./ListContainer";
-import { Marcher } from "../../Interfaces";
 
 function MarcherList() {
     const { marchers, fetchMarchers, marchersAreLoading, setMarchersAreLoading } = useMarcherStore();
+    // eslint-disable-next-line
     const [headerRowAttributes, setHeaderRowAttributes] = useState<string[]>(["drill_number"]);
     const rowAttributeText = {
         drill_number: "Drill Number"
@@ -14,7 +14,7 @@ function MarcherList() {
         fetchMarchers().finally(() => {
             setMarchersAreLoading(false)
         });
-    }, [fetchMarchers]);
+    }, [fetchMarchers, setMarchersAreLoading]);
 
     return (
         <>

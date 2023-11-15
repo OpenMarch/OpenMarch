@@ -35,7 +35,7 @@ function PlaybackControls() {
 
         // Default, may cause issues
         return 0;
-    }, []);
+    }, [selectedPage, pages]);
 
     const togglePlay = () => { setIsPlaying(!isPlaying); };
     return (

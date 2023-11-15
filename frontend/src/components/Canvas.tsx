@@ -1,7 +1,5 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
-import { FaSmile } from "react-icons/fa";
-import { Button } from "react-bootstrap";
 // import { linearEasing } from "../utils";
 import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
@@ -128,7 +126,7 @@ function Canvas() {
     // Moves the current marchers to the new page
     const renderMarchers = useCallback(() => {
         const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
-        console.log("renderMarchers:", canvasMarchers, marcherPages, selectedPage, curMarcherPages);
+        // console.log("renderMarchers:", canvasMarchers, marcherPages, selectedPage, curMarcherPages);
         curMarcherPages.forEach((marcherPage) => {
             // Marcher does not exist on the Canvas, create a new one
             if (!canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id)) {
@@ -178,7 +176,7 @@ function Canvas() {
     // Update the objectModified listener when the selected page changes
     useEffect(() => {
         if (!canvas && selectedPage && canvasRef.current) {
-            console.log("Canvas.tsx: useEffect: create canvas");
+            // console.log("Canvas.tsx: useEffect: create canvas");
             setCanvas(new fabric.Canvas(canvasRef.current, {}));
 
             // Handle window resize event
