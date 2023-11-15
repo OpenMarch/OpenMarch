@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
-// import { linearEasing } from "../utils";
+import { linearEasing } from "../utils";
 import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarcher } from "../context/SelectedMarcherContext";
@@ -290,23 +290,23 @@ function Canvas() {
         }
     }, [selectedMarcher, canvas, isLoading, canvasMarchers]);
 
-    // -------------------------- Animation Functions --------------------------
-    // const startAnimation = () => {
-    //     if (canvas) {
-    //         // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
-    //         canvasMarchers.forEach((CanvasMarcher) => {
-    //             const matrix = CanvasMarcher?.fabricObject?.calcTransformMatrix();
-    //             CanvasMarcher?.fabricObject?.animate({
-    //                 left: `${matrix![4]}`,
-    //                 top: `${matrix![5]}+100`,
-    //             }, {
-    //                 duration: 1000,
-    //                 onChange: canvas!.renderAll.bind(canvas),
-    //                 easing: linearEasing,
-    //             });
-    //         });
-    //     }
-    // };
+    /* --------------------------Animation Functions-------------------------- */
+    const startAnimation = () => {
+        if (canvas) {
+            // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
+            canvasMarchers.forEach((CanvasMarcher) => {
+                const matrix = CanvasMarcher?.fabricObject?.calcTransformMatrix();
+                CanvasMarcher?.fabricObject?.animate({
+                    left: `${matrix![4]}`,
+                    top: `${matrix![5]}+100`,
+                }, {
+                    duration: 1000,
+                    onChange: canvas!.renderAll.bind(canvas),
+                    easing: linearEasing,
+                });
+            });
+        }
+    };
 
     return (
         <div className="canvas-container">

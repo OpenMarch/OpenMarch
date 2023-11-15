@@ -107,11 +107,11 @@ export async function getMarcherPages(id_for_html: string | void) {
 }
 
 export async function updateMarcherPage(marcher_id: number, page_id: number, x: number, y: number) {
+  // console.log("JSON: " + JSON.stringify({ x, y }));
   const updateMarcherPage: UpdateMarcherPage = {
     x: x,
     y: y
   };
-  // console.log("JSON: " + JSON.stringify({ x, y }));
   const response = await axios.patch(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`,
     JSON.stringify({ x, y }), {
     headers: {

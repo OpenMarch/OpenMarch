@@ -10,12 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_09_21_032519) do
+ActiveRecord::Schema[7.0].define(version: 2023_11_15_035213) do
   create_table "marcher_pages", force: :cascade do |t|
     t.integer "marcher_id", null: false
     t.integer "page_id", null: false
-    t.integer "x"
-    t.integer "y"
+    t.float "x"
+    t.float "y"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "id_for_html"
