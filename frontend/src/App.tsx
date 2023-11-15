@@ -5,23 +5,26 @@ import Topbar from './components/toolbar/Topbar';
 import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
+import { IsPlayingProvider } from './context/IsPlayingContext';
 
 function App() {
   return (
     // Context for the selected page. Will change when more specialized
     <SelectedPageProvider>
       <SelectedMarcherProvider>
-        <div className="app-container">
-          {/* <div className="toolbar-container"> */}
-          <Topbar />
-          <div className="secondary-container">
-            <Sidebar />
-            <Canvas />
+        <IsPlayingProvider>
+          <div className="app-container">
+            {/* <div className="toolbar-container"> */}
+            <Topbar />
+            <div className="secondary-container">
+              <Sidebar />
+              <Canvas />
+            </div>
           </div>
-        </div>
-        <div className="canvas-container">
-        </div>
-        {/* </div> */}
+          <div className="canvas-container">
+          </div>
+          {/* </div> */}
+        </IsPlayingProvider>
       </SelectedMarcherProvider>
     </SelectedPageProvider >
   );

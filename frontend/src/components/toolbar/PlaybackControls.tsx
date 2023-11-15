@@ -3,11 +3,12 @@ import { ButtonGroup, Button } from "react-bootstrap";
 import { FaFastBackward, FaBackward, FaPause, FaPlay, FaForward, FaFastForward } from "react-icons/fa";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { usePageStore } from "../../stores/Store";
+import { useIsPlaying } from "../../context/IsPlayingContext";
 
 function PlaybackControls() {
-    const [playing, setPlaying] = React.useState(false);
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { pages } = usePageStore()!;
+    const { isPlaying, setIsPlaying } = useIsPlaying()!;
 
     const changeSelectedPageHandler: MouseEventHandler<HTMLButtonElement> = useCallback((e) => {
         const newPageOrder = parseInt(e.currentTarget.value);
@@ -26,27 +27,49 @@ function PlaybackControls() {
         return 0;
     }, [selectedPage, pages]);
 
-    const togglePlay = () => { setPlaying(!playing) };
+    const hightestPageOrder = useCallback(() => {
+        if (selectedPage && pages.length > 0) {
+            const orders = Object.values(pages).map(page => page.order);
+            return Math.max(...orders);
+        }
+
+        // Default, may cause issues
+        return 0;
+    }, []);
+
+    const togglePlay = () => { setIsPlaying(!isPlaying); };
     return (
         <div className="playback-controls">
             <ButtonGroup aria-label="Basic example">
                 <Button variant="secondary" title="First page"
-                    value={selectedPage ? selectedPage.order - 1 : -1}
+                    value={lowestPageOrder()}
                     onClick={changeSelectedPageHandler}
                     disabled={selectedPage?.order === lowestPageOrder()}
                 >
                     <FaFastBackward />
                 </Button>
-                <Button variant="secondary" title="Previous page">
+                <Button variant="secondary" title="Previous page"
+                    value={selectedPage ? selectedPage.order - 1 : -1}
+                    onClick={changeSelectedPageHandler}
+                    disabled={selectedPage?.order === lowestPageOrder()}
+                >
                     <FaBackward />
                 </Button>
                 <Button variant="secondary" onClick={togglePlay} title="Play or pause">
-                    {playing ? <FaPause /> : <FaPlay />}
+                    {isPlaying ? <FaPause /> : <FaPlay />}
                 </Button>
-                <Button variant="secondary" title="Next page">
+                <Button variant="secondary" title="Next page"
+                    value={selectedPage ? selectedPage.order + 1 : +1}
+                    onClick={changeSelectedPageHandler}
+                    disabled={selectedPage?.order === hightestPageOrder()}
+                >
                     <FaForward />
                 </Button>
-                <Button variant="secondary" title="Last page">
+                <Button variant="secondary" title="Last page"
+                    value={hightestPageOrder()}
+                    onClick={changeSelectedPageHandler}
+                    disabled={selectedPage?.order === hightestPageOrder()}
+                >
                     <FaFastForward />
                 </Button>
             </ButtonGroup>
