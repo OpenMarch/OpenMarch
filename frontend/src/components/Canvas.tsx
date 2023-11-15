@@ -63,15 +63,6 @@ function Canvas() {
         if (e.deselected) { setSelectedMarcher(null); }
     }, [setSelectedMarcher]);
 
-    const refreshListeners = useCallback(() => {
-        if (canvas) {
-            // Updates the objectModified listener so it is on the correct page
-            // TODO is there a better way to do this?
-            canvas.off('object:modified');
-            canvas.on('object:modified', handleObjectModified);
-        }
-    }, [canvas, handleObjectModified]);
-
     const cleanupListeners = useCallback(() => {
         if (canvas) {
             canvas.off('object:modified');
@@ -79,6 +70,11 @@ function Canvas() {
             canvas.off('selection:updated');
             canvas.off('selection:created');
             canvas.off('selection:cleared');
+
+            canvas.off('mouse:down');
+            canvas.off('mouse:move');
+            canvas.off('mouse:up');
+            canvas.off('mouse:wheel');
         }
     }, [canvas]);
 
@@ -187,10 +183,7 @@ function Canvas() {
             //     window.removeEventListener("resize", buildField);
             // };‰
         }
-        if (canvas) {
-            refreshListeners();
-        }
-    }, [selectedPage, canvas, refreshListeners]);
+    }, [selectedPage, canvas]);
 
     // Create the canvas and field
     useEffect(() => {
