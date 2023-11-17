@@ -92,9 +92,6 @@ export const buildField = (dimensions: Dimension) => {
 export function canvasMarcherToDotCoords(fabricGroup: fabric.Group) {
     // console.log("marcher", marcher);
     const dot = fabricGroup?._objects[0] as fabric.Circle;
-    fabricGroup.forEachObject((obj) => {
-        console.log("FOR EACH obj", obj);
-    });
     if (fabricGroup.left && fabricGroup.top && dot.left && dot.top) {
         // console.log("canvasMarcherToDotCoords - fabricGroup", "x: " + fabricGroup.left,
         //     "y: " + fabricGroup.top);
@@ -136,8 +133,7 @@ export function setCanvasMarcherCoordsFromDot(marcher: CanvasMarcher, x: number,
             marcher.fabricObject.setCoords();
             // console.log("setCanvasMarcherCoordsFromDot - marcher.fabricObject", marcher.fabricObject);
         } else
-            console.error("Marcher dot does not have left or top properties, or fabricGroup does not have height/width \
-                - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
+            console.error("Marcher dot does not have left or top properties, or fabricGroup does not have height/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
     } else
         console.error("FabricObject does not exist for the marcher - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
 

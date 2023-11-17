@@ -35,12 +35,8 @@ function Canvas() {
 
     /* -------------------------- Listener Functions -------------------------- */
     const handleObjectModified = useCallback((e: any) => {
-        console.log("handleObjectModified:", e.target);
-        console.log("Center Point:", (e.target as fabric.Group).getCenterPoint());
-        // console.log('selectedPage:', selectedPage);
-
         const newCoords = CanvasUtils.canvasMarcherToDotCoords(e.target as fabric.Group);
-        // console.log("newCoords:", newCoords);
+
         if (e.target?.id_for_html && newCoords?.x && newCoords?.y) {
             const id = idForHtmlToId(e.target.id_for_html);
             // const marcherPage = marcherPages.find((marcherPage) => marcherPage.marcher_id === id);
@@ -52,7 +48,7 @@ function Canvas() {
 
     // Set the selected marcher when selected element changes
     const handleSelect = useCallback((e: any) => {
-        console.log("handleSelect:", e.selected);
+        // console.log("handleSelect:", e.selected);
 
         // Check if it is a single selected element rather than a group
         if (e.selected?.length === 1 && e.selected[0].id_for_html) {
@@ -71,7 +67,7 @@ function Canvas() {
     const handleMouseDown = useCallback((opt: any) => {
         // console.log("canvas click location", opt.e);
         var evt = opt.e;
-        if (evt.altKey) {
+        if ((evt.altKey || !opt.target || !opt.target.id_for_html) && !evt.shiftKey) {
             canvas.isDragging = true;
             canvas.selection = false;
             canvas.lastPosX = evt.clientX;
@@ -265,13 +261,6 @@ function Canvas() {
             // set initial canvas size
             const staticGrid = CanvasUtils.buildField(canvasDimensions.footballField);
             canvas.add(staticGrid);
-            canvas.add(new fabric.Rect({
-                left: 800,
-                top: 534,
-                fill: "green",
-                width: 5,
-                height: 5,
-            }));
 
             // const cleanupListenersCall = () => initCanvasCallack.current();
         }
@@ -288,7 +277,7 @@ function Canvas() {
                 cleanupListeners();
             }
         }
-    }, [canvas, handleObjectModified, handleSelect, handleDeselect, cleanupListeners]);
+    }, [canvas, initiateListeners, cleanupListeners]);
 
 
     // Render the marchers when the canvas and marchers are loaded
@@ -321,6 +310,7 @@ function Canvas() {
     }, [selectedMarcher, canvas, isLoading, canvasMarchers]);
 
     /* --------------------------Animation Functions-------------------------- */
+    // eslint-disable-next-line
     const startAnimation = () => {
         if (canvas) {
             // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
