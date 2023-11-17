@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { Form, InputGroup } from "react-bootstrap";
 import { Constants } from "../../../Constants";
-import { createPage, getMarcherPage, updateMarcherPage, updatePageCounts } from "../../../api/api";
+import { updateMarcherPage } from "../../../api/api";
 import { useSelectedPage } from "../../../context/SelectedPageContext";
-import { useMarcherPageStore, usePageStore } from "../../../stores/Store";
+import { useMarcherPageStore } from "../../../stores/Store";
 import FormButtons from "../FormButtons";
 import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
 import { MarcherPage } from "../../../Interfaces";
 
 function EditMarcherPageForm() {
+    // eslint-disable-next-line
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    // eslint-disable-next-line
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -38,7 +40,7 @@ function EditMarcherPageForm() {
         else
             setIsEditing(false);
         resetForm();
-    }, [selectedPage, selectedMarcher, marcherPages]);
+    }, [selectedPage, selectedMarcher, marcherPages, setSelectedPage, setSelectedMarcher]);
 
     /* -------------------------------------- HANDLERS --------------------------------------*/
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -82,6 +84,7 @@ function EditMarcherPageForm() {
                             disabled={!isEditing}
                             id={xForm}
                             defaultValue={marcherPage?.x}
+                            step={0.1}
                             type="number"
                         />
                         <InputGroup.Text id={"y-label"}>
@@ -91,6 +94,7 @@ function EditMarcherPageForm() {
                             disabled={!isEditing}
                             id={yForm}
                             defaultValue={marcherPage?.y}
+                            step={0.1}
                             type="number"
                         />
                     </InputGroup>
@@ -102,8 +106,8 @@ function EditMarcherPageForm() {
                     />
                 </>
                     :
-                    selectedMarcher && <p>Select a page to view details</p> ||
-                    selectedPage && <p>Select a marcher to view details</p> ||
+                    (selectedMarcher && <p>Select a page to view details</p>) ||
+                    (selectedPage && <p>Select a marcher to view details</p>) ||
                     <p>Select a marcher and page to view details</p>
                 }
             </Form >

@@ -5,7 +5,7 @@ import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/St
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarcher } from "../context/SelectedMarcherContext";
 import { IGroupOptions } from "fabric/fabric-impl";
-import { idForHtmlToId } from "../Constants";
+import { Constants, idForHtmlToId } from "../Constants";
 import { updateMarcherPage } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
 import { CanvasMarcher } from "../Interfaces";
@@ -35,19 +35,24 @@ function Canvas() {
 
     /* -------------------------- Listener Functions -------------------------- */
     const handleObjectModified = useCallback((e: any) => {
-        // console.log("handleObjectModified:", e.target);
+        console.log("handleObjectModified:", e.target);
+        console.log("Center Point:", (e.target as fabric.Group).getCenterPoint());
         // console.log('selectedPage:', selectedPage);
-        const target = e.target;
-        if (e.target?.id_for_html && e.target?.left && e.target?.top) {
+
+        const newCoords = CanvasUtils.canvasMarcherToDotCoords(e.target as fabric.Group);
+        // console.log("newCoords:", newCoords);
+        if (e.target?.id_for_html && newCoords?.x && newCoords?.y) {
             const id = idForHtmlToId(e.target.id_for_html);
             // const marcherPage = marcherPages.find((marcherPage) => marcherPage.marcher_id === id);
-            updateMarcherPage(id, selectedPage!.id, target.left, target.top).then(() => { fetchMarcherPages() });
+            updateMarcherPage(id, selectedPage!.id, newCoords.x, newCoords.y).then(() => { fetchMarcherPages() });
+        } else {
+            console.error("Marcher or fabric object not found - handleObjectModified: Canvas.tsx");
         }
     }, [selectedPage, fetchMarcherPages]);
 
     // Set the selected marcher when selected element changes
     const handleSelect = useCallback((e: any) => {
-        // console.log("handleSelect:", e.selected);
+        console.log("handleSelect:", e.selected);
 
         // Check if it is a single selected element rather than a group
         if (e.selected?.length === 1 && e.selected[0].id_for_html) {
@@ -81,13 +86,12 @@ function Canvas() {
     /* ------------------------ Marcher Functions ------------------------ */
     const createMarcher = useCallback((x: number, y: number, id_for_html: string, marcher_id: number, label?: string):
         CanvasMarcher => {
-        let radius = 5;
 
         const newMarcherCircle = new fabric.Circle({
-            left: x - radius,
-            top: y - radius,
+            left: x - Constants.dotRadius,
+            top: y - Constants.dotRadius,
             fill: "red",
-            radius: radius,
+            radius: Constants.dotRadius,
         });
 
         const marcherLabel = new fabric.Text(label || "nil", {
@@ -139,9 +143,11 @@ function Canvas() {
                     (canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
 
                 if (canvasMarcher && canvasMarcher.fabricObject) {
-                    canvasMarcher.fabricObject!.left = marcherPage.x;
-                    canvasMarcher.fabricObject!.top = marcherPage.y;
-                    canvasMarcher.fabricObject!.setCoords();
+                    CanvasUtils.setCanvasMarcherCoordsFromDot(canvasMarcher, marcherPage.x, marcherPage.y);
+                    // console.log("canvasMarcher:", canvasMarcher);
+                    // canvasMarcher.fabricObject!.left = marcherPage.x;
+                    // canvasMarcher.fabricObject!.top = marcherPage.y;
+                    // canvasMarcher.fabricObject!.setCoords();
                 } else
                     throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
             }
@@ -200,6 +206,13 @@ function Canvas() {
             // set initial canvas size
             const staticGrid = CanvasUtils.buildField(canvasDimensions.footballField);
             canvas.add(staticGrid);
+            canvas.add(new fabric.Rect({
+                left: 800,
+                top: 534,
+                fill: "green",
+                width: 5,
+                height: 5,
+            }));
 
             // const cleanupListenersCall = () => initCanvasCallack.current();
         }
@@ -214,6 +227,7 @@ function Canvas() {
             canvas.on('selection:created', handleSelect);
             canvas.on('selection:cleared', handleDeselect);
             canvas.on('mouse:down', function (opt: any) {
+                // console.log("canvas click location", opt.e);
                 var evt = opt.e;
                 if (evt.altKey) {
                     canvas.isDragging = true;

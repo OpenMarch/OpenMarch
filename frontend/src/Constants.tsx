@@ -7,7 +7,9 @@ export const Constants = {
     MarcherPrefix: "marcher",
 
     MarcherPageTableName: "marcher_pages",
-    MarcherPagePrefix: "mp"
+    MarcherPagePrefix: "mp",
+
+    dotRadius: 5
 } as const;
 
 /**

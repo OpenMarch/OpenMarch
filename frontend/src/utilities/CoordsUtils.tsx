@@ -5,7 +5,7 @@ import { ReadableCoords, fieldProperties } from "../Interfaces";
 
 
 // The "origin" of a football field is on the 50 yard line on the front hash.
-const V1_ORIGIN = { x: 782, y: 505 };
+const V1_ORIGIN = { x: 800, y: 534 };
 export const V1_COLLEGE_PROPERTIES: fieldProperties = {
     frontSideline: 32,
     frontHash: 0,
