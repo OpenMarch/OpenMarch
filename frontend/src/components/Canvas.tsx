@@ -68,10 +68,69 @@ function Canvas() {
         if (e.deselected) { setSelectedMarcher(null); }
     }, [setSelectedMarcher]);
 
+    const handleMouseDown = useCallback((opt: any) => {
+        // console.log("canvas click location", opt.e);
+        var evt = opt.e;
+        if (evt.altKey) {
+            canvas.isDragging = true;
+            canvas.selection = false;
+            canvas.lastPosX = evt.clientX;
+            canvas.lastPosY = evt.clientY;
+        }
+    }, [canvas]);
+
+    const handleMouseMove = useCallback((opt: any) => {
+        if (canvas.isDragging) {
+            var e = opt.e;
+            var vpt = canvas.viewportTransform;
+            vpt[4] += e.clientX - canvas.lastPosX;
+            vpt[5] += e.clientY - canvas.lastPosY;
+            canvas.requestRenderAll();
+            canvas.lastPosX = e.clientX;
+            canvas.lastPosY = e.clientY;
+        }
+    }, [canvas]);
+
+    const handleMouseUp = useCallback((opt: any) => {
+        // on mouse up we want to recalculate new interaction
+        // for all objects, so we call setViewportTransform
+        canvas.setViewportTransform(canvas.viewportTransform);
+        canvas.isDragging = false;
+        canvas.selection = true;
+    }, [canvas]);
+
+    const handleMouseWheel = useCallback((opt: any) => {
+        // if (opt.e.shiftKey)
+        //     opt.e.preventDefault();
+        var delta = opt.e.deltaY;
+        var zoom = canvas.getZoom();
+        zoom *= 0.999 ** delta;
+        if (zoom > 20) zoom = 20;
+        if (zoom < 0.01) zoom = 0.01;
+        canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+    }, [canvas]);
+
+    const initiateListeners = useCallback(() => {
+        if (canvas) {
+            canvas.on('object:modified', handleObjectModified);
+            canvas.on('selection:updated', handleSelect);
+            canvas.on('selection:created', handleSelect);
+            canvas.on('selection:cleared', handleDeselect);
+
+            canvas.on('mouse:down', handleMouseDown);
+            canvas.on('mouse:move', handleMouseMove);
+            canvas.on('mouse:up', handleMouseUp);
+            canvas.on('mouse:wheel', handleMouseWheel);
+        }
+    }, [canvas, handleObjectModified, handleSelect, handleDeselect, handleMouseDown, handleMouseMove, handleMouseUp,
+        handleMouseWheel]);
+
+
     const cleanupListeners = useCallback(() => {
         if (canvas) {
             canvas.off('object:modified');
-
             canvas.off('selection:updated');
             canvas.off('selection:created');
             canvas.off('selection:cleared');
@@ -222,50 +281,7 @@ function Canvas() {
     useEffect(() => {
         if (canvas) {
             // Initiate listeners
-            canvas.on('object:modified', handleObjectModified);
-            canvas.on('selection:updated', handleSelect);
-            canvas.on('selection:created', handleSelect);
-            canvas.on('selection:cleared', handleDeselect);
-            canvas.on('mouse:down', function (opt: any) {
-                // console.log("canvas click location", opt.e);
-                var evt = opt.e;
-                if (evt.altKey) {
-                    canvas.isDragging = true;
-                    canvas.selection = false;
-                    canvas.lastPosX = evt.clientX;
-                    canvas.lastPosY = evt.clientY;
-                }
-            });
-            canvas.on('mouse:move', function (opt: any) {
-                if (canvas.isDragging) {
-                    var e = opt.e;
-                    var vpt = canvas.viewportTransform;
-                    vpt[4] += e.clientX - canvas.lastPosX;
-                    vpt[5] += e.clientY - canvas.lastPosY;
-                    canvas.requestRenderAll();
-                    canvas.lastPosX = e.clientX;
-                    canvas.lastPosY = e.clientY;
-                }
-            });
-            canvas.on('mouse:up', function (opt: any) {
-                // on mouse up we want to recalculate new interaction
-                // for all objects, so we call setViewportTransform
-                canvas.setViewportTransform(canvas.viewportTransform);
-                canvas.isDragging = false;
-                canvas.selection = true;
-            });
-            canvas.on('mouse:wheel', function (opt: any) {
-                // if (opt.e.shiftKey)
-                //     opt.e.preventDefault();
-                var delta = opt.e.deltaY;
-                var zoom = canvas.getZoom();
-                zoom *= 0.999 ** delta;
-                if (zoom > 20) zoom = 20;
-                if (zoom < 0.01) zoom = 0.01;
-                canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-                opt.e.preventDefault();
-                opt.e.stopPropagation();
-            });
+            initiateListeners();
 
             // Cleanup
             return () => {

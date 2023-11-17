@@ -145,5 +145,4 @@ export function setCanvasMarcherCoordsFromDot(marcher: CanvasMarcher, x: number,
 
 }
 
-
 export { };
