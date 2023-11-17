@@ -2,6 +2,7 @@
 import { fabric } from "fabric";
 import { CanvasMarcher, Dimension } from "../Interfaces";
 import { Constants } from "../Constants";
+import { V1_COLLEGE_PROPERTIES, V1_ORIGIN } from "./CoordsUtils";
 
 /* -------------------------- Field Functions -------------------------- */
 export const buildField = (dimensions: Dimension) => {
@@ -17,7 +18,7 @@ export const buildField = (dimensions: Dimension) => {
     const halfLineProps = { stroke: "#AAAAAA", selectable: false };
     const gridProps = { stroke: "#DDDDDD", selectable: false };
     const hashProps = { stroke: "black", strokeWidth: 3, selectable: false };
-    const numberProps = { fontSize: 40, fill: "#888888", selectable: false };
+    const numberProps = { fontSize: 45, fill: "#888888", selectable: false, charSpacing: 160 };
 
     // Grid lines
     for (let i = 10; i < width; i += 10)
@@ -25,26 +26,30 @@ export const buildField = (dimensions: Dimension) => {
     for (let i = height - 10; i > top; i -= 10)
         fieldArray.push(new fabric.Line([0, i, width, i], gridProps));
 
-    // --- Numbers ---
-    // Bottom numbers
-    for (let i = 1; i <= 19; i += 1) {
-        const num = (i * 5 > 50) ? (100 - i * 5) : (i * 5);
-        fieldArray.push(new fabric.Text(num.toString(), {
-            left: 0 + (i * 80 - (num > 5 ? 20 : 10)),
-            top: height - 142,
+    // Yard line numbers
+    const backSideline = V1_ORIGIN.y + (V1_COLLEGE_PROPERTIES.backSideline * V1_COLLEGE_PROPERTIES.pixelsPerStep);
+    const frontSideline = V1_ORIGIN.y + (V1_COLLEGE_PROPERTIES.frontSideline * V1_COLLEGE_PROPERTIES.pixelsPerStep);
+    const numberY = 153;
+    const xOffset = -6;
+    for (let i = 1; i <= 9; i += 1) {
+        const yardLineNumber = (i * 10 > 50) ? (100 - i * 10) : (i * 10);
+        // Home numbers
+        fieldArray.push(new fabric.Text(yardLineNumber.toString(), {
+            left: xOffset + (i * 160 - (yardLineNumber > 5 ? 20 : 10)),
+            top: frontSideline - numberY,
             ...numberProps
         }));
-    }
-    // Top numbers
-    for (let i = 1; i <= 19; i += 1) {
-        const num = (i * 5 > 50) ? (100 - i * 5) : (i * 5);
-        fieldArray.push(new fabric.Text(num.toString(), {
-            left: 0 + (i * 80 - (num > 5 ? 20 : 10)),
-            top: height - (80 * 9) - 15,
+        // Away numbers
+        fieldArray.push(new fabric.Text(yardLineNumber.toString(), {
+            left: xOffset + (i * 160 - (yardLineNumber > 5 ? 20 : 10)),
+            // top: height - (80 * 9) - 15,
+            top: backSideline + numberY,
             flipY: true,
             flipX: true,
             ...numberProps
         }));
+        const awayNumber = fieldArray[fieldArray.length - 1];
+        fieldArray[fieldArray.length - 1].top = awayNumber!.top! - awayNumber!.height!;
     }
 
     // Half lines and endzones
@@ -64,15 +69,20 @@ export const buildField = (dimensions: Dimension) => {
 
     // Hashes (college)
     for (let i = 0; i < width + 1; i += 80)
-        fieldArray.push(new fabric.Line([i - 10, height - 320, i + 10, height - 320], hashProps));
+        fieldArray.push(new fabric.Line(
+            [i === 0 ? i : i - 10, height - 320, i == width ? i : i + 10, height - 320], hashProps)
+        );
+
     for (let i = 0; i < width + 1; i += 80)
-        fieldArray.push(new fabric.Line([i - 10, height - 520, i + 10, height - 520], hashProps));
+        fieldArray.push(new fabric.Line(
+            [i === 0 ? i : i - 10, height - 520, i == width ? i : i + 10, height - 520], hashProps)
+        );
 
     // Border
-    fieldArray.push(new fabric.Line([0, 0, 0, height], borderProps));
+    fieldArray.push(new fabric.Line([0, 14, 0, height], borderProps));
     fieldArray.push(new fabric.Line([0, height - 840, width, height - 840], borderProps));
     fieldArray.push(new fabric.Line([0, height - 1, width, height - 1], borderProps));
-    fieldArray.push(new fabric.Line([width - 1, 0, width - 1, height], borderProps));
+    fieldArray.push(new fabric.Line([width - 1, 14, width - 1, height], borderProps));
 
     const field = new fabric.Group(fieldArray, {
         selectable: false,

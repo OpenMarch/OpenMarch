@@ -4,8 +4,11 @@ import { ReadableCoords, fieldProperties } from "../Interfaces";
 
 
 
-// The "origin" of a football field is on the 50 yard line on the front hash.
-const V1_ORIGIN = { x: 800, y: 534 };
+// The "origin" of a football field is on the 50 yard line on the front hash. This is the pixel position on the canvas.
+export const V1_ORIGIN = { x: 800, y: 534 };
+/**
+ * A lsit of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
+ */
 export const V1_COLLEGE_PROPERTIES: fieldProperties = {
     frontSideline: 32,
     frontHash: 0,
