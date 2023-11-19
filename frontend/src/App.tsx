@@ -5,6 +5,7 @@ import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
 import { IsPlayingProvider } from './context/IsPlayingContext';
+import StateInitializer from './utilities/StateInitializer';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
     <SelectedPageProvider>
       <SelectedMarcherProvider>
         <IsPlayingProvider>
+          <StateInitializer />
           <div className="app-container">
             {/* <div className="toolbar-container"> */}
             <Topbar />

@@ -1,21 +1,11 @@
-import { useEffect } from "react";
 import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
 import { useSelectedPage } from "../../../context/SelectedPageContext";
 import { MarcherPageDetails } from "./MarcherPageDeatils";
 import { MarcherPageList } from "./MarcherPageList";
-import { useMarcherPageStore } from "../../../stores/Store";
 
 function MarcherPageContainer() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
-    const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
-
-    useEffect(() => {
-        fetchMarcherPages().finally(() => {
-            setMarcherPagesAreLoading(false)
-        });
-    }, [fetchMarcherPages, setMarcherPagesAreLoading]);
-
 
     return (
         <>

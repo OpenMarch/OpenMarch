@@ -11,9 +11,8 @@ export function MarcherPageDetails() {
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
     // eslint-disable-next-line
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [readableCoords, setReadableCoords] = useState<ReadableCoords>();
-    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
+    const { marcherPages, marcherPagesAreLoading } = useMarcherPageStore()!;
 
     // Load marcherPage(s) from selected marcher/page
     useEffect(() => {
@@ -31,15 +30,9 @@ export function MarcherPageDetails() {
     }
         , [selectedPage, selectedMarcher, marcherPages]);
 
-    useEffect(() => {
-        fetchMarcherPages().finally(() => {
-            setIsLoading(false)
-        });
-    }, [fetchMarcherPages]);
-
     return (
         <>
-            {isLoading ? <p>Loading...</p> : <>
+            {marcherPagesAreLoading ? <p>Loading...</p> : <>
                 <div className={bsconfig.tableHeader}>
                     <div className="col table-header">Pg {selectedPage?.name || "nil"}</div>
                     <div className="col table-header">{selectedMarcher?.drill_number?.toString() || "nil"}</div>
