@@ -1,30 +1,50 @@
 
 import { fabric } from "fabric";
-import { CanvasMarcher, Dimension } from "../Interfaces";
+import { CanvasMarcher } from "../Interfaces";
 import { Constants } from "../Constants";
 import { V1_COLLEGE_PROPERTIES, V1_ORIGIN } from "./CoordsUtils";
 
-/* -------------------------- Field Functions -------------------------- */
-export const buildField = (dimensions: Dimension) => {
-    const fieldArray: fabric.Object[] = [];
-    const width = dimensions.width;
-    const height = dimensions.height;
-    const actualHeight = dimensions.actualHeight;
-    const top = height - actualHeight;
+/* -------------------------- Canvas Functions -------------------------- */
+/**
+ * Refreshes the size of the canvas to fit the window.
+ */
+export function refreshCanavsSize(canvas: fabric.Canvas) {
+    canvas.setWidth(window.innerWidth);
+    canvas.setHeight(window.innerHeight);
+    // canvas.renderAll();
+}
 
-    // Build the grid lines. This is only for a football field right now.
+/* -------------------------- Field Functions -------------------------- */
+export const buildField = (fieldWidth: number, fieldHeight: number) => {
+    const fieldArray: fabric.Object[] = [];
+    const top = 0;
+
+    // white background
+    const background = new fabric.Rect({
+        left: 0,
+        top: top,
+        width: fieldWidth,
+        height: fieldHeight - top,
+        fill: "white",
+        selectable: false,
+        hoverCursor: "default",
+    });
+    fieldArray.push(background);
+
+    /* Properties for each field object */
     const borderProps = { stroke: "black", strokeWidth: 3, selectable: false };
-    const yardLineProps = { stroke: "black", strokeWidth: 1.2, selectable: false };
+    const yardLineProps = { stroke: "black", strokeWidth: 1, selectable: false };
     const halfLineProps = { stroke: "#AAAAAA", selectable: false };
     const gridProps = { stroke: "#DDDDDD", selectable: false };
     const hashProps = { stroke: "black", strokeWidth: 3, selectable: false };
     const numberProps = { fontSize: 45, fill: "#888888", selectable: false, charSpacing: 160 };
 
     // Grid lines
-    for (let i = 10; i < width; i += 10)
-        fieldArray.push(new fabric.Line([i, top, i, height], gridProps));
-    for (let i = height - 10; i > top; i -= 10)
-        fieldArray.push(new fabric.Line([0, i, width, i], gridProps));
+    for (let i = 10; i < fieldWidth; i += 10)
+        fieldArray.push(new fabric.Line([i, top, i, fieldHeight], gridProps));
+    for (let i = fieldHeight - 10; i > top; i -= 10)
+        fieldArray.push(new fabric.Line([0, i, fieldWidth, i], gridProps));
+
 
     // Yard line numbers
     const backSideline = V1_ORIGIN.y + (V1_COLLEGE_PROPERTIES.backSideline * V1_COLLEGE_PROPERTIES.pixelsPerStep);
@@ -53,42 +73,41 @@ export const buildField = (dimensions: Dimension) => {
     }
 
     // Half lines and endzones
-    for (let i = 40; i < width; i += 80)
-        fieldArray.push(new fabric.Line([i, top, i, height], halfLineProps));
-    fieldArray.push(new fabric.Line([80, top, 80, height], halfLineProps));
-    fieldArray.push(new fabric.Line([width - 80, top, width - 80, height],
+    for (let i = 40; i < fieldWidth; i += 80)
+        fieldArray.push(new fabric.Line([i, top, i, fieldHeight], halfLineProps));
+    fieldArray.push(new fabric.Line([80, top, 80, fieldHeight], halfLineProps));
+    fieldArray.push(new fabric.Line([fieldWidth - 80, top, fieldWidth - 80, fieldHeight],
         halfLineProps));
 
     // Verical lines
-    for (let i = height - 40; i > 0; i -= 40)
-        fieldArray.push(new fabric.Line([0, i, width, i], halfLineProps));
+    for (let i = fieldHeight - 40; i > 0; i -= 40)
+        fieldArray.push(new fabric.Line([0, i, fieldWidth, i], halfLineProps));
 
     // Yard lines
-    for (let i = 0; i < width; i += 80)
-        fieldArray.push(new fabric.Line([i, top, i, height], yardLineProps));
+    for (let i = 0; i < fieldWidth; i += 80)
+        fieldArray.push(new fabric.Line([i, top, i, fieldHeight], yardLineProps));
 
     // Hashes (college)
-    for (let i = 0; i < width + 1; i += 80)
+    for (let i = 0; i < fieldWidth + 1; i += 80)
         fieldArray.push(new fabric.Line(
-            [i === 0 ? i : i - 10, height - 320, i == width ? i : i + 10, height - 320], hashProps)
+            [i === 0 ? i : i - 10, fieldHeight - 320, i === fieldWidth ? i : i + 10, fieldHeight - 320], hashProps)
         );
 
-    for (let i = 0; i < width + 1; i += 80)
+    for (let i = 0; i < fieldWidth + 1; i += 80)
         fieldArray.push(new fabric.Line(
-            [i === 0 ? i : i - 10, height - 520, i == width ? i : i + 10, height - 520], hashProps)
+            [i === 0 ? i : i - 10, fieldHeight - 520, i === fieldWidth ? i : i + 10, fieldHeight - 520], hashProps)
         );
 
     // Border
-    fieldArray.push(new fabric.Line([0, 14, 0, height], borderProps));
-    fieldArray.push(new fabric.Line([0, height - 840, width, height - 840], borderProps));
-    fieldArray.push(new fabric.Line([0, height - 1, width, height - 1], borderProps));
-    fieldArray.push(new fabric.Line([width - 1, 14, width - 1, height], borderProps));
+    fieldArray.push(new fabric.Line([0, top, 0, fieldHeight], borderProps));
+    fieldArray.push(new fabric.Line([0, fieldHeight - 840, fieldWidth, fieldHeight - 840], borderProps));
+    fieldArray.push(new fabric.Line([0, fieldHeight - 1, fieldWidth, fieldHeight - 1], borderProps));
+    fieldArray.push(new fabric.Line([fieldWidth - 1, top, fieldWidth - 1, fieldHeight], borderProps));
 
-    const field = new fabric.Group(fieldArray, {
+    return new fabric.Group(fieldArray, {
         selectable: false,
         hoverCursor: "default",
     });
-    return field;
 };
 
 /* -------------------------- Marcher Functions -------------------------- */
@@ -132,7 +151,7 @@ export function setCanvasMarcherCoordsFromDot(marcher: CanvasMarcher, x: number,
         const fabricGroup = marcher.fabricObject;
         const dot = (marcher.fabricObject as fabric.Group)._objects[0] as fabric.Circle;
         if (dot.left && dot.top && fabricGroup.width && fabricGroup.height) {
-            // Dot center - radius - offset - 1/2 width or height of the fabric group
+            // Dot center - radius - offset - 1/2 fieldWidth or fieldHeight of the fabric group
             const newCoords = {
                 x: x - Constants.dotRadius - dot.left - (fabricGroup.width / 2),
                 y: y - Constants.dotRadius - dot.top - (fabricGroup.height / 2)
@@ -143,7 +162,7 @@ export function setCanvasMarcherCoordsFromDot(marcher: CanvasMarcher, x: number,
             marcher.fabricObject.setCoords();
             // console.log("setCanvasMarcherCoordsFromDot - marcher.fabricObject", marcher.fabricObject);
         } else
-            console.error("Marcher dot does not have left or top properties, or fabricGroup does not have height/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
+            console.error("Marcher dot does not have left or top properties, or fabricGroup does not have fieldHeight/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
     } else
         console.error("FabricObject does not exist for the marcher - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
 
@@ -152,3 +171,7 @@ export function setCanvasMarcherCoordsFromDot(marcher: CanvasMarcher, x: number,
 }
 
 export { };
+export function setCanvasSize(arg0: string, setCanvasSize: any) {
+    throw new Error("Function not implemented.");
+}
+

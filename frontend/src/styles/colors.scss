@@ -1,0 +1,16 @@
+
+
+$primary: #ff00ff;
+:root {
+    --bs-primary: #ff00ff;         // Bootstrap Primary Color
+    --bs-secondary: #{$secondary};     // Bootstrap Secondary Color
+    --bs-success: #{$success};         // Bootstrap Success Color
+    --bs-info: #{$info};               // Bootstrap Info Color
+    --bs-warning: #{$warning};         // Bootstrap Warning Color
+    --bs-danger: #{$danger};           // Bootstrap Danger Color
+    --bs-light: #{$light};             // Bootstrap Light Color
+    --bs-dark: #{$dark};               // Bootstrap Dark Color
+    --bs-purple: #{$purple};           // Bootstrap Purple Color
+  }
+
+  @import 'bootstrap/scss/bootstrap';

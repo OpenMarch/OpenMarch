@@ -1,5 +1,16 @@
 @import 'bootstrap/scss/bootstrap';
 
+/* ================= VARIABLES ================= */
+// Colors
+$toolbarColor: $gray-600;
+$canvasColor: $gray-800;
+
+// Toolbar
+$topHeight: 125px;
+$sideWidth: 200px;
+$editFormWidth: 200px;
+
+
 /* ================= GLOBAL STYLES ================= */
 html, body  {
   margin: 0;
@@ -31,20 +42,24 @@ html, body  {
 /* ================= CANVAS STYLES ================= */
 
 .canvas-container {
+  background: $canvasColor;
   position: relative;
+  height: 100%;
+  width: calc(100vw - #{$sideWidth});
 }
 
 canvas {
   position: absolute;
-  top: 0;
-  left: 0;
+  // top: 0;
+  // left: 0;
 }
 
 .field-canvas {
   position: absolute;
+  height: 100%;
+  width: 100%;
   top: 0;
   left: 0;
-  z-index: 1;
 }
 
 .marcher-canvas {
@@ -55,18 +70,12 @@ canvas {
 }
 
 /* ================= TOOLBAR STYLES ================= */
-$topHeight: 125px;
-$sideWidth: 200px;
-$toolbarColor: $primary;
-
 .toolbar-container {
   display: flex;
   flex: 1;
 }
 
 /* ------------ Top Toolbar ------------ */
-$editFormWidth: 200px;
-
 .topbar {
   width: 100%;
   height: $topHeight;
@@ -98,6 +107,7 @@ $editFormWidth: 200px;
 .sidebar {
   width: $sideWidth;
   max-height:  calc(100vh - #{$topHeight});
+  box-sizing: border-box;
   // flex-grow: 1;
   background-color: $toolbarColor;
 }
@@ -142,3 +152,4 @@ $editFormWidth: 200px;
 .sidebar th {
   text-align: left;
 }
+

@@ -101,14 +101,8 @@ export interface fieldProperties {
      * (4 -> nearest .25), (2 -> nearest .5), (10 -> nearest .1)
      */
     roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1
-}
-
-
-export interface Dimension {
     width: number;
     height: number;
-    name: string;
-    actualHeight: number;
 }
 
 /**

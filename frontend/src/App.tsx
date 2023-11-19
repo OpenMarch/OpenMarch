@@ -1,5 +1,4 @@
 import './App.css';
-import './styles/global.scss';
 import Canvas from './components/Canvas';
 import Topbar from './components/toolbar/Topbar';
 import Sidebar from './components/toolbar/Sidebar';
@@ -20,8 +19,6 @@ function App() {
               <Sidebar />
               <Canvas />
             </div>
-          </div>
-          <div className="canvas-container">
           </div>
           {/* </div> */}
         </IsPlayingProvider>

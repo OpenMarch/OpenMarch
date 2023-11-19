@@ -9,15 +9,20 @@ import { Constants, idForHtmlToId } from "../Constants";
 import { updateMarcherPage } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
 import { CanvasMarcher } from "../Interfaces";
+import { V1_COLLEGE_PROPERTIES } from "../utilities/CoordsUtils";
 
 interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
 }
 
 // All dimensions are in tenth steps (2.25 inches)
-const canvasDimensions = {
-    footballField: { width: 1600, height: 854, name: "Football Field", actualHeight: 840 },
-};
+// const canvasDimensions = {
+//     canvas: { width: 1700, height: 854, name: "Football Field", actualHeight: 840 },
+//     footballField: V1_COLLEGE_PROPERTIES
+// };
+// const canvasDimensions = {
+//     width: 1800, height: 840, name: "Football Field",
+// };
 
 function Canvas() {
     const { marchers, marchersAreLoading } = useMarcherStore()!;
@@ -236,13 +241,13 @@ function Canvas() {
             // console.log("Canvas.tsx: useEffect: create canvas");
             setCanvas(new fabric.Canvas(canvasRef.current, {}));
 
-            // Handle window resize event
+            // // Handle window resize event
             // window.addEventListener("resize", buildField);
 
-            // Clean up event listener on component unmount
+            // // Clean up event listener on component unmount
             // return () => {
             //     window.removeEventListener("resize", buildField);
-            // };‰
+            // };
         }
     }, [selectedPage, canvas]);
 
@@ -250,17 +255,21 @@ function Canvas() {
     useEffect(() => {
         if (canvas) {
             // Set canvas size
-            canvas.setDimensions(canvasDimensions.footballField);
+            CanvasUtils.refreshCanavsSize(canvas);
+            // Update canvas size on window resize
+            window.addEventListener('resize', (evt) => {
+                CanvasUtils.refreshCanavsSize(canvas);
+            });
 
             // Set canvas configuration options
-            canvas.backgroundColor = "white";
+            // canvas.backgroundColor = getColor('$purple-200');
             canvas.selectionColor = "white";
             canvas.selectionLineWidth = 8;
-            canvas.crisp = true;
-
             // set initial canvas size
-            const staticGrid = CanvasUtils.buildField(canvasDimensions.footballField);
+            const staticGrid = CanvasUtils.buildField(
+                V1_COLLEGE_PROPERTIES.width, V1_COLLEGE_PROPERTIES.height);
             canvas.add(staticGrid);
+            canvas.renderAll()
 
             // const cleanupListenersCall = () => initCanvasCallack.current();
         }

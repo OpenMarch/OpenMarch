@@ -17,6 +17,8 @@ export const V1_COLLEGE_PROPERTIES: fieldProperties = {
     origin: V1_ORIGIN,
     pixelsPerStep: 10,
     roundFactor: 4,
+    width: 1600,
+    height: 840
 };
 /**
  * Translates raw coordinates into readable coordinates. Currently only supports .25 step accuracy.

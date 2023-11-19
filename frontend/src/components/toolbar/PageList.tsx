@@ -59,7 +59,7 @@ function PageList() {
                 attributesText={rowAttributeText}
                 content={pages}
             />
-            <Button disabled={isAdding} onClick={() => handleAddPage()}>
+            <Button variant="primary" disabled={isAdding} onClick={() => handleAddPage()}>
                 {selectedPage?.id_for_html === Constants.NewPageId ?
                     <>Adding...</>
                     :
