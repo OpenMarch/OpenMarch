@@ -70,12 +70,12 @@ function ListContainer({ isLoading, attributes, attributesText, content }: ListC
     // Update Marcher selection visually.
     useEffect(() => {
         updateSelection(prevSelectedMarcher, selectedMarcher, setPrevSelectedMarcher);
-    }, [selectedMarcher]);
+    }, [selectedMarcher, prevSelectedMarcher, setSelectedMarcher]);
 
     // Update Page selection visually.
     useEffect(() => {
         updateSelection(prevSelectedPage, selectedPage, setPrevSelectedPage);
-    }, [selectedPage]);
+    }, [selectedPage, prevSelectedPage, setSelectedPage]);
 
     return (
         <div className="list-container bg-light">

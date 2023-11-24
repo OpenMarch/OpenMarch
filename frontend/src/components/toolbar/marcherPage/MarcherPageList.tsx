@@ -33,7 +33,7 @@ export function MarcherPageList() {
             newHeaders[0] = "Pg " + newHeaders[0];
         setHeaders(newHeaders);
     }
-        , [selectedPage, selectedMarcher]);
+        , [selectedPage, selectedMarcher, marcherPages, headers]);
 
     // Accessor functions for marchers and pages
     const getMarcher = (marcher_id: number) => {
