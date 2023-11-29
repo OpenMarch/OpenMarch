@@ -16,25 +16,26 @@ export const V1_COLLEGE_PROPERTIES: fieldProperties = {
     backSideline: -52,
     origin: V1_ORIGIN,
     pixelsPerStep: 10,
-    roundFactor: 4,
+    roundFactor: 100,
     width: 1600,
     height: 840
 };
 /**
- * Translates raw coordinates into readable coordinates. Currently only supports .25 step accuracy.
+ * Translates raw canvas coordinates into readable coordinates.
+ * This is for a college football field.
  *
  * @param x Canvas x coordinate
  * @param y Canvas y coordinate
  * @returns An object with all of the information needed to make a readable coordinate. (See ReadableCoords interface)
  */
-export function coordsToCollege(x: number, y: number, props: fieldProperties = V1_COLLEGE_PROPERTIES) {
+export function canvasCoordsToCollegeRCords(x: number, y: number, props: fieldProperties = V1_COLLEGE_PROPERTIES) {
     const output: ReadableCoords = {} as ReadableCoords;
     const newCoords = {
         x: (x - props.origin.x) / props.pixelsPerStep,
         y: (y - props.origin.y) / props.pixelsPerStep
     };
 
-    // Round to nearest .25
+    // Round
     let tempXSteps = (Math.round(newCoords.x * props.roundFactor) / props.roundFactor);
     let tempYSteps = (Math.round(newCoords.y * props.roundFactor) / props.roundFactor);
 
@@ -125,8 +126,9 @@ export function coordsToCollege(x: number, y: number, props: fieldProperties = V
                 }
                 break;
         }
-        // ensure ySteps is positive
-        output.ySteps = Math.abs(output.ySteps);
+        // ensure ySteps is positive and limit to 2 decimal places
+        output.ySteps = +Math.abs(output.ySteps).toFixed(2);
+        output.xSteps = +output.xSteps.toFixed(2);
     }
     return output;
 }
@@ -191,6 +193,35 @@ export function yToTerseString(rCoords: ReadableCoords, steps: boolean = true) {
             : (rCoords.hash === "back hash" ? "BH"
                 : "BSL"));
     return (rCoords.ySteps === 0 || !steps ? "" : (rCoords.ySteps + " ")) + " " + newDescription + newHash;
+}
+
+/**
+ *  Returns a terse version of the given string.
+ *
+ * @param str "front sideline", "front hash", "back hash", "back sideline", "inside", "outside", "in front of", "behind"
+ * @returns A string that is the terse version of the given string.
+ */
+export function getTerseString(str: string) {
+    switch (str) {
+        case "front sideline":
+            return "FSL";
+        case "front hash":
+            return "FH";
+        case "back hash":
+            return "BH";
+        case "back sideline":
+            return "BSL";
+        case "inside":
+            return "in";
+        case "outside":
+            return "out";
+        case "in front of":
+            return "F";
+        case "behind":
+            return "B";
+        default:
+            return "Error";
+    }
 }
 
 // const newHash = rCoords.hash === "front sideline" ? "FSL" : (rCoords.hash === "front hash" ? "FH" : (rCoords.hash === "back hash" ? "BH" : "BSL"));

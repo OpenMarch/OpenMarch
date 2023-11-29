@@ -4,7 +4,7 @@ import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
 import { useSelectedPage } from "../../../context/SelectedPageContext";
 import { bsconfig } from "../../../styles/bootstrapClasses";
 import { useMarcherPageStore } from "../../../stores/Store";
-import { V1_COLLEGE_PROPERTIES, coordsToCollege, xToTerseString, yToTerseString } from "../../../utilities/CoordsUtils";
+import { V1_COLLEGE_PROPERTIES, canvasCoordsToCollegeRCords, xToTerseString, yToTerseString } from "../../../utilities/CoordsUtils";
 
 export function MarcherPageDetails() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
@@ -24,7 +24,7 @@ export function MarcherPageDetails() {
                 marcherPage.page_id === selectedPage.id) || null;
             if (newMarcherPage) {
                 setMarcherPage(newMarcherPage);
-                setReadableCoords(coordsToCollege(newMarcherPage.x, newMarcherPage.y, V1_COLLEGE_PROPERTIES));
+                setReadableCoords(canvasCoordsToCollegeRCords(newMarcherPage.x, newMarcherPage.y, V1_COLLEGE_PROPERTIES));
             }
         }
     }

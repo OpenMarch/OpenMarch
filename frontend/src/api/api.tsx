@@ -7,6 +7,14 @@ const p_table = Constants.PageTableName;
 
 const API_URL = 'http://localhost:3001/api/v1';
 
+/* ====================== Constants ====================== */
+// These will hopefully be replaced in the actual database soon.
+export async function getSections() {
+  return [
+    "Trumpet"
+  ]
+}
+
 /* ====================== Page ====================== */
 
 /**
@@ -33,6 +41,7 @@ export async function createPage(page: Page) {
 
 /**
  * Updates the counts for a given page.
+ * Must fetch pages after updating.
  *
  * @param {number} id - pageObj.id: The id of the page. Do not use id_for_html.
  * @param {number} counts - The new amount of counts for the page to be.
@@ -105,6 +114,16 @@ export async function getMarcherPages(id_for_html: string | void) {
   return response.data;
 }
 
+/**
+ * Updates the x and y coordinates for a given marcherPage.
+ * Must fetch marcherPages after updating.
+ *
+ * @param marcher_id
+ * @param page_id
+ * @param x
+ * @param y
+ * @returns Response data from the server.
+ */
 export async function updateMarcherPage(marcher_id: number, page_id: number, x: number, y: number) {
   // console.log("JSON: " + JSON.stringify({ x, y }));
   const response = await axios.patch(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`,
@@ -115,15 +134,3 @@ export async function updateMarcherPage(marcher_id: number, page_id: number, x: 
   });
   return response.data;
 }
-
-// export async function createPage(page) {
-//   const response = await axios.post(API_URL + '/pages', page);
-//   return response.data;
-// }
-
-// export async function updateMarcher(id, marcher) {
-//   const response = await axios.patch(API_URL + `/marchers/${id}`, marcher);
-//   return response.data;
-// }
-
-// etc...

@@ -20,3 +20,6 @@ export const Constants = {
 export const idForHtmlToId = (id_for_html: string) => {
     return parseInt(id_for_html.split("_")[1]);
 }
+
+export const YARD_LINES = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0] as const;
+export const HASHES = ["front sideline", "front hash", "back hash", "back sideline"] as const;

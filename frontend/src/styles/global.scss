@@ -9,6 +9,8 @@ $canvasColor: $gray-800;
 $topHeight: 125px;
 $sideWidth: 200px;
 $editFormWidth: 200px;
+$toolbarPadding: 10px;
+$toolbarMargin: 10px;
 
 
 /* ================= GLOBAL STYLES ================= */
@@ -112,6 +114,12 @@ canvas {
   background-color: $toolbarColor;
 }
 
+.sidebar .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .sidebar h2 {
   color: $light;
   text-align: center;
@@ -120,11 +128,106 @@ canvas {
   margin-bottom: -50px;
 }
 
+.sidebar h3 {
+  color: $light;
+  text-align: left;
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin: 0;
+  padding: $toolbarPadding;
+  border-top: 1px solid $secondary;
+  border-bottom: 1px solid $secondary;
+}
+
+.sidebar h4 {
+  color: $light;
+  text-align: left;
+  font-size: 1.15rem;
+  font-weight: bold;
+  margin: $toolbarMargin;
+}
+
+
+// Container for input groups
+.sidebar .edit-group {
+  align-items: left;
+  text-align: left;
+  margin: $toolbarMargin;
+  // padding-left: $toolbarPadding;
+  // background-color: green;
+  display: flex;
+  flex-direction: column;
+  justify-content: left;
+}
+
+.sidebar label {
+  color: $light;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.sidebar input, .sidebar select {
+  background: transparent;
+  color: $light;
+  font-weight: 400;
+  border-color: transparent;
+  text-align: right;
+}
+
+/* Remove number input spin box (up and down arrow) */
+.sidebar input::-webkit-outer-spin-button,
+.sidebar input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
+.sidebar input[type=number] {
+    -moz-appearance:textfield; /* Firefox */
+}
+
+.coords-editor label {
+  color: $light;
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+
+.coords-editor input, .page-editor input {
+  flex: 0 0 auto;
+  width: 60px;
+}
+
+.coords-editor .input-group {
+  flex-direction: row;
+  align-items: right;
+}
+
+.marcher-details-editor input {
+  width: 100%;
+}
+
+/* Hide the default arrow in modern browsers */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+/* For Firefox */
+select::-ms-expand {
+  display: none;
+}
+
+.page-editor .input-group {
+  justify-content: space-between;
+  align-items: right;
+  text-align: right;
+  width: auto;
+}
+
 /* Container to hold both toolbars and ensure they stack vertically */
 .app-container, .sidebar {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - #{$topHeight});
 }
 
 .list-container {
