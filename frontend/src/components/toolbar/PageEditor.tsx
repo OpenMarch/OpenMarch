@@ -6,12 +6,12 @@ import { useEffect } from "react";
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
     const { fetchPages } = usePageStore()!;
+    const { pages } = usePageStore()!;
 
     const countsInputId = "page-counts";
     const formId = "edit-page-form";
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        console.log("PageEditor: handleSubmit");
         event.preventDefault();
         const form = event.currentTarget;
         const counts = form[countsInputId].value;
@@ -57,11 +57,6 @@ function PageEditor() {
         (event.target as HTMLInputElement).value = currentValue.toString();
     };
 
-    const resetForm = () => {
-        const form = document.getElementById(formId) as HTMLFormElement;
-        if (form) form.reset();
-    };
-
     const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
         // Reset the value to the default
         if (selectedPage) {
@@ -71,6 +66,12 @@ function PageEditor() {
         }
     };
 
+    const resetForm = () => {
+        const form = document.getElementById(formId) as HTMLFormElement;
+        if (form) form.reset();
+    };
+
+    // Reset the form when the selected page changes so the values are correct
     useEffect(() => {
         resetForm();
     }, [selectedPage]);
@@ -93,7 +94,7 @@ function PageEditor() {
                 </div>
                 <div className="input-group">
                     <label htmlFor="page-order">Order</label>
-                    <input type="number" value={selectedPage.order} id="page-order" disabled={true} />
+                    <input type="string" value={selectedPage.order + "/" + pages.length} id="page-order" disabled={true} />
                 </div>
                 {/* <div className="input-group">
                     <label htmlFor="page-sets">Tempo</label>

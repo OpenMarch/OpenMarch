@@ -6,7 +6,7 @@ $toolbarColor: $gray-700;
 $canvasColor: $gray-800;
 
 // Toolbar
-$topHeight: 125px;
+$topHeight: 63px;
 $sideWidth: 200px;
 $editFormWidth: 200px;
 $toolbarPadding: 10px;
@@ -222,6 +222,9 @@ select::-ms-expand {
   text-align: right;
   width: auto;
 }
+
+.coords-editor select { text-align-last: right; }
+.coords-editor option { direction: rtl; }
 
 /* Container to hold both toolbars and ensure they stack vertically */
 .app-container, .sidebar {

@@ -9,12 +9,12 @@ import EditMarcherForm from './EditMarcherForm';
 function Topbar() {
     return (
         <Container fluid className="topbar p-3">
-            <FileControls />
+            {/* <FileControls />
 
             <NewMarcherForm />
             <EditPageForm />
             <EditMarcherPageForm />
-            <EditMarcherForm />
+            <EditMarcherForm /> */}
 
             <PlaybackControls />
         </Container>

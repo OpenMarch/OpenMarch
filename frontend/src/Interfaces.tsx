@@ -103,6 +103,7 @@ export interface fieldProperties {
     roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1
     width: number;
     height: number;
+    stepsBetweenYardLines: number;
 }
 
 /**

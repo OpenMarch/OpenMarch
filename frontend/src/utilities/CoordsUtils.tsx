@@ -2,8 +2,6 @@
 
 import { ReadableCoords, fieldProperties } from "../Interfaces";
 
-
-
 // The "origin" of a football field is on the 50 yard line on the front hash. This is the pixel position on the canvas.
 export const V1_ORIGIN = { x: 800, y: 520 };
 /**
@@ -18,7 +16,8 @@ export const V1_COLLEGE_PROPERTIES: fieldProperties = {
     pixelsPerStep: 10,
     roundFactor: 100,
     width: 1600,
-    height: 840
+    height: 840,
+    stepsBetweenYardLines: 8
 };
 /**
  * Translates raw canvas coordinates into readable coordinates.
@@ -224,8 +223,7 @@ export function getTerseString(str: string) {
     }
 }
 
-// const newHash = rCoords.hash === "front sideline" ? "FSL" : (rCoords.hash === "front hash" ? "FH" : (rCoords.hash === "back hash" ? "BH" : "BSL"));
-
 function findHalfway(a: number, b: number) {
     return (a + b) / 2;
 }
+
