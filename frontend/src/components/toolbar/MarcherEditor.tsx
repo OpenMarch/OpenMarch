@@ -82,29 +82,29 @@ function MarcherEditor() {
                     <label htmlFor={xInputId}>X</label>
                     <div className="input-group">
                         {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
-                        <input type="number" defaultValue={rCoords?.xSteps} id={xInputId} />
-                        <select defaultValue={rCoords.xDescription} id={xDescriptionId}>
+                        <input disabled={true} type="number" defaultValue={rCoords?.xSteps} id={xInputId} />
+                        <select disabled={true} defaultValue={rCoords.xDescription} id={xDescriptionId}>
                             <option value="inside">in</option>
                             <option value="outside">out</option>
                         </select>
-                        <select id={yardLineId} defaultValue={rCoords.yardLine}>
+                        <select disabled={true} id={yardLineId} defaultValue={rCoords.yardLine}>
                             {YARD_LINES.map((yardLine) => (
                                 <option value={yardLine} key={yardLine}>{yardLine}</option>
                             ))}
                         </select>
-                        <select id={fieldSideId} defaultValue={rCoords.side}>
+                        <select disabled={true} id={fieldSideId} defaultValue={rCoords.side}>
                             <option value="1">S1</option>
                             <option value="2">S2</option>
                         </select>
                     </div>
                     <label htmlFor={yInputId}>Y</label>
                     <div className="input-group">
-                        <input type="number" value={rCoords?.ySteps} id={yInputId} />
-                        <select value={rCoords.yDescription} id={yDescriptionId}>
+                        <input disabled={true} type="number" value={rCoords?.ySteps} id={yInputId} />
+                        <select disabled={true} value={rCoords.yDescription} id={yDescriptionId}>
                             <option value="in front of">front</option>
                             <option value="behind">behind</option>
                         </select>
-                        <select id={hashId}>
+                        <select disabled={true} id={hashId}>
                             {HASHES.map((hash) => (
                                 <option value={hash} key={hash}>{getTerseString(hash)}</option>
                             ))}
