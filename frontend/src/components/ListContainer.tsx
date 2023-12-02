@@ -1,9 +1,9 @@
 import { Container, Row, Col, Table } from "react-bootstrap";
-import { bsconfig } from "../../styles/bootstrapClasses";
-import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
-import { Marcher, Page } from "../../Interfaces";
-import { Constants } from "../../Constants";
+import { bsconfig } from "../styles/bootstrapClasses";
+import { useSelectedPage } from "../context/SelectedPageContext";
+import { useSelectedMarcher } from "../context/SelectedMarcherContext";
+import { Marcher, Page } from "../Interfaces";
+import { Constants } from "../Constants";
 import { useEffect, useState } from "react";
 
 interface ListContainerProps {

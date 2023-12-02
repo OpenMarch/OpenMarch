@@ -1,5 +1,5 @@
-import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
-import { useSelectedPage } from "../../../context/SelectedPageContext";
+import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { useSelectedPage } from "../../context/SelectedPageContext";
 import { MarcherPageDetails } from "./MarcherPageDeatils";
 import { MarcherPageList } from "./MarcherPageList";
 

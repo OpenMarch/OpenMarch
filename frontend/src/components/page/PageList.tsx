@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { usePageStore } from "../../stores/Store";
-import ListContainer from "./ListContainer";
+import ListContainer from "../ListContainer";
 import { Page } from "../../Interfaces";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { Constants } from "../../Constants";
@@ -46,7 +46,6 @@ function PageList() {
 
     return (
         <>
-            <h2>Pages</h2>
             <ListContainer
                 isLoading={pagesAreLoading}
                 attributes={headerRowAttributes}

@@ -71,6 +71,12 @@ canvas {
   z-index: 2;
 }
 
+/* ================= MODAL STYLES ================= */
+.modal-body {
+  max-height: calc(100vh - 120px); /* Adjust 120px as needed */
+  overflow-y: auto;
+}
+
 /* ================= TOOLBAR STYLES ================= */
 .toolbar-container {
   display: flex;
@@ -105,7 +111,7 @@ canvas {
  justify-content: flex-end;
 }
 
-/* ------------ Side Toolbar ------------ */
+/* $$$$$$$$$$$$ Side Toolbar $$$$$$$$$$$$ */
 .sidebar {
   width: $sideWidth;
   max-height:  calc(100vh - #{$topHeight});
@@ -185,6 +191,17 @@ canvas {
     -moz-appearance:textfield; /* Firefox */
 }
 
+/* Hide the default arrow in modern browsers */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+/* For Firefox */
+select::-ms-expand {
+  display: none;
+}
+
 .coords-editor label {
   color: $light;
   font-size: 1.25rem;
@@ -203,17 +220,6 @@ canvas {
 
 .marcher-details-editor input {
   width: 100%;
-}
-
-/* Hide the default arrow in modern browsers */
-select {
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-}
-/* For Firefox */
-select::-ms-expand {
-  display: none;
 }
 
 .page-editor .input-group {

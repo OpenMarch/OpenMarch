@@ -1,9 +1,9 @@
 import React, { MouseEventHandler, useCallback } from "react";
 import { ButtonGroup, Button } from "react-bootstrap";
 import { FaFastBackward, FaBackward, FaPause, FaPlay, FaForward, FaFastForward } from "react-icons/fa";
-import { useSelectedPage } from "../../context/SelectedPageContext";
-import { usePageStore } from "../../stores/Store";
-import { useIsPlaying } from "../../context/IsPlayingContext";
+import { useSelectedPage } from "../context/SelectedPageContext";
+import { usePageStore } from "../stores/Store";
+import { useIsPlaying } from "../context/IsPlayingContext";
 
 function PlaybackControls() {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;

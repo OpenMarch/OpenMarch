@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMarcherStore } from "../../stores/Store";
-import ListContainer from "./ListContainer";
+import ListContainer from "../ListContainer";
 
 function MarcherList() {
     const { marchers, marchersAreLoading } = useMarcherStore();
@@ -12,7 +12,6 @@ function MarcherList() {
 
     return (
         <>
-            <h2>Marchers</h2>
             <ListContainer
                 isLoading={marchersAreLoading}
                 attributes={headerRowAttributes}

@@ -2,7 +2,7 @@ import { Form, InputGroup } from "react-bootstrap";
 import { useCallback, useEffect, useState } from "react";
 import { updateMarcherDrillNumber } from "../../api/api";
 import { useMarcherStore } from "../../stores/Store";
-import FormButtons from "./FormButtons";
+import FormButtons from "../FormButtons";
 import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
 
 function EditMarcherForm() {

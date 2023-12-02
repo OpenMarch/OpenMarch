@@ -1,7 +1,7 @@
 import './App.css';
 import Canvas from './components/Canvas';
-import Topbar from './components/toolbar/Topbar';
-import Sidebar from './components/toolbar/Sidebar';
+import Topbar from './components/Topbar';
+import Sidebar from './components/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
 import { IsPlayingProvider } from './context/IsPlayingContext';
@@ -20,6 +20,7 @@ function App() {
             <div className="secondary-container">
               <Sidebar />
               <Canvas />
+              {/* <PageList /> */}
             </div>
           </div>
           {/* </div> */}

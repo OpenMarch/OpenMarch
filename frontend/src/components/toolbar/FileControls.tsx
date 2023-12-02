@@ -1,9 +1,0 @@
-function FileControls() {
-    return (
-        <div className="file-controls">
-            {/* toolbar buttons */}
-        </div>
-    );
-}
-
-export default FileControls;

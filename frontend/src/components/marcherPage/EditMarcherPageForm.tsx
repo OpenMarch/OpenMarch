@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Form, InputGroup } from "react-bootstrap";
-import { Constants } from "../../../Constants";
-import { updateMarcherPage } from "../../../api/api";
-import { useSelectedPage } from "../../../context/SelectedPageContext";
-import { useMarcherPageStore } from "../../../stores/Store";
+import { Constants } from "../../Constants";
+import { updateMarcherPage } from "../../api/api";
+import { useSelectedPage } from "../../context/SelectedPageContext";
+import { useMarcherPageStore } from "../../stores/Store";
 import FormButtons from "../FormButtons";
-import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
-import { MarcherPage } from "../../../Interfaces";
+import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { MarcherPage } from "../../Interfaces";
 
 function EditMarcherPageForm() {
     // eslint-disable-next-line

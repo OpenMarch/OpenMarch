@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { useSelectedMarcher } from "../../../context/SelectedMarcherContext";
-import { useSelectedPage } from "../../../context/SelectedPageContext";
-import { bsconfig } from "../../../styles/bootstrapClasses";
-import { useMarcherPageStore, useMarcherStore, usePageStore } from "../../../stores/Store";
-import { MarcherPage } from "../../../Interfaces";
+import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { useSelectedPage } from "../../context/SelectedPageContext";
+import { bsconfig } from "../../styles/bootstrapClasses";
+import { useMarcherPageStore, useMarcherStore, usePageStore } from "../../stores/Store";
+import { MarcherPage } from "../../Interfaces";
 import { Container, Row, Col, Table } from "react-bootstrap";
 
 export function MarcherPageList() {

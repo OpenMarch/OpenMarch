@@ -19,6 +19,7 @@
     "react-bootstrap": "^2.8.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.10.1",
+    "react-modal": "^3.16.1",
     "react-scripts": "5.0.1",
     "sass": "^1.63.6",
     "typescript": "^4.9.5",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.16.7",
-    "@types/fabric": "^5.3.3"
+    "@types/fabric": "^5.3.3",
+    "@types/react-modal": "^3.16.3"
   }
 }
