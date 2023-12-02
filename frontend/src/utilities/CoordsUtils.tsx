@@ -14,7 +14,7 @@ export const V1_COLLEGE_PROPERTIES: fieldProperties = {
     backSideline: -52,
     origin: V1_ORIGIN,
     pixelsPerStep: 10,
-    roundFactor: 100,
+    roundFactor: 20, // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
     width: 1600,
     height: 840,
     stepsBetweenYardLines: 8

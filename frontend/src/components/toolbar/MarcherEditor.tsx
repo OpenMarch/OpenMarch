@@ -86,6 +86,7 @@ function MarcherEditor() {
                         <select disabled={true} defaultValue={rCoords.xDescription} id={xDescriptionId}>
                             <option value="inside">in</option>
                             <option value="outside">out</option>
+                            <option value="on">on</option>
                         </select>
                         <select disabled={true} id={yardLineId} defaultValue={rCoords.yardLine}>
                             {YARD_LINES.map((yardLine) => (
@@ -103,6 +104,7 @@ function MarcherEditor() {
                         <select disabled={true} value={rCoords.yDescription} id={yDescriptionId}>
                             <option value="in front of">front</option>
                             <option value="behind">behind</option>
+                            <option value="on">on</option>
                         </select>
                         <select disabled={true} id={hashId}>
                             {HASHES.map((hash) => (
