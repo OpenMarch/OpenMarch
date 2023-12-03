@@ -2,7 +2,7 @@ class Marcher < ApplicationRecord
   has_many :marcher_pages
   has_many :pages, through: :marcher_pages
 
-  validates :name, :drill_prefix, :drill_order, presence: true
+  validates :instrument, :drill_prefix, :drill_order, presence: true
   # validate :unique_drill_number
 
   # before_create :prefix_id

@@ -1,9 +1,10 @@
 import FileControls from './FileControls';
 import ModalLauncher from './ModalLauncher';
 import PlaybackControls from './PlaybackControls';
-import { Button, Container } from 'react-bootstrap';
+import { Container } from 'react-bootstrap';
 import PageList from './page/PageList';
-import MarcherList from './marcher/MarcherList';
+// import MarcherList from './marcher/MarcherList';
+import NewMarcherForm from './marcher/NewMarcherForm';
 
 function Topbar() {
     return (
@@ -15,7 +16,7 @@ function Topbar() {
                 header="Pages"
             />
             <ModalLauncher
-                components={[<MarcherList />]}
+                components={[<NewMarcherForm />]}
                 buttonContent="Marchers"
                 header="Marchers"
             />

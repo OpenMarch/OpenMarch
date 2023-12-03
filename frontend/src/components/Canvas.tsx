@@ -15,15 +15,6 @@ interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
 }
 
-// All dimensions are in tenth steps (2.25 inches)
-// const canvasDimensions = {
-//     canvas: { width: 1700, height: 854, name: "Football Field", actualHeight: 840 },
-//     footballField: V1_COLLEGE_PROPERTIES
-// };
-// const canvasDimensions = {
-//     width: 1800, height: 840, name: "Football Field",
-// };
-
 function Canvas() {
     const { marchers, marchersAreLoading } = useMarcherStore()!;
     const { pagesAreLoading } = usePageStore()!;
@@ -34,9 +25,6 @@ function Canvas() {
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
-    //   const rootStore = useStore();
-    //   const { UIStore } = rootStore;
 
     /* -------------------------- Listener Functions -------------------------- */
     const handleObjectModified = useCallback((e: any) => {
@@ -240,14 +228,6 @@ function Canvas() {
         if (!canvas && selectedPage && canvasRef.current) {
             // console.log("Canvas.tsx: useEffect: create canvas");
             setCanvas(new fabric.Canvas(canvasRef.current, {}));
-
-            // // Handle window resize event
-            // window.addEventListener("resize", buildField);
-
-            // // Clean up event listener on component unmount
-            // return () => {
-            //     window.removeEventListener("resize", buildField);
-            // };
         }
     }, [selectedPage, canvas]);
 

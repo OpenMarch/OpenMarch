@@ -1,6 +1,5 @@
 // A collection of interfaces and types used throughout the application
 import { Constants } from "./Constants";
-import { updateMarcherPage } from "./api/api";
 type InterfaceConstType = typeof Constants;
 
 export interface Page {
@@ -13,6 +12,9 @@ export interface Page {
     prefix: InterfaceConstType["PagePrefix"];
 };
 
+/**
+ * An interface to use only for creating a page to the backend.
+ */
 export interface NewPage {
     name: string;
     counts: number;
@@ -28,6 +30,16 @@ export interface Marcher {
     drill_order: number;
     tableName: InterfaceConstType["MarcherTableName"];
     prefix: InterfaceConstType["MarcherPrefix"];
+};
+
+/**
+ * An interface to use only for creating a marcher to the backend.
+ */
+export interface NewMarcher {
+    name: string;
+    instrument: string;
+    drill_prefix: string;
+    drill_order: number;
 };
 
 export interface MarcherPage {

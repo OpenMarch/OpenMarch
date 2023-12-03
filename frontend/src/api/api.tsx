@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { NewPage, Page } from '../Interfaces';
+import { Marcher, NewMarcher, NewPage, Page } from '../Interfaces';
 import { Constants } from '../Constants';
 
 const m_table = Constants.MarcherTableName;
@@ -76,6 +76,22 @@ export async function updateMarcherDrillNumber(id: number, drill_prefix: string,
   const response = await axios.patch(API_URL + `/marchers/${id}`, { drill_prefix, drill_order });
   return response.data;
 };
+
+export async function createMarcher(marcher: NewMarcher | Marcher) {
+  const newMarcher: NewMarcher = {
+    name: marcher.name,
+    instrument: marcher.instrument,
+    drill_prefix: marcher.drill_prefix,
+    drill_order: marcher.drill_order
+  };
+  // console.log("newPage JSOn: " + JSON.stringify(newPage));
+  const response = await axios.post(API_URL + '/marchers', JSON.stringify(newMarcher), {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+  return response.data;
+}
 
 /* ====================== MarcherPage ====================== */
 
