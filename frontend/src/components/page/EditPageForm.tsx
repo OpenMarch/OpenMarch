@@ -3,7 +3,7 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useCallback, useEffect, useState } from "react";
 import { createPage, updatePageCounts } from "../../api/api";
 import { usePageStore } from "../../stores/Store";
-import FormButtons from "../FormButtons";
+import FormButtons from "../TinyFormButtons";
 import { Constants } from "../../Constants";
 
 function EditPageForm() {

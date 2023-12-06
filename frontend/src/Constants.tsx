@@ -59,3 +59,9 @@ export const sections = {
     DrumMajor: { family: "Other", instrument: "Drum Major", scoreOrder: 32, prefix: "DM" },
     Other: { family: "Other", instrument: "Other", scoreOrder: 33, prefix: "OT" }
 } as const;
+
+/* Marcher List Form */
+export const marcherListFormAttributes = {
+    formId: "marcherListForm",
+
+} as const;

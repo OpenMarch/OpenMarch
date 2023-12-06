@@ -5,7 +5,11 @@ import { useMarcherStore } from "../../stores/Store";
 import { Marcher, NewMarcher } from "../../Interfaces";
 import { createMarcher } from "../../api/api";
 
-function NewMarcherForm() {
+interface NewMarcherFormProps {
+    hasHeader?: boolean;
+}
+
+const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) => {
     const [section, setSection] = useState<string>();
     const [drillPrefix, setDrillPrefix] = useState<string>();
     const [drillOrder, setDrillOrder] = useState<number>();
@@ -152,8 +156,9 @@ function NewMarcherForm() {
 
     return (
         <Form onSubmit={handleSubmit} id="newMarcherForm">
+            {hasHeader && <h4>Create new marchers</h4>}
             <Row className="mb-3">
-                <Form.Group as={Col} md={6} controlId="sectionForm">
+                <Form.Group as={Col} md={12} controlId="sectionForm">
                     <Form.Label>Section</Form.Label>
                     <Form.Select placeholder="Choose a section" onChange={handleSectionChange}
                         required isInvalid={!!sectionError} value={section}
@@ -161,23 +166,16 @@ function NewMarcherForm() {
                     >
                         <option>Choose Section...</option>
                         {Object.values(sections).map((section: any) => {
-                            return <option>{section.instrument}</option>
+                            return <option key={section.instrument}>{section.instrument}</option>
                         })}
                     </Form.Select>
                     <Form.Control.Feedback type="invalid">{sectionError}</Form.Control.Feedback>
                 </Form.Group>
 
-                <Form.Group as={Col} md={6} controlId="quantityForm">
-                    <Form.Label>Number of marchers to create</Form.Label>
-                    <Form.Control type="number" defaultValue={1}
-                        onChange={handleQuantityChange} placeholder="1"
-                        step={1} min={1} />
-                </Form.Group>
-
             </Row>
 
             <Row className="mb-3">
-                <Form.Group as={Col} md={3} controlId="drillPrefixForm">
+                <Form.Group as={Col} md={4} controlId="drillPrefixForm">
                     <Form.Label>Drill Prefix</Form.Label>
                     <Form.Control type="text" placeholder="-"
                         onChange={handlePrefixChange} value={drillPrefix} required
@@ -185,8 +183,8 @@ function NewMarcherForm() {
                     <Form.Control.Feedback type="invalid">{drillPrefixError}</Form.Control.Feedback>
                 </Form.Group>
 
-                <Form.Group as={Col} md={3} controlId="drillOrderForm">
-                    <Form.Label>Drill Number</Form.Label>
+                <Form.Group as={Col} md={4} controlId="drillOrderForm">
+                    <Form.Label>Drill #</Form.Label>
                     <Form.Control type="number" placeholder="-"
                         onChange={handleOrderChange} value={drillOrder}
                         isInvalid={!!drillOrderError} required
@@ -194,12 +192,21 @@ function NewMarcherForm() {
                     />
                     <Form.Control.Feedback type="invalid">{drillOrderError}</Form.Control.Feedback>
                 </Form.Group>
+
+                <Form.Group as={Col} md={4} controlId="quantityForm">
+                    <Form.Label>Quantity</Form.Label>
+                    <Form.Control type="number" defaultValue={1}
+                        onChange={handleQuantityChange} placeholder="1"
+                        step={1} min={1} />
+                </Form.Group>
             </Row>
-            <Button variant="primary" type="submit" className="mb3"
-                disabled={!section || !drillPrefix || !drillOrder || !!drillOrderError}
-            >
-                {makeButtonString(quantity, section)}
-            </Button>
+            <Row className="py-2">
+                <Button variant="primary" type="submit"
+                    disabled={!section || !drillPrefix || !drillOrder || !!drillOrderError}
+                >
+                    {makeButtonString(quantity, section)}
+                </Button>
+            </Row>
             {alertMessages.map((message, index) => (
                 <Alert key={index} variant={message.startsWith('Error') ? 'danger' : 'success'} className="mt-3"
                     onClose={() => setAlertMessages(alertMessages.filter((_, i) => i !== index))} dismissible>

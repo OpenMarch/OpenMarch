@@ -39,7 +39,7 @@ function PlaybackControls() {
 
     const togglePlay = () => { setIsPlaying(!isPlaying); };
     return (
-        <div className="playback-controls">
+        <div className="playback-controls mx-2">
             <ButtonGroup aria-label="Basic example">
                 <Button variant="secondary" title="First page"
                     value={lowestPageOrder()}

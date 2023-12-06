@@ -1,42 +1,40 @@
 import { Button } from "react-bootstrap";
-import { FaEdit, FaTimes, FaCheck } from "react-icons/fa";
-
 interface ListContainerProps {
-    isEditing: boolean;
-    setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+    isEditingProp?: boolean;
+    setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
+    editButton?: string | React.ReactNode;
     handleCancel: () => void;
+    /**
+     * Only used if the buttons are not a child of a form
+     * @returns A function to be called when the form is submitted
+     */
+    handleSubmit?: () => void;
 }
 
-function FormButtons({ isEditing, setIsEditing, handleCancel }: ListContainerProps) {
+export default function FormButtons({ handleCancel,
+    handleSubmit = undefined, isEditingProp = true, setIsEditingProp = undefined,
+    editButton = "Edit" }: ListContainerProps) {
     return (
-        <div className="edit-form-button-container">
-            {!isEditing ?
-                < Button size="sm"
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="edit-form-button" variant="light"
-                >
-                    <FaEdit />
+        <div style={{ display: 'flex' }}>
+            {!isEditingProp ?
+                <Button variant="primary" onClick={setIsEditingProp && (() => setIsEditingProp(true))}>
+                    {editButton}
                 </Button>
                 :
                 <>
-                    <Button // Cancel button
-                        size="sm" variant="outline-danger"
-                        className="edit-form-button"
-                        onClick={() => handleCancel()}
-                    >
-                        <FaTimes />
-                    </Button>
-                    <Button // Submit button
-                        size="sm" variant="success"
-                        className="edit-form-button"
-                        type="submit"
-                    >
-                        <FaCheck />
+                    {handleSubmit ?
+                        <Button variant="primary" onClick={handleSubmit}>
+                            Save Changes
+                        </Button> :
+                        <Button variant="primary" type="submit">
+                            Save Changes
+                        </Button>
+                    }
+                    <Button variant="secondary" type="button" onClick={handleCancel} className="mx-1">
+                        Cancel
                     </Button>
                 </>
             }
         </div>
     );
 }
-
-export default FormButtons;

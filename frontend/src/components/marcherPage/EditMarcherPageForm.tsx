@@ -4,7 +4,7 @@ import { Constants } from "../../Constants";
 import { updateMarcherPage } from "../../api/api";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useMarcherPageStore } from "../../stores/Store";
-import FormButtons from "../FormButtons";
+import FormButtons from "../TinyFormButtons";
 import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
 import { MarcherPage } from "../../Interfaces";
 
