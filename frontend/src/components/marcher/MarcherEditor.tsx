@@ -122,7 +122,9 @@ function MarcherEditor() {
             <form className="marcher-details-editor edit-group" id={detailsFormId}>
                 <div className="input-group">
                     <label htmlFor="name-input">Name</label>
-                    <input type="text" value={selectedMarcher.name} disabled={true} id="name-input" />
+                    <input type="text"
+                        value={(selectedMarcher.name.length < 1 || selectedMarcher.name === " ") ? "-"
+                            : selectedMarcher.name} disabled={true} id="name-input" />
                 </div>
                 <div className="input-group">
                     <label htmlFor="instrument-input">Section</label>

@@ -77,6 +77,48 @@ export async function updateMarcherDrillNumber(id: number, drill_prefix: string,
   return response.data;
 };
 
+/**
+ * Updates the instrument/section for a given marcher.
+ *
+ * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
+ * @param instrument - The new instrument/section for the marcher to be.
+ * @returns response data from the server.
+ */
+export async function updateMarcherInstrument(id: number, instrument: string) {
+  const response = await axios.patch(API_URL + `/marchers/${id}`, { instrument });
+  return response.data;
+}
+
+/**
+ * Updates the name for a given marcher.
+ *
+ * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
+ * @param name - The new name for the marcher to be.
+ * @returns Response data from the server.
+ */
+export async function updateMarcherName(id: number, name: string) {
+  const response = await axios.patch(API_URL + `/marchers/${id}`, { name });
+  return response.data;
+}
+
+export async function updateMarcher(id: number, marcher: NewMarcher | Marcher) {
+  const response = await axios.patch(API_URL + `/marchers/${id}`, marcher);
+  return response.data;
+}
+
+/**
+ * Deletes a marcher from the database. Careful!
+ * Currently, this will delete all marcherPages associated with the marcher.
+ * This cannot be undone.
+ *
+ * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
+ * @returns Response data from the server.
+ */
+export async function deleteMarcher(id: number) {
+  const response = await axios.delete(API_URL + `/marchers/${id}`);
+  return response.data;
+}
+
 export async function createMarcher(marcher: NewMarcher | Marcher) {
   const newMarcher: NewMarcher = {
     name: marcher.name,
