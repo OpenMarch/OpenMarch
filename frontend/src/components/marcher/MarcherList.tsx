@@ -122,11 +122,11 @@ function MarcherList({
                                         marcher.name
                                     }
                                 </td>
-                                {isEditing &&
+                                {/* {isEditing &&
                                     <td >
                                         <Button variant="danger" ><FaTrashAlt /></Button>
                                     </td>
-                                }
+                                } */}
                             </tr>
                         ))}
                         {/* <tr>
