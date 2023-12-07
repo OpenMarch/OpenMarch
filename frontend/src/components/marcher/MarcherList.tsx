@@ -2,11 +2,9 @@ import { useMarcherStore } from "../../stores/Store";
 import { sections } from "../../Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import { FaTrashAlt } from "react-icons/fa";
 import FormButtons from "../FormButtons";
 import { marcherListFormAttributes } from "../../Constants";
-import { NewMarcher } from "../../Interfaces";
-import { updateMarcherInstrument, updateMarcherName, updateMarcherDrillNumber } from "../../api/api";
+import { updateMarcherInstrument, updateMarcherName } from "../../api/api";
 
 interface NewMarcherFormProps {
     isEditingProp?: boolean;
@@ -31,13 +29,18 @@ function MarcherList({
     const { marchers, marchersAreLoading, fetchMarchers } = useMarcherStore();
     const changesRef = useRef<{ [key: number | string]: any }>({});
 
-    const handleSubmit = async () => {
+    async function handleSubmit() {
         setIsEditing(false);
 
         for (const [marcherId, changes] of Object.entries(changesRef.current)) {
             await updateMarcher(Number(marcherId), changes);
         }
         fetchMarchers();
+        changesRef.current = {};
+    }
+
+    function handleCancel() {
+        setIsEditing(false);
         changesRef.current = {};
     }
 
@@ -53,11 +56,6 @@ function MarcherList({
                 console.error(`Error updating marcher ${marcherId}:`, error);
             }
         }
-    }
-
-    const handleCancel = () => {
-        setIsEditing(false);
-        changesRef.current = {};
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -78,7 +76,8 @@ function MarcherList({
             handleSubmit();
             setSubmitActivator && setSubmitActivator(false);
         }
-    }, [submitActivator]);
+        // eslint-disable-next-line
+    }, [submitActivator, setSubmitActivator]);
 
     // Activate submit with an external activator (like a button in a parent component)
     useEffect(() => {
@@ -86,7 +85,8 @@ function MarcherList({
             handleCancel();
             setCancelActivator && setCancelActivator(false);
         }
-    }, [cancelActivator]);
+        // eslint-disable-next-line
+    }, [cancelActivator, setCancelActivator]);
 
     return (
         <Form id={marcherListFormAttributes.formId}>

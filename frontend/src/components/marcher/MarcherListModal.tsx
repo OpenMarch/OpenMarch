@@ -1,10 +1,9 @@
-import { Col, Form, Row } from "react-bootstrap";
+import { Col, Row } from "react-bootstrap";
 import ModalLauncher from "../ModalLauncher";
 import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
 import { useState } from "react";
 import FormButtons from "../FormButtons";
-import { marcherListFormAttributes } from "../../Constants";
 
 export default function MarcherListModal() {
     const [listIsEditing, setListIsEditing] = useState(false);
