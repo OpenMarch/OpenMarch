@@ -8,13 +8,17 @@ import { marcherListFormAttributes } from "../../Constants";
 
 export default function MarcherListModal() {
     const [listIsEditing, setListIsEditing] = useState(false);
+    const [submitActivator, setSubmitActivator] = useState(false);
+    const [cancelActivator, setCancelActivator] = useState(false);
 
     function MarcherModalContents() {
         return (
             <Row>
                 <Col md={7} style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                    {/* <MarcherList isEditingProp={listIsEditing} setIsEditingProp={setListIsEditing} /> */}
-                    <MarcherList />
+                    <MarcherList isEditingProp={listIsEditing} setIsEditingProp={setListIsEditing}
+                        submitActivator={submitActivator} setSubmitActivator={setSubmitActivator}
+                        cancelActivator={cancelActivator} setCancelActivator={setCancelActivator} />
+                    {/* <MarcherList /> */}
                 </Col>
                 <Col md={5} className="px-4">
                     <NewMarcherForm hasHeader={true} />
@@ -23,18 +27,18 @@ export default function MarcherListModal() {
         );
     }
 
-    // function editFormButtons() {
-    //     return (
-    //         <FormButtons handleCancel={() => setListIsEditing(false)} isEditingProp={listIsEditing}
-    //             setIsEditingProp={setListIsEditing} editButton={"Edit Marchers"} />
-    //     );
-    // }
+    function editFormButtons() {
+        return (
+            <FormButtons handleCancel={() => setCancelActivator(true)} isEditingProp={listIsEditing}
+                setIsEditingProp={setListIsEditing} editButton={"Edit Marchers"}
+                handleSubmit={() => setSubmitActivator(true)} />
+        );
+    }
 
     return (
         <ModalLauncher
             components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers"
-            // className="modal-xl" bottomButton={editFormButtons()}
-            className="modal-xl"
+            className="modal-xl" bottomButton={editFormButtons()}
         />
     );
 }

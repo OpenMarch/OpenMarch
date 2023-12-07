@@ -1,6 +1,6 @@
 import { useMarcherStore } from "../../stores/Store";
 import { sections } from "../../Constants";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import { FaTrashAlt } from "react-icons/fa";
 import FormButtons from "../FormButtons";
@@ -12,12 +12,18 @@ interface NewMarcherFormProps {
     isEditingProp?: boolean;
     setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
     hasHeader?: boolean;
+    submitActivator?: boolean;
+    setSubmitActivator?: React.Dispatch<React.SetStateAction<boolean>>;
+    cancelActivator?: boolean;
+    setCancelActivator?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function MarcherList({
     isEditingProp = undefined,
     setIsEditingProp = undefined,
-    hasHeader = false
+    hasHeader = false,
+    submitActivator = undefined, setSubmitActivator = undefined,
+    cancelActivator = undefined, setCancelActivator = undefined,
 }: NewMarcherFormProps) {
     const [isEditingLocal, setIsEditingLocal] = useState(false);
     const isEditing = isEditingProp || isEditingLocal;
@@ -65,6 +71,22 @@ function MarcherList({
         changesRef.current[marcherId][attribute] = event.target.value;
         console.log(changesRef.current);
     }
+
+    // Activate submit with an external activator (like a button in a parent component)
+    useEffect(() => {
+        if (submitActivator) {
+            handleSubmit();
+            setSubmitActivator && setSubmitActivator(false);
+        }
+    }, [submitActivator]);
+
+    // Activate submit with an external activator (like a button in a parent component)
+    useEffect(() => {
+        if (cancelActivator) {
+            handleCancel();
+            setCancelActivator && setCancelActivator(false);
+        }
+    }, [cancelActivator]);
 
     return (
         <Form id={marcherListFormAttributes.formId}>
