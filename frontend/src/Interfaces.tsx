@@ -129,3 +129,19 @@ export interface CanvasMarcher {
     id_for_html: string;
     marcher_id: number;
 }
+
+/**
+ * This interface should be used when you want a form to be controlled by buttons in a parent component.
+ */
+export interface ListFormProps {
+    /**
+     * Whether or not the form should have a <h4> header defined in the component.
+     */
+    hasHeader?: boolean;
+    isEditingProp?: boolean;
+    setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
+    submitActivator?: boolean;
+    setSubmitActivator?: React.Dispatch<React.SetStateAction<boolean>>;
+    cancelActivator?: boolean;
+    setCancelActivator?: React.Dispatch<React.SetStateAction<boolean>>;
+}

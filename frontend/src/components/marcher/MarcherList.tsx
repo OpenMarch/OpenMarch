@@ -3,18 +3,8 @@ import { sections } from "../../Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
-import { marcherListFormAttributes } from "../../Constants";
 import { updateMarcherInstrument, updateMarcherName } from "../../api/api";
-
-interface NewMarcherFormProps {
-    isEditingProp?: boolean;
-    setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
-    hasHeader?: boolean;
-    submitActivator?: boolean;
-    setSubmitActivator?: React.Dispatch<React.SetStateAction<boolean>>;
-    cancelActivator?: boolean;
-    setCancelActivator?: React.Dispatch<React.SetStateAction<boolean>>;
-}
+import { ListFormProps } from "../../Interfaces";
 
 function MarcherList({
     isEditingProp = undefined,
@@ -22,7 +12,7 @@ function MarcherList({
     hasHeader = false,
     submitActivator = undefined, setSubmitActivator = undefined,
     cancelActivator = undefined, setCancelActivator = undefined,
-}: NewMarcherFormProps) {
+}: ListFormProps) {
     const [isEditingLocal, setIsEditingLocal] = useState(false);
     const isEditing = isEditingProp || isEditingLocal;
     const setIsEditing = setIsEditingProp || setIsEditingLocal;
@@ -45,7 +35,6 @@ function MarcherList({
     }
 
     async function updateMarcher(marcherId: number, changes: any) {
-        console.log("updateMarcher", marcherId, changes);
         for (const [key, value] of Object.entries(changes)) {
             try {
                 if (key === "instrument")
@@ -61,13 +50,11 @@ function MarcherList({
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
         attribute: string, marcherId: number
     ) => {
-        console.log(event.target.name + " " + event.target.value, "marcherId: " + marcherId);
         // create an entry for the marcher if it doesn't exist
         if (!changesRef.current[marcherId]) changesRef.current[marcherId] = {};
 
         // record the change
         changesRef.current[marcherId][attribute] = event.target.value;
-        console.log(changesRef.current);
     }
 
     // Activate submit with an external activator (like a button in a parent component)
@@ -89,7 +76,11 @@ function MarcherList({
     }, [cancelActivator, setCancelActivator]);
 
     return (
-        <Form id={marcherListFormAttributes.formId}>
+        <Form id={"marcherListForm"} onSubmit={(event) => {
+            event.preventDefault();
+            handleSubmit();
+        }}
+        >
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {(hasHeader && <h4>Marcher List</h4>) || <div />}
                 {!isEditingProp && !setIsEditingProp && (isEditing ?
@@ -155,16 +146,19 @@ function MarcherList({
             </table>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div />
-                {!isEditingProp && !setIsEditingProp && (isEditing ?
-                    <FormButtons
-                        handleCancel={handleCancel} editButton={"Edit Marchers"}
-                        isEditingProp={isEditing} setIsEditingProp={setIsEditing}
-                        handleSubmit={handleSubmit}
-                    />
+                {(!isEditingProp && !setIsEditingProp) ?
+                    (isEditing ?
+                        <FormButtons
+                            handleCancel={handleCancel} editButton={"Edit Marchers"}
+                            isEditingProp={isEditing} setIsEditingProp={setIsEditing}
+                            handleSubmit={handleSubmit}
+                        />
+                        :
+                        <Button variant="primary" onClick={() => setIsEditing(true)}>
+                            Edit Marchers
+                        </Button>)
                     :
-                    <Button variant="primary" onClick={() => setIsEditing(true)}>
-                        Edit Marchers
-                    </Button>)
+                    <button type="submit" hidden={true} />
                 }
             </div>
         </Form>
