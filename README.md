@@ -10,14 +10,11 @@ See [openmarch.com](https://www.openmarch.com/) for current status and a video e
 **Can**
 - Render a navigable canvas of a college football field
 - Create marchers with an assigned section, drill number, and name
-- Create multiple pages with a set number of counts\*
+- Create multiple pages with a set number of counts
 - Move a marcher around and see their coordinates printed in relation to yard lines and hashes
     - e.g. "3.25 steps inside 30 S1" or "11 steps behind front sideline"
 - Navigate through pages on the canvas
-- Have all marcher, page, and coordinate data saved locally to a db in rails
-
-\**features marked with \* exist in code but are temporarily absent due to GUI upgrades*
-
+- Have all marcher, page, and coordinate data saved locally to a db 
 
 **Cannot**
 - Save, except what the backend database does automatically.
