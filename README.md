@@ -58,7 +58,7 @@ Supporting packages
 - [**Fabric.js**](http://fabricjs.com/) - the football field "canvas" GUI with marcher dots
 - [**Zustand**](https://github.com/pmndrs/zustand) - global state management
 
-## OpenMarch development
+## OpenMarch for developers
 Currently only one person is working on this. (notice I said "we" a lot above? makes me feel official).
 If you would like to help out or learn more, just shoot me an [email](mailto:alex.dumo484@gmail.com)!
 
@@ -69,6 +69,12 @@ vision of simple, fast, and free drill designing software for band programs and 
 
 ### Onboarding
 Look at the wiki - [Onbaording for Developers](https://github.com/AlexDumo/OpenMarch/wiki/Onboarding-for-Developers)
+
+## OpenMarch for users and drill designers 
+OpenMarch does not have any releases or production demos available.
+Users who want to try it now are welcome follow the strps to spin up a production environment, though it is missing key features a designer may need.
+
+Check back to (openmarch.com)[https://www.openmarch.com/] and this repository periodically for updates. We're looking for some development help so send your devloper friends this way! 
 
 ## License
 OpenMarch is written under the [GPL-3.0 license](LICENSE). All code written for this project will forever and always
