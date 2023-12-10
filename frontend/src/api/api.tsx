@@ -25,7 +25,7 @@ export async function getPages() {
   return response.data;
 }
 
-export async function createPage(page: Page) {
+export async function createPage(page: Page | NewPage) {
   const newPage: NewPage = {
     name: page.name,
     counts: page.counts

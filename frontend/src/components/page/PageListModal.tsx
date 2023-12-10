@@ -1,10 +1,9 @@
 import { Col, Row } from "react-bootstrap";
 import ModalLauncher from "../ModalLauncher";
-// import MarcherList from "./MarcherList";
-// import NewMarcherForm from "./NewMarcherForm";
 import { useState } from "react";
 import FormButtons from "../FormButtons";
 import PageList from "./PageList";
+import NewPageForm from "./NewPageForm";
 
 export default function MarcherListModal() {
     const [listIsEditing, setListIsEditing] = useState(false);
@@ -14,15 +13,15 @@ export default function MarcherListModal() {
     function PageModalContents() {
         return (
             <Row>
-                <Col style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                <Col md={6} style={{ maxHeight: '70vh', overflowY: 'auto' }}>
                     <PageList isEditingProp={listIsEditing} setIsEditingProp={setListIsEditing}
                         submitActivator={submitActivator} setSubmitActivator={setSubmitActivator}
                         cancelActivator={cancelActivator} setCancelActivator={setCancelActivator} />
                     {/* <MarcherList /> */}
                 </Col>
-                {/* <Col md={5} className="px-4">
-                    <NewMarcherForm hasHeader={true} />
-                </Col> */}
+                <Col md={6} className="px-4">
+                    <NewPageForm hasHeader={true} />
+                </Col>
             </Row>
         );
     }
@@ -38,7 +37,7 @@ export default function MarcherListModal() {
     return (
         <ModalLauncher
             components={[PageModalContents()]} launchButton="Pages" header="Pages"
-            className="modal-l" bottomButton={editFormButtons()}
+            className="modal-lg" bottomButton={editFormButtons()}
         />
     );
 }

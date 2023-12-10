@@ -39,7 +39,6 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
         event.preventDefault();
         let newDrillOrderOffset = 0;
         const existingMarchers = marchers.filter((marcher: Marcher) => marcher.drill_prefix === drillPrefix);
-        console.log("Quantity: " + quantity);
         if (!drillOrderError && section && drillPrefix && drillOrder && quantity) {
             const newAlertMessages = [...alertMessages];
             for (let i = 0; i < quantity; i++) {
@@ -60,9 +59,9 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
 
                 try {
                     await createMarcher(newMarcher);
-                    newAlertMessages.push(`Marcher ${drillPrefix + newDrillOrder} created successfully`);
+                    newAlertMessages.unshift(`Marcher ${drillPrefix + newDrillOrder} created successfully`);
                 } catch (error) {
-                    newAlertMessages.push(`Error creating marcher ${drillPrefix + newDrillOrder}`);
+                    newAlertMessages.unshift(`Error creating marcher ${drillPrefix + newDrillOrder}`);
                     console.error(`Error creating marcher ${drillPrefix + newDrillOrder}:`, error);
                 }
             };
