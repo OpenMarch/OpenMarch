@@ -31,8 +31,6 @@ function MarcherEditor() {
         const xDescription = form[xDescriptionId].value;
         const yardLine = form[yardLineId].value;
         const fieldSide = form[fieldSideId].value;
-
-        console.log("MarcherEditor: handleSubmit", xSteps, xDescription, yardLine, fieldSide);
     }
 
     useEffect(() => {
@@ -41,7 +39,7 @@ function MarcherEditor() {
             marcherPage.page_id === selectedPage?.id);
         if (marcherPage) {
             setRCoords(canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y));
-            console.log("MarcherEditor: useEffect", canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y));
+            // console.log("MarcherEditor: useEffect", canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y));
         }
     }, [selectedMarcher, marcherPages, selectedPage]);
 

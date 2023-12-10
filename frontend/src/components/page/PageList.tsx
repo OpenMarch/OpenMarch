@@ -56,7 +56,6 @@ function PageList({
 
         // record the change
         changesRef.current[pageId][attribute] = event.target.value;
-        console.log(changesRef.current);
     }
 
     // Activate submit with an external activator (like a button in a parent component)

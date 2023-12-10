@@ -87,7 +87,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
             setDrillPrefix(selectedSection.prefix);
             setSectionError("");
         } else {
-            console.log("Section not found");
+            console.error("Section not found");
             setSectionError("Please choose a section");
 
         }
