@@ -74,7 +74,7 @@ Look at the wiki - [Onbaording for Developers](https://github.com/AlexDumo/OpenM
 OpenMarch does not have any releases or production demos available.
 Users who want to try it now are welcome follow the strps to spin up a production environment, though it is missing key features a designer may need.
 
-Check back to [openmarch.com](https://www.openmarch.com/) and this repository periodically for updates. We're looking for some development help so send your devloper friends this way! 
+Check back to [openmarch.com](https://www.openmarch.com/) and this repository periodically for updates. We're looking for some development, help so send your developer friends this way! 
 
 ## License
 OpenMarch is written under the [GPL-3.0 license](LICENSE). All code written for this project will forever and always
