@@ -26,11 +26,11 @@ function MarcherEditor() {
 
     const handleCoordsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const form = event.currentTarget;
-        const xSteps = form[xInputId].value;
-        const xDescription = form[xDescriptionId].value;
-        const yardLine = form[yardLineId].value;
-        const fieldSide = form[fieldSideId].value;
+        // const form = event.currentTarget;
+        // const xSteps = form[xInputId].value;
+        // const xDescription = form[xDescriptionId].value;
+        // const yardLine = form[yardLineId].value;
+        // const fieldSide = form[fieldSideId].value;
     }
 
     useEffect(() => {

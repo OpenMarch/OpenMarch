@@ -36,7 +36,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
                 }
             } else if (event.key === 's' || event.key === 'S') {
                 event.preventDefault();
-                console.log("Toggling subset");
                 setIsSubset(isSubset => !isSubset);
             }
         };
