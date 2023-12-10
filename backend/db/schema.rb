@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_11_15_035213) do
+ActiveRecord::Schema[7.0].define(version: 2023_12_10_191233) do
   create_table "marcher_pages", force: :cascade do |t|
     t.integer "marcher_id", null: false
     t.integer "page_id", null: false
@@ -19,6 +19,7 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_15_035213) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "id_for_html"
+    t.text "notes"
     t.index ["marcher_id"], name: "index_marcher_pages_on_marcher_id"
     t.index ["page_id"], name: "index_marcher_pages_on_page_id"
   end
@@ -28,19 +29,22 @@ ActiveRecord::Schema[7.0].define(version: 2023_11_15_035213) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "instrument"
-    t.integer "drill_order"
-    t.string "drill_prefix"
+    t.integer "drill_order", null: false
+    t.string "drill_prefix", null: false
     t.string "id_for_html"
     t.string "drill_number"
+    t.text "notes"
   end
 
   create_table "pages", force: :cascade do |t|
-    t.string "name"
+    t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "order"
-    t.integer "counts"
+    t.integer "counts", null: false
     t.string "id_for_html"
+    t.float "tempo"
+    t.text "notes"
   end
 
   add_foreign_key "marcher_pages", "marchers"

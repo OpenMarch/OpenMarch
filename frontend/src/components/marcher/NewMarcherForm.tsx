@@ -223,6 +223,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
                     {makeButtonString(quantity, section)}
                 </Button>
             </Row>
+            <span>Dev Note: new marchers may not show up until a refresh</span>
             {alertMessages.map((message, index) => (
                 <Alert key={index} variant={message.startsWith('Error') ? 'danger' : 'success'} className="mt-3"
                     onClose={() => setAlertMessages(alertMessages.filter((_, i) => i !== index))} dismissible>

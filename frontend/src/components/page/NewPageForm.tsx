@@ -125,6 +125,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
     };
 
     const getNewPageName = useCallback(() => {
+        if (pages.length === 0) return "1";
         const lastPage = pages[pages.length - 1];
         return getNextPageName(lastPage.name, isSubset);
     }, [pages, isSubset]);

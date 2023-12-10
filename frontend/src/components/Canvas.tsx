@@ -319,7 +319,13 @@ function Canvas() {
 
     return (
         <div className="canvas-container">
-            <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
+            {(marchers.length > 0 && marcherPages.length > 0) ?
+                <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
+                :
+                <h2 className="canvas-loading" style={{ color: "white" }}>
+                    Create a marcher and page to make the canvas visible. You may need to refresh the page after.
+                </h2>
+            }
         </div>
     );
 };
