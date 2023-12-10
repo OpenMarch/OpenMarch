@@ -9,10 +9,14 @@ interface NewMarcherFormProps {
     hasHeader?: boolean;
 }
 
+const defaultSection = "Choose Section...";
+const defaultDrillPrefix = "-";
+const defaultDrillOrder = 1;
+
 const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) => {
-    const [section, setSection] = useState<string>();
-    const [drillPrefix, setDrillPrefix] = useState<string>();
-    const [drillOrder, setDrillOrder] = useState<number>();
+    const [section, setSection] = useState<string>(defaultSection);
+    const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);
+    const [drillOrder, setDrillOrder] = useState<number>(defaultDrillOrder);
     const [quantity, setQuantity] = useState<number>(1);
     const [sectionError, setSectionError] = useState<string>("");
     const [drillPrefixError, setDrillPrefixError] = useState<string>("");
@@ -20,11 +24,12 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
     const [drillOrderError, setDrillOrderError] = useState<string>("");
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const { marchers, fetchMarchers } = useMarcherStore!();
+    const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
 
     const resetForm = () => {
-        setSection(undefined);
-        setDrillPrefix(undefined);
-        setDrillOrder(undefined);
+        setSection(defaultSection);
+        setDrillPrefix(defaultDrillPrefix);
+        setDrillOrder(defaultDrillOrder);
         setQuantity(1);
         setSectionError("");
         setDrillPrefixError("");
@@ -39,7 +44,8 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
         event.preventDefault();
         let newDrillOrderOffset = 0;
         const existingMarchers = marchers.filter((marcher: Marcher) => marcher.drill_prefix === drillPrefix);
-        if (!drillOrderError && section && drillPrefix && drillOrder && quantity) {
+        // if (!drillOrderError && section && drillPrefix && drillOrder && quantity) {
+        if (!submitIsDisabled) {
             const newAlertMessages = [...alertMessages];
             for (let i = 0; i < quantity; i++) {
                 // Check to see if the drill order already exists
@@ -72,7 +78,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
     };
 
     const handleSectionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSection(undefined);
+        setSection(defaultSection);
         const selectedSection = Object.values(sections).find(
             (section: any) => section.instrument === event.target.value
         );
@@ -134,7 +140,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
             section_string += 's';
         }
 
-        if (section) {
+        if (section !== defaultSection) {
             section_string = section + " " + section_string;
         }
         return "Create " + quantity_string + section_string;
@@ -152,6 +158,17 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
     useEffect(() => {
         validateDrillOrder(resetDrillOrder());
     }, [quantity, validateDrillOrder, resetDrillOrder]);
+
+    useEffect(() => {
+        setSubmitIsDisabled(
+            section === defaultSection || section === undefined ||
+            drillPrefix === undefined ||
+            drillOrder === undefined ||
+            sectionError !== "" ||
+            drillPrefixError !== "" ||
+            drillOrderError !== ""
+        );
+    }, [section, drillPrefix, drillOrder, sectionError, drillPrefixError, drillOrderError]);
 
     return (
         <Form onSubmit={handleSubmit} id="newMarcherForm">
@@ -201,7 +218,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
             </Row>
             <Row className="py-2">
                 <Button variant="primary" type="submit"
-                    disabled={!section || !drillPrefix || !drillOrder || !!drillOrderError}
+                    disabled={submitIsDisabled}
                 >
                     {makeButtonString(quantity, section)}
                 </Button>
