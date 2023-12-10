@@ -68,8 +68,7 @@ Currently, we ("I") work on this project as often as we ("I") can between work a
 vision of simple, fast, and free drill designing software for band programs and designers across the country.
 
 ### Onboarding
-Details tbd. If you know how to start a React and Rails dev environment you're golden. If you're completely new to
-web dev and still want to help out, shoot me an [email](mailto:alex.dumo484@gmail.com).
+Look at the wiki - [Onbaording for Developers](https://github.com/AlexDumo/OpenMarch/wiki/Onboarding-for-Developers)
 
 ## License
 OpenMarch is written under the [GPL-3.0 license](LICENSE). All code written for this project will forever and always
