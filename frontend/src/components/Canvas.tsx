@@ -284,7 +284,7 @@ function Canvas() {
             // console.log("Rendering canvas - pages");
             renderMarchers();
         }
-    }, [canvas, marchers, marcherPages, selectedPage, isLoading, renderMarchers]);
+    }, [canvas, marchers, pages, marcherPages, selectedPage, isLoading, renderMarchers]);
 
     // Change the active object when the selected marcher changes
     useEffect(() => {
