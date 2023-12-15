@@ -1,0 +1,14 @@
+{
+    "scripts": {
+        "start-electron": "cd electron && npm start",
+        "start-react": "cd frontend && npm start --open false",
+        "start-rails": "cd backend && rails server",
+        "start": "concurrently \"npm run start-rails\" \"BROWSER=none npm run start-react\" \"wait-on http://localhost:3000 && npm run start-electron\"",
+        "browser": "concurrently \"npm run start-rails\" \"npm run start-react\"",
+        "batch-install": "npm install && cd electron && npm install && cd ../frontend && npm install && cd ../backend && bundle install"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "wait-on": "^7.2.0"
+    }
+}
