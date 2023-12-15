@@ -66,7 +66,7 @@ Currently, we ("I") work on this project as often as we ("I") can between work a
 vision of simple, fast, and free drill designing software for band programs and designers across the country.
 
 ### Onboarding
-Look at the wiki - [Onbaording for Developers](https://github.com/AlexDumo/OpenMarch/wiki/Onboarding-for-Developers)
+Look at the [wiki](https://github.com/AlexDumo/OpenMarch/wiki) and [Onbaording for Developers](https://github.com/AlexDumo/OpenMarch/wiki/Onboarding-for-Developers)
 
 ## OpenMarch for users and drill designers 
 OpenMarch does not have any releases or production demos available.
