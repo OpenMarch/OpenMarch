@@ -1,7 +1,6 @@
 # OpenMarch
 [**OpenMarch**](https://www.openmarch.com/) is an open source drill writing software built on web app frameworks.
-Eventually, the hope is for OpenMarch to run in something like [**Electron.js**](https://www.electronjs.org/)
-so that it can be a cross-platform desktop app.
+OpenMarch is an open source drill writing software built on web app frameworks running in Electron.js so that it can be a cross-platform desktop app.
 
 
 ## What can **OpenMarch** do?
