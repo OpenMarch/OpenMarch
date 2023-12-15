@@ -1,5 +1,5 @@
 # OpenMarch
-[**OpenMarch**](https://www.openmarch.com/) is an open source drill writing software built on web app frameworks running in Electron.js so that it can be a cross-platform desktop app.
+[**OpenMarch**](https://www.openmarch.com/) is an open source drill writing software built on web app frameworks. Eventually it will be a cross platform desktop app.
 
 ## What can **OpenMarch** do?
 See [openmarch.com](https://www.openmarch.com/) for current status and a video example
@@ -49,6 +49,7 @@ with live video feed jumbotron props, but who really needs that?
  Main packages
 - [**React**](https://react.dev/) - active state response and all things frontend
 - [**Ruby on Rails**](https://rubyonrails.org/) - simple backend storage of marchers, pages, and coordinates
+- [**Electron Forge**](https://www.electronforge.io/) - container that react app runs in for it to be a desktop app.
 
 Supporting packages
 - [**Bootstrap**](https://getbootstrap.com/) - bootstrap
