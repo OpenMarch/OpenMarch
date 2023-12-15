@@ -3,9 +3,10 @@
         "start-electron": "cd electron && npm start",
         "start-react": "cd frontend && npm start --open false",
         "start-rails": "cd backend && rails server",
+        "init-rails": "cd backend && bundle install && rails db:create && rails db:migrate",
         "start": "concurrently \"npm run start-rails\" \"BROWSER=none npm run start-react\" \"wait-on http://localhost:3000 && npm run start-electron\"",
         "browser": "concurrently \"npm run start-rails\" \"npm run start-react\"",
-        "batch-install": "npm install && cd electron && npm install && cd ../frontend && npm install && cd ../backend && bundle install"
+        "init-openmarch": "npm install && cd electron && npm install && cd ../frontend && npm install && cd.. && npm run init-rails"
     },
     "devDependencies": {
         "concurrently": "^8.2.2",
