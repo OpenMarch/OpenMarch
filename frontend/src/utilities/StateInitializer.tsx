@@ -22,7 +22,7 @@ function StateInitializer() {
         fetchMarcherPages().finally(() => {
             setMarcherPagesAreLoading(false)
         });
-    }, [fetchMarcherPages, setMarcherPagesAreLoading]);
+    }, [fetchMarcherPages, setMarcherPagesAreLoading, pages]);
 
     useEffect(() => {
         fetchPages().finally(() => {

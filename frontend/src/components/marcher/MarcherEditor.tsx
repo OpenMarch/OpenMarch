@@ -75,7 +75,7 @@ function MarcherEditor() {
                 <span>{selectedMarcher.drill_number}</span>
             </h3>
             <h4>Coordinates</h4>
-            {!rCoords ? <p>Error loading coordinates</p> :
+            {!rCoords ? <p style={{ color: "white" }}>Error loading coordinates</p> :
                 <form className="coords-editor edit-group" id={coordsFormId} onSubmit={handleCoordsSubmit}>
                     <label htmlFor={xInputId}>X</label>
                     <div className="input-group">

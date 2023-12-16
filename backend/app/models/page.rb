@@ -13,10 +13,16 @@ class Page < ApplicationRecord
   private
     def create_marcher_pages
       Marcher.all.each do |marcher|
-        # TODO make this actually put the values of the previous page in the new page
-        # Set x and y values based on the previous MarcherPage or default values
-        x_prev = 25
-        y_prev = 25
+        # Find the previous MarcherPage for this marcher
+        previous_marcher_page = MarcherPage.joins(:page)
+        .where(marcher: marcher)
+        .where('"pages"."order" < ?', self.order)
+        .order('"pages"."order" DESC')
+        .first
+
+        # Use the x and y values from the previous MarcherPage, or default values if it doesn't exist
+        x_prev = previous_marcher_page ? previous_marcher_page.x : 25
+        y_prev = previous_marcher_page ? previous_marcher_page.y : 25
 
         MarcherPage.create(marcher: marcher, page: self, x: x_prev, y: y_prev)
       end
