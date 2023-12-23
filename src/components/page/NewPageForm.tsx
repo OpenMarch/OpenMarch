@@ -45,7 +45,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line
     }, []);
 
     const resetForm = () => {
@@ -77,7 +77,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
                     console.error(`Error creating page ${newPageName} (${counts} counts):`, error);
                 }
                 newPageName = getNextPageName(newPageName, isSubset) || "Error";
-            };
+            }
             setAlertMessages(newAlertMessages);
             resetForm();
             fetchPages();
@@ -122,7 +122,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
         }
 
         return "Create " + suffix;
-    };
+    }
 
     const getNewPageName = useCallback(() => {
         if (pages.length === 0) return "1";
@@ -130,7 +130,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
         return getNextPageName(lastPage.name, isSubset);
     }, [pages, isSubset]);
 
-    function getNextPageName(pageName: string, isSubsetArg: boolean = false) {
+    function getNextPageName(pageName: string, isSubsetArg = false) {
         if (pageName.length < 1) {
             console.error("Invalid page name: length < 1");
             return;
@@ -157,7 +157,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
             console.error("Invalid page name: " + pageName);
             return;
         }
-    };
+    }
 
     useEffect(() => {
         const newPageNumber = getNewPageName()?.toString() || "invalid";

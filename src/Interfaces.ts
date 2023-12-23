@@ -10,7 +10,7 @@ export interface Page {
     order: number;
     tableName: InterfaceConstType["PageTableName"];
     prefix: InterfaceConstType["PagePrefix"];
-};
+}
 
 /**
  * An interface to use only for creating a page to the backend.
@@ -18,7 +18,7 @@ export interface Page {
 export interface NewPage {
     name: string;
     counts: number;
-};
+}
 
 export interface Marcher {
     id: number;
@@ -28,9 +28,9 @@ export interface Marcher {
     drill_number: string;
     drill_prefix: string;
     drill_order: number;
-    tableName: InterfaceConstType["MarcherTableName"];
-    prefix: InterfaceConstType["MarcherPrefix"];
-};
+    tableName?: InterfaceConstType["MarcherTableName"];
+    prefix?: InterfaceConstType["MarcherPrefix"];
+}
 
 /**
  * An interface to use only for creating a marcher to the backend.
@@ -40,7 +40,7 @@ export interface NewMarcher {
     instrument: string;
     drill_prefix: string;
     drill_order: number;
-};
+}
 
 export interface MarcherPage {
     id: number;
@@ -98,7 +98,7 @@ export interface ReadableCoords {
 }
 
 /**
- * Descripes the canvas locations of football field checkpoints.
+ * Describes the canvas locations of football field checkpoints.
  */
 export interface fieldProperties {
     frontSideline: number;

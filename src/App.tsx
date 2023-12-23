@@ -19,7 +19,7 @@ function App() {
             <Topbar />
             <div className="secondary-container">
               <Sidebar />
-              <Canvas />
+              {/* <Canvas /> */}
               {/* <PageList /> */}
             </div>
           </div>

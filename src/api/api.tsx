@@ -1,19 +1,12 @@
 import axios from 'axios';
 import { Marcher, NewMarcher, NewPage, Page } from '../Interfaces';
 import { Constants } from '../Constants';
+// import { ipcRenderer } from 'electron';
 
 const m_table = Constants.MarcherTableName;
 const p_table = Constants.PageTableName;
 
 const API_URL = 'http://localhost:3001/api/v1';
-
-/* ====================== Constants ====================== */
-// These will hopefully be replaced in the actual database soon.
-export async function getSections() {
-  return [
-    "Trumpet"
-  ]
-}
 
 /* ====================== Page ====================== */
 
@@ -50,7 +43,7 @@ export async function createPage(page: Page | NewPage) {
 export async function updatePageCounts(id: number, counts: number) {
   const response = await axios.patch(API_URL + `/pages/${id}`, { counts });
   return response.data;
-};
+}
 
 /* ====================== Marcher ====================== */
 
@@ -61,6 +54,10 @@ export async function getMarchers() {
   const response = await axios.get(API_URL + '/marchers');
   return response.data;
 }
+// export async function getMarchers() {
+//   const response = await ipcRenderer.invoke('getMarchers');
+//   return response;
+// }
 
 
 /**
@@ -75,7 +72,7 @@ export async function getMarchers() {
 export async function updateMarcherDrillNumber(id: number, drill_prefix: string, drill_order: number) {
   const response = await axios.patch(API_URL + `/marchers/${id}`, { drill_prefix, drill_order });
   return response.data;
-};
+}
 
 /**
  * Updates the instrument/section for a given marcher.
@@ -157,7 +154,7 @@ export async function getMarcherPage(marcher_id: number, page_id: number) {
  * @returns A list of all the marcherPages or those for either a given marcher or page.
  */
 export async function getMarcherPages(id_for_html: string | void) {
-  var arg_string = '';
+  let arg_string = '';
 
   if (id_for_html) {
     // Trim the "marcher_" or "page_" prefix off the html id

@@ -70,7 +70,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
                     newAlertMessages.unshift(`Error creating marcher ${drillPrefix + newDrillOrder}`);
                     console.error(`Error creating marcher ${drillPrefix + newDrillOrder}:`, error);
                 }
-            };
+            }
             setAlertMessages(newAlertMessages);
             resetForm();
             fetchMarchers();
@@ -176,9 +176,8 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
             <Row className="mb-3">
                 <Form.Group as={Col} md={12} controlId="sectionForm">
                     <Form.Label>Section</Form.Label>
-                    <Form.Select placeholder="Choose a section" onChange={handleSectionChange}
+                    <Form.Select defaultValue="Choose a section" onChange={handleSectionChange}
                         required isInvalid={!!sectionError} value={section}
-                        defaultValue={undefined}
                     >
                         <option>Choose Section...</option>
                         {Object.values(sections).map((section: any) => {

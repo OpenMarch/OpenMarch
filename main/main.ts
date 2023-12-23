@@ -1,8 +1,22 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const url = require('url');
+import { app, BrowserWindow, ipcMain } from 'electron';
+import path from 'path';
+import url from 'url';
+import { createDatabase } from './database';
 
 let mainWindow: any;
+
+// Create the database if it doesn't exist
+createDatabase();
+
+ipcMain.handle('createMarcher', async (event, marcher) => {
+  console.log('createMarcher', marcher);
+  return "Marcher created TEST"
+});
+
+ipcMain.handle('getMarchers', async (event, ...args) => {
+  console.log('getMarchers');
+  return "Marchers TEST"
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -18,7 +32,7 @@ function createWindow() {
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000' // Development server URL
       : url.format({
-          pathname: path.join(__dirname, '../frontend/build/index.html'),
+          pathname: path.join(__dirname, '../app/build/index.html'),
           protocol: 'file:',
           slashes: true,
         })
