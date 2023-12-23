@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import url from 'url';
+// import { Database } from 'better-sqlite3';
 import { createDatabase } from './database';
 
 let mainWindow: any;

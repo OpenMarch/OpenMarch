@@ -3,10 +3,11 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import * as Interfaces from '../src/Interfaces';
 
+
 /* ============================ INIT ============================ */
 export function connect() {
     return Database(
-        path.join(__dirname, '../', 'database/', 'database.db'),
+        path.resolve(__dirname, '../../','main/database/', 'database.db'),
         { verbose: console.log, fileMustExist: true },
     );
 }

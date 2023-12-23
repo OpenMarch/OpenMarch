@@ -69,7 +69,10 @@ export const buildField = (fieldWidth: number, fieldHeight: number) => {
             ...numberProps
         }));
         const awayNumber = fieldArray[fieldArray.length - 1];
-        fieldArray[fieldArray.length - 1].top = awayNumber!.top! - awayNumber!.height!;
+        if (awayNumber.top && awayNumber.height)
+            fieldArray[fieldArray.length - 1].top = awayNumber.top - awayNumber.height;
+        else
+            console.error("awayNumber does not have top or height properties - buildField: CanvasUtils.tsx");
     }
 
     // Half lines and endzones
@@ -134,7 +137,7 @@ export function canvasMarcherToDotCoords(fabricGroup: fabric.Group) {
     console.error("Marcher dot or fabricGroup does not have left or top properties - canvasMarcherToDotCoords: CanvasUtils.tsx");
 
     return null;
-};
+}
 
 /**
  * Updates the coordinates of a CanvasMarcher object.
@@ -169,9 +172,3 @@ export function setCanvasMarcherCoordsFromDot(marcher: CanvasMarcher, x: number,
     return null;
 
 }
-
-export { };
-export function setCanvasSize(arg0: string, setCanvasSize: any) {
-    throw new Error("Function not implemented.");
-}
-
