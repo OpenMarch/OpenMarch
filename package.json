@@ -1,92 +1,51 @@
 {
   "name": "OpenMarch",
   "version": "0.0.1",
-  "productName": "OpenMarch",
+  "main": "dist-electron/main/index.js",
+  "description": "Electron Vite React boilerplate.",
+  "author": "Alex Dumouchelle",
+  "license": "GPL-3.0",
   "private": true,
-  "description": "Open source drill writing software",
-  "main": ".vite/build/main.js",
+  "debug": {
+    "env": {
+      "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777/"
+    }
+  },
   "scripts": {
-    "start": "concurrently \"npm run react-start\" \"wait-on http://localhost:3000 && npm run electron-start\"",
-    "electron-start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx .",
-    "react-start": "react-scripts start",
-    "react-build": "react-scripts build",
-    "react-test": "react-scripts test",
-    "react-eject": "react-scripts eject"
-  },
-  "keywords": [],
-  "author": {
-    "name": "Alex Dumouchelle",
-    "email": "58530312+AlexDumo@users.noreply.github.com"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.16.7",
-    "@electron-forge/cli": "^7.2.0",
-    "@electron-forge/maker-deb": "^7.2.0",
-    "@electron-forge/maker-rpm": "^7.2.0",
-    "@electron-forge/maker-squirrel": "^7.2.0",
-    "@electron-forge/maker-zip": "^7.2.0",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
-    "@electron-forge/plugin-vite": "^7.2.0",
-    "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@types/better-sqlite3": "^7.6.8",
-    "@types/fabric": "^5.3.3",
-    "@types/react-modal": "^3.16.3",
-    "@typescript-eslint/eslint-plugin": "^5.0.0",
-    "@typescript-eslint/parser": "^5.0.0",
-    "electron": "28.0.0",
-    "eslint": "^8.0.1",
-    "eslint-plugin-import": "^2.25.0",
-    "ts-node": "^10.0.0",
-    "typescript": "~4.5.4"
+    "dev": "vite",
+    "build": "tsc && vite build && electron-builder",
+    "preview": "vite preview",
+    "pree2e": "vite build --mode=test",
+    "e2e": "playwright test"
   },
   "dependencies": {
-    "@popperjs/core": "^2.11.8",
-    "@testing-library/jest-dom": "^5.16.5",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.37",
-    "@types/react": "^18.2.14",
-    "@types/react-dom": "^18.2.6",
-    "axios": "^1.5.0",
     "better-sqlite3": "^9.2.2",
-    "bootstrap": "^5.3.1",
-    "electron-squirrel-startup": "^1.0.0",
+    "bootstrap": "^5.3.2",
+    "electron-updater": "^6.1.1",
     "fabric": "^5.3.0",
-    "node-sass": "^7.0.3",
+    "react-bootstrap": "^2.9.2",
+    "react-icons": "^4.12.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.37.1",
+    "@types/react": "^18.2.20",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.0.4",
+    "autoprefixer": "^10.4.16",
+    "electron": "^26.0.0",
+    "electron-builder": "^24.6.3",
+    "postcss": "^8.4.31",
     "react": "^18.2.0",
-    "react-bootstrap": "^2.8.0",
     "react-dom": "^18.2.0",
-    "react-icons": "^4.10.1",
-    "react-modal": "^3.16.1",
-    "react-scripts": "5.0.1",
-    "sass": "^1.63.6",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4",
-    "zustand": "^4.4.1"
+    "sass": "^1.69.5",
+    "tailwindcss": "^3.3.3",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.9",
+    "vite-plugin-electron": "^0.15.5",
+    "vite-plugin-electron-renderer": "^0.14.5"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "engines": {
+    "node": "^14.18.0 || >=16.0.0"
   }
 }

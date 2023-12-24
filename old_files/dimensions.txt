@@ -1,2 +1,0 @@
-Football Field Dimensions: 120 x 53 1/3 yds, 1920 x 853 1/3 tenth steps
-A field (in the grid) is 84 steps tall)

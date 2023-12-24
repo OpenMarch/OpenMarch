@@ -1,4 +1,4 @@
-import axios from 'axios';
+// import axios from 'axios';
 import { Marcher, NewMarcher, NewPage, Page } from '../Interfaces';
 import { Constants } from '../Constants';
 // import { ipcRenderer } from 'electron';
@@ -14,22 +14,22 @@ const API_URL = 'http://localhost:3001/api/v1';
  * @returns a list of all pages.
  */
 export async function getPages() {
-  const response = await axios.get(API_URL + '/pages');
-  return response.data;
+  // const response = await axios.get(API_URL + '/pages');
+  // return response.data;
 }
 
 export async function createPage(page: Page | NewPage) {
-  const newPage: NewPage = {
-    name: page.name,
-    counts: page.counts
-  };
-  // console.log("newPage JSOn: " + JSON.stringify(newPage));
-  const response = await axios.post(API_URL + '/pages', JSON.stringify(newPage), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  return response.data;
+  // const newPage: NewPage = {
+  //   name: page.name,
+  //   counts: page.counts
+  // };
+  // // console.log("newPage JSOn: " + JSON.stringify(newPage));
+  // const response = await axios.post(API_URL + '/pages', JSON.stringify(newPage), {
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  // });
+  // return response.data;
 }
 
 /**
@@ -41,8 +41,8 @@ export async function createPage(page: Page | NewPage) {
  * @returns Response data from the server.
  */
 export async function updatePageCounts(id: number, counts: number) {
-  const response = await axios.patch(API_URL + `/pages/${id}`, { counts });
-  return response.data;
+  // const response = await axios.patch(API_URL + `/pages/${id}`, { counts });
+  // return response.data;
 }
 
 /* ====================== Marcher ====================== */
@@ -51,8 +51,8 @@ export async function updatePageCounts(id: number, counts: number) {
  * @returns a list of all marchers
  */
 export async function getMarchers() {
-  const response = await axios.get(API_URL + '/marchers');
-  return response.data;
+  // const response = await axios.get(API_URL + '/marchers');
+  // return response.data;
 }
 // export async function getMarchers() {
 //   const response = await ipcRenderer.invoke('getMarchers');
@@ -70,8 +70,8 @@ export async function getMarchers() {
  * @returns Response data from the server.
  */
 export async function updateMarcherDrillNumber(id: number, drill_prefix: string, drill_order: number) {
-  const response = await axios.patch(API_URL + `/marchers/${id}`, { drill_prefix, drill_order });
-  return response.data;
+  // const response = await axios.patch(API_URL + `/marchers/${id}`, { drill_prefix, drill_order });
+  // return response.data;
 }
 
 /**
@@ -82,8 +82,8 @@ export async function updateMarcherDrillNumber(id: number, drill_prefix: string,
  * @returns response data from the server.
  */
 export async function updateMarcherInstrument(id: number, instrument: string) {
-  const response = await axios.patch(API_URL + `/marchers/${id}`, { instrument });
-  return response.data;
+  // const response = await axios.patch(API_URL + `/marchers/${id}`, { instrument });
+  // return response.data;
 }
 
 /**
@@ -94,13 +94,13 @@ export async function updateMarcherInstrument(id: number, instrument: string) {
  * @returns Response data from the server.
  */
 export async function updateMarcherName(id: number, name: string) {
-  const response = await axios.patch(API_URL + `/marchers/${id}`, { name });
-  return response.data;
+  // const response = await axios.patch(API_URL + `/marchers/${id}`, { name });
+  // return response.data;
 }
 
 export async function updateMarcher(id: number, marcher: NewMarcher | Marcher) {
-  const response = await axios.patch(API_URL + `/marchers/${id}`, marcher);
-  return response.data;
+  // const response = await axios.patch(API_URL + `/marchers/${id}`, marcher);
+  // return response.data;
 }
 
 /**
@@ -112,24 +112,24 @@ export async function updateMarcher(id: number, marcher: NewMarcher | Marcher) {
  * @returns Response data from the server.
  */
 export async function deleteMarcher(id: number) {
-  const response = await axios.delete(API_URL + `/marchers/${id}`);
-  return response.data;
+  // const response = await axios.delete(API_URL + `/marchers/${id}`);
+  // return response.data;
 }
 
 export async function createMarcher(marcher: NewMarcher | Marcher) {
-  const newMarcher: NewMarcher = {
-    name: marcher.name,
-    instrument: marcher.instrument,
-    drill_prefix: marcher.drill_prefix,
-    drill_order: marcher.drill_order
-  };
-  // console.log("newPage JSOn: " + JSON.stringify(newPage));
-  const response = await axios.post(API_URL + '/marchers', JSON.stringify(newMarcher), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  return response.data;
+  // const newMarcher: NewMarcher = {
+  //   name: marcher.name,
+  //   instrument: marcher.instrument,
+  //   drill_prefix: marcher.drill_prefix,
+  //   drill_order: marcher.drill_order
+  // };
+  // // console.log("newPage JSOn: " + JSON.stringify(newPage));
+  // const response = await axios.post(API_URL + '/marchers', JSON.stringify(newMarcher), {
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  // });
+  // return response.data;
 }
 
 /* ====================== MarcherPage ====================== */
@@ -142,8 +142,8 @@ export async function createMarcher(marcher: NewMarcher | Marcher) {
  * @returns {MarcherPage} The marcherPage object for the given marcher_id and page_id.
  */
 export async function getMarcherPage(marcher_id: number, page_id: number) {
-  const response = await axios.get(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`);
-  return response.data;
+  // const response = await axios.get(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`);
+  // return response.data;
 }
 
 /**
@@ -154,19 +154,19 @@ export async function getMarcherPage(marcher_id: number, page_id: number) {
  * @returns A list of all the marcherPages or those for either a given marcher or page.
  */
 export async function getMarcherPages(id_for_html: string | void) {
-  let arg_string = '';
+  // let arg_string = '';
 
-  if (id_for_html) {
-    // Trim the "marcher_" or "page_" prefix off the html id
-    const id = id_for_html.substring(id_for_html.indexOf('_') + 1);
-    if (id_for_html.includes('marcher'))
-      arg_string = `/${m_table}/${id}`;
-    else if (id_for_html.includes('page'))
-      arg_string = `/${p_table}/${id}`;
-  }
+  // if (id_for_html) {
+  //   // Trim the "marcher_" or "page_" prefix off the html id
+  //   const id = id_for_html.substring(id_for_html.indexOf('_') + 1);
+  //   if (id_for_html.includes('marcher'))
+  //     arg_string = `/${m_table}/${id}`;
+  //   else if (id_for_html.includes('page'))
+  //     arg_string = `/${p_table}/${id}`;
+  // }
 
-  const response = await axios.get(API_URL + arg_string + '/marcher_pages');
-  return response.data;
+  // const response = await axios.get(API_URL + arg_string + '/marcher_pages');
+  // return response.data;
 }
 
 /**
@@ -180,12 +180,12 @@ export async function getMarcherPages(id_for_html: string | void) {
  * @returns Response data from the server.
  */
 export async function updateMarcherPage(marcher_id: number, page_id: number, x: number, y: number) {
-  // console.log("JSON: " + JSON.stringify({ x, y }));
-  const response = await axios.patch(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`,
-    JSON.stringify({ x, y }), {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  return response.data;
+  // // console.log("JSON: " + JSON.stringify({ x, y }));
+  // const response = await axios.patch(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`,
+  //   JSON.stringify({ x, y }), {
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  // });
+  // return response.data;
 }
