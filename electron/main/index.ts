@@ -1,7 +1,8 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, ipcRenderer } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import { update } from './update'
+import * as db from '../database/database.services'
 
 // The built directory structure
 //
@@ -13,6 +14,10 @@ import { update } from './update'
 // ├─┬ dist
 // │ └── index.html    > Electron-Renderer
 //
+
+db.createDatabase();
+db.initHandlers();
+
 process.env.DIST_ELECTRON = join(__dirname, '../')
 process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
 process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
@@ -50,8 +55,10 @@ async function createWindow() {
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
       // Consider using contextBridge.exposeInMainWorld
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
-      nodeIntegration: true,
-      contextIsolation: false,
+      // nodeIntegration: true,
+      // contextIsolation: false,
+      nodeIntegration: false, // is default value after Electron v5
+      contextIsolation: true, // protect against prototype pollution
     },
   })
 

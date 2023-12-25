@@ -103,7 +103,7 @@ function MarcherList({
                         <th scope="col">Name</th>
                     </tr>
                 </thead>
-                {!marchersAreLoading &&
+                {(!marchersAreLoading && marchers) &&
                     <tbody>
                         {marchers.map((marcher) => (
                             <tr key={marcher.id}>

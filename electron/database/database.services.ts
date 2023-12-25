@@ -1,42 +1,57 @@
 import { app, ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
-import * as Interfaces from '../src/Interfaces';
+import * as Interfaces from '../../src/Interfaces';
 
-
-/* ============================ INIT ============================ */
-export function connect() {
-    return Database(
-        path.resolve(__dirname, '../../','main/database/', 'database.db'),
-        { verbose: console.log, fileMustExist: true },
-    );
+/* ============================ DATABASE ============================ */
+function connect() {
+    try {
+        return Database(
+            path.resolve(__dirname, '../../','electron/database/', 'database.db'),
+            { verbose: console.log, fileMustExist: true },
+        );
+    } catch (error) {
+        console.error('Failed to connect to database:\
+        PLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
+    }
+    return undefined;
 }
 
 export function createDatabase() {
     const db = connect();
+    console.log(db);
+    console.log('Creating database...');
+    if(!db) return;
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
+    console.log('Database created.');
     db.close();
 }
 
 function createMarcherTable(db: Database.Database) {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS "marchers" (
-            "id"	INTEGER NOT NULL UNIQUE,
-            "id_for_html"	TEXT UNIQUE,
-            "name"	TEXT,
-            "section"	TEXT NOT NULL,
-            "year"	INTEGER,
-            "notes"	TEXT,
-            "drill_prefix"	TEXT NOT NULL,
-            "drill_order"	INTEGER NOT NULL,
-            "drill_number"	TEXT UNIQUE NOT NULL,
-            "created_at"	TEXT NOT NULL,
-            "updated_at"	TEXT NOT NULL,
-            PRIMARY KEY("id" AUTOINCREMENT)
-        );
-    `);
+    console.log('Creating marcher table...');
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS "marchers" (
+                "id"	INTEGER NOT NULL UNIQUE,
+                "id_for_html"	TEXT UNIQUE,
+                "name"	TEXT,
+                "section"	TEXT NOT NULL,
+                "year"	INTEGER,
+                "notes"	TEXT,
+                "drill_prefix"	TEXT NOT NULL,
+                "drill_order"	INTEGER NOT NULL,
+                "drill_number"	TEXT UNIQUE NOT NULL,
+                "created_at"	TEXT NOT NULL,
+                "updated_at"	TEXT NOT NULL,
+                PRIMARY KEY("id" AUTOINCREMENT)
+            );
+        `);
+    } catch (error) {
+        console.error('Failed to create marcher table:', error);
+    }
+    console.log('Marcher table created.');
 }
 
 function createPageTable(db: Database.Database) {
@@ -76,29 +91,32 @@ function createMarcherPageTable(db: Database.Database) {
     `);
 }
 
-export function init() {
-    ipcMain.handle('database', async (event, query, ...params) => {
-        const db = connect();
-        const stmt = db.prepare(query);
-        const result = stmt.all(...params);
-        db.close();
-        return result;
-    });
+// export function init() {
+//     ipcMain.handle('database', async (event, query, ...params) => {
+//         const db = connect();
+//         const stmt = db.prepare(query);
+//         const result = stmt.all(...params);
+//         db.close();
+//         return result;
+//     });
+// }
+
+export function initHandlers() {
+    ipcMain.handle('marcher:getAll', async (event, ...args) => getMarchers());
+    ipcMain.handle('marcher:insert', async (event, ...args) => createMarcher(args[0]));
 }
 
 /* ============================ Marcher ============================ */
 export function getMarchers() {
-    return ipcMain.handle('getMarchers', async (event, ...args) => {
-        const db = connect();
-        const stmt = db.prepare('SELECT * FROM marchers');
-        const result = stmt.all();
-        db.close();
-        return result;
-    });
+    const db = connect();
+    const stmt = db.prepare('SELECT * FROM marchers');
+    const result = stmt.all();
+    db.close();
+    return result;
 }
 
 export function createMarcher(newMarcher: Interfaces.NewMarcher) {
-    return ipcMain.handle('createMarcher', async (event, ...args) => {
+    return () => ipcMain.handle('createMarcher', async (event, ...args) => {
         const marcherToAdd: Interfaces.Marcher = {
             id: 0,
             id_for_html: '',

@@ -104,7 +104,7 @@ function PageList({
                         <th scope="col">Counts</th>
                     </tr>
                 </thead>
-                {!pagesAreLoading &&
+                {(!pagesAreLoading && pages) &&
                     <tbody>
                         {pages.map((page) => (
                             <tr key={page.id}>

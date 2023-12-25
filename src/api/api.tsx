@@ -1,7 +1,7 @@
 // import axios from 'axios';
 import { Marcher, NewMarcher, NewPage, Page } from '../Interfaces';
 import { Constants } from '../Constants';
-// import { ipcRenderer } from 'electron';
+
 
 const m_table = Constants.MarcherTableName;
 const p_table = Constants.PageTableName;
@@ -50,9 +50,12 @@ export async function updatePageCounts(id: number, counts: number) {
 /**
  * @returns a list of all marchers
  */
-export async function getMarchers() {
-  // const response = await axios.get(API_URL + '/marchers');
-  // return response.data;
+export async function getMarchers(): Promise<Marcher[]> {
+  // return
+  const response = await window.electron.getMarchers();
+  console.log(response);
+  // return response;
+  return response;
 }
 // export async function getMarchers() {
 //   const response = await ipcRenderer.invoke('getMarchers');
@@ -117,19 +120,21 @@ export async function deleteMarcher(id: number) {
 }
 
 export async function createMarcher(marcher: NewMarcher | Marcher) {
-  // const newMarcher: NewMarcher = {
-  //   name: marcher.name,
-  //   instrument: marcher.instrument,
-  //   drill_prefix: marcher.drill_prefix,
-  //   drill_order: marcher.drill_order
-  // };
+  const newMarcher: NewMarcher = {
+    name: marcher.name,
+    instrument: marcher.instrument,
+    drill_prefix: marcher.drill_prefix,
+    drill_order: marcher.drill_order
+  };
   // // console.log("newPage JSOn: " + JSON.stringify(newPage));
   // const response = await axios.post(API_URL + '/marchers', JSON.stringify(newMarcher), {
   //   headers: {
   //     'Content-Type': 'application/json',
   //   },
   // });
-  // return response.data;
+  const response = await window.electron.createMarcher(newMarcher);
+  console.log(response);
+  return response;
 }
 
 /* ====================== MarcherPage ====================== */

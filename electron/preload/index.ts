@@ -1,3 +1,9 @@
+import { Marcher, NewMarcher } from "@/Interfaces"
+import { contextBridge, ipcRenderer } from "electron"
+import context from "react-bootstrap/esm/AccordionContext"
+import { lstat } from 'node:fs/promises'
+
+
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {
     if (condition.includes(document.readyState)) {
@@ -90,3 +96,14 @@ window.onmessage = (ev) => {
 }
 
 setTimeout(removeLoading, 4999)
+
+// ----------------------------------------------------------------------
+
+const APP_API = {
+  getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
+  createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher)
+}
+
+contextBridge.exposeInMainWorld('electron', APP_API)
+
+export type ElectronApi = typeof APP_API;
