@@ -103,7 +103,7 @@ function createMarcherPageTable(db: Database.Database) {
 
 export function initHandlers() {
     ipcMain.handle('marcher:getAll', async (event, ...args) => getMarchers());
-    ipcMain.handle('marcher:insert', async (event, ...args) => createMarcher(args[0]));
+    ipcMain.handle('marcher:insert', async (event, ...args) => createMarcher(args));
 }
 
 /* ============================ Marcher ============================ */
@@ -115,44 +115,44 @@ export function getMarchers() {
     return result;
 }
 
-export function createMarcher(newMarcher: Interfaces.NewMarcher) {
-    return () => ipcMain.handle('createMarcher', async (event, ...args) => {
-        const marcherToAdd: Interfaces.Marcher = {
-            id: 0,
-            id_for_html: '',
-            name: newMarcher.name,
-            instrument: newMarcher.instrument,
-            drill_number: newMarcher.drill_prefix + newMarcher.drill_order,
-            drill_prefix: newMarcher.drill_prefix,
-            drill_order: newMarcher.drill_order
-        };
-        const created_at = new Date().toISOString();
-        const db = connect();
-        const stmt = db.prepare(`
-            INSERT INTO marchers (
-                name,
-                instrument,
-                drill_prefix,
-                drill_order,
-                drill_number,
-                created_at,
-                updated_at,
-            ) VALUES (
-                @name,
-                @instrument,
-                @drill_prefix,
-                @drill_order,
-                @drill_number,
-                @created_at,
-                @updated_at
-            )
-        `);
-        const result = stmt.run({
-            marcherToAdd,
+export function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
+    const newMarcher = newMarchers[0];
+    const marcherToAdd: Interfaces.Marcher = {
+        id: 0, // Not used, needed for interface
+        id_for_html: '', // Not used, needed for interface
+        name: newMarcher.name || '',
+        section: newMarcher.section,
+        drill_number: newMarcher.drill_prefix + newMarcher.drill_order,
+        drill_prefix: newMarcher.drill_prefix,
+        drill_order: newMarcher.drill_order
+    };
+    console.log(marcherToAdd);
+    const created_at = new Date().toISOString();
+    const db = connect();
+    const stmt = db.prepare(`
+        INSERT INTO marchers (
+            name,
+            section,
+            drill_prefix,
+            drill_order,
+            drill_number,
             created_at,
-            updated_at: created_at});
-        db.close();
-        return result;
-    });
+            updated_at
+        ) VALUES (
+            @name,
+            @section,
+            @drill_prefix,
+            @drill_order,
+            @drill_number,
+            @created_at,
+            @updated_at
+        )
+    `);
+    const result = stmt.run({
+        ...marcherToAdd,
+        created_at,
+        updated_at: created_at});
+    db.close();
+    return result;
 }
 
