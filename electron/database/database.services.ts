@@ -1,6 +1,7 @@
 import { app, ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { Constants } from '../../src/Constants';
 import * as Interfaces from '../../src/Interfaces';
 
 /* ============================ DATABASE ============================ */
@@ -11,9 +12,8 @@ function connect() {
             { verbose: console.log },
         );
     } catch (error) {
-        console.error('Failed to connect to database:\
+        throw new Error('Failed to connect to database:\
         PLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
-        process.exit(1);
     }
 }
 
@@ -58,7 +58,7 @@ function createPageTable(db: Database.Database) {
     db.exec(`
         CREATE TABLE IF NOT EXISTS "pages" (
             "id"	INTEGER NOT NULL UNIQUE,
-            "id_for_html"	TEXT NOT NULL UNIQUE,
+            "id_for_html"	TEXT UNIQUE,
             "name"	TEXT NOT NULL UNIQUE,
             "notes"	TEXT,
             "order"	INTEGER NOT NULL UNIQUE,
@@ -76,13 +76,13 @@ function createMarcherPageTable(db: Database.Database) {
     db.exec(`
         CREATE TABLE IF NOT EXISTS "marcher_pages" (
             "id" INTEGER NOT NULL UNIQUE,
+            "id_for_html" TEXT UNIQUE,
             "marcher_id" INTEGER NOT NULL,
             "page_id" INTEGER NOT NULL,
             "x" REAL,
             "y" REAL,
             "created_at" TEXT NOT NULL,
             "updated_at" TEXT NOT NULL,
-            "id_for_html" TEXT NOT NULL,
             "notes" TEXT,
             PRIMARY KEY("id" AUTOINCREMENT)
         );
@@ -102,16 +102,22 @@ function createMarcherPageTable(db: Database.Database) {
 // }
 
 export function initHandlers() {
+    // Marcher
     ipcMain.handle('marcher:getAll', async (event, ...args) => getMarchers());
     ipcMain.handle('marcher:insert', async (event, ...args) => createMarcher(args));
     ipcMain.handle('marcher:update', async (event, args) => updateMarcher(args));
     ipcMain.handle('marcher:delete', async (event, marcher_id) => deleteMarcher(marcher_id));
+
+    // Page
+    ipcMain.handle('page:getAll', async (event, ...args) => getPages());
+    ipcMain.handle('page:insert', async (event, ...args) => createPage(args));
+    ipcMain.handle('page:update', async (event, args) => updatePage(args));
 }
 
 /* ============================ Marcher ============================ */
 async function getMarchers() {
     const db = connect();
-    const stmt = db.prepare('SELECT * FROM marchers');
+    const stmt = db.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
     const result = stmt.all();
     db.close();
     return result;
@@ -128,11 +134,9 @@ async function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
         drill_prefix: newMarcher.drill_prefix,
         drill_order: newMarcher.drill_order
     };
-    console.log(marcherToAdd);
-    const created_at = new Date().toISOString();
     const db = connect();
     const insertStmt = db.prepare(`
-        INSERT INTO marchers (
+        INSERT INTO ${Constants.MarcherTableName} (
             name,
             section,
             drill_prefix,
@@ -150,6 +154,7 @@ async function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
             @updated_at
         )
     `);
+    const created_at = new Date().toISOString();
     const insertResult = insertStmt.run({
         ...marcherToAdd,
         created_at,
@@ -161,12 +166,12 @@ async function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
 
     // Update the id_for_html field
     const updateStmt = db.prepare(`
-        UPDATE marchers
-        SET id_for_html = 'marcher_' || @id
+        UPDATE ${Constants.MarcherTableName}
+        SET id_for_html = @id_for_html
         WHERE id = @id
     `);
     const updateResult = updateStmt.run({
-        id_for_html: 'marcher_' + id,
+        id_for_html: Constants.MarcherPrefix + "_" + id,
         id
     });
     db.close();
@@ -195,7 +200,6 @@ async function updateMarcher(args: Partial<Interfaces.Marcher> & {id: number}) {
     // Check if the SET clause is empty
     if (setClause.length === 0) {
         throw new Error('No valid properties to update');
-        return;
     }
 
     if(args.drill_prefix || args.drill_order) {
@@ -205,7 +209,7 @@ async function updateMarcher(args: Partial<Interfaces.Marcher> & {id: number}) {
     console.log("setClause:", setClause);
 
     const stmt = db.prepare(`
-        UPDATE marchers
+        UPDATE ${Constants.MarcherTableName}
         SET ${setClause}, updated_at = @new_updated_at
         WHERE id = @id
     `);
@@ -220,10 +224,112 @@ async function updateMarcher(args: Partial<Interfaces.Marcher> & {id: number}) {
 async function deleteMarcher(marcher_id: number) {
     const db = connect();
     const stmt = db.prepare(`
-        DELETE FROM marchers
+        DELETE FROM ${Constants.MarcherTableName}
         WHERE id = @marcher_id
     `);
     const result = stmt.run({ marcher_id });
     db.close();
     return result;
 }
+
+/* ============================ Page ============================ */
+async function getPages() {
+    const db = connect();
+    const stmt = db.prepare(`SELECT * FROM ${Constants.PageTableName}`);
+    const result = stmt.all();
+    db.close();
+    return result;
+}
+
+async function createPage(newPages: Interfaces.NewPage[]) {
+    const newPage = newPages[0];
+    const db = connect();
+
+    // Get the max order
+    const stmt = db.prepare(`SELECT MAX("order") as maxOrder FROM ${Constants.PageTableName}`);
+    const result: any = stmt.get();
+    const newOrder = result.maxOrder + 1;
+    const pageToAdd: Interfaces.Page = {
+        id: 0, // Not used, needed for interface
+        id_for_html: '', // Not used, needed for interface
+        name: newPage.name || '',
+        notes: newPage.notes || '',
+        order: newOrder,
+        tempo: newPage.tempo,
+        time_signature: newPage.time_signature,
+        counts: newPage.counts
+    };
+    const insertStmt = db.prepare(`
+        INSERT INTO ${Constants.PageTableName} (
+            name,
+            notes,
+            "order",
+            tempo,
+            time_signature,
+            counts,
+            created_at,
+            updated_at
+        ) VALUES (
+            @name,
+            @notes,
+            @order,
+            @tempo,
+            @time_signature,
+            @counts,
+            @created_at,
+            @updated_at
+        )
+    `);
+    const created_at = new Date().toISOString();
+    const insertResult = insertStmt.run({
+        ...pageToAdd,
+        created_at,
+        updated_at: created_at
+    });
+    // Get the id of the inserted row
+    const id = insertResult.lastInsertRowid;
+    // Update the id_for_html field
+    const updateStmt = db.prepare(`
+        UPDATE ${Constants.PageTableName}
+        SET id_for_html = @id_for_html
+        WHERE id = @id
+    `);
+    const updateResult = updateStmt.run({
+        id_for_html: Constants.PagePrefix + '_' + id,
+        id
+    });
+}
+
+async function updatePage(args: Partial<Interfaces.Page> & {id: number}) {
+    const db = connect();
+
+    // List of properties to exclude
+    const excludedProperties = ['id', 'id_for_html', 'order', 'created_at', 'updated_at'];
+
+    // Generate the SET clause of the SQL query
+    let setClause = Object.keys(args)
+        .filter(key => !excludedProperties.includes(key))
+        .map(key => `${key} = @${key}`)
+        .join(', ');
+
+    // Check if the SET clause is empty
+    if (setClause.length === 0) {
+        throw new Error('No valid properties to update');
+    }
+
+    console.log("setClause:", setClause);
+
+    const stmt = db.prepare(`
+        UPDATE ${Constants.PageTableName}
+        SET ${setClause}, updated_at = @new_updated_at
+        WHERE id = @id
+    `);
+
+    console.log("stmt:", stmt);
+
+    const result = stmt.run({ ...args,  new_updated_at: new Date().toISOString()});
+    db.close();
+    return result;
+}
+
+

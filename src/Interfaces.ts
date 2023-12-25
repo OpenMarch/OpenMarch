@@ -8,16 +8,22 @@ export interface Page {
     name: string;
     counts: number;
     order: number;
-    tableName: InterfaceConstType["PageTableName"];
-    prefix: InterfaceConstType["PagePrefix"];
+    tempo?: number; // TODO implement
+    time_signature?: string; // TODO implement
+    notes?: string;
+    tableName?: InterfaceConstType["PageTableName"];
+    prefix?: InterfaceConstType["PagePrefix"];
 }
 
 /**
- * An interface to use only for creating a page to the backend.
+ * An interface that defines the editable fields of a page.
  */
 export interface NewPage {
     name: string;
     counts: number;
+    tempo: number;
+    time_signature: string;
+    notes?: string;
 }
 
 export interface Marcher {
@@ -28,6 +34,8 @@ export interface Marcher {
     drill_number: string;
     drill_prefix: string;
     drill_order: number;
+    notes?: string;
+    year?: number;
     tableName?: InterfaceConstType["MarcherTableName"];
     prefix?: InterfaceConstType["MarcherPrefix"];
 }
@@ -40,6 +48,8 @@ export interface NewMarcher {
     section: string;
     drill_prefix: string;
     drill_order: number;
+    notes?: string;
+    year?: number;
 }
 
 export interface MarcherPage {

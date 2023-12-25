@@ -14,22 +14,19 @@ const API_URL = 'http://localhost:3001/api/v1';
  * @returns a list of all pages.
  */
 export async function getPages() {
-  // const response = await axios.get(API_URL + '/pages');
-  // return response.data;
+  const response = await window.electron.getPages();
+  return response;
 }
 
 export async function createPage(page: Page | NewPage) {
-  // const newPage: NewPage = {
-  //   name: page.name,
-  //   counts: page.counts
-  // };
-  // // console.log("newPage JSOn: " + JSON.stringify(newPage));
-  // const response = await axios.post(API_URL + '/pages', JSON.stringify(newPage), {
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  // });
-  // return response.data;
+  const newPage: NewPage = {
+    name: page.name,
+    counts: page.counts,
+    tempo: 120,
+    time_signature: "4/4"
+  };
+  const response = await window.electron.createPage(newPage);
+  return response;
 }
 
 /**
@@ -41,8 +38,8 @@ export async function createPage(page: Page | NewPage) {
  * @returns Response data from the server.
  */
 export async function updatePageCounts(id: number, counts: number) {
-  // const response = await axios.patch(API_URL + `/pages/${id}`, { counts });
-  // return response.data;
+  const response = await window.electron.updatePage({ id: id, counts: counts });
+  return response;
 }
 
 /* ====================== Marcher ====================== */
@@ -51,7 +48,6 @@ export async function updatePageCounts(id: number, counts: number) {
  * @returns a list of all marchers
  */
 export async function getMarchers(): Promise<Marcher[]> {
-  // return
   const response = await window.electron.getMarchers();
   return response;
 }

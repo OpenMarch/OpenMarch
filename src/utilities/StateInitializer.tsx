@@ -9,8 +9,8 @@ import { useSelectedPage } from "../context/SelectedPageContext";
 function StateInitializer() {
     const { fetchMarchers, setMarchersAreLoading } = useMarcherStore();
     // const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
-    // const { pages, fetchPages, setPagesAreLoading } = usePageStore();
-    // const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { pages, fetchPages, setPagesAreLoading } = usePageStore();
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
 
     useEffect(() => {
         fetchMarchers().finally(() => {
@@ -24,17 +24,17 @@ function StateInitializer() {
     //     });
     // }, [fetchMarcherPages, setMarcherPagesAreLoading, pages]);
 
-    // useEffect(() => {
-    //     fetchPages().finally(() => {
-    //         setPagesAreLoading(false);
-    //     });
-    // }, [fetchPages, setPagesAreLoading]);
+    useEffect(() => {
+        fetchPages().finally(() => {
+            setPagesAreLoading(false);
+        });
+    }, [fetchPages, setPagesAreLoading]);
 
-    // // Select the first page if none are selected. Intended to activate at the iniital loading of a webpage
-    // useEffect(() => {
-    //     if (selectedPage == null && pages.length > 0)
-    //         setSelectedPage(pages[0]);
-    // }, [pages, selectedPage, setSelectedPage]);
+    // Select the first page if none are selected. Intended to activate at the iniital loading of a webpage
+    useEffect(() => {
+        if (selectedPage == null && pages.length > 0)
+            setSelectedPage(pages[0]);
+    }, [pages, selectedPage, setSelectedPage]);
 
     return <></>;
 }

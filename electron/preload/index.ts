@@ -1,4 +1,4 @@
-import { Marcher, NewMarcher } from "@/Interfaces"
+import { Marcher, NewMarcher, NewPage } from "@/Interfaces"
 import { contextBridge, ipcRenderer } from "electron"
 import context from "react-bootstrap/esm/AccordionContext"
 import { lstat } from 'node:fs/promises'
@@ -100,10 +100,17 @@ setTimeout(removeLoading, 4999)
 // ----------------------------------------------------------------------
 
 const APP_API = {
+  // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
   createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher),
   updateMarcher: (args: Partial<Marcher> & {id: number}) => ipcRenderer.invoke('marcher:update', args),
-  deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id)
+  deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
+
+  // Page
+  getPages: () => ipcRenderer.invoke('page:getAll'),
+  createPage: (page: NewPage) => ipcRenderer.invoke('page:insert', page),
+  updatePage: (args: Partial<Page> & {id: number}) => ipcRenderer.invoke('page:update', args),
+  // deletePage: (id: number) => ipcRenderer.invoke('page:delete', id)
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)
