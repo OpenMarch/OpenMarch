@@ -58,7 +58,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
 
                 const newMarcher: NewMarcher = {
                     name: "",
-                    instrument: section,
+                    section: section,
                     drill_prefix: drillPrefix,
                     drill_order: newDrillOrder,
                 }
@@ -80,10 +80,10 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
     const handleSectionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSection(defaultSection);
         const selectedSection = Object.values(sections).find(
-            (section: any) => section.instrument === event.target.value
+            (section: any) => section.name === event.target.value
         );
         if (selectedSection) {
-            setSection(selectedSection.instrument);
+            setSection(selectedSection.name);
             setDrillPrefix(selectedSection.prefix);
             setSectionError("");
         } else {
@@ -181,7 +181,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
                     >
                         <option>Choose Section...</option>
                         {Object.values(sections).map((section: any) => {
-                            return <option key={section.instrument}>{section.instrument}</option>
+                            return <option key={section.name}>{section.name}</option>
                         })}
                     </Form.Select>
                     <Form.Control.Feedback type="invalid">{sectionError}</Form.Control.Feedback>

@@ -81,11 +81,11 @@ export async function updateMarcherDrillNumber(id: number, drill_prefix: string,
  * Updates the instrument/section for a given marcher.
  *
  * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
- * @param instrument - The new instrument/section for the marcher to be.
+ * @param section - The new instrument/section for the marcher to be.
  * @returns response data from the server.
  */
-export async function updateMarcherInstrument(id: number, instrument: string) {
-  // const response = await axios.patch(API_URL + `/marchers/${id}`, { instrument });
+export async function updateMarcherSection(id: number, section: string) {
+  // const response = await axios.patch(API_URL + `/marchers/${id}`, { section });
   // return response.data;
 }
 
@@ -122,7 +122,7 @@ export async function deleteMarcher(id: number) {
 export async function createMarcher(marcher: NewMarcher | Marcher) {
   const newMarcher: NewMarcher = {
     name: marcher.name,
-    instrument: marcher.instrument,
+    section: marcher.section,
     drill_prefix: marcher.drill_prefix,
     drill_order: marcher.drill_order
   };

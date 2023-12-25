@@ -3,7 +3,7 @@ import { sections } from "../../Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
-import { updateMarcherInstrument, updateMarcherName } from "../../api/api";
+import { updateMarcherSection, updateMarcherName } from "../../api/api";
 import { ListFormProps } from "../../Interfaces";
 
 function MarcherList({
@@ -37,8 +37,8 @@ function MarcherList({
     async function updateMarcher(marcherId: number, changes: any) {
         for (const [key, value] of Object.entries(changes)) {
             try {
-                if (key === "instrument")
-                    await updateMarcherInstrument(marcherId, value as string);
+                if (key === "section")
+                    await updateMarcherSection(marcherId, value as string);
                 else if (key === "name")
                     await updateMarcherName(marcherId, value as string);
             } catch (error) {
@@ -99,7 +99,7 @@ function MarcherList({
                 <thead className="thead-dark">
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">Instrument</th>
+                        <th scope="col">section</th>
                         <th scope="col">Name</th>
                     </tr>
                 </thead>
@@ -110,18 +110,18 @@ function MarcherList({
                                 <th scope="row">{marcher.drill_prefix + marcher.drill_order}</th>
                                 <td>
                                     {isEditing ?
-                                        <select className="form-select" defaultValue={marcher.instrument}
+                                        <select className="form-select" defaultValue={marcher.section}
                                             aria-label="Section" disabled={!isEditing}
                                             key={marcher.id_for_html}
-                                            onChange={(event) => handleChange(event, "instrument", marcher.id)}
+                                            onChange={(event) => handleChange(event, "section", marcher.id)}
                                         >
                                             <option value=""></option>
                                             {Object.values(sections).map((section: any) => {
-                                                return <option key={section.instrument}>{section.instrument}</option>
+                                                return <option key={section.name}>{section.name}</option>
                                             })}
                                         </select>
                                         :
-                                        marcher.instrument
+                                        marcher.section
                                     }
                                 </td>
                                 <td>

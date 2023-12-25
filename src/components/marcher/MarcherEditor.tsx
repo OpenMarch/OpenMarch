@@ -125,8 +125,8 @@ function MarcherEditor() {
                             : selectedMarcher.name} disabled={true} id="name-input" />
                 </div>
                 <div className="input-group">
-                    <label htmlFor="instrument-input">Section</label>
-                    <input type="text" value={selectedMarcher.instrument} disabled={true} id="instrument-input" />
+                    <label htmlFor="section-input">Section</label>
+                    <input type="text" value={selectedMarcher.section} disabled={true} id="section-input" />
                 </div>
                 <div className="input-group">
                     <label htmlFor="drill-number-input">Drill Number</label>

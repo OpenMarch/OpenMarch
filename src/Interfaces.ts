@@ -24,7 +24,7 @@ export interface Marcher {
     id: number;
     id_for_html: string;
     name: string;
-    instrument: string;
+    section: string;
     drill_number: string;
     drill_prefix: string;
     drill_order: number;
@@ -37,7 +37,7 @@ export interface Marcher {
  */
 export interface NewMarcher {
     name: string;
-    instrument: string;
+    section: string;
     drill_prefix: string;
     drill_order: number;
 }
