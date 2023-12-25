@@ -101,7 +101,9 @@ setTimeout(removeLoading, 4999)
 
 const APP_API = {
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
-  createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher)
+  createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher),
+  updateMarcher: (args: Partial<Marcher> & {id: number}) => ipcRenderer.invoke('marcher:update', args),
+  deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id)
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)

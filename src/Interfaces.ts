@@ -33,7 +33,7 @@ export interface Marcher {
 }
 
 /**
- * An interface to use only for creating a marcher to the backend.
+ * An interface that defines the editable fields of a marcher.
  */
 export interface NewMarcher {
     name: string;

@@ -53,17 +53,11 @@ export async function updatePageCounts(id: number, counts: number) {
 export async function getMarchers(): Promise<Marcher[]> {
   // return
   const response = await window.electron.getMarchers();
-  console.log(response);
-  // return response;
   return response;
 }
-// export async function getMarchers() {
-//   const response = await ipcRenderer.invoke('getMarchers');
-//   return response;
-// }
-
 
 /**
+ * TODO: NOT TESTED
  * Updates the drill number for a given marcher.
  * A drill number cannot be updated as one string, "B1" for example. It must be updated as a prefix "B" and order 1.
  *
@@ -73,8 +67,8 @@ export async function getMarchers(): Promise<Marcher[]> {
  * @returns Response data from the server.
  */
 export async function updateMarcherDrillNumber(id: number, drill_prefix: string, drill_order: number) {
-  // const response = await axios.patch(API_URL + `/marchers/${id}`, { drill_prefix, drill_order });
-  // return response.data;
+  const response = await window.electron.updateMarcher({ id: id, drill_prefix: drill_prefix, drill_order: drill_order });
+  return response;
 }
 
 /**
@@ -82,11 +76,11 @@ export async function updateMarcherDrillNumber(id: number, drill_prefix: string,
  *
  * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
  * @param section - The new instrument/section for the marcher to be.
- * @returns response data from the server.
+ * @returns response data.
  */
 export async function updateMarcherSection(id: number, section: string) {
-  // const response = await axios.patch(API_URL + `/marchers/${id}`, { section });
-  // return response.data;
+  const response = await window.electron.updateMarcher({ id: id, section: section });
+  return response;
 }
 
 /**
@@ -94,46 +88,53 @@ export async function updateMarcherSection(id: number, section: string) {
  *
  * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
  * @param name - The new name for the marcher to be.
- * @returns Response data from the server.
+ * @returns Response data.
  */
 export async function updateMarcherName(id: number, name: string) {
-  // const response = await axios.patch(API_URL + `/marchers/${id}`, { name });
-  // return response.data;
-}
-
-export async function updateMarcher(id: number, marcher: NewMarcher | Marcher) {
-  // const response = await axios.patch(API_URL + `/marchers/${id}`, marcher);
-  // return response.data;
+  const response = await window.electron.updateMarcher({ id: id, name: name });
+  return response;
 }
 
 /**
+ * Updates the given marcher with the given newMarcher object.
+ *
+ * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
+ * @param marcher - The newMarcher object for the marcher to be.
+ * @returns Response data.
+ */
+export async function updateMarcher(id: number, marcher: NewMarcher) {
+  const response = await window.electron.updateMarcher({ id: id, ...marcher });
+  return response;
+}
+
+/**
+ * TODO: NOT TESTED
  * Deletes a marcher from the database. Careful!
  * Currently, this will delete all marcherPages associated with the marcher.
  * This cannot be undone.
  *
  * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
- * @returns Response data from the server.
+ * @returns Response data.
  */
 export async function deleteMarcher(id: number) {
-  // const response = await axios.delete(API_URL + `/marchers/${id}`);
-  // return response.data;
+  const response = await window.electron.deleteMarcher(id);
+  return response;
 }
 
-export async function createMarcher(marcher: NewMarcher | Marcher) {
+/**
+ * Creates a new marcher in the database.
+ *
+ * @param marcher - The new marcher object to be created.
+ * @returns Response data.
+ */
+export async function createMarcher(marcher: NewMarcher) {
   const newMarcher: NewMarcher = {
     name: marcher.name,
     section: marcher.section,
     drill_prefix: marcher.drill_prefix,
     drill_order: marcher.drill_order
   };
-  // // console.log("newPage JSOn: " + JSON.stringify(newPage));
-  // const response = await axios.post(API_URL + '/marchers', JSON.stringify(newMarcher), {
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  // });
   const response = await window.electron.createMarcher(newMarcher);
-  console.log(response);
   return response;
 }
 

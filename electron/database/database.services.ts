@@ -8,13 +8,13 @@ function connect() {
     try {
         return Database(
             path.resolve(__dirname, '../../','electron/database/', 'database.db'),
-            { verbose: console.log, fileMustExist: true },
+            { verbose: console.log },
         );
     } catch (error) {
         console.error('Failed to connect to database:\
         PLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
+        process.exit(1);
     }
-    return undefined;
 }
 
 export function createDatabase() {
@@ -104,10 +104,12 @@ function createMarcherPageTable(db: Database.Database) {
 export function initHandlers() {
     ipcMain.handle('marcher:getAll', async (event, ...args) => getMarchers());
     ipcMain.handle('marcher:insert', async (event, ...args) => createMarcher(args));
+    ipcMain.handle('marcher:update', async (event, args) => updateMarcher(args));
+    ipcMain.handle('marcher:delete', async (event, marcher_id) => deleteMarcher(marcher_id));
 }
 
 /* ============================ Marcher ============================ */
-export function getMarchers() {
+async function getMarchers() {
     const db = connect();
     const stmt = db.prepare('SELECT * FROM marchers');
     const result = stmt.all();
@@ -115,7 +117,7 @@ export function getMarchers() {
     return result;
 }
 
-export function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
+async function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
     const newMarcher = newMarchers[0];
     const marcherToAdd: Interfaces.Marcher = {
         id: 0, // Not used, needed for interface
@@ -129,7 +131,7 @@ export function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
     console.log(marcherToAdd);
     const created_at = new Date().toISOString();
     const db = connect();
-    const stmt = db.prepare(`
+    const insertStmt = db.prepare(`
         INSERT INTO marchers (
             name,
             section,
@@ -148,11 +150,80 @@ export function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
             @updated_at
         )
     `);
-    const result = stmt.run({
+    const insertResult = insertStmt.run({
         ...marcherToAdd,
         created_at,
-        updated_at: created_at});
+        updated_at: created_at
+    });
+
+    // Get the id of the inserted row
+    const id = insertResult.lastInsertRowid;
+
+    // Update the id_for_html field
+    const updateStmt = db.prepare(`
+        UPDATE marchers
+        SET id_for_html = 'marcher_' || @id
+        WHERE id = @id
+    `);
+    const updateResult = updateStmt.run({
+        id_for_html: 'marcher_' + id,
+        id
+    });
+    db.close();
+    return updateResult;
+}
+
+/**
+ * Updates a marcher with the given values.
+ *
+ * @param marcher_id: number - The id of the marcher to update
+ * @param args: obj {} - The values to update the marcher with
+ * @returns
+ */
+async function updateMarcher(args: Partial<Interfaces.Marcher> & {id: number}) {
+    const db = connect();
+
+    // List of properties to exclude
+    const excludedProperties = ['id', 'id_for_html', 'drill_number', 'created_at', 'updated_at'];
+
+    // Generate the SET clause of the SQL query
+    let setClause = Object.keys(args)
+        .filter(key => !excludedProperties.includes(key))
+        .map(key => `${key} = @${key}`)
+        .join(', ');
+
+    // Check if the SET clause is empty
+    if (setClause.length === 0) {
+        throw new Error('No valid properties to update');
+        return;
+    }
+
+    if(args.drill_prefix || args.drill_order) {
+        setClause += ', drill_number = @drill_prefix || @drill_order';
+    }
+
+    console.log("setClause:", setClause);
+
+    const stmt = db.prepare(`
+        UPDATE marchers
+        SET ${setClause}, updated_at = @new_updated_at
+        WHERE id = @id
+    `);
+
+    console.log("stmt:", stmt);
+
+    const result = stmt.run({ ...args,  new_updated_at: new Date().toISOString()});
     db.close();
     return result;
 }
 
+async function deleteMarcher(marcher_id: number) {
+    const db = connect();
+    const stmt = db.prepare(`
+        DELETE FROM marchers
+        WHERE id = @marcher_id
+    `);
+    const result = stmt.run({ marcher_id });
+    db.close();
+    return result;
+}
