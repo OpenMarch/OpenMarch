@@ -1,5 +1,5 @@
 // import axios from 'axios';
-import { Marcher, NewMarcher, NewPage, Page } from '../Interfaces';
+import { Marcher, NewMarcher, NewPage, Page, UpdateMarcherPage } from '../Interfaces';
 import { Constants } from '../Constants';
 
 
@@ -144,8 +144,8 @@ export async function createMarcher(marcher: NewMarcher) {
  * @returns {MarcherPage} The marcherPage object for the given marcher_id and page_id.
  */
 export async function getMarcherPage(marcher_id: number, page_id: number) {
-  // const response = await axios.get(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`);
-  // return response.data;
+  const response = await window.electron.getMarcherPage({ marcher_id: marcher_id, page_id: page_id });
+  return response;
 }
 
 /**
@@ -156,19 +156,18 @@ export async function getMarcherPage(marcher_id: number, page_id: number) {
  * @returns A list of all the marcherPages or those for either a given marcher or page.
  */
 export async function getMarcherPages(id_for_html: string | void) {
-  // let arg_string = '';
+  let response = await window.electron.getMarcherPages({});
 
-  // if (id_for_html) {
-  //   // Trim the "marcher_" or "page_" prefix off the html id
-  //   const id = id_for_html.substring(id_for_html.indexOf('_') + 1);
-  //   if (id_for_html.includes('marcher'))
-  //     arg_string = `/${m_table}/${id}`;
-  //   else if (id_for_html.includes('page'))
-  //     arg_string = `/${p_table}/${id}`;
-  // }
+  if (id_for_html) {
+    // Trim the "marcher_" or "page_" prefix off the html id
+    const id = parseInt(id_for_html.substring(id_for_html.indexOf('_') + 1));
+    if (id_for_html.includes(Constants.MarcherPrefix))
+      response = window.electron.getMarcherPages({ marcher_id: id });
+    else if (id_for_html.includes(Constants.PagePrefix))
+      response = window.electron.getMarcherPages({ page_id: id });
+  }
 
-  // const response = await axios.get(API_URL + arg_string + '/marcher_pages');
-  // return response.data;
+  return response;
 }
 
 /**
@@ -182,12 +181,13 @@ export async function getMarcherPages(id_for_html: string | void) {
  * @returns Response data from the server.
  */
 export async function updateMarcherPage(marcher_id: number, page_id: number, x: number, y: number) {
-  // // console.log("JSON: " + JSON.stringify({ x, y }));
-  // const response = await axios.patch(API_URL + `/${m_table}/${marcher_id}/${p_table}/${page_id}/marcher_pages`,
-  //   JSON.stringify({ x, y }), {
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  // });
-  // return response.data;
+  // console.log("JSON: " + JSON.stringify({ x, y }));
+  const updatedMarcherPage: UpdateMarcherPage = {
+    marcher_id: marcher_id,
+    page_id: page_id,
+    x: x,
+    y: y
+  };
+  const response = await window.electron.updateMarcherPage(updatedMarcherPage);
+  return response;
 }

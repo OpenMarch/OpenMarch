@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import { Constants } from '../../src/Constants';
 import * as Interfaces from '../../src/Interfaces';
+import { Update } from 'vite/types/hmrPayload';
 
 /* ============================ DATABASE ============================ */
 function connect() {
@@ -11,7 +12,7 @@ function connect() {
             path.resolve(__dirname, '../../','electron/database/', 'database.db'),
             { verbose: console.log },
         );
-    } catch (error) {
+    } catch (error: any) {
         throw new Error('Failed to connect to database:\
         PLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
     }
@@ -103,28 +104,32 @@ function createMarcherPageTable(db: Database.Database) {
 
 export function initHandlers() {
     // Marcher
-    ipcMain.handle('marcher:getAll', async (event, ...args) => getMarchers());
-    ipcMain.handle('marcher:insert', async (event, ...args) => createMarcher(args));
-    ipcMain.handle('marcher:update', async (event, args) => updateMarcher(args));
-    ipcMain.handle('marcher:delete', async (event, marcher_id) => deleteMarcher(marcher_id));
+    ipcMain.handle('marcher:getAll', async (_, args) => getMarchers());
+    ipcMain.handle('marcher:insert', async (_, args) => createMarcher(args));
+    ipcMain.handle('marcher:update', async (_, args) => updateMarcher(args));
+    ipcMain.handle('marcher:delete', async (_, marcher_id) => deleteMarcher(marcher_id));
 
     // Page
-    ipcMain.handle('page:getAll', async (event, ...args) => getPages());
-    ipcMain.handle('page:insert', async (event, ...args) => createPage(args));
-    ipcMain.handle('page:update', async (event, args) => updatePage(args));
+    ipcMain.handle('page:getAll', async (_, args) => getPages());
+    ipcMain.handle('page:insert', async (_, args) => createPage(args));
+    ipcMain.handle('page:update', async (_, args) => updatePage(args));
+
+    // MarcherPage
+    ipcMain.handle('marcher_page:getAll', async (_, args) => getMarcherPages(args));
+    ipcMain.handle('marcher_page:get', async (_, args) => getMarcherPage(args));
+    ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPage(args));
 }
 
 /* ============================ Marcher ============================ */
-async function getMarchers() {
+async function getMarchers(): Promise<Interfaces.Marcher[]> {
     const db = connect();
     const stmt = db.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
     const result = stmt.all();
     db.close();
-    return result;
+    return result as Interfaces.Marcher[];
 }
 
-async function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
-    const newMarcher = newMarchers[0];
+async function createMarcher(newMarcher: Interfaces.NewMarcher) {
     const marcherToAdd: Interfaces.Marcher = {
         id: 0, // Not used, needed for interface
         id_for_html: '', // Not used, needed for interface
@@ -162,7 +167,7 @@ async function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
     });
 
     // Get the id of the inserted row
-    const id = insertResult.lastInsertRowid;
+    const id = insertResult.lastInsertRowid as number;
 
     // Update the id_for_html field
     const updateStmt = db.prepare(`
@@ -174,6 +179,17 @@ async function createMarcher(newMarchers: Interfaces.NewMarcher[]) {
         id_for_html: Constants.MarcherPrefix + "_" + id,
         id
     });
+
+    /* Add a marcherPage for this marcher for each page */
+    // Get all existing pages
+    const pages = await getPages();
+
+    // For each page, create a new MarcherPage
+    for (const page of pages) {
+        createMarcherPage(db, { marcher_id: id, page_id: page.id, x: 100, y: 100 });
+    }
+
+    console.log("marcherPages:", getMarcherPages({}));
     db.close();
     return updateResult;
 }
@@ -233,16 +249,15 @@ async function deleteMarcher(marcher_id: number) {
 }
 
 /* ============================ Page ============================ */
-async function getPages() {
+async function getPages(): Promise<Interfaces.Page[]> {
     const db = connect();
     const stmt = db.prepare(`SELECT * FROM ${Constants.PageTableName}`);
     const result = stmt.all();
     db.close();
-    return result;
+    return result as Interfaces.Page[];
 }
 
-async function createPage(newPages: Interfaces.NewPage[]) {
-    const newPage = newPages[0];
+async function createPage(newPage: Interfaces.NewPage) {
     const db = connect();
 
     // Get the max order
@@ -287,7 +302,7 @@ async function createPage(newPages: Interfaces.NewPage[]) {
         updated_at: created_at
     });
     // Get the id of the inserted row
-    const id = insertResult.lastInsertRowid;
+    const id = insertResult.lastInsertRowid as number;
     // Update the id_for_html field
     const updateStmt = db.prepare(`
         UPDATE ${Constants.PageTableName}
@@ -298,6 +313,18 @@ async function createPage(newPages: Interfaces.NewPage[]) {
         id_for_html: Constants.PagePrefix + '_' + id,
         id
     });
+
+    /* Add a marcherPage for this page for each marcher */
+    // Get all existing marchers
+    const marchers = await getMarchers();
+
+    // For each marcher, create a new MarcherPage
+    for (const marcher of marchers) {
+        createMarcherPage(db, { marcher_id: marcher.id, page_id: id, x: 100, y: 100 });
+    }
+
+    db.close();
+    return updateResult;
 }
 
 async function updatePage(args: Partial<Interfaces.Page> & {id: number}) {
@@ -332,4 +359,127 @@ async function updatePage(args: Partial<Interfaces.Page> & {id: number}) {
     return result;
 }
 
+/* ============================ MarcherPage ============================ */
+/**
+ * Gets all of the marcherPages, or the marcherPages with the given marcher_id or page_id.
+ *
+ * @param args { marcher_id?: number, page_id?: number}
+ * @returns Array of marcherPages
+ */
+async function getMarcherPages(args: { marcher_id?: number, page_id?: number}): Promise<Interfaces.MarcherPage[]> {
+    const db = connect();
+    let stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName}`);
+    console.log("GETTING MARCHER PAGES", args);
+    if(args) {
+        if(args.marcher_id && args.page_id)
+            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = @marcher_id AND page_id = @page_id`);
+        else if(args.marcher_id)
+            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = @marcher_id`);
+        else if(args.page_id)
+            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = @page_id`);
+    }
+    const result = stmt.all();
+    db.close();
+    return result as Interfaces.MarcherPage[];
+}
+
+/**
+ * Gets the marcherPage with the given marcher_id and page_id.
+ * TODO: NOT TESTED
+ *
+ * @param args { marcher_id: number, page_id: number}
+ * @returns The marcherPage
+ */
+async function getMarcherPage(args: { marcher_id: number, page_id: number}): Promise<Interfaces.MarcherPage> {
+    const marcherPages = await getMarcherPages(args);
+    return marcherPages[0];
+}
+
+/**
+ * Adds a new marcherPage to the database.
+ * NOTE - this function should only be called from createMarcher and createPage.
+ * A marcherPage should not be created manually by the user.
+ * ALSO NOTE - this function does not open or close the database connection.
+ *
+ * @param db The database connection
+ * @param newMarcherPage The marcherPage to add
+ * @returns
+ */
+async function createMarcherPage(db: Database.Database, newMarcherPage: Interfaces.UpdateMarcherPage) {
+    if(!newMarcherPage.marcher_id || !newMarcherPage.page_id)
+        throw new Error('MarcherPage must have marcher_id and page_id');
+
+    const marcherPageToAdd: Interfaces.MarcherPage = {
+        id: 0, // Not used, needed for interface
+        id_for_html: '', // Not used, needed for interface
+        marcher_id: newMarcherPage.marcher_id,
+        page_id: newMarcherPage.page_id,
+        x: newMarcherPage.x,
+        y: newMarcherPage.y
+    };
+    const insertStmt = db.prepare(`
+        INSERT INTO ${Constants.MarcherPageTableName} (
+            marcher_id,
+            page_id,
+            x,
+            y,
+            created_at,
+            updated_at
+        ) VALUES (
+            @marcher_id,
+            @page_id,
+            @x,
+            @y,
+            @created_at,
+            @updated_at
+        )
+    `);
+    const created_at = new Date().toISOString();
+    const insertResult = insertStmt.run({
+        ...marcherPageToAdd,
+        created_at,
+        updated_at: created_at
+    });
+    // Get the id of the inserted row
+    const id = insertResult.lastInsertRowid;
+    // Update the id_for_html field
+    const updateStmt = db.prepare(`
+        UPDATE ${Constants.MarcherPageTableName}
+        SET id_for_html = @id_for_html
+        WHERE id = @id
+    `);
+    const updateResult = updateStmt.run({
+        id_for_html: Constants.MarcherPagePrefix + '_' + id,
+        id
+    });
+    return updateResult;
+}
+
+async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
+    const db = connect();
+
+    // Generate the SET clause of the SQL query
+    let setClause = Object.keys(args)
+        .map(key => `${key} = @${key}`)
+        .join(', ');
+
+    // Check if the SET clause is empty
+    if (setClause.length === 0) {
+        throw new Error('No valid properties to update');
+    }
+
+    console.log("setClause:", setClause);
+
+    const stmt = db.prepare(`
+        UPDATE ${Constants.MarcherPageTableName}
+        SET x = @x, y = @y, updated_at = @new_updated_at
+        WHERE marcher_id = @marcher_id AND page_id = @page_id
+    `);
+
+    console.log("stmt:", stmt);
+
+    const result = stmt.run({ ...args,  new_updated_at: new Date().toISOString()});
+    db.close();
+    return result;
+}
 

@@ -8,7 +8,7 @@ import { useSelectedPage } from "../context/SelectedPageContext";
  */
 function StateInitializer() {
     const { fetchMarchers, setMarchersAreLoading } = useMarcherStore();
-    // const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
+    const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
     const { pages, fetchPages, setPagesAreLoading } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
 
@@ -18,11 +18,11 @@ function StateInitializer() {
         });
     }, [fetchMarchers, setMarchersAreLoading]);
 
-    // useEffect(() => {
-    //     fetchMarcherPages().finally(() => {
-    //         setMarcherPagesAreLoading(false)
-    //     });
-    // }, [fetchMarcherPages, setMarcherPagesAreLoading, pages]);
+    useEffect(() => {
+        fetchMarcherPages().finally(() => {
+            setMarcherPagesAreLoading(false)
+        });
+    }, [fetchMarcherPages, setMarcherPagesAreLoading, pages]);
 
     useEffect(() => {
         fetchPages().finally(() => {
@@ -36,7 +36,7 @@ function StateInitializer() {
             setSelectedPage(pages[0]);
     }, [pages, selectedPage, setSelectedPage]);
 
-    return <></>;
+    return <></>; // Empty fragment
 }
 
 export default StateInitializer;

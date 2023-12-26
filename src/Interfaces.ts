@@ -59,14 +59,22 @@ export interface MarcherPage {
     page_id: number;
     x: number;
     y: number;
-    tableName: InterfaceConstType["MarcherPageTableName"];
-    prefix: InterfaceConstType["MarcherPagePrefix"];
+    tableName?: InterfaceConstType["MarcherPageTableName"];
+    prefix?: InterfaceConstType["MarcherPagePrefix"];
 }
 
 /**
- * An interface to use only for updating a marcher page to the backend.
+ * An interface to use only for updating a marcherPage in the database.
  */
 export interface UpdateMarcherPage {
+    /**
+     * The id of the marcher for the marcherPage. Read only.
+     */
+    marcher_id: number;
+    /**
+     * The id of the page for the marcherPage. Read only.
+     */
+    page_id: number;
     x: number;
     y: number;
 }
