@@ -1,6 +1,8 @@
 # OpenMarch
 [**OpenMarch**](https://www.openmarch.com/) is an open source drill writing software built on web app frameworks. Eventually it will be a cross platform desktop app.
 
+NOTE - if you're reading this right now, OpenMarch is almost fully transitioned into Electron (rather than a browser based environment). The frontend react code is largely unchanged, but rails will be completely removed in place of SQLite running directly in Electron. Check out the [file-system-restructure](https://github.com/AlexDumo/OpenMarch/tree/file-system-restructure) branch too peak at the changes. Merge will happen soon once more verification is done.
+
 ## What can **OpenMarch** do?
 See [openmarch.com](https://www.openmarch.com/) for current status and a video example
 
