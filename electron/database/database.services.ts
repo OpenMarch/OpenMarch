@@ -189,7 +189,6 @@ async function createMarcher(newMarcher: Interfaces.NewMarcher) {
         createMarcherPage(db, { marcher_id: id, page_id: page.id, x: 100, y: 100 });
     }
 
-    console.log("marcherPages:", getMarcherPages({}));
     db.close();
     return updateResult;
 }
@@ -320,7 +319,12 @@ async function createPage(newPage: Interfaces.NewPage) {
 
     // For each marcher, create a new MarcherPage
     for (const marcher of marchers) {
-        createMarcherPage(db, { marcher_id: marcher.id, page_id: id, x: 100, y: 100 });
+        const previousMarcherPageCoords = await getCoordsOfPreviousPage(marcher.id, id);
+        createMarcherPage(db, {
+            marcher_id: marcher.id,
+            page_id: id,
+            x: previousMarcherPageCoords?.x || 100,
+            y: previousMarcherPageCoords?.y || 100 });
     }
 
     db.close();
@@ -369,14 +373,13 @@ async function updatePage(args: Partial<Interfaces.Page> & {id: number}) {
 async function getMarcherPages(args: { marcher_id?: number, page_id?: number}): Promise<Interfaces.MarcherPage[]> {
     const db = connect();
     let stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName}`);
-    console.log("GETTING MARCHER PAGES", args);
     if(args) {
         if(args.marcher_id && args.page_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = @marcher_id AND page_id = @page_id`);
+            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`);
         else if(args.marcher_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = @marcher_id`);
+            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`);
         else if(args.page_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = @page_id`);
+            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`);
     }
     const result = stmt.all();
     db.close();
@@ -483,3 +486,35 @@ async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
     return result;
 }
 
+/**
+ * Changes the coordinates of the marcherPage with the given marcher_id and page_id to the coordinates of the previous page.
+ *
+ * @param db database connection
+ * @param marcher_id marcher_id of the marcher whose coordinates will change
+ * @param page_id the page_id of the page that the coordinates will be updated on (not the previous page's id).
+ */
+async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
+    const db = connect();
+
+    /* Get the previous marcherPage */
+    const currPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @page_id`);
+    const currPage = currPageStmt.get({ page_id }) as Interfaces.Page;
+    if(!currPage)
+        throw new Error(`Page with id ${page_id} does not exist`);
+    if(currPage.order === 1){
+        console.log(`page_id ${page_id} is the first page, skipping setCoordsToPreviousPage`);
+        return;
+    }
+    const previousPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE "order" = @order`);
+    const previousPage = previousPageStmt.get({ order: currPage.order - 1 }) as Interfaces.Page;
+    const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as Interfaces.MarcherPage;
+
+    if(!previousPage)
+        throw new Error(`Previous page with page_id ${page_id} does not exist`);
+
+    db.close();
+    return {
+        x: previousMarcherPage.x,
+        y: previousMarcherPage.y
+    }
+}
