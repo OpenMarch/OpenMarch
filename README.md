@@ -1,8 +1,6 @@
 # OpenMarch
 [**OpenMarch**](https://www.openmarch.com/) is an open source drill writing software built on web app frameworks. Eventually it will be a cross platform desktop app.
 
-NOTE - if you're reading this right now, OpenMarch is almost fully transitioned into Electron (rather than a browser based environment). The frontend react code is largely unchanged, but rails will be completely removed in place of SQLite running directly in Electron. Check out the [file-system-restructure](https://github.com/AlexDumo/OpenMarch/tree/file-system-restructure) branch too peak at the changes. Merge will happen soon once more verification is done.
-
 ## What can **OpenMarch** do?
 See [openmarch.com](https://www.openmarch.com/) for current status and a video example
 
@@ -13,7 +11,7 @@ See [openmarch.com](https://www.openmarch.com/) for current status and a video e
 - Move a marcher around and see their coordinates printed in relation to yard lines and hashes
     - e.g. "3.25 steps inside 30 S1" or "11 steps behind front sideline"
 - Navigate through pages on the canvas
-- Have all marcher, page, and coordinate data saved locally to a db 
+- Have all marcher, page, and coordinate data saved locally to a db
 
 **Cannot**
 - Save, except what the backend database does automatically.
@@ -50,8 +48,7 @@ with live video feed jumbotron props, but who really needs that?
 ## What does **OpenMarch** use?
  Main packages
 - [**React**](https://react.dev/) - active state response and all things frontend
-- [**Ruby on Rails**](https://rubyonrails.org/) - simple backend storage of marchers, pages, and coordinates
-- [**Electron Forge**](https://www.electronforge.io/) - container that react app runs in for it to be a desktop app.
+- [**Electron**](https://www.electronjs.org/) - container that react app runs in for it to be a desktop app.
 
 Supporting packages
 - [**Bootstrap**](https://getbootstrap.com/) - bootstrap
@@ -60,7 +57,7 @@ Supporting packages
 
 ## OpenMarch for developers
 Currently only one person is working on this. (notice I said "we" a lot above? makes me feel official).
-If you would like to help out or learn more, just shoot me an [email](mailto:alex.dumo484@gmail.com)!
+If you would like to help out or learn more, just shoot me an [email](mailto:alex.dumo@gmail.com)!
 
 This project is still in its infancy with significant and essential features missing (saving and undo lol). The team
 that will bring this to life still need to make significant and path-altering decisions about what OpenMarch will be.
@@ -70,11 +67,11 @@ vision of simple, fast, and free drill designing software for band programs and 
 ### Onboarding
 Look at the [wiki](https://github.com/AlexDumo/OpenMarch/wiki) and [Onbaording for Developers](https://github.com/AlexDumo/OpenMarch/wiki/Onboarding-for-Developers)
 
-## OpenMarch for users and drill designers 
+## OpenMarch for users and drill designers
 OpenMarch does not have any releases or production demos available.
 Users who want to try it now are welcome follow the strps to spin up a production environment, though it is missing key features a designer may need.
 
-Check back to [openmarch.com](https://www.openmarch.com/) and this repository periodically for updates. We're looking for some development, help so send your developer friends this way! 
+Check back to [openmarch.com](https://www.openmarch.com/) and this repository periodically for updates. We're looking for some development, help so send your developer friends this way!
 
 ## License
 OpenMarch is written under the [GPL-3.0 license](LICENSE). All code written for this project will forever and always
