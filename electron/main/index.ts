@@ -1,8 +1,12 @@
-import { app, BrowserWindow, shell, ipcMain, ipcRenderer } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, ipcRenderer, Menu, dialog } from 'electron'
+import Store from 'electron-store'
+import * as fs from 'fs';
 import { release } from 'node:os'
 import { join } from 'node:path'
 import { update } from './update'
-import * as db from '../database/database.services'
+import * as DatabaseServices from '../database/database.services'
+
+import { applicationMenu } from './application-menu';
 
 // The built directory structure
 //
@@ -15,8 +19,8 @@ import * as db from '../database/database.services'
 // │ └── index.html    > Electron-Renderer
 //
 
-db.createDatabase();
-db.initHandlers();
+DatabaseServices.createDatabase();
+DatabaseServices.initHandlers();
 
 process.env.DIST_ELECTRON = join(__dirname, '../')
 process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
@@ -55,8 +59,6 @@ async function createWindow() {
       // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
       // Consider using contextBridge.exposeInMainWorld
       // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
-      // nodeIntegration: true,
-      // contextIsolation: false,
       nodeIntegration: false, // is default value after Electron v5
       contextIsolation: true, // protect against prototype pollution
     },
@@ -85,12 +87,37 @@ async function createWindow() {
   update(win)
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  createWindow();
+  app.setName('OpenMarch');
+  Menu.setApplicationMenu(applicationMenu);
+})
 
 app.on('window-all-closed', () => {
   win = null
   if (process.platform !== 'darwin') app.quit()
 })
+
+// app.on('close', (event) => {
+//   if (newWindow.isDocumentEdited()) {
+//     event.preventDefault();
+
+//     const result = dialog.showMessageBox(newWindow, {
+//       type: 'warning',
+//       title: 'Quit with Unsaved Changes?',
+//       message: 'Your changes will be lost permanently if you do not save.',
+//       buttons: [
+//         'Quit Anyway',
+//         'Cancel',
+//       ],
+//       cancelId: 1,
+//       defaultId: 0
+//     });
+
+//     if (result === 0) newWindow.destroy();
+//   }
+// });
+
 
 app.on('second-instance', () => {
   if (win) {
@@ -126,3 +153,21 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
+export async function saveFile() {
+  console.log('saveFile');
+
+  const db = DatabaseServices.connect();
+  const store = new Store();
+
+  // Save database file
+  store.set('database', db.serialize());
+
+  // Save
+  const path = await dialog.showSaveDialog({
+    filters: [
+      { name: 'drill', extensions: ['feet'] }
+    ]
+  });
+  if (path.canceled || !path.filePath) return;
+  fs.writeFileSync(path.filePath, db.serialize());
+}

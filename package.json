@@ -1,5 +1,6 @@
 {
   "name": "OpenMarch",
+  "productName": "OpenMarch",
   "version": "0.0.1",
   "main": "dist-electron/main/index.js",
   "description": "Electron Vite React boilerplate.",
@@ -23,6 +24,7 @@
     "@types/better-sqlite3": "^7.6.8",
     "better-sqlite3": "^9.2.2",
     "bootstrap": "^5.3.2",
+    "electron-store": "^8.1.0",
     "electron-updater": "^6.1.1",
     "fabric": "^5.3.0",
     "react-bootstrap": "^2.9.2",
@@ -32,6 +34,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.37.1",
+    "@types/node": "^20.10.5",
     "@types/react": "^18.2.20",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.4",

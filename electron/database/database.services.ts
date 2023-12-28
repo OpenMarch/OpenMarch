@@ -6,7 +6,7 @@ import * as Interfaces from '../../src/Interfaces';
 import { Update } from 'vite/types/hmrPayload';
 
 /* ============================ DATABASE ============================ */
-function connect() {
+export function connect() {
     try {
         return Database(
             path.resolve(__dirname, '../../','electron/database/', 'database.db'),
