@@ -1,24 +1,32 @@
-import { app, ipcMain } from 'electron';
+import { app, dialog, ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { Constants } from '../../src/Constants';
 import * as Interfaces from '../../src/Interfaces';
+import * as fs from 'fs';
 import { Update } from 'vite/types/hmrPayload';
 
 /* ============================ DATABASE ============================ */
+var DB_PATH = '';
+
+export function setDbPath(path: string) {
+    if (!fs.existsSync(path)) {
+        throw new Error(`File does not exist at path: ${path}`);
+    }
+    DB_PATH = path;
+}
+
 export function connect() {
     try {
-        return Database(
-            path.resolve(__dirname, '../../','electron/database/', 'database.db'),
-            { verbose: console.log },
-        );
+        const dbPath = DB_PATH.length > 0 ? DB_PATH : path.resolve(__dirname, '../../','electron/database/', 'database.db');
+        return Database(dbPath, { verbose: console.log });
     } catch (error: any) {
         throw new Error('Failed to connect to database:\
         PLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
     }
 }
 
-export function createDatabase() {
+export function initDatabase() {
     const db = connect();
     console.log(db);
     console.log('Creating database...');
@@ -221,7 +229,7 @@ async function updateMarcher(args: Partial<Interfaces.Marcher> & {id: number}) {
         setClause += ', drill_number = @drill_prefix || @drill_order';
     }
 
-    console.log("setClause:", setClause);
+    // console.log("setClause:", setClause);
 
     const stmt = db.prepare(`
         UPDATE ${Constants.MarcherTableName}
@@ -229,7 +237,7 @@ async function updateMarcher(args: Partial<Interfaces.Marcher> & {id: number}) {
         WHERE id = @id
     `);
 
-    console.log("stmt:", stmt);
+    // console.log("stmt:", stmt);
 
     const result = stmt.run({ ...args,  new_updated_at: new Date().toISOString()});
     db.close();
@@ -348,7 +356,7 @@ async function updatePage(args: Partial<Interfaces.Page> & {id: number}) {
         throw new Error('No valid properties to update');
     }
 
-    console.log("setClause:", setClause);
+    // console.log("setClause:", setClause);
 
     const stmt = db.prepare(`
         UPDATE ${Constants.PageTableName}
@@ -356,7 +364,7 @@ async function updatePage(args: Partial<Interfaces.Page> & {id: number}) {
         WHERE id = @id
     `);
 
-    console.log("stmt:", stmt);
+    // console.log("stmt:", stmt);
 
     const result = stmt.run({ ...args,  new_updated_at: new Date().toISOString()});
     db.close();
@@ -471,7 +479,7 @@ async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
         throw new Error('No valid properties to update');
     }
 
-    console.log("setClause:", setClause);
+    // console.log("setClause:", setClause);
 
     const stmt = db.prepare(`
         UPDATE ${Constants.MarcherPageTableName}
@@ -479,7 +487,7 @@ async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
         WHERE marcher_id = @marcher_id AND page_id = @page_id
     `);
 
-    console.log("stmt:", stmt);
+    // console.log("stmt:", stmt);
 
     const result = stmt.run({ ...args,  new_updated_at: new Date().toISOString()});
     db.close();

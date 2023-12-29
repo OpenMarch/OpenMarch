@@ -99,7 +99,7 @@ function MarcherList({
                 <thead className="thead-dark">
                     <tr>
                         <th scope="col">#</th>
-                        <th scope="col">section</th>
+                        <th scope="col">Section</th>
                         <th scope="col">Name</th>
                     </tr>
                 </thead>

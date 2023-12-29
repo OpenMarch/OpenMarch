@@ -5,8 +5,8 @@ import { release } from 'node:os'
 import { join } from 'node:path'
 import { update } from './update'
 import * as DatabaseServices from '../database/database.services'
-
 import { applicationMenu } from './application-menu';
+import { on } from 'events';
 
 // The built directory structure
 //
@@ -19,8 +19,7 @@ import { applicationMenu } from './application-menu';
 // │ └── index.html    > Electron-Renderer
 //
 
-DatabaseServices.createDatabase();
-DatabaseServices.initHandlers();
+const store = new Store();
 
 process.env.DIST_ELECTRON = join(__dirname, '../')
 process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
@@ -50,9 +49,9 @@ const preload = join(__dirname, '../preload/index.js')
 const url = process.env.VITE_DEV_SERVER_URL
 const indexHtml = join(process.env.DIST, 'index.html')
 
-async function createWindow() {
+async function createWindow(title?: string) {
   win = new BrowserWindow({
-    title: 'Main window',
+    title: title || 'OpenMarch',
     icon: join(process.env.VITE_PUBLIC, 'favicon.ico'),
     webPreferences: {
       preload,
@@ -87,10 +86,13 @@ async function createWindow() {
   update(win)
 }
 
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
   app.setName('OpenMarch');
   Menu.setApplicationMenu(applicationMenu);
+  await loadDbFromFile(true);
+  await createWindow('OpenMarch - ' + store.get('databasePath'));
+  DatabaseServices.initDatabase();
+  DatabaseServices.initHandlers();
 })
 
 app.on('window-all-closed', () => {
@@ -170,4 +172,54 @@ export async function saveFile() {
   });
   if (path.canceled || !path.filePath) return;
   fs.writeFileSync(path.filePath, db.serialize());
+  DatabaseServices.setDbPath(path.filePath);
+  // Save the path for next time
+  store.set('databasePath', path.filePath);
+}
+
+/**
+ * Opens a dialog to load a database file path to connect to.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function loadDbFromFile(onLaunch = false) {
+  console.log('loadDbFromFile');
+
+  try {
+    let previousPath = '';
+    // Load the previous path on launch
+    if (onLaunch) {
+      previousPath = store.get('databasePath') as string;
+      if(previousPath && previousPath.length > 0)
+        DatabaseServices.setDbPath(previousPath);
+    }
+    // If there is no previous path, open a dialog
+    if(previousPath === '') {
+      const path = await dialog.showOpenDialog({
+        filters: [
+          { name: 'drill', extensions: ['feet'] }
+        ]
+      });
+      DatabaseServices.setDbPath(path.filePaths[0]);
+      store.set('databasePath', path.filePaths[0]); // Save the path for next time
+
+      // If the user cancels the dialog, and there is no previous path, return -1
+      if (path.canceled || !path.filePaths[0]) {
+        if (!onLaunch) return -1;
+        // App is launching, so app quits on cancel
+        console.log('No database file selected. Exiting.');
+        app.quit();
+      }
+
+      DatabaseServices.setDbPath(path.filePaths[0]);
+      store.set('databasePath', path.filePaths[0]); // Save the path for next time
+      win?.setTitle('OpenMarch - ' + path.filePaths[0]);
+      win?.webContents.reload();
+    }
+  }
+  catch (e) {
+    console.log(e);
+    return -1;
+  }
+  return 200;
 }

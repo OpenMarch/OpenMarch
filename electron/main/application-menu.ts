@@ -23,7 +23,7 @@ const template = [
       {
         label: 'Open File',
         accelerator: 'CommandOrControl+O',
-        // click(item:any, focusedWindow:any) {
+        click(item:any, focusedWindow:any) {
         //   if (focusedWindow) {
         //     return mainProcess.getFileFromUser(focusedWindow);
         //   }
@@ -33,7 +33,9 @@ const template = [
         //   newWindow.on('show', () => {
         //     mainProcess.getFileFromUser(newWindow);
         //   });
-        // },
+          mainProcess.loadDbFromFile();
+          focusedWindow.reload();
+        },
       },
       {
         label: 'Save File',
@@ -113,6 +115,16 @@ const template = [
         label: 'Close',
         accelerator: 'CommandOrControl+W',
         role: 'close',
+      },
+      {
+        label: 'Refresh',
+        accelerator: 'CommandOrControl+R',
+        click(item: any, focusedWindow: any) {
+          if (focusedWindow) {
+            // Reload the current window
+            focusedWindow.reload();
+          }
+        },
       },
     ],
   },
