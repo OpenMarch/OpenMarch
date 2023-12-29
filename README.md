@@ -12,12 +12,10 @@ See [openmarch.com](https://www.openmarch.com/) for current status and a video e
     - e.g. "3.25 steps inside 30 S1" or "11 steps behind front sideline"
 - Navigate through pages on the canvas
 - Have all marcher, page, and coordinate data saved locally to a db
+- Save files to the local system
 
 **Cannot**
-- Save, except what the backend database does automatically.
-    - I.e. you can't save your projects as a file.
-    - But - all marchers, pages, and coordinates data is retained.
-- Open other files
+- Open other files (this will be done within days)
 - Undo/redo
 - Move multiple marchers at once
 - Animate marchers in between pages
