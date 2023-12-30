@@ -13,12 +13,24 @@ var DB_PATH = '';
  * Change the location of the database file the application and actively updates.
  *
  * @param path the path to the database file
+ * @returns 200 if successful, -1 if the file does not exist
  */
 export function setDbPath(path: string, isNewFile = false) {
     if (!fs.existsSync(path) && !isNewFile) {
-        throw new Error(`File does not exist at path: ${path}`);
+        console.error(`setDbPath: File does not exist at path: ${path}`);
+        DB_PATH = '';
+        return -1;
     }
     DB_PATH = path;
+    return 200;
+}
+
+export function getDbPath() {
+    return DB_PATH;
+}
+
+export function databaseIsReady() {
+    return DB_PATH.length > 0 && fs.existsSync(DB_PATH);
 }
 
 export function initDatabase() {
@@ -115,6 +127,10 @@ function createMarcherPageTable(db: Database.Database) {
 //     });
 // }
 
+/**
+ * Handlers for the app api.
+ * Whenever modifying this, you must also modify the app api in electron/preload/index.ts
+ */
 export function initHandlers() {
     // Marcher
     ipcMain.handle('marcher:getAll', async (_, args) => getMarchers());

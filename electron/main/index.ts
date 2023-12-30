@@ -90,36 +90,25 @@ async function createWindow(title?: string) {
 app.whenReady().then(async () => {
   app.setName('OpenMarch');
   Menu.setApplicationMenu(applicationMenu);
-  await loadFile(true);
-  await createWindow('OpenMarch - ' + store.get('databasePath'));
+  const previousPath = store.get('databasePath') as string;
+  if(previousPath && previousPath.length > 0)
+    setActiveDb(previousPath);
   DatabaseServices.initHandlers();
+
+  // Database handlers
+  console.log("db_path: " + DatabaseServices.getDbPath());
+  ipcMain.handle('database:isReady', DatabaseServices.databaseIsReady );
+  ipcMain.handle('database:save', async () => saveFile());
+  ipcMain.handle('database:load', async () => loadFile());
+  ipcMain.handle('database:create', async () => newFile());
+
+  await createWindow('OpenMarch - ' + store.get('databasePath'));
 })
 
 app.on('window-all-closed', () => {
   win = null
   if (process.platform !== 'darwin') app.quit()
 })
-
-// app.on('close', (event) => {
-//   if (newWindow.isDocumentEdited()) {
-//     event.preventDefault();
-
-//     const result = dialog.showMessageBox(newWindow, {
-//       type: 'warning',
-//       title: 'Quit with Unsaved Changes?',
-//       message: 'Your changes will be lost permanently if you do not save.',
-//       buttons: [
-//         'Quit Anyway',
-//         'Cancel',
-//       ],
-//       cancelId: 1,
-//       defaultId: 0
-//     });
-
-//     if (result === 0) newWindow.destroy();
-//   }
-// });
-
 
 app.on('second-instance', () => {
   if (win) {
@@ -160,7 +149,7 @@ export async function newFile() {
 
   // Get path to new file
   const path = await dialog.showSaveDialog({
-    buttonLabel: 'Create New File',
+    buttonLabel: 'Create New',
     filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
   });
   if (path.canceled || !path.filePath) return;
@@ -168,6 +157,8 @@ export async function newFile() {
   setActiveDb(path.filePath, true);
   DatabaseServices.initDatabase();
   win?.webContents.reload();
+
+  return 200;
 }
 
 export async function saveFile() {
@@ -180,13 +171,15 @@ export async function saveFile() {
 
   // Save
   const path = await dialog.showSaveDialog({
-    buttonLabel: 'Save As Copy',
+    buttonLabel: 'Save Copy',
     filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
   });
   if (path.canceled || !path.filePath) return;
   fs.writeFileSync(path.filePath, db.serialize());
 
   setActiveDb(path.filePath);
+
+  return 200;
 }
 
 /**
@@ -194,19 +187,11 @@ export async function saveFile() {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function loadFile(onLaunch = false) {
+export async function loadFile() {
   console.log('loadFile');
 
   try {
-    let previousPath = '';
-    // Load the previous path on launch
-    if (onLaunch) {
-      previousPath = store.get('databasePath') as string;
-      if(previousPath && previousPath.length > 0)
-        DatabaseServices.setDbPath(previousPath);
-    }
     // If there is no previous path, open a dialog
-    if(previousPath === '') {
       const path = await dialog.showOpenDialog({
         filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
       });
@@ -214,15 +199,10 @@ export async function loadFile(onLaunch = false) {
       store.set('databasePath', path.filePaths[0]); // Save the path for next time
 
       // If the user cancels the dialog, and there is no previous path, return -1
-      if (path.canceled || !path.filePaths[0]) {
-        if (!onLaunch) return -1;
-        // App is launching, so app quits on cancel
-        console.log('No database file selected. Exiting.');
-        app.quit();
-      }
+      if (path.canceled || !path.filePaths[0])
+        return -1;
 
       setActiveDb(path.filePaths[0]);
-    }
   }
   catch (e) {
     console.log(e);

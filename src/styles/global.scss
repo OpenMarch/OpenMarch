@@ -41,6 +41,16 @@ html, body  {
   // flex: 1;
 }
 
+.launch-page {
+  background-color: $toolbarColor;
+  color: $light;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
 /* ================= CANVAS STYLES ================= */
 
 .canvas-container {

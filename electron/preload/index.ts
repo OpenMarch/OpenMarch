@@ -100,6 +100,12 @@ setTimeout(removeLoading, 4999)
 // ----------------------------------------------------------------------
 
 const APP_API = {
+  // Database
+  databaseIsReady: () => ipcRenderer.invoke('database:isReady'),
+  databaseSave: () => ipcRenderer.invoke('database:save'),
+  databaseLoad: () => ipcRenderer.invoke('database:load'),
+  databaseCreate: () => ipcRenderer.invoke('database:create'),
+
   // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
   createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher),

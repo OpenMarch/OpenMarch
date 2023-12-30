@@ -6,27 +6,40 @@ import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
 import { IsPlayingProvider } from './context/IsPlayingContext';
 import StateInitializer from './utilities/StateInitializer';
+import LaunchPage from './components/LaunchPage';
+import { useEffect, useState } from 'react';
 
 function App() {
+  const [databaseIsReady, setDatabaseIsReady] = useState(false);
+
+  useEffect(() => {
+    window.electron.databaseIsReady().then((result) => {
+      setDatabaseIsReady(result);
+    });
+  }, []);
   return (
     // Context for the selected page. Will change when more specialized
-    <SelectedPageProvider>
-      <SelectedMarcherProvider>
-        <IsPlayingProvider>
-          <StateInitializer />
-          <div className="app-container">
-            {/* <div className="toolbar-container"> */}
-            <Topbar />
-            <div className="secondary-container">
-              <Sidebar />
-              <Canvas />
-              {/* <PageList /> */}
-            </div>
-          </div>
-          {/* </div> */}
-        </IsPlayingProvider>
-      </SelectedMarcherProvider>
-    </SelectedPageProvider >
+    <>
+      {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
+        <SelectedPageProvider>
+          <SelectedMarcherProvider>
+            <IsPlayingProvider>
+              <StateInitializer />
+              <div className="app-container">
+                {/* <div className="toolbar-container"> */}
+                <Topbar />
+                <div className="secondary-container">
+                  <Sidebar />
+                  <Canvas />
+                  {/* <PageList /> */}
+                </div>
+              </div>
+              {/* </div> */}
+            </IsPlayingProvider>
+          </SelectedMarcherProvider>
+        </SelectedPageProvider >
+      }
+    </>
   );
 }
 
