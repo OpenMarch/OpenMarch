@@ -9,21 +9,16 @@ import { Update } from 'vite/types/hmrPayload';
 /* ============================ DATABASE ============================ */
 var DB_PATH = '';
 
-export function setDbPath(path: string) {
-    if (!fs.existsSync(path)) {
+/**
+ * Change the location of the database file the application and actively updates.
+ *
+ * @param path the path to the database file
+ */
+export function setDbPath(path: string, isNewFile = false) {
+    if (!fs.existsSync(path) && !isNewFile) {
         throw new Error(`File does not exist at path: ${path}`);
     }
     DB_PATH = path;
-}
-
-export function connect() {
-    try {
-        const dbPath = DB_PATH.length > 0 ? DB_PATH : path.resolve(__dirname, '../../','electron/database/', 'database.db');
-        return Database(dbPath, { verbose: console.log });
-    } catch (error: any) {
-        throw new Error('Failed to connect to database:\
-        PLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
-    }
 }
 
 export function initDatabase() {
@@ -36,6 +31,16 @@ export function initDatabase() {
     createMarcherPageTable(db);
     console.log('Database created.');
     db.close();
+}
+
+export function connect() {
+    try {
+        const dbPath = DB_PATH.length > 0 ? DB_PATH : path.resolve(__dirname, '../../','electron/database/', 'database.db');
+        return Database(dbPath, { verbose: console.log });
+    } catch (error: any) {
+        throw new Error('Failed to connect to database:\
+        PLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
+    }
 }
 
 function createMarcherTable(db: Database.Database) {

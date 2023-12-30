@@ -7,6 +7,7 @@ import { update } from './update'
 import * as DatabaseServices from '../database/database.services'
 import { applicationMenu } from './application-menu';
 import { on } from 'events';
+import { create } from 'domain';
 
 // The built directory structure
 //
@@ -89,9 +90,8 @@ async function createWindow(title?: string) {
 app.whenReady().then(async () => {
   app.setName('OpenMarch');
   Menu.setApplicationMenu(applicationMenu);
-  await loadDbFromFile(true);
+  await loadFile(true);
   await createWindow('OpenMarch - ' + store.get('databasePath'));
-  DatabaseServices.initDatabase();
   DatabaseServices.initHandlers();
 })
 
@@ -155,26 +155,38 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
+export async function newFile() {
+  console.log('newFile');
+
+  // Get path to new file
+  const path = await dialog.showSaveDialog({
+    buttonLabel: 'Create New File',
+    filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
+  });
+  if (path.canceled || !path.filePath) return;
+
+  setActiveDb(path.filePath, true);
+  DatabaseServices.initDatabase();
+  win?.webContents.reload();
+}
+
 export async function saveFile() {
   console.log('saveFile');
 
   const db = DatabaseServices.connect();
-  const store = new Store();
 
   // Save database file
   store.set('database', db.serialize());
 
   // Save
   const path = await dialog.showSaveDialog({
-    filters: [
-      { name: 'drill', extensions: ['feet'] }
-    ]
+    buttonLabel: 'Save As Copy',
+    filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
   });
   if (path.canceled || !path.filePath) return;
   fs.writeFileSync(path.filePath, db.serialize());
-  DatabaseServices.setDbPath(path.filePath);
-  // Save the path for next time
-  store.set('databasePath', path.filePath);
+
+  setActiveDb(path.filePath);
 }
 
 /**
@@ -182,8 +194,8 @@ export async function saveFile() {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function loadDbFromFile(onLaunch = false) {
-  console.log('loadDbFromFile');
+export async function loadFile(onLaunch = false) {
+  console.log('loadFile');
 
   try {
     let previousPath = '';
@@ -196,9 +208,7 @@ export async function loadDbFromFile(onLaunch = false) {
     // If there is no previous path, open a dialog
     if(previousPath === '') {
       const path = await dialog.showOpenDialog({
-        filters: [
-          { name: 'drill', extensions: ['feet'] }
-        ]
+        filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
       });
       DatabaseServices.setDbPath(path.filePaths[0]);
       store.set('databasePath', path.filePaths[0]); // Save the path for next time
@@ -211,10 +221,7 @@ export async function loadDbFromFile(onLaunch = false) {
         app.quit();
       }
 
-      DatabaseServices.setDbPath(path.filePaths[0]);
-      store.set('databasePath', path.filePaths[0]); // Save the path for next time
-      win?.setTitle('OpenMarch - ' + path.filePaths[0]);
-      win?.webContents.reload();
+      setActiveDb(path.filePaths[0]);
     }
   }
   catch (e) {
@@ -222,4 +229,11 @@ export async function loadDbFromFile(onLaunch = false) {
     return -1;
   }
   return 200;
+}
+
+function setActiveDb(path: string, isNewFile = false) {
+  DatabaseServices.setDbPath(path, isNewFile);
+  win?.setTitle('OpenMarch - ' + path);
+  !isNewFile && win?.webContents.reload();
+  store.set('databasePath', path); // Save current db path
 }

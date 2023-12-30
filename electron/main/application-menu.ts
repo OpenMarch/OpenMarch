@@ -14,13 +14,6 @@ const template = [
     label: 'File',
     submenu: [
       {
-        label: 'New File',
-        accelerator: 'CommandOrControl+N',
-        click() {
-          // mainProcess.createWindow();
-        }
-      },
-      {
         label: 'Open File',
         accelerator: 'CommandOrControl+O',
         click(item:any, focusedWindow:any) {
@@ -33,12 +26,19 @@ const template = [
         //   newWindow.on('show', () => {
         //     mainProcess.getFileFromUser(newWindow);
         //   });
-          mainProcess.loadDbFromFile();
-          focusedWindow.reload();
+          mainProcess.loadFile();
         },
       },
+      { type: 'separator' },
       {
-        label: 'Save File',
+        label: 'Create New',
+        accelerator: 'CommandOrControl+N',
+        click() {
+          mainProcess.newFile();
+        }
+      },
+      {
+        label: 'Save As Copy',
         accelerator: 'CommandOrControl+S',
         click(item:any, focusedWindow:any) {
           if (!focusedWindow) {
