@@ -229,7 +229,7 @@ function Canvas() {
             // console.log("Canvas.tsx: useEffect: create canvas");
             setCanvas(new fabric.Canvas(canvasRef.current, {}));
         }
-    }, [selectedPage, canvas, pages, marchers, marcherPages]);
+    }, [selectedPage, canvas]);
 
     // Create the canvas and field
     useEffect(() => {

@@ -11,7 +11,6 @@ import { V1_COLLEGE_PROPERTIES, V1_ORIGIN } from "./CoordsUtils";
 export function refreshCanavsSize(canvas: fabric.Canvas) {
     canvas.setWidth(window.innerWidth);
     canvas.setHeight(window.innerHeight);
-    // canvas.renderAll();
 }
 
 /* -------------------------- Field Functions -------------------------- */
