@@ -14,16 +14,9 @@ const template = [
     label: 'File',
     submenu: [
       {
-        label: 'New File',
-        accelerator: 'CommandOrControl+N',
-        click() {
-          // mainProcess.createWindow();
-        }
-      },
-      {
         label: 'Open File',
         accelerator: 'CommandOrControl+O',
-        // click(item:any, focusedWindow:any) {
+        click(item:any, focusedWindow:any) {
         //   if (focusedWindow) {
         //     return mainProcess.getFileFromUser(focusedWindow);
         //   }
@@ -33,10 +26,19 @@ const template = [
         //   newWindow.on('show', () => {
         //     mainProcess.getFileFromUser(newWindow);
         //   });
-        // },
+          mainProcess.loadFile();
+        },
+      },
+      { type: 'separator' },
+      {
+        label: 'Create New',
+        accelerator: 'CommandOrControl+N',
+        click() {
+          mainProcess.newFile();
+        }
       },
       {
-        label: 'Save File',
+        label: 'Save As Copy',
         accelerator: 'CommandOrControl+S',
         click(item:any, focusedWindow:any) {
           if (!focusedWindow) {
@@ -113,6 +115,16 @@ const template = [
         label: 'Close',
         accelerator: 'CommandOrControl+W',
         role: 'close',
+      },
+      {
+        label: 'Refresh',
+        accelerator: 'CommandOrControl+R',
+        click(item: any, focusedWindow: any) {
+          if (focusedWindow) {
+            // Reload the current window
+            focusedWindow.reload();
+          }
+        },
       },
     ],
   },
