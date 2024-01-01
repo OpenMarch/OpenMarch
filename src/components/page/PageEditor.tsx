@@ -1,7 +1,8 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { usePageStore } from "../../stores/Store";
-import { updatePageCounts } from "../../api/api";
+import { updatePages } from "../../api/api";
 import { useEffect } from "react";
+import { update } from "electron/main/update";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
@@ -17,7 +18,7 @@ function PageEditor() {
         const counts = form[countsInputId].value;
 
         if (selectedPage) {
-            updatePageCounts(selectedPage.id, counts).then(() => fetchPages());
+            updatePages([{ id: selectedPage.id, counts: counts }]).then(() => fetchPages());
         }
 
         // Remove focus from the input field

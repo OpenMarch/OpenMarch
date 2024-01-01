@@ -2,8 +2,8 @@ import { usePageStore } from "../../stores/Store";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
-import { updatePageCounts } from "../../api/api";
-import { ListFormProps } from "../../Interfaces";
+import { updatePages } from "../../api/api";
+import { ListFormProps, UpdatePage } from "../../Interfaces";
 
 
 function PageList({
@@ -23,29 +23,20 @@ function PageList({
     async function handleSubmit() {
         setIsEditing(false);
 
-        for (const [pageId, changes] of Object.entries(changesRef.current)) {
-            await updatePage(Number(pageId), changes);
-        }
+        const pageUpdates: UpdatePage[] = [];
+
+        for (const [pageId, changes] of Object.entries(changesRef.current))
+            pageUpdates.push({ id: Number(pageId), ...changes });
+
+        const result = await updatePages(pageUpdates);
         fetchPages();
         changesRef.current = {};
+        return result;
     }
 
     function handleCancel() {
         setIsEditing(false);
         changesRef.current = {};
-    }
-
-    async function updatePage(pageId: number, changes: any) {
-        for (const [key, value] of Object.entries(changes)) {
-            try {
-                if (key === "counts")
-                    await updatePageCounts(pageId, value as number);
-                // else if (key === "name")
-                //     await updateMarcherName(pageId, value as string);
-            } catch (error) {
-                console.error(`Error updating page ${pageId}:`, error);
-            }
-        }
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,

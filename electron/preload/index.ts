@@ -1,4 +1,4 @@
-import { Marcher, NewMarcher, NewPage, Page, UpdateMarcherPage } from "@/Interfaces"
+import { Marcher, NewMarcher, NewPage, Page, UpdateMarcher, UpdateMarcherPage, UpdatePage } from "@/Interfaces"
 import { contextBridge, ipcRenderer } from "electron"
 import context from "react-bootstrap/esm/AccordionContext"
 import { lstat } from 'node:fs/promises'
@@ -109,18 +109,18 @@ const APP_API = {
   // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
   createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher),
-  updateMarcher: (args: Partial<Marcher> & {id: number}) => ipcRenderer.invoke('marcher:update', args),
-  deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
+  updateMarchers: (args: UpdateMarcher[]) => ipcRenderer.invoke('marcher:update', args),
+  // deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
 
   // Page
   getPages: () => ipcRenderer.invoke('page:getAll'),
-  createPage: (page: NewPage) => ipcRenderer.invoke('page:insert', page),
-  updatePage: (args: Partial<Page> & {id: number}) => ipcRenderer.invoke('page:update', args),
+  createPages: (pages: NewPage[]) => ipcRenderer.invoke('page:insert', pages),
+  updatePages: (args: UpdatePage[]) => ipcRenderer.invoke('page:update', args),
   // deletePage: (id: number) => ipcRenderer.invoke('page:delete', id)
 
   // MarcherPage
-  getMarcherPages: (args: {marcher_id?: number, page_id?: number}) => ipcRenderer.invoke('marcher_page:getAll'),
-  getMarcherPage: (id: {marcher_id: number, page_id: number}) => ipcRenderer.invoke('marcher_page:get', id),
+  getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll'),
+  getMarcherPage: (id: { marcher_id: number, page_id: number }) => ipcRenderer.invoke('marcher_page:get', id),
   updateMarcherPage: (args: UpdateMarcherPage) => ipcRenderer.invoke('marcher_page:update', args),
 }
 

@@ -1,7 +1,7 @@
 import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
 import { useCallback, useEffect, useState } from "react";
 import { usePageStore } from "../../stores/Store";
-import { NewPage } from "../../Interfaces";
+import { NewPage, Page } from "../../Interfaces";
 import { createPage } from "../../api/api";
 
 interface NewPageFormProps {
@@ -63,10 +63,13 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
         if (!pageNameError && pageName && counts && quantity) {
             const newAlertMessages = [...alertMessages];
             let newPageName = pageName;
+            const newPages: NewPage[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPage: NewPage = {
                     name: newPageName,
                     counts: counts,
+                    tempo: 120,
+                    time_signature: "4/4"
                 }
 
                 try {
@@ -89,7 +92,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
         setPageName(name);
         if (name === "")
             setPageNameError("Page name cannot be empty");
-        else if (pages.some((page: NewPage) => page.name === name))
+        else if (pages.some((page: Page) => page.name === name))
             setPageNameError("Page name already exists");
         else if (!/^\d+[A-Za-z]*$/.test(name))
             setPageNameError("Page must be one or more digits followed by zero or more letters. (Ex: 23, 1A)");

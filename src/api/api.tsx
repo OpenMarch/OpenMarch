@@ -1,6 +1,8 @@
 // import axios from 'axios';
-import { Marcher, NewMarcher, NewPage, Page, UpdateMarcherPage } from '../Interfaces';
+import { Marcher, NewMarcher, NewPage, Page, UpdateMarcher, UpdateMarcherPage, UpdatePage } from '../Interfaces';
 import { Constants } from '../Constants';
+import { Update } from 'vite/types/hmrPayload';
+import { create } from 'domain';
 
 
 const m_table = Constants.MarcherTableName;
@@ -18,27 +20,24 @@ export async function getPages() {
   return response;
 }
 
-export async function createPage(page: Page | NewPage) {
-  const newPage: NewPage = {
-    name: page.name,
-    counts: page.counts,
-    tempo: 120,
-    time_signature: "4/4"
-  };
-  const response = await window.electron.createPage(newPage);
+export async function createPage(newPage: NewPage) {
+  return await createPages([newPage]);
+}
+
+export async function createPages(pages: NewPage[]) {
+  const response = await window.electron.createPages(pages);
   return response;
 }
 
 /**
- * Updates the counts for a given page.
+ * Update one or many pages.
  * Must fetch pages after updating.
  *
- * @param {number} id - pageObj.id: The id of the page. Do not use id_for_html.
- * @param {number} counts - The new amount of counts for the page to be.
+ * @param pageUpdates
  * @returns Response data from the server.
  */
-export async function updatePageCounts(id: number, counts: number) {
-  const response = await window.electron.updatePage({ id: id, counts: counts });
+export async function updatePages(pageUpdates: UpdatePage[]) {
+  const response = await window.electron.updatePages(pageUpdates);
   return response;
 }
 
@@ -52,54 +51,8 @@ export async function getMarchers(): Promise<Marcher[]> {
   return response;
 }
 
-/**
- * TODO: NOT TESTED
- * Updates the drill number for a given marcher.
- * A drill number cannot be updated as one string, "B1" for example. It must be updated as a prefix "B" and order 1.
- *
- * @param {number} id - marcherObj.id: The id of the marcher. Do not use id_for_html.
- * @param {string} drill_prefix - (B1 -> "B") The drill prefix for the marcher to be.
- * @param {number} drill_order - (B1 -> 1) The drill order for the marcher to be.
- * @returns Response data from the server.
- */
-export async function updateMarcherDrillNumber(id: number, drill_prefix: string, drill_order: number) {
-  const response = await window.electron.updateMarcher({ id: id, drill_prefix: drill_prefix, drill_order: drill_order });
-  return response;
-}
-
-/**
- * Updates the instrument/section for a given marcher.
- *
- * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
- * @param section - The new instrument/section for the marcher to be.
- * @returns response data.
- */
-export async function updateMarcherSection(id: number, section: string) {
-  const response = await window.electron.updateMarcher({ id: id, section: section });
-  return response;
-}
-
-/**
- * Updates the name for a given marcher.
- *
- * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
- * @param name - The new name for the marcher to be.
- * @returns Response data.
- */
-export async function updateMarcherName(id: number, name: string) {
-  const response = await window.electron.updateMarcher({ id: id, name: name });
-  return response;
-}
-
-/**
- * Updates the given marcher with the given newMarcher object.
- *
- * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
- * @param marcher - The newMarcher object for the marcher to be.
- * @returns Response data.
- */
-export async function updateMarcher(id: number, marcher: NewMarcher) {
-  const response = await window.electron.updateMarcher({ id: id, ...marcher });
+export async function updateMarchers(updateMarchers: UpdateMarcher[]) {
+  const response = await window.electron.updateMarchers(updateMarchers);
   return response;
 }
 
@@ -112,10 +65,10 @@ export async function updateMarcher(id: number, marcher: NewMarcher) {
  * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
  * @returns Response data.
  */
-export async function deleteMarcher(id: number) {
-  const response = await window.electron.deleteMarcher(id);
-  return response;
-}
+// export async function deleteMarcher(id: number) {
+//   const response = await window.electron.deleteMarcher(id);
+//   return response;
+// }
 
 /**
  * Creates a new marcher in the database.
@@ -123,13 +76,7 @@ export async function deleteMarcher(id: number) {
  * @param marcher - The new marcher object to be created.
  * @returns Response data.
  */
-export async function createMarcher(marcher: NewMarcher) {
-  const newMarcher: NewMarcher = {
-    name: marcher.name,
-    section: marcher.section,
-    drill_prefix: marcher.drill_prefix,
-    drill_order: marcher.drill_order
-  };
+export async function createMarcher(newMarcher: NewMarcher) {
   const response = await window.electron.createMarcher(newMarcher);
   return response;
 }

@@ -2,6 +2,10 @@
 import { Constants } from "./Constants";
 type InterfaceConstType = typeof Constants;
 
+/*********************** Page ***********************/
+/**
+ * Defines all of the data associated with a page in the database.
+ */
 export interface Page {
     id: number;
     id_for_html: string;
@@ -16,7 +20,7 @@ export interface Page {
 }
 
 /**
- * An interface that defines the editable fields of a page.
+ * Defines the required fields of a new page.
  */
 export interface NewPage {
     name: string;
@@ -26,6 +30,26 @@ export interface NewPage {
     notes?: string;
 }
 
+/**
+ * Defines the editable fields of a page.
+ */
+export interface UpdatePage {
+    /**
+     * The id of the page to update. Read only.
+     */
+    id: number;
+    name?: string;
+    counts?: number;
+    // order?: number; // TODO implement
+    tempo?: number;
+    time_signature?: string;
+    notes?: string;
+}
+
+/*********************** Marcher ***********************/
+/**
+ * Defines all of the data associated with a marcher in the database.
+ */
 export interface Marcher {
     id: number;
     id_for_html: string;
@@ -41,7 +65,7 @@ export interface Marcher {
 }
 
 /**
- * An interface that defines the editable fields of a marcher.
+ * Defines the required fields of a new marcher.
  */
 export interface NewMarcher {
     name: string;
@@ -52,6 +76,26 @@ export interface NewMarcher {
     year?: number;
 }
 
+/**
+ * Defines the editable fields of a marcher.
+ */
+export interface UpdateMarcher {
+    /**
+     * The id of the marcher to update. Read only.
+     */
+    id: number;
+    name?: string;
+    section?: string;
+    drill_prefix?: string;
+    drill_order?: number;
+    year?: number;
+    notes?: string;
+}
+
+/*********************** MarcherPage ***********************/
+/**
+ * Defines all of the data associated with a marcherPage in the database.
+ */
 export interface MarcherPage {
     id: number;
     id_for_html: string;
@@ -59,12 +103,13 @@ export interface MarcherPage {
     page_id: number;
     x: number;
     y: number;
+    notes?: string;
     tableName?: InterfaceConstType["MarcherPageTableName"];
     prefix?: InterfaceConstType["MarcherPagePrefix"];
 }
 
 /**
- * An interface to use only for updating a marcherPage in the database.
+ * Defines data needed for updating a marcherPage in the database.
  */
 export interface UpdateMarcherPage {
     /**
@@ -77,7 +122,10 @@ export interface UpdateMarcherPage {
     page_id: number;
     x: number;
     y: number;
+    notes?: string;
 }
+
+/*********************** Canvas ***********************/
 
 export interface ReadableCoords {
     /**

@@ -11,11 +11,6 @@ function Topbar() {
             <PageListModal />
             <MarcherListModal />
 
-            {/* <NewMarcherForm />
-            <EditPageForm />
-            <EditMarcherPageForm />
-            <EditMarcherForm /> */}
-
             <PlaybackControls />
         </Container>
     );

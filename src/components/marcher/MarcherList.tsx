@@ -3,8 +3,8 @@ import { sections } from "../../Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
-import { updateMarcherSection, updateMarcherName } from "../../api/api";
-import { ListFormProps } from "../../Interfaces";
+import { updateMarchers } from "../../api/api";
+import { ListFormProps, UpdateMarcher } from "../../Interfaces";
 
 function MarcherList({
     isEditingProp = undefined,
@@ -22,29 +22,20 @@ function MarcherList({
     async function handleSubmit() {
         setIsEditing(false);
 
-        for (const [marcherId, changes] of Object.entries(changesRef.current)) {
-            await updateMarcher(Number(marcherId), changes);
-        }
+        const marcherUpdates: UpdateMarcher[] = [];
+
+        for (const [pageId, changes] of Object.entries(changesRef.current))
+            marcherUpdates.push({ id: Number(pageId), ...changes });
+
+        const result = await updateMarchers(marcherUpdates);
         fetchMarchers();
         changesRef.current = {};
+        return result;
     }
 
     function handleCancel() {
         setIsEditing(false);
         changesRef.current = {};
-    }
-
-    async function updateMarcher(marcherId: number, changes: any) {
-        for (const [key, value] of Object.entries(changes)) {
-            try {
-                if (key === "section")
-                    await updateMarcherSection(marcherId, value as string);
-                else if (key === "name")
-                    await updateMarcherName(marcherId, value as string);
-            } catch (error) {
-                console.error(`Error updating marcher ${marcherId}:`, error);
-            }
-        }
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
