@@ -1,6 +1,5 @@
 // A collection of interfaces and types used throughout the application
 import { Constants } from "./Constants";
-type InterfaceConstType = typeof Constants;
 
 /*********************** Page ***********************/
 /**
@@ -15,8 +14,6 @@ export interface Page {
     tempo?: number; // TODO implement
     time_signature?: string; // TODO implement
     notes?: string;
-    tableName?: InterfaceConstType["PageTableName"];
-    prefix?: InterfaceConstType["PagePrefix"];
 }
 
 /**
@@ -60,8 +57,6 @@ export interface Marcher {
     drill_order: number;
     notes?: string;
     year?: number;
-    tableName?: InterfaceConstType["MarcherTableName"];
-    prefix?: InterfaceConstType["MarcherPrefix"];
 }
 
 /**
@@ -104,8 +99,6 @@ export interface MarcherPage {
     x: number;
     y: number;
     notes?: string;
-    tableName?: InterfaceConstType["MarcherPageTableName"];
-    prefix?: InterfaceConstType["MarcherPagePrefix"];
 }
 
 /**

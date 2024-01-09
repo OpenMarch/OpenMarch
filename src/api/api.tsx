@@ -4,12 +4,6 @@ import { Constants } from '../Constants';
 import { Update } from 'vite/types/hmrPayload';
 import { create } from 'domain';
 
-
-const m_table = Constants.MarcherTableName;
-const p_table = Constants.PageTableName;
-
-const API_URL = 'http://localhost:3001/api/v1';
-
 /* ====================== Page ====================== */
 
 /**

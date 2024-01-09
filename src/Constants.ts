@@ -1,14 +1,14 @@
 export const Constants = {
     PageTableName: "pages",
+    MarcherTableName: "marchers",
+    MarcherPageTableName: "marcher_pages",
+    HistoryTableName: "history",
+
+
     PagePrefix: "page",
     NewPageId: "NEW_PAGE",
-
-    MarcherTableName: "marchers",
     MarcherPrefix: "marcher",
-
-    MarcherPageTableName: "marcher_pages",
     MarcherPagePrefix: "mp",
-
     dotRadius: 5
 } as const;
 

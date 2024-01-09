@@ -100,11 +100,28 @@ setTimeout(removeLoading, 4999)
 // ----------------------------------------------------------------------
 
 const APP_API = {
+  // send: async (channel: string, data: any) => {
+  //   const validChannels = ['undo', 'redo'];
+  //   if (validChannels.includes(channel))
+  //     ipcRenderer.invoke(channel, data);
+  // },
+
+  // on: (channel: string, func: (...args: any[]) => void) => {
+  //   const validChannels = ['undo', 'redo'];
+  //   if (validChannels.includes(channel))
+  //     ipcRenderer.on(channel, (event, ...args) => func(...args));
+  // },
+
+  onUndo: (callback: any) => ipcRenderer.on('history:undo', (event, args) => callback(args)),
+
   // Database
   databaseIsReady: () => ipcRenderer.invoke('database:isReady'),
   databaseSave: () => ipcRenderer.invoke('database:save'),
   databaseLoad: () => ipcRenderer.invoke('database:load'),
   databaseCreate: () => ipcRenderer.invoke('database:create'),
+
+  // History
+  undo: () => ipcRenderer.invoke('history:undo'),
 
   // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
@@ -125,5 +142,10 @@ const APP_API = {
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)
+
+// TODO, figure out how to send message to renderer
+// const HISTORY_API = {
+//   undo: () => ipcRenderer.invoke('history:undo'),
+// }
 
 export type ElectronApi = typeof APP_API;

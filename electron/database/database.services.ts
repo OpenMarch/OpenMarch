@@ -1,23 +1,50 @@
-import { app, dialog, ipcMain } from 'electron';
+import { ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { Constants } from '../../src/Constants';
 import * as Interfaces from '../../src/Interfaces';
 import * as fs from 'fs';
-import { Update } from 'vite/types/hmrPayload';
-import { create } from 'domain';
+// import { Update } from 'vite/types/hmrPayload';
 
 /* ============================ DATABASE ============================ */
+const PageTableName = Constants.PageTableName;
+const MarcherTableName = Constants.MarcherTableName;
+const MarcherPageTableName = Constants.MarcherPageTableName;
+const HistoryTableName = Constants.HistoryTableName;
+
 interface historyQuery {
     action: string;
     tableName: string;
     setClause?: string;
+    /**
+     * Either the previous state of the object or the object's ID
+     */
     obj?: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage | { id: number } | { marcher_id: number, page_id: number };
+}
+
+interface HistoryEntry {
+    id: number;
+    action: string;
+    table_name: string;
+    set_clause?: string;
+    data: string | Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage | { id: number } | { marcher_id: number, page_id: number };
+}
+
+/**
+ * Defines the fields of a history state when a marcher, page, or marcherPage is updated.
+ *
+ * Assumes UPDATE action.
+ * Used for undo/redo functionality.
+ */
+interface UpdateHistoryEntry {
+    tableName: string;
+    setClause: string;
+    previousState: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage;
 }
 
 interface response {
     success: boolean;
-    errorMessage?: string;
+    result?: Database.RunResult | string;
 }
 
 var DB_PATH = '';
@@ -70,10 +97,9 @@ export function connect() {
 }
 
 function createMarcherTable(db: Database.Database) {
-    console.log('Creating marcher table...');
     try {
         db.exec(`
-            CREATE TABLE IF NOT EXISTS "marchers" (
+            CREATE TABLE IF NOT EXISTS "${MarcherTableName}" (
                 "id"	INTEGER NOT NULL UNIQUE,
                 "id_for_html"	TEXT UNIQUE,
                 "name"	TEXT,
@@ -95,8 +121,9 @@ function createMarcherTable(db: Database.Database) {
 }
 
 function createPageTable(db: Database.Database) {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS "pages" (
+    try {
+        db.exec(`
+        CREATE TABLE IF NOT EXISTS "${PageTableName}" (
             "id"	INTEGER NOT NULL UNIQUE,
             "id_for_html"	TEXT UNIQUE,
             "name"	TEXT NOT NULL UNIQUE,
@@ -110,11 +137,15 @@ function createPageTable(db: Database.Database) {
             PRIMARY KEY("id" AUTOINCREMENT)
         );
     `);
+    } catch (error) {
+        console.error('Failed to create page table:', error);
+    }
 }
 
 function createMarcherPageTable(db: Database.Database) {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS "marcher_pages" (
+    try {
+        db.exec(`
+        CREATE TABLE IF NOT EXISTS "${MarcherPageTableName}" (
             "id" INTEGER NOT NULL UNIQUE,
             "id_for_html" TEXT UNIQUE,
             "marcher_id" INTEGER NOT NULL,
@@ -129,15 +160,20 @@ function createMarcherPageTable(db: Database.Database) {
         CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
         CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
     `);
+    } catch (error) {
+        console.error('Failed to create marcher_page table:', error);
+    }
 }
 
 function createHistoryTable(db: Database.Database) {
     db.exec(`
-        CREATE TABLE IF NOT EXISTS "history" (
+        CREATE TABLE IF NOT EXISTS "${HistoryTableName}" (
             "id" INTEGER NOT NULL UNIQUE,
             "action" TEXT NOT NULL,
             "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
-            "data" TEXT NOT NULL,
+            "table_name" TEXT NOT NULL,
+            "set_clause" TEXT,
+            "data" TEXT,
             PRIMARY KEY("id" AUTOINCREMENT)
         );
     `);
@@ -158,6 +194,9 @@ function createHistoryTable(db: Database.Database) {
  * Whenever modifying this, you must also modify the app api in electron/preload/index.ts
  */
 export function initHandlers() {
+    // History
+    ipcMain.handle('history:undo', async (_, args) => undo());
+
     // Marcher
     ipcMain.handle('marcher:getAll', async (_, args) => getMarchers());
     ipcMain.handle('marcher:insert', async (_, args) => createMarcher(args));
@@ -178,7 +217,7 @@ export function initHandlers() {
 /* ============================ Marcher ============================ */
 async function getMarchers(db?: Database.Database): Promise<Interfaces.Marcher[]> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
+    const stmt = dbToUse.prepare(`SELECT * FROM ${MarcherTableName}`);
     const result = stmt.all();
     if (!db) dbToUse.close();
     return result as Interfaces.Marcher[];
@@ -186,7 +225,7 @@ async function getMarchers(db?: Database.Database): Promise<Interfaces.Marcher[]
 
 async function getMarcher(marcherId: number, db?: Database.Database): Promise<Interfaces.Marcher> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`);
+    const stmt = dbToUse.prepare(`SELECT * FROM ${MarcherTableName} WHERE id = @marcherId`);
     const result = stmt.get({ marcherId });
     if (!db) dbToUse.close();
     return result as Interfaces.Marcher;
@@ -220,7 +259,7 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
             };
             const db = connect();
             const insertStmt = db.prepare(`
-                INSERT INTO ${Constants.MarcherTableName} (
+                INSERT INTO ${MarcherTableName} (
                     name,
                     section,
                     drill_prefix,
@@ -250,13 +289,20 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
 
             // Update the id_for_html field
             const updateStmt = db.prepare(`
-                UPDATE ${Constants.MarcherTableName}
+                UPDATE ${MarcherTableName}
                 SET id_for_html = @id_for_html
                 WHERE id = @id
             `);
             const updateResult = updateStmt.run({
                 id_for_html: Constants.MarcherPrefix + "_" + id,
                 id
+            });
+
+            // Add the page to the history table
+            historyQueries.push({
+                action: 'DELETE',
+                tableName: MarcherTableName,
+                obj: { id }
             });
 
             /* Add a marcherPage for this marcher for each page */
@@ -266,6 +312,13 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
             // For each page, create a new MarcherPage
             for (const page of pages) {
                 createMarcherPage(db, { marcher_id: id, page_id: page.id, x: 100, y: 100 });
+
+                // Add the marcherPage to the history table
+                historyQueries.push({
+                    action: 'DELETE',
+                    tableName: MarcherPageTableName,
+                    obj: { marcher_id: id, page_id: page.id }
+                });
             }
         }
     } catch (error: any) {
@@ -321,13 +374,13 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
             const originalMarcher = await getMarcher(marcherUpdate.id, db);
             historyQueries.push({
                 action: 'UPDATE',
-                tableName: Constants.MarcherTableName,
+                tableName: MarcherTableName,
                 setClause: setClause,
                 obj: originalMarcher
             });
 
             const stmt = db.prepare(`
-                UPDATE ${Constants.MarcherTableName}
+                UPDATE ${MarcherTableName}
                 SET ${setClause}, updated_at = @new_updated_at
                 WHERE id = @id
             `);
@@ -350,7 +403,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
 async function deleteMarcher(marcher_id: number) {
     const db = connect();
     const stmt = db.prepare(`
-        DELETE FROM ${Constants.MarcherTableName}
+        DELETE FROM ${MarcherTableName}
         WHERE id = @marcher_id
     `);
     const result = stmt.run({ marcher_id });
@@ -361,7 +414,7 @@ async function deleteMarcher(marcher_id: number) {
 /* ============================ Page ============================ */
 async function getPages(db?: Database.Database): Promise<Interfaces.Page[]> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName}`);
+    const stmt = dbToUse.prepare(`SELECT * FROM ${PageTableName}`);
     const result = stmt.all();
     if (!db) dbToUse.close();
     return result as Interfaces.Page[];
@@ -369,7 +422,7 @@ async function getPages(db?: Database.Database): Promise<Interfaces.Page[]> {
 
 async function getPage(pageId: number, db?: Database.Database): Promise<Interfaces.Page> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @pageId`);
+    const stmt = dbToUse.prepare(`SELECT * FROM ${PageTableName} WHERE id = @pageId`);
     const result = stmt.get({ pageId });
     if (!db) dbToUse.close();
     return result as Interfaces.Page;
@@ -389,7 +442,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<response> {
     try {
         for (const newPage of newPages) {
             // Get the max order
-            const stmt = db.prepare(`SELECT MAX("order") as maxOrder FROM ${Constants.PageTableName}`);
+            const stmt = db.prepare(`SELECT MAX("order") as maxOrder FROM ${PageTableName}`);
             const result: any = stmt.get();
             const newOrder = result.maxOrder + 1;
             const pageToAdd: Interfaces.Page = {
@@ -403,7 +456,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<response> {
                 counts: newPage.counts
             };
             const insertStmt = db.prepare(`
-                INSERT INTO ${Constants.PageTableName} (
+                INSERT INTO ${PageTableName} (
                     name,
                     notes,
                     "order",
@@ -433,7 +486,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<response> {
             const id = insertResult.lastInsertRowid as number;
             // Update the id_for_html field
             const updateStmt = db.prepare(`
-                UPDATE ${Constants.PageTableName}
+                UPDATE ${PageTableName}
                 SET id_for_html = @id_for_html
                 WHERE id = @id
             `);
@@ -444,11 +497,9 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<response> {
             });
 
             // Add the page to the history table
-            pageToAdd.id = id;
-            pageToAdd.id_for_html = new_id_for_html;
             historyQueries.push({
                 action: 'DELETE',
-                tableName: Constants.PageTableName,
+                tableName: PageTableName,
                 obj: { id }
             });
 
@@ -468,7 +519,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<response> {
                 // Add the marcherPage to the history table
                 historyQueries.push({
                     action: 'DELETE',
-                    tableName: Constants.MarcherPageTableName,
+                    tableName: MarcherPageTableName,
                     obj: { marcher_id: marcher.id, page_id: id }
                 });
             }
@@ -476,7 +527,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<response> {
 
     } catch (error: any) {
         console.error(error);
-        return { success: false, errorMessage: error.message };
+        return { success: false, result: error.message };
     } finally {
         db.close();
     }
@@ -529,14 +580,14 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
             const originalPage = await getPage(pageUpdate.id, db);
             historyQueries.push({
                 action: 'UPDATE',
-                tableName: Constants.PageTableName,
+                tableName: PageTableName,
                 setClause: setClause,
                 obj: originalPage
             });
 
             // Update the page
             const stmt = db.prepare(`
-                UPDATE ${Constants.PageTableName}
+                UPDATE ${PageTableName}
                 SET ${setClause}, updated_at = @new_updated_at
                 WHERE id = @id
             `);
@@ -562,14 +613,14 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
  */
 async function getMarcherPages(args: { marcher_id?: number, page_id?: number }): Promise<Interfaces.MarcherPage[]> {
     const db = connect();
-    let stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName}`);
+    let stmt = db.prepare(`SELECT * FROM ${MarcherPageTableName}`);
     if (args) {
         if (args.marcher_id && args.page_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`);
+            stmt = db.prepare(`SELECT * FROM ${MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`);
         else if (args.marcher_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`);
+            stmt = db.prepare(`SELECT * FROM ${MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`);
         else if (args.page_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`);
+            stmt = db.prepare(`SELECT * FROM ${MarcherPageTableName} WHERE page_id = ${args.page_id}`);
     }
     const result = stmt.all();
     db.close();
@@ -611,7 +662,7 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Interfac
         y: newMarcherPage.y
     };
     const insertStmt = db.prepare(`
-        INSERT INTO ${Constants.MarcherPageTableName} (
+        INSERT INTO ${MarcherPageTableName} (
             marcher_id,
             page_id,
             x,
@@ -637,7 +688,7 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Interfac
     const id = insertResult.lastInsertRowid;
     // Update the id_for_html field
     const updateStmt = db.prepare(`
-        UPDATE ${Constants.MarcherPageTableName}
+        UPDATE ${MarcherPageTableName}
         SET id_for_html = @id_for_html
         WHERE id = @id
     `);
@@ -648,32 +699,48 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Interfac
     return updateResult;
 }
 
+/**
+ * Updates a marcherPage with the given values.
+ *
+ * @param args UpdateMarcherPage object that contains the marcher_id and page_id of the
+ *                    marcherPage to update and the values to update it with
+ * @returns - {success: boolean, result: Database.result | string}
+ */
 async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
-    const db = connect();
+    try {
+        const db = connect();
 
-    // Generate the SET clause of the SQL query
-    let setClause = Object.keys(args)
-        .map(key => `${key} = @${key}`)
-        .join(', ');
+        // Generate the SET clause of the SQL query
+        let setClause = Object.keys(args)
+            .map(key => `${key} = @${key}`)
+            .join(', ');
 
-    // Check if the SET clause is empty
-    if (setClause.length === 0) {
-        throw new Error('No valid properties to update');
+        // Check if the SET clause is empty
+        if (setClause.length === 0) {
+            throw new Error('No valid properties to update');
+        }
+
+        insertUpdateHistory({
+            tableName: MarcherPageTableName,
+            setClause: setClause,
+            previousState: await getMarcherPage({ marcher_id: args.marcher_id, page_id: args.page_id })
+        }, db);
+
+        // console.log("setClause:", setClause);
+
+        const stmt = db.prepare(`
+            UPDATE ${MarcherPageTableName}
+            SET x = @x, y = @y, updated_at = @new_updated_at
+            WHERE marcher_id = @marcher_id AND page_id = @page_id
+        `);
+
+        const result = stmt.run({ ...args, new_updated_at: new Date().toISOString() });
+        db.close();
+        return result;
+    } catch (error: any) {
+        console.error(error);
+        return { success: false, errorMessage: error.message };
     }
-
-    // console.log("setClause:", setClause);
-
-    const stmt = db.prepare(`
-        UPDATE ${Constants.MarcherPageTableName}
-        SET x = @x, y = @y, updated_at = @new_updated_at
-        WHERE marcher_id = @marcher_id AND page_id = @page_id
-    `);
-
-    // console.log("stmt:", stmt);
-
-    const result = stmt.run({ ...args, new_updated_at: new Date().toISOString() });
-    db.close();
-    return result;
 }
 
 /**
@@ -687,7 +754,7 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
     const db = connect();
 
     /* Get the previous marcherPage */
-    const currPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @page_id`);
+    const currPageStmt = db.prepare(`SELECT * FROM ${PageTableName} WHERE id = @page_id`);
     const currPage = currPageStmt.get({ page_id }) as Interfaces.Page;
     if (!currPage)
         throw new Error(`Page with id ${page_id} does not exist`);
@@ -695,7 +762,7 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         console.log(`page_id ${page_id} is the first page, skipping setCoordsToPreviousPage`);
         return;
     }
-    const previousPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE "order" = @order`);
+    const previousPageStmt = db.prepare(`SELECT * FROM ${PageTableName} WHERE "order" = @order`);
     const previousPage = previousPageStmt.get({ order: currPage.order - 1 }) as Interfaces.Page;
     const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as Interfaces.MarcherPage;
 
@@ -707,4 +774,131 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         x: previousMarcherPage.x,
         y: previousMarcherPage.y
     }
+}
+
+/* ============================ History Table ============================ */
+/**
+ * Pops the last action off of the history table and executes it (resets to original state/undo).
+ *
+ * @param db database connection
+ * @returns - {success: boolean, tableName: string}
+ */
+export async function undo(db?: Database.Database) {
+    const dbToUse = db || connect();
+
+    const selectStmt = dbToUse.prepare(`
+        SELECT * FROM ${HistoryTableName}
+        ORDER BY id DESC
+        LIMIT 1
+    `);
+    const result = selectStmt.get() as HistoryEntry;
+    if (!result) {
+        console.log('No actions to undo');
+        return;
+    }
+
+    const undoQuery: HistoryEntry = {
+        id: result.id,
+        action: result.action,
+        table_name: result.table_name,
+        set_clause: result.set_clause,
+        data: JSON.parse((result.data as string))
+    };
+
+    // The ID of the marcher or page that was updated
+    let marcher_id: number = -1;
+    let page_id: number = -1;
+
+    let undoStmt: Database.Statement | undefined = undefined;
+    if (undoQuery.action === 'UPDATE') {
+        const updateQuery: UpdateHistoryEntry = {
+            tableName: undoQuery.table_name,
+            setClause: undoQuery.set_clause as string,
+            previousState: undoQuery.data as Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage
+        }
+
+        // record the id of the marcher or page that was updated
+        switch (undoQuery.table_name) {
+            case MarcherTableName:
+                marcher_id = (updateQuery.previousState as Interfaces.Marcher).id;
+                break;
+            case PageTableName:
+                page_id = (updateQuery.previousState as Interfaces.Page).id;
+                break;
+            case MarcherPageTableName:
+                marcher_id = (updateQuery.previousState as Interfaces.MarcherPage).marcher_id;
+                page_id = (updateQuery.previousState as Interfaces.MarcherPage).page_id;
+                break;
+            default:
+                throw new Error(`undoQuery.table_name is invalid: ${undoQuery.table_name}`);
+        }
+
+        undoStmt = dbToUse.prepare(`
+            UPDATE ${updateQuery.tableName}
+            SET ${updateQuery.setClause}
+            WHERE id = ${updateQuery.previousState.id}
+        `);
+        undoStmt.run(updateQuery.previousState);
+
+        // } else if (undoQuery.action === 'DELETE') {
+        //     undoStmt = dbToUse.prepare(`
+        //         ${undoQuery.action} FROM ${undoQuery.table_name}
+        //         ${undoQuery.set_clause && ("SET" + undoQuery.set_clause)}
+        //         WHERE id = ${undoQuery.id}
+        //     `);
+    } else
+        throw new Error(`undoStmt is undefined for action ${undoQuery.action}`);
+
+    if (!db) dbToUse.close();
+
+    return { success: true, undo_id: undoQuery.id, undo_data: { tableName: undoQuery.table_name, marcher_id, page_id } };
+}
+
+export async function deleteUndo(undo_id: number) {
+    const dbToUse = connect();
+
+    const deleteStmt = dbToUse.prepare(`
+        DELETE FROM ${HistoryTableName}
+        WHERE id = @id
+    `);
+
+    deleteStmt.run({ id: undo_id });
+
+    dbToUse.close();
+
+    return { success: true };
+}
+
+/**
+ * Insert an update action into the history table.
+ *
+ * @param args UpdateHistoryEntry object
+ * @param db database connection
+ * @returns - {success: boolean, errorMessage?: string}
+ */
+async function insertUpdateHistory(args: UpdateHistoryEntry, db?: Database.Database) {
+    const historyEntry: HistoryEntry = {
+        id: 0, // Not used, needed for interface
+        action: 'UPDATE',
+        table_name: args.tableName,
+        set_clause: args.setClause,
+        data: JSON.stringify(args.previousState),
+    }
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(`
+        INSERT INTO ${HistoryTableName} (
+            action,
+            table_name,
+            set_clause,
+            data
+        ) VALUES (
+            @action,
+            @table_name,
+            @set_clause,
+            @data
+        )
+    `);
+    const result = stmt.run(historyEntry);
+    if (!db) dbToUse.close();
+    return 200;
 }

@@ -1,4 +1,5 @@
 const { app, dialog, Menu, shell } = require('electron');
+import * as db from '../database/database.services';
 import * as mainProcess from './index';
 
 interface MenuItem {
@@ -16,16 +17,16 @@ const template = [
       {
         label: 'Open File',
         accelerator: 'CommandOrControl+O',
-        click(item:any, focusedWindow:any) {
-        //   if (focusedWindow) {
-        //     return mainProcess.getFileFromUser(focusedWindow);
-        //   }
+        click(item: any, focusedWindow: any) {
+          //   if (focusedWindow) {
+          //     return mainProcess.getFileFromUser(focusedWindow);
+          //   }
 
-        //   const newWindow = mainProcess.createWindow();
+          //   const newWindow = mainProcess.createWindow();
 
-        //   newWindow.on('show', () => {
-        //     mainProcess.getFileFromUser(newWindow);
-        //   });
+          //   newWindow.on('show', () => {
+          //     mainProcess.getFileFromUser(newWindow);
+          //   });
           mainProcess.loadFile();
         },
       },
@@ -40,7 +41,7 @@ const template = [
       {
         label: 'Save As Copy',
         accelerator: 'CommandOrControl+S',
-        click(item:any, focusedWindow:any) {
+        click(item: any, focusedWindow: any) {
           if (!focusedWindow) {
             return dialog.showErrorBox(
               'Cannot Save or Export',
@@ -68,12 +69,17 @@ const template = [
   {
     label: 'Edit',
     submenu: [
-      {label: "None of this works yet"},
+      { label: "None of this works yet" },
       { type: 'separator' },
       {
         label: 'Undo',
         accelerator: 'CommandOrControl+Z',
-        role: 'undo',
+        // role: 'undo',
+        click(item: any, focusedWindow: any) {
+          console.log("Undoing");
+          // if (focusedWindow) focusedWindow.webContents.undo();
+          mainProcess.executeUndo();
+        }
       },
       {
         label: 'Redo',
@@ -128,7 +134,7 @@ const template = [
       },
     ],
   },
-    {
+  {
     label: 'Help',
     role: 'help',
     submenu: [
@@ -138,7 +144,7 @@ const template = [
       },
       {
         label: 'Toggle Developer Tools',
-        click(item:any, focusedWindow:any) {
+        click(item: any, focusedWindow: any) {
           if (focusedWindow) focusedWindow.webContents.toggleDevTools();
         }
       }
@@ -161,7 +167,7 @@ if (process.platform === 'darwin') {
         label: 'Services',
         role: 'services',
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        submenu: [{ label: 'No Services', enabled: false}],
+        submenu: [{ label: 'No Services', enabled: false }],
       },
       { type: 'separator' },
       {

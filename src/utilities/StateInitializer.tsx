@@ -1,16 +1,21 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useMarcherStore, useMarcherPageStore, usePageStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
+import { Constants } from "@/Constants";
+import { useSelectedMarcher } from "@/context/SelectedMarcherContext";
+import { Marcher } from "@/Interfaces";
+import { get } from "http";
 
 /**
  * A component that initializes the state of the application.
  * @returns <> </>
  */
 function StateInitializer() {
-    const { fetchMarchers, setMarchersAreLoading } = useMarcherStore();
+    const { marchers, fetchMarchers, setMarchersAreLoading } = useMarcherStore();
     const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
     const { pages, fetchPages, setPagesAreLoading } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
 
     useEffect(() => {
         fetchMarchers().finally(() => {
@@ -35,6 +40,38 @@ function StateInitializer() {
         if (selectedPage == null && pages.length > 0)
             setSelectedPage(pages[0]);
     }, [pages, selectedPage, setSelectedPage]);
+
+    useEffect(() => {
+        window.electron.onUndo((args: { tableName: string, marcher_id: number, page_id: number }) => {
+            console.log("Undoing " + args.tableName + " with args: " + JSON.stringify(args));
+            switch (args.tableName) {
+                case Constants.MarcherTableName:
+                    fetchMarchers();
+                    break;
+                case Constants.MarcherPageTableName:
+                    fetchMarcherPages();
+                    if (args.marcher_id > 0)
+                        setSelectedMarcher(getMarcher(args.marcher_id));
+                    if (args.page_id > 0)
+                        setSelectedPage(getPage(args.page_id));
+
+                    console.log("Selected marcher: " + JSON.stringify(selectedMarcher));
+                    console.log("Selected page: " + JSON.stringify(selectedPage));
+                    break;
+                case Constants.PageTableName:
+                    fetchPages();
+                    break;
+            }
+        })
+    }, [marchers, pages]);
+
+    const getMarcher = useCallback((id: number) => {
+        return marchers.find(marcher => marcher.id === id) || null;
+    }, [marchers]);
+
+    const getPage = useCallback((id: number) => {
+        return pages.find(page => page.id === id) || null;
+    }, [pages]);
 
     return <></>; // Empty fragment
 }

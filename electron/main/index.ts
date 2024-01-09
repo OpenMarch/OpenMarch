@@ -91,13 +91,13 @@ app.whenReady().then(async () => {
   app.setName('OpenMarch');
   Menu.setApplicationMenu(applicationMenu);
   const previousPath = store.get('databasePath') as string;
-  if(previousPath && previousPath.length > 0)
+  if (previousPath && previousPath.length > 0)
     setActiveDb(previousPath);
   DatabaseServices.initHandlers();
 
   // Database handlers
   console.log("db_path: " + DatabaseServices.getDbPath());
-  ipcMain.handle('database:isReady', DatabaseServices.databaseIsReady );
+  ipcMain.handle('database:isReady', DatabaseServices.databaseIsReady);
   ipcMain.handle('database:save', async () => saveFile());
   ipcMain.handle('database:load', async () => loadFile());
   ipcMain.handle('database:create', async () => newFile());
@@ -192,23 +192,37 @@ export async function loadFile() {
 
   try {
     // If there is no previous path, open a dialog
-      const path = await dialog.showOpenDialog({
-        filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
-      });
-      DatabaseServices.setDbPath(path.filePaths[0]);
-      store.set('databasePath', path.filePaths[0]); // Save the path for next time
+    const path = await dialog.showOpenDialog({
+      filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
+    });
+    DatabaseServices.setDbPath(path.filePaths[0]);
+    store.set('databasePath', path.filePaths[0]); // Save the path for next time
 
-      // If the user cancels the dialog, and there is no previous path, return -1
-      if (path.canceled || !path.filePaths[0])
-        return -1;
+    // If the user cancels the dialog, and there is no previous path, return -1
+    if (path.canceled || !path.filePaths[0])
+      return -1;
 
-      setActiveDb(path.filePaths[0]);
+    setActiveDb(path.filePaths[0]);
   }
   catch (e) {
     console.log(e);
     return -1;
   }
   return 200;
+}
+
+export async function executeUndo() {
+  const response = await DatabaseServices.undo();
+
+  if (!response?.success) {
+    console.log("Error undoing");
+    return;
+  }
+
+  // send a message to the renderer to fetch the updated data
+  win?.webContents.send('history:undo', response.undo_data);
+
+  DatabaseServices.deleteUndo(response.undo_id);
 }
 
 function setActiveDb(path: string, isNewFile = false) {
