@@ -2,7 +2,8 @@ export const Constants = {
     PageTableName: "pages",
     MarcherTableName: "marchers",
     MarcherPageTableName: "marcher_pages",
-    HistoryTableName: "history",
+    UndoHistoryTableName: "history_undo",
+    RedoHistoryTableName: "history_redo",
 
 
     PagePrefix: "page",

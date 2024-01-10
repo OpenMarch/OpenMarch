@@ -211,18 +211,16 @@ export async function loadFile() {
   return 200;
 }
 
-export async function executeUndo() {
-  const response = await DatabaseServices.undo();
+export async function executeHistoryAction(type: 'undo' | 'redo') {
+  const response = await DatabaseServices.historyAction(type);
 
   if (!response?.success) {
-    console.log("Error undoing");
+    console.log(`Error ${type}ing`);
     return;
   }
 
   // send a message to the renderer to fetch the updated data
-  win?.webContents.send('history:undo', response.undo_data);
-
-  DatabaseServices.deleteUndo(response.undo_id);
+  win?.webContents.send('history:action', response.history_data);
 }
 
 function setActiveDb(path: string, isNewFile = false) {

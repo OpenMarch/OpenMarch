@@ -3,8 +3,6 @@ import { useMarcherStore, useMarcherPageStore, usePageStore } from "../stores/St
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { Constants } from "@/Constants";
 import { useSelectedMarcher } from "@/context/SelectedMarcherContext";
-import { Marcher } from "@/Interfaces";
-import { get } from "http";
 
 /**
  * A component that initializes the state of the application.
@@ -15,7 +13,7 @@ function StateInitializer() {
     const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
     const { pages, fetchPages, setPagesAreLoading } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
+    const { setSelectedMarcher } = useSelectedMarcher()!;
 
     useEffect(() => {
         fetchMarchers().finally(() => {
@@ -42,7 +40,7 @@ function StateInitializer() {
     }, [pages, selectedPage, setSelectedPage]);
 
     useEffect(() => {
-        window.electron.onUndo((args: { tableName: string, marcher_id: number, page_id: number }) => {
+        window.electron.onHistoryAction((args: { tableName: string, marcher_id: number, page_id: number }) => {
             console.log("Undoing " + args.tableName + " with args: " + JSON.stringify(args));
             switch (args.tableName) {
                 case Constants.MarcherTableName:
@@ -54,9 +52,6 @@ function StateInitializer() {
                         setSelectedMarcher(getMarcher(args.marcher_id));
                     if (args.page_id > 0)
                         setSelectedPage(getPage(args.page_id));
-
-                    console.log("Selected marcher: " + JSON.stringify(selectedMarcher));
-                    console.log("Selected page: " + JSON.stringify(selectedPage));
                     break;
                 case Constants.PageTableName:
                     fetchPages();

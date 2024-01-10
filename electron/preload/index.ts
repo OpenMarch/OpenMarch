@@ -112,7 +112,7 @@ const APP_API = {
   //     ipcRenderer.on(channel, (event, ...args) => func(...args));
   // },
 
-  onUndo: (callback: any) => ipcRenderer.on('history:undo', (event, args) => callback(args)),
+
 
   // Database
   databaseIsReady: () => ipcRenderer.invoke('database:isReady'),
@@ -121,7 +121,10 @@ const APP_API = {
   databaseCreate: () => ipcRenderer.invoke('database:create'),
 
   // History
+  /** Activates on undo or redo. */
+  onHistoryAction: (callback: any) => ipcRenderer.on('history:action', (event, args) => callback(args)),
   undo: () => ipcRenderer.invoke('history:undo'),
+  redo: () => ipcRenderer.invoke('history:redo'),
 
   // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),

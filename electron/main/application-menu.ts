@@ -73,40 +73,47 @@ const template = [
       { type: 'separator' },
       {
         label: 'Undo',
+        id: 'undo',
         accelerator: 'CommandOrControl+Z',
         // role: 'undo',
         click(item: any, focusedWindow: any) {
           console.log("Undoing");
           // if (focusedWindow) focusedWindow.webContents.undo();
-          mainProcess.executeUndo();
+          mainProcess.executeHistoryAction('undo');
         }
       },
       {
         label: 'Redo',
+        id: 'redo',
         accelerator: 'Shift+CommandOrControl+Z',
-        role: 'redo',
+        // role: 'redo',
+        click(item: any, focusedWindow: any) {
+          console.log("Undoing");
+          // if (focusedWindow) focusedWindow.webContents.undo();
+          mainProcess.executeHistoryAction('redo');
+        }
       },
       { type: 'separator' },
-      {
-        label: 'Cut',
-        accelerator: 'CommandOrControl+X',
-        role: 'cut',
-      },
-      {
-        label: 'Copy',
-        accelerator: 'CommandOrControl+C',
-        role: 'copy',
-      },
-      {
-        label: 'Paste',
-        accelerator: 'CommandOrControl+V',
-        role: 'paste',
-      },
-      {
-        label: 'Select All',
-        accelerator: 'CommandOrControl+A',
-        role: 'selectall',
-      },
+      // {
+      //   label: 'Cut',
+      //   accelerator: 'CommandOrControl+X',
+      //   role: 'cut',
+      // },
+      // {
+      //   label: 'Copy',
+      //   accelerator: 'CommandOrControl+C',
+      //   role: 'copy',
+      // },
+      // {
+      //   label: 'Paste',
+      //   accelerator: 'CommandOrControl+V',
+      //   role: 'paste',
+      // },
+      // {
+      //   label: 'Select All',
+      //   accelerator: 'CommandOrControl+A',
+      //   role: 'selectall',
+      // },
     ],
   },
   {

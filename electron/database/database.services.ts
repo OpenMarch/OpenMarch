@@ -4,13 +4,15 @@ import path from 'path';
 import { Constants } from '../../src/Constants';
 import * as Interfaces from '../../src/Interfaces';
 import * as fs from 'fs';
+import { json } from 'stream/consumers';
 // import { Update } from 'vite/types/hmrPayload';
 
 /* ============================ DATABASE ============================ */
 const PageTableName = Constants.PageTableName;
 const MarcherTableName = Constants.MarcherTableName;
 const MarcherPageTableName = Constants.MarcherPageTableName;
-const HistoryTableName = Constants.HistoryTableName;
+const UndoHistoryTableName = Constants.UndoHistoryTableName;
+const RedoHistoryTableName = Constants.RedoHistoryTableName;
 
 interface historyQuery {
     action: string;
@@ -22,8 +24,13 @@ interface historyQuery {
     obj?: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage | { id: number } | { marcher_id: number, page_id: number };
 }
 
-interface HistoryEntry {
-    id: number;
+/**
+ * HistoryEntry without the reverse_action field.
+ * I.e. putting a reverse_action for the action itself would create a circular reference.
+ * This should not be used for the objects going into the undo and redo tables.
+ */
+interface HistoryEntryBase {
+    id?: number;
     action: string;
     table_name: string;
     set_clause?: string;
@@ -31,20 +38,29 @@ interface HistoryEntry {
 }
 
 /**
- * Defines the fields of a history state when a marcher, page, or marcherPage is updated.
- *
- * Assumes UPDATE action.
- * Used for undo/redo functionality.
+ * Defines the fields of a history state for the undo and redo tables.
+ * Objects of this type are what will go into the undo and redo tables.
  */
-interface UpdateHistoryEntry {
+interface HistoryEntry extends HistoryEntryBase {
+    reverse_action: HistoryEntryBase;
+}
+
+/**
+ * Update history entry without the reverse_action field.
+ * I.e. putting a reverse_action for the action itself would create a circular reference.
+ */
+interface UpdateHistoryEntryBase {
     tableName: string;
     setClause: string;
     previousState: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage;
 }
 
-interface response {
-    success: boolean;
-    result?: Database.RunResult | string;
+/**
+ * Defines the fields of a history state when a marcher, page, or marcherPage is updated.
+ * This is will be parsed into a HistoryEntry and put into the undo and redo tables.
+ */
+interface UpdateHistoryEntry extends UpdateHistoryEntryBase {
+    reverseAction: UpdateHistoryEntryBase;
 }
 
 var DB_PATH = '';
@@ -73,6 +89,9 @@ export function databaseIsReady() {
     return DB_PATH.length > 0 && fs.existsSync(DB_PATH);
 }
 
+/**
+ * Initiates the database by creating the tables if they do not exist.
+ */
 export function initDatabase() {
     const db = connect();
     console.log(db);
@@ -81,7 +100,7 @@ export function initDatabase() {
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
-    createHistoryTable(db);
+    createHistoryTables(db);
     console.log('Database created.');
     db.close();
 }
@@ -165,29 +184,22 @@ function createMarcherPageTable(db: Database.Database) {
     }
 }
 
-function createHistoryTable(db: Database.Database) {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS "${HistoryTableName}" (
+function createHistoryTables(db: Database.Database) {
+    const tableStr = `
+        CREATE TABLE IF NOT EXISTS "{TableName}" (
             "id" INTEGER NOT NULL UNIQUE,
             "action" TEXT NOT NULL,
             "timestamp" DATETIME DEFAULT CURRENT_TIMESTAMP,
             "table_name" TEXT NOT NULL,
             "set_clause" TEXT,
             "data" TEXT,
+            "reverse_action" TEXT NOT NULL,
             PRIMARY KEY("id" AUTOINCREMENT)
         );
-    `);
+    `
+    db.exec(tableStr.replace('{TableName}', UndoHistoryTableName));
+    db.exec(tableStr.replace('{TableName}', RedoHistoryTableName));
 }
-
-// export function init() {
-//     ipcMain.handle('database', async (event, query, ...params) => {
-//         const db = connect();
-//         const stmt = db.prepare(query);
-//         const result = stmt.all(...params);
-//         db.close();
-//         return result;
-//     });
-// }
 
 /**
  * Handlers for the app api.
@@ -195,7 +207,8 @@ function createHistoryTable(db: Database.Database) {
  */
 export function initHandlers() {
     // History
-    ipcMain.handle('history:undo', async (_, args) => undo());
+    ipcMain.handle('history:undo', async (_, args) => historyAction("undo"));
+    ipcMain.handle('history:redo', async (_, args) => historyAction("redo"));
 
     // Marcher
     ipcMain.handle('marcher:getAll', async (_, args) => getMarchers());
@@ -400,6 +413,12 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
     return { success: true };
 }
 
+/**
+ * NOT READY
+ *
+ * @param marcher_id
+ * @returns
+ */
 async function deleteMarcher(marcher_id: number) {
     const db = connect();
     const stmt = db.prepare(`
@@ -432,12 +451,11 @@ async function createPage(newPage: Interfaces.NewPage) {
     createPages([newPage]);
 }
 
-async function createPages(newPages: Interfaces.NewPage[]): Promise<response> {
+async function createPages(newPages: Interfaces.NewPage[]) {
     const db = connect();
 
     // List of queries executed in this function to be added to the history table
     const historyQueries: historyQuery[] = [];
-    const redoAction: () => Promise<response> = () => createPages(newPages);
 
     try {
         for (const newPage of newPages) {
@@ -720,13 +738,8 @@ async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
             throw new Error('No valid properties to update');
         }
 
-        insertUpdateHistory({
-            tableName: MarcherPageTableName,
-            setClause: setClause,
-            previousState: await getMarcherPage({ marcher_id: args.marcher_id, page_id: args.page_id })
-        }, db);
-
-        // console.log("setClause:", setClause);
+        // Record the original values of the marcherPage for the history table
+        const previousState = await getMarcherPage({ marcher_id: args.marcher_id, page_id: args.page_id });
 
         const stmt = db.prepare(`
             UPDATE ${MarcherPageTableName}
@@ -735,6 +748,20 @@ async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
         `);
 
         const result = stmt.run({ ...args, new_updated_at: new Date().toISOString() });
+
+
+        const updateHistoryEntry = {
+            tableName: MarcherPageTableName,
+            setClause: setClause,
+            previousState: previousState,
+            reverseAction: {
+                tableName: MarcherPageTableName,
+                setClause: setClause,
+                previousState: await getMarcherPage({ marcher_id: args.marcher_id, page_id: args.page_id }),
+            }
+        }
+        insertUpdateHistory(updateHistoryEntry, db);
+
         db.close();
         return result;
     } catch (error: any) {
@@ -778,127 +805,200 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
 
 /* ============================ History Table ============================ */
 /**
- * Pops the last action off of the history table and executes it (resets to original state/undo).
+ * Pops the last action off of the undo or redo table and executes it (resets to original state/undo).
  *
+ * @param type 'undo' or 'redo'
  * @param db database connection
- * @returns - {success: boolean, tableName: string}
+ * @returns - {success: boolean, undo_id: number, history_data: { tableName: string, marcher_id: number, page_id: number }}
  */
-export async function undo(db?: Database.Database) {
+export async function historyAction(type: 'undo' | 'redo', db?: Database.Database) {
+    console.log("-------------------- ", type, " --------------------")
     const dbToUse = db || connect();
+    let output;
 
-    const selectStmt = dbToUse.prepare(`
-        SELECT * FROM ${HistoryTableName}
-        ORDER BY id DESC
-        LIMIT 1
-    `);
-    const result = selectStmt.get() as HistoryEntry;
-    if (!result) {
-        console.log('No actions to undo');
-        return;
-    }
+    try {
+        const HistoryTableName = type === 'undo' ? UndoHistoryTableName : RedoHistoryTableName;
 
-    const undoQuery: HistoryEntry = {
-        id: result.id,
-        action: result.action,
-        table_name: result.table_name,
-        set_clause: result.set_clause,
-        data: JSON.parse((result.data as string))
-    };
-
-    // The ID of the marcher or page that was updated
-    let marcher_id: number = -1;
-    let page_id: number = -1;
-
-    let undoStmt: Database.Statement | undefined = undefined;
-    if (undoQuery.action === 'UPDATE') {
-        const updateQuery: UpdateHistoryEntry = {
-            tableName: undoQuery.table_name,
-            setClause: undoQuery.set_clause as string,
-            previousState: undoQuery.data as Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage
-        }
-
-        // record the id of the marcher or page that was updated
-        switch (undoQuery.table_name) {
-            case MarcherTableName:
-                marcher_id = (updateQuery.previousState as Interfaces.Marcher).id;
-                break;
-            case PageTableName:
-                page_id = (updateQuery.previousState as Interfaces.Page).id;
-                break;
-            case MarcherPageTableName:
-                marcher_id = (updateQuery.previousState as Interfaces.MarcherPage).marcher_id;
-                page_id = (updateQuery.previousState as Interfaces.MarcherPage).page_id;
-                break;
-            default:
-                throw new Error(`undoQuery.table_name is invalid: ${undoQuery.table_name}`);
-        }
-
-        undoStmt = dbToUse.prepare(`
-            UPDATE ${updateQuery.tableName}
-            SET ${updateQuery.setClause}
-            WHERE id = ${updateQuery.previousState.id}
+        // pull the last action off of the history table. Acts like a stack.
+        const selectStmt = dbToUse.prepare(`
+            SELECT * FROM ${HistoryTableName}
+            ORDER BY id DESC
+            LIMIT 1
         `);
-        undoStmt.run(updateQuery.previousState);
+        const result = selectStmt.get() as HistoryEntry;
+        if (!result) {
+            console.log('No actions to ' + type);
+            return;
+        }
 
-        // } else if (undoQuery.action === 'DELETE') {
-        //     undoStmt = dbToUse.prepare(`
-        //         ${undoQuery.action} FROM ${undoQuery.table_name}
-        //         ${undoQuery.set_clause && ("SET" + undoQuery.set_clause)}
-        //         WHERE id = ${undoQuery.id}
-        //     `);
-    } else
-        throw new Error(`undoStmt is undefined for action ${undoQuery.action}`);
+        // parse the history entry
+        const historyQuery: HistoryEntry = {
+            id: result.id,
+            action: result.action,
+            table_name: result.table_name,
+            set_clause: result.set_clause,
+            data: JSON.parse((result.data as string)),
+            reverse_action: JSON.parse((result.reverse_action as unknown as string))
+        };
 
-    if (!db) dbToUse.close();
+        // The ID of the marcher or page that was updated. -1 by default and changes depending on the action.
+        let marcher_id: number = -1;
+        let page_id: number = -1;
 
-    return { success: true, undo_id: undoQuery.id, undo_data: { tableName: undoQuery.table_name, marcher_id, page_id } };
+        // Translate the history entry into a query for a given action
+        if (historyQuery.action === 'UPDATE') {
+            const updateQuery: UpdateHistoryEntry = {
+                tableName: historyQuery.table_name,
+                setClause: historyQuery.set_clause as string,
+                previousState: historyQuery.data as Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage,
+                reverseAction: {
+                    tableName: historyQuery.reverse_action.table_name,
+                    setClause: historyQuery.reverse_action.set_clause as string,
+                    previousState: historyQuery.reverse_action.data as
+                        Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage,
+                }
+            }
+
+            // record the id of the marcher or page that was updated
+            switch (historyQuery.table_name) {
+                case MarcherTableName:
+                    marcher_id = (updateQuery.previousState as Interfaces.Marcher).id;
+                    break;
+                case PageTableName:
+                    page_id = (updateQuery.previousState as Interfaces.Page).id;
+                    break;
+                case MarcherPageTableName:
+                    marcher_id = (updateQuery.previousState as Interfaces.MarcherPage).marcher_id;
+                    page_id = (updateQuery.previousState as Interfaces.MarcherPage).page_id;
+                    break;
+                default:
+                    throw new Error(`historyQuery.table_name is invalid: ${historyQuery.table_name}`);
+            }
+
+            const historyStmt = dbToUse.prepare(`
+                UPDATE ${updateQuery.tableName}
+                SET ${updateQuery.setClause}
+                WHERE id = ${updateQuery.previousState.id}
+            `);
+            historyStmt.run(updateQuery.previousState as unknown as string);
+        } else {
+            throw new Error(`historyStmt is undefined for action ${historyQuery.action}`);
+        }
+
+        // ** Add the reverse action to the opposite history table
+        // remove the reverse_action field from the historyQuery to avoid circular references
+        const { reverse_action, ...historyQueryWithoutReverse } = historyQuery;
+        insertHistory(type === 'undo' ? 'redo' : 'undo', {
+            ...(historyQuery.reverse_action),
+            reverse_action: { ...(historyQueryWithoutReverse) }
+        }, dbToUse, true);
+
+        // Delete the history entry from the history table (like popping from a stack)
+        const deleteStmt = dbToUse.prepare(`
+            DELETE FROM ${HistoryTableName}
+            WHERE id = @id
+        `);
+        deleteStmt.run({ id: historyQuery.id });
+
+        output = { success: true, undo_id: historyQuery.id, history_data: { tableName: historyQuery.table_name, marcher_id, page_id } };
+    } catch (error: any) {
+        console.error(error);
+        output = { success: false, errorMessage: error.message };
+    } finally {
+        if (!db) dbToUse.close();
+        return output;
+    }
 }
 
-export async function deleteUndo(undo_id: number) {
-    const dbToUse = connect();
+// export async function deleteHistoryEntry(type: 'undo' | 'redo', undo_id: number) {
+//     const dbToUse = connect();
 
-    const deleteStmt = dbToUse.prepare(`
-        DELETE FROM ${HistoryTableName}
-        WHERE id = @id
-    `);
+//     const HistoryTableName = type === 'undo' ? UndoHistoryTableName : RedoHistoryTableName;
+//     const deleteStmt = dbToUse.prepare(`
+//         DELETE FROM ${HistoryTableName}
+//         WHERE id = @id
+//     `);
 
-    deleteStmt.run({ id: undo_id });
+//     deleteStmt.run({ id: undo_id });
+//     dbToUse.close();
 
-    dbToUse.close();
-
-    return { success: true };
-}
+//     return { success: true };
+// }
 
 /**
- * Insert an update action into the history table.
+ * Insert an update action into the undo or redo table.
  *
  * @param args UpdateHistoryEntry object
  * @param db database connection
+ * @param type 'undo' or 'redo'
  * @returns - {success: boolean, errorMessage?: string}
  */
-async function insertUpdateHistory(args: UpdateHistoryEntry, db?: Database.Database) {
+async function insertUpdateHistory(args: UpdateHistoryEntry, db?: Database.Database, type: 'undo' | 'redo' = 'undo') {
     const historyEntry: HistoryEntry = {
-        id: 0, // Not used, needed for interface
         action: 'UPDATE',
         table_name: args.tableName,
         set_clause: args.setClause,
-        data: JSON.stringify(args.previousState),
+        data: args.previousState,
+        reverse_action: {
+            action: 'UPDATE',
+            table_name: args.reverseAction.tableName,
+            set_clause: args.reverseAction.setClause,
+            data: args.reverseAction.previousState
+        }
     }
+    return await insertHistory(type, historyEntry, db);
+}
+
+/**
+ * Inserts a HistoryEntry object into the undo or redo table.
+ *
+ * @param type 'undo' or 'redo'
+ * @param historyEntry HistoryEntry - the entry to insert into the history table
+ * @param db database connection
+ * @returns
+ */
+async function insertHistory(type: 'undo' | 'redo', historyEntry: HistoryEntry, db?: Database.Database, fromReverseAction = false) {
+    console.log('insertHistory:', type, historyEntry);
     const dbToUse = db || connect();
+
+    // Delete the redo table when another action is performed
+    // TODO this doesn't work (on redo, only the first action is remembered)
+    // You need to find a way to figure out that the modified action is different from the previous action
+    if (type === 'undo' && !fromReverseAction) {
+        try {
+            const deleteStmt = dbToUse.prepare(`DELETE FROM history_redo`);
+            deleteStmt.run();
+        } catch (error: any) {
+            console.error(error);
+        }
+    }
+
+    const HistoryTableName = type === 'undo' ? UndoHistoryTableName : RedoHistoryTableName;
+
     const stmt = dbToUse.prepare(`
         INSERT INTO ${HistoryTableName} (
             action,
             table_name,
             set_clause,
-            data
+            data,
+            reverse_action
         ) VALUES (
             @action,
             @table_name,
             @set_clause,
-            @data
+            @data,
+            @reverse_action
         )
     `);
-    const result = stmt.run(historyEntry);
+    const result = stmt.run({
+        ...historyEntry,
+        data: JSON.stringify(historyEntry.data),
+        reverse_action: JSON.stringify(historyEntry.reverse_action)
+    });
     if (!db) dbToUse.close();
     return 200;
+}
+
+export async function redo(db?: Database.Database) {
+    return;
 }
