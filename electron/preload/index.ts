@@ -100,20 +100,6 @@ setTimeout(removeLoading, 4999)
 // ----------------------------------------------------------------------
 
 const APP_API = {
-  // send: async (channel: string, data: any) => {
-  //   const validChannels = ['undo', 'redo'];
-  //   if (validChannels.includes(channel))
-  //     ipcRenderer.invoke(channel, data);
-  // },
-
-  // on: (channel: string, func: (...args: any[]) => void) => {
-  //   const validChannels = ['undo', 'redo'];
-  //   if (validChannels.includes(channel))
-  //     ipcRenderer.on(channel, (event, ...args) => func(...args));
-  // },
-
-
-
   // Database
   databaseIsReady: () => ipcRenderer.invoke('database:isReady'),
   databaseSave: () => ipcRenderer.invoke('database:save'),

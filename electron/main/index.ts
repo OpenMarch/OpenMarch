@@ -97,10 +97,14 @@ app.whenReady().then(async () => {
 
   // Database handlers
   console.log("db_path: " + DatabaseServices.getDbPath());
+
+  // File IO handlers
   ipcMain.handle('database:isReady', DatabaseServices.databaseIsReady);
   ipcMain.handle('database:save', async () => saveFile());
   ipcMain.handle('database:load', async () => loadFile());
   ipcMain.handle('database:create', async () => newFile());
+  ipcMain.handle('history:undo', async () => executeHistoryAction("undo"));
+  ipcMain.handle('history:redo', async () => executeHistoryAction("redo"));
 
   await createWindow('OpenMarch - ' + store.get('databasePath'));
 })
@@ -144,25 +148,46 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
+/**
+ * Creates a new database file path to connect to.
+ *
+ * @returns 200 for success, -1 for failure
+ */
 export async function newFile() {
   console.log('newFile');
 
+  if (!win) return -1;
+
   // Get path to new file
-  const path = await dialog.showSaveDialog({
+  dialog.showSaveDialog(win, {
     buttonLabel: 'Create New',
     filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
+  }).then((path) => {
+    if (path.canceled || !path.filePath) return;
+
+    setActiveDb(path.filePath, true);
+    DatabaseServices.initDatabase();
+    win?.webContents.reload();
+
+    return 200;
+  }).catch((err) => {
+    console.log(err);
+    return -1;
   });
-  if (path.canceled || !path.filePath) return;
 
-  setActiveDb(path.filePath, true);
-  DatabaseServices.initDatabase();
-  win?.webContents.reload();
-
-  return 200;
 }
 
+/**
+ * Opens a dialog to create a new database file path to connect to with the data of the current database.
+ * I.e. Save As..
+ * OpenMarch automatically saves changes to the database, so this is not a save function.
+ *
+ * @returns 200 for success, -1 for failure
+ */
 export async function saveFile() {
   console.log('saveFile');
+
+  if (!win) return -1;
 
   const db = DatabaseServices.connect();
 
@@ -170,16 +195,20 @@ export async function saveFile() {
   store.set('database', db.serialize());
 
   // Save
-  const path = await dialog.showSaveDialog({
+  dialog.showSaveDialog(win, {
     buttonLabel: 'Save Copy',
     filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
+  }).then((path) => {
+    if (path.canceled || !path.filePath) return -1;
+
+    fs.writeFileSync(path.filePath, db.serialize());
+
+    setActiveDb(path.filePath);
+    return 200;
+  }).catch((err) => {
+    console.log(err);
+    return -1;
   });
-  if (path.canceled || !path.filePath) return;
-  fs.writeFileSync(path.filePath, db.serialize());
-
-  setActiveDb(path.filePath);
-
-  return 200;
 }
 
 /**
@@ -190,11 +219,12 @@ export async function saveFile() {
 export async function loadFile() {
   console.log('loadFile');
 
-  try {
-    // If there is no previous path, open a dialog
-    const path = await dialog.showOpenDialog({
-      filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
-    });
+  if (!win) return -1;
+
+  // If there is no previous path, open a dialog
+  dialog.showOpenDialog(win, {
+    filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
+  }).then((path) => {
     DatabaseServices.setDbPath(path.filePaths[0]);
     store.set('databasePath', path.filePaths[0]); // Save the path for next time
 
@@ -203,24 +233,31 @@ export async function loadFile() {
       return -1;
 
     setActiveDb(path.filePaths[0]);
-  }
-  catch (e) {
-    console.log(e);
+    return 200;
+  }).catch((err) => {
+    console.log(err);
     return -1;
-  }
-  return 200;
+  });
 }
 
+/**
+ * Performs an undo or redo action on the history stacks based on the type.
+ *
+ * @param type 'undo' or 'redo'
+ * @returns 200 for success, -1 for failure
+ */
 export async function executeHistoryAction(type: 'undo' | 'redo') {
   const response = await DatabaseServices.historyAction(type);
 
   if (!response?.success) {
     console.log(`Error ${type}ing`);
-    return;
+    return -1;
   }
 
   // send a message to the renderer to fetch the updated data
   win?.webContents.send('history:action', response.history_data);
+
+  return 200;
 }
 
 function setActiveDb(path: string, isNewFile = false) {

@@ -206,18 +206,16 @@ function createHistoryTables(db: Database.Database) {
  * Whenever modifying this, you must also modify the app api in electron/preload/index.ts
  */
 export function initHandlers() {
-    // History
-    ipcMain.handle('history:undo', async (_, args) => historyAction("undo"));
-    ipcMain.handle('history:redo', async (_, args) => historyAction("redo"));
+    // File IO handlers located in electron/main/index.ts
 
     // Marcher
-    ipcMain.handle('marcher:getAll', async (_, args) => getMarchers());
+    ipcMain.handle('marcher:getAll', async () => getMarchers());
     ipcMain.handle('marcher:insert', async (_, args) => createMarcher(args));
     ipcMain.handle('marcher:update', async (_, args) => updateMarchers(args));
     // ipcMain.handle('marcher:delete', async (_, marcher_id) => deleteMarcher(marcher_id));
 
     // Page
-    ipcMain.handle('page:getAll', async (_, args) => getPages());
+    ipcMain.handle('page:getAll', async () => getPages());
     ipcMain.handle('page:insert', async (_, args) => createPages(args));
     ipcMain.handle('page:update', async (_, args) => updatePages(args));
 
@@ -398,8 +396,6 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
                 WHERE id = @id
             `);
 
-            // console.log("stmt:", stmt);
-
             stmt.run({ ...marcherUpdate, new_updated_at: new Date().toISOString() });
         }
     } catch (error: any) {
@@ -409,7 +405,6 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
         db.close();
     }
 
-    console.log('historyQueries:', historyQueries);
     return { success: true };
 }
 
@@ -550,7 +545,6 @@ async function createPages(newPages: Interfaces.NewPage[]) {
         db.close();
     }
 
-    console.log('historyQueries:', historyQueries);
     return { success: true };
 }
 
@@ -618,7 +612,6 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
         db.close();
     }
 
-    console.log('historyQueries:', historyQueries);
     return { success: true };
 }
 
@@ -812,7 +805,6 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
  * @returns - {success: boolean, undo_id: number, history_data: { tableName: string, marcher_id: number, page_id: number }}
  */
 export async function historyAction(type: 'undo' | 'redo', db?: Database.Database) {
-    console.log("-------------------- ", type, " --------------------")
     const dbToUse = db || connect();
     let output;
 
@@ -997,8 +989,4 @@ async function insertHistory(type: 'undo' | 'redo', historyEntry: HistoryEntry, 
     });
     if (!db) dbToUse.close();
     return 200;
-}
-
-export async function redo(db?: Database.Database) {
-    return;
 }
