@@ -6,6 +6,12 @@ import * as Interfaces from '../../src/Interfaces';
 import * as fs from 'fs';
 import * as History from './database.history';
 
+interface DatabaseResponse {
+    success: boolean;
+    result?: any;
+    errorMessage?: string;
+}
+
 /* ============================ DATABASE ============================ */
 var DB_PATH = '';
 
@@ -141,12 +147,13 @@ export function initHandlers() {
     ipcMain.handle('marcher:getAll', async () => getMarchers());
     ipcMain.handle('marcher:insert', async (_, args) => createMarcher(args));
     ipcMain.handle('marcher:update', async (_, args) => updateMarchers(args));
-    // ipcMain.handle('marcher:delete', async (_, marcher_id) => deleteMarcher(marcher_id));
+    ipcMain.handle('marcher:delete', async (_, marcher_id) => deleteMarcher(marcher_id));
 
     // Page
     ipcMain.handle('page:getAll', async () => getPages());
     ipcMain.handle('page:insert', async (_, args) => createPages(args));
     ipcMain.handle('page:update', async (_, args) => updatePages(args));
+    ipcMain.handle('page:delete', async (_, page_id) => deletePage(page_id));
 
     // MarcherPage
     ipcMain.handle('marcher_page:getAll', async (_, args) => getMarcherPages(args));
@@ -187,8 +194,9 @@ async function createMarcher(newMarcher: Interfaces.NewMarcher) {
  * @param newMarchers
  * @returns - {success: boolean, errorMessage?: string}
  */
-async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
+async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<DatabaseResponse> {
     const db = connect();
+    let output: DatabaseResponse = { success: true };
 
     // List of queries executed in this function to be added to the history table
     // const historyQueries: History.historyQuery[] = [];
@@ -269,23 +277,11 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
         }
     } catch (error: any) {
         console.error(error);
-        return { success: false, errorMessage: error.message };
+        output = { success: false, errorMessage: error.message };
     } finally {
         db.close();
+        return output;
     }
-
-    return { success: true };
-}
-
-/**
- * Updates a marcher with the given values.
- *
- * @param marcherUpdates UpdateMarcher object that contains the id of the
- *                    marcher to update and the values to update it with
- * @returns {success: boolean, errorMessage: string}
- */
-async function updateMarcher(marcherUpdate: Interfaces.UpdateMarcher) {
-    return updateMarchers([marcherUpdate]);
 }
 
 /**
@@ -295,8 +291,9 @@ async function updateMarcher(marcherUpdate: Interfaces.UpdateMarcher) {
  *                    marcher to update and the values to update it with
  * @returns - {success: boolean, errorMessage: string}
  */
-async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
+async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promise<DatabaseResponse> {
     const db = connect();
+    let output: DatabaseResponse = { success: true };
 
     // List of queries executed in this function to be added to the history table
     const historyActions: History.UpdateHistoryEntry[] = [];
@@ -340,29 +337,46 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
         History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
-        return { success: false, errorMessage: error.message };
+        output = { success: false, errorMessage: error.message };
     } finally {
         db.close();
+        return output;
     }
-
-    return { success: true };
 }
 
 /**
- * NOT READY
+ * CAUTION - this will delete all of the marcherPages associated with the marcher.
+ * THIS CANNOT BE UNDONE.
+ *
+ * Deletes the marcher with the given id and all of their marcherPages.
  *
  * @param marcher_id
- * @returns
+ * @returns {success: boolean, errorMessage?: string}
  */
-async function deleteMarcher(marcher_id: number) {
+async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
     const db = connect();
-    const stmt = db.prepare(`
-        DELETE FROM ${Constants.MarcherTableName}
-        WHERE id = @marcher_id
-    `);
-    const result = stmt.run({ marcher_id });
-    db.close();
-    return result;
+    let output: DatabaseResponse = { success: true };
+    try {
+        const marcherStmt = db.prepare(`
+            DELETE FROM ${Constants.MarcherTableName}
+            WHERE id = @marcher_id
+        `);
+        marcherStmt.run({ marcher_id });
+
+        const marcherPageStmt = db.prepare(`
+            DELETE FROM ${Constants.MarcherPageTableName}
+            WHERE marcher_id = @marcher_id
+        `);
+        marcherPageStmt.run({ marcher_id });
+    }
+    catch (error: any) {
+        console.error(error);
+        output = { success: false, errorMessage: error.message };
+    }
+    finally {
+        db.close();
+        return output;
+    }
 }
 
 /* ============================ Page ============================ */
@@ -382,12 +396,9 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Interfac
     return result as Interfaces.Page;
 }
 
-async function createPage(newPage: Interfaces.NewPage) {
-    createPages([newPage]);
-}
-
-async function createPages(newPages: Interfaces.NewPage[]) {
+async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResponse> {
     const db = connect();
+    let output: DatabaseResponse = { success: true };
 
     // List of queries executed in this function to be added to the history table
     // const historyQueries: History.InsertHistoryEntry[] = [];
@@ -483,23 +494,11 @@ async function createPages(newPages: Interfaces.NewPage[]) {
 
     } catch (error: any) {
         console.error(error);
-        return { success: false, result: error.message };
+        output = { success: false, result: error.message };
     } finally {
         db.close();
+        return output;
     }
-
-    return { success: true };
-}
-
-/**
- * Update a page with the given values.
- *
- * @param pageUpdates UpdatePage object that contains the id of the
- *                    page to update and the values to update it with
- * @returns - {success: boolean, errorMessage?: string}
- */
-async function updatePage(pageUpdate: Interfaces.UpdatePage) {
-    return updatePages([pageUpdate]);
 }
 
 /**
@@ -509,8 +508,9 @@ async function updatePage(pageUpdate: Interfaces.UpdatePage) {
  *                    page to update and the values to update it with
  * @returns - {success: boolean, errorMessage?: string}
  */
-async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
+async function updatePages(pageUpdates: Interfaces.UpdatePage[]): Promise<DatabaseResponse> {
     const db = connect();
+    let output: DatabaseResponse = { success: true };
 
     // List of queries executed in this function to be added to the history table
     const historyActions: History.UpdateHistoryEntry[] = [];
@@ -556,12 +556,46 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
         History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
-        return { success: false, errorMessage: error.message };
+        output = { success: false, errorMessage: error.message };
     } finally {
         db.close();
+        return output;
     }
+}
 
-    return { success: true };
+/**
+ * CAUTION - this will delete all of the marcherPages associated with the page.
+ * THIS CANNOT BE UNDONE.
+ *
+ * Deletes the page with the given id and all of its marcherPages.
+ *
+ * @param page_id
+ * @returns {success: boolean, errorMessage?: string}
+ */
+async function deletePage(page_id: number): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: true };
+    try {
+        const pageStmt = db.prepare(`
+            DELETE FROM ${Constants.PageTableName}
+            WHERE id = @page_id
+        `);
+        pageStmt.run({ page_id });
+
+        const marcherPageStmt = db.prepare(`
+            DELETE FROM ${Constants.MarcherPageTableName}
+            WHERE page_id = @page_id
+        `);
+        marcherPageStmt.run({ page_id });
+    }
+    catch (error: any) {
+        console.error(error);
+        output = { success: false, errorMessage: error.message };
+    }
+    finally {
+        db.close();
+        return output;
+    }
 }
 
 /* ============================ MarcherPage ============================ */
@@ -666,10 +700,10 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Interfac
  *                    marcherPage to update and the values to update it with
  * @returns - {success: boolean, result: Database.result | string}
  */
-async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
+async function updateMarcherPage(args: Interfaces.UpdateMarcherPage): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: true };
     try {
-        const db = connect();
-
         // Generate the SET clause of the SQL query
         let setClause = Object.keys(args)
             .map(key => `${key} = @${key}`)
@@ -704,11 +738,13 @@ async function updateMarcherPage(args: Interfaces.UpdateMarcherPage) {
         }
         History.insertUpdateHistory([updateHistoryEntry], db);
 
-        db.close();
-        return result;
+        output = { success: true, result };
     } catch (error: any) {
         console.error(error);
-        return { success: false, errorMessage: error.message };
+        output = { success: false, errorMessage: error.message };
+    } finally {
+        db.close();
+        return output;
     }
 }
 

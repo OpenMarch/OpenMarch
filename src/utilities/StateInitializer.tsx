@@ -33,7 +33,7 @@ function StateInitializer() {
         });
     }, [fetchPages, setPagesAreLoading]);
 
-    // Select the first page if none are selected. Intended to activate at the iniital loading of a webpage
+    // Select the first page if none are selected. Intended to activate at the initial loading of a webpage
     useEffect(() => {
         if (selectedPage == null && pages.length > 0)
             setSelectedPage(pages[0]);

@@ -168,7 +168,7 @@ export interface fieldProperties {
     pixelsPerStep: number;
     /**
      * The accuracy to round the steps to. Highest accuracy is .1.
-     * Note: the canvas is actually displaying the dots to the neareat (0.1) tenth.
+     * Note: the canvas is actually displaying the dots to the nearest (0.1) tenth.
      * (4 -> nearest .25), (2 -> nearest .5), (10 -> nearest .1)
      */
     roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1

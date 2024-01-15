@@ -83,6 +83,20 @@ export async function updatePages(pageUpdates: UpdatePage[]) {
   return response;
 }
 
+/**
+ * Deletes a page from the database.
+ *
+ * CAUTION - this will delete all of the marcherPages associated with the page.
+ * THIS CANNOT BE UNDONE.
+ *
+ * @param page_id - The id of the page. Do not use id_for_html.
+ * @returns Response data from the server.
+ */
+export async function deletePage(page_id: number) {
+  const response = await window.electron.deletePage(page_id);
+  return response;
+}
+
 /* ====================== Marcher ====================== */
 
 /**
@@ -99,24 +113,23 @@ export async function updateMarchers(updateMarchers: UpdateMarcher[]) {
 }
 
 /**
- * TODO: NOT TESTED
- * Deletes a marcher from the database. Careful!
- * Currently, this will delete all marcherPages associated with the marcher.
- * This cannot be undone.
+ * Deletes a marcher from the database.
+ * CAUTION - this will delete all of the marcherPages associated with the marcher.
+ * THIS CANNOT BE UNDONE.
  *
- * @param id - marcherObj.id: The id of the marcher. Do not use id_for_html.
- * @returns Response data.
+ * @param marcher_id - The id of the marcher. Do not use id_for_html.
+ * @returns Response data from the server.
  */
-// export async function deleteMarcher(id: number) {
-//   const response = await window.electron.deleteMarcher(id);
-//   return response;
-// }
+export async function deleteMarcher(marcher_id: number) {
+  const response = await window.electron.deleteMarcher(marcher_id);
+  return response;
+}
 
 /**
  * Creates a new marcher in the database.
  *
  * @param marcher - The new marcher object to be created.
- * @returns Response data.
+ * @returns Response data from the server.
  */
 export async function createMarcher(newMarcher: NewMarcher) {
   const response = await window.electron.createMarcher(newMarcher);

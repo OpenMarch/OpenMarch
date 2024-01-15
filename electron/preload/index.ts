@@ -117,13 +117,13 @@ const APP_API = {
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
   createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher),
   updateMarchers: (args: UpdateMarcher[]) => ipcRenderer.invoke('marcher:update', args),
-  // deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
+  deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
 
   // Page
   getPages: () => ipcRenderer.invoke('page:getAll'),
   createPages: (pages: NewPage[]) => ipcRenderer.invoke('page:insert', pages),
   updatePages: (args: UpdatePage[]) => ipcRenderer.invoke('page:update', args),
-  // deletePage: (id: number) => ipcRenderer.invoke('page:delete', id)
+  deletePage: (id: number) => ipcRenderer.invoke('page:delete', id),
 
   // MarcherPage
   getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll'),

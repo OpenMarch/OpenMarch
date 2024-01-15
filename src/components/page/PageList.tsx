@@ -2,8 +2,9 @@ import { usePageStore } from "../../stores/Store";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
-import { updatePages } from "../../api/api";
-import { ListFormProps, UpdatePage } from "../../Interfaces";
+import { deletePage, updatePages } from "../../api/api";
+import { ListFormProps, Page, UpdatePage } from "../../Interfaces";
+import { FaTrashAlt } from "react-icons/fa";
 
 
 function PageList({
@@ -18,25 +19,50 @@ function PageList({
     const isEditing = isEditingProp || isEditingLocal;
     const setIsEditing = setIsEditingProp || setIsEditingLocal;
     const { pages, pagesAreLoading, fetchPages } = usePageStore();
+
+    // localPages are the Pages that are displayed in the table
+    const [localPages, setLocalPages] = useState<Page[]>();
     const changesRef = useRef<{ [key: number | string]: any }>({});
+    const deletionsRef = useRef<number[]>([]);
 
     async function handleSubmit() {
         setIsEditing(false);
 
         const pageUpdates: UpdatePage[] = [];
 
+        if (deletionsRef.current.length > 0) {
+            let windowConfirmStr = `-- WARNING --`
+            windowConfirmStr += `\n\nYou are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} pages` : "a page"}, `;
+            windowConfirmStr += `which will also delete the coordinates for ALL marchers on them.`;
+            windowConfirmStr += `\n\nTHIS CANNOT BE UNDONE.`;
+            windowConfirmStr += `\n\nPages that will be deleted:`;
+            for (const pageId of deletionsRef.current)
+                windowConfirmStr += `\nPg. ${pages?.find((page) => page.id === pageId)?.name}`;
+            if (window.confirm(windowConfirmStr))
+                for (const pageId of deletionsRef.current)
+                    await deletePage(pageId);
+        }
+
         for (const [pageId, changes] of Object.entries(changesRef.current))
             pageUpdates.push({ id: Number(pageId), ...changes });
 
         const result = await updatePages(pageUpdates);
         fetchPages();
+        deletionsRef.current = [];
         changesRef.current = {};
         return result;
     }
 
     function handleCancel() {
         setIsEditing(false);
+        setLocalPages(pages);
+        deletionsRef.current = [];
         changesRef.current = {};
+    }
+
+    function handleDeletePage(pageId: number) {
+        deletionsRef.current.push(pageId);
+        setLocalPages(localPages?.filter((page) => page.id !== pageId));
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -48,6 +74,11 @@ function PageList({
         // record the change
         changesRef.current[pageId][attribute] = event.target.value;
     }
+
+    // Update local pages when pages are fetched
+    useEffect(() => {
+        setLocalPages(pages);
+    }, [pages]);
 
     // Activate submit with an external activator (like a button in a parent component)
     useEffect(() => {
@@ -95,9 +126,9 @@ function PageList({
                         <th scope="col">Counts</th>
                     </tr>
                 </thead>
-                {(!pagesAreLoading && pages) &&
+                {(!pagesAreLoading && pages && localPages) &&
                     <tbody>
-                        {pages.map((page) => (
+                        {localPages.map((page) => (
                             <tr key={page.id}>
                                 <th scope="row">{page.name}</th>
                                 <td>
@@ -111,6 +142,13 @@ function PageList({
                                         page.counts
                                     }
                                 </td>
+                                {isEditing &&
+                                    <td >
+                                        <Button variant="danger" onClick={() => handleDeletePage(page.id)}>
+                                            <FaTrashAlt />
+                                        </Button>
+                                    </td>
+                                }
                             </tr>
                         ))}
                     </tbody>}
