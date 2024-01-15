@@ -69,6 +69,7 @@ function StateInitializer() {
                         setSelectedPage(getPage(args.page_id));
                     break;
             }
+            return "SUCCESS"
         };
 
         window.electron.onHistoryAction(handler);
@@ -76,7 +77,29 @@ function StateInitializer() {
         return () => {
             window.electron.removeHistoryActionListener(); // Remove the event listener
         };
-    }, [getMarcher, getPage]);
+    }, [getMarcher, getPage, fetchMarchers, fetchMarcherPages, fetchPages]);
+
+    useEffect(() => {
+        const handler = (type: 'marcher' | 'page' | 'marcher_page') => {
+            switch (type) {
+                case 'marcher':
+                    fetchMarchers();
+                    break;
+                case 'page':
+                    fetchPages();
+                    break;
+                case 'marcher_page':
+                    fetchMarcherPages();
+                    break;
+            }
+        }
+
+        window.electron.onFetch(handler);
+
+        return () => {
+            window.electron.removeFetchListener(); // Remove the event listener
+        }
+    }, [fetchMarchers, fetchMarcherPages, fetchPages]);
 
     return <></>; // Empty fragment
 }

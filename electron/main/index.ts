@@ -106,6 +106,11 @@ app.whenReady().then(async () => {
   ipcMain.handle('history:undo', async () => executeHistoryAction("undo"));
   ipcMain.handle('history:redo', async () => executeHistoryAction("redo"));
 
+  // Getters
+  ipcMain.on('get:selectedPage', async (event, selectedPageId) => {
+    store.set('selectedPageId', selectedPageId);
+  });
+
   await createWindow('OpenMarch - ' + store.get('databasePath'));
 })
 
@@ -259,6 +264,17 @@ export async function executeHistoryAction(type: 'undo' | 'redo') {
 
   return 200;
 }
+
+/**
+ * Triggers the renderer to fetch all data of the given type.
+ *
+ * @param type 'marcher' | 'page' | 'marcher_page'
+ */
+export async function triggerFetch(type: 'marcher' | 'page' | 'marcher_page') {
+  win?.webContents.send('fetch:all', type);
+}
+
+
 
 function setActiveDb(path: string, isNewFile = false) {
   DatabaseServices.setDbPath(path, isNewFile);

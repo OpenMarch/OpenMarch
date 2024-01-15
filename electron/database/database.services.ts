@@ -159,6 +159,9 @@ export function initHandlers() {
     ipcMain.handle('marcher_page:getAll', async (_, args) => getMarcherPages(args));
     ipcMain.handle('marcher_page:get', async (_, args) => getMarcherPage(args));
     ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPage(args));
+    // Batch actions
+    ipcMain.handle('page:setAllCoordsToPreviousPage', (_, currentPageId, previousPageId) => setAllCoordsToPreviousPage(currentPageId));
+
 }
 
 /* ======================= Exported Functions ======================= */
@@ -171,7 +174,7 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
 async function getMarchers(db?: Database.Database): Promise<Interfaces.Marcher[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
-    const result = stmt.all();
+    const result = await stmt.all();
     if (!db) dbToUse.close();
     return result as Interfaces.Marcher[];
 }
@@ -179,7 +182,7 @@ async function getMarchers(db?: Database.Database): Promise<Interfaces.Marcher[]
 async function getMarcher(marcherId: number, db?: Database.Database): Promise<Interfaces.Marcher> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`);
-    const result = stmt.get({ marcherId });
+    const result = await stmt.get({ marcherId });
     if (!db) dbToUse.close();
     return result as Interfaces.Marcher;
 }
@@ -383,7 +386,7 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
 async function getPages(db?: Database.Database): Promise<Interfaces.Page[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName}`);
-    const result = stmt.all();
+    const result = await stmt.all();
     if (!db) dbToUse.close();
     return result as Interfaces.Page[];
 }
@@ -391,9 +394,34 @@ async function getPages(db?: Database.Database): Promise<Interfaces.Page[]> {
 async function getPage(pageId: number, db?: Database.Database): Promise<Interfaces.Page> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @pageId`);
-    const result = stmt.get({ pageId });
+    const result = await stmt.get({ pageId });
     if (!db) dbToUse.close();
     return result as Interfaces.Page;
+}
+
+/**
+ * Returns the previous page in the order of pages.
+ *
+ * @param pageId
+ * @param db
+ * @returns The page prior to the page with the given id. Null if the page is the first page.
+ */
+export async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Interfaces.Page> {
+    const dbToUse = db || connect();
+    const currentOrder = (await getPage(pageId, dbToUse)).order;
+
+    const stmt = dbToUse.prepare(`
+        SELECT *
+        FROM pages
+        WHERE "order" < @currentOrder
+        ORDER BY "order" DESC
+        LIMIT 1
+    `);
+
+    const result = await stmt.get({ currentOrder }) as Interfaces.Page;
+    if (!db) dbToUse.close();
+    return result as Interfaces.Page || null;
+
 }
 
 async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResponse> {
@@ -616,7 +644,7 @@ async function getMarcherPages(args: { marcher_id?: number, page_id?: number }):
         else if (args.page_id)
             stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`);
     }
-    const result = stmt.all();
+    const result = await stmt.all();
     db.close();
     return result as Interfaces.MarcherPage[];
 }
@@ -701,44 +729,65 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Interfac
  * @returns - {success: boolean, result: Database.result | string}
  */
 async function updateMarcherPage(args: Interfaces.UpdateMarcherPage): Promise<DatabaseResponse> {
+    return updateMarcherPages([args]);
+}
+
+/**
+ * Updates a list of marcherPages with the given values.
+ *
+ * @param marcherPageUpdates: Array of UpdateMarcherPage objects that contain the marcher_id and page_id of the
+ *                  marcherPage to update and the values to update it with
+ * @returns - {success: boolean, result: Database.result | string}
+ */
+async function updateMarcherPages(marcherPageUpdates: Interfaces.UpdateMarcherPage[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
+    const historyActions: History.UpdateHistoryEntry[] = [];
     try {
-        // Generate the SET clause of the SQL query
-        let setClause = Object.keys(args)
-            .map(key => `${key} = @${key}`)
-            .join(', ');
+        for (const marcherPageUpdate of marcherPageUpdates) {
+            // Generate the SET clause of the SQL query
+            let setClause = Object.keys(marcherPageUpdate)
+                .map(key => `${key} = @${key}`)
+                .join(', ');
 
-        // Check if the SET clause is empty
-        if (setClause.length === 0) {
-            throw new Error('No valid properties to update');
-        }
+            // Check if the SET clause is empty
+            if (setClause.length === 0) {
+                throw new Error('No valid properties to update');
+            }
 
-        // Record the original values of the marcherPage for the history table
-        const previousState = await getMarcherPage({ marcher_id: args.marcher_id, page_id: args.page_id });
+            // Record the original values of the marcherPage for the history table
+            const previousState = await getMarcherPage({
+                marcher_id: marcherPageUpdate.marcher_id,
+                page_id: marcherPageUpdate.page_id
+            });
 
-        const stmt = db.prepare(`
-            UPDATE ${Constants.MarcherPageTableName}
-            SET x = @x, y = @y, updated_at = @new_updated_at
-            WHERE marcher_id = @marcher_id AND page_id = @page_id
-        `);
+            const stmt = db.prepare(`
+                UPDATE ${Constants.MarcherPageTableName}
+                SET x = @x, y = @y, updated_at = @new_updated_at
+                WHERE marcher_id = @marcher_id AND page_id = @page_id
+            `);
 
-        const result = stmt.run({ ...args, new_updated_at: new Date().toISOString() });
+            const result = await stmt.run({ ...marcherPageUpdate, new_updated_at: new Date().toISOString() });
 
-
-        const updateHistoryEntry = {
-            tableName: Constants.MarcherPageTableName,
-            setClause: setClause,
-            previousState: previousState,
-            reverseAction: {
+            const updateHistoryEntry = {
                 tableName: Constants.MarcherPageTableName,
                 setClause: setClause,
-                previousState: await getMarcherPage({ marcher_id: args.marcher_id, page_id: args.page_id }),
+                previousState: previousState,
+                reverseAction: {
+                    tableName: Constants.MarcherPageTableName,
+                    setClause: setClause,
+                    previousState: await getMarcherPage({
+                        marcher_id: marcherPageUpdate.marcher_id,
+                        page_id: marcherPageUpdate.page_id
+                    }),
+                }
             }
-        }
-        History.insertUpdateHistory([updateHistoryEntry], db);
 
-        output = { success: true, result };
+            historyActions.push(updateHistoryEntry);
+        }
+        History.insertUpdateHistory(historyActions, db);
+
+        output = { success: true };
     } catch (error: any) {
         console.error(error);
         output = { success: false, errorMessage: error.message };
@@ -767,8 +816,7 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         console.log(`page_id ${page_id} is the first page, skipping setCoordsToPreviousPage`);
         return;
     }
-    const previousPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE "order" = @order`);
-    const previousPage = previousPageStmt.get({ order: currPage.order - 1 }) as Interfaces.Page;
+    const previousPage = await getPreviousPage(page_id, db);
     const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as Interfaces.MarcherPage;
 
     if (!previousPage)
@@ -781,3 +829,37 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
     }
 }
 
+/* --------------- MarcherPage Batch Actions --------------- */
+/**
+ * Sets the coordinates of all marcherPages on the given page to the coordinates of the previous page.
+ *
+ * @param currentPageId - the id of the page to set the coordinates on
+ * @param previousPageId - the id of the page to get the coordinates from. If not provided, the previous page will be found.
+ * @returns {success: boolean, result: Database.result | string}
+ */
+export async function setAllCoordsToPreviousPage(currentPageId: number, previousPageId?: number): Promise<DatabaseResponse> {
+    const dbToUse = connect();
+    if (!previousPageId)
+        try {
+            previousPageId = (await getPreviousPage(currentPageId, dbToUse)).id;
+        }
+        catch (error: any) {
+            console.error("setAllCoordsToPreviousPage: error likely caused by currentPage being the first page\n", error);
+            return { success: false, errorMessage: "setAllCoordsToPreviousPage: error likely caused by currentPageId being the first page\n" + error.message };
+        }
+    const marcherPages = await getMarcherPages({ page_id: previousPageId });
+
+    const changes: Interfaces.UpdateMarcherPage[] = [];
+    for (const marcherPage of marcherPages) {
+        changes.push({
+            marcher_id: marcherPage.marcher_id,
+            page_id: currentPageId,
+            x: marcherPage.x,
+            y: marcherPage.y
+        });
+    }
+
+    const response = await updateMarcherPages(changes);
+
+    return { success: true, result: response };
+}

@@ -1,5 +1,6 @@
 const { app, dialog, Menu, shell } = require('electron');
 import * as db from '../database/database.services';
+import Store from 'electron-store'
 import * as mainProcess from './index';
 
 interface MenuItem {
@@ -69,8 +70,6 @@ const template = [
   {
     label: 'Edit',
     submenu: [
-      { label: "None of this works yet" },
-      { type: 'separator' },
       {
         label: 'Undo',
         id: 'undo',
@@ -94,6 +93,20 @@ const template = [
         }
       },
       { type: 'separator' },
+      {
+        label: 'Bulk Actions',
+        submenu: [
+          {
+            label: 'Set coordinates of all marchers to previous page',
+            accelerator: 'Shift+CommandOrControl+G',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              db.setAllCoordsToPreviousPage(store.get('selectedPageId') as number);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },]
+      }
       // {
       //   label: 'Cut',
       //   accelerator: 'CommandOrControl+X',
@@ -145,10 +158,10 @@ const template = [
     label: 'Help',
     role: 'help',
     submenu: [
-      {
-        label: 'Visit Website',
-        click() { /* To be implemented */ }
-      },
+      // {
+      //   label: 'Visit Website',
+      //   click() { /* To be implemented */ }
+      // },
       {
         label: 'Toggle Developer Tools',
         click(item: any, focusedWindow: any) {

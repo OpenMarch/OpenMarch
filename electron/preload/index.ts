@@ -106,6 +106,11 @@ const APP_API = {
   databaseLoad: () => ipcRenderer.invoke('database:load'),
   databaseCreate: () => ipcRenderer.invoke('database:create'),
 
+  // Triggers
+  onFetch: (callback: any) => ipcRenderer.on('fetch:all', (event, type) => callback(type)),
+  removeFetchListener: () => ipcRenderer.removeAllListeners('fetch:all'),
+  setSelectedPage: (selectedPageId: number) => ipcRenderer.send('get:selectedPage', (selectedPageId)),
+
   // History
   /** Activates on undo or redo. */
   onHistoryAction: (callback: any) => ipcRenderer.on('history:action', (event, args) => callback(args)),

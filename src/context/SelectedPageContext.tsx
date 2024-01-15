@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { Page } from '../Interfaces';
 
 // Define the type for the context value
@@ -11,6 +11,11 @@ const SelectedPageContext = createContext<SelectedPageContextProps | undefined>(
 
 export function SelectedPageProvider({ children }: { children: ReactNode }) {
     const [selectedPage, setSelectedPage] = useState<Page | null>(null);
+
+    useEffect(() => {
+        if (selectedPage)
+            window.electron.setSelectedPage(selectedPage.id);
+    }, [selectedPage]);
 
     // Create the context value object
     const contextValue: SelectedPageContextProps = {
