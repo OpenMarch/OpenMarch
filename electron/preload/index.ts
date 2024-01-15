@@ -109,6 +109,7 @@ const APP_API = {
   // History
   /** Activates on undo or redo. */
   onHistoryAction: (callback: any) => ipcRenderer.on('history:action', (event, args) => callback(args)),
+  removeHistoryActionListener: () => ipcRenderer.removeAllListeners('history:action'),
   undo: () => ipcRenderer.invoke('history:undo'),
   redo: () => ipcRenderer.invoke('history:redo'),
 

@@ -39,12 +39,22 @@ function StateInitializer() {
             setSelectedPage(pages[0]);
     }, [pages, selectedPage, setSelectedPage]);
 
+    const getMarcher = useCallback((id: number) => {
+        return marchers.find(marcher => marcher.id === id) || null;
+    }, [marchers]);
+
+    const getPage = useCallback((id: number) => {
+        return pages.find(page => page.id === id) || null;
+    }, [pages]);
+
     useEffect(() => {
-        window.electron.onHistoryAction((args: { tableName: string, marcher_id: number, page_id: number }) => {
+        const handler = (args: { tableName: string, marcher_id: number, page_id: number }) => {
             console.log("Undoing " + args.tableName + " with args: " + JSON.stringify(args));
             switch (args.tableName) {
                 case Constants.MarcherTableName:
                     fetchMarchers();
+                    if (args.marcher_id > 0)
+                        setSelectedMarcher(getMarcher(args.marcher_id));
                     break;
                 case Constants.MarcherPageTableName:
                     fetchMarcherPages();
@@ -55,18 +65,18 @@ function StateInitializer() {
                     break;
                 case Constants.PageTableName:
                     fetchPages();
+                    if (args.page_id > 0)
+                        setSelectedPage(getPage(args.page_id));
                     break;
             }
-        })
-    }, [marchers, pages]);
+        };
 
-    const getMarcher = useCallback((id: number) => {
-        return marchers.find(marcher => marcher.id === id) || null;
-    }, [marchers]);
+        window.electron.onHistoryAction(handler);
 
-    const getPage = useCallback((id: number) => {
-        return pages.find(page => page.id === id) || null;
-    }, [pages]);
+        return () => {
+            window.electron.removeHistoryActionListener(); // Remove the event listener
+        };
+    }, [getMarcher, getPage]);
 
     return <></>; // Empty fragment
 }
