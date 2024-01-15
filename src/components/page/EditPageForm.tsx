@@ -6,6 +6,10 @@ import { usePageStore } from "../../stores/Store";
 import FormButtons from "../TinyFormButtons";
 import { Constants } from "../../Constants";
 
+/**
+ * THIS COMPONENT SHOULD NOT BE USED. IT IS NOT FUNCTIONAL.
+ * @returns
+ */
 function EditPageForm() {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const [isEditing, setIsEditing] = useState(false);

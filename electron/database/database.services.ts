@@ -191,7 +191,7 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
     const db = connect();
 
     // List of queries executed in this function to be added to the history table
-    const historyQueries: History.historyQuery[] = [];
+    // const historyQueries: History.historyQuery[] = [];
     try {
         for (const newMarcher of newMarchers) {
             const marcherToAdd: Interfaces.Marcher = {
@@ -245,11 +245,11 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
             });
 
             // Add the page to the history table
-            historyQueries.push({
-                action: 'DELETE',
-                tableName: Constants.MarcherTableName,
-                obj: { id }
-            });
+            // historyQueries.push({
+            //     action: 'DELETE',
+            //     tableName: Constants.MarcherTableName,
+            //     obj: { id }
+            // });
 
             /* Add a marcherPage for this marcher for each page */
             // Get all existing pages
@@ -260,11 +260,11 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]) {
                 createMarcherPage(db, { marcher_id: id, page_id: page.id, x: 100, y: 100 });
 
                 // Add the marcherPage to the history table
-                historyQueries.push({
-                    action: 'DELETE',
-                    tableName: Constants.MarcherPageTableName,
-                    obj: { marcher_id: id, page_id: page.id }
-                });
+                // historyQueries.push({
+                //     action: 'DELETE',
+                //     tableName: Constants.MarcherPageTableName,
+                //     obj: { marcher_id: id, page_id: page.id }
+                // });
             }
         }
     } catch (error: any) {
@@ -315,6 +315,8 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
             if (setClause.length === 0) {
                 throw new Error('No valid properties to update');
             }
+            // Record the original values of the marcher
+            const originalMarcher = await getMarcher(marcherUpdate.id, db);
 
             const stmt = db.prepare(`
                 UPDATE ${Constants.MarcherTableName}
@@ -324,8 +326,6 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
 
             stmt.run({ ...marcherUpdate, new_updated_at: new Date().toISOString() });
 
-            // Record the original values of the marcher
-            const originalMarcher = await getMarcher(marcherUpdate.id, db);
             historyActions.push({
                 tableName: Constants.MarcherTableName,
                 setClause: setClause,
@@ -337,7 +337,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]) {
                 }
             });
         }
-        // History.insertUpdateHistory(historyActions, db)
+        History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
         return { success: false, errorMessage: error.message };
@@ -390,7 +390,7 @@ async function createPages(newPages: Interfaces.NewPage[]) {
     const db = connect();
 
     // List of queries executed in this function to be added to the history table
-    const historyQueries: History.historyQuery[] = [];
+    // const historyQueries: History.InsertHistoryEntry[] = [];
 
     try {
         for (const newPage of newPages) {
@@ -449,12 +449,15 @@ async function createPages(newPages: Interfaces.NewPage[]) {
                 id
             });
 
-            // Add the page to the history table
-            historyQueries.push({
-                action: 'DELETE',
-                tableName: Constants.PageTableName,
-                obj: { id }
-            });
+            // // Add the page to the history table
+            // historyQueries.push({
+            //     tableName: Constants.PageTableName,
+            //     id: id,
+            //     reverseAction: {
+            //         tableName: Constants.PageTableName,
+            //         previousState: await getPage(id, db)
+            //     }
+            // });
 
             // Add a marcherPage for this page for each marcher
             // Get all existing marchers
@@ -470,11 +473,11 @@ async function createPages(newPages: Interfaces.NewPage[]) {
                 });
 
                 // Add the marcherPage to the history table
-                historyQueries.push({
-                    action: 'DELETE',
-                    tableName: Constants.MarcherPageTableName,
-                    obj: { marcher_id: marcher.id, page_id: id }
-                });
+                // historyQueries.push({
+                //     action: 'DELETE',
+                //     tableName: Constants.MarcherPageTableName,
+                //     obj: { marcher_id: marcher.id, page_id: id }
+                // });
             }
         }
 
@@ -510,7 +513,7 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
     const db = connect();
 
     // List of queries executed in this function to be added to the history table
-    const historyQueries: History.historyQuery[] = [];
+    const historyActions: History.UpdateHistoryEntry[] = [];
     // List of properties to exclude
     const excludedProperties = ['id'];
 
@@ -530,13 +533,6 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
 
             // Record the original values of the page
             const originalPage = await getPage(pageUpdate.id, db);
-            historyQueries.push({
-                action: 'UPDATE',
-                tableName: Constants.PageTableName,
-                setClause: setClause,
-                obj: originalPage
-            });
-
             // Update the page
             const stmt = db.prepare(`
                 UPDATE ${Constants.PageTableName}
@@ -544,7 +540,20 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
                 WHERE id = @id
             `);
             stmt.run({ ...pageUpdate, new_updated_at: new Date().toISOString() });
+
+            historyActions.push({
+                tableName: Constants.PageTableName,
+                setClause: setClause,
+                previousState: originalPage,
+                reverseAction: {
+                    tableName: Constants.PageTableName,
+                    setClause: setClause,
+                    previousState: await getPage(pageUpdate.id, db)
+                }
+            });
+
         }
+        History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
         return { success: false, errorMessage: error.message };

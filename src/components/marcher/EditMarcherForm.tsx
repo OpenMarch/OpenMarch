@@ -5,6 +5,10 @@ import { useMarcherStore } from "../../stores/Store";
 import FormButtons from "../TinyFormButtons";
 import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
 
+/**
+ * THIS COMPONENT SHOULD NOT BE USED. IT IS NOT FUNCTIONAL.
+ * @returns
+ */
 function EditMarcherForm() {
     const { selectedMarcher } = useSelectedMarcher()!;
     const [isEditing, setIsEditing] = useState(false);

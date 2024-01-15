@@ -4,22 +4,12 @@ import Database from 'better-sqlite3';
 import { connect } from './database.services';
 
 /* ============================ Interfaces ============================ */
-export interface historyQuery {
-    action: string;
-    tableName: string;
-    setClause?: string;
-    /**
-     * Either the previous state of the object or the object's ID
-     */
-    obj?: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage | { id: number } | { marcher_id: number, page_id: number };
-}
-
 /**
  * HistoryEntry without the reverse_action field.
  * I.e. putting a reverse_action for the action itself would create a circular reference.
  * This should not be used for the objects going into the undo and redo tables.
  */
-export interface HistoryEntryBase {
+interface HistoryEntryBase {
     id?: number;
     action: string;
     table_name: string;
@@ -40,7 +30,7 @@ export interface HistoryEntry extends HistoryEntryBase {
  * Update history entry without the reverse_action field.
  * I.e. putting a reverse_action for the action itself would create a circular reference.
  */
-export interface UpdateHistoryEntryBase {
+interface UpdateHistoryEntryBase {
     tableName: string;
     setClause: string;
     previousState: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage;
@@ -52,6 +42,19 @@ export interface UpdateHistoryEntryBase {
  */
 export interface UpdateHistoryEntry extends UpdateHistoryEntryBase {
     reverseAction: UpdateHistoryEntryBase;
+}
+
+/**
+ * Defines the fields of a history state when a marcher, page, or marcherPage is updated.
+ * This is will be parsed into a HistoryEntry and put into the undo and redo tables.
+ */
+export interface InsertHistoryEntry {
+    tableName: string;
+    id: number;
+    reverseAction: {
+        tableName: string,
+        previousState: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage
+    };
 }
 
 /* ============================ Exported Functions ============================ */
@@ -202,7 +205,7 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
 }
 
 /**
- * Insert an update action into the undo or redo table.
+ * Insert an UPDATE action into the undo or redo table.
  *
  * @param args UpdateHistoryEntry object
  * @param db database connection
@@ -221,6 +224,31 @@ export async function insertUpdateHistory(updateEntries: UpdateHistoryEntry[], d
                 action: 'UPDATE',
                 table_name: entry.reverseAction.tableName,
                 set_clause: entry.reverseAction.setClause,
+                data: entry.reverseAction.previousState
+            }
+        })
+    });
+    return await insertHistory(type, historyEntries, db);
+}
+
+/**
+ * Insert an INSERT action into the undo or redo table.
+ *
+ * @param args UpdateHistoryEntry object
+ * @param db database connection
+ * @param type 'undo' or 'redo'
+ * @returns - {success: boolean, errorMessage?: string}
+ */
+export async function insertInsertHistory(updateEntries: UpdateHistoryEntry[], db?: Database.Database, type: 'undo' | 'redo' = 'undo') {
+    const historyEntries: HistoryEntry[] = [];
+    updateEntries.forEach(entry => {
+        historyEntries.push({
+            action: 'INSERT',
+            table_name: entry.tableName,
+            data: entry.previousState,
+            reverse_action: {
+                action: 'UPDATE',
+                table_name: entry.reverseAction.tableName,
                 data: entry.reverseAction.previousState
             }
         })
