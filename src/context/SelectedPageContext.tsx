@@ -14,7 +14,7 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (selectedPage)
-            window.electron.setSelectedPage(selectedPage.id);
+            window.electron.getSelectedPage(selectedPage.id);
     }, [selectedPage]);
 
     // Create the context value object

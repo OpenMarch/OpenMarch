@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useContext, useState } from 'react';
+import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { Marcher } from '../Interfaces';
 
 // Define the type for the context value
@@ -11,6 +11,11 @@ const SelectedMarcherContext = createContext<SelectedMarcherContextProps | undef
 
 export function SelectedMarcherProvider({ children }: { children: ReactNode }) {
     const [selectedMarcher, setSelectedMarcher] = useState<Marcher | null>(null);
+
+    useEffect(() => {
+        if (selectedMarcher)
+            window.electron.getSelectedMarchers([selectedMarcher.id]);
+    }, [selectedMarcher]);
 
     // Create the context value object
     const contextValue: SelectedMarcherContextProps = {

@@ -3,7 +3,7 @@
 /* ================= VARIABLES ================= */
 // Colors
 $toolbarColor: $gray-700;
-$canvasColor: $gray-800;
+$canvasColor: $gray-900;
 
 // Toolbar
 $topHeight: 63px;
@@ -127,13 +127,15 @@ canvas {
   max-height:  calc(100vh - #{$topHeight});
   box-sizing: border-box;
   // flex-grow: 1;
-  background-color: $toolbarColor;
+  background-color: $gray-800;
+  overflow: auto;
 }
 
 .sidebar .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: $toolbarColor;
 }
 
 .sidebar h2 {

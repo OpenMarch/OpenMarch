@@ -109,7 +109,8 @@ const APP_API = {
   // Triggers
   onFetch: (callback: any) => ipcRenderer.on('fetch:all', (event, type) => callback(type)),
   removeFetchListener: () => ipcRenderer.removeAllListeners('fetch:all'),
-  setSelectedPage: (selectedPageId: number) => ipcRenderer.send('get:selectedPage', (selectedPageId)),
+  getSelectedPage: (selectedPageId: number) => ipcRenderer.send('get:selectedPage', (selectedPageId)),
+  getSelectedMarchers: (selectedMarchersId: number[]) => ipcRenderer.send('get:selectedMarchers', (selectedMarchersId)),
 
   // History
   /** Activates on undo or redo. */
@@ -117,6 +118,9 @@ const APP_API = {
   removeHistoryActionListener: () => ipcRenderer.removeAllListeners('history:action'),
   undo: () => ipcRenderer.invoke('history:undo'),
   redo: () => ipcRenderer.invoke('history:redo'),
+
+  // FieldProperties
+  getFieldProperties: () => ipcRenderer.invoke('field_properties:get'),
 
   // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),

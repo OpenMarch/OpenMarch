@@ -1,24 +1,9 @@
-/* A collection of utility functions to translate raw coordinates into readable coordinates */
+/** A collection of utility functions to translate raw coordinates into readable coordinates */
 
-import { ReadableCoords, fieldProperties } from "../Interfaces";
+import { ReadableCoords, FieldProperties } from "../Interfaces";
 
-// The "origin" of a football field is on the 50 yard line on the front hash. This is the pixel position on the canvas.
-export const V1_ORIGIN = { x: 800, y: 520 };
-/**
- * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
- */
-export const V1_COLLEGE_PROPERTIES: fieldProperties = {
-    frontSideline: 32,
-    frontHash: 0,
-    backHash: -20,
-    backSideline: -52,
-    origin: V1_ORIGIN,
-    pixelsPerStep: 10,
-    roundFactor: 20, // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
-    width: 1600,
-    height: 840,
-    stepsBetweenYardLines: 8
-};
+const roundFactor = 20; // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
+
 /**
  * Translates raw canvas coordinates into readable coordinates.
  * This is for a college football field.
@@ -27,16 +12,18 @@ export const V1_COLLEGE_PROPERTIES: fieldProperties = {
  * @param y Canvas y coordinate
  * @returns An object with all of the information needed to make a readable coordinate. (See ReadableCoords interface)
  */
-export function canvasCoordsToCollegeRCords(x: number, y: number, props: fieldProperties = V1_COLLEGE_PROPERTIES) {
+export function canvasCoordsToCollegeRCords(x: number, y: number, props: FieldProperties) {
     const output: ReadableCoords = {} as ReadableCoords;
     const newCoords = {
-        x: (x - props.origin.x) / props.pixelsPerStep,
-        y: (y - props.origin.y) / props.pixelsPerStep
+        x: (x - props.originX) / props.pixelsPerStep,
+        y: (y - props.originY) / props.pixelsPerStep
     };
 
+
     // Round
-    let tempXSteps = (Math.round(newCoords.x * props.roundFactor) / props.roundFactor);
-    const tempYSteps = (Math.round(newCoords.y * props.roundFactor) / props.roundFactor);
+    let tempXSteps = (Math.round(newCoords.x * roundFactor) / roundFactor);
+    const tempYSteps = (Math.round(newCoords.y * roundFactor) / roundFactor);
+
 
     /* ----------- Calculate X descriptions ----------- */
     // Determine which side of the field the marcher is on
@@ -49,8 +36,8 @@ export function canvasCoordsToCollegeRCords(x: number, y: number, props: fieldPr
     output.yardLine = 50 - ((Math.round(tempXSteps / 8)) * 5);
 
     // Determine how many steps inside or outside the yard line the marcher is
-    // Fix for negative yard lines. Coordinates can be an infinite amount outside of the 0 Yard Line.
     if (output.yardLine < 0) {
+        // Fix for negative yard lines. Coordinates can be an infinite amount outside of the 0 Yard Line.
         output.yardLine = 0;
         output.xSteps = tempXSteps - 72;
         output.xDescription = "outside";

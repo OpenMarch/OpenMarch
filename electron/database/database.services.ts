@@ -5,12 +5,33 @@ import { Constants } from '../../src/Constants';
 import * as Interfaces from '../../src/Interfaces';
 import * as fs from 'fs';
 import * as History from './database.history';
+import { FieldProperties } from '../../src/Interfaces';
 
 interface DatabaseResponse {
     success: boolean;
     result?: any;
     errorMessage?: string;
 }
+
+/* ============================ COORDINATES ============================ */
+// The "origin" of a football field is on the 50 yard line on the front hash. This is the pixel position on the canvas.
+export const V1_ORIGIN = { x: 800, y: 520 };
+/**
+ * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
+ */
+export const V1_COLLEGE_PROPERTIES: FieldProperties = {
+    frontSideline: 32,
+    frontHash: 0,
+    backHash: -20,
+    backSideline: -52,
+    originX: 800,
+    originY: 520,
+    pixelsPerStep: 10,
+    roundFactor: 20, // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
+    width: 1600,
+    height: 840,
+    stepsBetweenLines: 8
+};
 
 /* ============================ DATABASE ============================ */
 var DB_PATH = '';
@@ -50,6 +71,7 @@ export function initDatabase() {
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
+    createFieldProperties(db, V1_COLLEGE_PROPERTIES);
     History.createHistoryTables(db);
     console.log('Database created.');
     db.close();
@@ -69,7 +91,7 @@ function createMarcherTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
-                "id"	INTEGER NOT NULL UNIQUE,
+                "id"	INTEGER PRIMARY KEY AUTOINCREMENT,
                 "id_for_html"	TEXT UNIQUE,
                 "name"	TEXT,
                 "section"	TEXT NOT NULL,
@@ -81,7 +103,6 @@ function createMarcherTable(db: Database.Database) {
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL,
                 UNIQUE ("drill_prefix", "drill_order")
-                PRIMARY KEY("id" AUTOINCREMENT)
             );
         `);
     } catch (error) {
@@ -93,20 +114,19 @@ function createMarcherTable(db: Database.Database) {
 function createPageTable(db: Database.Database) {
     try {
         db.exec(`
-        CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
-            "id"	INTEGER NOT NULL UNIQUE,
-            "id_for_html"	TEXT UNIQUE,
-            "name"	TEXT NOT NULL UNIQUE,
-            "notes"	TEXT,
-            "order"	INTEGER NOT NULL UNIQUE,
-            "tempo"	REAL NOT NULL,
-            "time_signature"	TEXT,
-            "counts"	INTEGER NOT NULL,
-            "created_at"	TEXT NOT NULL,
-            "updated_at"	TEXT NOT NULL,
-            PRIMARY KEY("id" AUTOINCREMENT)
-        );
-    `);
+            CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
+                "id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id_for_html"	TEXT UNIQUE,
+                "name"	TEXT NOT NULL UNIQUE,
+                "notes"	TEXT,
+                "order"	INTEGER NOT NULL UNIQUE,
+                "tempo"	REAL NOT NULL,
+                "time_signature"	TEXT,
+                "counts"	INTEGER NOT NULL,
+                "created_at"	TEXT NOT NULL,
+                "updated_at"	TEXT NOT NULL
+            );
+        `);
     } catch (error) {
         console.error('Failed to create page table:', error);
     }
@@ -115,24 +135,73 @@ function createPageTable(db: Database.Database) {
 function createMarcherPageTable(db: Database.Database) {
     try {
         db.exec(`
-        CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
-            "id" INTEGER NOT NULL UNIQUE,
-            "id_for_html" TEXT UNIQUE,
-            "marcher_id" INTEGER NOT NULL,
-            "page_id" INTEGER NOT NULL,
-            "x" REAL,
-            "y" REAL,
-            "created_at" TEXT NOT NULL,
-            "updated_at" TEXT NOT NULL,
-            "notes" TEXT,
-            PRIMARY KEY("id" AUTOINCREMENT)
-        );
-        CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
-        CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
-    `);
+            CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id_for_html" TEXT UNIQUE,
+                "marcher_id" INTEGER NOT NULL,
+                "page_id" INTEGER NOT NULL,
+                "x" REAL,
+                "y" REAL,
+                "created_at" TEXT NOT NULL,
+                "updated_at" TEXT NOT NULL,
+                "notes" TEXT
+            );
+            CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
+            CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
+        `);
     } catch (error) {
         console.error('Failed to create marcher_page table:', error);
     }
+}
+
+function createFieldProperties(db: Database.Database, fieldProperties: Interfaces.FieldProperties) {
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS "${Constants.FieldPropertiesTableName}" (
+                id INTEGER PRIMARY KEY,
+                frontSideline REAL NOT NULL,
+                frontHash REAL NOT NULL,
+                backHash REAL NOT NULL,
+                backSideline REAL NOT NULL,
+                originX REAL NOT NULL,
+                originY REAL NOT NULL,
+                pixelsPerStep REAL NOT NULL,
+                width REAL NOT NULL,
+                height REAL NOT NULL,
+                stepsBetweenLines REAL NOT NULL
+            );
+        `);
+    } catch (error) {
+        console.error('Failed to create field properties table:', error);
+    }
+    db.exec(`
+        INSERT INTO ${Constants.FieldPropertiesTableName} (
+            id,
+            frontSideline,
+            frontHash,
+            backHash,
+            backSideline,
+            originX,
+            originY,
+            pixelsPerStep,
+            width,
+            height,
+            stepsBetweenLines
+        ) VALUES (
+            1,
+            ${fieldProperties.frontSideline},
+            ${fieldProperties.frontHash},
+            ${fieldProperties.backHash},
+            ${fieldProperties.backSideline},
+            ${fieldProperties.originX},
+            ${fieldProperties.originY},
+            ${fieldProperties.pixelsPerStep},
+            ${fieldProperties.width},
+            ${fieldProperties.height},
+            ${fieldProperties.stepsBetweenLines}
+        );
+    `);
+    console.log('Field properties table created.');
 }
 
 /* ============================ Handlers ============================ */
@@ -141,6 +210,9 @@ function createMarcherPageTable(db: Database.Database) {
  * Whenever modifying this, you must also modify the app api in electron/preload/index.ts
  */
 export function initHandlers() {
+    // Field properties
+    ipcMain.handle('field_properties:get', async () => getFieldProperties());
+
     // File IO handlers located in electron/main/index.ts
 
     // Marcher
@@ -169,6 +241,22 @@ export function initHandlers() {
 export async function historyAction(type: 'undo' | 'redo', db?: Database.Database) {
     return await History.historyAction(type, db);
 }
+
+/* ======================== Field Properties ======================== */
+/**
+ * Gets the field properties from the database.
+ *
+ * @param db
+ * @returns
+ */
+export async function getFieldProperties(db?: Database.Database): Promise<Interfaces.FieldProperties> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.FieldPropertiesTableName}`);
+    const result = await stmt.get() as Interfaces.FieldProperties;
+    if (!db) dbToUse.close();
+    return result;
+};
+
 
 /* ============================ Marcher ============================ */
 async function getMarchers(db?: Database.Database): Promise<Interfaces.Marcher[]> {
@@ -829,7 +917,7 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
     }
 }
 
-/* --------------- MarcherPage Batch Actions --------------- */
+/* --------------- MarcherPage Utility Actions --------------- */
 /**
  * Sets the coordinates of all marcherPages on the given page to the coordinates of the previous page.
  *
@@ -862,4 +950,37 @@ export async function setAllCoordsToPreviousPage(currentPageId: number, previous
     const response = await updateMarcherPages(changes);
 
     return { success: true, result: response };
+}
+
+/**
+ * Rounds the coordinates of the marcherPages with the given marcher_id and page_id to the nearest multiple of the denominator.
+ *
+ * Example: if the denominator is 10, the coordinates will be rounded to the nearest .1.
+ * If the denominator is 4, the coordinates will be rounded to the nearest .25.
+ *
+ * @param marcherId
+ * @param pageId
+ * @param denominator
+ * @returns
+ */
+export async function roundCoordinates(marcherPages: { marcherId: number, pageId: number }[], denominator: number, xAxis: boolean, yAxis: boolean): Promise<DatabaseResponse> {
+    const db = connect();
+
+    const changes: Interfaces.UpdateMarcherPage[] = [];
+    for (const marcherPageArgs of marcherPages) {
+        const marcherPage = await getMarcherPage({ marcher_id: marcherPageArgs.marcherId, page_id: marcherPageArgs.pageId });
+        changes.push({
+            marcher_id: marcherPage.marcher_id,
+            page_id: marcherPage.page_id,
+            x: xAxis ? Math.round(marcherPage.x * denominator) / denominator : marcherPage.x,
+            y: yAxis ? Math.round(marcherPage.y * denominator) / denominator : marcherPage.y
+        });
+    }
+
+    const response = await updateMarcherPages(changes);
+
+    db.close();
+
+    return { success: true, result: response };
+
 }

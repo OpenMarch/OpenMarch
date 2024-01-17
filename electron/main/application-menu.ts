@@ -106,6 +106,64 @@ const template = [
               mainProcess.triggerFetch('marcher_page');
             }
           },]
+      },
+      {
+        label: 'X Snap',
+        submenu: [
+          {
+            label: 'Nearest whole step',
+            accelerator: 'Shift+1',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 1, true, false);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+        ]
+      },
+      {
+        label: 'Y Snap',
+        submenu: [
+          {
+            label: 'Set coordinates of all marchers to previous page',
+            accelerator: 'Shift+CommandOrControl+G',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              db.setAllCoordsToPreviousPage(store.get('selectedPageId') as number);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Set coordinates of all marchers to previous page',
+            accelerator: 'Shift+CommandOrControl+G',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              db.setAllCoordsToPreviousPage(store.get('selectedPageId') as number);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Set coordinates of all marchers to previous page',
+            accelerator: 'Shift+CommandOrControl+G',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              db.setAllCoordsToPreviousPage(store.get('selectedPageId') as number);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+        ]
       }
       // {
       //   label: 'Cut',

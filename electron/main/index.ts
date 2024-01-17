@@ -110,6 +110,9 @@ app.whenReady().then(async () => {
   ipcMain.on('get:selectedPage', async (event, selectedPageId) => {
     store.set('selectedPageId', selectedPageId);
   });
+  ipcMain.on('get:selectedMarchers', async (event, selectedMarchersId) => {
+    store.set('selectedMarchersId', selectedMarchersId);
+  });
 
   await createWindow('OpenMarch - ' + store.get('databasePath'));
 })

@@ -2,7 +2,7 @@
 import { fabric } from "fabric";
 import { CanvasMarcher } from "../Interfaces";
 import { Constants } from "../Constants";
-import { V1_COLLEGE_PROPERTIES, V1_ORIGIN } from "./CoordsUtils";
+import { FieldProperties } from "../Interfaces";
 
 /* -------------------------- Canvas Functions -------------------------- */
 /**
@@ -14,9 +14,11 @@ export function refreshCanavsSize(canvas: fabric.Canvas) {
 }
 
 /* -------------------------- Field Functions -------------------------- */
-export const buildField = (fieldWidth: number, fieldHeight: number) => {
+export const buildField = (fieldProperties: FieldProperties) => {
     const fieldArray: fabric.Object[] = [];
     const top = 0;
+    const fieldWidth = fieldProperties.width;
+    const fieldHeight = fieldProperties.height;
 
     // white background
     const background = new fabric.Rect({
@@ -46,8 +48,8 @@ export const buildField = (fieldWidth: number, fieldHeight: number) => {
 
 
     // Yard line numbers
-    const backSideline = V1_ORIGIN.y + (V1_COLLEGE_PROPERTIES.backSideline * V1_COLLEGE_PROPERTIES.pixelsPerStep);
-    const frontSideline = V1_ORIGIN.y + (V1_COLLEGE_PROPERTIES.frontSideline * V1_COLLEGE_PROPERTIES.pixelsPerStep);
+    const backSideline = fieldProperties.originY + (fieldProperties.backSideline * fieldProperties.pixelsPerStep);
+    const frontSideline = fieldProperties.originY + (fieldProperties.frontSideline * fieldProperties.pixelsPerStep);
     const numberY = 153;
     const xOffset = -6;
     for (let i = 1; i <= 9; i += 1) {

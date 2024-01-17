@@ -1,5 +1,5 @@
 // import axios from 'axios';
-import { Marcher, NewMarcher, NewPage, Page, UpdateMarcher, UpdateMarcherPage, UpdatePage } from '../Interfaces';
+import * as Interfaces from '../Interfaces';
 import { Constants } from '../Constants';
 import { Update } from 'vite/types/hmrPayload';
 import { create } from 'domain';
@@ -52,21 +52,26 @@ export async function performRedo() {
   return response;
 }
 
+export async function getFieldProperties(): Promise<Interfaces.FieldProperties> {
+  const response = await window.electron.getFieldProperties();
+  return response;
+}
+
 /* ====================== Page ====================== */
 
 /**
  * @returns a list of all pages.
  */
-export async function getPages() {
+export async function getPages(): Promise<Interfaces.Page[]> {
   const response = await window.electron.getPages();
   return response;
 }
 
-export async function createPage(newPage: NewPage) {
+export async function createPage(newPage: Interfaces.NewPage) {
   return await createPages([newPage]);
 }
 
-export async function createPages(pages: NewPage[]) {
+export async function createPages(pages: Interfaces.NewPage[]) {
   const response = await window.electron.createPages(pages);
   return response;
 }
@@ -78,7 +83,7 @@ export async function createPages(pages: NewPage[]) {
  * @param pageUpdates
  * @returns Response data from the server.
  */
-export async function updatePages(pageUpdates: UpdatePage[]) {
+export async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
   const response = await window.electron.updatePages(pageUpdates);
   return response;
 }
@@ -102,12 +107,12 @@ export async function deletePage(page_id: number) {
 /**
  * @returns a list of all marchers
  */
-export async function getMarchers(): Promise<Marcher[]> {
+export async function getMarchers(): Promise<Interfaces.Marcher[]> {
   const response = await window.electron.getMarchers();
   return response;
 }
 
-export async function updateMarchers(updateMarchers: UpdateMarcher[]) {
+export async function updateMarchers(updateMarchers: Interfaces.UpdateMarcher[]) {
   const response = await window.electron.updateMarchers(updateMarchers);
   return response;
 }
@@ -131,7 +136,7 @@ export async function deleteMarcher(marcher_id: number) {
  * @param marcher - The new marcher object to be created.
  * @returns Response data from the server.
  */
-export async function createMarcher(newMarcher: NewMarcher) {
+export async function createMarcher(newMarcher: Interfaces.NewMarcher) {
   const response = await window.electron.createMarcher(newMarcher);
   return response;
 }
@@ -145,7 +150,7 @@ export async function createMarcher(newMarcher: NewMarcher) {
  * @param {number} page_id - pageObj.id: The id of the page.
  * @returns {MarcherPage} The marcherPage object for the given marcher_id and page_id.
  */
-export async function getMarcherPage(marcher_id: number, page_id: number) {
+export async function getMarcherPage(marcher_id: number, page_id: number): Promise<Interfaces.MarcherPage> {
   const response = await window.electron.getMarcherPage({ marcher_id: marcher_id, page_id: page_id });
   return response;
 }
@@ -157,7 +162,7 @@ export async function getMarcherPage(marcher_id: number, page_id: number) {
  * @param {string} id_for_html - obj.id_for_html: the id_for_html of the marcher or page.
  * @returns A list of all the marcherPages or those for either a given marcher or page.
  */
-export async function getMarcherPages(id_for_html: string | void) {
+export async function getMarcherPages(id_for_html: string | void): Promise<Interfaces.MarcherPage[]> {
   let response = await window.electron.getMarcherPages({});
 
   if (id_for_html) {
@@ -184,7 +189,7 @@ export async function getMarcherPages(id_for_html: string | void) {
  */
 export async function updateMarcherPage(marcher_id: number, page_id: number, x: number, y: number) {
   // console.log("JSON: " + JSON.stringify({ x, y }));
-  const updatedMarcherPage: UpdateMarcherPage = {
+  const updatedMarcherPage: Interfaces.UpdateMarcherPage = {
     marcher_id: marcher_id,
     page_id: page_id,
     x: x,

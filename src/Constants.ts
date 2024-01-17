@@ -4,6 +4,7 @@ export const Constants = {
     MarcherPageTableName: "marcher_pages",
     UndoHistoryTableName: "history_undo",
     RedoHistoryTableName: "history_redo",
+    FieldPropertiesTableName: "field_properties",
 
 
     PagePrefix: "page",

@@ -6,10 +6,9 @@ import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarcher } from "../context/SelectedMarcherContext";
 import { IGroupOptions } from "fabric/fabric-impl";
 import { Constants, idForHtmlToId } from "../Constants";
-import { updateMarcherPage } from "../api/api";
+import { getFieldProperties, updateMarcherPage } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
-import { CanvasMarcher } from "../Interfaces";
-import { V1_COLLEGE_PROPERTIES } from "../utilities/CoordsUtils";
+import { CanvasMarcher, FieldProperties } from "../Interfaces";
 
 interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
@@ -25,6 +24,7 @@ function Canvas() {
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fieldProperties = useRef<FieldProperties>();
 
     /* -------------------------- Listener Functions -------------------------- */
     const handleObjectModified = useCallback((e: any) => {
@@ -217,6 +217,12 @@ function Canvas() {
     }, [marchers, canvasMarchers, canvas]);
 
     /* -------------------------- useEffects -------------------------- */
+    useEffect(() => {
+        getFieldProperties().then((fieldPropertiesResult) => {
+            fieldProperties.current = fieldPropertiesResult;
+        });
+    }, []);
+
     // Set Loading
     useEffect(() => {
         setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
@@ -246,8 +252,7 @@ function Canvas() {
             canvas.selectionColor = "white";
             canvas.selectionLineWidth = 8;
             // set initial canvas size
-            const staticGrid = CanvasUtils.buildField(
-                V1_COLLEGE_PROPERTIES.width, V1_COLLEGE_PROPERTIES.height);
+            const staticGrid = CanvasUtils.buildField(fieldProperties.current!);
             canvas.add(staticGrid);
             canvas.renderAll()
 
