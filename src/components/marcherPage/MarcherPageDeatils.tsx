@@ -4,8 +4,9 @@ import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { bsconfig } from "../../styles/bootstrapClasses";
 import { useMarcherPageStore } from "../../stores/Store";
-import { V1_COLLEGE_PROPERTIES, canvasCoordsToCollegeRCords, xToTerseString, yToTerseString } from "../../utilities/CoordsUtils";
+import { canvasCoordsToCollegeRCords, xToTerseString, yToTerseString } from "../../utilities/CoordsUtils";
 
+/** DO NOT USE. NO LONGER FUNCTIONAL */
 export function MarcherPageDetails() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
     const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;

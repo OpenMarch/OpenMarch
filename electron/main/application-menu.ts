@@ -108,6 +108,83 @@ const template = [
           },]
       },
       {
+        label: 'Snap X and Y',
+        submenu: [
+          {
+            label: 'Nearest whole step',
+            accelerator: '1',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 1, true, true);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Nearest half step',
+            accelerator: '2',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 2, true, true);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Nearest quarter step',
+            accelerator: '3',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 4, true, true);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Nearest tenth step',
+            accelerator: '4',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 10, true, true);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+        ]
+      },
+      {
         label: 'X Snap',
         submenu: [
           {
@@ -128,43 +205,139 @@ const template = [
               mainProcess.triggerFetch('marcher_page');
             }
           },
+          {
+            label: 'Nearest half step',
+            accelerator: 'Shift+2',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 2, true, false);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Nearest quarter step',
+            accelerator: 'Shift+3',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 4, true, false);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Nearest tenth step',
+            accelerator: 'Shift+4',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 10, true, false);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
         ]
       },
       {
         label: 'Y Snap',
         submenu: [
           {
-            label: 'Set coordinates of all marchers to previous page',
-            accelerator: 'Shift+CommandOrControl+G',
+            label: 'Nearest whole step',
+            accelerator: 'Alt+1',
             click(item: any, focusedWindow: any) {
               // if (focusedWindow) focusedWindow.webContents.undo();
               const store = new Store();
-              db.setAllCoordsToPreviousPage(store.get('selectedPageId') as number);
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 1, false, true);
               mainProcess.triggerFetch('marcher_page');
             }
           },
           {
-            label: 'Set coordinates of all marchers to previous page',
-            accelerator: 'Shift+CommandOrControl+G',
+            label: 'Nearest half step',
+            accelerator: 'Alt+2',
             click(item: any, focusedWindow: any) {
               // if (focusedWindow) focusedWindow.webContents.undo();
               const store = new Store();
-              db.setAllCoordsToPreviousPage(store.get('selectedPageId') as number);
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 2, false, true);
               mainProcess.triggerFetch('marcher_page');
             }
           },
           {
-            label: 'Set coordinates of all marchers to previous page',
-            accelerator: 'Shift+CommandOrControl+G',
+            label: 'Nearest quarter step',
+            accelerator: 'Alt+3',
             click(item: any, focusedWindow: any) {
               // if (focusedWindow) focusedWindow.webContents.undo();
               const store = new Store();
-              db.setAllCoordsToPreviousPage(store.get('selectedPageId') as number);
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 4, false, true);
+              mainProcess.triggerFetch('marcher_page');
+            }
+          },
+          {
+            label: 'Nearest tenth step',
+            accelerator: 'Alt+4',
+            click(item: any, focusedWindow: any) {
+              // if (focusedWindow) focusedWindow.webContents.undo();
+              const store = new Store();
+              const marcherPages = [];
+              const selectedPageId = store.get('selectedPageId') as number;
+              for (const marcherId of store.get('selectedMarchersId') as number[]) {
+                marcherPages.push({
+                  marcherId: marcherId,
+                  pageId: selectedPageId,
+                });
+              }
+              db.roundCoordinates(marcherPages, 10, false, true);
               mainProcess.triggerFetch('marcher_page');
             }
           },
         ]
-      }
+      },
       // {
       //   label: 'Cut',
       //   accelerator: 'CommandOrControl+X',

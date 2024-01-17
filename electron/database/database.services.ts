@@ -24,14 +24,16 @@ export const V1_COLLEGE_PROPERTIES: FieldProperties = {
     frontHash: 0,
     backHash: -20,
     backSideline: -52,
-    originX: 800,
-    originY: 520,
+    originX: V1_ORIGIN.x,
+    originY: V1_ORIGIN.y,
     pixelsPerStep: 10,
     roundFactor: 20, // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
     width: 1600,
     height: 840,
     stepsBetweenLines: 8
 };
+
+const CURRENT_FIELD_PROPERTIES = V1_COLLEGE_PROPERTIES;
 
 /* ============================ DATABASE ============================ */
 var DB_PATH = '';
@@ -71,7 +73,7 @@ export function initDatabase() {
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
-    createFieldProperties(db, V1_COLLEGE_PROPERTIES);
+    createFieldProperties(db, CURRENT_FIELD_PROPERTIES);
     History.createHistoryTables(db);
     console.log('Database created.');
     db.close();
@@ -967,20 +969,35 @@ export async function roundCoordinates(marcherPages: { marcherId: number, pageId
     const db = connect();
 
     const changes: Interfaces.UpdateMarcherPage[] = [];
+    const stepsPerPixel = 1 / CURRENT_FIELD_PROPERTIES.pixelsPerStep;
     for (const marcherPageArgs of marcherPages) {
         const marcherPage = await getMarcherPage({ marcher_id: marcherPageArgs.marcherId, page_id: marcherPageArgs.pageId });
+
+        let newX = marcherPage.x;
+        let newY = marcherPage.y;
+
+        if (xAxis) {
+            const xStepsFromOrigin = stepsPerPixel * (CURRENT_FIELD_PROPERTIES.originX - marcherPage.x);
+            const roundedXSteps = Math.round(xStepsFromOrigin * denominator) / denominator;
+            newX = CURRENT_FIELD_PROPERTIES.originX - (roundedXSteps / stepsPerPixel);
+        }
+        if (yAxis) {
+            const yStepsFromOrigin = stepsPerPixel * (CURRENT_FIELD_PROPERTIES.originY - marcherPage.y);
+            const roundedYSteps = Math.round(yStepsFromOrigin * denominator) / denominator;
+            newY = CURRENT_FIELD_PROPERTIES.originY - (roundedYSteps / stepsPerPixel);
+        }
         changes.push({
             marcher_id: marcherPage.marcher_id,
             page_id: marcherPage.page_id,
-            x: xAxis ? Math.round(marcherPage.x * denominator) / denominator : marcherPage.x,
-            y: yAxis ? Math.round(marcherPage.y * denominator) / denominator : marcherPage.y
+            // 860 pixels, 86 steps, .1 steps per pixel
+            x: newX,
+            y: newY
         });
     }
 
     const response = await updateMarcherPages(changes);
 
     db.close();
-
     return { success: true, result: response };
 
 }
