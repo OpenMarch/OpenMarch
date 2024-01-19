@@ -236,6 +236,7 @@ function Canvas() {
         if (!canvas.current && selectedPage && canvasRef.current) {
             // console.log("Canvas.tsx: useEffect: create canvas.current");
             canvas.current = new fabric.Canvas(canvasRef.current, {});
+
             // Set canvas.current size
             CanvasUtils.refreshCanavsSize(canvas.current);
             // Update canvas.current size on window resize
@@ -251,6 +252,10 @@ function Canvas() {
             const staticGrid = CanvasUtils.buildField(fieldProperties.current!);
             canvas.current.add(staticGrid);
 
+            // Set canvas selection color
+            canvas.current.selectionColor = 'rgba(0, 0, 255, 0.2)';
+            canvas.current.selectionBorderColor = 'rgba(0, 0, 255, 1)';
+            canvas.current.selectionLineWidth = 2;
 
             canvas.current.renderAll()
         }
