@@ -20,9 +20,10 @@ function Canvas() {
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
-    const [canvas, setCanvas] = React.useState<fabric.Canvas | any>();
+    // const [canvasState, setCanvas] = React.useState<fabric.Canvas | any>();
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
+    const canvas = useRef<fabric.Canvas | any>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fieldProperties = useRef<FieldProperties>();
 
@@ -58,78 +59,78 @@ function Canvas() {
     }, [setSelectedMarcher]);
 
     const handleMouseDown = useCallback((opt: any) => {
-        // console.log("canvas click location", opt.e);
+        // console.log("canvas.current click location", opt.e);
         var evt = opt.e;
         if ((evt.altKey || !opt.target || !opt.target.id_for_html) && !evt.shiftKey) {
-            canvas.isDragging = true;
-            canvas.selection = false;
-            canvas.lastPosX = evt.clientX;
-            canvas.lastPosY = evt.clientY;
+            canvas.current.isDragging = true;
+            canvas.current.selection = false;
+            canvas.current.lastPosX = evt.clientX;
+            canvas.current.lastPosY = evt.clientY;
         }
-    }, [canvas]);
+    }, []);
 
     const handleMouseMove = useCallback((opt: any) => {
-        if (canvas.isDragging) {
+        if (canvas.current.isDragging) {
             var e = opt.e;
-            var vpt = canvas.viewportTransform;
-            vpt[4] += e.clientX - canvas.lastPosX;
-            vpt[5] += e.clientY - canvas.lastPosY;
-            canvas.requestRenderAll();
-            canvas.lastPosX = e.clientX;
-            canvas.lastPosY = e.clientY;
+            var vpt = canvas.current.viewportTransform;
+            vpt[4] += e.clientX - canvas.current.lastPosX;
+            vpt[5] += e.clientY - canvas.current.lastPosY;
+            canvas.current.requestRenderAll();
+            canvas.current.lastPosX = e.clientX;
+            canvas.current.lastPosY = e.clientY;
         }
-    }, [canvas]);
+    }, []);
 
     const handleMouseUp = useCallback((opt: any) => {
         // on mouse up we want to recalculate new interaction
         // for all objects, so we call setViewportTransform
-        canvas.setViewportTransform(canvas.viewportTransform);
-        canvas.isDragging = false;
-        canvas.selection = true;
-    }, [canvas]);
+        canvas.current.setViewportTransform(canvas.current.viewportTransform);
+        canvas.current.isDragging = false;
+        canvas.current.selection = true;
+    }, []);
 
     const handleMouseWheel = useCallback((opt: any) => {
         // if (opt.e.shiftKey)
         //     opt.e.preventDefault();
         var delta = opt.e.deltaY;
-        var zoom = canvas.getZoom();
+        var zoom = canvas.current.getZoom();
         zoom *= 0.999 ** delta;
         if (zoom > 20) zoom = 20;
         if (zoom < 0.01) zoom = 0.01;
-        canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+        canvas.current.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
         opt.e.preventDefault();
         opt.e.stopPropagation();
-    }, [canvas]);
+    }, []);
 
     const initiateListeners = useCallback(() => {
-        if (canvas) {
-            canvas.on('object:modified', handleObjectModified);
-            canvas.on('selection:updated', handleSelect);
-            canvas.on('selection:created', handleSelect);
-            canvas.on('selection:cleared', handleDeselect);
+        if (canvas.current) {
+            canvas.current.on('object:modified', handleObjectModified);
+            canvas.current.on('selection:updated', handleSelect);
+            canvas.current.on('selection:created', handleSelect);
+            canvas.current.on('selection:cleared', handleDeselect);
 
-            canvas.on('mouse:down', handleMouseDown);
-            canvas.on('mouse:move', handleMouseMove);
-            canvas.on('mouse:up', handleMouseUp);
-            canvas.on('mouse:wheel', handleMouseWheel);
+            canvas.current.on('mouse:down', handleMouseDown);
+            canvas.current.on('mouse:move', handleMouseMove);
+            canvas.current.on('mouse:up', handleMouseUp);
+            canvas.current.on('mouse:wheel', handleMouseWheel);
         }
-    }, [canvas, handleObjectModified, handleSelect, handleDeselect, handleMouseDown, handleMouseMove, handleMouseUp,
+    }, [handleObjectModified, handleSelect, handleDeselect, handleMouseDown, handleMouseMove, handleMouseUp,
         handleMouseWheel]);
 
 
     const cleanupListeners = useCallback(() => {
-        if (canvas) {
-            canvas.off('object:modified');
-            canvas.off('selection:updated');
-            canvas.off('selection:created');
-            canvas.off('selection:cleared');
+        if (canvas.current) {
+            canvas.current.off('object:modified');
+            canvas.current.off('selection:updated');
+            canvas.current.off('selection:created');
+            canvas.current.off('selection:cleared');
 
-            canvas.off('mouse:down');
-            canvas.off('mouse:move');
-            canvas.off('mouse:up');
-            canvas.off('mouse:wheel');
+            canvas.current.off('mouse:down');
+            canvas.current.off('mouse:move');
+            canvas.current.off('mouse:up');
+            canvas.current.off('mouse:wheel');
         }
-    }, [canvas]);
+    }, []);
 
     /* ------------------------ Marcher Functions ------------------------ */
     const createMarcher = useCallback((x: number, y: number, id_for_html: string, marcher_id: number, label?: string):
@@ -166,9 +167,9 @@ function Canvas() {
             marcher_id: marcher_id
         }
         canvasMarchers.push(newMarcher);
-        canvas!.add(marcherGroup);
+        canvas.current!.add(marcherGroup);
         return newMarcher;
-    }, [canvas, canvasMarchers]);
+    }, [canvasMarchers]);
 
     /* Create new marchers based on the selected page if they haven't been created yet */
     // Moves the current marchers to the new page
@@ -200,8 +201,8 @@ function Canvas() {
                     throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
             }
         });
-        canvas!.renderAll();
-    }, [marchers, canvasMarchers, canvas, marcherPages, selectedPage, createMarcher]);
+        canvas.current!.renderAll();
+    }, [marchers, canvasMarchers, marcherPages, selectedPage, createMarcher]);
 
     const updateMarcherLabels = useCallback(() => {
         canvasMarchers.forEach((canvasMarcher) => {
@@ -213,8 +214,8 @@ function Canvas() {
                     textObject.set({ text: canvasMarcher.drill_number });
             }
         });
-        canvas?.renderAll();
-    }, [marchers, canvasMarchers, canvas]);
+        canvas.current?.renderAll();
+    }, [marchers, canvasMarchers]);
 
     /* -------------------------- useEffects -------------------------- */
     useEffect(() => {
@@ -228,41 +229,36 @@ function Canvas() {
         setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
     }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
 
-    /* Initialize the canvas */
+    /* Initialize the canvas.current */
     // Update the objectModified listener when the selected page changes
     useEffect(() => {
-        if (!canvas && selectedPage && canvasRef.current) {
-            // console.log("Canvas.tsx: useEffect: create canvas");
-            setCanvas(new fabric.Canvas(canvasRef.current, {}));
-        }
-    }, [selectedPage, canvas]);
-
-    // Create the canvas and field
-    useEffect(() => {
-        if (canvas) {
-            // Set canvas size
-            CanvasUtils.refreshCanavsSize(canvas);
-            // Update canvas size on window resize
+        console.log(marchers, pages, marcherPages, selectedPage, isLoading, canvasMarchers)
+        if (!canvas.current && selectedPage && canvasRef.current) {
+            // console.log("Canvas.tsx: useEffect: create canvas.current");
+            canvas.current = new fabric.Canvas(canvasRef.current, {});
+            // Set canvas.current size
+            CanvasUtils.refreshCanavsSize(canvas.current);
+            // Update canvas.current size on window resize
             window.addEventListener('resize', (evt) => {
-                CanvasUtils.refreshCanavsSize(canvas);
+                CanvasUtils.refreshCanavsSize(canvas.current);
             });
 
-            // Set canvas configuration options
-            // canvas.backgroundColor = getColor('$purple-200');
-            canvas.selectionColor = "white";
-            canvas.selectionLineWidth = 8;
-            // set initial canvas size
+            // Set canvas.current configuration options
+            // canvas.current.backgroundColor = getColor('$purple-200');
+            canvas.current.selectionColor = "white";
+            canvas.current.selectionLineWidth = 8;
+            // set initial canvas.current size
             const staticGrid = CanvasUtils.buildField(fieldProperties.current!);
-            canvas.add(staticGrid);
-            canvas.renderAll()
+            canvas.current.add(staticGrid);
 
-            // const cleanupListenersCall = () => initCanvasCallack.current();
+
+            canvas.current.renderAll()
         }
-    }, [canvas]);
+    }, [selectedPage]);
 
     // Initiate listeners
     useEffect(() => {
-        if (canvas) {
+        if (canvas.current) {
             // Initiate listeners
             initiateListeners();
 
@@ -271,43 +267,43 @@ function Canvas() {
                 cleanupListeners();
             }
         }
-    }, [canvas, initiateListeners, cleanupListeners]);
+    }, [initiateListeners, cleanupListeners]);
 
 
-    // Render the marchers when the canvas and marchers are loaded
+    // Render the marchers when the canvas.current and marchers are loaded
     useEffect(() => {
         // console.log("UseEffect: renderMarchers - marchers", selectedPage);
-        if (canvas && !isLoading) {
+        if (canvas.current && !isLoading) {
             updateMarcherLabels();
         }
-    }, [marchers, canvas, isLoading, updateMarcherLabels]);
+    }, [marchers, isLoading, updateMarcherLabels]);
 
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
         // console.log("UseEffect: renderMarchers - pages", selectedPage);
-        if (canvas && !isLoading) {
-            // console.log("Rendering canvas - pages");
+        if (canvas.current && !isLoading) {
+            // console.log("Rendering canvas.current - pages");
             renderMarchers();
         }
-    }, [canvas, marchers, pages, marcherPages, selectedPage, isLoading, renderMarchers]);
+    }, [marchers, pages, marcherPages, selectedPage, isLoading, renderMarchers]);
 
     // Change the active object when the selected marcher changes
     useEffect(() => {
-        if (canvas && !isLoading && canvasMarchers.length > 0 && selectedMarcher) {
+        if (canvas.current && !isLoading && canvasMarchers.length > 0 && selectedMarcher) {
             const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarcher.id);
             if (curMarcher && curMarcher.fabricObject) {
-                canvas.setActiveObject(curMarcher.fabricObject);
+                canvas.current.setActiveObject(curMarcher.fabricObject);
             }
             else
                 throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
         }
-    }, [selectedMarcher, canvas, isLoading, canvasMarchers]);
+    }, [selectedMarcher, isLoading, canvasMarchers]);
 
     /* --------------------------Animation Functions-------------------------- */
     // eslint-disable-next-line
     const startAnimation = () => {
-        if (canvas) {
-            // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.renderAll.bind(canvas) });
+        if (canvas.current) {
+            // canvasMarchers[0]?.animate("down", "+=100", { onChange: canvas.current.renderAll.bind(canvas.current) });
             canvasMarchers.forEach((CanvasMarcher) => {
                 const matrix = CanvasMarcher?.fabricObject?.calcTransformMatrix();
                 CanvasMarcher?.fabricObject?.animate({
@@ -315,7 +311,7 @@ function Canvas() {
                     top: `${matrix![5]}+100`,
                 }, {
                     duration: 1000,
-                    onChange: canvas!.renderAll.bind(canvas),
+                    onChange: canvas.current!.renderAll.bind(canvas.current),
                     easing: linearEasing,
                 });
             });
@@ -328,9 +324,21 @@ function Canvas() {
                 ((marchers.length > 0 && pages.length > 0) ?
                     <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
                     :
-                    <h2 className="canvas-loading" style={{ color: "white" }}>
-                        Create a marcher and page to make the canvas visible. You may need to refresh the page after.
-                    </h2>)
+                    <div className="canvas-loading"
+                        style={{
+                            color: "white",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: "100%",
+                        }}
+                    >
+                        <h3>To start the show, create Marchers and Pages.</h3>
+                        <p>Then {"(Window -> Refresh) or (Ctrl+R)"}</p>
+                        <h5>If anything in OpenMarch ever seems broken, a refresh will often fix it.</h5>
+                    </div>
+                )
             }
         </div>
     );

@@ -8,8 +8,8 @@ function Topbar() {
     return (
         <Container fluid className="topbar p-3">
             <FileControls />
-            <PageListModal />
             <MarcherListModal />
+            <PageListModal />
 
             <PlaybackControls />
         </Container>
