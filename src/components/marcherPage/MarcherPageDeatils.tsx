@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { MarcherPage, ReadableCoords } from "../../Interfaces";
-import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { bsconfig } from "../../styles/bootstrapClasses";
 import { useMarcherPageStore } from "../../stores/Store";
@@ -9,7 +9,7 @@ import { canvasCoordsToCollegeRCords, xToTerseString, yToTerseString } from "../
 /** DO NOT USE. NO LONGER FUNCTIONAL */
 export function MarcherPageDetails() {
     const selectedPage = useSelectedPage()?.selectedPage || null;
-    const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
+    const selectedMarchers = useSelectedMarchers()?.selectedMarchers || null;
     // eslint-disable-next-line
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
     const [readableCoords, setReadableCoords] = useState<ReadableCoords>();
@@ -20,8 +20,8 @@ export function MarcherPageDetails() {
         setMarcherPage(null);
         // setIsLoading(true);
         // If both a marcher and page is selected return a single marcherPage
-        if (selectedPage && selectedMarcher) {
-            const newMarcherPage: MarcherPage | null = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher.id &&
+        if (selectedPage && selectedMarchers) {
+            const newMarcherPage: MarcherPage | null = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarchers.id &&
                 marcherPage.page_id === selectedPage.id) || null;
             if (newMarcherPage) {
                 setMarcherPage(newMarcherPage);
@@ -29,14 +29,14 @@ export function MarcherPageDetails() {
             }
         }
     }
-        , [selectedPage, selectedMarcher, marcherPages]);
+        , [selectedPage, selectedMarchers, marcherPages]);
 
     return (
         <>
             {marcherPagesAreLoading ? <p>Loading...</p> : <>
                 <div className={bsconfig.tableHeader}>
                     <div className="col table-header">Pg {selectedPage?.name || "nil"}</div>
-                    <div className="col table-header">{selectedMarcher?.drill_number?.toString() || "nil"}</div>
+                    <div className="col table-header">{selectedMarchers?.drill_number?.toString() || "nil"}</div>
                 </div>
                 <table className="table pageDetails-table">
                     <tbody>

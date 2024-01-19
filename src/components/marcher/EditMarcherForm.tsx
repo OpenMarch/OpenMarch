@@ -3,14 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import { updateMarcherDrillNumber } from "../../api/api";
 import { useMarcherStore } from "../../stores/Store";
 import FormButtons from "../TinyFormButtons";
-import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 
 /**
  * THIS COMPONENT SHOULD NOT BE USED. IT IS NOT FUNCTIONAL.
  * @returns
  */
 function EditMarcherForm() {
-    const { selectedMarcher } = useSelectedMarcher()!;
+    const { selectedMarchers } = useSelectedMarchers()!;
     const [isEditing, setIsEditing] = useState(false);
     const { fetchMarchers } = useMarcherStore();
 
@@ -22,7 +22,7 @@ function EditMarcherForm() {
     useEffect(() => {
         setIsEditing(false);
         resetForm();
-    }, [selectedMarcher]);
+    }, [selectedMarchers]);
 
     /* -------------------------------------- HANDLERS --------------------------------------*/
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -32,7 +32,7 @@ function EditMarcherForm() {
         const prefix = form[drillPrefixInputId].value;
         const order = form[drillOrderInputId].value;
 
-        updateMarcherDrillNumber(selectedMarcher!.id, prefix, order).then(() => fetchMarchers());
+        updateMarcherDrillNumber(selectedMarchers!.id, prefix, order).then(() => fetchMarchers());
     };
 
     const handleCancel = useCallback(() => {
@@ -53,9 +53,9 @@ function EditMarcherForm() {
                 id={marcherFormId}
                 onSubmit={handleSubmit}
             >
-                {!selectedMarcher ? <p>Select a marcher to view details</p> : <>
+                {!selectedMarchers ? <p>Select a marcher to view details</p> : <>
                     <Form.Label htmlFor={marcherFormId}>
-                        Marcher {selectedMarcher?.name}
+                        Marcher {selectedMarchers?.name}
                     </Form.Label>
                     <InputGroup size="sm" className="mb-12 text-right">
                         <InputGroup.Text id={"counts-label"}>
@@ -64,13 +64,13 @@ function EditMarcherForm() {
                         <Form.Control
                             disabled={!isEditing}
                             id={drillPrefixInputId}
-                            defaultValue={selectedMarcher.drill_prefix || ""}
+                            defaultValue={selectedMarchers.drill_prefix || ""}
                             type="text"
                         />
                         <Form.Control
                             disabled={!isEditing}
                             id={drillOrderInputId}
-                            defaultValue={selectedMarcher.drill_order || ""}
+                            defaultValue={selectedMarchers.drill_order || ""}
                             type="number"
                             min={1}
                             step={1}

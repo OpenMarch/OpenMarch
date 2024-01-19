@@ -5,14 +5,14 @@ import { updateMarcherPage } from "../../api/api";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useMarcherPageStore } from "../../stores/Store";
 import FormButtons from "../TinyFormButtons";
-import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { MarcherPage } from "../../Interfaces";
 
 function EditMarcherPageForm() {
     // eslint-disable-next-line
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     // eslint-disable-next-line
-    const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
+    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const [marcherPage, setMarcherPage] = useState<MarcherPage | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const marcherPageFormId = "marcherPageFormId";
@@ -28,8 +28,8 @@ function EditMarcherPageForm() {
         setMarcherPage(null);
 
         // If both a marcher and page is selected return a single marcherPage
-        if (selectedPage && selectedMarcher) {
-            setMarcherPage(marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher.id &&
+        if (selectedPage && selectedMarchers) {
+            setMarcherPage(marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarchers.id &&
                 marcherPage.page_id === selectedPage.id) || null);
         }
 
@@ -40,7 +40,7 @@ function EditMarcherPageForm() {
         else
             setIsEditing(false);
         resetForm();
-    }, [selectedPage, selectedMarcher, marcherPages, setSelectedPage, setSelectedMarcher]);
+    }, [selectedPage, selectedMarchers, marcherPages, setSelectedPage, setSelectedMarchers]);
 
     /* -------------------------------------- HANDLERS --------------------------------------*/
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -51,7 +51,7 @@ function EditMarcherPageForm() {
         const y = form[yForm].value;
 
         // Refresh pages in the PageStore after making changes
-        updateMarcherPage(selectedMarcher!.id, selectedPage!.id, x, y).then(() => fetchMarcherPages());
+        updateMarcherPage(selectedMarchers!.id, selectedPage!.id, x, y).then(() => fetchMarcherPages());
     };
 
     const handleCancel = () => {
@@ -72,9 +72,9 @@ function EditMarcherPageForm() {
                 id={marcherPageFormId}
                 onSubmit={handleSubmit}
             >
-                {selectedPage && selectedMarcher ? <>
+                {selectedPage && selectedMarchers ? <>
                     <Form.Label htmlFor={marcherPageFormId}>
-                        Page {selectedPage?.name} | {selectedMarcher?.drill_number || "nil"}
+                        Page {selectedPage?.name} | {selectedMarchers?.drill_number || "nil"}
                     </Form.Label>
                     <InputGroup size="sm" className="mb-12 text-right">
                         <InputGroup.Text id={"x-label"}>
@@ -106,7 +106,7 @@ function EditMarcherPageForm() {
                     />
                 </>
                     :
-                    (selectedMarcher && <p>Select a page to view details</p>) ||
+                    (selectedMarchers && <p>Select a page to view details</p>) ||
                     (selectedPage && <p>Select a marcher to view details</p>) ||
                     <p>Select a marcher and page to view details</p>
                 }

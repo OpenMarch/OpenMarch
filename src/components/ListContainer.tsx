@@ -1,7 +1,7 @@
 import { Container, Row, Col, Table } from "react-bootstrap";
 import { bsconfig } from "../styles/bootstrapClasses";
 import { useSelectedPage } from "../context/SelectedPageContext";
-import { useSelectedMarcher } from "../context/SelectedMarcherContext";
+import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { Marcher, Page } from "../Interfaces";
 import { Constants } from "../Constants";
 import { useEffect, useState } from "react";
@@ -15,8 +15,8 @@ interface ListContainerProps {
 
 function ListContainer({ isLoading, attributes, attributesText, content }: ListContainerProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
-    const [prevSelectedMarcher, setPrevSelectedMarcher] = useState<Marcher | null>(null);
+    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
+    const [prevSelectedMarchers, setPrevSelectedMarchers] = useState<Marcher | null>(null);
     const [prevSelectedPage, setPrevSelectedPage] = useState<Page | null>(null);
 
     const handleRowClick = (selectedItem: Marcher | Page | any) => {
@@ -26,12 +26,12 @@ function ListContainer({ isLoading, attributes, attributesText, content }: ListC
 
             // Marcher
             if (idSplit[0] === Constants.MarcherPrefix) {
-                setPrevSelectedMarcher(selectedMarcher);
+                setPrevSelectedMarchers(selectedMarchers);
                 // Deselect if already selected
-                if (selectedMarcher?.id_for_html === selectedItem.id_for_html)
-                    setSelectedMarcher(null);
+                if (selectedMarchers?.id_for_html === selectedItem.id_for_html)
+                    setSelectedMarchers(null);
                 else
-                    setSelectedMarcher(selectedItem);
+                    setSelectedMarchers(selectedItem);
             }
             // Page
             else if (idSplit[0] === Constants.PagePrefix) {
@@ -69,8 +69,8 @@ function ListContainer({ isLoading, attributes, attributesText, content }: ListC
 
     // Update Marcher selection visually.
     useEffect(() => {
-        updateSelection(prevSelectedMarcher, selectedMarcher, setPrevSelectedMarcher);
-    }, [selectedMarcher, prevSelectedMarcher, setSelectedMarcher]);
+        updateSelection(prevSelectedMarchers, selectedMarchers, setPrevSelectedMarchers);
+    }, [selectedMarchers, prevSelectedMarchers, setSelectedMarchers]);
 
     // Update Page selection visually.
     useEffect(() => {

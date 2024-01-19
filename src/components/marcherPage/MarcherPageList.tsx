@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { bsconfig } from "../../styles/bootstrapClasses";
 import { useMarcherPageStore, useMarcherStore, usePageStore } from "../../stores/Store";
@@ -9,13 +9,13 @@ import { Container, Row, Col, Table } from "react-bootstrap";
 export function MarcherPageList() {
     // const [isLoading, setIsLoading] = useState(true);
     const selectedPage = useSelectedPage()?.selectedPage || null;
-    const selectedMarcher = useSelectedMarcher()?.selectedMarcher || null;
+    const selectedMarchers = useSelectedMarchers()?.selectedMarchers || null;
     const marchers = useMarcherStore(state => state.marchers);
     const pages = usePageStore(state => state.pages);
     const [marcherPagesState, setMarcherPagesState] = useState<MarcherPage[]>([]);
     const { marcherPages } = useMarcherPageStore()!;
     const [headers, setHeaders] = useState<string[]>
-        ([selectedMarcher?.drill_number || "Pg " + selectedPage?.name || "Name", "X", "Y"]);
+        ([selectedMarchers?.drill_number || "Pg " + selectedPage?.name || "Name", "X", "Y"]);
 
     // Load marcherPage(s) from selected marcher/page
     useEffect(() => {
@@ -24,16 +24,16 @@ export function MarcherPageList() {
         // Load either a list of marcherPages relating to a marcher or a page
         if (selectedPage)
             setMarcherPagesState(marcherPages.filter(marcherPage => marcherPage.page_id === selectedPage!.id));
-        else if (selectedMarcher)
-            setMarcherPagesState(marcherPages.filter(marcherPage => marcherPage.marcher_id === selectedMarcher!.id));
+        else if (selectedMarchers)
+            setMarcherPagesState(marcherPages.filter(marcherPage => marcherPage.marcher_id === selectedMarchers!.id));
 
         const newHeaders = headers;
-        newHeaders[0] = selectedMarcher?.drill_number || selectedPage?.name || "Name";
+        newHeaders[0] = selectedMarchers?.drill_number || selectedPage?.name || "Name";
         if (selectedPage)
             newHeaders[0] = "Pg " + newHeaders[0];
         setHeaders(newHeaders);
     }
-        , [selectedPage, selectedMarcher, marcherPages, headers]);
+        , [selectedPage, selectedMarchers, marcherPages, headers]);
 
     // Accessor functions for marchers and pages
     const getMarcher = (marcher_id: number) => {

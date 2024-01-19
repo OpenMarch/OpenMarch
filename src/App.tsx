@@ -3,7 +3,7 @@ import Canvas from './components/Canvas';
 import Topbar from './components/Topbar';
 import Sidebar from './components/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
-import { SelectedMarcherProvider } from './context/SelectedMarcherContext';
+import { SelectedMarchersProvider } from './context/SelectedMarchersContext';
 import { IsPlayingProvider } from './context/IsPlayingContext';
 import StateInitializer from './utilities/StateInitializer';
 import LaunchPage from './components/LaunchPage';
@@ -22,7 +22,7 @@ function App() {
     <>
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
         <SelectedPageProvider>
-          <SelectedMarcherProvider>
+          <SelectedMarchersProvider>
             <IsPlayingProvider>
               <StateInitializer />
               <div className="app-container">
@@ -36,7 +36,7 @@ function App() {
               </div>
               {/* </div> */}
             </IsPlayingProvider>
-          </SelectedMarcherProvider>
+          </SelectedMarchersProvider>
         </SelectedPageProvider >
       }
     </>

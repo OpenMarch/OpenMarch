@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HASHES, YARD_LINES } from "../../Constants";
-import { useSelectedMarcher } from "../../context/SelectedMarcherContext";
+import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { ReadableCoords, FieldProperties } from "../../Interfaces";
 import { canvasCoordsToCollegeRCords, getTerseString } from "../../utilities/CoordsUtils";
 import { useMarcherPageStore } from "../../stores/Store";
@@ -8,7 +8,7 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { getFieldProperties } from "@/api/api";
 
 function MarcherEditor() {
-    const { selectedMarcher } = useSelectedMarcher()!;
+    const { selectedMarchers } = useSelectedMarchers()!;
     const [rCoords, setRCoords] = useState<ReadableCoords>();
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
@@ -42,14 +42,14 @@ function MarcherEditor() {
 
     useEffect(() => {
         setRCoords(undefined);
-        const marcherPage = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarcher?.id &&
+        const marcherPage = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarchers?.id &&
             marcherPage.page_id === selectedPage?.id);
         if (marcherPage) {
             if (!fieldProperties.current) return;
             const newRcoords = canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y, fieldProperties.current);
             setRCoords(newRcoords);
         }
-    }, [selectedMarcher, marcherPages, selectedPage]);
+    }, [selectedMarchers, marcherPages, selectedPage]);
 
     const resetForm = useCallback(() => {
         coordsFormRef.current?.reset();
@@ -70,13 +70,13 @@ function MarcherEditor() {
     // Reset the form when the selected page changes so the values are correct
     useEffect(() => {
         resetForm();
-    }, [selectedMarcher, rCoords, resetForm]);
+    }, [selectedMarchers, rCoords, resetForm]);
 
     return (
-        <>{selectedMarcher && (<div className="marcher-editor editor">
+        <>{selectedMarchers && (<div className="marcher-editor editor">
             <h3 className="header">
                 <span>Marcher</span>
-                <span>{selectedMarcher.drill_number}</span>
+                <span>{selectedMarchers.drill_number}</span>
             </h3>
             <h4>Coordinates</h4>
             {!rCoords ? <p style={{ color: "white" }}>Error loading coordinates</p> :
@@ -125,19 +125,19 @@ function MarcherEditor() {
                 <div className="input-group">
                     <label htmlFor="name-input">Name</label>
                     <input type="text"
-                        value={(selectedMarcher.name.length < 1 || selectedMarcher.name === " ") ? "-"
-                            : selectedMarcher.name} disabled={true} id="name-input" />
+                        value={(selectedMarchers.name.length < 1 || selectedMarchers.name === " ") ? "-"
+                            : selectedMarchers.name} disabled={true} id="name-input" />
                 </div>
                 <div className="input-group">
                     <label htmlFor="section-input">Section</label>
-                    <input type="text" value={selectedMarcher.section} disabled={true} id="section-input" />
+                    <input type="text" value={selectedMarchers.section} disabled={true} id="section-input" />
                 </div>
                 <div className="input-group">
                     <label htmlFor="drill-number-input">Drill Number</label>
-                    <input type="text" value={selectedMarcher.drill_number} disabled={true} id="drill-number-input" />
+                    <input type="text" value={selectedMarchers.drill_number} disabled={true} id="drill-number-input" />
                 </div>
                 {/* <label htmlFor="counts-input">Counts</label>
-                <input type="number" value={selectedMarcher.counts} onChange={undefined} id="counts-input" /> */}
+                <input type="number" value={selectedMarchers.counts} onChange={undefined} id="counts-input" /> */}
                 {/* This is here so the form submits when enter is pressed */}
                 <button type="submit" style={{ display: 'none' }}>
                     Submit

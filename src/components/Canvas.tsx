@@ -3,7 +3,7 @@ import { fabric } from "fabric";
 import { linearEasing } from "../utils";
 import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
-import { useSelectedMarcher } from "../context/SelectedMarcherContext";
+import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
 import { Constants, idForHtmlToId } from "../Constants";
 import { getFieldProperties, updateMarcherPage } from "../api/api";
@@ -19,7 +19,7 @@ function Canvas() {
     const { pagesAreLoading, pages } = usePageStore()!;
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
-    const { selectedMarcher, setSelectedMarcher } = useSelectedMarcher()!;
+    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     // const [canvasState, setCanvas] = React.useState<fabric.Canvas | any>();
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
@@ -47,16 +47,16 @@ function Canvas() {
         // Check if it is a single selected element rather than a group
         if (e.selected?.length === 1 && e.selected[0].id_for_html) {
             const id_for_html = e.selected[0].id_for_html;
-            setSelectedMarcher(marchers.find((marcher) => marcher.id_for_html === id_for_html) || null);
+            setSelectedMarchers(marchers.find((marcher) => marcher.id_for_html === id_for_html) || null);
         }
-    }, [marchers, setSelectedMarcher]);
+    }, [marchers, setSelectedMarchers]);
 
     // Deselect the marcher when the selection is cleared
     const handleDeselect = useCallback((e: any) => {
         // console.log("handleDeselect:", e.deselected);
 
-        if (e.deselected) { setSelectedMarcher(null); }
-    }, [setSelectedMarcher]);
+        if (e.deselected) { setSelectedMarchers(null); }
+    }, [setSelectedMarchers]);
 
     const handleMouseDown = useCallback((opt: any) => {
         // console.log("canvas.current click location", opt.e);
@@ -294,15 +294,15 @@ function Canvas() {
 
     // Change the active object when the selected marcher changes
     useEffect(() => {
-        if (canvas.current && !isLoading && canvasMarchers.length > 0 && selectedMarcher) {
-            const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarcher.id);
+        if (canvas.current && !isLoading && canvasMarchers.length > 0 && selectedMarchers) {
+            const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarchers.id);
             if (curMarcher && curMarcher.fabricObject) {
                 canvas.current.setActiveObject(curMarcher.fabricObject);
             }
             else
                 throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
         }
-    }, [selectedMarcher, isLoading, canvasMarchers]);
+    }, [selectedMarchers, isLoading, canvasMarchers]);
 
     /* --------------------------Animation Functions-------------------------- */
     // eslint-disable-next-line
