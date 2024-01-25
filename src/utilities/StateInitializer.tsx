@@ -55,13 +55,19 @@ function StateInitializer() {
             switch (args.tableName) {
                 case Constants.MarcherTableName:
                     fetchMarchers();
-                    if (args.marcher_id > 0)
-                        setSelectedMarchers(getMarcher(args.marcher_id));
+                    if (args.marcher_id > 0) {
+                        // TODO support passing in all of the marchers that were modified in the undo
+                        const newMarcher = getMarcher(args.marcher_id);
+                        setSelectedMarchers(newMarcher ? [newMarcher] : []);
+                    }
                     break;
                 case Constants.MarcherPageTableName:
                     fetchMarcherPages();
-                    if (args.marcher_id > 0)
-                        setSelectedMarchers(getMarcher(args.marcher_id));
+                    if (args.marcher_id > 0) {
+                        // TODO support passing in all of the marchers that were modified in the undo
+                        const newMarcher = getMarcher(args.marcher_id);
+                        setSelectedMarchers(newMarcher ? [newMarcher] : []);
+                    }
                     if (args.page_id > 0)
                         setSelectedPage(getPage(args.page_id));
                     break;

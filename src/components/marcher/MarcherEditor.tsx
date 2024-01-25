@@ -42,7 +42,8 @@ function MarcherEditor() {
 
     useEffect(() => {
         setRCoords(undefined);
-        const marcherPage = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarchers?.id &&
+        if (!selectedMarchers || selectedMarchers.length !== 1) return;
+        const marcherPage = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarchers[0]?.id &&
             marcherPage.page_id === selectedPage?.id);
         if (marcherPage) {
             if (!fieldProperties.current) return;
@@ -73,76 +74,93 @@ function MarcherEditor() {
     }, [selectedMarchers, rCoords, resetForm]);
 
     return (
-        <>{selectedMarchers && (<div className="marcher-editor editor">
-            <h3 className="header">
-                <span>Marcher</span>
-                <span>{selectedMarchers.drill_number}</span>
-            </h3>
-            <h4>Coordinates</h4>
-            {!rCoords ? <p style={{ color: "white" }}>Error loading coordinates</p> :
-                <form className="coords-editor edit-group" ref={coordsFormRef} onSubmit={handleCoordsSubmit}>
-                    <label htmlFor="xInput">X</label>
-                    <div className="input-group">
-                        {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
-                        <input disabled={true} type="number" defaultValue={rCoords?.xSteps} ref={xInputRef} />
-                        <select disabled={true} defaultValue={rCoords.xDescription} ref={xDescriptionRef}>
-                            <option value="inside">in</option>
-                            <option value="outside">out</option>
-                            <option value="on">on</option>
-                        </select>
-                        <select disabled={true} ref={yardLineRef} defaultValue={rCoords.yardLine}>
-                            {YARD_LINES.map((yardLine) => (
-                                <option value={yardLine} key={yardLine}>{yardLine}</option>
-                            ))}
-                        </select>
-                        <select disabled={true} ref={fieldSideRef} defaultValue={rCoords.side}>
-                            <option value="1">S1</option>
-                            <option value="2">S2</option>
-                        </select>
-                    </div>
-                    <label htmlFor="yInput">Y</label>
-                    <div className="input-group">
-                        <input disabled={true} type="number" value={rCoords?.ySteps} ref={yInputRef} />
-                        <select disabled={true} value={rCoords.yDescription} ref={yDescriptionRef}>
-                            <option value="in front of">front</option>
-                            <option value="behind">behind</option>
-                            <option value="on">on</option>
-                        </select>
-                        <select disabled={true} ref={hashRef}>
-                            {HASHES.map((hash) => (
-                                <option value={hash} key={hash}>{getTerseString(hash)}</option>
-                            ))}
-                        </select>
-                    </div>
-                    {/* This is here so the form submits when enter is pressed */}
-                    <button type="submit" style={{ display: 'none' }}>
-                        Submit
-                    </button>
-                </form>
-            }
-            <h4>Details</h4>
-            <form className="marcher-details-editor edit-group" ref={detailsFormRef}>
-                <div className="input-group">
-                    <label htmlFor="name-input">Name</label>
-                    <input type="text"
-                        value={(selectedMarchers.name.length < 1 || selectedMarchers.name === " ") ? "-"
-                            : selectedMarchers.name} disabled={true} id="name-input" />
-                </div>
-                <div className="input-group">
-                    <label htmlFor="section-input">Section</label>
-                    <input type="text" value={selectedMarchers.section} disabled={true} id="section-input" />
-                </div>
-                <div className="input-group">
-                    <label htmlFor="drill-number-input">Drill Number</label>
-                    <input type="text" value={selectedMarchers.drill_number} disabled={true} id="drill-number-input" />
-                </div>
-                {/* <label htmlFor="counts-input">Counts</label>
-                <input type="number" value={selectedMarchers.counts} onChange={undefined} id="counts-input" /> */}
-                {/* This is here so the form submits when enter is pressed */}
-                <button type="submit" style={{ display: 'none' }}>
-                    Submit
-                </button>
-            </form>
+        <>{selectedMarchers.length > 0 && (<div className="marcher-editor editor">
+
+            {selectedMarchers.length > 1 ?
+                // Multiple marchers selected
+                <>
+                    <h3 className="header">
+                        <span>Marchers</span>
+                        <span>{`(${selectedMarchers.length})`}</span>
+                    </h3>
+                    <h4>Selected</h4>
+                    <p style={{ color: "white" }}>
+                        {selectedMarchers.map(marcher => marcher.drill_number).join(', ')}
+                    </p>
+                </>
+                :
+                // One marcher selected
+                <>
+                    <h3 className="header">
+                        <span>Marcher</span>
+                        <span>{selectedMarchers[0].drill_number}</span>
+                    </h3>
+                    <h4>Coordinates</h4>
+                    {!rCoords ? <p style={{ color: "white" }}>Error loading coordinates</p> :
+                        <form className="coords-editor edit-group" ref={coordsFormRef} onSubmit={handleCoordsSubmit}>
+                            <label htmlFor="xInput">X</label>
+                            <div className="input-group">
+                                {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
+                                <input disabled={true} type="number" defaultValue={rCoords?.xSteps} ref={xInputRef} />
+                                <select disabled={true} defaultValue={rCoords.xDescription} ref={xDescriptionRef}>
+                                    <option value="inside">in</option>
+                                    <option value="outside">out</option>
+                                    <option value="on">on</option>
+                                </select>
+                                <select disabled={true} ref={yardLineRef} defaultValue={rCoords.yardLine}>
+                                    {YARD_LINES.map((yardLine) => (
+                                        <option value={yardLine} key={yardLine}>{yardLine}</option>
+                                    ))}
+                                </select>
+                                <select disabled={true} ref={fieldSideRef} defaultValue={rCoords.side}>
+                                    <option value="1">S1</option>
+                                    <option value="2">S2</option>
+                                </select>
+                            </div>
+                            <label htmlFor="yInput">Y</label>
+                            <div className="input-group">
+                                <input disabled={true} type="number" value={rCoords?.ySteps} ref={yInputRef} />
+                                <select disabled={true} value={rCoords.yDescription} ref={yDescriptionRef}>
+                                    <option value="in front of">front</option>
+                                    <option value="behind">behind</option>
+                                    <option value="on">on</option>
+                                </select>
+                                <select disabled={true} ref={hashRef}>
+                                    {HASHES.map((hash) => (
+                                        <option value={hash} key={hash}>{getTerseString(hash)}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            {/* This is here so the form submits when enter is pressed */}
+                            <button type="submit" style={{ display: 'none' }}>
+                                Submit
+                            </button>
+                        </form>
+                    }
+                    <h4>Details</h4>
+                    <form className="marcher-details-editor edit-group" ref={detailsFormRef}>
+                        <div className="input-group">
+                            <label htmlFor="name-input">Name</label>
+                            <input type="text"
+                                value={(selectedMarchers[0].name.length < 1 || selectedMarchers[0].name === " ") ? "-"
+                                    : selectedMarchers[0].name} disabled={true} id="name-input" />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="section-input">Section</label>
+                            <input type="text" value={selectedMarchers[0].section} disabled={true} id="section-input" />
+                        </div>
+                        <div className="input-group">
+                            <label htmlFor="drill-number-input">Drill Number</label>
+                            <input type="text" value={selectedMarchers[0].drill_number} disabled={true} id="drill-number-input" />
+                        </div>
+                        {/* <label htmlFor="counts-input">Counts</label>
+                <input type="number" value={selectedMarchers[0].counts} onChange={undefined} id="counts-input" /> */}
+                        {/* This is here so the form submits when enter is pressed */}
+                        <button type="submit" style={{ display: 'none' }}>
+                            Submit
+                        </button>
+                    </form>
+                </>}
         </div>)
         }</>
     );

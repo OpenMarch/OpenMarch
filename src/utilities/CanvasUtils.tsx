@@ -13,7 +13,6 @@ export function refreshCanavsSize(canvas: fabric.Canvas) {
     canvas.setHeight(window.innerHeight);
 }
 
-/* -------------------------- Field Functions -------------------------- */
 export const buildField = (fieldProperties: FieldProperties) => {
     const fieldArray: fabric.Object[] = [];
     const top = 0;
@@ -113,63 +112,3 @@ export const buildField = (fieldProperties: FieldProperties) => {
         hoverCursor: "default",
     });
 };
-
-/* -------------------------- Marcher Functions -------------------------- */
-/**
- * A function to get the coordinates of a CanvasMarcher's dot to offset the fabric group coordinate.
- * The dot's actual coordinate is down and to the right of the fabric group coordinate.
- *
- * @param marcher
- * @returns The coordinates of the CanvasMarcher dot. {x: number, y: number}
- */
-export function canvasMarcherToDotCoords(fabricGroup: fabric.Group) {
-    // console.log("marcher", marcher);
-    const dot = fabricGroup?._objects[0] as fabric.Circle;
-    if (fabricGroup.left && fabricGroup.top && dot.left && dot.top) {
-        // console.log("canvasMarcherToDotCoords - fabricGroup", "x: " + fabricGroup.left,
-        //     "y: " + fabricGroup.top);
-        // console.log("canvasMarcherToDotCoords - dot", "x: " + (fabricGroup.left + dot.left),
-        //     "y: " + (fabricGroup.top + dot.top));
-        return {
-            x: fabricGroup.getCenterPoint().x + dot.left + Constants.dotRadius,
-            y: fabricGroup.getCenterPoint().y + dot.top + Constants.dotRadius
-        };
-    }
-    console.error("Marcher dot or fabricGroup does not have left or top properties - canvasMarcherToDotCoords: CanvasUtils.tsx");
-
-    return null;
-}
-
-/**
- * Updates the coordinates of a CanvasMarcher object.
- * This compensates for the fabric group offset and ensures the coordinate is where the dot itelf is located.
- * The fabric group to represent the dot is offset up and to the left a bit.
- *
- * @param marcher The CanvasMarcher object to update.
- * @param x the x location of the actual dot
- * @param y the y location of the actual dot.
- */
-export function setCanvasMarcherCoordsFromDot(marcher: CanvasMarcher, x: number, y: number) {
-    if (marcher?.fabricObject) {
-        // The offset that the dot is from the fabric group coordinate.
-        const fabricGroup = marcher.fabricObject;
-        const dot = (marcher.fabricObject as fabric.Group)._objects[0] as fabric.Circle;
-        if (dot.left && dot.top && fabricGroup.width && fabricGroup.height) {
-            // Dot center - radius - offset - 1/2 fieldWidth or fieldHeight of the fabric group
-            const newCoords = {
-                x: x - Constants.dotRadius - dot.left - (fabricGroup.width / 2),
-                y: y - Constants.dotRadius - dot.top - (fabricGroup.height / 2)
-            };
-
-            marcher.fabricObject.left = newCoords.x;
-            marcher.fabricObject.top = newCoords.y;
-            marcher.fabricObject.setCoords();
-            // console.log("setCanvasMarcherCoordsFromDot - marcher.fabricObject", marcher.fabricObject);
-        } else
-            console.error("Marcher dot does not have left or top properties, or fabricGroup does not have fieldHeight/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
-    } else
-        console.error("FabricObject does not exist for the marcher - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
-
-    return null;
-
-}

@@ -14,13 +14,17 @@ interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
 }
 
+const keyActions = {
+    lockX: "Alt",
+    lockY: "Shift",
+}
+
 function Canvas() {
     const { marchers, marchersAreLoading } = useMarcherStore()!;
     const { pagesAreLoading, pages } = usePageStore()!;
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
-    // const [canvasState, setCanvas] = React.useState<fabric.Canvas | any>();
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvas = useRef<fabric.Canvas | any>(null);
@@ -29,47 +33,62 @@ function Canvas() {
 
     /* -------------------------- Listener Functions -------------------------- */
     const handleObjectModified = useCallback((e: any) => {
-        const newCoords = CanvasUtils.canvasMarcherToDotCoords(e.target as fabric.Group);
+        const activeObjects = canvas.current.getActiveObjects();
 
-        if (e.target?.id_for_html && newCoords?.x && newCoords?.y) {
-            const id = idForHtmlToId(e.target.id_for_html);
-            // const marcherPage = marcherPages.find((marcherPage) => marcherPage.marcher_id === id);
-            updateMarcherPage(id, selectedPage!.id, newCoords.x, newCoords.y).then(() => { fetchMarcherPages() });
-        } else {
-            console.error("Marcher or fabric object not found - handleObjectModified: Canvas.tsx");
-        }
-    }, [selectedPage, fetchMarcherPages]);
+        const changes = [];
+        activeObjects.forEach((activeObject: any) => {
+            const newCoords = fabricObjectToRealCoords(activeObject as fabric.Group);
+            if (activeObject.id_for_html && newCoords?.x && newCoords?.y) {
+                const marcherId = idForHtmlToId(activeObject.id_for_html);
+                changes.push({ marcherId: marcherId, pageId: selectedPage!.id, x: newCoords.x, y: newCoords.y });
+                updateMarcherPage(
+                    marcherId, selectedPage!.id,
+                    newCoords.x,
+                    newCoords.y)
+                    .then(() => { fetchMarcherPages() });
+            } else {
+                console.error("Marcher or fabric object not found - handleObjectModified: Canvas.tsx");
+            }
+        });
+    }, [selectedPage, fetchMarcherPages, selectedMarchers]);
 
-    // Set the selected marcher when selected element changes
+    /**
+     * Set the selected marcher when selected element changes
+     */
     const handleSelect = useCallback((e: any) => {
-        // console.log("handleSelect:", e.selected);
+        const newSelectedMarchers = marchers.filter((marcher) => canvas.current.getActiveObjects()
+            .some((selected: any) => selected.id_for_html === marcher.id_for_html))
+            || []; // If no marchers are selected, set the selected marchers to an empty array
+        setSelectedMarchers(newSelectedMarchers);
 
-        // Check if it is a single selected element rather than a group
-        if (e.selected?.length === 1 && e.selected[0].id_for_html) {
-            const id_for_html = e.selected[0].id_for_html;
-            setSelectedMarchers(marchers.find((marcher) => marcher.id_for_html === id_for_html) || null);
-        }
     }, [marchers, setSelectedMarchers]);
 
-    // Deselect the marcher when the selection is cleared
+    /**
+     * Deselect the marcher when the selection is cleared
+     */
     const handleDeselect = useCallback((e: any) => {
-        // console.log("handleDeselect:", e.deselected);
-
-        if (e.deselected) { setSelectedMarchers(null); }
+        if (e.deselected) { setSelectedMarchers([]); }
     }, [setSelectedMarchers]);
 
-    const handleMouseDown = useCallback((opt: any) => {
-        // console.log("canvas.current click location", opt.e);
+    /**
+     * Set the canvas to dragging mode on mousedown.
+     */
+    const handleMouseDown = (opt: any) => {
         var evt = opt.e;
-        if ((evt.altKey || !opt.target || !opt.target.id_for_html) && !evt.shiftKey) {
+        // opt.target checks if the mouse is on the canvas at all
+        const isMarcherSelection = opt.target && (opt.target?.id_for_html || opt.target._objects?.some((obj: any) => obj.id_for_html));
+        if ((evt.altKey || !isMarcherSelection) && !evt.shiftKey) {
             canvas.current.isDragging = true;
             canvas.current.selection = false;
             canvas.current.lastPosX = evt.clientX;
             canvas.current.lastPosY = evt.clientY;
         }
-    }, []);
+    };
 
-    const handleMouseMove = useCallback((opt: any) => {
+    /**
+     * Move the canvas on mousemove when in dragging mode
+     */
+    const handleMouseMove = (opt: any) => {
         if (canvas.current.isDragging) {
             var e = opt.e;
             var vpt = canvas.current.viewportTransform;
@@ -79,28 +98,61 @@ function Canvas() {
             canvas.current.lastPosX = e.clientX;
             canvas.current.lastPosY = e.clientY;
         }
-    }, []);
+    };
 
-    const handleMouseUp = useCallback((opt: any) => {
+    /**
+     * Disable dragging mode on mouseup.
+     */
+    const handleMouseUp = (opt: any) => {
         // on mouse up we want to recalculate new interaction
         // for all objects, so we call setViewportTransform
         canvas.current.setViewportTransform(canvas.current.viewportTransform);
         canvas.current.isDragging = false;
         canvas.current.selection = true;
-    }, []);
+    };
 
-    const handleMouseWheel = useCallback((opt: any) => {
-        // if (opt.e.shiftKey)
-        //     opt.e.preventDefault();
+    /**
+     * Zoom in and out with the mouse wheel
+     */
+    const handleMouseWheel = (opt: any) => {
         var delta = opt.e.deltaY;
         var zoom = canvas.current.getZoom();
         zoom *= 0.999 ** delta;
-        if (zoom > 20) zoom = 20;
-        if (zoom < 0.01) zoom = 0.01;
+        if (zoom > 25) zoom = 25;
+        if (zoom < 0.35) zoom = 0.35;
         canvas.current.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
         opt.e.preventDefault();
         opt.e.stopPropagation();
-    }, []);
+    };
+
+    /**
+     * Keydown and Keyup handler
+     *
+     * @param e
+     * @param keydown true if keydown, false if keyup
+     */
+    const handleKey = (e: KeyboardEvent, keydown: boolean) => {
+        if (canvas.current && canvas.current.getActiveObjects().length > 0) {
+            switch (e.key) {
+                case keyActions.lockY:
+                    for (const selected of canvas.current.getActiveObjects())
+                        selected.lockMovementY = keydown;
+                    break;
+                case keyActions.lockX:
+                    for (const selected of canvas.current.getActiveObjects())
+                        selected.lockMovementX = keydown;
+                    break;
+            }
+        }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+        handleKey(e, true);
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+        handleKey(e, false);
+    };
 
     const initiateListeners = useCallback(() => {
         if (canvas.current) {
@@ -113,12 +165,15 @@ function Canvas() {
             canvas.current.on('mouse:move', handleMouseMove);
             canvas.current.on('mouse:up', handleMouseUp);
             canvas.current.on('mouse:wheel', handleMouseWheel);
+
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
         }
     }, [handleObjectModified, handleSelect, handleDeselect, handleMouseDown, handleMouseMove, handleMouseUp,
         handleMouseWheel]);
 
 
-    const cleanupListeners = useCallback(() => {
+    const cleanupListeners = () => {
         if (canvas.current) {
             canvas.current.off('object:modified');
             canvas.current.off('selection:updated');
@@ -129,8 +184,11 @@ function Canvas() {
             canvas.current.off('mouse:move');
             canvas.current.off('mouse:up');
             canvas.current.off('mouse:wheel');
+
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
         }
-    }, []);
+    };
 
     /* ------------------------ Marcher Functions ------------------------ */
     const createMarcher = useCallback((x: number, y: number, id_for_html: string, marcher_id: number, label?: string):
@@ -175,7 +233,6 @@ function Canvas() {
     // Moves the current marchers to the new page
     const renderMarchers = useCallback(() => {
         const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
-        // console.log("renderMarchers:", canvasMarchers, marcherPages, selectedPage, curMarcherPages);
         curMarcherPages.forEach((marcherPage) => {
             // Marcher does not exist on the Canvas, create a new one
             if (!canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id)) {
@@ -192,11 +249,7 @@ function Canvas() {
                     (canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
 
                 if (canvasMarcher && canvasMarcher.fabricObject) {
-                    CanvasUtils.setCanvasMarcherCoordsFromDot(canvasMarcher, marcherPage.x, marcherPage.y);
-                    // console.log("canvasMarcher:", canvasMarcher);
-                    // canvasMarcher.fabricObject!.left = marcherPage.x;
-                    // canvasMarcher.fabricObject!.top = marcherPage.y;
-                    // canvasMarcher.fabricObject!.setCoords();
+                    setCanvasMarcherCoordsFromDot(canvasMarcher, marcherPage.x, marcherPage.y);
                 } else
                     throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
             }
@@ -217,6 +270,104 @@ function Canvas() {
         canvas.current?.renderAll();
     }, [marchers, canvasMarchers]);
 
+
+    /**
+     * Updates the coordinates of a CanvasMarcher object.
+     * This compensates for the fabric group offset and ensures the coordinate is where the dot itself is located.
+     * The fabric group to represent the dot is offset up and to the left a bit.
+     *
+     * @param marcher The CanvasMarcher object to update.
+     * @param x the x location of the actual dot
+     * @param y the y location of the actual dot.
+     */
+    const setCanvasMarcherCoordsFromDot = useCallback((marcher: CanvasMarcher, x: number, y: number) => {
+        /* If multiple objects are selected, offset the coordinates by the group's center
+           Active object coordinates in fabric are the relative coordinates
+           to the group's center when multiple objects are selected */
+        // Check if multople marchers are selected and if the current marcher is one of them
+        let offset = { x: 0, y: 0 };
+        if (selectedMarchers.length > 1 && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === marcher.id_for_html)) {
+            // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id === marcher.marcher_id)) {
+            const groupObject = canvas.current.getActiveObject();
+            offset = {
+                x: groupObject.left + (groupObject.width / 2),
+                y: groupObject.top + (groupObject.height / 2)
+            };
+        }
+
+        if (marcher?.fabricObject) {
+            // The offset that the dot is from the fabric group coordinate.
+            const fabricGroup = marcher.fabricObject;
+            const dot = (marcher.fabricObject as fabric.Group)._objects[0] as fabric.Circle;
+            if (dot.left && dot.top && fabricGroup.width && fabricGroup.height) {
+                // Dot center - radius - offset - 1/2 fieldWidth or fieldHeight of the fabric group
+                const newCoords = {
+                    x: (x - Constants.dotRadius - dot.left - (fabricGroup.width / 2)) - offset.x,
+                    y: (y - Constants.dotRadius - dot.top - (fabricGroup.height / 2)) - offset.y
+                };
+                // console.log("setCanvasMarcherCoordsFromDot - newCoords", newCoords);
+
+                marcher.fabricObject.left = newCoords.x;
+                marcher.fabricObject.top = newCoords.y;
+                marcher.fabricObject.setCoords();
+                // console.log("setCanvasMarcherCoordsFromDot - marcher.fabricObject", marcher.fabricObject);
+            } else
+                console.error("Marcher dot does not have left or top properties, or fabricGroup does not have fieldHeight/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
+        } else
+            console.error("FabricObject does not exist for the marcher - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
+
+        return null;
+    }, [selectedMarchers]);
+
+    /**
+     * A function to get the coordinates of a fabric marcher's dot.
+     * The coordinate on the canvas is different than the coordinate of the actual dot.
+     *
+     * @param fabricGroup - the fabric object of the canvas marcher
+     * @returns The real coordinates of the CanvasMarcher dot. {x: number, y: number}
+     */
+    const fabricObjectToRealCoords = useCallback((fabricGroup: fabric.Group) => {
+        /* If multiple objects are selected, offset the coordinates by the group's center
+           Active object coordinates in fabric are the relative coordinates
+           to the group's center when multiple objects are selected */
+        if (!(fabricGroup as any).id_for_html) {
+            console.error("fabricGroup does not have id_for_html property - fabricObjectToRealCoords: CanvasUtils.tsx");
+            return null;
+        }
+
+        console.log("fabricObjectToReal", selectedMarchers);
+        const idForHtml = (fabricGroup as any).id_for_html;
+        console.log("fabricObjectToRealCoords - idForHtml", idForHtml, selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml))
+
+        // Check if multople marchers are selected and if the current marcher is one of them
+        let offset = { x: 0, y: 0 };
+        if (selectedMarchers.length > 1 && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
+            // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
+            console.log("selectedMarchers.some TRUE");
+            const groupObject = canvas.current.getActiveObject();
+            offset = {
+                x: groupObject.left + (groupObject.width / 2),
+                y: groupObject.top + (groupObject.height / 2)
+            };
+        }
+
+        // console.log("marcher", marcher);
+        const dot = fabricGroup?._objects[0] as fabric.Circle;
+        if (fabricGroup.left && fabricGroup.top && dot.left && dot.top) {
+            // console.log("fabricObjectToRealCoords - fabricGroup", "x: " + fabricGroup.left,
+            //     "y: " + fabricGroup.top);
+            // console.log("fabricObjectToRealCoords - dot", "x: " + (fabricGroup.left + dot.left),
+            //     "y: " + (fabricGroup.top + dot.top));
+            return {
+                x: offset.x + fabricGroup.getCenterPoint().x + dot.left + Constants.dotRadius,
+                y: offset.y + fabricGroup.getCenterPoint().y + dot.top + Constants.dotRadius
+            };
+        }
+        console.error("Marcher dot or fabricGroup does not have left or top properties - fabricObjectToRealCoords: CanvasUtils.tsx");
+
+        return null;
+    }, [selectedMarchers]);
+
     /* -------------------------- useEffects -------------------------- */
     useEffect(() => {
         getFieldProperties().then((fieldPropertiesResult) => {
@@ -232,8 +383,8 @@ function Canvas() {
     /* Initialize the canvas.current */
     // Update the objectModified listener when the selected page changes
     useEffect(() => {
-        console.log(marchers, pages, marcherPages, selectedPage, isLoading, canvasMarchers)
-        if (!canvas.current && selectedPage && canvasRef.current) {
+        // console.log(marchers, pages, marcherPages, selectedPage, isLoading, canvasMarchers)
+        if (!canvas.current && selectedPage && canvasRef.current && fieldProperties.current) {
             // console.log("Canvas.tsx: useEffect: create canvas.current");
             canvas.current = new fabric.Canvas(canvasRef.current, {});
 
@@ -259,7 +410,7 @@ function Canvas() {
 
             canvas.current.renderAll()
         }
-    }, [selectedPage]);
+    }, [selectedPage, fieldProperties]);
 
     // Initiate listeners
     useEffect(() => {
@@ -292,17 +443,18 @@ function Canvas() {
         }
     }, [marchers, pages, marcherPages, selectedPage, isLoading, renderMarchers]);
 
+    // TODO implement this for multiple marchers
     // Change the active object when the selected marcher changes
-    useEffect(() => {
-        if (canvas.current && !isLoading && canvasMarchers.length > 0 && selectedMarchers) {
-            const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarchers.id);
-            if (curMarcher && curMarcher.fabricObject) {
-                canvas.current.setActiveObject(curMarcher.fabricObject);
-            }
-            else
-                throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
-        }
-    }, [selectedMarchers, isLoading, canvasMarchers]);
+    // useEffect(() => {
+    //     if (canvas.current && !isLoading && canvasMarchers.length > 0 && selectedMarchers.length > 1) {
+    //         const curMarcher = canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === selectedMarchers.id);
+    //         if (curMarcher && curMarcher.fabricObject) {
+    //             canvas.current.setActiveObject(curMarcher.fabricObject);
+    //         }
+    //         else
+    //             throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
+    //     }
+    // }, [selectedMarchers, isLoading, canvasMarchers]);
 
     /* --------------------------Animation Functions-------------------------- */
     // eslint-disable-next-line
