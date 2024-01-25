@@ -6,9 +6,9 @@ import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
 import { Constants, idForHtmlToId } from "../Constants";
-import { getFieldProperties, updateMarcherPage } from "../api/api";
+import { getFieldProperties, updateMarcherPage, updateMarcherPages } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
-import { CanvasMarcher, FieldProperties } from "../Interfaces";
+import { CanvasMarcher, FieldProperties, UpdateMarcherPage } from "../Interfaces";
 
 interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
@@ -35,21 +35,22 @@ function Canvas() {
     const handleObjectModified = useCallback((e: any) => {
         const activeObjects = canvas.current.getActiveObjects();
 
-        const changes = [];
+        const changes: UpdateMarcherPage[] = [];
         activeObjects.forEach((activeObject: any) => {
             const newCoords = fabricObjectToRealCoords(activeObject as fabric.Group);
             if (activeObject.id_for_html && newCoords?.x && newCoords?.y) {
                 const marcherId = idForHtmlToId(activeObject.id_for_html);
-                changes.push({ marcherId: marcherId, pageId: selectedPage!.id, x: newCoords.x, y: newCoords.y });
-                updateMarcherPage(
-                    marcherId, selectedPage!.id,
-                    newCoords.x,
-                    newCoords.y)
-                    .then(() => { fetchMarcherPages() });
+                changes.push({ marcher_id: marcherId, page_id: selectedPage!.id, x: newCoords.x, y: newCoords.y });
+                // updateMarcherPage(
+                //     marcherId, selectedPage!.id,
+                //     newCoords.x,
+                //     newCoords.y)
+                //     .then(() => { fetchMarcherPages() });
             } else {
                 console.error("Marcher or fabric object not found - handleObjectModified: Canvas.tsx");
             }
         });
+        updateMarcherPages(changes).then(() => { fetchMarcherPages() });
     }, [selectedPage, fetchMarcherPages, selectedMarchers]);
 
     /**
@@ -133,6 +134,7 @@ function Canvas() {
      * @param keydown true if keydown, false if keyup
      */
     const handleKey = (e: KeyboardEvent, keydown: boolean) => {
+        return;
         const canvasObjects = canvas.current.getObjects();
         if (canvas.current && canvas.current.getObjects().length > 0) {
             switch (e.key) {
@@ -290,8 +292,8 @@ function Canvas() {
            to the group's center when multiple objects are selected */
         // Check if multople marchers are selected and if the current marcher is one of them
         let offset = { x: 0, y: 0 };
-        if (selectedMarchers.length > 1 && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === marcher.id_for_html)) {
-            // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id === marcher.marcher_id)) {
+        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === marcher.id_for_html);
+        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
             const groupObject = canvas.current.getActiveObject();
             offset = {
                 x: groupObject.left + (groupObject.width / 2),
@@ -319,7 +321,7 @@ function Canvas() {
             console.error("FabricObject does not exist for the marcher - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
 
         return null;
-    }, [selectedMarchers]);
+    }, []);
 
     /**
      * A function to get the coordinates of a fabric marcher's dot.
@@ -339,9 +341,10 @@ function Canvas() {
 
         const idForHtml = (fabricGroup as any).id_for_html;
 
-        // Check if multople marchers are selected and if the current marcher is one of them
+        // Check if multiple marchers are selected and if the current marcher is one of them
         let offset = { x: 0, y: 0 };
-        if (selectedMarchers.length > 1 && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
+        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === idForHtml);
+        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
             // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
             const groupObject = canvas.current.getActiveObject();
             offset = {

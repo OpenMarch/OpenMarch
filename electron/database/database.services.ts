@@ -232,7 +232,7 @@ export function initHandlers() {
     // MarcherPage
     ipcMain.handle('marcher_page:getAll', async (_, args) => getMarcherPages(args));
     ipcMain.handle('marcher_page:get', async (_, args) => getMarcherPage(args));
-    ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPage(args));
+    ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPages(args));
     // Batch actions
     ipcMain.handle('page:setAllCoordsToPreviousPage', (_, currentPageId, previousPageId) => setAllCoordsToPreviousPage(currentPageId));
 

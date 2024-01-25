@@ -2,7 +2,7 @@
 
 import { ReadableCoords, FieldProperties } from "../Interfaces";
 
-const roundFactor = 20; // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
+const roundFactor = 100; // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
 
 /**
  * Translates raw canvas coordinates into readable coordinates.

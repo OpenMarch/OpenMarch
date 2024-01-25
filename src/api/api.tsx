@@ -195,6 +195,17 @@ export async function updateMarcherPage(marcher_id: number, page_id: number, x: 
     x: x,
     y: y
   };
-  const response = await window.electron.updateMarcherPage(updatedMarcherPage);
+  const response = await window.electron.updateMarcherPages([updatedMarcherPage]);
+  return response;
+}
+
+/**
+ * Updates the x and y coordinates for a list of marcherPages defined using the UpdateMarcherPage interface.
+ *
+ * @param marcherPages A list of marcherPages to update.
+ * @returns Response data from the server.
+ */
+export async function updateMarcherPages(marcherPages: Interfaces.UpdateMarcherPage[]) {
+  const response = await window.electron.updateMarcherPages(marcherPages);
   return response;
 }

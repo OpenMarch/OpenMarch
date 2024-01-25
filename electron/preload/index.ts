@@ -137,7 +137,7 @@ const APP_API = {
   // MarcherPage
   getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll'),
   getMarcherPage: (id: { marcher_id: number, page_id: number }) => ipcRenderer.invoke('marcher_page:get', id),
-  updateMarcherPage: (args: UpdateMarcherPage) => ipcRenderer.invoke('marcher_page:update', args),
+  updateMarcherPages: (args: UpdateMarcherPage[]) => ipcRenderer.invoke('marcher_page:update', args),
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)
