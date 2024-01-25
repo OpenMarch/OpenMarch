@@ -1,8 +1,8 @@
 # OpenMarch
-[**OpenMarch**](https://www.openmarch.com/) is an open source drill writing software built on web app frameworks. Eventually it will be a cross platform desktop app.
+[**OpenMarch**](https://www.OpenMarch.com/) is an open source drill writing software built on web app frameworks. Eventually it will be a cross platform desktop app.
 
 ## What can **OpenMarch** do?
-See [openmarch.com](https://www.openmarch.com/) for current status and a video example
+See [OpenMarch.com](https://www.OpenMarch.com/) for current status and a video example
 
 **Can**
 - Render a navigable canvas of a college football field
@@ -13,15 +13,18 @@ See [openmarch.com](https://www.openmarch.com/) for current status and a video e
 - Navigate through pages on the canvas
 - Have all marcher, page, and coordinate data saved locally to a db
 - Save files to the local system
-
-**Cannot**
-- Open other files (this will be done within days)
+- Open other files
 - Undo/redo
 - Move multiple marchers at once
+
+**Cannot**
 - Animate marchers in between pages
 - Load music of any kind
 - Mark props or non-marcher objects
 - Export the drill into any sort of PDF or file
+- Create drill based on shape
+- Auto-generate boxes
+- Move by step
 
 ## What is OpenMarch's goal?
 To be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles.
@@ -69,7 +72,7 @@ Look at the [wiki](https://github.com/AlexDumo/OpenMarch/wiki) and [Onbaording f
 OpenMarch does not have any releases or production demos available.
 Users who want to try it now are welcome follow the strps to spin up a production environment, though it is missing key features a designer may need.
 
-Check back to [openmarch.com](https://www.openmarch.com/) and this repository periodically for updates. We're looking for some development, help so send your developer friends this way!
+Check back to [OpenMarch.com](https://www.OpenMarch.com/) and this repository periodically for updates. We're looking for some development, help so send your developer friends this way!
 
 ## License
 OpenMarch is written under the [GPL-3.0 license](LICENSE). All code written for this project will forever and always
