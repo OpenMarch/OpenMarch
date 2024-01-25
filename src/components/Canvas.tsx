@@ -15,8 +15,8 @@ interface IGroupOptionsWithId extends IGroupOptions {
 }
 
 const keyActions = {
-    lockX: "Alt",
-    lockY: "Shift",
+    lockX: "z",
+    lockY: "x",
 }
 
 function Canvas() {
@@ -76,8 +76,9 @@ function Canvas() {
     const handleMouseDown = (opt: any) => {
         var evt = opt.e;
         // opt.target checks if the mouse is on the canvas at all
+        // Don't move the canvas if the mouse is on a marcher
         const isMarcherSelection = opt.target && (opt.target?.id_for_html || opt.target._objects?.some((obj: any) => obj.id_for_html));
-        if ((evt.altKey || !isMarcherSelection) && !evt.shiftKey) {
+        if (!isMarcherSelection && !evt.shiftKey) {
             canvas.current.isDragging = true;
             canvas.current.selection = false;
             canvas.current.lastPosX = evt.clientX;
@@ -132,15 +133,18 @@ function Canvas() {
      * @param keydown true if keydown, false if keyup
      */
     const handleKey = (e: KeyboardEvent, keydown: boolean) => {
-        if (canvas.current && canvas.current.getActiveObjects().length > 0) {
+        const canvasObjects = canvas.current.getObjects();
+        if (canvas.current && canvas.current.getObjects().length > 0) {
             switch (e.key) {
                 case keyActions.lockY:
-                    for (const selected of canvas.current.getActiveObjects())
+                    canvasObjects.forEach((selected: any) => {
                         selected.lockMovementY = keydown;
+                    });
                     break;
                 case keyActions.lockX:
-                    for (const selected of canvas.current.getActiveObjects())
+                    canvasObjects.forEach((selected: any) => {
                         selected.lockMovementX = keydown;
+                    });
                     break;
             }
         }
@@ -305,12 +309,10 @@ function Canvas() {
                     x: (x - Constants.dotRadius - dot.left - (fabricGroup.width / 2)) - offset.x,
                     y: (y - Constants.dotRadius - dot.top - (fabricGroup.height / 2)) - offset.y
                 };
-                // console.log("setCanvasMarcherCoordsFromDot - newCoords", newCoords);
 
                 marcher.fabricObject.left = newCoords.x;
                 marcher.fabricObject.top = newCoords.y;
                 marcher.fabricObject.setCoords();
-                // console.log("setCanvasMarcherCoordsFromDot - marcher.fabricObject", marcher.fabricObject);
             } else
                 console.error("Marcher dot does not have left or top properties, or fabricGroup does not have fieldHeight/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
         } else
@@ -335,15 +337,12 @@ function Canvas() {
             return null;
         }
 
-        console.log("fabricObjectToReal", selectedMarchers);
         const idForHtml = (fabricGroup as any).id_for_html;
-        console.log("fabricObjectToRealCoords - idForHtml", idForHtml, selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml))
 
         // Check if multople marchers are selected and if the current marcher is one of them
         let offset = { x: 0, y: 0 };
         if (selectedMarchers.length > 1 && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
             // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
-            console.log("selectedMarchers.some TRUE");
             const groupObject = canvas.current.getActiveObject();
             offset = {
                 x: groupObject.left + (groupObject.width / 2),
@@ -351,13 +350,8 @@ function Canvas() {
             };
         }
 
-        // console.log("marcher", marcher);
         const dot = fabricGroup?._objects[0] as fabric.Circle;
         if (fabricGroup.left && fabricGroup.top && dot.left && dot.top) {
-            // console.log("fabricObjectToRealCoords - fabricGroup", "x: " + fabricGroup.left,
-            //     "y: " + fabricGroup.top);
-            // console.log("fabricObjectToRealCoords - dot", "x: " + (fabricGroup.left + dot.left),
-            //     "y: " + (fabricGroup.top + dot.top));
             return {
                 x: offset.x + fabricGroup.getCenterPoint().x + dot.left + Constants.dotRadius,
                 y: offset.y + fabricGroup.getCenterPoint().y + dot.top + Constants.dotRadius
@@ -383,9 +377,7 @@ function Canvas() {
     /* Initialize the canvas.current */
     // Update the objectModified listener when the selected page changes
     useEffect(() => {
-        // console.log(marchers, pages, marcherPages, selectedPage, isLoading, canvasMarchers)
         if (!canvas.current && selectedPage && canvasRef.current && fieldProperties.current) {
-            // console.log("Canvas.tsx: useEffect: create canvas.current");
             canvas.current = new fabric.Canvas(canvasRef.current, {});
 
             // Set canvas.current size
@@ -428,7 +420,6 @@ function Canvas() {
 
     // Render the marchers when the canvas.current and marchers are loaded
     useEffect(() => {
-        // console.log("UseEffect: renderMarchers - marchers", selectedPage);
         if (canvas.current && !isLoading) {
             updateMarcherLabels();
         }
@@ -436,9 +427,7 @@ function Canvas() {
 
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        // console.log("UseEffect: renderMarchers - pages", selectedPage);
         if (canvas.current && !isLoading) {
-            // console.log("Rendering canvas.current - pages");
             renderMarchers();
         }
     }, [marchers, pages, marcherPages, selectedPage, isLoading, renderMarchers]);

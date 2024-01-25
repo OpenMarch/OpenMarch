@@ -24,7 +24,6 @@ export function SelectedMarchersProvider({ children }: { children: ReactNode }) 
     // Update the selected marcher if the marchers list changes
     useEffect(() => {
         if (selectedMarchers) {
-            // const newMarcher = marchers.find(marcher => marcher.id === selectedMarchers.id);
             const newSelectedMarchers = selectedMarchers.filter(marcher => marchers.some(m => m.id === marcher.id));
             setSelectedMarchers(newSelectedMarchers);
         }
