@@ -14,6 +14,11 @@ export const Constants = {
     dotRadius: 5
 } as const;
 
+export const KeyActions = {
+    lockX: "z",
+    lockY: "x",
+}
+
 /**
  * Assumes that the id_for_html is in the form "page_1" with a single "_" delimiter
  * @param id_for_html "page_1"

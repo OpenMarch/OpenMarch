@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
 import { linearEasing } from "../utils";
-import { useMarcherStore, usePageStore, useMarcherPageStore } from "../stores/Store";
+import { useMarcherStore, usePageStore, useMarcherPageStore, useUiSettingsStore } from "../stores/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
-import { Constants, idForHtmlToId } from "../Constants";
+import { Constants, idForHtmlToId, KeyActions } from "../Constants";
 import { getFieldProperties, updateMarcherPage, updateMarcherPages } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
 import { CanvasMarcher, FieldProperties, UpdateMarcherPage } from "../Interfaces";
@@ -14,17 +14,13 @@ interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
 }
 
-const keyActions = {
-    lockX: "z",
-    lockY: "x",
-}
-
 function Canvas() {
     const { marchers, marchersAreLoading } = useMarcherStore()!;
     const { pagesAreLoading, pages } = usePageStore()!;
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
+    const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvas = useRef<fabric.Canvas | any>(null);
@@ -62,6 +58,7 @@ function Canvas() {
             || []; // If no marchers are selected, set the selected marchers to an empty array
         setSelectedMarchers(newSelectedMarchers);
 
+        // Lock X and Y based on current UiSettings
     }, [marchers, setSelectedMarchers]);
 
     /**
@@ -133,31 +130,15 @@ function Canvas() {
      * @param e
      * @param keydown true if keydown, false if keyup
      */
-    const handleKey = (e: KeyboardEvent, keydown: boolean) => {
-        return;
-        const canvasObjects = canvas.current.getObjects();
-        if (canvas.current && canvas.current.getObjects().length > 0) {
-            switch (e.key) {
-                case keyActions.lockY:
-                    canvasObjects.forEach((selected: any) => {
-                        selected.lockMovementY = keydown;
-                    });
-                    break;
-                case keyActions.lockX:
-                    canvasObjects.forEach((selected: any) => {
-                        selected.lockMovementX = keydown;
-                    });
-                    break;
-            }
-        }
-    };
-
     const handleKeyDown = (e: KeyboardEvent) => {
-        handleKey(e, true);
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-        handleKey(e, false);
+        switch (e.key) {
+            case KeyActions.lockY:
+                setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, "lockY");
+                break;
+            case KeyActions.lockX:
+                setUiSettings({ ...uiSettings, lockX: !uiSettings.lockX }, "lockX");
+                break;
+        }
     };
 
     const initiateListeners = useCallback(() => {
@@ -173,7 +154,6 @@ function Canvas() {
             canvas.current.on('mouse:wheel', handleMouseWheel);
 
             window.addEventListener('keydown', handleKeyDown);
-            window.addEventListener('keyup', handleKeyUp);
         }
     }, [handleObjectModified, handleSelect, handleDeselect, handleMouseDown, handleMouseMove, handleMouseUp,
         handleMouseWheel]);
@@ -192,7 +172,6 @@ function Canvas() {
             canvas.current.off('mouse:wheel');
 
             window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
         }
     };
 
@@ -447,6 +426,19 @@ function Canvas() {
     //             throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
     //     }
     // }, [selectedMarchers, isLoading, canvasMarchers]);
+
+    /*************** UI Settings ***************/
+    // Lock X
+    useEffect(() => {
+        if (canvas.current && uiSettings)
+            canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementX = uiSettings.lockX; });
+    }, [uiSettings.lockX]);
+
+    // Lock Y
+    useEffect(() => {
+        if (canvas.current && uiSettings)
+            canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementY = uiSettings.lockY; });
+    }, [uiSettings.lockY]);
 
     /* --------------------------Animation Functions-------------------------- */
     // eslint-disable-next-line

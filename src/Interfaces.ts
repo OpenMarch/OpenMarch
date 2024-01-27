@@ -190,6 +190,14 @@ export interface CanvasMarcher {
     marcher_id: number;
 }
 
+export interface UiSettings {
+    lockX: boolean;
+    lockY: boolean;
+    isPlaying: boolean;
+}
+
+
+/*********************** Other ***********************/
 /**
  * This interface should be used when you want a form to be controlled by buttons in a parent component.
  */

@@ -3,6 +3,7 @@ import PlaybackControls from './PlaybackControls';
 import { Container } from 'react-bootstrap';
 import MarcherListModal from './marcher/MarcherListModal';
 import PageListModal from './page/PageListModal';
+import UiSettingsToolbar from './UiSettingsToolbar';
 
 function Topbar() {
     return (
@@ -12,6 +13,8 @@ function Topbar() {
             <PageListModal />
 
             <PlaybackControls />
+
+            <UiSettingsToolbar />
         </Container>
     );
 }

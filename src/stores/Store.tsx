@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import * as api from "../api/api";
-import * as Types from "../Interfaces";
+import * as Interfaces from "../Interfaces";
 
+/******************** Marchers ********************/
 interface MarcherStoreState {
-    marchers: Types.Marcher[],
+    marchers: Interfaces.Marcher[],
     marchersAreLoading: boolean
 }
 interface MarcherStoreActions {
-    // Why void?
     fetchMarchers: () => Promise<void>;
     setMarchersAreLoading: (isLoading: boolean) => void;
 }
@@ -20,21 +20,14 @@ export const useMarcherStore = create<MarcherStoreState & MarcherStoreActions>()
         set({ marchers: newMarchers });
     },
 
-
     setMarchersAreLoading: (isLoading) => {
         set({ marchersAreLoading: isLoading });
     }
-
-    // addMarcher: async (marcher) => {
-    //     await addMarcher(marcher);
-    //     set(state => ({
-    //       marchers: [...state.marchers, marcher]
-    //     }));
-    //   }
 }));
 
+/******************** Pages ********************/
 interface PageStoreState {
-    pages: Types.Page[],
+    pages: Interfaces.Page[],
     pagesAreLoading: boolean
 }
 interface PageStoreActions {
@@ -53,17 +46,11 @@ export const usePageStore = create<PageStoreState & PageStoreActions>()((set) =>
     setPagesAreLoading: (isLoading) => {
         set({ pagesAreLoading: isLoading });
     }
-
-    // addPage: async (page) => {
-    //     await addPage(page);
-    //     set(state => ({
-    //       pages: [...state.pages, page]
-    //     }));
-    //   }
 }));
 
+/******************** MarcherPages ********************/
 interface MarcherPageStoreState {
-    marcherPages: Types.MarcherPage[],
+    marcherPages: Interfaces.MarcherPage[],
     marcherPagesAreLoading: boolean
 }
 interface MarcherPageStoreActions {
@@ -82,11 +69,34 @@ export const useMarcherPageStore = create<MarcherPageStoreState & MarcherPageSto
     setMarcherPagesAreLoading: (isLoading) => {
         set({ marcherPagesAreLoading: isLoading });
     }
-
-    // addMarcherPage: async (marcherPage) => {
-    //     await addMarcherPage(marcherPage);
-    //     set(state => ({
-    //       marcherPages: [...state.marcherPages, marcherPage]
-    //     }));
-    //   }
 }));
+
+/******************** UI Settings ********************/
+interface UiSettingsStoreState {
+    uiSettings: Interfaces.UiSettings
+}
+interface UiSettingsStoreActions {
+    setUiSettings: (uiSettings: Interfaces.UiSettings, type?: keyof Interfaces.UiSettings) => void;
+}
+export const useUiSettingsStore = create<UiSettingsStoreState & UiSettingsStoreActions>()((set) => ({
+    uiSettings: {
+        isPlaying: false,
+        lockX: false,
+        lockY: false,
+    },
+
+    setUiSettings: (newUiSettings, type) => {
+        let uiSettings = { ...newUiSettings };
+
+        if (uiSettings.lockX && type === "lockX") {
+            uiSettings.lockY = false;
+        }
+
+        if (uiSettings.lockY && type === "lockY") {
+            uiSettings.lockX = false;
+        }
+
+        set({ uiSettings: uiSettings });
+    }
+}));
+
