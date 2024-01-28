@@ -6,15 +6,15 @@ import PageListModal from './page/PageListModal';
 import UiSettingsToolbar from './UiSettingsToolbar';
 
 function Topbar() {
+    const componentClassName = 'mx-2';
     return (
         <Container fluid className="topbar p-3">
-            <FileControls />
-            <MarcherListModal />
-            <PageListModal />
-
-            <PlaybackControls />
-
-            <UiSettingsToolbar />
+            <FileControls className={componentClassName} />
+            <PlaybackControls className={componentClassName} />
+            <MarcherListModal className={componentClassName} />
+            <PageListModal className={componentClassName} />
+            <div className='vertival-divider' />
+            <UiSettingsToolbar className={componentClassName} />
         </Container>
     );
 }

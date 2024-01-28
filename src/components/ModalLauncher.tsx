@@ -7,7 +7,8 @@ interface ModalLauncherProps {
     header?: string;
     bottomButton?: React.ReactNode;
     style?: React.CSSProperties;
-    className?: string;
+    modalClassName?: string;
+    buttonClassName?: string;
 }
 
 /**
@@ -27,7 +28,8 @@ const ModalLauncher: React.FC<ModalLauncherProps> =
         header = "Modal",
         bottomButton = null,
         style = {},
-        className = ""
+        modalClassName = "",
+        buttonClassName = ""
     }) => {
         const [modalIsOpen, setModalIsOpen] = useState(false);
 
@@ -41,8 +43,8 @@ const ModalLauncher: React.FC<ModalLauncherProps> =
 
         return (
             <div>
-                <Button onClick={openModal} className='mx-2'>{launchButton}</Button>
-                <Modal show={modalIsOpen} onHide={closeModal} style={style} className={className}>
+                <Button onClick={openModal} className={buttonClassName}>{launchButton}</Button>
+                <Modal show={modalIsOpen} onHide={closeModal} style={style} className={modalClassName}>
                     <Modal.Header closeButton>
                         <Modal.Title>{header}</Modal.Title>
                     </Modal.Header>

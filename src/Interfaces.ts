@@ -213,3 +213,7 @@ export interface ListFormProps {
     cancelActivator?: boolean;
     setCancelActivator?: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+export interface topBarComponentProps {
+    className?: string;
+}

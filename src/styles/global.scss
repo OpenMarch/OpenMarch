@@ -6,7 +6,7 @@ $toolbarColor: $gray-700;
 $canvasColor: $gray-900;
 
 // Toolbar
-$topHeight: 63px;
+$topHeight: 72px;
 $sideWidth: 200px;
 $editFormWidth: 200px;
 $toolbarPadding: 10px;
@@ -96,9 +96,14 @@ canvas {
 /* ------------ Top Toolbar ------------ */
 .topbar {
   width: 100%;
-  height: $topHeight;
+  min-height: $topHeight;
   background-color: $toolbarColor;
   display: flex;
+  align-items:center;
+}
+.vertical-divider {
+  border-left: 1px solid #000;  // Change the color as needed
+  height: 100%;
 }
 
 .topbar Form {

@@ -4,8 +4,9 @@ import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
 import { useState } from "react";
 import FormButtons from "../FormButtons";
+import { topBarComponentProps } from "@/Interfaces";
 
-export default function MarcherListModal() {
+export default function MarcherListModal({ className }: topBarComponentProps) {
     const [listIsEditing, setListIsEditing] = useState(false);
     const [submitActivator, setSubmitActivator] = useState(false);
     const [cancelActivator, setCancelActivator] = useState(false);
@@ -37,7 +38,7 @@ export default function MarcherListModal() {
     return (
         <ModalLauncher
             components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers"
-            className="modal-xl" bottomButton={editFormButtons()}
+            modalClassName="modal-xl" bottomButton={editFormButtons()} buttonClassName={className}
         />
     );
 }

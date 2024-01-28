@@ -4,8 +4,9 @@ import { useState } from "react";
 import FormButtons from "../FormButtons";
 import PageList from "./PageList";
 import NewPageForm from "./NewPageForm";
+import { topBarComponentProps } from "@/Interfaces";
 
-export default function MarcherListModal() {
+export default function MarcherListModal({ className }: topBarComponentProps) {
     const [listIsEditing, setListIsEditing] = useState(false);
     const [submitActivator, setSubmitActivator] = useState(false);
     const [cancelActivator, setCancelActivator] = useState(false);
@@ -37,7 +38,7 @@ export default function MarcherListModal() {
     return (
         <ModalLauncher
             components={[PageModalContents()]} launchButton="Pages" header="Pages"
-            className="modal-lg" bottomButton={editFormButtons()}
+            modalClassName="modal-lg" bottomButton={editFormButtons()} buttonClassName={className}
         />
     );
 }

@@ -4,8 +4,9 @@ import { FaFastBackward, FaBackward, FaPause, FaPlay, FaForward, FaFastForward }
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { usePageStore } from "../stores/Store";
 import { useIsPlaying } from "../context/IsPlayingContext";
+import { topBarComponentProps } from "@/Interfaces";
 
-function PlaybackControls() {
+function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { pages } = usePageStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
@@ -39,8 +40,8 @@ function PlaybackControls() {
 
     const togglePlay = () => { setIsPlaying(!isPlaying); };
     return (
-        <div className="playback-controls mx-2">
-            <ButtonGroup aria-label="Basic example">
+        <div className="playback-controls">
+            <ButtonGroup aria-label="Basic example" className={className}>
                 <Button variant="secondary" title="First page"
                     value={lowestPageOrder()}
                     onClick={changeSelectedPageHandler}

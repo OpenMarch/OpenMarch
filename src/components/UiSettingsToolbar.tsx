@@ -5,7 +5,7 @@ import { TbAxisX, TbAxisY } from "react-icons/tb";
 import * as Interfaces from "../Interfaces";
 import { KeyActions } from "../Constants";
 
-export default function UiSettingsToolbar() {
+export default function UiSettingsToolbar({ className }: Interfaces.topBarComponentProps) {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
 
     const toggle = useCallback((setting: keyof Interfaces.UiSettings) => {
@@ -17,7 +17,7 @@ export default function UiSettingsToolbar() {
 
     return (
         <div>
-            <ButtonGroup>
+            <ButtonGroup className={className}>
                 <OverlayTrigger
                     placement="bottom"
                     overlay={<Tooltip id={`tooltip-top`}>
