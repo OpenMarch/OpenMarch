@@ -2,7 +2,6 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { usePageStore } from "../../stores/Store";
 import { updatePages } from "../../api/api";
 import { useEffect } from "react";
-import { update } from "electron/main/update";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;

@@ -1,13 +1,13 @@
 import { Button } from "react-bootstrap";
 import { FaEdit, FaTimes, FaCheck } from "react-icons/fa";
 
-interface ListContainerProps {
+interface TinyFormButtonsProps {
     isEditing: boolean;
     setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
     handleCancel: () => void;
 }
 
-function FormButtons({ isEditing, setIsEditing, handleCancel }: ListContainerProps) {
+export default function TinyFormButtons({ isEditing, setIsEditing, handleCancel }: TinyFormButtonsProps) {
     return (
         <div className="edit-form-button-container">
             {!isEditing ?
@@ -38,5 +38,3 @@ function FormButtons({ isEditing, setIsEditing, handleCancel }: ListContainerPro
         </div>
     );
 }
-
-export default FormButtons;

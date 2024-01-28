@@ -1,5 +1,5 @@
 import { Button } from "react-bootstrap";
-interface ListContainerProps {
+interface FormButtonsProps {
     isEditingProp?: boolean;
     setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
     editButton?: string | React.ReactNode;
@@ -13,7 +13,7 @@ interface ListContainerProps {
 
 export default function FormButtons({ handleCancel,
     handleSubmit = undefined, isEditingProp = true, setIsEditingProp = undefined,
-    editButton = "Edit" }: ListContainerProps) {
+    editButton = "Edit" }: FormButtonsProps) {
     return (
         <div style={{ display: 'flex' }}>
             {!isEditingProp ?
