@@ -66,10 +66,15 @@ async function createWindow(title?: string) {
 
   if (url) { // electron-vite-vue#298
     win.loadURL(url)
+
+    win.on("ready-to-show", () => {
+      if (win)
+        win.webContents.openDevTools();
+    });
     // Open devTool if the app is not packaged
-    win.webContents.openDevTools()
+    // win.webContents.openDevTools();
   } else {
-    win.loadFile(indexHtml)
+    win.loadFile(indexHtml);
   }
 
   // Test actively push message to the Electron-Renderer
@@ -121,6 +126,7 @@ app.on('window-all-closed', () => {
   win = null
   if (process.platform !== 'darwin') app.quit()
 })
+
 
 app.on('second-instance', () => {
   if (win) {
