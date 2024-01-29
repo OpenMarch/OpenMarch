@@ -54,7 +54,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     }, [typing, counts, isSubset]);
 
     const resetForm = () => {
-        setPageName(undefined);
+        setPageName("");
         setQuantity(1);
         setPageNameError("");
 
@@ -99,7 +99,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
         else if (pages.some((page: Page) => page.name === name))
             setPageNameError("Page name already exists");
         else if (!/^\d+[A-Za-z]*$/.test(name))
-            setPageNameError("Page must be one or more digits followed by zero or more letters. (Ex: 23, 1A)");
+            setPageNameError("Page must be one or more digits followed by zero or more letters. (e.g. 23, 1A)");
         else
             setPageNameError("");
     }
