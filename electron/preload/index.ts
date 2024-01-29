@@ -109,8 +109,10 @@ const APP_API = {
   // Triggers
   onFetch: (callback: any) => ipcRenderer.on('fetch:all', (event, type) => callback(type)),
   removeFetchListener: () => ipcRenderer.removeAllListeners('fetch:all'),
-  getSelectedPage: (selectedPageId: number) => ipcRenderer.send('get:selectedPage', (selectedPageId)),
-  getSelectedMarchers: (selectedMarchersId: number[]) => ipcRenderer.send('get:selectedMarchers', (selectedMarchersId)),
+  sendSelectedPage: (selectedPageId: number) => ipcRenderer.send('send:selectedPage', (selectedPageId)),
+  sendSelectedMarchers: (selectedMarchersId: number[]) => ipcRenderer.send('send:selectedMarchers', (selectedMarchersId)),
+  sendLockX: (lockX: boolean) => ipcRenderer.send('send:lockX', (lockX)),
+  sendLockY: (lockY: boolean) => ipcRenderer.send('send:lockY', (lockY)),
 
   // History
   /** Activates on undo or redo. */

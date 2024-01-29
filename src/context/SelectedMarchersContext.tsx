@@ -18,7 +18,7 @@ export function SelectedMarchersProvider({ children }: { children: ReactNode }) 
     // Send the selected marcher to the electron main process
     useEffect(() => {
         if (selectedMarchers)
-            window.electron.getSelectedMarchers(selectedMarchers.map(m => m.id));
+            window.electron.sendSelectedMarchers(selectedMarchers.map(m => m.id));
     }, [selectedMarchers]);
 
     // Update the selected marcher if the marchers list changes

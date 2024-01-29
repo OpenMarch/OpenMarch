@@ -967,6 +967,7 @@ export async function setAllCoordsToPreviousPage(currentPageId: number, previous
  */
 export async function roundCoordinates(marcherPages: { marcherId: number, pageId: number }[], denominator: number, xAxis: boolean, yAxis: boolean): Promise<DatabaseResponse> {
     const db = connect();
+    console.log('roundCoordinates', marcherPages, denominator, xAxis, yAxis);
 
     const changes: Interfaces.UpdateMarcherPage[] = [];
     const stepsPerPixel = 1 / CURRENT_FIELD_PROPERTIES.pixelsPerStep;

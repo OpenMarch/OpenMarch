@@ -8,6 +8,7 @@ import * as DatabaseServices from '../database/database.services'
 import { applicationMenu } from './application-menu';
 import { on } from 'events';
 import { create } from 'domain';
+import { UiSettings } from '@/Interfaces';
 
 // The built directory structure
 //
@@ -66,13 +67,10 @@ async function createWindow(title?: string) {
 
   if (url) { // electron-vite-vue#298
     win.loadURL(url)
-
     win.on("ready-to-show", () => {
       if (win)
         win.webContents.openDevTools();
     });
-    // Open devTool if the app is not packaged
-    // win.webContents.openDevTools();
   } else {
     win.loadFile(indexHtml);
   }
@@ -112,15 +110,32 @@ app.whenReady().then(async () => {
   ipcMain.handle('history:redo', async () => executeHistoryAction("redo"));
 
   // Getters
-  ipcMain.on('get:selectedPage', async (event, selectedPageId) => {
-    store.set('selectedPageId', selectedPageId);
-  });
-  ipcMain.on('get:selectedMarchers', async (event, selectedMarchersId) => {
-    store.set('selectedMarchersId', selectedMarchersId);
-  });
+  initGetters();
 
   await createWindow('OpenMarch - ' + store.get('databasePath'));
 })
+
+function initGetters() {
+  // Store selected page and marchers
+  ipcMain.on('send:selectedPage', async (_, selectedPageId: number) => {
+    store.set('selectedPageId', selectedPageId);
+  });
+  ipcMain.on('send:selectedMarchers', async (_, selectedMarchersId: number[]) => {
+    store.set('selectedMarchersId', selectedMarchersId);
+  });
+
+  // Store locked x or y axis
+  store.set('lockX', false);
+  store.set('lockY', false);
+  ipcMain.on('send:lockX', async (_, lockX: boolean) => {
+    console.log('lockX: ' + lockX);
+    store.set('lockX', lockX as boolean);
+  });
+  ipcMain.on('send:lockY', async (_, lockY: boolean) => {
+    console.log('lockY: ' + lockY);
+    store.set('lockY', lockY as boolean);
+  });
+}
 
 app.on('window-all-closed', () => {
   win = null
