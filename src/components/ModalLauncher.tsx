@@ -9,6 +9,7 @@ interface ModalLauncherProps {
     style?: React.CSSProperties;
     modalClassName?: string;
     buttonClassName?: string;
+    setModelIsOpenProp?: (isOpen: boolean) => void;
 }
 
 /**
@@ -29,22 +30,28 @@ const ModalLauncher: React.FC<ModalLauncherProps> =
         bottomButton = null,
         style = {},
         modalClassName = "",
-        buttonClassName = ""
+        buttonClassName = "",
+        setModelIsOpenProp = () => { }
+
     }) => {
         const [modalIsOpen, setModalIsOpen] = useState(false);
 
         const openModal = () => {
+            setModelIsOpenProp && setModelIsOpenProp(true);
             setModalIsOpen(true);
         };
 
         const closeModal = () => {
+            setModelIsOpenProp && setModelIsOpenProp(false);
             setModalIsOpen(false);
         };
 
         return (
             <div>
                 <Button onClick={openModal} className={buttonClassName}>{launchButton}</Button>
-                <Modal show={modalIsOpen} onHide={closeModal} style={style} className={modalClassName}>
+                <Modal
+                    show={modalIsOpen} onHide={closeModal} style={style} className={modalClassName}
+                >
                     <Modal.Header closeButton>
                         <Modal.Title>{header}</Modal.Title>
                     </Modal.Header>

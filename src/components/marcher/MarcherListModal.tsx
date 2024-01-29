@@ -2,14 +2,22 @@ import { Col, Row } from "react-bootstrap";
 import ModalLauncher from "../ModalLauncher";
 import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FormButtons from "../FormButtons";
 import { topBarComponentProps } from "@/Interfaces";
+import { useMarcherStore } from "@/stores/Store";
 
 export default function MarcherListModal({ className }: topBarComponentProps) {
     const [listIsEditing, setListIsEditing] = useState(false);
     const [submitActivator, setSubmitActivator] = useState(false);
     const [cancelActivator, setCancelActivator] = useState(false);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const { marchers } = useMarcherStore()!;
+
+    // Turn off editing when the modal is closed/opened
+    useEffect(() => {
+        setListIsEditing(false);
+    }, [modalIsOpen]);
 
     function MarcherModalContents() {
         return (
@@ -21,7 +29,7 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
                     {/* <MarcherList /> */}
                 </Col>
                 <Col md={5} className="px-4">
-                    <NewMarcherForm hasHeader={true} />
+                    <NewMarcherForm hasHeader={true} disabledProp={listIsEditing} />
                 </Col>
             </Row>
         );
@@ -37,8 +45,9 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
 
     return (
         <ModalLauncher
-            components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers"
-            modalClassName="modal-xl" bottomButton={editFormButtons()} buttonClassName={className}
+            components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers" modalClassName="modal-xl"
+            bottomButton={marchers.length > 0 && editFormButtons()} buttonClassName={className}
+            setModelIsOpenProp={setModalIsOpen}
         />
     );
 }

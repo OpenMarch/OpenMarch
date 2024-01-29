@@ -7,13 +7,14 @@ import { createMarcher } from "../../api/api";
 
 interface NewMarcherFormProps {
     hasHeader?: boolean;
+    disabledProp?: boolean;
 }
 
-const defaultSection = "Choose Section...";
+const defaultSection = "default";
 const defaultDrillPrefix = "-";
 const defaultDrillOrder = 1;
 
-const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) => {
+const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disabledProp = false }) => {
     const [section, setSection] = useState<string>(defaultSection);
     const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);
     const [drillOrder, setDrillOrder] = useState<number>(defaultDrillOrder);
@@ -176,10 +177,10 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
             <Row className="mb-3">
                 <Form.Group as={Col} md={12} controlId="sectionForm">
                     <Form.Label>Section</Form.Label>
-                    <Form.Select defaultValue="Choose a section" onChange={handleSectionChange}
+                    <Form.Select onChange={handleSectionChange}
                         required isInvalid={!!sectionError} value={section}
                     >
-                        <option>Choose Section...</option>
+                        <option value="default">Choose Section...</option>
                         {Object.values(sections).map((section: any) => {
                             return <option key={section.name}>{section.name}</option>
                         })}
@@ -211,13 +212,12 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false }) =>
                 <Form.Group as={Col} md={4} controlId="quantityForm">
                     <Form.Label>Quantity</Form.Label>
                     <Form.Control type="number" defaultValue={1}
-                        onChange={handleQuantityChange} placeholder="1"
-                        step={1} min={1} />
+                        onChange={handleQuantityChange} step={1} min={1} />
                 </Form.Group>
             </Row>
             <Row className="py-2">
                 <Button variant="primary" type="submit"
-                    disabled={submitIsDisabled}
+                    disabled={submitIsDisabled || disabledProp}
                 >
                     {makeButtonString(quantity, section)}
                 </Button>

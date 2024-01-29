@@ -6,51 +6,55 @@ import { createPage } from "../../api/api";
 
 interface NewPageFormProps {
     hasHeader?: boolean;
+    disabledProp?: boolean;
 }
 
-const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
-    const [pageName, setPageName] = useState<string>();
+const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledProp = false }) => {
+    const [pageName, setPageName] = useState<string>("");
     const [counts, setCounts] = useState<number>(8);
+    const [formCounts, setFormCounts] = useState<string>(counts.toString() || "8"); // used to reset the form when counts changes
     const [quantity, setQuantity] = useState<number>(1);
     const [pageNameError, setPageNameError] = useState<string>("");
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const [isSubset, setIsSubset] = useState<boolean>(false);
+    const [typing, setTyping] = useState<boolean>(false);
     const { pages, fetchPages } = usePageStore!();
 
     useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            const activeElement = document.activeElement as HTMLInputElement;
+        if (!typing) {
+            const handleKeyDown = (event: KeyboardEvent) => {
+                const activeElement = document.activeElement as HTMLInputElement;
 
-            if (event.key === 'ArrowRight') {
-                setCounts(counts => counts + 4);
-            } else if (event.key === 'ArrowLeft') {
-                setCounts(counts => Math.max(0, counts - 4));
-            } else if (event.key === 'ArrowUp' && activeElement.id !== 'quantityForm') {
-                setCounts(counts => counts + 1);
-            } else if (event.key === 'ArrowDown' && activeElement.id !== 'quantityForm') {
-                setCounts(counts => Math.max(0, counts - 1));
-            } else if (event.key === 'Enter') {
-                const form = document.getElementById("newPageForm") as HTMLFormElement;
-                if (form) {
-                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                if (event.key === 'ArrowRight') {
+                    setCounts(counts => counts + 4);
+                } else if (event.key === 'ArrowLeft') {
+                    setCounts(counts => Math.max(0, counts - 4));
+                } else if (event.key === 'ArrowUp' && activeElement.id !== 'quantityForm') {
+                    setCounts(counts => counts + 1);
+                } else if (event.key === 'ArrowDown' && activeElement.id !== 'quantityForm') {
+                    setCounts(counts => Math.max(0, counts - 1));
+                } else if (event.key === 'Enter') {
+                    const form = document.getElementById("newPageForm") as HTMLFormElement;
+                    if (form) {
+                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    }
+                } else if (event.key === 's' || event.key === 'S') {
+                    event.preventDefault();
+                    setIsSubset(isSubset => !isSubset);
                 }
-            } else if (event.key === 's' || event.key === 'S') {
-                event.preventDefault();
-                setIsSubset(isSubset => !isSubset);
-            }
-        };
+            };
 
-        window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keydown', handleKeyDown);
 
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
+            return () => {
+                window.removeEventListener('keydown', handleKeyDown);
+            };
+        }
         // eslint-disable-next-line
-    }, []);
+    }, [typing, counts, isSubset]);
 
     const resetForm = () => {
         setPageName(undefined);
-        setCounts(8);
         setQuantity(1);
         setPageNameError("");
 
@@ -101,10 +105,14 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
     }
 
     const handleCountsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.value === "")
-            setCounts(1);
-        else
+        if (event.target.value === "") {
+            setFormCounts("");
+            setCounts(0);
+        }
+        else {
+            setFormCounts(event.target.value);
             setCounts(parseInt(event.target.value));
+        }
     };
 
     const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,6 +175,13 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
         setPageName(newPageNumber);
     }, [getNewPageName, pages, isSubset]);
 
+    // Update the form counts when counts changes
+    useEffect(() => {
+        if (formCounts !== "" && counts !== 1) {
+            setFormCounts(counts.toString());
+        }
+    }, [counts, formCounts]);
+
     return (
         <Form onSubmit={handleSubmit} id="newPageForm">
             {hasHeader && <h4>Create new pages</h4>}
@@ -174,6 +189,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
                 <Form.Group as={Col} md={4} controlId="drillPrefixForm">
                     <Form.Label>Page #</Form.Label>
                     <Form.Control type="text" placeholder="-"
+                        onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
                         onChange={handlePageNameChange}
                         value={pageName} required readOnly={isSubset}
                         isInvalid={!!pageNameError} />
@@ -183,17 +199,25 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
                 <Form.Group as={Col} md={4} controlId="drillOrderForm">
                     <Form.Label>Counts</Form.Label>
                     <Form.Control type="number" placeholder="-"
-                        onChange={handleCountsChange} value={counts}
-                        required
-                        min={1} step={1} disabled={quantity > 1}
+                        onFocus={() => setTyping(true)}
+                        onBlur={() => {
+                            setTyping(false);
+                            if (counts === 0) {
+                                setCounts(1);
+                                setFormCounts("1");
+                            } else
+                                setFormCounts(counts.toString())
+                        }}
+                        value={formCounts} onChange={handleCountsChange}
+                        required min={1} step={1} disabled={quantity > 1}
                     />
                 </Form.Group>
 
                 <Form.Group as={Col} md={4} controlId="quantityForm">
                     <Form.Label>Quantity</Form.Label>
                     <Form.Control type="number" defaultValue={1}
-                        onChange={handleQuantityChange} placeholder="1"
-                        step={1} min={1} />
+                        onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
+                        onChange={handleQuantityChange} step={1} min={1} />
                 </Form.Group>
             </Row>
             <Row className="mb-3">
@@ -216,7 +240,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false }) => {
             </Row>
             <Row className="py-2">
                 <Button variant="primary" type="submit"
-                    disabled={!pageName}
+                    disabled={!pageName || disabledProp}
                 >
                     {makeButtonString(quantity)}
                 </Button>
