@@ -21,8 +21,8 @@
 title: OpenMarch
 email: alex.dumouchelle484@gmail.com
 description:
-  OpenMarch is an open source drill writing software project that aims to provide a free drill-designing tool for
-  marching bands, indoor color guards, indoor percussion ensembles, indoor winds, and drum corps.
+  OpenMarch is an open source software project that aims to provide a free drill writing tool for
+  marching bands, drum corps, and indoor ensembles (color guard, percussion, winds).
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 # twitter_username: jekyllrb
