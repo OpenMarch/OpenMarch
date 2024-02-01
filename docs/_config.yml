@@ -23,8 +23,8 @@ email: alex.dumouchelle484@gmail.com
 description:
   OpenMarch is an open source software project that aims to provide a free drill writing tool for
   marching bands, drum corps, and indoor ensembles (color guard, percussion, winds).
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "alexdumo.github.io/OpenMarch/" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: "/OpenMarch" # the subpath of your site, e.g. /blog
+url: "alexdumo.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 # twitter_username: jekyllrb
 github_username:  AlexDumo
 
