@@ -3,4 +3,32 @@
 # To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
 
 layout: home
+title: OpenMarch
 ---
+
+## The open source drill writing software project
+
+[OpenMarch](https://github.com/AlexDumo/OpenMarch) is a free open source drill writing software built on web app frameworks.
+It will be released as cross platform desktop app.
+
+[Go to the GitHub]([OpenMarch](https://github.com/AlexDumo/OpenMarch)) - [View the about page](about.markdown)
+
+### Want to help build OpenMarch?
+
+Building a desktop app takes a village. To build a niche app is even harder. The UI needs to be organized, the UX needs
+to make sense, the app can't crash, and the website can't look ugly. Currently, none of these things are true, and I
+need all the help I can get!
+
+OpenMarch is looking people with the following skills to help contribute -
+- Web Development ([**React**](https://react.dev/))
+- Desktop software integration ([**Electron**](https://www.electronjs.org/) and deployment)
+- GitHub open source project management
+- UI/UX design
+- Web design (for this ugly website)
+- Graphic design (logo and branding)
+
+We also need better insight as to what OpenMarch should be!
+- Drill writers to test and request features
+- Visual educators to advise what makes good drill and how that can be baked into design
+
+See the [About Page](about.markdown) for onboarding
