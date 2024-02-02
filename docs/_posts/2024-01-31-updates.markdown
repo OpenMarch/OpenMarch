@@ -24,6 +24,7 @@ categories: jekyll update
 - Multiple marchers can be selected and moved at the same time. (also, _finally_)
 - There's a launch page on startup.
     - The app will try and open the last opened file first.
+- This website! Used to use Google sites, but we're Jekylling now in GitHub Pages!
 
 #### Tiny things
 - Movement of marchers can be locked along the x or y axis
