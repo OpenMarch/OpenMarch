@@ -31,4 +31,4 @@ We also need better insight as to what OpenMarch should be!
 - Drill writers to test and request features
 - Visual educators to advise what makes good drill and how that can be baked into design
 
-See the [About Page](about.markdown) for onboarding
+See the [About Page](about.markdown) for onboarding.
