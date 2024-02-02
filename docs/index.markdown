@@ -11,7 +11,7 @@ title: Welcome to OpenMarch
 [OpenMarch](https://github.com/AlexDumo/OpenMarch) is a free open source drill writing software built on web app frameworks.
 It will be released as cross platform desktop app.
 
-**Check out the [Janurary 2024 Update](/jekyll/update/2024/01/31/updates.html) for the most recent demo!**
+**Check out the [Janurary 2024 Update](/jekyll/update/2024/02/01/updates.html) for the most recent demo!**
 
 [Go to the GitHub]([OpenMarch](https://github.com/AlexDumo/OpenMarch)) - [View the about page](about.markdown)
 
