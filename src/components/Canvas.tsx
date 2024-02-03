@@ -5,7 +5,8 @@ import { useMarcherStore, usePageStore, useMarcherPageStore, useUiSettingsStore 
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
-import { Constants, idForHtmlToId, KeyActions } from "../global/Constants";
+import { Constants, idForHtmlToId } from "../global/Constants";
+import { ReactKeyActions } from "../global/KeyboardShortcuts";
 import { getFieldProperties, updateMarcherPage, updateMarcherPages } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
 import { CanvasMarcher, FieldProperties, UpdateMarcherPage } from "../global/Interfaces";
@@ -131,13 +132,12 @@ function Canvas() {
      * @param keydown true if keydown, false if keyup
      */
     const handleKeyDown = (e: KeyboardEvent) => {
-        console.log("Keydown", e.key, document.activeElement, canvas.current)
-        if (!document.activeElement?.matches("input, textarea, select, [contenteditable]")) {
+        if (!document.activeElement?.matches("input, textarea, select, [contenteditable]") && !e.ctrlKey && !e.metaKey) {
             switch (e.key) {
-                case KeyActions.lockY:
+                case ReactKeyActions.lockY:
                     setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, "lockY");
                     break;
-                case KeyActions.lockX:
+                case ReactKeyActions.lockX:
                     setUiSettings({ ...uiSettings, lockX: !uiSettings.lockX }, "lockX");
                     break;
             }

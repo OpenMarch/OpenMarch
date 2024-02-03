@@ -51,7 +51,6 @@ function StateInitializer() {
 
     useEffect(() => {
         const handler = (args: { tableName: string, marcher_id: number, page_id: number }) => {
-            console.log("Undoing " + args.tableName + " with args: " + JSON.stringify(args));
             switch (args.tableName) {
                 case Constants.MarcherTableName:
                     fetchMarchers();

@@ -112,7 +112,7 @@ const template = [
         submenu: [
           {
             label: 'Nearest whole step',
-            accelerator: 'Shift+1',
+            accelerator: 'CommandOrControl+1',
             click(item: any, focusedWindow: any) {
               // if (focusedWindow) focusedWindow.webContents.undo();
               const store = new Store();
@@ -130,7 +130,7 @@ const template = [
           },
           {
             label: 'Nearest half step',
-            accelerator: 'Shift+2',
+            accelerator: 'CommandOrControl+2',
             click(item: any, focusedWindow: any) {
               // if (focusedWindow) focusedWindow.webContents.undo();
               const store = new Store();
@@ -148,7 +148,7 @@ const template = [
           },
           {
             label: 'Nearest quarter step',
-            accelerator: 'Shift+3',
+            accelerator: 'CommandOrControl+3',
             click(item: any, focusedWindow: any) {
               // if (focusedWindow) focusedWindow.webContents.undo();
               const store = new Store();
@@ -166,7 +166,7 @@ const template = [
           },
           {
             label: 'Nearest tenth step',
-            accelerator: 'Shift+4',
+            accelerator: 'CommandOrControl+4',
             click(item: any, focusedWindow: any) {
               // if (focusedWindow) focusedWindow.webContents.undo();
               const store = new Store();

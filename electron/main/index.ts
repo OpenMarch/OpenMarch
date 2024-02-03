@@ -135,6 +135,13 @@ function initGetters() {
     console.log('lockY: ' + lockY);
     store.set('lockY', lockY as boolean);
   });
+
+  // Snap to grid
+  ipcMain.on('send:snap', async (_, marcherPages: { marcherId: number, pageId: number }[], roundFactor: number, lockX: boolean, lockY: boolean) => {
+    DatabaseServices.roundCoordinates(marcherPages, roundFactor, !lockX, !lockY).then(() => {
+      triggerFetch('marcher_page');
+    });
+  });
 }
 
 app.on('window-all-closed', () => {

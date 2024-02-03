@@ -113,6 +113,7 @@ const APP_API = {
   sendSelectedMarchers: (selectedMarchersId: number[]) => ipcRenderer.send('send:selectedMarchers', (selectedMarchersId)),
   sendLockX: (lockX: boolean) => ipcRenderer.send('send:lockX', (lockX)),
   sendLockY: (lockY: boolean) => ipcRenderer.send('send:lockY', (lockY)),
+  snapToGrid: (marcherPages: { marcherId: number, pageId: number }[], roundFactor: number, lockX: boolean, lockY: boolean) => ipcRenderer.send('send:snap', marcherPages, roundFactor, lockX, lockY),
 
   // History
   /** Activates on undo or redo. */
