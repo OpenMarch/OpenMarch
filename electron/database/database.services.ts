@@ -1,11 +1,11 @@
 import { ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
-import { Constants } from '../../src/Constants';
-import * as Interfaces from '../../src/Interfaces';
+import { Constants } from '../../src/global/Constants';
+import * as Interfaces from '../../src/global/Interfaces';
 import * as fs from 'fs';
 import * as History from './database.history';
-import { FieldProperties } from '../../src/Interfaces';
+import { FieldProperties } from '../../src/global/Interfaces';
 
 interface DatabaseResponse {
     success: boolean;

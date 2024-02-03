@@ -1,4 +1,7 @@
-
+/**
+ * I forgot why I created this file, but I think it was to have a single source of truth for colors.
+ * Do we use this?
+ */
 
 export const BootstrapColors = {
     bsBlue: 'var(--bs-blue)',

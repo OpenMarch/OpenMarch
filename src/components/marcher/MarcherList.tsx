@@ -1,12 +1,12 @@
-import { useMarcherStore } from "../../stores/Store";
-import { sections } from "../../Constants";
+import { useMarcherStore } from "../../global/Store";
+import { sections } from "../../global/Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
 import { deleteMarcher, updateMarchers } from "../../api/api";
-import { ListFormProps, UpdateMarcher } from "../../Interfaces";
+import { ListFormProps, UpdateMarcher } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
-import { Marcher } from "../../Interfaces";
+import { Marcher } from "../../global/Interfaces";
 
 function MarcherList({
     isEditingProp = undefined,

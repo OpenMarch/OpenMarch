@@ -1,10 +1,10 @@
 import React, { MouseEventHandler, useCallback } from "react";
 import { ButtonGroup, Button } from "react-bootstrap";
 import { FaFastBackward, FaBackward, FaPause, FaPlay, FaForward, FaFastForward } from "react-icons/fa";
-import { useSelectedPage } from "../context/SelectedPageContext";
-import { usePageStore } from "../stores/Store";
-import { useIsPlaying } from "../context/IsPlayingContext";
-import { topBarComponentProps } from "@/Interfaces";
+import { useSelectedPage } from "../../context/SelectedPageContext";
+import { usePageStore } from "../../global/Store";
+import { useIsPlaying } from "../../context/IsPlayingContext";
+import { topBarComponentProps } from "@/global/Interfaces";
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;

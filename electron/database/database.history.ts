@@ -1,5 +1,5 @@
-import { Constants } from '../../src/Constants';
-import * as Interfaces from '../../src/Interfaces';
+import { Constants } from '../../src/global/Constants';
+import * as Interfaces from '../../src/global/Interfaces';
 import Database from 'better-sqlite3';
 import { connect } from './database.services';
 

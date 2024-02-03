@@ -1,7 +1,7 @@
 import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
 import { useCallback, useEffect, useState } from "react";
-import { usePageStore } from "../../stores/Store";
-import { NewPage, Page } from "../../Interfaces";
+import { usePageStore } from "../../global/Store";
+import { NewPage, Page } from "../../global/Interfaces";
 import { createPage } from "../../api/api";
 
 interface NewPageFormProps {

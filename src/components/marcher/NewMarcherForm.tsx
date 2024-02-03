@@ -1,8 +1,8 @@
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
-import { sections } from "../../Constants";
+import { sections } from "../../global/Constants";
 import { useCallback, useEffect, useState } from "react";
-import { useMarcherStore } from "../../stores/Store";
-import { Marcher, NewMarcher } from "../../Interfaces";
+import { useMarcherStore } from "../../global/Store";
+import { Marcher, NewMarcher } from "../../global/Interfaces";
 import { createMarcher } from "../../api/api";
 
 interface NewMarcherFormProps {

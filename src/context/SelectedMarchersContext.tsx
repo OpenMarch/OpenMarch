@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { Marcher } from '../Interfaces';
-import { useMarcherStore } from '@/stores/Store';
+import { Marcher } from '../global/Interfaces';
+import { useMarcherStore } from '@/global/Store';
 import { getMarchers } from '@/api/api';
 
 // Define the type for the context value

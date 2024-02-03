@@ -1,4 +1,4 @@
-import { Marcher, NewMarcher, NewPage, Page, UpdateMarcher, UpdateMarcherPage, UpdatePage } from "@/Interfaces"
+import { Marcher, NewMarcher, NewPage, Page, UpdateMarcher, UpdateMarcherPage, UpdatePage } from "@/global/Interfaces"
 import { contextBridge, ipcRenderer } from "electron"
 import context from "react-bootstrap/esm/AccordionContext"
 import { lstat } from 'node:fs/promises'

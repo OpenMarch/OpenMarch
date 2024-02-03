@@ -1,14 +1,14 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
-import { linearEasing } from "../utils";
-import { useMarcherStore, usePageStore, useMarcherPageStore, useUiSettingsStore } from "../stores/Store";
+import { linearEasing } from "../global/utils";
+import { useMarcherStore, usePageStore, useMarcherPageStore, useUiSettingsStore } from "../global/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
-import { Constants, idForHtmlToId, KeyActions } from "../Constants";
+import { Constants, idForHtmlToId, KeyActions } from "../global/Constants";
 import { getFieldProperties, updateMarcherPage, updateMarcherPages } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
-import { CanvasMarcher, FieldProperties, UpdateMarcherPage } from "../Interfaces";
+import { CanvasMarcher, FieldProperties, UpdateMarcherPage } from "../global/Interfaces";
 
 interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
@@ -131,13 +131,16 @@ function Canvas() {
      * @param keydown true if keydown, false if keyup
      */
     const handleKeyDown = (e: KeyboardEvent) => {
-        switch (e.key) {
-            case KeyActions.lockY:
-                setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, "lockY");
-                break;
-            case KeyActions.lockX:
-                setUiSettings({ ...uiSettings, lockX: !uiSettings.lockX }, "lockX");
-                break;
+        console.log("Keydown", e.key, document.activeElement, canvas.current)
+        if (!document.activeElement?.matches("input, textarea, select, [contenteditable]")) {
+            switch (e.key) {
+                case KeyActions.lockY:
+                    setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, "lockY");
+                    break;
+                case KeyActions.lockX:
+                    setUiSettings({ ...uiSettings, lockX: !uiSettings.lockX }, "lockX");
+                    break;
+            }
         }
     };
 

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HASHES, YARD_LINES } from "../../Constants";
+import { HASHES, YARD_LINES } from "../../global/Constants";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
-import { ReadableCoords, FieldProperties } from "../../Interfaces";
+import { ReadableCoords, FieldProperties } from "../../global/Interfaces";
 import { canvasCoordsToCollegeRCords, getTerseString } from "../../utilities/CoordsUtils";
-import { useMarcherPageStore } from "../../stores/Store";
+import { useMarcherPageStore } from "../../global/Store";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { getFieldProperties } from "@/api/api";
 

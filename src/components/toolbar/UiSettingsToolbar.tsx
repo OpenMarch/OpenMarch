@@ -1,9 +1,9 @@
-import { useUiSettingsStore } from "@/stores/Store";
+import { useUiSettingsStore } from "@/global/Store";
 import { useCallback } from "react";
 import { Button, ButtonGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
 import { TbAxisX, TbAxisY } from "react-icons/tb";
-import * as Interfaces from "../Interfaces";
-import { KeyActions } from "../Constants";
+import * as Interfaces from "../../global/Interfaces";
+import { KeyActions } from "../../global/Constants";
 
 export default function UiSettingsToolbar({ className }: Interfaces.topBarComponentProps) {
     const { uiSettings, setUiSettings } = useUiSettingsStore();

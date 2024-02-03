@@ -1,7 +1,7 @@
 import { Button, ButtonGroup } from "react-bootstrap";
 import { FaFile, FaFileExport, FaFolderOpen, FaRedo, FaSave, FaUndo } from "react-icons/fa";
-import * as api from "../api/api";
-import { topBarComponentProps } from "@/Interfaces";
+import * as api from "../../api/api";
+import { topBarComponentProps } from "@/global/Interfaces";
 
 function FileControls({ className }: topBarComponentProps) {
     return (

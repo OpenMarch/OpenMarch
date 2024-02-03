@@ -1,11 +1,11 @@
 import { Col, Row } from "react-bootstrap";
-import ModalLauncher from "../ModalLauncher";
+import ModalLauncher from "../toolbar/ModalLauncher";
 import { useEffect, useState } from "react";
 import FormButtons from "../FormButtons";
 import PageList from "./PageList";
 import NewPageForm from "./NewPageForm";
-import { topBarComponentProps } from "@/Interfaces";
-import { usePageStore } from "@/stores/Store";
+import { topBarComponentProps } from "@/global/Interfaces";
+import { usePageStore } from "@/global/Store";
 
 export default function MarcherListModal({ className }: topBarComponentProps) {
     const [listIsEditing, setListIsEditing] = useState(false);

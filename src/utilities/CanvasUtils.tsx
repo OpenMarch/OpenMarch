@@ -1,8 +1,8 @@
 
 import { fabric } from "fabric";
-import { CanvasMarcher } from "../Interfaces";
-import { Constants } from "../Constants";
-import { FieldProperties } from "../Interfaces";
+import { CanvasMarcher } from "../global/Interfaces";
+import { Constants } from "../global/Constants";
+import { FieldProperties } from "../global/Interfaces";
 
 /* -------------------------- Canvas Functions -------------------------- */
 /**

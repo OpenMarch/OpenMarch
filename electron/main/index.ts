@@ -8,7 +8,7 @@ import * as DatabaseServices from '../database/database.services'
 import { applicationMenu } from './application-menu';
 import { on } from 'events';
 import { create } from 'domain';
-import { UiSettings } from '@/Interfaces';
+import { UiSettings } from '@/global/Interfaces';
 
 // The built directory structure
 //

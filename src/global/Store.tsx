@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import * as api from "../api/api";
-import * as Interfaces from "../Interfaces";
+import * as Interfaces from "./Interfaces";
 
 /******************** Marchers ********************/
 interface MarcherStoreState {

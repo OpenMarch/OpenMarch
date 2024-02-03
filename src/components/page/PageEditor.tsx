@@ -1,5 +1,5 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { usePageStore } from "../../stores/Store";
+import { usePageStore } from "../../global/Store";
 import { updatePages } from "../../api/api";
 import { useEffect } from "react";
 

@@ -1,5 +1,5 @@
-import MarcherEditor from "./marcher/MarcherEditor";
-import PageEditor from "./page/PageEditor";
+import MarcherEditor from "../marcher/MarcherEditor";
+import PageEditor from "../page/PageEditor";
 
 function Sidebar() {
     return (

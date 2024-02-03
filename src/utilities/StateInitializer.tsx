@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
-import { useMarcherStore, useMarcherPageStore, usePageStore } from "../stores/Store";
+import { useMarcherStore, useMarcherPageStore, usePageStore } from "../global/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
-import { Constants } from "@/Constants";
+import { Constants } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { getFieldProperties } from "@/api/api";
 import { get } from "http";

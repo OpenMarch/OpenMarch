@@ -1,7 +1,6 @@
-import './App.css';
 import Canvas from './components/Canvas';
-import Topbar from './components/Topbar';
-import Sidebar from './components/Sidebar';
+import Topbar from './components/toolbar/Topbar';
+import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarchersProvider } from './context/SelectedMarchersContext';
 import { IsPlayingProvider } from './context/IsPlayingContext';
