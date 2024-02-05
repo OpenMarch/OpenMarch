@@ -7,6 +7,7 @@ import { IsPlayingProvider } from './context/IsPlayingContext';
 import StateInitializer from './utilities/StateInitializer';
 import LaunchPage from './components/LaunchPage';
 import { useEffect, useState } from 'react';
+import { FieldPropertiesProvider } from './context/fieldPropertiesContext';
 
 function App() {
   const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -22,19 +23,21 @@ function App() {
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
         <SelectedPageProvider>
           <SelectedMarchersProvider>
-            <IsPlayingProvider>
-              <StateInitializer />
-              <div className="app-container">
-                {/* <div className="toolbar-container"> */}
-                <Topbar />
-                <div className="secondary-container">
-                  <Sidebar />
-                  <Canvas />
-                  {/* <PageList /> */}
+            <FieldPropertiesProvider>
+              <IsPlayingProvider>
+                <StateInitializer />
+                <div className="app-container">
+                  {/* <div className="toolbar-container"> */}
+                  <Topbar />
+                  <div className="secondary-container">
+                    <Sidebar />
+                    <Canvas />
+                    {/* <PageList /> */}
+                  </div>
                 </div>
-              </div>
-              {/* </div> */}
-            </IsPlayingProvider>
+                {/* </div> */}
+              </IsPlayingProvider>
+            </FieldPropertiesProvider>
           </SelectedMarchersProvider>
         </SelectedPageProvider >
       }

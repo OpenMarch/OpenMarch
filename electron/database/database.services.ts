@@ -122,6 +122,7 @@ function createPageTable(db: Database.Database) {
                 "name"	TEXT NOT NULL UNIQUE,
                 "notes"	TEXT,
                 "order"	INTEGER NOT NULL UNIQUE,
+                "measure"	TEXT,
                 "tempo"	REAL NOT NULL,
                 "time_signature"	TEXT,
                 "counts"	INTEGER NOT NULL,

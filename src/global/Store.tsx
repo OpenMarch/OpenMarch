@@ -102,4 +102,3 @@ export const useUiSettingsStore = create<UiSettingsStoreState & UiSettingsStoreA
         set({ uiSettings: uiSettings });
     }
 }));
-

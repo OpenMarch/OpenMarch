@@ -29,7 +29,7 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
                 pageId: selectedPage.id,
             });
         }
-        window.electron.snapToGrid(marcherPages, 1, uiSettings.lockX, uiSettings.lockY);
+        window.electron.sendSnapToGrid(marcherPages, 1, uiSettings.lockX, uiSettings.lockY);
     }, [selectedMarchers, selectedPage, uiSettings.lockX, uiSettings.lockY]);
 
     const handleKeyDown = (e: KeyboardEvent) => {

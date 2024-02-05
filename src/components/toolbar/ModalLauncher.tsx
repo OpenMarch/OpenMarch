@@ -20,12 +20,14 @@ interface ModalLauncherProps {
  * @param header: string - The header of the modal
  * @param bottomButton: React.ReactNode - A button to be rendered at the bottom of the modal
  * @param style: React.CSSProperties - The style of the modal
- * @param className: string - The class name of the modal
+ * @param modalClassName: string - The class name of the modal
+ * @param buttonClassName: string - The class name of the button
+ * @param setModelIsOpenProp: (isOpen: boolean) => void - A function to set the modal's open state
  * @returns A button that launches a modal with the given components and header
  */
 const ModalLauncher: React.FC<ModalLauncherProps> =
     ({ components,
-        launchButton = "Open Modal",
+        launchButton,
         header = "Modal",
         bottomButton = null,
         style = {},
@@ -48,7 +50,7 @@ const ModalLauncher: React.FC<ModalLauncherProps> =
 
         return (
             <div>
-                <Button onClick={openModal} className={buttonClassName}>{launchButton}</Button>
+                {launchButton && <Button onClick={openModal} className={buttonClassName}>{launchButton}</Button>}
                 <Modal
                     show={modalIsOpen} onHide={closeModal} style={style} className={modalClassName}
                 >

@@ -168,8 +168,9 @@ export interface FieldProperties {
     originY: number,
     pixelsPerStep: number;
     /**
-     * The accuracy to round the steps to. Highest accuracy is .1.
-     * Note: the canvas is actually displaying the dots to the nearest (0.1) tenth.
+     * The accuracy to round the coordinates to. Highest accuracy is (0.1).
+     *
+     * Note: This is the round factor of the pixel values, not steps. 14.5 pixels / pixelsPerStep.
      * (4 -> nearest .25), (2 -> nearest .5), (10 -> nearest .1)
      */
     roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1

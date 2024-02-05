@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HASHES, YARD_LINES } from "../../global/Constants";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
-import { ReadableCoords, FieldProperties } from "../../global/Interfaces";
+import { ReadableCoords } from "../../global/Interfaces";
 import { canvasCoordsToCollegeRCords, getTerseString } from "../../utilities/CoordsUtils";
 import { useMarcherPageStore } from "../../global/Store";
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { getFieldProperties } from "@/api/api";
+import { useFieldProperties } from "@/context/fieldPropertiesContext";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
     const [rCoords, setRCoords] = useState<ReadableCoords>();
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
+    const { fieldProperties } = useFieldProperties()!;
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
@@ -22,14 +23,6 @@ function MarcherEditor() {
     const yDescriptionRef = useRef<HTMLSelectElement>(null);
     const hashRef = useRef<HTMLSelectElement>(null);
     const detailsFormRef = useRef<HTMLFormElement>(null);
-
-    const fieldProperties = useRef<FieldProperties>();
-
-    useEffect(() => {
-        getFieldProperties().then((fieldPropertiesResult) => {
-            fieldProperties.current = fieldPropertiesResult;
-        });
-    }, []);
 
     const handleCoordsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -46,8 +39,8 @@ function MarcherEditor() {
         const marcherPage = marcherPages.find(marcherPage => marcherPage.marcher_id === selectedMarchers[0]?.id &&
             marcherPage.page_id === selectedPage?.id);
         if (marcherPage) {
-            if (!fieldProperties.current) return;
-            const newRcoords = canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y, fieldProperties.current);
+            if (!fieldProperties) return;
+            const newRcoords = canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y, fieldProperties);
             setRCoords(newRcoords);
         }
     }, [selectedMarchers, marcherPages, selectedPage]);
@@ -153,8 +146,6 @@ function MarcherEditor() {
                             <label htmlFor="drill-number-input">Drill Number</label>
                             <input type="text" value={selectedMarchers[0].drill_number} disabled={true} id="drill-number-input" />
                         </div>
-                        {/* <label htmlFor="counts-input">Counts</label>
-                <input type="number" value={selectedMarchers[0].counts} onChange={undefined} id="counts-input" /> */}
                         {/* This is here so the form submits when enter is pressed */}
                         <button type="submit" style={{ display: 'none' }}>
                             Submit

@@ -49,6 +49,7 @@ function StateInitializer() {
         return pages.find(page => page.id === id) || null;
     }, [pages]);
 
+    // Listen for history actions (undo/redo) from the main process
     useEffect(() => {
         const handler = (args: { tableName: string, marcher_id: number, page_id: number }) => {
             switch (args.tableName) {
@@ -86,6 +87,7 @@ function StateInitializer() {
         };
     }, [getMarcher, getPage, fetchMarchers, fetchMarcherPages, fetchPages]);
 
+    // Listen for fetch actions from the main process
     useEffect(() => {
         const handler = (type: 'marcher' | 'page' | 'marcher_page') => {
             switch (type) {

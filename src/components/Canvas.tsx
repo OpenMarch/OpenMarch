@@ -10,6 +10,8 @@ import { ReactKeyActions } from "../global/KeyboardShortcuts";
 import { getFieldProperties, updateMarcherPage, updateMarcherPages } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
 import { CanvasMarcher, FieldProperties, UpdateMarcherPage } from "../global/Interfaces";
+import MarcherCoordinateSheet from "@/components/exporting/MarcherCoordinateSheet";
+import { useFieldProperties } from "@/context/fieldPropertiesContext";
 
 interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;
@@ -21,12 +23,12 @@ function Canvas() {
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
+    const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvas = useRef<fabric.Canvas | any>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const fieldProperties = useRef<FieldProperties>();
 
     /* -------------------------- Listener Functions -------------------------- */
     const handleObjectModified = useCallback((e: any) => {
@@ -348,12 +350,6 @@ function Canvas() {
     }, [selectedMarchers]);
 
     /* -------------------------- useEffects -------------------------- */
-    useEffect(() => {
-        getFieldProperties().then((fieldPropertiesResult) => {
-            fieldProperties.current = fieldPropertiesResult;
-        });
-    }, []);
-
     // Set Loading
     useEffect(() => {
         setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
@@ -362,7 +358,7 @@ function Canvas() {
     /* Initialize the canvas.current */
     // Update the objectModified listener when the selected page changes
     useEffect(() => {
-        if (!canvas.current && selectedPage && canvasRef.current && fieldProperties.current) {
+        if (!canvas.current && selectedPage && canvasRef.current && fieldProperties) {
             canvas.current = new fabric.Canvas(canvasRef.current, {});
 
             // Set canvas.current size
@@ -377,7 +373,7 @@ function Canvas() {
             canvas.current.selectionColor = "white";
             canvas.current.selectionLineWidth = 8;
             // set initial canvas.current size
-            const staticGrid = CanvasUtils.buildField(fieldProperties.current!);
+            const staticGrid = CanvasUtils.buildField(fieldProperties);
             canvas.current.add(staticGrid);
 
             // Set canvas selection color

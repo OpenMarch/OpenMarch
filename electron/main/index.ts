@@ -9,6 +9,7 @@ import { applicationMenu } from './application-menu';
 import { on } from 'events';
 import { create } from 'domain';
 import { UiSettings } from '@/global/Interfaces';
+import { generatePDF } from './export-coordinates';
 
 // The built directory structure
 //
@@ -142,6 +143,9 @@ function initGetters() {
       triggerFetch('marcher_page');
     });
   });
+
+  // Export Individual Coordinate Sheets
+  ipcMain.on('send:exportIndividual', async (_, coordinateSheets: string[]) => await generatePDF(coordinateSheets));
 }
 
 app.on('window-all-closed', () => {
@@ -184,6 +188,7 @@ ipcMain.handle('open-win', (_, arg) => {
   }
 })
 
+/************************************** FILE SYSTEM INTERACTIONS **************************************/
 /**
  * Creates a new database file path to connect to.
  *
