@@ -11,6 +11,7 @@ function ExportModalContents() {
     const [isTerse, setIsTerse] = useState(false);
     const [includeMeasures, setIncludeMeasures] = useState(true);
     const [useXY, setUseXY] = useState(false);
+    const [roundingDenominator, setRoundingDenominator] = useState(4);
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { marcherPages } = useMarcherPageStore()!;
@@ -28,15 +29,15 @@ function ExportModalContents() {
             coordinateSheets.push(ReactDOMServer.renderToString
                 (<StaticMarcherCoordinateSheet marcher={marcher} pages={pages} marcherPages={marcherPages}
                     includeMeasures={includeMeasures} terse={isTerse} useXY={useXY} fieldProperties={fieldProperties}
+                    roundingDenominator={roundingDenominator}
                 />)
             );
-            console.log("coordinateSheets", coordinateSheets[0]);
         });
         setIsLoading(true);
         window.electron.sendExportIndividualCoordinateSheets(coordinateSheets).then(
             () => setIsLoading(false)
         );
-    }, [marchers, isTerse, includeMeasures, useXY, fieldProperties]);
+    }, [marchers, pages, marcherPages, isTerse, includeMeasures, useXY, fieldProperties]);
 
     return (
         <div>
@@ -45,16 +46,28 @@ function ExportModalContents() {
                 <Col>
                     <Form>
                         <Form.Group>
-                            <Form.Check type="checkbox" label="Include measures" checked={includeMeasures}
-                                onChange={(e) => setIncludeMeasures(e.target.checked)}
-                            />
-                            <Form.Check type="checkbox" label="Abbreviate coordinate descriptions" checked={isTerse}
-                                onChange={(e) => setIsTerse(e.target.checked)}
-                            />
-                            <Form.Check type="checkbox" label="Use X/Y headers" checked={useXY}
-                                onChange={(e) => setUseXY(e.target.checked)} />
-                            {/* <Form.Check type="checkbox" label="Print 4 sheets per page"
-                                onChange={(e) => fourSheets.current = e.target.checked} /> */}
+                            <Row>
+                                <Col>
+                                    <Form.Check type="checkbox" label="Include measures" checked={includeMeasures}
+                                        onChange={(e) => setIncludeMeasures(e.target.checked)}
+                                    />
+                                    <Form.Check type="checkbox" label="Abbreviate coordinate descriptions" checked={isTerse}
+                                        onChange={(e) => setIsTerse(e.target.checked)}
+                                    />
+                                    <Form.Check type="checkbox" label="Use X/Y headers" checked={useXY}
+                                        onChange={(e) => setUseXY(e.target.checked)} />
+                                </Col>
+                                <Col>
+                                    <Form.Label>Rounding denominator:</Form.Label>
+                                    <Col sm={3}>
+                                        <Form.Control type="number" defaultValue={roundingDenominator} step={1} min={1}
+                                            onChange={(e) => setRoundingDenominator(parseInt(e.target.value) || 4)} />
+                                    </Col>
+                                    <Form.Text className="text-muted">
+                                        {'4 -> 1/4 = nearest quarter step'}<br />{'10 -> 1/10 = nearest tenth step'}
+                                    </Form.Text>
+                                </Col>
+                            </Row>
                         </Form.Group>
                     </Form>
                 </Col>
@@ -65,6 +78,7 @@ function ExportModalContents() {
                 <Col className="mx-2" style={{ border: "2px solid #aaa" }}>
                     <MarcherCoordinateSheet example={true} terse={isTerse}
                         includeMeasures={includeMeasures} useXY={useXY}
+                        roundingDenominator={roundingDenominator || 4}
                     />
                 </Col>
             </Row>
