@@ -1,6 +1,4 @@
-// A collection of interfaces and types used throughout the application
-import { Constants } from "./Constants";
-
+/** A collection of interfaces and types used throughout the application */
 /*********************** Page ***********************/
 /**
  * Defines all of the data associated with a page in the database.
@@ -217,4 +215,11 @@ export interface ListFormProps {
 
 export interface topBarComponentProps {
     className?: string;
+}
+
+export interface Section {
+    family: string;
+    name: string;
+    scoreOrder: number;
+    prefix: string;
 }

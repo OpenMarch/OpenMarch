@@ -5,7 +5,6 @@ import MarcherListModal from '../marcher/MarcherListModal';
 import PageListModal from '../page/PageListModal';
 import UiSettingsToolbar from './UiSettingsToolbar';
 import ExportCoordinatesModal from '../exporting/ExportCoordinatesModal';
-import { useEffect, useState } from 'react';
 
 function Topbar() {
     const componentClassName = 'mx-2';

@@ -169,6 +169,7 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
 
             // ** Add the reverse action to the opposite history table
             // remove the reverse_action field from the historyQuery to avoid circular references
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { reverse_action, ...historyQueryWithoutReverse } = historyQuery;
             reverseActions.push({
                 ...(historyQuery.reverse_action),
@@ -195,13 +196,17 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
                 marcher_id, page_id
             }
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error);
-        output = { success: false, errorMessage: error.message };
+        let errorMessage = '';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+        output = { success: false, errorMessage: errorMessage };
     } finally {
         if (!db) dbToUse.close();
-        return output;
     }
+    return output;
 }
 
 /**
@@ -274,7 +279,7 @@ async function insertHistory(type: 'undo' | 'redo', historyEntries: HistoryEntry
         try {
             const deleteStmt = dbToUse.prepare(`DELETE FROM history_redo`);
             deleteStmt.run();
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
         }
     }
@@ -282,6 +287,7 @@ async function insertHistory(type: 'undo' | 'redo', historyEntries: HistoryEntry
     const HistoryTableName = type === 'undo' ? Constants.UndoHistoryTableName : Constants.RedoHistoryTableName;
 
     const stmt = dbToUse.prepare(`SELECT MAX("history_action_group") as groupMax FROM ${HistoryTableName}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: any = stmt.get();
     const newGroupId = result.groupMax + 1;
 
@@ -305,7 +311,7 @@ async function insertHistory(type: 'undo' | 'redo', historyEntries: HistoryEntry
                 @history_group_order
             )
         `);
-        const result = stmt.run({
+        stmt.run({
             ...historyEntries[i],
             data: JSON.stringify(historyEntries[i].data),
             reverse_action: JSON.stringify(historyEntries[i].reverse_action),

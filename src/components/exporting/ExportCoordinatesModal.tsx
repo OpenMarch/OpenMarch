@@ -26,8 +26,8 @@ function ExportModalContents() {
         const coordinateSheets: string[] = [];
         marchers.forEach((marcher) => {
             console.log("marcher", marcher);
-            coordinateSheets.push(ReactDOMServer.renderToString
-                (<StaticMarcherCoordinateSheet marcher={marcher} pages={pages} marcherPages={marcherPages}
+            coordinateSheets.push(ReactDOMServer.renderToString(
+                <StaticMarcherCoordinateSheet marcher={marcher} pages={pages} marcherPages={marcherPages}
                     includeMeasures={includeMeasures} terse={isTerse} useXY={useXY} fieldProperties={fieldProperties}
                     roundingDenominator={roundingDenominator}
                 />)

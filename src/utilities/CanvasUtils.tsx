@@ -1,7 +1,5 @@
 
 import { fabric } from "fabric";
-import { CanvasMarcher } from "../global/Interfaces";
-import { Constants } from "../global/Constants";
 import { FieldProperties } from "../global/Interfaces";
 
 /* -------------------------- Canvas Functions -------------------------- */

@@ -1,6 +1,5 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { FieldProperties } from '../global/Interfaces';
-import { usePageStore } from '@/global/Store';
 
 // Define the type for the context value
 type FieldPropertiesContextProps = {

@@ -45,6 +45,4 @@ export async function generatePDF(renderedPages: string[]) {
     }
 
     await page.close();
-
-
-};
+}

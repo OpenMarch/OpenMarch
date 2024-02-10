@@ -7,6 +7,7 @@ import { deleteMarcher, updateMarchers } from "../../api/api";
 import { ListFormProps, UpdateMarcher } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
 import { Marcher } from "../../global/Interfaces";
+import * as Interfaces from "../../global/Interfaces";
 
 function MarcherList({
     isEditingProp = undefined,
@@ -22,6 +23,7 @@ function MarcherList({
 
     // localMarchers are the marchers that are displayed in the table
     const [localMarchers, setLocalMarchers] = useState<Marcher[]>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const changesRef = useRef<{ [key: number | string]: any }>({});
     const deletionsRef = useRef<number[]>([]);
 
@@ -139,7 +141,7 @@ function MarcherList({
                                             onChange={(event) => handleChange(event, "section", marcher.id)}
                                         >
                                             <option value=""></option>
-                                            {Object.values(sections).map((section: any) => {
+                                            {Object.values(sections).map((section: Interfaces.Section) => {
                                                 return <option key={section.name}>{section.name}</option>
                                             })}
                                         </select>

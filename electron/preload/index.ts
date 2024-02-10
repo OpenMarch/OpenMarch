@@ -1,8 +1,5 @@
-import { Marcher, NewMarcher, NewPage, Page, UpdateMarcher, UpdateMarcherPage, UpdatePage } from "@/global/Interfaces"
+import { NewMarcher, NewPage, UpdateMarcher, UpdateMarcherPage, UpdatePage } from "@/global/Interfaces"
 import { contextBridge, ipcRenderer } from "electron"
-import context from "react-bootstrap/esm/AccordionContext"
-import { lstat } from 'node:fs/promises'
-
 
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {
@@ -107,20 +104,25 @@ const APP_API = {
   databaseCreate: () => ipcRenderer.invoke('database:create'),
 
   // Triggers
-  onFetch: (callback: any) => ipcRenderer.on('fetch:all', (event, type) => callback(type)),
+  onFetch: (callback:
+    (type: 'marcher' | 'page' | 'marcher_page') => void) =>
+    ipcRenderer.on('fetch:all', (event, type) => callback(type)),
   removeFetchListener: () => ipcRenderer.removeAllListeners('fetch:all'),
   sendSelectedPage: (selectedPageId: number) => ipcRenderer.send('send:selectedPage', (selectedPageId)),
   sendSelectedMarchers: (selectedMarchersId: number[]) => ipcRenderer.send('send:selectedMarchers', (selectedMarchersId)),
   sendLockX: (lockX: boolean) => ipcRenderer.send('send:lockX', (lockX)),
   sendLockY: (lockY: boolean) => ipcRenderer.send('send:lockY', (lockY)),
   sendSnapToGrid:
-    (marcherPages: { marcherId: number, pageId: number }[], roundFactor: number, lockX: boolean, lockY: boolean) => ipcRenderer.send('send:snap', marcherPages, roundFactor, lockX, lockY),
+    (marcherPages: { marcherId: number, pageId: number }[], roundFactor: number, lockX: boolean, lockY: boolean) =>
+      ipcRenderer.send('send:snap', marcherPages, roundFactor, lockX, lockY),
   sendExportIndividualCoordinateSheets:
     async (coordinateSheets: string[]) => ipcRenderer.send('send:exportIndividual', coordinateSheets),
 
   // History
   /** Activates on undo or redo. */
-  onHistoryAction: (callback: any) => ipcRenderer.on('history:action', (event, args) => callback(args)),
+  onHistoryAction: (callback:
+    (args: { tableName: string; marcher_id: number; page_id: number; }) => string) =>
+    ipcRenderer.on('history:action', (event, args) => callback(args)),
   removeHistoryActionListener: () => ipcRenderer.removeAllListeners('history:action'),
   undo: () => ipcRenderer.invoke('history:undo'),
   redo: () => ipcRenderer.invoke('history:redo'),
@@ -141,7 +143,7 @@ const APP_API = {
   deletePage: (id: number) => ipcRenderer.invoke('page:delete', id),
 
   // MarcherPage
-  getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll'),
+  getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll', args),
   getMarcherPage: (id: { marcher_id: number, page_id: number }) => ipcRenderer.invoke('marcher_page:get', id),
   updateMarcherPages: (args: UpdateMarcherPage[]) => ipcRenderer.invoke('marcher_page:update', args),
 }

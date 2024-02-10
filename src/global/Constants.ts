@@ -1,3 +1,5 @@
+import { Section } from "./Interfaces";
+
 export const Constants = {
     PageTableName: "pages",
     MarcherTableName: "marchers",
@@ -25,7 +27,7 @@ export const idForHtmlToId = (id_for_html: string) => {
 export const YARD_LINES = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0] as const;
 export const HASHES = ["front sideline", "front hash", "back hash", "back sideline"] as const;
 
-export const sections = {
+export const sections: { [key: string]: Section } = {
     Piccolo: { family: "Woodwind", name: "Piccolo", scoreOrder: 1, prefix: "P" },
     Flute: { family: "Woodwind", name: "Flute", scoreOrder: 2, prefix: "F" },
     Clarinet: { family: "Woodwind", name: "Clarinet", scoreOrder: 3, prefix: "C" },

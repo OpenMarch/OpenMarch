@@ -3,8 +3,6 @@ import { useMarcherStore, useMarcherPageStore, usePageStore } from "../global/St
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { Constants } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { getFieldProperties } from "@/api/api";
-import { get } from "http";
 
 /**
  * A component that initializes the state of the application.

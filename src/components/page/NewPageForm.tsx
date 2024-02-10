@@ -67,7 +67,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
         if (!pageNameError && pageName && counts && quantity) {
             const newAlertMessages = [...alertMessages];
             let newPageName = pageName;
-            const newPages: NewPage[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPage: NewPage = {
                     name: newPageName,

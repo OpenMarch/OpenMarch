@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain, ipcRenderer, Menu, dialog } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from 'electron'
 import Store from 'electron-store'
 import * as fs from 'fs';
 import { release } from 'node:os'
@@ -6,9 +6,6 @@ import { join } from 'node:path'
 import { update } from './update'
 import * as DatabaseServices from '../database/database.services'
 import { applicationMenu } from './application-menu';
-import { on } from 'events';
-import { create } from 'domain';
-import { UiSettings } from '@/global/Interfaces';
 import { generatePDF } from './export-coordinates';
 
 // The built directory structure

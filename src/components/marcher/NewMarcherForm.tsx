@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useMarcherStore } from "../../global/Store";
 import { Marcher, NewMarcher } from "../../global/Interfaces";
 import { createMarcher } from "../../api/api";
+import { Section } from "../../global/Interfaces";
 
 interface NewMarcherFormProps {
     hasHeader?: boolean;
@@ -81,7 +82,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
     const handleSectionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSection(defaultSection);
         const selectedSection = Object.values(sections).find(
-            (section: any) => section.name === event.target.value
+            (section: Section) => section.name === event.target.value
         );
         if (selectedSection) {
             setSection(selectedSection.name);
@@ -181,7 +182,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
                         required isInvalid={!!sectionError} value={section}
                     >
                         <option value="default">Choose Section...</option>
-                        {Object.values(sections).map((section: any) => {
+                        {Object.values(sections).map((section: Section) => {
                             return <option key={section.name}>{section.name}</option>
                         })}
                     </Form.Select>

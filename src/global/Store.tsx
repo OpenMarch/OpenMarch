@@ -86,7 +86,7 @@ export const useUiSettingsStore = create<UiSettingsStoreState & UiSettingsStoreA
     },
 
     setUiSettings: (newUiSettings, type) => {
-        let uiSettings = { ...newUiSettings };
+        const uiSettings = { ...newUiSettings };
 
         if (uiSettings.lockX && type === "lockX") {
             uiSettings.lockY = false;

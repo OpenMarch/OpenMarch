@@ -22,6 +22,7 @@ function PageList({
 
     // localPages are the Pages that are displayed in the table
     const [localPages, setLocalPages] = useState<Page[]>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const changesRef = useRef<{ [key: number | string]: any }>({});
     const deletionsRef = useRef<number[]>([]);
 

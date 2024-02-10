@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
 import { linearEasing } from "../global/utils";
@@ -7,10 +8,9 @@ import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
 import { Constants, idForHtmlToId } from "../global/Constants";
 import { ReactKeyActions } from "../global/KeyboardShortcuts";
-import { getFieldProperties, updateMarcherPage, updateMarcherPages } from "../api/api";
+import { updateMarcherPages } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
-import { CanvasMarcher, FieldProperties, UpdateMarcherPage } from "../global/Interfaces";
-import MarcherCoordinateSheet from "@/components/exporting/MarcherCoordinateSheet";
+import { CanvasMarcher, UpdateMarcherPage } from "../global/Interfaces";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 
 interface IGroupOptionsWithId extends IGroupOptions {
@@ -31,6 +31,7 @@ function Canvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     /* -------------------------- Listener Functions -------------------------- */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleObjectModified = useCallback((e: any) => {
         const activeObjects = canvas.current.getActiveObjects();
 
@@ -55,6 +56,7 @@ function Canvas() {
     /**
      * Set the selected marcher when selected element changes
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleSelect = useCallback((e: any) => {
         const newSelectedMarchers = marchers.filter((marcher) => canvas.current.getActiveObjects()
             .some((selected: any) => selected.id_for_html === marcher.id_for_html))
@@ -75,7 +77,7 @@ function Canvas() {
      * Set the canvas to dragging mode on mousedown.
      */
     const handleMouseDown = (opt: any) => {
-        var evt = opt.e;
+        const evt = opt.e;
         // opt.target checks if the mouse is on the canvas at all
         // Don't move the canvas if the mouse is on a marcher
         const isMarcherSelection = opt.target && (opt.target?.id_for_html || opt.target._objects?.some((obj: any) => obj.id_for_html));
@@ -92,8 +94,8 @@ function Canvas() {
      */
     const handleMouseMove = (opt: any) => {
         if (canvas.current.isDragging) {
-            var e = opt.e;
-            var vpt = canvas.current.viewportTransform;
+            const e = opt.e;
+            const vpt = canvas.current.viewportTransform;
             vpt[4] += e.clientX - canvas.current.lastPosX;
             vpt[5] += e.clientY - canvas.current.lastPosY;
             canvas.current.requestRenderAll();
@@ -105,6 +107,7 @@ function Canvas() {
     /**
      * Disable dragging mode on mouseup.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleMouseUp = (opt: any) => {
         // on mouse up we want to recalculate new interaction
         // for all objects, so we call setViewportTransform
@@ -117,8 +120,8 @@ function Canvas() {
      * Zoom in and out with the mouse wheel
      */
     const handleMouseWheel = (opt: any) => {
-        var delta = opt.e.deltaY;
-        var zoom = canvas.current.getZoom();
+        const delta = opt.e.deltaY;
+        let zoom = canvas.current.getZoom();
         zoom *= 0.999 ** delta;
         if (zoom > 25) zoom = 25;
         if (zoom < 0.35) zoom = 0.35;
@@ -364,6 +367,7 @@ function Canvas() {
             // Set canvas.current size
             CanvasUtils.refreshCanavsSize(canvas.current);
             // Update canvas.current size on window resize
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             window.addEventListener('resize', (evt) => {
                 CanvasUtils.refreshCanavsSize(canvas.current);
             });
@@ -482,6 +486,6 @@ function Canvas() {
             }
         </div>
     );
-};
+}
 
 export default Canvas;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
@@ -36,7 +37,7 @@ export const V1_COLLEGE_PROPERTIES: FieldProperties = {
 const CURRENT_FIELD_PROPERTIES = V1_COLLEGE_PROPERTIES;
 
 /* ============================ DATABASE ============================ */
-var DB_PATH = '';
+let DB_PATH = '';
 
 /**
  * Change the location of the database file the application and actively updates.
@@ -235,7 +236,7 @@ export function initHandlers() {
     ipcMain.handle('marcher_page:get', async (_, args) => getMarcherPage(args));
     ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPages(args));
     // Batch actions
-    ipcMain.handle('page:setAllCoordsToPreviousPage', (_, currentPageId, previousPageId) => setAllCoordsToPreviousPage(currentPageId));
+    ipcMain.handle('page:setAllCoordsToPreviousPage', (_, currentPageId, previousPageId) => setAllCoordsToPreviousPage(currentPageId, previousPageId));
 
 }
 
@@ -258,7 +259,7 @@ export async function getFieldProperties(db?: Database.Database): Promise<Interf
     const result = await stmt.get() as Interfaces.FieldProperties;
     if (!db) dbToUse.close();
     return result;
-};
+}
 
 
 /* ============================ Marcher ============================ */
@@ -341,7 +342,7 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<Dat
                 SET id_for_html = @id_for_html
                 WHERE id = @id
             `);
-            const updateResult = updateStmt.run({
+            updateStmt.run({
                 id_for_html: Constants.MarcherPrefix + "_" + id,
                 id
             });
@@ -374,8 +375,8 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<Dat
         output = { success: false, errorMessage: error.message };
     } finally {
         db.close();
-        return output;
     }
+    return output;
 }
 
 /**
@@ -397,7 +398,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
     try {
         for (const marcherUpdate of marcherUpdates) {
             // Generate the SET clause of the SQL query
-            let setClause = Object.keys(marcherUpdate)
+            const setClause = Object.keys(marcherUpdate)
                 .filter(key => !excludedProperties.includes(key))
                 .map(key => `${key} = @${key}`)
                 .join(', ');
@@ -434,8 +435,8 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
         output = { success: false, errorMessage: error.message };
     } finally {
         db.close();
-        return output;
     }
+    return output;
 }
 
 /**
@@ -469,8 +470,8 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
     }
     finally {
         db.close();
-        return output;
     }
+    return output;
 }
 
 /* ============================ Page ============================ */
@@ -574,7 +575,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
                 WHERE id = @id
             `);
             const new_id_for_html = Constants.PagePrefix + '_' + id;
-            const updateResult = updateStmt.run({
+            updateStmt.run({
                 id_for_html: new_id_for_html,
                 id
             });
@@ -616,8 +617,8 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
         output = { success: false, result: error.message };
     } finally {
         db.close();
-        return output;
     }
+    return output;
 }
 
 /**
@@ -639,7 +640,7 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]): Promise<Databa
     try {
         for (const pageUpdate of pageUpdates) {
             // Generate the SET clause of the SQL query
-            let setClause = Object.keys(pageUpdate)
+            const setClause = Object.keys(pageUpdate)
                 .filter(key => !excludedProperties.includes(key))
                 .map(key => `${key} = @${key}`)
                 .join(', ');
@@ -678,8 +679,8 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]): Promise<Databa
         output = { success: false, errorMessage: error.message };
     } finally {
         db.close();
-        return output;
     }
+    return output;
 }
 
 /**
@@ -713,8 +714,8 @@ async function deletePage(page_id: number): Promise<DatabaseResponse> {
     }
     finally {
         db.close();
-        return output;
     }
+    return output;
 }
 
 /* ============================ MarcherPage ============================ */
@@ -813,17 +814,6 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Interfac
 }
 
 /**
- * Updates a marcherPage with the given values.
- *
- * @param args UpdateMarcherPage object that contains the marcher_id and page_id of the
- *                    marcherPage to update and the values to update it with
- * @returns - {success: boolean, result: Database.result | string}
- */
-async function updateMarcherPage(args: Interfaces.UpdateMarcherPage): Promise<DatabaseResponse> {
-    return updateMarcherPages([args]);
-}
-
-/**
  * Updates a list of marcherPages with the given values.
  *
  * @param marcherPageUpdates: Array of UpdateMarcherPage objects that contain the marcher_id and page_id of the
@@ -837,7 +827,7 @@ async function updateMarcherPages(marcherPageUpdates: Interfaces.UpdateMarcherPa
     try {
         for (const marcherPageUpdate of marcherPageUpdates) {
             // Generate the SET clause of the SQL query
-            let setClause = Object.keys(marcherPageUpdate)
+            const setClause = Object.keys(marcherPageUpdate)
                 .map(key => `${key} = @${key}`)
                 .join(', ');
 
@@ -858,7 +848,7 @@ async function updateMarcherPages(marcherPageUpdates: Interfaces.UpdateMarcherPa
                 WHERE marcher_id = @marcher_id AND page_id = @page_id
             `);
 
-            const result = await stmt.run({ ...marcherPageUpdate, new_updated_at: new Date().toISOString() });
+            await stmt.run({ ...marcherPageUpdate, new_updated_at: new Date().toISOString() });
 
             const updateHistoryEntry = {
                 tableName: Constants.MarcherPageTableName,
@@ -884,8 +874,8 @@ async function updateMarcherPages(marcherPageUpdates: Interfaces.UpdateMarcherPa
         output = { success: false, errorMessage: error.message };
     } finally {
         db.close();
-        return output;
     }
+    return output;
 }
 
 /**
