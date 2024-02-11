@@ -32,7 +32,7 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
         window.electron.sendSnapToGrid(marcherPages, 1, uiSettings.lockX, uiSettings.lockY);
     }, [selectedMarchers, selectedPage, uiSettings.lockX, uiSettings.lockY]);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (!document.activeElement?.matches("input, textarea, select, [contenteditable]") && !e.ctrlKey && !e.metaKey) {
             switch (e.key) {
                 case ReactKeyActions.snapToNearestWhole:
@@ -40,7 +40,7 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
                     break;
             }
         }
-    };
+    }, [handleSnapButton]);
 
     useEffect(() => {
         window.addEventListener("keydown", handleKeyDown);

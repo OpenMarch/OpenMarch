@@ -22,13 +22,181 @@ function Canvas() {
     const { pagesAreLoading, pages } = usePageStore()!;
     const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
-    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
+    const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvas = useRef<fabric.Canvas | any>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    /* ------------------------ Marcher Functions ------------------------ */
+    /**
+        * Updates the coordinates of a CanvasMarcher object.
+        * This compensates for the fabric group offset and ensures the coordinate is where the dot itself is located.
+        * The fabric group to represent the dot is offset up and to the left a bit.
+        *
+        * @param marcher The CanvasMarcher object to update.
+        * @param x the x location of the actual dot
+        * @param y the y location of the actual dot.
+        */
+    const setCanvasMarcherCoordsFromDot = useCallback((marcher: CanvasMarcher, x: number, y: number) => {
+        /* If multiple objects are selected, offset the coordinates by the group's center
+           Active object coordinates in fabric are the relative coordinates
+           to the group's center when multiple objects are selected */
+        // Check if multople marchers are selected and if the current marcher is one of them
+        let offset = { x: 0, y: 0 };
+        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === marcher.id_for_html);
+        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
+            const groupObject = canvas.current.getActiveObject();
+            offset = {
+                x: groupObject.left + (groupObject.width / 2),
+                y: groupObject.top + (groupObject.height / 2)
+            };
+        }
+
+        if (marcher?.fabricObject) {
+            // The offset that the dot is from the fabric group coordinate.
+            const fabricGroup = marcher.fabricObject;
+            const dot = (marcher.fabricObject as fabric.Group)._objects[0] as fabric.Circle;
+            if (dot.left && dot.top && fabricGroup.width && fabricGroup.height) {
+                // Dot center - radius - offset - 1/2 fieldWidth or fieldHeight of the fabric group
+                const newCoords = {
+                    x: (x - Constants.dotRadius - dot.left - (fabricGroup.width / 2)) - offset.x,
+                    y: (y - Constants.dotRadius - dot.top - (fabricGroup.height / 2)) - offset.y
+                };
+
+                marcher.fabricObject.left = newCoords.x;
+                marcher.fabricObject.top = newCoords.y;
+                marcher.fabricObject.setCoords();
+            } else
+                console.error("Marcher dot does not have left or top properties, or fabricGroup does not have fieldHeight/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
+        } else
+            console.error("FabricObject does not exist for the marcher - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
+
+        return null;
+    }, []);
+
+    const createMarcher = useCallback((x: number, y: number, id_for_html: string, marcher_id: number, label?: string):
+        CanvasMarcher => {
+
+        const newMarcherCircle = new fabric.Circle({
+            left: x - Constants.dotRadius,
+            top: y - Constants.dotRadius,
+            fill: "red",
+            radius: Constants.dotRadius,
+        });
+
+        const marcherLabel = new fabric.Text(label || "nil", {
+            top: y - 22,
+            fontFamily: "courier",
+            fontSize: 14,
+        });
+        marcherLabel.left = x - marcherLabel!.width! / 2;
+
+        const marcherGroup = new fabric.Group([newMarcherCircle, marcherLabel], {
+            id_for_html: id_for_html,
+            hasControls: false,
+            hasBorders: true,
+            lockRotation: true,
+            hoverCursor: "pointer",
+        } as IGroupOptionsWithId);
+
+        const newMarcher = {
+            fabricObject: marcherGroup,
+            x: x,
+            y: y,
+            id_for_html: id_for_html,
+            drill_number: label || "nil",
+            marcher_id: marcher_id
+        }
+        canvasMarchers.push(newMarcher);
+        canvas.current!.add(marcherGroup);
+        return newMarcher;
+    }, [canvasMarchers]);
+
+    /* Create new marchers based on the selected page if they haven't been created yet */
+    // Moves the current marchers to the new page
+    const renderMarchers = useCallback(() => {
+        const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
+        curMarcherPages.forEach((marcherPage) => {
+            // Marcher does not exist on the Canvas, create a new one
+            if (!canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id)) {
+                const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
+                if (curMarcher)
+                    createMarcher(
+                        marcherPage.x, marcherPage.y, curMarcher.id_for_html, curMarcher.id, curMarcher.drill_number);
+                else
+                    throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
+            }
+            // Marcher does exist on the Canvas, move it to the new location if it has changed
+            else {
+                const canvasMarcher = canvasMarchers.find(
+                    (canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
+
+                if (canvasMarcher && canvasMarcher.fabricObject) {
+                    setCanvasMarcherCoordsFromDot(canvasMarcher, marcherPage.x, marcherPage.y);
+                } else
+                    throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
+            }
+        });
+        canvas.current!.renderAll();
+    }, [marcherPages, selectedPage?.id, canvasMarchers, marchers, createMarcher, setCanvasMarcherCoordsFromDot]);
+
+    const updateMarcherLabels = useCallback(() => {
+        canvasMarchers.forEach((canvasMarcher) => {
+            if (canvasMarcher.fabricObject instanceof fabric.Group) {
+                canvasMarcher.drill_number =
+                    marchers.find((marcher) => marcher.id === canvasMarcher.marcher_id)?.drill_number || "nil";
+                const textObject = canvasMarcher.fabricObject._objects[1] as fabric.Text;
+                if (textObject.text !== canvasMarcher.drill_number)
+                    textObject.set({ text: canvasMarcher.drill_number });
+            }
+        });
+        canvas.current?.renderAll();
+    }, [marchers, canvasMarchers]);
+
+    /**
+    * A function to get the coordinates of a fabric marcher's dot.
+    * The coordinate on the canvas is different than the coordinate of the actual dot.
+    *
+    * @param fabricGroup - the fabric object of the canvas marcher
+    * @returns The real coordinates of the CanvasMarcher dot. {x: number, y: number}
+    */
+    const fabricObjectToRealCoords = useCallback((fabricGroup: fabric.Group) => {
+        /* If multiple objects are selected, offset the coordinates by the group's center
+           Active object coordinates in fabric are the relative coordinates
+           to the group's center when multiple objects are selected */
+        if (!(fabricGroup as any).id_for_html) {
+            console.error("fabricGroup does not have id_for_html property - fabricObjectToRealCoords: CanvasUtils.tsx");
+            return null;
+        }
+
+        const idForHtml = (fabricGroup as any).id_for_html;
+
+        // Check if multiple marchers are selected and if the current marcher is one of them
+        let offset = { x: 0, y: 0 };
+        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === idForHtml);
+        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
+            // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
+            const groupObject = canvas.current.getActiveObject();
+            offset = {
+                x: groupObject.left + (groupObject.width / 2),
+                y: groupObject.top + (groupObject.height / 2)
+            };
+        }
+
+        const dot = fabricGroup?._objects[0] as fabric.Circle;
+        if (fabricGroup.left && fabricGroup.top && dot.left && dot.top) {
+            return {
+                x: offset.x + fabricGroup.getCenterPoint().x + dot.left + Constants.dotRadius,
+                y: offset.y + fabricGroup.getCenterPoint().y + dot.top + Constants.dotRadius
+            };
+        }
+        console.error("Marcher dot or fabricGroup does not have left or top properties - fabricObjectToRealCoords: CanvasUtils.tsx");
+
+        return null;
+    }, []);
 
     /* -------------------------- Listener Functions -------------------------- */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -51,7 +219,7 @@ function Canvas() {
             }
         });
         updateMarcherPages(changes).then(() => { fetchMarcherPages() });
-    }, [selectedPage, fetchMarcherPages, selectedMarchers]);
+    }, [fabricObjectToRealCoords, selectedPage, fetchMarcherPages]);
 
     /**
      * Set the selected marcher when selected element changes
@@ -136,7 +304,7 @@ function Canvas() {
      * @param e
      * @param keydown true if keydown, false if keyup
      */
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (!document.activeElement?.matches("input, textarea, select, [contenteditable]") && !e.ctrlKey && !e.metaKey) {
             switch (e.key) {
                 case ReactKeyActions.lockY:
@@ -147,7 +315,7 @@ function Canvas() {
                     break;
             }
         }
-    };
+    }, [uiSettings, setUiSettings]);
 
     const initiateListeners = useCallback(() => {
         if (canvas.current) {
@@ -163,11 +331,10 @@ function Canvas() {
 
             window.addEventListener('keydown', handleKeyDown);
         }
-    }, [handleObjectModified, handleSelect, handleDeselect, handleMouseDown, handleMouseMove, handleMouseUp,
-        handleMouseWheel]);
+    }, [handleObjectModified, handleSelect, handleDeselect, handleKeyDown]);
 
 
-    const cleanupListeners = () => {
+    const cleanupListeners = useCallback(() => {
         if (canvas.current) {
             canvas.current.off('object:modified');
             canvas.current.off('selection:updated');
@@ -181,176 +348,7 @@ function Canvas() {
 
             window.removeEventListener('keydown', handleKeyDown);
         }
-    };
-
-    /* ------------------------ Marcher Functions ------------------------ */
-    const createMarcher = useCallback((x: number, y: number, id_for_html: string, marcher_id: number, label?: string):
-        CanvasMarcher => {
-
-        const newMarcherCircle = new fabric.Circle({
-            left: x - Constants.dotRadius,
-            top: y - Constants.dotRadius,
-            fill: "red",
-            radius: Constants.dotRadius,
-        });
-
-        const marcherLabel = new fabric.Text(label || "nil", {
-            top: y - 22,
-            fontFamily: "courier",
-            fontSize: 14,
-        });
-        marcherLabel.left = x - marcherLabel!.width! / 2;
-
-        const marcherGroup = new fabric.Group([newMarcherCircle, marcherLabel], {
-            id_for_html: id_for_html,
-            hasControls: false,
-            hasBorders: true,
-            lockRotation: true,
-            hoverCursor: "pointer",
-        } as IGroupOptionsWithId);
-
-        const newMarcher = {
-            fabricObject: marcherGroup,
-            x: x,
-            y: y,
-            id_for_html: id_for_html,
-            drill_number: label || "nil",
-            marcher_id: marcher_id
-        }
-        canvasMarchers.push(newMarcher);
-        canvas.current!.add(marcherGroup);
-        return newMarcher;
-    }, [canvasMarchers]);
-
-    /* Create new marchers based on the selected page if they haven't been created yet */
-    // Moves the current marchers to the new page
-    const renderMarchers = useCallback(() => {
-        const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage?.id);
-        curMarcherPages.forEach((marcherPage) => {
-            // Marcher does not exist on the Canvas, create a new one
-            if (!canvasMarchers.find((canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id)) {
-                const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
-                if (curMarcher)
-                    createMarcher(
-                        marcherPage.x, marcherPage.y, curMarcher.id_for_html, curMarcher.id, curMarcher.drill_number);
-                else
-                    throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
-            }
-            // Marcher does exist on the Canvas, move it to the new location if it has changed
-            else {
-                const canvasMarcher = canvasMarchers.find(
-                    (canvasMarcher) => canvasMarcher.marcher_id === marcherPage.marcher_id);
-
-                if (canvasMarcher && canvasMarcher.fabricObject) {
-                    setCanvasMarcherCoordsFromDot(canvasMarcher, marcherPage.x, marcherPage.y);
-                } else
-                    throw new Error("Marcher or fabric object not found - renderMarchers: Canvas.tsx");
-            }
-        });
-        canvas.current!.renderAll();
-    }, [marchers, canvasMarchers, marcherPages, selectedPage, createMarcher]);
-
-    const updateMarcherLabels = useCallback(() => {
-        canvasMarchers.forEach((canvasMarcher) => {
-            if (canvasMarcher.fabricObject instanceof fabric.Group) {
-                canvasMarcher.drill_number =
-                    marchers.find((marcher) => marcher.id === canvasMarcher.marcher_id)?.drill_number || "nil";
-                const textObject = canvasMarcher.fabricObject._objects[1] as fabric.Text;
-                if (textObject.text !== canvasMarcher.drill_number)
-                    textObject.set({ text: canvasMarcher.drill_number });
-            }
-        });
-        canvas.current?.renderAll();
-    }, [marchers, canvasMarchers]);
-
-
-    /**
-     * Updates the coordinates of a CanvasMarcher object.
-     * This compensates for the fabric group offset and ensures the coordinate is where the dot itself is located.
-     * The fabric group to represent the dot is offset up and to the left a bit.
-     *
-     * @param marcher The CanvasMarcher object to update.
-     * @param x the x location of the actual dot
-     * @param y the y location of the actual dot.
-     */
-    const setCanvasMarcherCoordsFromDot = useCallback((marcher: CanvasMarcher, x: number, y: number) => {
-        /* If multiple objects are selected, offset the coordinates by the group's center
-           Active object coordinates in fabric are the relative coordinates
-           to the group's center when multiple objects are selected */
-        // Check if multople marchers are selected and if the current marcher is one of them
-        let offset = { x: 0, y: 0 };
-        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === marcher.id_for_html);
-        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
-            const groupObject = canvas.current.getActiveObject();
-            offset = {
-                x: groupObject.left + (groupObject.width / 2),
-                y: groupObject.top + (groupObject.height / 2)
-            };
-        }
-
-        if (marcher?.fabricObject) {
-            // The offset that the dot is from the fabric group coordinate.
-            const fabricGroup = marcher.fabricObject;
-            const dot = (marcher.fabricObject as fabric.Group)._objects[0] as fabric.Circle;
-            if (dot.left && dot.top && fabricGroup.width && fabricGroup.height) {
-                // Dot center - radius - offset - 1/2 fieldWidth or fieldHeight of the fabric group
-                const newCoords = {
-                    x: (x - Constants.dotRadius - dot.left - (fabricGroup.width / 2)) - offset.x,
-                    y: (y - Constants.dotRadius - dot.top - (fabricGroup.height / 2)) - offset.y
-                };
-
-                marcher.fabricObject.left = newCoords.x;
-                marcher.fabricObject.top = newCoords.y;
-                marcher.fabricObject.setCoords();
-            } else
-                console.error("Marcher dot does not have left or top properties, or fabricGroup does not have fieldHeight/width - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
-        } else
-            console.error("FabricObject does not exist for the marcher - setCanvasMarcherCoordsFromDot: CanvasUtils.tsx");
-
-        return null;
-    }, []);
-
-    /**
-     * A function to get the coordinates of a fabric marcher's dot.
-     * The coordinate on the canvas is different than the coordinate of the actual dot.
-     *
-     * @param fabricGroup - the fabric object of the canvas marcher
-     * @returns The real coordinates of the CanvasMarcher dot. {x: number, y: number}
-     */
-    const fabricObjectToRealCoords = useCallback((fabricGroup: fabric.Group) => {
-        /* If multiple objects are selected, offset the coordinates by the group's center
-           Active object coordinates in fabric are the relative coordinates
-           to the group's center when multiple objects are selected */
-        if (!(fabricGroup as any).id_for_html) {
-            console.error("fabricGroup does not have id_for_html property - fabricObjectToRealCoords: CanvasUtils.tsx");
-            return null;
-        }
-
-        const idForHtml = (fabricGroup as any).id_for_html;
-
-        // Check if multiple marchers are selected and if the current marcher is one of them
-        let offset = { x: 0, y: 0 };
-        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === idForHtml);
-        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
-            // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
-            const groupObject = canvas.current.getActiveObject();
-            offset = {
-                x: groupObject.left + (groupObject.width / 2),
-                y: groupObject.top + (groupObject.height / 2)
-            };
-        }
-
-        const dot = fabricGroup?._objects[0] as fabric.Circle;
-        if (fabricGroup.left && fabricGroup.top && dot.left && dot.top) {
-            return {
-                x: offset.x + fabricGroup.getCenterPoint().x + dot.left + Constants.dotRadius,
-                y: offset.y + fabricGroup.getCenterPoint().y + dot.top + Constants.dotRadius
-            };
-        }
-        console.error("Marcher dot or fabricGroup does not have left or top properties - fabricObjectToRealCoords: CanvasUtils.tsx");
-
-        return null;
-    }, [selectedMarchers]);
+    }, [handleKeyDown]);
 
     /* -------------------------- useEffects -------------------------- */
     // Set Loading
@@ -365,11 +363,11 @@ function Canvas() {
             canvas.current = new fabric.Canvas(canvasRef.current, {});
 
             // Set canvas.current size
-            CanvasUtils.refreshCanavsSize(canvas.current);
+            CanvasUtils.refreshCanvasSize(canvas.current);
             // Update canvas.current size on window resize
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             window.addEventListener('resize', (evt) => {
-                CanvasUtils.refreshCanavsSize(canvas.current);
+                CanvasUtils.refreshCanvasSize(canvas.current);
             });
 
             // Set canvas.current configuration options
@@ -435,13 +433,13 @@ function Canvas() {
     useEffect(() => {
         if (canvas.current && uiSettings)
             canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementX = uiSettings.lockX; });
-    }, [uiSettings.lockX]);
+    }, [uiSettings, uiSettings.lockX]);
 
     // Lock Y
     useEffect(() => {
         if (canvas.current && uiSettings)
             canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementY = uiSettings.lockY; });
-    }, [uiSettings.lockY]);
+    }, [uiSettings, uiSettings.lockY]);
 
     /* --------------------------Animation Functions-------------------------- */
     // eslint-disable-next-line

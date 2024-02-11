@@ -37,7 +37,7 @@ function ExportModalContents() {
         window.electron.sendExportIndividualCoordinateSheets(coordinateSheets).then(
             () => setIsLoading(false)
         );
-    }, [marchers, pages, marcherPages, isTerse, includeMeasures, useXY, fieldProperties]);
+    }, [fieldProperties, marchers, pages, marcherPages, includeMeasures, isTerse, useXY, roundingDenominator]);
 
     return (
         <div>

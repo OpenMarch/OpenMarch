@@ -15,6 +15,7 @@ const defaultSection = "default";
 const defaultDrillPrefix = "-";
 const defaultDrillOrder = 1;
 
+// eslint-disable-next-line react/prop-types
 const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disabledProp = false }) => {
     const [section, setSection] = useState<string>(defaultSection);
     const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);

@@ -43,7 +43,7 @@ function MarcherEditor() {
             const newRcoords = canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y, fieldProperties);
             setRCoords(newRcoords);
         }
-    }, [selectedMarchers, marcherPages, selectedPage]);
+    }, [selectedMarchers, marcherPages, selectedPage, fieldProperties]);
 
     const resetForm = useCallback(() => {
         coordsFormRef.current?.reset();

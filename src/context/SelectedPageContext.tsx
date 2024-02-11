@@ -20,10 +20,11 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
             window.electron.sendSelectedPage(selectedPage.id);
     }, [selectedPage]);
 
-    // Update the selected page if the pages list changes
+    // Update the selected page if the pages list changes. This refreshes the information of the selected page
     useEffect(() => {
         if (selectedPage)
             setSelectedPage(pages.find(page => page.id === selectedPage.id) || null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pages]);
 
     // Create the context value object

@@ -83,7 +83,7 @@ function StateInitializer() {
         return () => {
             window.electron.removeHistoryActionListener(); // Remove the event listener
         };
-    }, [getMarcher, getPage, fetchMarchers, fetchMarcherPages, fetchPages]);
+    }, [getMarcher, getPage, fetchMarchers, fetchMarcherPages, fetchPages, setSelectedPage, setSelectedMarchers]);
 
     // Listen for fetch actions from the main process
     useEffect(() => {

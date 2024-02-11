@@ -9,6 +9,7 @@ interface NewPageFormProps {
     disabledProp?: boolean;
 }
 
+// eslint-disable-next-line react/prop-types
 const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledProp = false }) => {
     const [pageName, setPageName] = useState<string>("");
     const [counts, setCounts] = useState<number>(8);

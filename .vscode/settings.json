@@ -18,7 +18,11 @@
   // "files.autoSave": "onFocusChange", // optional but recommended
   "vs-code-prettier-eslint.prettierLast": false,
   "cSpell.words": [
+    "Classname",
     "Dumouchelle",
     "openmarch"
-  ] // set as "true" to run 'prettier' last not first
+  ],
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  } // set as "true" to run 'prettier' last not first
 }

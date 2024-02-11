@@ -6,7 +6,7 @@ import { FieldProperties } from "../global/Interfaces";
 /**
  * Refreshes the size of the canvas to fit the window.
  */
-export function refreshCanavsSize(canvas: fabric.Canvas) {
+export function refreshCanvasSize(canvas: fabric.Canvas) {
     canvas.setWidth(window.innerWidth);
     canvas.setHeight(window.innerHeight);
 }

@@ -73,7 +73,7 @@ export default function MacherCoordinateSheet(
             setPagesToUse(pages);
             setMarcherPagesToUse(marcherPages);
         }
-    }, [marcher, marcherPages, pages, example]);
+    }, [marcher, marcherPages, pages, example, fieldProperties]);
 
     return (
         <StaticMarcherCoordinateSheet marcher={marcherToUse!} pages={pagesToUse} marcherPages={marcherPagesToUse}
