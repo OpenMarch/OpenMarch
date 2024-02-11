@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-const { app, dialog, Menu } = require('electron');
 import * as db from '../database/database.services';
 import Store from 'electron-store'
 import * as mainProcess from './index';
+const { app, dialog, Menu } = require('electron');
 
 interface MenuItem {
   label: string;
