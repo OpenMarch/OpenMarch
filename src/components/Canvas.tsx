@@ -44,7 +44,7 @@ function Canvas() {
         /* If multiple objects are selected, offset the coordinates by the group's center
            Active object coordinates in fabric are the relative coordinates
            to the group's center when multiple objects are selected */
-        // Check if multople marchers are selected and if the current marcher is one of them
+        // Check if multiple marchers are selected and if the current marcher is one of them
         let offset = { x: 0, y: 0 };
         const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === marcher.id_for_html);
         if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
