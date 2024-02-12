@@ -1,12 +1,11 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { usePageStore } from "../../global/Store";
 import { updatePages } from "../../api/api";
 import { useEffect } from "react";
+import { usePageStore } from "@/stores/page/usePageStore";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
-    const { fetchPages } = usePageStore()!;
-    const { pages } = usePageStore()!;
+    const { pages, fetchPages } = usePageStore()!;
 
     const countsInputId = "page-counts";
     const formId = "edit-page-form";

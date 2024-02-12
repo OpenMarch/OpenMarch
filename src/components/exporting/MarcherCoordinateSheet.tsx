@@ -1,9 +1,10 @@
 import * as Interfaces from "@/global/Interfaces";
-import { useMarcherPageStore, usePageStore } from "@/global/Store";
 import { Col, Row, Table } from "react-bootstrap";
 import * as CoordsUtils from '@/utilities/CoordsUtils';
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useEffect, useState } from "react";
+import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
+import { usePageStore } from "@/stores/page/usePageStore";
 
 interface MarcherCoordinateSheetProps {
     marcher?: Interfaces.Marcher;

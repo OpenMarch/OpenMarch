@@ -3,9 +3,9 @@ import { HASHES, YARD_LINES } from "../../global/Constants";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { ReadableCoords } from "../../global/Interfaces";
 import { canvasCoordsToCollegeRCords, getTerseString } from "../../utilities/CoordsUtils";
-import { useMarcherPageStore } from "../../global/Store";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;

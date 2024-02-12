@@ -1,4 +1,4 @@
-import { useUiSettingsStore } from "@/global/Store";
+import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
 import { useCallback, useEffect } from "react";
 import { Button, ButtonGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
 import { TbAxisX, TbAxisY, TbKeyframeAlignCenterFilled } from "react-icons/tb";

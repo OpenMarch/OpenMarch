@@ -1,4 +1,3 @@
-import { useMarcherStore } from "../../global/Store";
 import { sections } from "../../global/Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
@@ -8,6 +7,7 @@ import { ListFormProps, UpdateMarcher } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
 import { Marcher } from "../../global/Interfaces";
 import * as Interfaces from "../../global/Interfaces";
+import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 
 function MarcherList({
     isEditingProp = undefined,

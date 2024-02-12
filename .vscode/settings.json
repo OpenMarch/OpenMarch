@@ -20,7 +20,8 @@
   "cSpell.words": [
     "Classname",
     "Dumouchelle",
-    "openmarch"
+    "openmarch",
+    "zustand"
   ],
   "[typescriptreact]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"

@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
 import { linearEasing } from "../global/utils";
-import { useMarcherStore, usePageStore, useMarcherPageStore, useUiSettingsStore } from "../global/Store";
+import { useUiSettingsStore } from "../stores/uiSettings/useUiSettingsStore";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { useSelectedMarchers } from "../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
@@ -12,6 +12,9 @@ import { updateMarcherPages } from "../api/api";
 import * as CanvasUtils from "../utilities/CanvasUtils";
 import { CanvasMarcher, UpdateMarcherPage } from "../global/Interfaces";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { usePageStore } from "@/stores/page/usePageStore";
+import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 
 interface IGroupOptionsWithId extends IGroupOptions {
     id_for_html: string | number;

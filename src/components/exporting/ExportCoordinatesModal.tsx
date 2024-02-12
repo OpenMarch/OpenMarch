@@ -3,9 +3,11 @@ import ModalLauncher from "../toolbar/ModalLauncher";
 import { useCallback, useState } from "react";
 import { topBarComponentProps } from "@/global/Interfaces";
 import MarcherCoordinateSheet, { StaticMarcherCoordinateSheet } from "./MarcherCoordinateSheet";
-import { useMarcherPageStore, useMarcherStore, usePageStore } from "@/global/Store";
 import ReactDOMServer from 'react-dom/server';
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { usePageStore } from "@/stores/page/usePageStore";
+import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 
 function ExportModalContents() {
     const [isTerse, setIsTerse] = useState(false);

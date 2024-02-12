@@ -1,10 +1,10 @@
-import { usePageStore } from "../../global/Store";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
 import { deletePage, updatePages } from "../../api/api";
 import { ListFormProps, Page, UpdatePage } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
+import { usePageStore } from "@/stores/page/usePageStore";
 
 
 function PageList({

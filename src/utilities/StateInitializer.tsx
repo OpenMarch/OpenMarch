@@ -1,8 +1,10 @@
 import { useCallback, useEffect } from "react";
-import { useMarcherStore, useMarcherPageStore, usePageStore } from "../global/Store";
 import { useSelectedPage } from "../context/SelectedPageContext";
 import { Constants } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
+import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
+import { usePageStore } from "@/stores/page/usePageStore";
 
 /**
  * A component that initializes the state of the application.

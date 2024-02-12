@@ -5,7 +5,7 @@ import NewMarcherForm from "./NewMarcherForm";
 import { useEffect, useState } from "react";
 import FormButtons from "../FormButtons";
 import { topBarComponentProps } from "@/global/Interfaces";
-import { useMarcherStore } from "@/global/Store";
+import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 
 export default function MarcherListModal({ className }: topBarComponentProps) {
     const [listIsEditing, setListIsEditing] = useState(false);

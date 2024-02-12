@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { Page } from '../global/Interfaces';
-import { usePageStore } from '@/global/Store';
+import { usePageStore } from '@/stores/page/usePageStore';
 
 // Define the type for the context value
 type SelectedPageContextProps = {

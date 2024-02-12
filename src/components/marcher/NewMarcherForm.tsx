@@ -1,10 +1,10 @@
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
 import { sections } from "../../global/Constants";
 import { useCallback, useEffect, useState } from "react";
-import { useMarcherStore } from "../../global/Store";
 import { Marcher, NewMarcher } from "../../global/Interfaces";
 import { createMarcher } from "../../api/api";
 import { Section } from "../../global/Interfaces";
+import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 
 interface NewMarcherFormProps {
     hasHeader?: boolean;
