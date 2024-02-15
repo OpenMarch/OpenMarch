@@ -16,6 +16,13 @@ export const uiSettingsStoreCreator: StateCreator<UiSettingsStoreState & UiSetti
         lockY: false,
     },
 
+    /**
+     * Set the uiSettings
+     *
+     * @param newUiSettings the new uiSettings
+     * @param type the ui setting that is being changed. E.g. "lockX" if changing lockX, "lockY", if changing lockY
+     * This must be passed to keep lockX and lockY from being true at the same time
+     */
     setUiSettings: (newUiSettings, type) => {
         const uiSettings = { ...newUiSettings };
 

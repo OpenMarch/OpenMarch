@@ -97,7 +97,7 @@ function createMarcherTable(db: Database.Database) {
                 "id_for_html"	TEXT UNIQUE,
                 "name"	TEXT,
                 "section"	TEXT NOT NULL,
-                "year"	INTEGER,
+                "year"	TEXT,
                 "notes"	TEXT,
                 "drill_prefix"	TEXT NOT NULL,
                 "drill_order"	INTEGER NOT NULL,

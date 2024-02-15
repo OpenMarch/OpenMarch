@@ -18,7 +18,7 @@ const createUncurried = <T>(stateCreator: zustand.StateCreator<T>) => {
 
 // when creating a store, we get its initial state, create a reset function and add it in the set
 export const create = (<T>(stateCreator: zustand.StateCreator<T>) => {
-    console.log('zustand create mock')
+    // console.log('zustand create mock')
 
     // to support curried version of create
     return typeof stateCreator === 'function'
@@ -37,7 +37,7 @@ const createStoreUncurried = <T>(stateCreator: zustand.StateCreator<T>) => {
 
 // when creating a store, we get its initial state, create a reset function and add it in the set
 export const createStore = (<T>(stateCreator: zustand.StateCreator<T>) => {
-    console.log('zustand createStore mock')
+    // console.log('zustand createStore mock')
 
     // to support curried version of createStore
     return typeof stateCreator === 'function'

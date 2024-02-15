@@ -34,3 +34,6 @@ yarn.lock
 
 # database
 *.db
+
+# generated testing
+coverage/

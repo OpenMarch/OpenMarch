@@ -54,7 +54,7 @@ export interface Marcher {
     drill_prefix: string;
     drill_order: number;
     notes?: string;
-    year?: number;
+    year?: string;
 }
 
 /**
