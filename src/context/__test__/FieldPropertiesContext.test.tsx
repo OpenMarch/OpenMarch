@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { FieldPropertiesProvider, useFieldProperties } from '../fieldPropertiesContext';
 import * as api from '@/api/api';
-import { mockV1FieldProperties } from "@/__mocks__/data/mockV1FieldProperties";
+import { mockV1FieldProperties } from "./__mocks__/mockV1FieldProperties";
 
 describe('SelectedPageContext', () => {
     beforeEach(() => {
