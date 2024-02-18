@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { useMarcherPageStore } from "../useMarcherPageStore";
-import { mockMarcherPages } from './__mocks__/mockMarcherPages';
+import { mockMarcherPages } from '../../../__mocks__/data/mockMarcherPages';
 import * as api from '@/api/api';
 import { MarcherPage } from '@/global/Interfaces';
 

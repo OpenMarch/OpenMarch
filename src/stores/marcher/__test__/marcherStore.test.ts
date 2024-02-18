@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { useMarcherStore } from "../useMarcherStore";
-import { mockMarchers } from './__mocks__/mockMarchers';
+import { mockMarchers } from '../../../__mocks__/data/mockMarchers';
 import * as api from '@/api/api';
 import { Marcher } from '@/global/Interfaces';
 

@@ -5,7 +5,7 @@ import { useMarcherStore } from '@/stores/marcher/useMarcherStore';
 // Define the type for the context value
 type SelectedMarcherContextProps = {
     selectedMarchers: Marcher[];
-    setSelectedMarchers: (marcher: Marcher[]) => void;
+    setSelectedMarchers: (marchers: Marcher[]) => void;
 };
 
 const SelectedMarcherContext = createContext<SelectedMarcherContextProps | undefined>(undefined);

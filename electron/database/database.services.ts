@@ -579,16 +579,6 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
                 id
             });
 
-            // // Add the page to the history table
-            // historyQueries.push({
-            //     tableName: Constants.PageTableName,
-            //     id: id,
-            //     reverseAction: {
-            //         tableName: Constants.PageTableName,
-            //         previousState: await getPage(id, db)
-            //     }
-            // });
-
             // Add a marcherPage for this page for each marcher
             // Get all existing marchers
             const marchers = await getMarchers();
@@ -601,13 +591,6 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
                     x: previousMarcherPageCoords?.x || 100,
                     y: previousMarcherPageCoords?.y || 100
                 });
-
-                // Add the marcherPage to the history table
-                // historyQueries.push({
-                //     action: 'DELETE',
-                //     tableName: Constants.MarcherPageTableName,
-                //     obj: { marcher_id: marcher.id, page_id: id }
-                // });
             }
         }
 

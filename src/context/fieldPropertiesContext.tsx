@@ -1,5 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { FieldProperties } from '../global/Interfaces';
+import { getFieldProperties } from '@/api/api';
 
 // Define the type for the context value
 type FieldPropertiesContextProps = {
@@ -13,7 +14,7 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
 
     // Send the selected page to the electron main process
     useEffect(() => {
-        window.electron.getFieldProperties().then((fieldPropertiesResult) => {
+        getFieldProperties().then((fieldPropertiesResult) => {
             setFieldProperties(fieldPropertiesResult);
         });
     }, []);
