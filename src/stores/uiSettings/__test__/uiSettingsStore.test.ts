@@ -14,14 +14,20 @@ describe('uiSettings Store', () => {
         lockY: false,
     };
 
-    it('inital settings', async () => {
+    beforeEach(() => {
+        const { result } = renderHook(() => useUiSettingsStore());
+        // Reset the settings to the initial state
+        act(() => result.current.setUiSettings({ ...initialSettings }));
+        jest.clearAllMocks();
+    });
+
+    it('uiSettingsStore - initial settings', async () => {
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useUiSettingsStore());
-
         expect(result.current.uiSettings).toEqual(initialSettings);
     });
 
-    it('set is playing', async () => {
+    it('uiSettingsStore - set is playing', async () => {
         const { result } = renderHook(() => useUiSettingsStore());
 
         const expectedSettings = {
@@ -39,7 +45,7 @@ describe('uiSettings Store', () => {
         expect(result.current.uiSettings).toEqual(expectedSettings);
     });
 
-    it('set lockX and lockY', async () => {
+    it('uiSettingsStore - set lockX and lockY', async () => {
         const { result } = renderHook(() => useUiSettingsStore());
 
         const expectedSettings = {
@@ -71,7 +77,7 @@ describe('uiSettings Store', () => {
         expect(result.current.uiSettings).toEqual(expectedSettings);
     });
 
-    it('expect that lockX and lockY cannot both be true when "type" is passed', async () => {
+    it('uiSettingsStore - expect that lockX and lockY cannot both be true when "type" is passed', async () => {
         const { result } = renderHook(() => useUiSettingsStore());
 
         const expectedSettings = {
