@@ -205,12 +205,18 @@ export interface ListFormProps {
      * Whether or not the form should have a <h4> header defined in the component.
      */
     hasHeader?: boolean;
-    isEditingProp?: boolean;
-    setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
-    submitActivator?: boolean;
-    setSubmitActivator?: React.Dispatch<React.SetStateAction<boolean>>;
-    cancelActivator?: boolean;
-    setCancelActivator?: React.Dispatch<React.SetStateAction<boolean>>;
+    /**
+     * React state to control the editing state of the form and replace its internal state.
+     */
+    isEditingStateProp?: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+    /**
+     * React state to trigger a submit of the list form from a parent component.
+     */
+    submitActivatorStateProp?: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+    /**
+     * React state to trigger a cancel of the editing in a list form from a parent component.
+     */
+    cancelActivatorStateProp?: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
 }
 
 export interface topBarComponentProps {

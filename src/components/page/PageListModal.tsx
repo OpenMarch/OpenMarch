@@ -23,9 +23,9 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
         return (
             <Row>
                 <Col md={6} style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                    <PageList isEditingProp={listIsEditing} setIsEditingProp={setListIsEditing}
-                        submitActivator={submitActivator} setSubmitActivator={setSubmitActivator}
-                        cancelActivator={cancelActivator} setCancelActivator={setCancelActivator} />
+                    <PageList isEditingStateProp={[listIsEditing, setListIsEditing]}
+                        submitActivatorStateProp={[submitActivator, setSubmitActivator]}
+                        cancelActivatorStateProp={[cancelActivator, setCancelActivator]} />
                     {/* <MarcherList /> */}
                 </Col>
                 <Col md={6} className="px-4">

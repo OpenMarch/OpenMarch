@@ -8,16 +8,16 @@ import { usePageStore } from "@/stores/page/usePageStore";
 
 
 function PageList({
-    isEditingProp = undefined,
-    setIsEditingProp = undefined,
     hasHeader = false,
-    submitActivator = undefined, setSubmitActivator = undefined,
-    cancelActivator = undefined, setCancelActivator = undefined,
+    isEditingStateProp = undefined,
+    submitActivatorStateProp = undefined,
+    cancelActivatorStateProp = undefined
 }: ListFormProps) {
+
     const [isEditingLocal, setIsEditingLocal] = useState(false);
-    // const [sortedPages, setSortedPages] = useState<Page[]>([]);
-    const isEditing = isEditingProp || isEditingLocal;
-    const setIsEditing = setIsEditingProp || setIsEditingLocal;
+    const [isEditing, setIsEditing] = isEditingStateProp || [isEditingLocal, setIsEditingLocal];
+    const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [false, undefined];
+    const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [false, undefined];
     const { pages, pagesAreLoading, fetchPages } = usePageStore();
 
     // localPages are the Pages that are displayed in the table
@@ -108,7 +108,7 @@ function PageList({
         >
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {(hasHeader && <h4>Page List</h4>) || <div />}
-                {!isEditingProp && !setIsEditingProp && (isEditing ?
+                {!isEditingStateProp && (isEditing ?
                     <FormButtons
                         handleCancel={handleCancel} editButton={"Edit Pages"}
                         isEditingProp={isEditing} setIsEditingProp={setIsEditing}
@@ -156,7 +156,7 @@ function PageList({
             </table>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div />
-                {(!isEditingProp && !setIsEditingProp) ?
+                {(!isEditingStateProp) ?
                     (isEditing ?
                         <FormButtons
                             handleCancel={handleCancel} editButton={"Edit Pages"}

@@ -10,15 +10,16 @@ import * as Interfaces from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 
 function MarcherList({
-    isEditingProp = undefined,
-    setIsEditingProp = undefined,
     hasHeader = false,
-    submitActivator = undefined, setSubmitActivator = undefined,
-    cancelActivator = undefined, setCancelActivator = undefined,
+    isEditingStateProp = undefined,
+    submitActivatorStateProp = undefined,
+    cancelActivatorStateProp = undefined
 }: ListFormProps) {
+
     const [isEditingLocal, setIsEditingLocal] = useState(false);
-    const isEditing = isEditingProp || isEditingLocal;
-    const setIsEditing = setIsEditingProp || setIsEditingLocal;
+    const [isEditing, setIsEditing] = isEditingStateProp || [isEditingLocal, setIsEditingLocal];
+    const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [false, undefined];
+    const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [false, undefined];
     const { marchers, marchersAreLoading, fetchMarchers } = useMarcherStore();
 
     // localMarchers are the marchers that are displayed in the table
@@ -52,6 +53,7 @@ function MarcherList({
         fetchMarchers();
         changesRef.current = {};
         deletionsRef.current = [];
+        console.log(result);
         return result;
     }
 
@@ -91,7 +93,7 @@ function MarcherList({
         // eslint-disable-next-line
     }, [submitActivator, setSubmitActivator]);
 
-    // Activate submit with an external activator (like a button in a parent component)
+    // Activate cancel with an external activator (like a button in a parent component)
     useEffect(() => {
         if (cancelActivator) {
             handleCancel();
@@ -108,7 +110,7 @@ function MarcherList({
         >
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {(hasHeader && <h4>Marcher List</h4>) || <div />}
-                {!isEditingProp && !setIsEditingProp && (isEditing ?
+                {!isEditingStateProp && (isEditing ?
                     <FormButtons
                         handleCancel={handleCancel} editButton={"Edit Marchers"}
                         isEditingProp={isEditing} setIsEditingProp={setIsEditing}
@@ -120,7 +122,11 @@ function MarcherList({
                     </Button>)
                 }
             </div>
-            <table className={"table " + (isEditing && "table-hover")} style={{ cursor: "default" }}>
+            <table
+                className={"table " + (isEditing ? "table-hover" : "")}
+                style={{ cursor: "default" }}
+                title="marcher-list-table"
+            >
                 <thead className="thead-dark">
                     <tr>
                         <th scope="col">#</th>
@@ -131,13 +137,14 @@ function MarcherList({
                 {(!marchersAreLoading && localMarchers && marchers) &&
                     <tbody>
                         {localMarchers.map((marcher) => (
-                            <tr key={marcher.id}>
-                                <th scope="row">{marcher.drill_prefix + marcher.drill_order}</th>
-                                <td>
+                            <tr key={marcher.id_for_html} title="marcher-row">
+                                <th scope="row" title="marcher-drill-number">
+                                    {marcher.drill_prefix + marcher.drill_order}
+                                </th>
+                                <td title="marcher-section">
                                     {isEditing ?
                                         <select className="form-select" defaultValue={marcher.section}
                                             aria-label="Section" disabled={!isEditing}
-                                            key={marcher.id_for_html}
                                             onChange={(event) => handleChange(event, "section", marcher.id)}
                                         >
                                             <option value=""></option>
@@ -149,7 +156,7 @@ function MarcherList({
                                         marcher.section
                                     }
                                 </td>
-                                <td>
+                                <td title="marcher-name">
                                     {isEditing ?
                                         <input type="text" className="form-control"
                                             aria-label="Name" defaultValue={marcher.name} disabled={!isEditing}
@@ -173,7 +180,8 @@ function MarcherList({
             </table>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div />
-                {(!isEditingProp && !setIsEditingProp) ?
+                {/* Do not show this button if the form is being controlled by a parent component. */}
+                {(!isEditingStateProp) ?
                     (isEditing ?
                         <FormButtons
                             handleCancel={handleCancel} editButton={"Edit Marchers"}
