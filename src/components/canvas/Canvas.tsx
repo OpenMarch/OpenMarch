@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
-import { linearEasing } from "../global/utils";
-import { useUiSettingsStore } from "../stores/uiSettings/useUiSettingsStore";
-import { useSelectedPage } from "../context/SelectedPageContext";
-import { useSelectedMarchers } from "../context/SelectedMarchersContext";
+import { linearEasing } from "../../global/utils";
+import { useUiSettingsStore } from "../../stores/uiSettings/useUiSettingsStore";
+import { useSelectedPage } from "../../context/SelectedPageContext";
+import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { IGroupOptions } from "fabric/fabric-impl";
-import { Constants, idForHtmlToId } from "../global/Constants";
-import { ReactKeyActions } from "../global/KeyboardShortcuts";
-import { updateMarcherPages } from "../api/api";
-import * as CanvasUtils from "../utilities/CanvasUtils";
-import { CanvasMarcher, UpdateMarcherPage } from "../global/Interfaces";
+import { Constants, idForHtmlToId } from "../../global/Constants";
+import { ReactKeyActions } from "../../global/KeyboardShortcuts";
+import { updateMarcherPages } from "../../api/api";
+import * as CanvasUtils from "../../utilities/CanvasUtils";
+import { CanvasMarcher, UpdateMarcherPage } from "../../global/Interfaces";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { usePageStore } from "@/stores/page/usePageStore";
@@ -464,7 +464,7 @@ function Canvas() {
     };
 
     return (
-        <div className="canvas-container">
+        <div className="canvas-container-custom">
             {!isLoading &&
                 ((marchers.length > 0 && pages.length > 0) ?
                     <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />

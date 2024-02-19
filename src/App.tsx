@@ -1,4 +1,4 @@
-import Canvas from './components/Canvas';
+import Canvas from './components/canvas/Canvas';
 import Topbar from './components/toolbar/Topbar';
 import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';

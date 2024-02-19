@@ -1,4 +1,4 @@
-@import 'bootstrap/scss/bootstrap';
+@import "bootstrap/scss/bootstrap";
 
 /* ================= VARIABLES ================= */
 // Colors
@@ -12,9 +12,9 @@ $editFormWidth: 200px;
 $toolbarPadding: 10px;
 $toolbarMargin: 10px;
 
-
 /* ================= GLOBAL STYLES ================= */
-html, body  {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -23,7 +23,8 @@ html, body  {
   display: flex;
 }
 
-.app, #root {
+.app,
+#root {
   height: 100%;
   width: 100%;
 }
@@ -53,7 +54,7 @@ html, body  {
 
 /* ================= CANVAS STYLES ================= */
 
-.canvas-container {
+.canvas-container-custom {
   background: $canvasColor;
   position: relative;
   height: 100%;
@@ -99,10 +100,10 @@ canvas {
   min-height: $topHeight;
   background-color: $toolbarColor;
   display: flex;
-  align-items:center;
+  align-items: center;
 }
 .vertical-divider {
-  border-left: 1px solid #000;  // Change the color as needed
+  border-left: 1px solid #000; // Change the color as needed
   height: 100%;
 }
 
@@ -122,14 +123,14 @@ canvas {
 }
 
 .edit-form-button-container {
- display: flex;
- justify-content: flex-end;
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* $$$$$$$$$$$$ Side Toolbar $$$$$$$$$$$$ */
 .sidebar {
   width: $sideWidth;
-  max-height:  calc(100vh - #{$topHeight});
+  max-height: calc(100vh - #{$topHeight});
   box-sizing: border-box;
   // flex-grow: 1;
   background-color: $gray-800;
@@ -170,7 +171,6 @@ canvas {
   margin: $toolbarMargin;
 }
 
-
 // Container for input groups
 .sidebar .edit-group {
   align-items: left;
@@ -189,7 +189,8 @@ canvas {
   font-weight: 400;
 }
 
-.sidebar input, .sidebar select {
+.sidebar input,
+.sidebar select {
   background: transparent;
   color: $light;
   font-weight: 400;
@@ -200,12 +201,12 @@ canvas {
 /* Remove number input spin box (up and down arrow) */
 .sidebar input::-webkit-outer-spin-button,
 .sidebar input::-webkit-inner-spin-button {
-    /* display: none; <- Crashes Chrome on hover */
-    -webkit-appearance: none;
-    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+  /* display: none; <- Crashes Chrome on hover */
+  -webkit-appearance: none;
+  margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
 }
-.sidebar input[type=number] {
-    -moz-appearance:textfield; /* Firefox */
+.sidebar input[type="number"] {
+  -moz-appearance: textfield; /* Firefox */
 }
 
 /* Hide the default arrow in modern browsers */
@@ -225,7 +226,8 @@ select::-ms-expand {
   font-weight: 400;
 }
 
-.coords-editor input, .page-editor input {
+.coords-editor input,
+.page-editor input {
   flex: 0 0 auto;
   width: 60px;
 }
@@ -246,11 +248,16 @@ select::-ms-expand {
   width: auto;
 }
 
-.coords-editor select { text-align-last: right; }
-.coords-editor option { direction: rtl; }
+.coords-editor select {
+  text-align-last: right;
+}
+.coords-editor option {
+  direction: rtl;
+}
 
 /* Container to hold both toolbars and ensure they stack vertically */
-.app-container, .sidebar {
+.app-container,
+.sidebar {
   display: flex;
   flex-direction: column;
   height: calc(100vh - #{$topHeight});
@@ -268,8 +275,7 @@ select::-ms-expand {
   cursor: pointer;
 }
 
-.table-header
-{
+.table-header {
   font-weight: bold;
 }
 
@@ -281,4 +287,3 @@ select::-ms-expand {
 .sidebar th {
   text-align: left;
 }
-
