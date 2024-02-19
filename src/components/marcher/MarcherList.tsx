@@ -53,7 +53,6 @@ function MarcherList({
         fetchMarchers();
         changesRef.current = {};
         deletionsRef.current = [];
-        console.log(result);
         return result;
     }
 
@@ -110,6 +109,8 @@ function MarcherList({
         >
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {(hasHeader && <h4>Marcher List</h4>) || <div />}
+                {/* Do not show this button if the form is being controlled by a parent component.
+                  Form buttons exist on both the bottom and top of the form */}
                 {!isEditingStateProp && (isEditing ?
                     <FormButtons
                         handleCancel={handleCancel} editButton={"Edit Marchers"}
@@ -137,14 +138,21 @@ function MarcherList({
                 {(!marchersAreLoading && localMarchers && marchers) &&
                     <tbody>
                         {localMarchers.map((marcher) => (
-                            <tr key={marcher.id_for_html} title="marcher-row">
-                                <th scope="row" title="marcher-drill-number">
+                            <tr key={marcher.id_for_html}
+                                data-id={marcher.id}
+                                title="Marcher row"
+                                aria-label="Marcher Row"
+                            >
+                                <th scope="row" title="Marcher drill number">
                                     {marcher.drill_prefix + marcher.drill_order}
                                 </th>
-                                <td title="marcher-section">
+                                <td title="Marcher section" aria-label="Marcher section">
                                     {isEditing ?
-                                        <select className="form-select" defaultValue={marcher.section}
-                                            aria-label="Section" disabled={!isEditing}
+                                        <select className="form-select"
+                                            defaultValue={marcher.section}
+                                            aria-label="Marcher section input"
+                                            title="Marcher section input"
+                                            disabled={!isEditing}
                                             onChange={(event) => handleChange(event, "section", marcher.id)}
                                         >
                                             <option value=""></option>
@@ -156,10 +164,10 @@ function MarcherList({
                                         marcher.section
                                     }
                                 </td>
-                                <td title="marcher-name">
+                                <td title="Marcher name" aria-label="Marcher name">
                                     {isEditing ?
                                         <input type="text" className="form-control"
-                                            aria-label="Name" defaultValue={marcher.name} disabled={!isEditing}
+                                            aria-label="Marcher name input" title="Marcher name input" defaultValue={marcher.name} disabled={!isEditing}
                                             key={marcher.id_for_html}
                                             onChange={(event) => handleChange(event, "name", marcher.id)}
                                         />
@@ -180,7 +188,8 @@ function MarcherList({
             </table>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div />
-                {/* Do not show this button if the form is being controlled by a parent component. */}
+                {/* Do not show this button if the form is being controlled by a parent component.
+                  Form buttons exist on both the bottom and top of the form */}
                 {(!isEditingStateProp) ?
                     (isEditing ?
                         <FormButtons
@@ -193,6 +202,7 @@ function MarcherList({
                             Edit Marchers
                         </Button>)
                     :
+                    // exists to ensure default submit behavior
                     <button type="submit" hidden={true} />
                 }
             </div>

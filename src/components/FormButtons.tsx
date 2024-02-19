@@ -17,20 +17,30 @@ export default function FormButtons({ handleCancel,
     return (
         <div style={{ display: 'flex' }}>
             {!isEditingProp ?
-                <Button variant="primary" onClick={setIsEditingProp && (() => setIsEditingProp(true))}>
+                <Button
+                    variant="primary"
+                    title="edit-form-button"
+                    onClick={setIsEditingProp && (() => setIsEditingProp(true))}
+                >
                     {editButton}
                 </Button>
                 :
                 <>
+                    {/* handle if handleSubmit is a function */}
                     {handleSubmit ?
-                        <Button variant="primary" onClick={handleSubmit}>
+                        <Button variant="primary" title="Submit form button" onClick={handleSubmit}>
                             Save Changes
                         </Button> :
-                        <Button variant="primary" type="submit">
+                        <Button variant="primary" title="Submit form button" type="submit">
                             Save Changes
                         </Button>
                     }
-                    <Button variant="secondary" type="button" onClick={handleCancel} className="mx-1">
+                    <Button variant="secondary"
+                        title="Cancel form button"
+                        type="button"
+                        onClick={handleCancel}
+                        className="mx-1"
+                    >
                         Cancel
                     </Button>
                 </>

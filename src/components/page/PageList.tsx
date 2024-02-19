@@ -130,12 +130,16 @@ function PageList({
                 {(!pagesAreLoading && pages && localPages) &&
                     <tbody>
                         {localPages.map((page) => (
-                            <tr key={page.id}>
-                                <th scope="row">{page.name}</th>
-                                <td>
+                            <tr key={page.id} aria-label="Page row" title="Page row" data-id={page.id}>
+                                <th title="Page name" aria-label="Page name" scope="row">
+                                    {page.name}
+                                </th>
+                                <td title="Page counts" aria-label="Page counts">
                                     {isEditing ?
                                         <input type="number" className="form-control"
-                                            aria-label="Name" defaultValue={page.counts} disabled={!isEditing}
+                                            aria-label="Page counts input"
+                                            title="Page counts input"
+                                            defaultValue={page.counts} disabled={!isEditing}
                                             key={page.id_for_html} min={0} step={1}
                                             onChange={(event) => handleChange(event, "counts", page.id)}
                                         />
@@ -168,6 +172,7 @@ function PageList({
                             Edit Pages
                         </Button>)
                     :
+                    // exists to ensure default submit behavior
                     <button type="submit" hidden={true} />
                 }
             </div>
