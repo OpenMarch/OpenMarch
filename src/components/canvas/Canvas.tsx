@@ -32,6 +32,7 @@ function Canvas() {
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const canvas = useRef<fabric.Canvas | any>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const staticGridRef = useRef<any>(null);
 
     /* ------------------------ Marcher Functions ------------------------ */
     /**
@@ -44,21 +45,20 @@ function Canvas() {
         * @param y the y location of the actual dot.
         */
     const setCanvasMarcherCoordsFromDot = useCallback((marcher: CanvasMarcher, x: number, y: number) => {
-        /* If multiple objects are selected, offset the coordinates by the group's center
-           Active object coordinates in fabric are the relative coordinates
-           to the group's center when multiple objects are selected */
-        // Check if multiple marchers are selected and if the current marcher is one of them
-        let offset = { x: 0, y: 0 };
-        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === marcher.id_for_html);
-        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
-            const groupObject = canvas.current.getActiveObject();
-            offset = {
-                x: groupObject.left + (groupObject.width / 2),
-                y: groupObject.top + (groupObject.height / 2)
-            };
-        }
-
         if (marcher?.fabricObject) {
+            // Check if the fabric object is part of a group
+            let offset = { x: 0, y: 0 };
+            if (marcher.fabricObject.group) {
+                const parentGroup = marcher.fabricObject.group;
+                if (parentGroup && parentGroup.left && parentGroup.top
+                    && parentGroup.width && parentGroup.height) {
+                    offset = {
+                        x: parentGroup.left + (parentGroup.width / 2),
+                        y: parentGroup.top + (parentGroup.height / 2)
+                    };
+                }
+            }
+
             // The offset that the dot is from the fabric group coordinate.
             const fabricGroup = marcher.fabricObject;
             const dot = (marcher.fabricObject as fabric.Group)._objects[0] as fabric.Circle;
@@ -175,17 +175,13 @@ function Canvas() {
             return null;
         }
 
-        const idForHtml = (fabricGroup as any).id_for_html;
-
         // Check if multiple marchers are selected and if the current marcher is one of them
         let offset = { x: 0, y: 0 };
-        const isActiveObject = canvas.current.getActiveObjects().some((canvasObject: any) => canvasObject.id_for_html === idForHtml);
-        if (canvas.current.getActiveObjects().length > 1 && isActiveObject) {
-            // && selectedMarchers.some((selectedMarcher) => selectedMarcher.id_for_html === idForHtml)) {
-            const groupObject = canvas.current.getActiveObject();
+        if (fabricGroup.group && fabricGroup.group.left && fabricGroup.group.top
+            && fabricGroup.group.width && fabricGroup.group.height) {
             offset = {
-                x: groupObject.left + (groupObject.width / 2),
-                y: groupObject.top + (groupObject.height / 2)
+                x: fabricGroup.group.left + (fabricGroup.group.width / 2),
+                y: fabricGroup.group.top + (fabricGroup.group.height / 2)
             };
         }
 
@@ -208,15 +204,11 @@ function Canvas() {
 
         const changes: UpdateMarcherPage[] = [];
         activeObjects.forEach((activeObject: any) => {
+            console.log("activeObject", activeObject);
             const newCoords = fabricObjectToRealCoords(activeObject as fabric.Group);
             if (activeObject.id_for_html && newCoords?.x && newCoords?.y) {
                 const marcherId = idForHtmlToId(activeObject.id_for_html);
                 changes.push({ marcher_id: marcherId, page_id: selectedPage!.id, x: newCoords.x, y: newCoords.y });
-                // updateMarcherPage(
-                //     marcherId, selectedPage!.id,
-                //     newCoords.x,
-                //     newCoords.y)
-                //     .then(() => { fetchMarcherPages() });
             } else {
                 console.error("Marcher or fabric object not found - handleObjectModified: Canvas.tsx");
             }
@@ -291,6 +283,10 @@ function Canvas() {
      * Zoom in and out with the mouse wheel
      */
     const handleMouseWheel = (opt: any) => {
+        // set objectCaching to true to improve performance while zooming
+        if (!staticGridRef.current.objectCaching)
+            staticGridRef.current.objectCaching = true;
+
         const delta = opt.e.deltaY;
         let zoom = canvas.current.getZoom();
         zoom *= 0.999 ** delta;
@@ -299,6 +295,16 @@ function Canvas() {
         canvas.current.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
         opt.e.preventDefault();
         opt.e.stopPropagation();
+
+        // set objectCaching to false after 100ms to improve performance after zooming
+        // This is what prevents the grid from being blurry after zooming
+        clearTimeout(canvas.current.zoomTimeout);
+        canvas.current.zoomTimeout = setTimeout(() => {
+            if (staticGridRef.current.objectCaching) {
+                staticGridRef.current.objectCaching = false;
+                canvas.current.renderAll();
+            }
+        }, 50);
     };
 
     /**
@@ -365,6 +371,9 @@ function Canvas() {
         if (!canvas.current && selectedPage && canvasRef.current && fieldProperties) {
             canvas.current = new fabric.Canvas(canvasRef.current, {});
 
+            canvas.current.perfLimitSizeTotal = 225000000;
+            canvas.current.maxCacheSideLimit = 11000;
+
             // Set canvas.current size
             CanvasUtils.refreshCanvasSize(canvas.current);
             // Update canvas.current size on window resize
@@ -378,8 +387,9 @@ function Canvas() {
             canvas.current.selectionColor = "white";
             canvas.current.selectionLineWidth = 8;
             // set initial canvas.current size
-            const staticGrid = CanvasUtils.buildField(fieldProperties);
-            canvas.current.add(staticGrid);
+            staticGridRef.current = CanvasUtils.buildField(fieldProperties);
+            canvas.current.add(staticGridRef.current);
+            staticGridRef.current.objectCaching = true;
 
             // Set canvas selection color
             canvas.current.selectionColor = 'rgba(0, 0, 255, 0.2)';
