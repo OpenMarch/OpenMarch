@@ -1,6 +1,6 @@
 
 import { fabric } from "fabric";
-import { FieldProperties } from "../global/Interfaces";
+import { FieldProperties } from "../../global/Interfaces";
 
 /* -------------------------- Canvas Functions -------------------------- */
 /**

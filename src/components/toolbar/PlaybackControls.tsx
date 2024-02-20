@@ -1,15 +1,17 @@
-import React, { MouseEventHandler, useCallback } from "react";
+import React, { MouseEventHandler, useCallback, useEffect } from "react";
 import { ButtonGroup, Button } from "react-bootstrap";
 import { FaFastBackward, FaBackward, FaPause, FaPlay, FaForward, FaFastForward } from "react-icons/fa";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useIsPlaying } from "../../context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
 import { usePageStore } from "@/stores/page/usePageStore";
+import { getNextPage } from "../page/PageUtils";
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { pages } = usePageStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
+    const [playIsDisabled, setPlayIsDisabled] = React.useState(false);
 
     const changeSelectedPageHandler: MouseEventHandler<HTMLButtonElement> = useCallback((e) => {
         const newPageOrder = parseInt(e.currentTarget.value);
@@ -38,6 +40,15 @@ function PlaybackControls({ className }: topBarComponentProps) {
         return 0;
     }, [selectedPage, pages]);
 
+    useEffect(() => {
+        if (!pages || pages.length === 0 || !selectedPage)
+            setPlayIsDisabled(true);
+        else if (getNextPage(selectedPage, pages) === null)
+            setPlayIsDisabled(true);
+        else
+            setPlayIsDisabled(false);
+    }, [pages, selectedPage]);
+
     const togglePlay = () => { setIsPlaying(!isPlaying); };
     return (
         <div className="playback-controls">
@@ -56,7 +67,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                 >
                     <FaBackward />
                 </Button>
-                <Button variant="secondary" onClick={togglePlay} title="Play or pause">
+                <Button variant="secondary" onClick={togglePlay} title="Play or pause" disabled={playIsDisabled}>
                     {isPlaying ? <FaPause /> : <FaPlay />}
                 </Button>
                 <Button variant="secondary" title="Next page"
