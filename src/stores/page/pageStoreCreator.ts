@@ -17,7 +17,7 @@ export const pageStoreCreator: StateCreator<PageStoreState & PageStoreActions> =
     pagesAreLoading: true,
 
     fetchPages: async () => {
-        set({ pagesAreLoading: true });
+        // set({ pagesAreLoading: true });
         const newPages = await api.getPages();
         set({ pages: newPages, pagesAreLoading: false });
     },

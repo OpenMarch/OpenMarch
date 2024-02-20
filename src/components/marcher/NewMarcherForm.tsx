@@ -1,6 +1,6 @@
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
 import { sections } from "../../global/Constants";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Marcher, NewMarcher } from "../../global/Interfaces";
 import { createMarcher } from "../../api/api";
 import { Section } from "../../global/Interfaces";
@@ -28,6 +28,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const { marchers, fetchMarchers } = useMarcherStore!();
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
+    const formRef = useRef<HTMLFormElement>(null);
 
     const resetForm = () => {
         setSection(defaultSection);
@@ -39,8 +40,8 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
         setDrillPrefixTouched(false);
         setDrillOrderError("");
 
-        const form = document.getElementById("newMarcherForm") as HTMLFormElement;
-        if (form) form.reset();
+        if (formRef.current)
+            formRef.current.reset();
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -174,7 +175,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
     }, [section, drillPrefix, drillOrder, sectionError, drillPrefixError, drillOrderError]);
 
     return (
-        <Form onSubmit={handleSubmit} id="newMarcherForm">
+        <Form onSubmit={handleSubmit} id="newMarcherForm" ref={formRef}>
             {hasHeader && <h4>Create new marchers</h4>}
             <Row className="mb-3">
                 <Form.Group as={Col} md={12} controlId="sectionForm">

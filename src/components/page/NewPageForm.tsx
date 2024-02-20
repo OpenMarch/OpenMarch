@@ -1,5 +1,5 @@
 import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NewPage, Page } from "../../global/Interfaces";
 import { createPage } from "../../api/api";
 import { usePageStore } from "@/stores/page/usePageStore";
@@ -20,6 +20,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
     const { pages, fetchPages } = usePageStore!();
+    const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
         if (!typing) {
@@ -35,10 +36,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                 } else if (event.key === 'ArrowDown' && activeElement.id !== 'quantityForm') {
                     setCounts(counts => Math.max(0, counts - 1));
                 } else if (event.key === 'Enter') {
-                    const form = document.getElementById("newPageForm") as HTMLFormElement;
-                    if (form) {
-                        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                    }
+                    formRef.current?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
                 } else if (event.key === 's' || event.key === 'S') {
                     event.preventDefault();
                     setIsSubset(isSubset => !isSubset);
@@ -59,8 +57,8 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
         setQuantity(1);
         setPageNameError("");
 
-        const form = document.getElementById("newPageForm") as HTMLFormElement;
-        if (form) form.reset();
+        if (formRef.current)
+            formRef.current.reset();
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -183,7 +181,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     }, [counts, formCounts]);
 
     return (
-        <Form onSubmit={handleSubmit} id="newPageForm">
+        <Form onSubmit={handleSubmit} id="newPageForm" ref={formRef}>
             {hasHeader && <h4>Create new pages</h4>}
             <Row className="mb-3">
                 <Form.Group as={Col} md={4} controlId="drillPrefixForm">

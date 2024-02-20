@@ -17,7 +17,7 @@ export const marcherStoreCreator: StateCreator<MarcherStoreState & MarcherStoreA
     marchersAreLoading: true,
 
     fetchMarchers: async () => {
-        set({ marchersAreLoading: true });
+        // set({ marchersAreLoading: true });
         const newMarchers = await api.getMarchers();
         set({ marchers: newMarchers, marchersAreLoading: false });
     },
