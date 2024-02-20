@@ -3,10 +3,17 @@ import * as api from "../../api/api";
 import * as Interfaces from "../../global/Interfaces";
 
 interface PageStoreState {
+    /**
+     * List of all pages sorted by order in the drill
+     */
     pages: Interfaces.Page[],
     pagesAreLoading: boolean
 }
 interface PageStoreActions {
+    /**
+     * Fetch the pages from the API and set them in the store
+     * @returns A promise that resolves when the pages have been fetched
+     */
     fetchPages: () => Promise<void>;
     setPagesAreLoading: (isLoading: boolean) => void;
 }
@@ -17,9 +24,11 @@ export const pageStoreCreator: StateCreator<PageStoreState & PageStoreActions> =
     pagesAreLoading: true,
 
     fetchPages: async () => {
-        set({ pagesAreLoading: true });
         const newPages = await api.getPages();
-        set({ pages: newPages, pagesAreLoading: false });
+        set({
+            pages: newPages.sort((a, b) => a.order - b.order),
+            pagesAreLoading: false
+        });
     },
 
     setPagesAreLoading: (isLoading) => {
