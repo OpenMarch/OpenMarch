@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { useSelectedPage, SelectedPageProvider } from "@/context/SelectedPageContext";
 import * as api from '@/api/api';
 import { ElectronApi } from 'electron/preload';
-import { mockPages } from './__mocks__/mockPages';
+import { mockPages } from './mocks';
 
 // Mock the electron api
 window.electron = {

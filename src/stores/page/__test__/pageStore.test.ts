@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { usePageStore } from "../usePageStore";
-import { mockPages } from './__mocks__/mockPages';
+import { mockPages } from './mocks';
 import * as api from '@/api/api';
 import { Page } from '@/global/Interfaces';
 
