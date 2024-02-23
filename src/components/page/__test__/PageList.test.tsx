@@ -1,7 +1,7 @@
 import { render, fireEvent, act, renderHook, within, Matcher, MatcherOptions, ByRoleMatcher, ByRoleOptions } from "@testing-library/react";
 import PageList from "../PageList";
 import * as api from '@/api/api';
-import { mockPages } from "./__mocks__/mockPages";
+import { mockPages } from "./mocks";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { Page } from "@/global/Interfaces";
 
