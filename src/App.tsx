@@ -4,7 +4,7 @@ import Sidebar from './components/toolbar/Sidebar';
 import { SelectedPageProvider } from './context/SelectedPageContext';
 import { SelectedMarchersProvider } from './context/SelectedMarchersContext';
 import { IsPlayingProvider } from './context/IsPlayingContext';
-import StateInitializer from './utilities/StateInitializer';
+import StateInitializer from './StateInitializer';
 import LaunchPage from './components/LaunchPage';
 import { useEffect, useState } from 'react';
 import { FieldPropertiesProvider } from './context/fieldPropertiesContext';

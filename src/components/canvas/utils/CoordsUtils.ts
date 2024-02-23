@@ -1,6 +1,6 @@
 /** A collection of utility functions to translate raw coordinates into readable coordinates */
 
-import { ReadableCoords, FieldProperties } from "../../global/Interfaces";
+import { ReadableCoords, FieldProperties } from "../../../global/Interfaces";
 
 const roundFactor = 100; // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
 
