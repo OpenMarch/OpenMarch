@@ -271,6 +271,7 @@ function Canvas() {
     // }, [selectedMarchers, isLoading, canvasMarchers]);
 
     useEffect(() => {
+        if (!(canvas.current && uiSettings)) return;
         canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementX = uiSettings.lockX; });
     }, [uiSettings, uiSettings.lockY]);
 
