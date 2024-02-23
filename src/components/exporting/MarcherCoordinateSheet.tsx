@@ -1,6 +1,6 @@
 import * as Interfaces from "@/global/Interfaces";
 import { Col, Row, Table } from "react-bootstrap";
-import * as CoordsUtils from '@/components/canvas/CoordsUtils';
+import * as CoordsUtils from '@/components/canvas/utils/CoordsUtils';
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";

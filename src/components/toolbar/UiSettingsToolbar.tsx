@@ -3,7 +3,7 @@ import { useCallback, useEffect } from "react";
 import { Button, ButtonGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
 import { TbAxisX, TbAxisY, TbKeyframeAlignCenterFilled } from "react-icons/tb";
 import * as Interfaces from "../../global/Interfaces";
-import { ReactKeyActions } from "../../global/KeyboardShortcuts";
+import { ReactKeyActions } from "../../KeyboardListeners";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 
