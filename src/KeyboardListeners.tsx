@@ -23,9 +23,9 @@ export const DefinedKeyboardActions: DefinedKeyboardActionsInterface = {
     lockX: new KeyboardAction({ key: "z", desc: "Lock X axis", toggleOnStr: "Enable X movement", toggleOffStr: "Lock X movement" }),
     lockY: new KeyboardAction({ key: "x", desc: "Lock Y axis", toggleOnStr: "Enable Y movement", toggleOffStr: "Lock Y movement" }),
     nextPage: new KeyboardAction({ key: "e", desc: "Next page" }),
-    lastPage: new KeyboardAction({ key: "e", control: true, desc: "Last page" }),
+    lastPage: new KeyboardAction({ key: "e", shift: true, desc: "Last page" }),
     previousPage: new KeyboardAction({ key: "q", desc: "Previous page" }),
-    firstPage: new KeyboardAction({ key: "q", control: true, desc: "First page" }),
+    firstPage: new KeyboardAction({ key: "q", shift: true, desc: "First page" }),
     playPause: new KeyboardAction({ key: " ", desc: "Play or pause", toggleOnStr: "Play", toggleOffStr: "Pause" }),
     snapToNearestWhole: new KeyboardAction({ key: "1", desc: "Snap to nearest whole" })
 } as const;
