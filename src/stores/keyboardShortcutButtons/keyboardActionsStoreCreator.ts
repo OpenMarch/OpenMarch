@@ -16,21 +16,23 @@ export type KeyboardActionsStoreType = {
      *
      * @param key The ksyString the action is associated with (`keyboardAction.keyString`)
      * @param action The action to perform on the keyboard shortcut. Can be a button click, or any other action.
-     * @returns
+    * @returns
      */
     registerKeyboardAction: (key: string, action: () => any) => void;
 };
 
 export const keyboardActionsStoreCreator: StateCreator<KeyboardActionsStoreType> = (set) => ({
     keyboardActions: {},
-    initKeyboardActions: (definedKeyboardActions: { [key: string]: KeyboardAction }) => set({
-        keyboardActions: Object.fromEntries(
-            Object.values(definedKeyboardActions).map(
-                (keyboardAction) => [keyboardAction.keyString,
-                () => console.error(`No action registered for "${keyboardAction.instructionalString}"`)]
+    initKeyboardActions: (definedKeyboardActions: { [key: string]: KeyboardAction }) => {
+        set({
+            keyboardActions: Object.fromEntries(
+                Object.values(definedKeyboardActions).map(
+                    (keyboardAction) => [keyboardAction.keyString,
+                    () => console.error(`No action registered for "${keyboardAction.instructionalString}"`)]
+                )
             )
-        )
-    }),
+        })
+    },
     registerKeyboardAction:
         (key, action) => {
             set((state) => {
