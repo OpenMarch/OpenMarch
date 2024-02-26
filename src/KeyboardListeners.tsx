@@ -1,37 +1,55 @@
 import { useCallback, useEffect } from "react";
-import { useUiSettingsStore } from "./stores/uiSettings/useUiSettingsStore";
+import { KeyboardAction } from "@/global/classes/KeyboardAction";
+import { useKeyboardActionsStore } from "./stores/keyboardShortcutButtons/useKeyboardActionsStore";
 
 /**
- * Keyboard shortcuts for the application
+ * Keyboard shortcuts for the application. All values must be unique.
  */
-export const ReactKeyActions = {
-    lockX: "z",
-    lockY: "x",
-    snapToNearestWhole: "1",
-}
+export const DefinedKeyboardActions: { [action: string]: KeyboardAction } = {
+    lockX: new KeyboardAction({ key: "z", desc: "Lock X axis", toggleOnStr: "Enable X movement", toggleOffStr: "Lock X movement" }),
+    lockY: new KeyboardAction({ key: "x", desc: "Lock Y axis", toggleOnStr: "Enable Y movement", toggleOffStr: "Lock Y movement" }),
+    nextPage: new KeyboardAction({ key: "e", desc: "Next page" }),
+    previousPage: new KeyboardAction({ key: "q", desc: "Previous page" }),
+    snapToNearestWhole: new KeyboardAction({ key: "1", desc: "Snap to nearest whole" })
+} as const;
 
+/**
+ * A listener for keyboard shortcuts.
+ * This component uses a list of button refs to trigger button clicks when a keyboard shortcut is pressed.
+ * @returns
+ */
 export default function KeyboardListener() {
-    const { uiSettings, setUiSettings } = useUiSettingsStore()!;
+    const { keyboardActions, initKeyboardActions } = useKeyboardActionsStore()!;
 
     /**
-     * Keydown and Keyup handler
-     *
-     * @param e
-     * @param keydown true if keydown, false if keyup
+     * Handles the keyboard shortcuts for entire react side of the application.
      */
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (!document.activeElement?.matches("input, textarea, select, [contenteditable]") && !e.ctrlKey && !e.metaKey) {
-            switch (e.key) {
-                case ReactKeyActions.lockY:
-                    setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, "lockY");
-                    break;
-                case ReactKeyActions.lockX:
-                    setUiSettings({ ...uiSettings, lockX: !uiSettings.lockX }, "lockX");
-                    break;
+        if (!document.activeElement?.matches("input, textarea, select, [contenteditable]")) {
+            const keyString = KeyboardAction.makeKeyString({ key: e.key, control: e.ctrlKey, alt: e.altKey, shift: e.shiftKey });
+            if (keyboardActions[keyString]) {
+                keyboardActions[keyString]();
+                e.preventDefault();
             }
         }
-    }, [uiSettings, setUiSettings]);
+    }, [keyboardActions]);
 
+    useEffect(() => {
+        // Check that all DefinedKeyboardActions are unique
+        const actionsArray = Object.values(DefinedKeyboardActions);
+        for (let curActionIdx = 0; curActionIdx < actionsArray.length; curActionIdx++) {
+            for (let compareActionIdx = curActionIdx + 1; compareActionIdx < actionsArray.length; compareActionIdx++) {
+                if (actionsArray[curActionIdx].keysEqual(actionsArray[compareActionIdx])) {
+                    throw new Error(`DefinedKeyboardActions must have unique key . \
+                    "${actionsArray[curActionIdx].desc}" and "${actionsArray[compareActionIdx].desc}" are not unique.\
+                    Both have key "${actionsArray[curActionIdx].key}" and modifiers control: ${actionsArray[curActionIdx].control}, alt: ${actionsArray[curActionIdx].alt}, shift: ${actionsArray[curActionIdx].shift}`);
+                }
+            }
+        }
+        initKeyboardActions(DefinedKeyboardActions);
+    }, [initKeyboardActions]);
+
+    // register the keyboard listener to the window
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
         return () => {

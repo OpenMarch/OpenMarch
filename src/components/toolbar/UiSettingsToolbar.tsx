@@ -1,17 +1,35 @@
 import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Button, ButtonGroup, Tooltip, OverlayTrigger } from "react-bootstrap";
 import { TbAxisX, TbAxisY, TbKeyframeAlignCenterFilled } from "react-icons/tb";
 import * as Interfaces from "../../global/Interfaces";
-import { ReactKeyActions } from "../../KeyboardListeners";
+import { DefinedKeyboardActions } from "../../KeyboardListeners";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
+import { useKeyboardActionsStore } from "@/stores/keyboardShortcutButtons/useKeyboardActionsStore";
 
 export default function UiSettingsToolbar({ className }: Interfaces.topBarComponentProps) {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers } = useSelectedMarchers()!;
+    const { registerKeyboardAction } = useKeyboardActionsStore();
+    const lockXRef = useRef<HTMLButtonElement>(null);
+    const lockYRef = useRef<HTMLButtonElement>(null);
+    const snapToNearestWholeRef = useRef<HTMLButtonElement>(null);
 
+    // register the button refs for the keyboard shortcuts
+    useEffect(() => {
+        if (lockXRef.current)
+            registerKeyboardAction(DefinedKeyboardActions.lockX.keyString, () => lockXRef.current?.click());
+        if (lockYRef.current)
+            registerKeyboardAction(DefinedKeyboardActions.lockY.keyString, () => lockYRef.current?.click());
+        if (snapToNearestWholeRef.current)
+            registerKeyboardAction(DefinedKeyboardActions.snapToNearestWhole.keyString, () => snapToNearestWholeRef.current?.click());
+    }, [lockXRef, lockYRef, registerKeyboardAction]);
+
+    /**
+     * Toggle a setting, lockX or lockY
+     */
     const toggle = useCallback((setting: keyof Interfaces.UiSettings) => {
         setUiSettings({
             ...uiSettings,
@@ -19,6 +37,9 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
         }, setting);
     }, [uiSettings, setUiSettings]);
 
+    /**
+     * Snap the selected marchers to the nearest whole step
+     */
     const handleSnapButton = useCallback(() => {
         if (selectedMarchers.length < 1 || !selectedPage) return;
 
@@ -32,41 +53,40 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
         window.electron.sendSnapToGrid(marcherPages, 1, uiSettings.lockX, uiSettings.lockY);
     }, [selectedMarchers, selectedPage, uiSettings.lockX, uiSettings.lockY]);
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (!document.activeElement?.matches("input, textarea, select, [contenteditable]") && !e.ctrlKey && !e.metaKey) {
-            switch (e.key) {
-                case ReactKeyActions.snapToNearestWhole:
-                    handleSnapButton();
-                    break;
-            }
-        }
-    }, [handleSnapButton]);
-
-    useEffect(() => {
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [handleKeyDown]);
-
     return (
         <div>
             <ButtonGroup className={className}>
                 <OverlayTrigger
                     placement="bottom"
                     overlay={<Tooltip id={`tooltip-top`}>
-                        {uiSettings.lockX ? "Enable " : "Lock "} X Movement [{ReactKeyActions.lockX.toUpperCase()}]
+                        {uiSettings.lockX ?
+                            DefinedKeyboardActions.lockX.instructionalStringToggleOn :
+                            DefinedKeyboardActions.lockX.instructionalStringToggleOff
+                        }
                     </Tooltip>}
                 >
-                    <Button variant={uiSettings.lockX ? "secondary" : "primary"} onClick={() => toggle("lockX")}>
+                    <Button
+                        variant={uiSettings.lockX ? "secondary" : "primary"}
+                        onClick={() => toggle("lockX")}
+                        ref={lockXRef}
+                    >
                         < TbAxisX />
                     </Button>
                 </OverlayTrigger>
                 <OverlayTrigger
                     placement="bottom"
                     overlay={<Tooltip id={`tooltip-top`}>
-                        {uiSettings.lockY ? "Enable " : "Lock "} Y Movement [{ReactKeyActions.lockY.toUpperCase()}]
+                        {uiSettings.lockY ?
+                            DefinedKeyboardActions.lockY.instructionalStringToggleOn :
+                            DefinedKeyboardActions.lockY.instructionalStringToggleOff
+                        }
                     </Tooltip>}
                 >
-                    <Button variant={uiSettings.lockY ? "secondary" : "primary"} onClick={() => toggle("lockY")}>
+                    <Button
+                        variant={uiSettings.lockY ? "secondary" : "primary"}
+                        onClick={() => toggle("lockY")}
+                        ref={lockYRef}
+                    >
                         < TbAxisY />
                     </Button>
                 </OverlayTrigger>
@@ -74,9 +94,11 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
             <ButtonGroup className={className}>
                 <OverlayTrigger
                     placement="bottom"
-                    overlay={<Tooltip id={`tooltip-top`}>Snap to nearest whole step [{ReactKeyActions.snapToNearestWhole.toUpperCase()}]</Tooltip>}
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {DefinedKeyboardActions.snapToNearestWhole.instructionalString}
+                    </Tooltip>}
                 >
-                    <Button onClick={handleSnapButton}>
+                    <Button onClick={handleSnapButton} ref={snapToNearestWholeRef}>
                         < TbKeyframeAlignCenterFilled />
                     </Button>
                 </OverlayTrigger>
