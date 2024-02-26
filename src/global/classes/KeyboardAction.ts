@@ -64,4 +64,14 @@ export class KeyboardAction {
             && this.alt === action.alt
             && this.shift === action.shift;
     }
+
+    /**
+     * Equality check for the action. Returns true if the keys and description are equal.
+     * @param action
+     * @returns
+     */
+    equals(action: KeyboardAction) {
+        return this.keysEqual(action)
+            && this.desc === action.desc;
+    }
 }

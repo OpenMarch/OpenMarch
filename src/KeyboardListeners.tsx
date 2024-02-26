@@ -3,13 +3,30 @@ import { KeyboardAction } from "@/global/classes/KeyboardAction";
 import { useKeyboardActionsStore } from "./stores/keyboardShortcutButtons/useKeyboardActionsStore";
 
 /**
+ * The interface for the keyboard actions. This exists so it is easy to see what actions are available.
+ */
+export interface DefinedKeyboardActionsInterface {
+    lockX: KeyboardAction;
+    lockY: KeyboardAction;
+    nextPage: KeyboardAction;
+    lastPage: KeyboardAction;
+    previousPage: KeyboardAction;
+    firstPage: KeyboardAction;
+    playPause: KeyboardAction;
+    snapToNearestWhole: KeyboardAction;
+}
+
+/**
  * Keyboard shortcuts for the application. All values must be unique.
  */
-export const DefinedKeyboardActions: { [action: string]: KeyboardAction } = {
+export const DefinedKeyboardActions: DefinedKeyboardActionsInterface = {
     lockX: new KeyboardAction({ key: "z", desc: "Lock X axis", toggleOnStr: "Enable X movement", toggleOffStr: "Lock X movement" }),
     lockY: new KeyboardAction({ key: "x", desc: "Lock Y axis", toggleOnStr: "Enable Y movement", toggleOffStr: "Lock Y movement" }),
     nextPage: new KeyboardAction({ key: "e", desc: "Next page" }),
+    lastPage: new KeyboardAction({ key: "e", control: true, desc: "Last page" }),
     previousPage: new KeyboardAction({ key: "q", desc: "Previous page" }),
+    firstPage: new KeyboardAction({ key: "q", control: true, desc: "First page" }),
+    playPause: new KeyboardAction({ key: " ", desc: "Play or pause", toggleOnStr: "Play", toggleOffStr: "Pause" }),
     snapToNearestWhole: new KeyboardAction({ key: "1", desc: "Snap to nearest whole" })
 } as const;
 
@@ -26,7 +43,7 @@ export default function KeyboardListener() {
      */
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (!document.activeElement?.matches("input, textarea, select, [contenteditable]")) {
-            const keyString = KeyboardAction.makeKeyString({ key: e.key, control: e.ctrlKey, alt: e.altKey, shift: e.shiftKey });
+            const keyString = KeyboardAction.makeKeyString({ key: e.key, control: e.ctrlKey || e.metaKey, alt: e.altKey, shift: e.shiftKey });
             if (keyboardActions[keyString]) {
                 keyboardActions[keyString]();
                 e.preventDefault();

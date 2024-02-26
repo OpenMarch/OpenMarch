@@ -1,4 +1,4 @@
-import { KeyboardAction } from "@/global/classes/KeyboardAction";
+import { DefinedKeyboardActionsInterface } from "@/KeyboardListeners";
 import { type StateCreator } from "zustand";
 
 export type KeyboardActionsStoreType = {
@@ -10,7 +10,7 @@ export type KeyboardActionsStoreType = {
      * @param definedKeyboardActions
      * @returns
      */
-    initKeyboardActions: (definedKeyboardActions: { [key: string]: KeyboardAction }) => void;
+    initKeyboardActions: (definedKeyboardActions: DefinedKeyboardActionsInterface) => void;
     /**
      * If you want to register a keyboard shortcut to an action, you need to register the action here.
      *
@@ -23,7 +23,7 @@ export type KeyboardActionsStoreType = {
 
 export const keyboardActionsStoreCreator: StateCreator<KeyboardActionsStoreType> = (set) => ({
     keyboardActions: {},
-    initKeyboardActions: (definedKeyboardActions: { [key: string]: KeyboardAction }) => {
+    initKeyboardActions: (definedKeyboardActions: DefinedKeyboardActionsInterface) => {
         set({
             keyboardActions: Object.fromEntries(
                 Object.values(definedKeyboardActions).map(
