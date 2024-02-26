@@ -6,8 +6,6 @@ export class KeyboardAction {
     readonly key: string;
     /** The description of the action. E.g. "lockX" */
     readonly desc: string;
-    /** The action to perform when the key and combinations are pressed */
-    // action: () => any;
     /** True if the control key needs to be held down (Command in macOS)*/
     readonly control: boolean;
     /** True if the alt key needs to be held down (option in macOS) */
@@ -45,22 +43,6 @@ export class KeyboardAction {
     private makeInstructionalString() {
         return `${this.desc} [${this.keyString}]`;
     }
-
-    // /**
-    //  * Registers an action to the keyboard shortcut.
-    //  * @param action The action to perform when the key and combinations are pressed
-    //  */
-    // registerAction(action: () => any) {
-    //     this.action = action;
-    // }
-
-    // /**
-    //  * Registers a button ref click as the keyboard shortcut action.
-    //  * @param ref The button's ref
-    //  */
-    // registerActionAsButtonRef(ref: React.RefObject<HTMLButtonElement>) {
-    //     this.action = () => ref.current?.click() || console.error(`Button ref not found for ${this.desc}`);
-    // }
 
     /**
      * Returns a string representation of the key and modifiers.
