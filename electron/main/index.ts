@@ -126,11 +126,9 @@ function initGetters() {
   store.set('lockX', false);
   store.set('lockY', false);
   ipcMain.on('send:lockX', async (_, lockX: boolean) => {
-    console.log('lockX: ' + lockX);
     store.set('lockX', lockX as boolean);
   });
   ipcMain.on('send:lockY', async (_, lockY: boolean) => {
-    console.log('lockY: ' + lockY);
     store.set('lockY', lockY as boolean);
   });
 

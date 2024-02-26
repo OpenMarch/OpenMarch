@@ -229,3 +229,21 @@ export interface Section {
     scoreOrder: number;
     prefix: string;
 }
+
+/**
+ * Any action that can be triggered by a keyboard shortcut.
+ */
+export interface KeyboardAction {
+    /** The key to press to trigger the action */
+    key: string;
+    /** The description of the action */
+    desc: string;
+    /** The action to perform when the key and combinations are pressed */
+    action: () => any;
+    /** True if the control key needs to be held down (Command in macOS)*/
+    control?: boolean;
+    /** True if the alt key needs to be held down (option in macOS) */
+    alt?: boolean;
+    /** True if the shift key needs to be held down */
+    shift?: boolean;
+}

@@ -8,6 +8,7 @@ import StateInitializer from './StateInitializer';
 import LaunchPage from './components/LaunchPage';
 import { useEffect, useState } from 'react';
 import { FieldPropertiesProvider } from './context/fieldPropertiesContext';
+import KeyboardListener from './KeyboardListeners';
 
 function App() {
   const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -22,20 +23,18 @@ function App() {
     <>
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
         <SelectedPageProvider>
+          <KeyboardListener />
           <SelectedMarchersProvider>
             <FieldPropertiesProvider>
               <IsPlayingProvider>
                 <StateInitializer />
                 <div className="app-container">
-                  {/* <div className="toolbar-container"> */}
                   <Topbar />
                   <div className="secondary-container">
                     <Sidebar />
                     <Canvas />
-                    {/* <PageList /> */}
                   </div>
                 </div>
-                {/* </div> */}
               </IsPlayingProvider>
             </FieldPropertiesProvider>
           </SelectedMarchersProvider>
@@ -46,19 +45,3 @@ function App() {
 }
 
 export default App;
-
-// {/* <header className="App-header">
-//         <img src={logo} className="App-logo" alt="logo" />
-//         <p>
-//           Edit <code>src/App.tsx</code> and save to reload.
-//         </p>
-//         <a
-//           className="App-link"
-//           href="https://reactjs.org"
-//           target="_blank"
-//           rel="noopener noreferrer"
-//         >
-//           Learn React
-//         </a>
-//       </header> */}
-// {/* <Toolbar /> */ }
