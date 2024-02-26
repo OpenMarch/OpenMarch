@@ -26,7 +26,7 @@ export default function KeyboardListener() {
      */
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (!document.activeElement?.matches("input, textarea, select, [contenteditable]")) {
-            const keyString = KeyboardAction.makeKeyString({ key: e.key, control: e.ctrlKey, alt: e.altKey, shift: e.shiftKey });
+            const keyString = KeyboardAction.makeKeyString({ key: e.key, control: e.ctrlKey || e.metaKey, alt: e.altKey, shift: e.shiftKey });
             if (keyboardActions[keyString]) {
                 keyboardActions[keyString]();
                 e.preventDefault();
