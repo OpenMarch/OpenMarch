@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as History from './database.history';
 import { FieldProperties } from '../../src/global/Interfaces';
 import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '@/global/classes/Marcher';
+import { NewPageArgs, Page } from '@/global/classes/Page';
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -482,20 +483,20 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
 }
 
 /* ============================ Page ============================ */
-async function getPages(db?: Database.Database): Promise<Interfaces.Page[]> {
+async function getPages(db?: Database.Database): Promise<Page[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName}`);
     const result = await stmt.all();
     if (!db) dbToUse.close();
-    return result as Interfaces.Page[];
+    return result as Page[];
 }
 
-async function getPage(pageId: number, db?: Database.Database): Promise<Interfaces.Page> {
+async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @pageId`);
     const result = await stmt.get({ pageId });
     if (!db) dbToUse.close();
-    return result as Interfaces.Page;
+    return result as Page;
 }
 
 /**
@@ -505,7 +506,7 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Interfac
  * @param db
  * @returns The page prior to the page with the given id. Null if the page is the first page.
  */
-export async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Interfaces.Page> {
+export async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Page> {
     const dbToUse = db || connect();
     const currentOrder = (await getPage(pageId, dbToUse)).order;
 
@@ -517,13 +518,13 @@ export async function getPreviousPage(pageId: number, db?: Database.Database): P
         LIMIT 1
     `);
 
-    const result = await stmt.get({ currentOrder }) as Interfaces.Page;
+    const result = await stmt.get({ currentOrder }) as Page;
     if (!db) dbToUse.close();
-    return result as Interfaces.Page || null;
+    return result as Page || null;
 
 }
 
-async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResponse> {
+async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -536,7 +537,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
             const stmt = db.prepare(`SELECT MAX("order") as maxOrder FROM ${Constants.PageTableName}`);
             const result: any = stmt.get();
             const newOrder = result.maxOrder + 1;
-            const pageToAdd: Interfaces.Page = {
+            const pageToAdd: Page = {
                 id: 0, // Not used, needed for interface
                 id_for_html: '', // Not used, needed for interface
                 name: newPage.name || '',
@@ -614,11 +615,11 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
 /**
  * Update a list of pages with the given values.
  *
- * @param pageUpdates Array of UpdatePage objects that contain the id of the
+ * @param modifiedPages Array of UpdatePage objects that contain the id of the
  *                    page to update and the values to update it with
  * @returns - {success: boolean, errorMessage?: string}
  */
-async function updatePages(pageUpdates: Interfaces.UpdatePage[]): Promise<DatabaseResponse> {
+async function updatePages(modifiedPages: ModifiedMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -628,7 +629,7 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]): Promise<Databa
     const excludedProperties = ['id'];
 
     try {
-        for (const pageUpdate of pageUpdates) {
+        for (const pageUpdate of modifiedPages) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(pageUpdate)
                 .filter(key => !excludedProperties.includes(key))
@@ -880,7 +881,7 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
 
     /* Get the previous marcherPage */
     const currPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @page_id`);
-    const currPage = currPageStmt.get({ page_id }) as Interfaces.Page;
+    const currPage = currPageStmt.get({ page_id }) as Page;
     if (!currPage)
         throw new Error(`Page with id ${page_id} does not exist`);
     if (currPage.order === 1) {

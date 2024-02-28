@@ -22,7 +22,8 @@
     "lint": "eslint .",
     "test": "eslint . && jest",
     "test:watch": "eslint . && jest --watch",
-    "test:coverage": "eslint . && jest --coverage"
+    "test:coverage": "eslint . && jest --coverage",
+    "test:clearCache": "jest --clearCache"
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.8",

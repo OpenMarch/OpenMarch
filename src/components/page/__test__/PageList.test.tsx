@@ -1,9 +1,8 @@
 import { render, fireEvent, act, renderHook, within, Matcher, MatcherOptions, ByRoleMatcher, ByRoleOptions } from "@testing-library/react";
 import PageList from "../PageList";
-import * as api from '@/api/api';
-import { mockPages } from "./mocks";
+import { mockPages } from "@/__mocks__/globalMocks";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { Page } from "@/global/Interfaces";
+import { Page } from "@/global/classes/Page";
 
 function validatePageRows(pageRows: HTMLElement[], expectedPages: Page[]) {
     pageRows.forEach(pageRow => {
@@ -19,14 +18,13 @@ function validatePageRows(pageRows: HTMLElement[], expectedPages: Page[]) {
 describe("PageList", () => {
     let updatePagesSpy: jest.SpyInstance;
     beforeAll(async () => {
-        jest.mock('@/api/api');
         jest.mock('@/stores/page/usePageStore');
 
         // Mock the getPages function to return the mockPages array
-        jest.spyOn(api, 'getPages').mockResolvedValue(mockPages);
+        jest.spyOn(Page, 'getPages').mockResolvedValue(mockPages);
 
         // Mock the updatePages function to return a resolved promise
-        updatePagesSpy = jest.spyOn(api, 'updatePages').mockResolvedValue({ success: true });
+        updatePagesSpy = jest.spyOn(Page, 'updatePages').mockResolvedValue({ success: true });
     });
 
     beforeEach(async () => {

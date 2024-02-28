@@ -1,6 +1,6 @@
 import { render, fireEvent, act, renderHook, within, Matcher, MatcherOptions, ByRoleMatcher, ByRoleOptions } from "@testing-library/react";
 import MarcherList from "../MarcherList";
-import { mockMarchers } from "./mocks";
+import { mockMarchers } from "@/__mocks__/globalMocks";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 

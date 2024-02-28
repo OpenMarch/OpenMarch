@@ -1,5 +1,6 @@
-import { NewPage, UpdateMarcherPage, UpdatePage } from "@/global/Interfaces"
+import { UpdateMarcherPage } from "@/global/Interfaces"
 import { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
+import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page"
 import { contextBridge, ipcRenderer } from "electron"
 import { DatabaseResponse } from "electron/database/database.services"
 
@@ -141,8 +142,8 @@ const APP_API = {
 
   // Page
   getPages: () => ipcRenderer.invoke('page:getAll'),
-  createPages: (pages: NewPage[]) => ipcRenderer.invoke('page:insert', pages),
-  updatePages: (args: UpdatePage[]) => ipcRenderer.invoke('page:update', args),
+  createPages: (pages: NewPageArgs[]) => ipcRenderer.invoke('page:insert', pages),
+  updatePages: (modifiedPages: ModifiedPageArgs[]) => ipcRenderer.invoke('page:update', modifiedPages),
   deletePage: (id: number) => ipcRenderer.invoke('page:delete', id),
 
   // MarcherPage

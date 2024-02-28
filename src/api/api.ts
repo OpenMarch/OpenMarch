@@ -57,48 +57,48 @@ export async function getFieldProperties(): Promise<Interfaces.FieldProperties> 
 
 /* ====================== Page ====================== */
 
-/**
- * @returns a list of all pages.
- */
-export async function getPages(): Promise<Interfaces.Page[]> {
-  const response = await window.electron.getPages();
-  return response;
-}
+// /**
+//  * @returns a list of all pages.
+//  */
+// export async function getPages(): Promise<Interfaces.Page[]> {
+//   const response = await window.electron.getPages();
+//   return response;
+// }
 
-export async function createPage(newPage: Interfaces.NewPage) {
-  return await createPages([newPage]);
-}
+// export async function createPage(newPage: Interfaces.NewPage) {
+//   return await createPages([newPage]);
+// }
 
-export async function createPages(pages: Interfaces.NewPage[]) {
-  const response = await window.electron.createPages(pages);
-  return response;
-}
+// export async function createPages(pages: Interfaces.NewPage[]) {
+//   const response = await window.electron.createPages(pages);
+//   return response;
+// }
 
-/**
- * Update one or many pages.
- * Must fetch pages after updating.
- *
- * @param pageUpdates
- * @returns Response data from the server.
- */
-export async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
-  const response = await window.electron.updatePages(pageUpdates);
-  return response;
-}
+// /**
+//  * Update one or many pages.
+//  * Must fetch pages after updating.
+//  *
+//  * @param pageUpdates
+//  * @returns Response data from the server.
+//  */
+// export async function updatePages(pageUpdates: Interfaces.UpdatePage[]) {
+//   const response = await window.electron.updatePages(pageUpdates);
+//   return response;
+// }
 
-/**
- * Deletes a page from the database.
- *
- * CAUTION - this will delete all of the marcherPages associated with the page.
- * THIS CANNOT BE UNDONE.
- *
- * @param page_id - The id of the page. Do not use id_for_html.
- * @returns Response data from the server.
- */
-export async function deletePage(page_id: number) {
-  const response = await window.electron.deletePage(page_id);
-  return response;
-}
+// /**
+//  * Deletes a page from the database.
+//  *
+//  * CAUTION - this will delete all of the marcherPages associated with the page.
+//  * THIS CANNOT BE UNDONE.
+//  *
+//  * @param page_id - The id of the page. Do not use id_for_html.
+//  * @returns Response data from the server.
+//  */
+// export async function deletePage(page_id: number) {
+//   const response = await window.electron.deletePage(page_id);
+//   return response;
+// }
 
 /* ====================== MarcherPage ====================== */
 

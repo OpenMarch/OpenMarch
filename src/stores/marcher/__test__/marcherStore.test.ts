@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { useMarcherStore } from "../useMarcherStore";
-import { mockMarchers } from './mocks';
+import { mockMarchers } from '@/__mocks__/globalMocks';
 import { Marcher } from '@/global/classes/Marcher';
 
 jest.mock('@/global/classes/Marcher');

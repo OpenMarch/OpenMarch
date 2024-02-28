@@ -1,46 +1,4 @@
 /** A collection of interfaces and types used throughout the application */
-/*********************** Page ***********************/
-/**
- * Defines all of the data associated with a page in the database.
- */
-export interface Page {
-    id: number;
-    id_for_html: string;
-    name: string;
-    counts: number;
-    order: number;
-    tempo?: number; // TODO implement
-    time_signature?: string; // TODO implement
-    notes?: string;
-}
-
-/**
- * Defines the required fields of a new page.
- */
-export interface NewPage {
-    name: string;
-    counts: number;
-    tempo: number;
-    time_signature: string;
-    notes?: string;
-}
-
-/**
- * Defines the editable fields of a page.
- */
-export interface UpdatePage {
-    /**
-     * The id of the page to update. Read only.
-     */
-    id: number;
-    name?: string;
-    counts?: number;
-    // order?: number; // TODO implement
-    tempo?: number;
-    time_signature?: string;
-    notes?: string;
-}
-
 /*********************** MarcherPage ***********************/
 /**
  * Defines all of the data associated with a marcherPage in the database.

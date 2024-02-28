@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { mockMarchers } from './mocks';
+import { mockMarchers } from '@/__mocks__/globalMocks';
 import { useSelectedMarchers, SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { ElectronApi } from 'electron/preload';
 import { Marcher } from '@/global/classes/Marcher';

@@ -1,11 +1,11 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { updatePages } from "../../api/api";
 import { useEffect } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
+import { Page } from "@/global/classes/Page";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
-    const { pages, fetchPages } = usePageStore()!;
+    const { pages } = usePageStore()!;
 
     const countsInputId = "page-counts";
     const formId = "edit-page-form";
@@ -16,7 +16,7 @@ function PageEditor() {
         const counts = form[countsInputId].value;
 
         if (selectedPage) {
-            updatePages([{ id: selectedPage.id, counts: counts }]).then(() => fetchPages());
+            Page.updatePages([{ id: selectedPage.id, counts: counts }]);
         }
 
         // Remove focus from the input field

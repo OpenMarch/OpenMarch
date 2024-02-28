@@ -62,8 +62,10 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
 
                 if (response.success)
                     newAlertMessages.unshift(`Marcher ${drillPrefix + newDrillOrder} created successfully`);
-                else
+                else {
+                    newAlertMessages.unshift(`Error creating marcher ${drillPrefix + newDrillOrder}`);
                     console.error(`Error creating marcher ${drillPrefix + newDrillOrder}:`, response.errorMessage);
+                }
             }
             setAlertMessages(newAlertMessages);
             resetForm();

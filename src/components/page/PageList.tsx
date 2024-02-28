@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
-import { deletePage, updatePages } from "../../api/api";
-import { ListFormProps, Page, UpdatePage } from "../../global/Interfaces";
+import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
 import { usePageStore } from "@/stores/page/usePageStore";
+import { Page } from "@/global/classes/Page";
+import { ModifiedMarcherArgs } from "@/global/classes/Marcher";
 
 
 function PageList({
@@ -18,7 +19,7 @@ function PageList({
     const [isEditing, setIsEditing] = isEditingStateProp || [isEditingLocal, setIsEditingLocal];
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [false, undefined];
     const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [false, undefined];
-    const { pages, fetchPages } = usePageStore();
+    const { pages } = usePageStore();
 
     // localPages are the Pages that are displayed in the table
     const [localPages, setLocalPages] = useState<Page[]>();
@@ -29,7 +30,7 @@ function PageList({
     async function handleSubmit() {
         setIsEditing(false);
 
-        const pageUpdates: UpdatePage[] = [];
+        const modifiedPages: ModifiedMarcherArgs[] = [];
 
         if (deletionsRef.current.length > 0) {
             let windowConfirmStr = `-- WARNING --`
@@ -41,14 +42,13 @@ function PageList({
                 windowConfirmStr += `\nPg. ${pages?.find((page) => page.id === pageId)?.name}`;
             if (window.confirm(windowConfirmStr))
                 for (const pageId of deletionsRef.current)
-                    await deletePage(pageId);
+                    await Page.deletePage(pageId);
         }
 
         for (const [pageId, changes] of Object.entries(changesRef.current))
-            pageUpdates.push({ id: Number(pageId), ...changes });
+            modifiedPages.push({ id: Number(pageId), ...changes });
 
-        const result = await updatePages(pageUpdates);
-        fetchPages();
+        const result = await Page.updatePages(modifiedPages);
         deletionsRef.current = [];
         changesRef.current = {};
         return result;

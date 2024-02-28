@@ -24,9 +24,8 @@ export class Marcher {
     /**
      * Fetches all of the marchers from the database.
      * This is attached to the Marcher store and needs to be updated in a useEffect hook so that the UI is updated.
-     * @returns A list of all the marchers in the database.
      */
-    static fetchMarchers: () => Promise<Marcher[]>;
+    static fetchMarchers: () => Promise<void>;
 
     constructor(marcher: Marcher) {
         this.id = marcher.id;
@@ -68,7 +67,8 @@ export class Marcher {
     /**
      * Update one or many marchers with the provided arguments.
      *
-     * @param updateMarchers
+     * @param modifiedMarchers - The objects to update the marchers with.
+     * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]) {
         const response = await window.electron.updateMarchers(modifiedMarchers);

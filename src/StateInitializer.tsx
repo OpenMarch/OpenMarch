@@ -6,6 +6,7 @@ import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { Marcher } from "./global/classes/Marcher";
+import { Page } from "./global/classes/Page";
 
 /**
  * A component that initializes the state of the application.
@@ -29,6 +30,7 @@ function StateInitializer() {
     }, [fetchMarcherPages, pages, marchers]);
 
     useEffect(() => {
+        Page.fetchPages = fetchPages;
         fetchPages();
     }, [fetchPages]);
 

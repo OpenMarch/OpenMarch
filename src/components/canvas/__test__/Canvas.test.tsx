@@ -1,4 +1,4 @@
-// import { mockMarchers, mockPages } from "./mocks";
+// import { mockMarchers, mockPages } from "@/__mocks__/globalMocks";
 // import { createMarcherPages } from "@/utilities/TestingUtilities";
 
 // const initialMockMarcherPages = createMarcherPages(mockMarchers, mockPages);

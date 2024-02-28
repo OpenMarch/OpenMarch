@@ -1,8 +1,7 @@
 import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
 import { useCallback, useEffect, useState } from "react";
-import { NewPage, Page } from "../../global/Interfaces";
-import { createPage } from "../../api/api";
 import { usePageStore } from "@/stores/page/usePageStore";
+import { NewPageArgs, Page } from "@/global/classes/Page";
 
 interface NewPageFormProps {
     hasHeader?: boolean;
@@ -19,7 +18,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
-    const { pages, fetchPages } = usePageStore!();
+    const { pages } = usePageStore!();
 
     useEffect(() => {
         if (!typing) {
@@ -69,25 +68,25 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
             const newAlertMessages = [...alertMessages];
             let newPageName = pageName;
             for (let i = 0; i < quantity; i++) {
-                const newPage: NewPage = {
+                const newPage: NewPageArgs = {
                     name: newPageName,
                     counts: counts,
                     tempo: 120,
                     time_signature: "4/4"
                 }
 
-                try {
-                    await createPage(newPage);
+                const response = await Page.createPage(newPage);
+
+                if (response.success)
                     newAlertMessages.unshift(`Page ${newPageName} (${counts} count${counts > 1 ? "s" : ""}) created successfully`);
-                } catch (error) {
+                else {
+                    console.error(`Error creating page ${newPageName} (${counts} counts):`, response.errorMessage);
                     newAlertMessages.unshift(`Error creating page ${newPageName} (${counts} counts)`);
-                    console.error(`Error creating page ${newPageName} (${counts} counts):`, error);
                 }
                 newPageName = getNextPageName(newPageName, isSubset) || "Error";
             }
             setAlertMessages(newAlertMessages);
             resetForm();
-            fetchPages();
         }
     };
 

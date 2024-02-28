@@ -1,12 +1,10 @@
 import { ElectronApi } from 'electron/preload';
 import { Marcher, NewMarcherArgs, ModifiedMarcherArgs } from '../Marcher';
-import { mockMarchers } from './mocks';
+import { mockMarchers } from '@/__mocks__/globalMocks';
 
 describe('Marcher', () => {
-    let marcher: Marcher;
-
-    beforeEach(() => {
-        marcher = new Marcher({
+    it('should create a marcher object', () => {
+        const marcher = new Marcher({
             id: 1,
             id_for_html: 'marcher_1',
             name: 'John Doe',
@@ -16,9 +14,7 @@ describe('Marcher', () => {
             notes: 'Some notes',
             year: 'Freshman',
         });
-    });
 
-    it('should create a marcher object', () => {
         expect(marcher).toBeInstanceOf(Marcher);
         expect(marcher.id).toBe(1);
         expect(marcher.id_for_html).toBe('marcher_1');
@@ -35,16 +31,9 @@ describe('Marcher', () => {
 
         jest.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockMarchers);
 
-        Marcher.fetchMarchers = jest.fn().mockImplementation(() => {
-            return Marcher.getMarchers();
-        });
-
         const getMarchersResult = await Marcher.getMarchers();
-        const fetchMarchersResult = await Marcher.fetchMarchers();
 
         expect(getMarchersResult).toEqual(mockMarchers);
-        expect(fetchMarchersResult).toEqual(mockMarchers);
-        expect(Marcher.fetchMarchers).toHaveBeenCalled();
     });
 
     it('should create a new marcher in the database', async () => {

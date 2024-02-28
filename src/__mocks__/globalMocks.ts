@@ -1,4 +1,7 @@
-import { Marcher, Page } from "@/global/Interfaces";
+import { FieldProperties, MarcherPage } from "@/global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
+import { Page } from "@/global/classes/Page";
+import { TimeSignature } from "@/global/classes/TimeSignature";
 
 export const mockMarchers: Marcher[] = [
     {
@@ -55,7 +58,7 @@ export const mockPages: Page[] = [
         counts: 16,
         order: 1,
         tempo: 120,
-        time_signature: '4/4',
+        time_signature: TimeSignature.timeSignatureFromString('4/4'),
         notes: 'This is the first page'
     },
     {
@@ -65,7 +68,7 @@ export const mockPages: Page[] = [
         counts: 8,
         order: 2,
         tempo: 89,
-        time_signature: '12/8',
+        time_signature: TimeSignature.timeSignatureFromString('12/8'),
         notes: 'This is the second page'
     },
     {
@@ -74,18 +77,57 @@ export const mockPages: Page[] = [
         name: '3',
         counts: 16,
         order: 3,
-        tempo: undefined,
-        time_signature: undefined,
-        notes: undefined
-    },
-    {
-        id: 4,
-        id_for_html: 'page_4',
-        name: '4',
-        counts: 32,
-        order: 3,
-        tempo: undefined,
-        time_signature: undefined,
+        tempo: 2,
+        time_signature: TimeSignature.timeSignatureFromString('15/1'),
         notes: undefined
     }
 ] as const;
+
+export const mockMarcherPages: MarcherPage[] = [
+    {
+        id: 1,
+        id_for_html: 'marcherPage_1',
+        marcher_id: 1,
+        page_id: 1,
+        x: 50,
+        y: 50,
+        notes: 'This is the first marcherPage'
+    },
+    {
+        id: 2,
+        id_for_html: 'marcherPage_2',
+        marcher_id: 2,
+        page_id: 2,
+        x: 0,
+        y: 0,
+        notes: 'This is the second marcherPage'
+    },
+    {
+        id: 3,
+        id_for_html: 'marcherPage_3',
+        marcher_id: 3,
+        page_id: 3,
+        x: -200,
+        y: -500,
+        notes: undefined
+    }
+] as const;
+
+// The "origin" of a football field is on the 50 yard line on the front hash. This is the pixel position on the canvas.
+const V1_ORIGIN = { x: 800, y: 520 };
+/**
+ * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
+ */
+export const mockV1FieldProperties: FieldProperties = {
+    frontSideline: 32,
+    frontHash: 0,
+    backHash: -20,
+    backSideline: -52,
+    originX: V1_ORIGIN.x,
+    originY: V1_ORIGIN.y,
+    pixelsPerStep: 10,
+    roundFactor: 20, // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
+    width: 1600,
+    height: 840,
+    stepsBetweenLines: 8
+} as const;
