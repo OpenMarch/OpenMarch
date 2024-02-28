@@ -1,10 +1,9 @@
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
 import { sections } from "../../global/Constants";
 import { useCallback, useEffect, useState } from "react";
-import { Marcher, NewMarcher } from "../../global/Interfaces";
-import { createMarcher } from "../../api/api";
 import { Section } from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { Marcher } from "@/global/classes/Marcher";
 
 interface NewMarcherFormProps {
     hasHeader?: boolean;
@@ -26,7 +25,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
     const [drillPrefixTouched, setDrillPrefixTouched] = useState<boolean>(false);
     const [drillOrderError, setDrillOrderError] = useState<string>("");
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
-    const { marchers, fetchMarchers } = useMarcherStore!();
+    const { marchers } = useMarcherStore!();
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
 
     const resetForm = () => {
@@ -59,24 +58,15 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
                     newDrillOrder++;
                 }
 
-                const newMarcher: NewMarcher = {
-                    name: "",
-                    section: section,
-                    drill_prefix: drillPrefix,
-                    drill_order: newDrillOrder,
-                }
+                const response = await Marcher.createMarcher({ section, drill_prefix: drillPrefix, drill_order: newDrillOrder });
 
-                try {
-                    await createMarcher(newMarcher);
+                if (response.success)
                     newAlertMessages.unshift(`Marcher ${drillPrefix + newDrillOrder} created successfully`);
-                } catch (error) {
-                    newAlertMessages.unshift(`Error creating marcher ${drillPrefix + newDrillOrder}`);
-                    console.error(`Error creating marcher ${drillPrefix + newDrillOrder}:`, error);
-                }
+                else
+                    console.error(`Error creating marcher ${drillPrefix + newDrillOrder}:`, response.errorMessage);
             }
             setAlertMessages(newAlertMessages);
             resetForm();
-            fetchMarchers();
         }
     };
 

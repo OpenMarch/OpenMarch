@@ -18,7 +18,7 @@ function PageList({
     const [isEditing, setIsEditing] = isEditingStateProp || [isEditingLocal, setIsEditingLocal];
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [false, undefined];
     const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [false, undefined];
-    const { pages, pagesAreLoading, fetchPages } = usePageStore();
+    const { pages, fetchPages } = usePageStore();
 
     // localPages are the Pages that are displayed in the table
     const [localPages, setLocalPages] = useState<Page[]>();
@@ -127,7 +127,7 @@ function PageList({
                         <th scope="col">Counts</th>
                     </tr>
                 </thead>
-                {(!pagesAreLoading && pages && localPages) &&
+                {(pages && localPages) &&
                     <tbody>
                         {localPages.map((page) => (
                             <tr key={page.id} aria-label="Page row" title="Page row" data-id={page.id}>

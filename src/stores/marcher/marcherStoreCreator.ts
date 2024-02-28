@@ -1,27 +1,17 @@
 import { type StateCreator } from "zustand";
-import * as api from "../../api/api";
-import * as Interfaces from "../../global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
 
-interface MarcherStoreState {
-    marchers: Interfaces.Marcher[],
-    marchersAreLoading: boolean
+export interface MarcherStoreInterface {
+    marchers: Marcher[]
+    fetchMarchers: () => Promise<Marcher[]>;
 }
-interface MarcherStoreActions {
-    fetchMarchers: () => Promise<void>;
-    setMarchersAreLoading: (isLoading: boolean) => void;
-}
-export interface MarcherStoreInterface extends MarcherStoreState, MarcherStoreActions { }
 
-export const marcherStoreCreator: StateCreator<MarcherStoreState & MarcherStoreActions> = (set) => ({
+export const marcherStoreCreator: StateCreator<MarcherStoreInterface> = (set) => ({
     marchers: [],
-    marchersAreLoading: true,
 
-    fetchMarchers: async () => {
-        const newMarchers = await api.getMarchers();
-        set({ marchers: newMarchers, marchersAreLoading: false });
+    fetchMarchers: async (): Promise<Marcher[]> => {
+        const newMarchers = await Marcher.getMarchers();
+        set({ marchers: newMarchers });
+        return newMarchers;
     },
-
-    setMarchersAreLoading: (isLoading) => {
-        set({ marchersAreLoading: isLoading });
-    }
 });

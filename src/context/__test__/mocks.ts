@@ -1,4 +1,5 @@
-import { FieldProperties, Marcher, Page } from "@/global/Interfaces";
+import { FieldProperties, Page } from "@/global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
 
 export const mockMarchers: Marcher[] = [
     {

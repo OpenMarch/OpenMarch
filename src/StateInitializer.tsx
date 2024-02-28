@@ -5,35 +5,32 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
+import { Marcher } from "./global/classes/Marcher";
 
 /**
  * A component that initializes the state of the application.
  * @returns <> </>
  */
 function StateInitializer() {
-    const { marchers, fetchMarchers, setMarchersAreLoading } = useMarcherStore();
-    const { fetchMarcherPages, setMarcherPagesAreLoading } = useMarcherPageStore()!;
-    const { pages, fetchPages, setPagesAreLoading } = usePageStore();
+    const { marchers, fetchMarchers } = useMarcherStore();
+    const { fetchMarcherPages } = useMarcherPageStore()!;
+    const { pages, fetchPages } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
+    // Set the fetchMarchers function in the Marcher class and fetch marchers from the database
     useEffect(() => {
-        fetchMarchers().finally(() => {
-            setMarchersAreLoading(false)
-        });
-    }, [fetchMarchers, setMarchersAreLoading]);
+        Marcher.fetchMarchers = fetchMarchers;
+        fetchMarchers();
+    }, [fetchMarchers]);
 
     useEffect(() => {
-        fetchMarcherPages().finally(() => {
-            setMarcherPagesAreLoading(false)
-        });
-    }, [fetchMarcherPages, setMarcherPagesAreLoading, pages]);
+        fetchMarcherPages();
+    }, [fetchMarcherPages, pages, marchers]);
 
     useEffect(() => {
-        fetchPages().finally(() => {
-            setPagesAreLoading(false);
-        });
-    }, [fetchPages, setPagesAreLoading]);
+        fetchPages();
+    }, [fetchPages]);
 
     // Select the first page if none are selected. Intended to activate at the initial loading of a webpage
     useEffect(() => {

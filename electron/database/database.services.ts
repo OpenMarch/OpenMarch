@@ -7,11 +7,19 @@ import * as Interfaces from '../../src/global/Interfaces';
 import * as fs from 'fs';
 import * as History from './database.history';
 import { FieldProperties } from '../../src/global/Interfaces';
+import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '@/global/classes/Marcher';
 
-interface DatabaseResponse {
-    success: boolean;
-    result?: any;
-    errorMessage?: string;
+export class DatabaseResponse {
+    readonly success: boolean;
+    /** Resulting data from the database action. This isn't very well implemented */
+    readonly result?: any;
+    readonly errorMessage?: string;
+
+    constructor(success: boolean, result?: any, errorMessage?: string) {
+        this.success = success;
+        this.result = result;
+        this.errorMessage = errorMessage;
+    }
 }
 
 /* ============================ COORDINATES ============================ */
@@ -262,33 +270,33 @@ export async function getFieldProperties(db?: Database.Database): Promise<Interf
 
 
 /* ============================ Marcher ============================ */
-async function getMarchers(db?: Database.Database): Promise<Interfaces.Marcher[]> {
+async function getMarchers(db?: Database.Database): Promise<Marcher[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
     const result = await stmt.all();
     if (!db) dbToUse.close();
-    return result as Interfaces.Marcher[];
+    return result as Marcher[];
 }
 
-async function getMarcher(marcherId: number, db?: Database.Database): Promise<Interfaces.Marcher> {
+async function getMarcher(marcherId: number, db?: Database.Database): Promise<Marcher> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`);
     const result = await stmt.get({ marcherId });
     if (!db) dbToUse.close();
-    return result as Interfaces.Marcher;
+    return result as Marcher;
 }
 
-async function createMarcher(newMarcher: Interfaces.NewMarcher) {
+async function createMarcher(newMarcher: NewMarcherArgs) {
     return createMarchers([newMarcher]);
 }
 
 /**
  * Updates a list of marchers with the given values.
  *
- * @param newMarchers
+ * @param newMarcherArgs
  * @returns - {success: boolean, errorMessage?: string}
  */
-async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<DatabaseResponse> {
+async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -296,7 +304,7 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<Dat
     // const historyQueries: History.historyQuery[] = [];
     try {
         for (const newMarcher of newMarchers) {
-            const marcherToAdd: Interfaces.Marcher = {
+            const marcherToAdd: Marcher = {
                 id: 0, // Not used, needed for interface
                 id_for_html: '', // Not used, needed for interface
                 name: newMarcher.name || '',
@@ -381,11 +389,11 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<Dat
 /**
  * Update a list of marchers with the given values.
  *
- * @param marcherUpdates Array of UpdateMarcher objects that contain the id of the
+ * @param modifiedMarchers Array of ModifiedMarcherArgs that contain the id of the
  *                    marcher to update and the values to update it with
  * @returns - {success: boolean, errorMessage: string}
  */
-async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promise<DatabaseResponse> {
+async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -395,9 +403,9 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
     const excludedProperties = ['id'];
 
     try {
-        for (const marcherUpdate of marcherUpdates) {
+        for (const modifiedMarcher of modifiedMarchers) {
             // Generate the SET clause of the SQL query
-            const setClause = Object.keys(marcherUpdate)
+            const setClause = Object.keys(modifiedMarcher)
                 .filter(key => !excludedProperties.includes(key))
                 .map(key => `${key} = @${key}`)
                 .join(', ');
@@ -407,7 +415,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
                 throw new Error('No valid properties to update');
             }
             // Record the original values of the marcher
-            const originalMarcher = await getMarcher(marcherUpdate.id, db);
+            const originalMarcher = await getMarcher(modifiedMarcher.id, db);
 
             const stmt = db.prepare(`
                 UPDATE ${Constants.MarcherTableName}
@@ -415,7 +423,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
                 WHERE id = @id
             `);
 
-            stmt.run({ ...marcherUpdate, new_updated_at: new Date().toISOString() });
+            stmt.run({ ...modifiedMarcher, new_updated_at: new Date().toISOString() });
 
             historyActions.push({
                 tableName: Constants.MarcherTableName,
@@ -424,7 +432,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
                 reverseAction: {
                     tableName: Constants.MarcherTableName,
                     setClause: setClause,
-                    previousState: await getMarcher(marcherUpdate.id, db)
+                    previousState: await getMarcher(modifiedMarcher.id, db)
                 }
             });
         }

@@ -1,5 +1,7 @@
-import { NewMarcher, NewPage, UpdateMarcher, UpdateMarcherPage, UpdatePage } from "@/global/Interfaces"
+import { NewPage, UpdateMarcherPage, UpdatePage } from "@/global/Interfaces"
+import { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
 import { contextBridge, ipcRenderer } from "electron"
+import { DatabaseResponse } from "electron/database/database.services"
 
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {
@@ -133,8 +135,8 @@ const APP_API = {
 
   // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
-  createMarcher: (marcher: NewMarcher) => ipcRenderer.invoke('marcher:insert', marcher),
-  updateMarchers: (args: UpdateMarcher[]) => ipcRenderer.invoke('marcher:update', args),
+  createMarcher: (newMarcher: NewMarcherArgs) => ipcRenderer.invoke('marcher:insert', newMarcher) as Promise<DatabaseResponse>,
+  updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) => ipcRenderer.invoke('marcher:update', modifiedMarchers),
   deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
 
   // Page

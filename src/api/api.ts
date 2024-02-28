@@ -100,45 +100,6 @@ export async function deletePage(page_id: number) {
   return response;
 }
 
-/* ====================== Marcher ====================== */
-
-/**
- * @returns a list of all marchers
- */
-export async function getMarchers(): Promise<Interfaces.Marcher[]> {
-  const response = await window.electron.getMarchers();
-  return response;
-}
-
-export async function updateMarchers(updateMarchers: Interfaces.UpdateMarcher[]) {
-  const response = await window.electron.updateMarchers(updateMarchers);
-  return response;
-}
-
-/**
- * Deletes a marcher from the database.
- * CAUTION - this will delete all of the marcherPages associated with the marcher.
- * THIS CANNOT BE UNDONE.
- *
- * @param marcher_id - The id of the marcher. Do not use id_for_html.
- * @returns Response data from the server.
- */
-export async function deleteMarcher(marcher_id: number) {
-  const response = await window.electron.deleteMarcher(marcher_id);
-  return response;
-}
-
-/**
- * Creates a new marcher in the database.
- *
- * @param marcher - The new marcher object to be created.
- * @returns Response data from the server.
- */
-export async function createMarcher(newMarcher: Interfaces.NewMarcher) {
-  const response = await window.electron.createMarcher(newMarcher);
-  return response;
-}
-
 /* ====================== MarcherPage ====================== */
 
 /**

@@ -1,16 +1,15 @@
 import { act, renderHook } from '@testing-library/react';
 import { useMarcherStore } from "../useMarcherStore";
 import { mockMarchers } from './mocks';
-import * as api from '@/api/api';
-import { Marcher } from '@/global/Interfaces';
+import { Marcher } from '@/global/classes/Marcher';
 
-jest.mock('@/api/api');
+jest.mock('@/global/classes/Marcher');
 
 describe('marcherStore', () => {
     afterEach(async () => {
         jest.clearAllMocks();
         const { result } = renderHook(() => useMarcherStore());
-        jest.spyOn(api, 'getMarchers').mockResolvedValue([]);
+        jest.spyOn(Marcher, 'getMarchers').mockResolvedValue([]);
         await act(async () => { result.current.fetchMarchers() });
         jest.clearAllMocks();
     });
@@ -23,7 +22,7 @@ describe('marcherStore', () => {
 
     it('marcherStore - fetches marchers', async () => {
         const mockToUse = mockMarchers;
-        jest.spyOn(api, 'getMarchers').mockResolvedValue(mockToUse);
+        jest.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockToUse);
 
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherStore());
@@ -37,7 +36,7 @@ describe('marcherStore', () => {
 
     it('marcherStore - fetches single marcher', async () => {
         const mockToUse = [mockMarchers[0]];
-        jest.spyOn(api, 'getMarchers').mockResolvedValue(mockToUse);
+        jest.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockToUse);
 
         const { result } = renderHook(() => useMarcherStore());
         await act(async () => { result.current.fetchMarchers() });
@@ -49,7 +48,7 @@ describe('marcherStore', () => {
 
     it('marcherStore - fetch no marchers', async () => {
         const mockToUse: Marcher[] = [];
-        jest.spyOn(api, 'getMarchers').mockResolvedValue(mockToUse);
+        jest.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockToUse);
 
         const { result } = renderHook(() => useMarcherStore());
         await act(async () => { result.current.fetchMarchers() });

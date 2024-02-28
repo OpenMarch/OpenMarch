@@ -1,4 +1,4 @@
-import { Marcher } from "@/global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
 
 export const mockMarchers: Marcher[] = [
     {

@@ -1,7 +1,7 @@
-import { mockMarchers, mockPages } from "./mocks";
-import { createMarcherPages } from "@/utilities/TestingUtilities";
+// import { mockMarchers, mockPages } from "./mocks";
+// import { createMarcherPages } from "@/utilities/TestingUtilities";
 
-const initialMockMarcherPages = createMarcherPages(mockMarchers, mockPages);
+// const initialMockMarcherPages = createMarcherPages(mockMarchers, mockPages);
 
 describe('Canvas', () => {
 

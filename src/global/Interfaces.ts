@@ -41,50 +41,6 @@ export interface UpdatePage {
     notes?: string;
 }
 
-/*********************** Marcher ***********************/
-/**
- * Defines all of the data associated with a marcher in the database.
- */
-export interface Marcher {
-    id: number;
-    id_for_html: string;
-    name: string;
-    section: string;
-    drill_number: string;
-    drill_prefix: string;
-    drill_order: number;
-    notes?: string;
-    year?: string;
-}
-
-/**
- * Defines the required fields of a new marcher.
- */
-export interface NewMarcher {
-    name: string;
-    section: string;
-    drill_prefix: string;
-    drill_order: number;
-    notes?: string;
-    year?: number;
-}
-
-/**
- * Defines the editable fields of a marcher.
- */
-export interface UpdateMarcher {
-    /**
-     * The id of the marcher to update. Read only.
-     */
-    id: number;
-    name?: string;
-    section?: string;
-    drill_prefix?: string;
-    drill_order?: number;
-    year?: number;
-    notes?: string;
-}
-
 /*********************** MarcherPage ***********************/
 /**
  * Defines all of the data associated with a marcherPage in the database.

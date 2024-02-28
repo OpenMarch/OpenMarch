@@ -19,14 +19,13 @@ import { getNextPage } from "../page/PageUtils";
 
 function Canvas() {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const { marchers, marchersAreLoading } = useMarcherStore()!;
-    const { pagesAreLoading, pages } = usePageStore()!;
-    const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
+    const { marchers } = useMarcherStore()!;
+    const { pages } = usePageStore()!;
+    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
-    const [isLoading, setIsLoading] = React.useState<boolean>(true);
     const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const staticGridRef = useRef<fabric.Rect | any>(null);
     const canvas = useRef<fabric.Canvas | any>(null);
@@ -185,11 +184,6 @@ function Canvas() {
     }, []);
 
     /* -------------------------- useEffects -------------------------- */
-    // Set Loading
-    useEffect(() => {
-        setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
-    }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
-
     /* Initialize the canvas.current */
     // Update the objectModified listener when the selected page changes
     useEffect(() => {
@@ -240,17 +234,17 @@ function Canvas() {
 
     // Render the marchers when the canvas.current and marchers are loaded
     useEffect(() => {
-        if (canvas.current && !isLoading) {
+        if (canvas.current) {
             CanvasMarcherUtils.updateMarcherLabels({ marchers, canvasMarchers, canvas: canvas.current });
         }
-    }, [marchers, isLoading, canvasMarchers]);
+    }, [marchers, canvasMarchers]);
 
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        if (canvas.current && !isLoading && selectedPage) {
+        if (canvas.current && selectedPage) {
             CanvasMarcherUtils.renderMarchers({ canvas: canvas.current, marchers, selectedPage, canvasMarchers, marcherPages });
         }
-    }, [marchers, pages, marcherPages, selectedPage, isLoading, canvasMarchers]);
+    }, [marchers, pages, marcherPages, selectedPage, canvasMarchers]);
 
     // TODO implement this for multiple marchers
     // Change the active object when the selected marcher changes
@@ -316,32 +310,30 @@ function Canvas() {
     }, [selectedPage, pages, marcherPages, canvasMarchers, setSelectedPage, setIsPlaying]);
 
     useEffect(() => {
-        if (!(canvas.current && !isLoading && isPlaying)) return;
+        if (!(canvas.current && isPlaying)) return;
         startAnimation();
-    }, [isLoading, isPlaying, startAnimation]);
+    }, [isPlaying, startAnimation]);
 
     return (
         <div className="canvas-container-custom">
-            {!isLoading &&
-                ((marchers.length > 0 && pages.length > 0) ?
-                    <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
-                    :
-                    <div className="canvas-loading"
-                        style={{
-                            color: "white",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: "100%",
-                        }}
-                    >
-                        <h3>To start the show, create Marchers and Pages.</h3>
-                        <p>Then {"(Window -> Refresh) or (Ctrl+R)"}</p>
-                        <h5>If anything in OpenMarch ever seems broken, a refresh will often fix it.</h5>
-                    </div>
-                )
-            }
+            {((marchers.length > 0 && pages.length > 0) ?
+                <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
+                : // If there are no marchers or pages, display a message
+                <div className="canvas-loading"
+                    style={{
+                        color: "white",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                    }}
+                >
+                    <h3>To start the show, create Marchers and Pages.</h3>
+                    <p>Then {"(Window -> Refresh) or (Ctrl+R)"}</p>
+                    <h5>If anything in OpenMarch ever seems broken, a refresh will often fix it.</h5>
+                </div>
+            )}
         </div>
     );
 }

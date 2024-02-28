@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { mockMarchers } from './mocks';
 import { useSelectedMarchers, SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
-import * as api from '@/api/api';
 import { ElectronApi } from 'electron/preload';
+import { Marcher } from '@/global/classes/Marcher';
 
 // Mock the electron api
 window.electron = {
@@ -12,7 +12,7 @@ window.electron = {
 describe('SelectedMarchersContext', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        jest.spyOn(api, 'getMarchers').mockResolvedValue(mockMarchers);
+        jest.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockMarchers);
     });
 
     it('initial selected marchers should be []', async () => {
@@ -22,7 +22,7 @@ describe('SelectedMarchersContext', () => {
 
     it('set selected marcher - single marcher', async () => {
         const { result } = renderHook(() => useSelectedMarchers(), { wrapper: SelectedMarchersProvider });
-        const marchers = await api.getMarchers();
+        const marchers = await Marcher.getMarchers();
 
         // copy the first marcher to avoid reference equality issues
         act(() => result.current?.setSelectedMarchers([[...marchers][0]]));
@@ -31,7 +31,7 @@ describe('SelectedMarchersContext', () => {
 
     it('set selected marcher - multiple marchers', async () => {
         const { result } = renderHook(() => useSelectedMarchers(), { wrapper: SelectedMarchersProvider });
-        const marchers = await api.getMarchers();
+        const marchers = await Marcher.getMarchers();
 
         // copy the first marcher to avoid reference equality issues
         const multipleMarchers = [[...marchers][0], [...marchers][2]];
@@ -41,7 +41,7 @@ describe('SelectedMarchersContext', () => {
 
     it('set selected marcher - multiple changes', async () => {
         const { result } = renderHook(() => useSelectedMarchers(), { wrapper: SelectedMarchersProvider });
-        const marchers = await api.getMarchers();
+        const marchers = await Marcher.getMarchers();
 
         // copy the first marcher to avoid reference equality issues
         let expectedMarchers = [[...marchers][0], [...marchers][2]];
