@@ -60,8 +60,8 @@ describe('ReadableCoords', () => {
                 });
                 it('should format the ReadableCoords object toStrings', () => {
                     expect(readableCoords.toVerboseStringX({ includeStepsString: true })).toBe("S1: 1 step inside 35 yard line");
-                    expect(readableCoords.toVerboseStringY({ includeStepsString: true, includeFieldStandard: true })).
-                        toBe("10 steps behind front sideline");
+                    expect(readableCoords.toVerboseStringY({ includeStepsString: true, includeFieldStandard: true }))
+                        .toBe("10 steps behind front sideline");
                     expect(readableCoords.toTerseStringX()).toBe("S1: 1 in 35");
                     expect(readableCoords.toTerseStringY()).toBe("10 be. FSL");
                 });
