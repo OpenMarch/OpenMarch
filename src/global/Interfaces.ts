@@ -34,7 +34,7 @@ export interface UpdateMarcherPage {
 
 export interface ReadableCoords {
     /**
-     * The yard line the marcher is guiding to.
+     * The yard line the marcher is guiding to.pdata
      * (50, 45 ... 0)
      */
     yardLine: number;
@@ -72,23 +72,23 @@ export interface ReadableCoords {
  * Describes the canvas locations of football field checkpoints.
  */
 export interface FieldProperties {
-    frontSideline: number;
-    frontHash: number;
-    backHash: number;
-    backSideline: number;
-    originX: number,
-    originY: number,
-    pixelsPerStep: number;
+    readonly frontSideline: number;
+    readonly frontHash: number;
+    readonly backHash: number;
+    readonly backSideline: number;
+    readonly originX: number,
+    readonly originY: number,
+    readonly pixelsPerStep: number;
     /**
      * The accuracy to round the coordinates to. Highest accuracy is (0.1).
      *
      * Note: This is the round factor of the pixel values, not steps. 14.5 pixels / pixelsPerStep.
      * (4 -> nearest .25), (2 -> nearest .5), (10 -> nearest .1)
      */
-    roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1
-    width: number;
-    height: number;
-    stepsBetweenLines: number;
+    readonly roundFactor: number; // 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1
+    readonly width: number;
+    readonly height: number;
+    readonly stepsBetweenLines: number;
 }
 
 /**

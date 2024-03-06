@@ -172,7 +172,7 @@ export function getTerseStringX(rCoords: ReadableCoords) {
  */
 export function getVerboseStringY(rCoords: ReadableCoords, includeStepsWord = true) {
     if (!rCoords) return "Error getting coordinate details";
-    return (rCoords.xSteps === 0 ? "" : formatNumberString(rCoords.ySteps, includeStepsWord))
+    return (rCoords.ySteps === 0 ? "" : formatNumberString(rCoords.ySteps, includeStepsWord))
         + rCoords.yDescription + " " + rCoords.hash;
 }
 

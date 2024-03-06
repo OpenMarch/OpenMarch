@@ -5,9 +5,11 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
+import { Marcher } from "@/global/classes/Marcher";
+import { Page } from "@/global/classes/Page";
 
 interface MarcherCoordinateSheetProps {
-    marcher?: Interfaces.Marcher;
+    marcher?: Marcher;
     includeMeasures?: boolean;
     /**
      * The denominator to round to. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
@@ -38,8 +40,8 @@ export default function MacherCoordinateSheet(
     const { marcherPages } = useMarcherPageStore()!;
     const { pages } = usePageStore()!;
     const { fieldProperties } = useFieldProperties()!;
-    const [marcherToUse, setMarcherToUse] = useState<Interfaces.Marcher>();
-    const [pagesToUse, setPagesToUse] = useState<Interfaces.Page[]>([]);
+    const [marcherToUse, setMarcherToUse] = useState<Marcher>();
+    const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
     const [marcherPagesToUse, setMarcherPagesToUse] = useState<Interfaces.MarcherPage[]>([]);
 
     useEffect(() => {
@@ -49,9 +51,9 @@ export default function MacherCoordinateSheet(
                 id_for_html: "example-marcher", drill_prefix: "B", drill_order: 1
             });
             setPagesToUse([
-                { id: 1, name: "1", counts: 8, order: 1, id_for_html: "example-page-1" },
-                { id: 2, name: "2", counts: 16, order: 2, id_for_html: "example-page-2" },
-                { id: 3, name: "2A", counts: 5, order: 3, id_for_html: "example-page-3" },
+                { id: 1, name: "1", counts: 8, order: 1, id_for_html: "example-page-1", tempo: 120, time_signature: "4/4" },
+                { id: 2, name: "2", counts: 16, order: 2, id_for_html: "example-page-2", tempo: 120, time_signature: "4/4" },
+                { id: 3, name: "2A", counts: 5, order: 3, id_for_html: "example-page-3", tempo: 120, time_signature: "4/4" },
             ]);
             setMarcherPagesToUse([
                 {
@@ -84,8 +86,8 @@ export default function MacherCoordinateSheet(
 }
 
 interface StaticCoordinateSheetProps {
-    marcher: Interfaces.Marcher;
-    pages: Interfaces.Page[];
+    marcher: Marcher;
+    pages: Page[];
     marcherPages: Interfaces.MarcherPage[];
     fieldProperties: Interfaces.FieldProperties;
     includeMeasures?: boolean;

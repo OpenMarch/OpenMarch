@@ -1,5 +1,7 @@
 import { Constants } from "@/global/Constants";
-import { CanvasMarcher, Marcher, Page, MarcherPage } from "@/global/Interfaces";
+import { CanvasMarcher, MarcherPage } from "@/global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
+import { Page } from "@/global/classes/Page";
 import { fabric } from "fabric";
 import { IGroupOptions } from "fabric/fabric-impl";
 
