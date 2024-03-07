@@ -47,10 +47,13 @@ describe('Page', () => {
     });
 
     it('should fetch all pages from the database', async () => {
-        const mockResponse = [{ id: 1, name: '1' }, { id: 2, name: '2' }];
+        const mockResponse = [
+            { id: 1, name: '1' },
+            { id: 2, name: '2' }
+        ];
         const getPagesSpy = jest.spyOn(Page, 'getPages');
 
-        getPagesSpy.mockResolvedValue(mockResponse);
+        getPagesSpy.mockResolvedValue(mockResponse as Page[]);
 
         const pages = await Page.getPages();
 
@@ -199,5 +202,101 @@ describe('Page', () => {
         const updatePagesSpy = jest.spyOn(Page, "updatePages");
         Page.updatePages(modifiedPages as ModifiedPageArgs[]);
         expect(updatePagesSpy).toHaveBeenCalledWith(expectedValidatedPages);
+    });
+
+    describe('getNextPage', () => {
+        it('should get the next page, sequential order', () => {
+            const firstPage = mockPages[0];
+            const nextPage1 = mockPages[1];
+            const nextPage2 = mockPages[2];
+            let mocksToUse = mockPages.slice(0, 3);
+
+            let nextPage = Page.getNextPage(firstPage, mocksToUse);
+            expect(nextPage).toBe(nextPage1);
+            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            expect(nextPage).toBe(nextPage2);
+            // Return null on last page
+            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            expect(nextPage).toBe(null);
+        });
+
+        it('should get the next page, non-sequential order', () => {
+            const firstPage = mockPages[0];
+            const nextPage1 = mockPages[1];
+            const nextPage2 = mockPages[2];
+            let mocksToUse = [mockPages[0], mockPages[1], mockPages[2]];
+
+            let nextPage = Page.getNextPage(firstPage, mocksToUse);
+            expect(nextPage).toEqual(nextPage1);
+            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            expect(nextPage).toEqual(nextPage2);
+            // Return null on last page
+            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            expect(nextPage).toEqual(null);
+
+            mocksToUse = [mockPages[2], mockPages[0], mockPages[1]];
+            nextPage = Page.getNextPage(firstPage, mocksToUse);
+            expect(nextPage).toEqual(nextPage1);
+            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            expect(nextPage).toEqual(nextPage2);
+            // Return null on last page
+            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            expect(nextPage).toEqual(null);
+
+            mocksToUse = [mockPages[0], mockPages[2]];
+            nextPage = Page.getNextPage(firstPage, mocksToUse);
+            expect(nextPage).toEqual(nextPage2);
+            // Return null on last page
+            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            expect(nextPage).toEqual(null);
+        });
+    });
+
+    describe('getPreviousPage', () => {
+        it('should get the previous page, sequential order', () => {
+            const lastPage = mockPages[2];
+            const previousPage1 = mockPages[1];
+            const previousPage2 = mockPages[0];
+            let mocksToUse = mockPages.slice(0, 3);
+
+            let previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            expect(previousPage).toBe(previousPage1);
+            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            expect(previousPage).toBe(previousPage2);
+            // Return null on first page
+            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            expect(previousPage).toBe(null);
+        });
+
+        it('should get the previous page, non-sequential order', () => {
+            const lastPage = mockPages[2];
+            const previousPage1 = mockPages[1];
+            const previousPage2 = mockPages[0];
+            let mocksToUse = [mockPages[0], mockPages[1], mockPages[2]];
+
+            let previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            expect(previousPage).toEqual(previousPage1);
+            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            expect(previousPage).toEqual(previousPage2);
+            // Return null on first page
+            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            expect(previousPage).toEqual(null);
+
+            mocksToUse = [mockPages[2], mockPages[0], mockPages[1]];
+            previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            expect(previousPage).toEqual(previousPage1);
+            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            expect(previousPage).toEqual(previousPage2);
+            // Return null on last page
+            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            expect(previousPage).toEqual(null);
+
+            mocksToUse = [mockPages[0], mockPages[2]];
+            previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            expect(previousPage).toEqual(previousPage2);
+            // Return null on last page
+            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            expect(previousPage).toEqual(null);
+        });
     });
 });

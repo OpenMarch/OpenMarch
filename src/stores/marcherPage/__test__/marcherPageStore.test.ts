@@ -1,16 +1,14 @@
 import { act, renderHook } from '@testing-library/react';
 import { useMarcherPageStore } from "../useMarcherPageStore";
 import { mockMarcherPages } from '@/__mocks__/globalMocks';
-import * as api from '@/api/api';
-import { MarcherPage } from '@/global/Interfaces';
+import { MarcherPage } from '@/global/classes/MarcherPage';
 
-jest.mock('@/api/api');
 
 describe('marcherPageStore', () => {
     afterEach(async () => {
         jest.clearAllMocks();
         const { result } = renderHook(() => useMarcherPageStore());
-        jest.spyOn(api, 'getMarcherPages').mockResolvedValue([]);
+        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue([]);
         await act(async () => { result.current.fetchMarcherPages() });
         jest.clearAllMocks();
     });
@@ -23,7 +21,7 @@ describe('marcherPageStore', () => {
 
     it('marcherPagesStore - fetch all', async () => {
         const mockToUse = mockMarcherPages;
-        jest.spyOn(api, 'getMarcherPages').mockResolvedValue(mockToUse);
+        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
 
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherPageStore());
@@ -37,7 +35,7 @@ describe('marcherPageStore', () => {
 
     it('marcherPagesStore - fetches single marcherPage', async () => {
         const mockToUse = [mockMarcherPages[0]];
-        jest.spyOn(api, 'getMarcherPages').mockResolvedValue(mockToUse);
+        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
 
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherPageStore());
@@ -51,7 +49,7 @@ describe('marcherPageStore', () => {
 
     it('marcherPagesStore - fetch no marcherPages', async () => {
         const mockToUse: MarcherPage[] = [];
-        jest.spyOn(api, 'getMarcherPages').mockResolvedValue(mockToUse);
+        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
 
         const { result } = renderHook(() => useMarcherPageStore());
         await act(async () => { result.current.fetchMarcherPages() });

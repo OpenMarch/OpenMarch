@@ -6,8 +6,8 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useIsPlaying } from "../../context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { getNextPage } from "../page/PageUtils";
 import { useKeyboardActionsStore } from "@/stores/keyboardShortcutButtons/useKeyboardActionsStore";
+import { Page } from "../../global/classes/Page";
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
@@ -51,9 +51,11 @@ function PlaybackControls({ className }: topBarComponentProps) {
     }, [registerKeyboardAction]);
 
     useEffect(() => {
-        if (!pages || pages.length === 0 || !selectedPage)
+        if (!pages || pages.length === 0 || !selectedPage) {
             setPlayIsDisabled(true);
-        else if (getNextPage(selectedPage, pages) === null)
+            return
+        }
+        else if (Page.getNextPage(selectedPage, pages) === null)
             setPlayIsDisabled(true);
         else
             setPlayIsDisabled(false);

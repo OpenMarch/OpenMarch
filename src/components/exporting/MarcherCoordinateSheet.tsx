@@ -7,6 +7,7 @@ import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import { Page } from "@/global/classes/Page";
+import { MarcherPage } from "@/global/classes/MarcherPage";
 
 interface MarcherCoordinateSheetProps {
     marcher?: Marcher;
@@ -42,7 +43,7 @@ export default function MacherCoordinateSheet(
     const { fieldProperties } = useFieldProperties()!;
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
-    const [marcherPagesToUse, setMarcherPagesToUse] = useState<Interfaces.MarcherPage[]>([]);
+    const [marcherPagesToUse, setMarcherPagesToUse] = useState<MarcherPage[]>([]);
 
     useEffect(() => {
         if (example && fieldProperties) {
@@ -88,7 +89,7 @@ export default function MacherCoordinateSheet(
 interface StaticCoordinateSheetProps {
     marcher: Marcher;
     pages: Page[];
-    marcherPages: Interfaces.MarcherPage[];
+    marcherPages: MarcherPage[];
     fieldProperties: Interfaces.FieldProperties;
     includeMeasures?: boolean;
     /**
@@ -114,7 +115,7 @@ export function StaticMarcherCoordinateSheet({
     marcher, fieldProperties, marcherPages, pages, includeMeasures = true, roundingDenominator = 4,
     terse = false, useXY = false }: StaticCoordinateSheetProps) {
 
-    const sortMarcherPages = (a: Interfaces.MarcherPage, b: Interfaces.MarcherPage) => {
+    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
         const pageA = pages.find((page) => page.id === a.page_id);
         const pageB = pages.find((page) => page.id === b.page_id);
         return pageA && pageB ? pageA.order - pageB.order : 0;

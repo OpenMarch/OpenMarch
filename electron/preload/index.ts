@@ -1,6 +1,6 @@
-import { UpdateMarcherPage } from "@/global/Interfaces"
-import { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
-import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page"
+import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
+import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
+import { ModifiedPageArgs, NewPageArgs, Page } from "@/global/classes/Page"
 import { contextBridge, ipcRenderer } from "electron"
 import { DatabaseResponse } from "electron/database/database.services"
 
@@ -135,21 +135,21 @@ const APP_API = {
   getFieldProperties: () => ipcRenderer.invoke('field_properties:get'),
 
   // Marcher
-  getMarchers: () => ipcRenderer.invoke('marcher:getAll'),
+  getMarchers: () => ipcRenderer.invoke('marcher:getAll') as Promise<Marcher[]>,
   createMarcher: (newMarcher: NewMarcherArgs) => ipcRenderer.invoke('marcher:insert', newMarcher) as Promise<DatabaseResponse>,
   updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) => ipcRenderer.invoke('marcher:update', modifiedMarchers),
   deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
 
   // Page
-  getPages: () => ipcRenderer.invoke('page:getAll'),
+  getPages: () => ipcRenderer.invoke('page:getAll') as Promise<Page[]>,
   createPages: (pages: NewPageArgs[]) => ipcRenderer.invoke('page:insert', pages),
   updatePages: (modifiedPages: ModifiedPageArgs[]) => ipcRenderer.invoke('page:update', modifiedPages),
   deletePage: (id: number) => ipcRenderer.invoke('page:delete', id),
 
   // MarcherPage
-  getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll', args),
+  getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll', args) as Promise<MarcherPage[]>,
   getMarcherPage: (id: { marcher_id: number, page_id: number }) => ipcRenderer.invoke('marcher_page:get', id),
-  updateMarcherPages: (args: UpdateMarcherPage[]) => ipcRenderer.invoke('marcher_page:update', args),
+  updateMarcherPages: (args: ModifiedMarcherPageArgs[]) => ipcRenderer.invoke('marcher_page:update', args),
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)

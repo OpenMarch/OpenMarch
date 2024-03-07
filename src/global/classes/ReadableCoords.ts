@@ -1,4 +1,5 @@
 import { Checkpoint, FieldProperties } from "./FieldProperties";
+import { MarcherPage } from "./MarcherPage";
 
 export enum X_DESCRIPTION {
     INSIDE = "inside",
@@ -31,6 +32,10 @@ export class ReadableCoords {
 
     /* ----------- Attributes ----------- */
 
+    /** The X coordinate of the marcher on the canvas */
+    readonly orginalX: number;
+    /** The Y coordinate of the marcher on the canvas */
+    readonly orginalY: number;
     /** The amount of steps the marcher is from the X-Checkpoint (e.g. yard line)  */
     readonly xSteps: number;
     /** The amount of steps the marcher is from the nearest Y-Checkpoint (e.g front hash or back sideline) */
@@ -49,11 +54,16 @@ export class ReadableCoords {
     readonly roundingDenominator: number;
 
     /**
-     * @param x X coordinate of the marcher on the canvas
-     * @param y Y coordinate of the marcher on the canvas
+     * Note, you can use the static method `fromMarcherPage` to create a ReadableCoords object from a MarcherPage object.
+     *
+     * @param x X coordinate of the marcher on the canvas in pixels
+     * @param y Y coordinate of the marcher on the canvas in pixels
      * @param roundingDenominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
+     *  Optional, nearest 1/100 step by default.
      */
     constructor(x: number, y: number, roundingDenominator = 100) {
+        this.orginalX = x;
+        this.orginalY = y;
         this.roundingDenominator = roundingDenominator;
         const readableCoords = this.parseCanvasCoords(x, y);
         this.xCheckpoint = readableCoords.xCheckpoint;
@@ -63,6 +73,16 @@ export class ReadableCoords {
         this.yDescription = readableCoords.yDescription;
         this.xSteps = readableCoords.xSteps;
         this.ySteps = readableCoords.ySteps;
+    }
+
+    /**
+     * @param marcherPage
+     * @param roundingDenominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
+     *  Optional, nearest 1/100 step by default.
+     * @returns A new ReadableCoords object created from a MarcherPage object.
+     */
+    static fromMarcherPage(marcherPage: MarcherPage, roundingDenominator = 100) {
+        return new ReadableCoords(marcherPage.x, marcherPage.y, roundingDenominator);
     }
 
     /**
@@ -280,6 +300,4 @@ export class ReadableCoords {
             + this.yCheckpoint.terseName
             + (includeFieldStandard && this.yCheckpoint.fieldStandard ? ` (${this.yCheckpoint.fieldStandard})` : "");
     }
-
-
 }

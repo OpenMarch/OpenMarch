@@ -7,21 +7,21 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { idForHtmlToId } from "../../global/Constants";
 import * as CanvasMarcherUtils from "./utils/CanvasMarcherUtils";
-import { updateMarcherPages } from "../../api/api";
 import * as CanvasUtils from "./utils/CanvasUtils";
-import { CanvasMarcher, UpdateMarcherPage } from "../../global/Interfaces";
+import { CanvasMarcher } from "../../global/Interfaces";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { getNextPage } from "../page/PageUtils";
+import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
+import { Page } from "@/global/classes/Page";
 
 function Canvas() {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
-    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
+    const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -36,7 +36,7 @@ function Canvas() {
     const handleObjectModified = useCallback((e: any) => {
         const activeObjects = canvas.current.getActiveObjects();
 
-        const changes: UpdateMarcherPage[] = [];
+        const changes: ModifiedMarcherPageArgs[] = [];
         activeObjects.forEach((activeObject: any) => {
             const newCoords = CanvasMarcherUtils.fabricObjectToRealCoords({ canvas: canvas.current, fabricGroup: activeObject as fabric.Group });
             if (activeObject.id_for_html && newCoords?.x && newCoords?.y) {
@@ -46,8 +46,8 @@ function Canvas() {
                 console.error("Marcher or fabric object not found - handleObjectModified: Canvas.tsx");
             }
         });
-        updateMarcherPages(changes).then(() => { fetchMarcherPages() });
-    }, [selectedPage, fetchMarcherPages]);
+        MarcherPage.updateMarcherPages(changes);
+    }, [selectedPage]);
 
     /**
      * Set the selected marcher when selected element changes
@@ -279,9 +279,11 @@ function Canvas() {
 
     // eslint-disable-next-line
     const startAnimation = useCallback(() => {
-        if (!(canvas.current && selectedPage)) return;
-        const nextPage = getNextPage(selectedPage!, pages);
-        if (!nextPage) return;
+        if (!(canvas.current && selectedPage))
+            return;
+        const nextPage = Page.getNextPage(selectedPage, pages);
+        if (!nextPage)
+            return;
         const nextPageMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === nextPage.id);
         const duration = 1000;
 

@@ -1,6 +1,8 @@
 /**
  * A class that represents a marcher in the database.
  * This is the standard Marcher object that should be used throughout the application.
+ *
+ * Note: this class has no/should not have instance methods. All methods are static.
  */
 export class Marcher {
     /** The id of the marcher in the database */

@@ -3,6 +3,8 @@ import { TimeSignature } from "./TimeSignature";
 /**
  * A class that represents a Page in the database.
  * This is the standard Page object that should be used throughout the application.
+ *
+ * Note: this class has no/should not have instance methods. All methods are static.
  */
 export class Page {
     /** The id of the page in the database */
@@ -71,7 +73,7 @@ export class Page {
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async createPages(newPagesArg: NewPageArgs[]) {
-        const newPages = this.validateTimeSingatures(newPagesArg) as NewPageArgs[];
+        const newPages = this.validateTimeSignatures(newPagesArg) as NewPageArgs[];
         const response = await window.electron.createPages(newPages);
         // fetch the pages to update the store
         this.checkForFetchPages();
@@ -86,7 +88,7 @@ export class Page {
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updatePages(modifiedPagesArg: ModifiedPageArgs[]) {
-        const modifiedPages = this.validateTimeSingatures(modifiedPagesArg) as ModifiedPageArgs[];
+        const modifiedPages = this.validateTimeSignatures(modifiedPagesArg) as ModifiedPageArgs[];
         const response = await window.electron.updatePages(modifiedPages);
         // fetch the pages to update the store
         this.checkForFetchPages();
@@ -133,7 +135,7 @@ export class Page {
      * @param pages - The list of page objects to validate time signatures for.
      * @return The list of pages with validated time signatures.
      */
-    private static validateTimeSingatures(pages: NewPageArgs[] | ModifiedPageArgs[]) {
+    private static validateTimeSignatures(pages: NewPageArgs[] | ModifiedPageArgs[]) {
         const validatedPages = [...pages];
         validatedPages.forEach((page) => {
             if (page.time_signature) {
@@ -146,6 +148,64 @@ export class Page {
             }
         });
         return validatedPages;
+    }
+
+    /**
+     * Retrieves the next Page based on this Page and the list of all Pages.
+     * If the current Page is the last Page, null is returned.
+     *
+     * @param currentPage - The current Page.
+     * @param allPages - The list of all Pages.
+     * @returns The next Page or null if the current Page is the last Page.
+     * @throws If the current Page is not found in the list of all Pages.
+     */
+    static getNextPage(currentPage: Page, allPages: Page[]): Page | null {
+        if (!allPages || allPages.length === 0)
+            return null;
+
+        const higherOrderPages = allPages.filter((page) => page.order > currentPage.order);
+        if (higherOrderPages.length === 0)
+            return null; // the current page is the last page
+
+        // find the nearest page with an order greater than the current page
+        const sortedHigherOrderPages = this.sortPagesByOrder(higherOrderPages);
+        const nextPage = sortedHigherOrderPages.reduce((nearestNextPage, current) => {
+            if (current.order > currentPage.order && (nearestNextPage === null || current.order < nearestNextPage.order)) {
+                return current;
+            }
+            return nearestNextPage;
+        });
+
+        return nextPage !== currentPage ? nextPage : null;
+    }
+
+    /**
+     * Retrieves the previous Page based on this Page and the list of all Pages.
+     * If the current Page is the first Page, null is returned.
+     *
+     * @param currentPage - The current Page.
+     * @param allPages - The list of all Pages.
+     * @returns The previous Page or null if the current Page is the first Page.
+     * @throws If the current Page is not found in the list of all Pages.
+     */
+    static getPreviousPage(currentPage: Page, allPages: Page[]): Page | null {
+        if (!allPages || allPages.length === 0)
+            return null;
+
+        const lowerOrderPages = allPages.filter((page) => page.order < currentPage.order);
+        if (lowerOrderPages.length === 0)
+            return null; // the current page is the first page
+
+        // find the nearest page with an order greater than the current page
+        const sortedLowerOrderPages = this.sortPagesByOrder(lowerOrderPages).reverse();
+        const previousPage = sortedLowerOrderPages.reduce((nearestPreviousPage, current) => {
+            if (current.order < currentPage.order && (nearestPreviousPage === null || current.order > nearestPreviousPage.order)) {
+                return current;
+            }
+            return nearestPreviousPage;
+        });
+
+        return previousPage !== currentPage ? previousPage : null;
     }
 }
 

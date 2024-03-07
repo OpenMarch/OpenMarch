@@ -1,34 +1,34 @@
 /** A collection of interfaces and types used throughout the application */
 /*********************** MarcherPage ***********************/
-/**
- * Defines all of the data associated with a marcherPage in the database.
- */
-export interface MarcherPage {
-    id: number;
-    id_for_html: string;
-    marcher_id: number;
-    page_id: number;
-    x: number;
-    y: number;
-    notes?: string;
-}
+// /**
+//  * Defines all of the data associated with a marcherPage in the database.
+//  */
+// export interface MarcherPage {
+//     id: number;
+//     id_for_html: string;
+//     marcher_id: number;
+//     page_id: number;
+//     x: number;
+//     y: number;
+//     notes?: string;
+// }
 
-/**
- * Defines data needed for updating a marcherPage in the database.
- */
-export interface UpdateMarcherPage {
-    /**
-     * The id of the marcher for the marcherPage. Read only.
-     */
-    marcher_id: number;
-    /**
-     * The id of the page for the marcherPage. Read only.
-     */
-    page_id: number;
-    x: number;
-    y: number;
-    notes?: string;
-}
+// /**
+//  * Defines data needed for updating a marcherPage in the database.
+//  */
+// export interface UpdateMarcherPage {
+//     /**
+//      * The id of the marcher for the marcherPage. Read only.
+//      */
+//     marcher_id: number;
+//     /**
+//      * The id of the page for the marcherPage. Read only.
+//      */
+//     page_id: number;
+//     x: number;
+//     y: number;
+//     notes?: string;
+// }
 
 /*********************** Canvas ***********************/
 

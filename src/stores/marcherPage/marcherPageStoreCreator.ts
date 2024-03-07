@@ -1,9 +1,7 @@
 import { type StateCreator } from "zustand";
-import * as api from "../../api/api";
-import * as Interfaces from "../../global/Interfaces";
-
+import { MarcherPage } from "@/global/classes/MarcherPage";
 export interface MarcherPageStoreInterface {
-    marcherPages: Interfaces.MarcherPage[],
+    marcherPages: MarcherPage[],
     fetchMarcherPages: () => Promise<void>;
 }
 
@@ -12,7 +10,8 @@ export const marcherPageStoreCreator: StateCreator<MarcherPageStoreInterface> = 
     marcherPagesAreLoading: true,
 
     fetchMarcherPages: async () => {
-        const newMarcherPages = await api.getMarcherPages();
+        const newMarcherPages = await MarcherPage.getMarcherPages();
+        // Todo, create marcherpage objects only after we have optimized the getMarcherPages function
         set({ marcherPages: newMarcherPages });
     },
 });
