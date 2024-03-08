@@ -87,6 +87,17 @@ describe("KeyboardAction", () => {
         expect(keyString).toEqual("Ctrl + Shift + Q");
     });
 
+    it("should generate the correct key string", () => {
+        const keyString = KeyboardAction.makeKeyString({
+            key: " ",
+            control: true,
+            alt: true,
+            shift: true,
+        });
+
+        expect(keyString).toEqual("Ctrl + Alt + Shift + Space");
+    });
+
     it("should compare two KeyboardAction instances for key equality", () => {
         const action1 = new KeyboardAction({
             key: "q",

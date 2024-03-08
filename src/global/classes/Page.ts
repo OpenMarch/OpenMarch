@@ -207,6 +207,44 @@ export class Page {
 
         return previousPage !== currentPage ? previousPage : null;
     }
+
+    /**
+     * Retrieves the first Page based on the list of all Pages.
+     *
+     * @param allPages - The list of all Pages.
+     * @returns The first Page or null if there are no Pages.
+     */
+    static getFirstPage(allPages: Page[]): Page | null {
+        if (!allPages || allPages.length === 0)
+            return null;
+
+        const firstPage = allPages.reduce((nearestFirstPage, current) => {
+            if (nearestFirstPage === null || current.order < nearestFirstPage.order) {
+                return current;
+            }
+            return nearestFirstPage;
+        });
+        return firstPage;
+    }
+
+    /**
+     * Retrieves the last Page based on the list of all Pages.
+     *
+     * @param allPages - The list of all Pages.
+     * @returns The last Page or null if there are no Pages.
+     */
+    static getLastPage(allPages: Page[]): Page | null {
+        if (!allPages || allPages.length === 0)
+            return null;
+
+        const lastPage = allPages.reduce((nearestLastPage, current) => {
+            if (nearestLastPage === null || current.order > nearestLastPage.order) {
+                return current;
+            }
+            return nearestLastPage;
+        });
+        return lastPage;
+    }
 }
 
 /**

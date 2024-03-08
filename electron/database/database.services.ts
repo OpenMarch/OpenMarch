@@ -538,7 +538,7 @@ async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
             const stmt = db.prepare(`SELECT MAX("order") as maxOrder FROM ${Constants.PageTableName}`);
             const result: any = stmt.get();
             const newOrder = result.maxOrder + 1;
-            const pageToAdd: Page = new Page({
+            const pageToAdd: Page = {
                 id: 0, // Not used, needed for interface
                 id_for_html: '', // Not used, needed for interface
                 name: newPage.name || '',
@@ -547,7 +547,7 @@ async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
                 tempo: newPage.tempo,
                 time_signature: newPage.time_signature,
                 counts: newPage.counts
-            } as Page);
+            };
             const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.PageTableName} (
                     name,

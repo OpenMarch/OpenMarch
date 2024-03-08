@@ -50,7 +50,8 @@ export class KeyboardAction {
      */
     static makeKeyString({ key, control = false, alt = false, shift = false }:
         { key: string; control?: boolean; alt?: boolean; shift?: boolean; }) {
-        return `${control ? "Ctrl + " : ""}${alt ? "Alt + " : ""}${shift ? "Shift + " : ""}${key.toUpperCase()}`
+        const keyStr = key === " " ? "Space" : key.toUpperCase();
+        return `${control ? "Ctrl + " : ""}${alt ? "Alt + " : ""}${shift ? "Shift + " : ""}${keyStr}`
     }
 
     /**

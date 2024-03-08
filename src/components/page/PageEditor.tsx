@@ -93,7 +93,7 @@ function PageEditor() {
                 </div>
                 <div className="input-group">
                     <label htmlFor="page-order">Order</label>
-                    <input type="string" value={selectedPage.order + "/" + pages.length} id="page-order" disabled={true} />
+                    <input type="string" value={(pages.indexOf(selectedPage) + 1) + "/" + pages.length} id="page-order" disabled={true} />
                 </div>
                 {/* <div className="input-group">
                     <label htmlFor="page-sets">Tempo</label>

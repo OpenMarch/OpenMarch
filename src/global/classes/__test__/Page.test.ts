@@ -299,4 +299,36 @@ describe('Page', () => {
             expect(previousPage).toEqual(null);
         });
     });
+
+    it('should get the first page', () => {
+        const firstPage = mockPages[0];
+        let mocksToUse = [mockPages[0], mockPages[1], mockPages[2]];
+
+        let testFirstPage = Page.getFirstPage(mocksToUse);
+        expect(testFirstPage).toBe(firstPage);
+
+        mocksToUse = [mockPages[2], mockPages[0], mockPages[1]];
+        testFirstPage = Page.getFirstPage(mocksToUse);
+        expect(testFirstPage).toBe(firstPage);
+
+        mocksToUse = [mockPages[2], mockPages[1], mockPages[0]];
+        testFirstPage = Page.getFirstPage(mocksToUse);
+        expect(testFirstPage).toBe(firstPage);
+    });
+
+    it('should get the last page', () => {
+        const lastPage = mockPages[2];
+        let mocksToUse = [mockPages[0], mockPages[1], mockPages[2]];
+
+        let testLastPage = Page.getLastPage(mocksToUse);
+        expect(testLastPage).toBe(lastPage);
+
+        mocksToUse = [mockPages[2], mockPages[0], mockPages[1]];
+        testLastPage = Page.getLastPage(mocksToUse);
+        expect(testLastPage).toBe(lastPage);
+
+        mocksToUse = [mockPages[2], mockPages[1], mockPages[0]];
+        testLastPage = Page.getLastPage(mocksToUse);
+        expect(testLastPage).toBe(lastPage);
+    });
 });
