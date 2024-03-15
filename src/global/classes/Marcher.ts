@@ -13,8 +13,9 @@ export class Marcher {
     readonly name: string;
     /** The section the marcher is in. E.g. "Color Guard" */
     readonly section: string;
-    /** The drill number of the marcher. E.g. "B1" */
-    readonly drill_number?: string;
+    /** The drill number of the marcher. E.g. "B1"
+     * Cannot be manually set and is always the combination of the drill prefix and drill order. "B1" */
+    readonly drill_number: string;
     /** The drill prefix of the marcher's drill number. E.g. "BD" if the drill number is "BD1" */
     readonly drill_prefix: string;
     /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
@@ -34,7 +35,7 @@ export class Marcher {
         this.id_for_html = marcher.id_for_html;
         this.name = marcher.name;
         this.section = marcher.section;
-        this.drill_number = marcher.drill_number || marcher.drill_prefix + marcher.drill_order;
+        this.drill_number = marcher.drill_prefix + marcher.drill_order;
         this.drill_prefix = marcher.drill_prefix;
         this.drill_order = marcher.drill_order;
         this.notes = marcher.notes;

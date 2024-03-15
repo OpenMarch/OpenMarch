@@ -13,6 +13,8 @@
 //     notes?: string;
 // }
 
+import { MarcherPage } from "./classes/MarcherPage";
+
 // /**
 //  * Defines data needed for updating a marcherPage in the database.
 //  */
@@ -95,12 +97,11 @@ export interface FieldProperties {
  * An interface to use for the marcher objects on the canvas.
  */
 export interface CanvasMarcher {
-    fabricObject: fabric.Object | null;
-    x: number;
-    y: number;
+    fabricGroupObject: fabric.Object | null;
+    marcherPage: MarcherPage;
     drill_number: string;
     id_for_html: string;
-    marcher_id: number;
+    id: number;
 }
 
 export interface UiSettings {

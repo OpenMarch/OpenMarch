@@ -11,6 +11,7 @@ describe('Marcher', () => {
             section: 'Color Guard',
             drill_prefix: 'B',
             drill_order: 1,
+            drill_number: 'F32',
             notes: 'Some notes',
             year: 'Freshman',
         });
