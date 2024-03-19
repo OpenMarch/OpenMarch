@@ -211,13 +211,22 @@ export class CanvasMarcher extends fabric.Group {
             top: newCanvasCoords.y
         }, {
             duration: duration * counts,
-            onChange: this.getCanvas().requestRenderAll.bind(this.getCanvas()),
+            onChange: () => {
+                this.getCanvas().requestRenderAll();
+                // Set coords so that objects offscreen are still rendered
+                this.setCoords()
+            },
             easing: linearEasing
         });
 
         this.setCoords();
 
         return callback;
+    }
+
+    private changeHandler() {
+        this.getCanvas().requestRenderAll.bind(this.getCanvas());
+        this.setCoords();
     }
 }
 
