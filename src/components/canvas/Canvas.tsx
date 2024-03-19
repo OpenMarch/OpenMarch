@@ -26,6 +26,8 @@ function Canvas() {
     const staticGridRef = useRef<fabric.Rect | any>(null);
     const canvas = useRef<fabric.Canvas | any>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animationCallbacks = useRef<any>([]);
+    const timeoutID = useRef<any>(null);
 
     /* -------------------------- Listener Functions -------------------------- */
     const handleObjectModified = useCallback((e: any) => {
@@ -149,16 +151,6 @@ function Canvas() {
                 canvas.current.renderAll();
             }
         }, 50);
-
-        // set objectCaching to false after 100ms to improve performance after zooming
-        // This is what prevents the grid from being blurry after zooming
-        clearTimeout(canvas.current.zoomTimeout);
-        canvas.current.zoomTimeout = setTimeout(() => {
-            if (staticGridRef.current.objectCaching) {
-                staticGridRef.current.objectCaching = false;
-                canvas.current.renderAll();
-            }
-        }, 50);
     };
 
     const initiateListeners = useCallback(() => {
@@ -190,7 +182,9 @@ function Canvas() {
 
     /* -------------------------- Marcher Functions-------------------------- */
     const renderMarchers = useCallback(() => {
-        if (!(canvas.current && selectedPage && marchers && marcherPages)) return;
+        if (!(canvas.current && selectedPage && marchers && marcherPages))
+            return;
+
         const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage.id);
 
         // Get the canvas marchers on the canvas
@@ -287,35 +281,58 @@ function Canvas() {
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {
-        if (canvas.current && isPlaying && selectedPage) {
-            const nextPage = Page.getNextPage(selectedPage, pages);
-            if (!nextPage)
-                return;
-
-            const nextPageMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === nextPage?.id);
-            canvas.current.getObjects().forEach((canvasMarcher: CanvasMarcher) => {
-                // If the active object is not a marcher, return
-                if (!(canvasMarcher instanceof CanvasMarcher))
+        if (canvas.current && selectedPage) {
+            if (isPlaying) {
+                const nextPage = Page.getNextPage(selectedPage, pages);
+                if (!nextPage)
                     return;
 
-                const marcherPageToUse = nextPageMarcherPages.find((marcherPage) => marcherPage.marcher_id === canvasMarcher.marcherObj.id);
-                if (!marcherPageToUse) {
-                    console.error("Marcher page not found - startAnimation: Canvas.tsx", canvasMarcher);
-                    return;
+                const nextPageMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === nextPage.id);
+                canvas.current.getObjects().forEach((canvasMarcher: CanvasMarcher) => {
+                    // If the active object is not a marcher, return
+                    if (!(canvasMarcher instanceof CanvasMarcher))
+                        return;
+
+                    const marcherPageToUse = nextPageMarcherPages.find((marcherPage) => marcherPage.marcher_id === canvasMarcher.marcherObj.id && marcherPage.page_id === nextPage.id);
+                    if (!marcherPageToUse) {
+                        console.error("Marcher page not found - startAnimation: Canvas.tsx", canvasMarcher);
+                        return;
+                    }
+
+                    const callback = canvasMarcher.setNextAnimation(
+                        {
+                            marcherPage: marcherPageToUse,
+                            tempo: selectedPage.tempo,
+                            counts: selectedPage.counts
+                        }
+                    );
+                    animationCallbacks.current.push(callback);
+                });
+
+                const duration = tempoToDuration(nextPage.tempo);
+                canvas.current.requestRenderAll();
+                // Set the selected page after the animation is done and set isPlaying to false
+                timeoutID.current = setTimeout(() => {
+                    setSelectedPage(nextPage);
+                    setIsPlaying(false);
+                }, duration * selectedPage.counts);
+            }
+            else {
+                animationCallbacks.current.forEach((callback: any) => {
+                    // Not sure why these are two functions in Fabric.js
+                    (callback[0] as () => void)(); // Stop X animation
+                    (callback[1] as () => void)(); // Stop Y animation
+                });
+                if (timeoutID.current) {
+                    clearTimeout(timeoutID.current);
                 }
-
-                canvasMarcher.setNextAnimation({ marcherPage: marcherPageToUse, tempo: nextPage.tempo });
-            });
-
-            const duration = tempoToDuration(nextPage.tempo);
-            canvas.current.requestRenderAll();
-            // Set the selected page after the animation is done and set isPlaying to false
-            setTimeout(() => {
-                setSelectedPage(nextPage);
-                setIsPlaying(false);
-            }, duration);
+                renderMarchers();
+                // canvas.current.getObjects().forEach((canvasMarcher: CanvasMarcher) => {
+                //     canvasMarcher.dispose();
+                // });
+            }
         }
-    }, [isPlaying, marcherPages, pages, selectedPage, setIsPlaying, setSelectedPage]);
+    }, [isPlaying, marcherPages, pages, renderMarchers, selectedPage, setIsPlaying, setSelectedPage]);
 
     return (
         <div className="canvas-container-custom">

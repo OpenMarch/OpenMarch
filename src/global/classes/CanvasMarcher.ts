@@ -22,17 +22,19 @@ export class CanvasMarcher extends fabric.Group {
      * @param marcher The marcher object to create the canvas object from
      * @param marcherPage The MarcherPage object to set the initial coordinates from
      * @param canvas The canvas object to add the marcher to
+     * @param dotRadius The radius of the dot
+     * @param color The color of the dot
      */
-    constructor({ marcher, marcherPage, canvas }:
-        { marcher: Marcher; marcherPage: MarcherPage; canvas: fabric.Canvas }) {
+    constructor({ marcher, marcherPage, canvas, dotRadius = CanvasMarcher.dotRadius, color = CanvasMarcher.color }:
+        { marcher: Marcher; marcherPage: MarcherPage; canvas: fabric.Canvas, dotRadius?: number, color?: string }) {
         super([
             new fabric.Circle({
                 left: marcherPage.x,
                 top: marcherPage.y,
                 originX: "center",
                 originY: "center",
-                fill: CanvasMarcher.color,
-                radius: CanvasMarcher.dotRadius,
+                fill: color,
+                radius: dotRadius,
             }),
             new fabric.Text(marcher.drill_number, {
                 left: marcherPage.x,
@@ -190,11 +192,11 @@ export class CanvasMarcher extends fabric.Group {
     }
 
     /**
-     *
      * @param marcherPage MarcherPage object to set the next animation to
      * @param tempo The tempo of the animation
+     * @param counts The counts of the animation
      */
-    setNextAnimation({ marcherPage, tempo }: { marcherPage: MarcherPage; tempo: number; }) {
+    setNextAnimation({ marcherPage, tempo, counts }: { marcherPage: MarcherPage; tempo: number; counts: number }) {
         const duration = tempoToDuration(tempo);
         const groupOffset = this.getGroupOffset();
         const dotOffset = this.getDotOffset();
@@ -204,14 +206,18 @@ export class CanvasMarcher extends fabric.Group {
             y: marcherPage.y - groupOffset.y - dotOffset.y + CanvasMarcher.gridOffset
         };
 
-        this.animate({
+        const callback = this.animate({
             left: newCanvasCoords.x,
             top: newCanvasCoords.y
         }, {
-            duration: duration,
-            onChange: this.getCanvas().renderAll.bind(this.getCanvas()),
+            duration: duration * counts,
+            onChange: this.getCanvas().requestRenderAll.bind(this.getCanvas()),
             easing: linearEasing
         });
+
+        this.setCoords();
+
+        return callback;
     }
 }
 
