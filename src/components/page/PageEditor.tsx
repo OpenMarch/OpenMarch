@@ -20,10 +20,11 @@ function PageEditor() {
         }
 
         // Remove focus from the input field
-        if (countsInputRef.current) {
-            countsInputRef.current.blur();
-            countsInputRef.current.defaultValue = counts;
-            countsInputRef.current.value = counts;
+        const inputField = document.getElementById(countsInputId) as HTMLInputElement;
+        if (inputField) {
+            inputField.blur();
+            inputField.defaultValue = counts;
+            inputField.value = counts;
         }
     };
 
@@ -65,8 +66,8 @@ function PageEditor() {
     };
 
     const resetForm = () => {
-        if (formRef.current)
-            formRef.current.reset();
+        const form = document.getElementById(formId) as HTMLFormElement;
+        if (form) form.reset();
     };
 
     // Reset the form when the selected page changes so the values are correct
@@ -80,16 +81,15 @@ function PageEditor() {
                 <span>Page</span>
                 <span>{selectedPage.name}</span>
             </h3>
-            <form className="edit-group" id={formId} onSubmit={handleSubmit} ref={formRef}>
+            <form className="edit-group" id={formId} onSubmit={handleSubmit}>
                 {/* <div className="input-group">
                     <label htmlFor="page-name">Name</label>
                     <input type="text" value={selectedPage.name} onChange={undefined} id="page-name" />
                 </div> */}
                 <div className="input-group">
                     <label htmlFor={countsInputId}>Counts</label>
-                    <input type="number" defaultValue={selectedPage.counts} ref={countsInputRef}
-                        id={countsInputId} onKeyDown={handleKeyDown} onBlur={handleBlur}
-                    />
+                    <input type="number" defaultValue={selectedPage.counts}
+                        id={countsInputId} onKeyDown={handleKeyDown} onBlur={handleBlur} />
                 </div>
                 <div className="input-group">
                     <label htmlFor="page-order">Order</label>
