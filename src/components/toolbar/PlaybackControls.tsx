@@ -1,89 +1,185 @@
 import React, { MouseEventHandler, useCallback, useEffect } from "react";
-import { ButtonGroup, Button } from "react-bootstrap";
-import { FaFastBackward, FaBackward, FaPause, FaPlay, FaForward, FaFastForward } from "react-icons/fa";
+import { ButtonGroup, Button, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { FaFastBackward, FaPause, FaPlay, FaFastForward, FaStepBackward, FaStepForward } from "react-icons/fa";
+import { DefinedKeyboardActions } from "@/KeyboardListeners";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useIsPlaying } from "../../context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { getNextPage } from "../page/PageUtils";
+import { useKeyboardActionsStore } from "@/stores/keyboardShortcutButtons/useKeyboardActionsStore";
+import { Page } from "../../global/classes/Page";
+
+enum PlaybackControlsEnum {
+    firstPage = "firstPage",
+    previousPage = "previousPage",
+    nextPage = "nextPage",
+    lastPage = "lastPage",
+}
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { pages } = usePageStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const [playIsDisabled, setPlayIsDisabled] = React.useState(false);
+    const [previousPage, setPreviousPage] = React.useState<Page | null>(null);
+    const [nextPage, setNextPage] = React.useState<Page | null>(null);
+    const { registerKeyboardAction } = useKeyboardActionsStore();
 
-    const changeSelectedPageHandler: MouseEventHandler<HTMLButtonElement> = useCallback((e) => {
-        const newPageOrder = parseInt(e.currentTarget.value);
-        if (selectedPage) {
-            setSelectedPage(pages.find(page => page.order === newPageOrder) || selectedPage);
+    const firstPageRef = React.useRef<HTMLButtonElement>(null);
+    const previousPageRef = React.useRef<HTMLButtonElement>(null);
+    const nextPageRef = React.useRef<HTMLButtonElement>(null);
+    const lastPageRef = React.useRef<HTMLButtonElement>(null);
+    const playPauseRef = React.useRef<HTMLButtonElement>(null);
+
+    // register the button refs for the keyboard shortcuts
+    useEffect(() => {
+        if (firstPageRef.current) {
+            registerKeyboardAction(DefinedKeyboardActions.firstPage.keyString, () => {
+                firstPageRef.current?.click();
+            });
         }
-    }, [selectedPage, pages, setSelectedPage]);
-
-    const lowestPageOrder = useCallback(() => {
-        if (selectedPage && pages.length > 0) {
-            const orders = Object.values(pages).map(page => page.order);
-            return Math.min(...orders);
+        if (previousPageRef.current) {
+            registerKeyboardAction(DefinedKeyboardActions.previousPage.keyString, () => {
+                previousPageRef.current?.click();
+            });
         }
-
-        // Default, may cause issues
-        return 0;
-    }, [selectedPage, pages]);
-
-    const hightestPageOrder = useCallback(() => {
-        if (selectedPage && pages.length > 0) {
-            const orders = Object.values(pages).map(page => page.order);
-            return Math.max(...orders);
+        if (playPauseRef.current) {
+            registerKeyboardAction(DefinedKeyboardActions.playPause.keyString, () => {
+                playPauseRef.current?.click();
+            });
         }
-
-        // Default, may cause issues
-        return 0;
-    }, [selectedPage, pages]);
+        if (nextPageRef.current) {
+            registerKeyboardAction(DefinedKeyboardActions.nextPage.keyString, () => {
+                nextPageRef.current?.click();
+            });
+        }
+        if (lastPageRef.current) {
+            registerKeyboardAction(DefinedKeyboardActions.lastPage.keyString, () => {
+                lastPageRef.current?.click();
+            });
+        }
+    }, [registerKeyboardAction]);
 
     useEffect(() => {
-        if (!pages || pages.length === 0 || !selectedPage)
-            setPlayIsDisabled(true);
-        else if (getNextPage(selectedPage, pages) === null)
-            setPlayIsDisabled(true);
-        else
-            setPlayIsDisabled(false);
+        if (!pages || pages.length === 0 || !selectedPage) {
+            setPreviousPage(null);
+            setNextPage(null);
+        } else {
+            setPreviousPage(Page.getPreviousPage(selectedPage, pages));
+            setNextPage(Page.getNextPage(selectedPage, pages));
+        }
     }, [pages, selectedPage]);
 
-    const togglePlay = () => { setIsPlaying(!isPlaying); };
+    const changeSelectedPageHandler: MouseEventHandler<HTMLButtonElement> = useCallback((e) => {
+        const action = e.currentTarget.value as PlaybackControlsEnum;
+        switch (action) {
+            case PlaybackControlsEnum.firstPage:
+                setSelectedPage(Page.getFirstPage(pages));
+                break;
+            case PlaybackControlsEnum.previousPage:
+                if (previousPage) {
+                    setSelectedPage(previousPage);
+                }
+                break;
+            case PlaybackControlsEnum.nextPage:
+                if (nextPage) {
+                    setSelectedPage(nextPage);
+                }
+                break;
+            case PlaybackControlsEnum.lastPage:
+                setSelectedPage(Page.getLastPage(pages));
+                break;
+            default:
+                break;
+        }
+    }, [setSelectedPage, pages, previousPage, nextPage]);
+
+    const togglePlay = useCallback(() => {
+        setIsPlaying(!isPlaying);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setIsPlaying, isPlaying]);
+
     return (
         <div className="playback-controls">
-            <ButtonGroup aria-label="Basic example" className={className}>
-                <Button variant="secondary" title="First page"
-                    value={lowestPageOrder()}
-                    onClick={changeSelectedPageHandler}
-                    disabled={selectedPage?.order === lowestPageOrder()}
+            <ButtonGroup aria-label="Playback Controls" title="Playback Controls" className={className}>
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {DefinedKeyboardActions.firstPage.instructionalString}
+                    </Tooltip>}
                 >
-                    <FaFastBackward />
-                </Button>
-                <Button variant="secondary" title="Previous page"
-                    value={selectedPage ? selectedPage.order - 1 : -1}
-                    onClick={changeSelectedPageHandler}
-                    disabled={selectedPage?.order === lowestPageOrder()}
+                    <Button variant="secondary" title="First page"
+                        value={PlaybackControlsEnum.firstPage}
+                        onClick={changeSelectedPageHandler}
+                        disabled={!previousPage}
+                        ref={firstPageRef}
+                    >
+                        <FaFastBackward />
+                    </Button>
+                </OverlayTrigger>
+
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {DefinedKeyboardActions.previousPage.instructionalString}
+                    </Tooltip>}
                 >
-                    <FaBackward />
-                </Button>
-                <Button variant="secondary" onClick={togglePlay} title="Play or pause" disabled={playIsDisabled}>
-                    {isPlaying ? <FaPause /> : <FaPlay />}
-                </Button>
-                <Button variant="secondary" title="Next page"
-                    value={selectedPage ? selectedPage.order + 1 : +1}
-                    onClick={changeSelectedPageHandler}
-                    disabled={selectedPage?.order === hightestPageOrder()}
+                    <Button variant="secondary" title="Previous page"
+                        value={PlaybackControlsEnum.previousPage}
+                        onClick={changeSelectedPageHandler}
+                        disabled={!previousPage}
+                        ref={previousPageRef}
+                    >
+                        <FaStepBackward />
+                    </Button>
+                </OverlayTrigger>
+
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {isPlaying ?
+                            DefinedKeyboardActions.playPause.instructionalStringToggleOff
+                            : DefinedKeyboardActions.playPause.instructionalStringToggleOn
+                        }
+                    </Tooltip>}
                 >
-                    <FaForward />
-                </Button>
-                <Button variant="secondary" title="Last page"
-                    value={hightestPageOrder()}
-                    onClick={changeSelectedPageHandler}
-                    disabled={selectedPage?.order === hightestPageOrder()}
+                    <Button variant="secondary" onClick={togglePlay}
+                        title="Play or pause" disabled={!nextPage} ref={playPauseRef}
+                    >
+                        {isPlaying ? <FaPause /> : <FaPlay />}
+                    </Button>
+                </OverlayTrigger>
+
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {DefinedKeyboardActions.nextPage.instructionalString}
+                    </Tooltip>}
                 >
-                    <FaFastForward />
-                </Button>
+                    <Button variant="secondary" title="Next page"
+                        value={PlaybackControlsEnum.nextPage}
+                        onClick={changeSelectedPageHandler}
+                        disabled={!nextPage}
+                        ref={nextPageRef}
+                    >
+                        <FaStepForward />
+                    </Button>
+                </OverlayTrigger>
+
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {DefinedKeyboardActions.lastPage.instructionalString}
+                    </Tooltip>}
+                >
+                    <Button variant="secondary" title="Last page"
+                        value={PlaybackControlsEnum.lastPage}
+                        onClick={changeSelectedPageHandler}
+                        disabled={!nextPage}
+                        ref={lastPageRef}
+                    >
+                        <FaFastForward />
+                    </Button>
+                </OverlayTrigger>
             </ButtonGroup>
         </div>
     );

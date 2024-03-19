@@ -7,11 +7,21 @@ import * as Interfaces from '../../src/global/Interfaces';
 import * as fs from 'fs';
 import * as History from './database.history';
 import { FieldProperties } from '../../src/global/Interfaces';
+import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '@/global/classes/Marcher';
+import { NewPageArgs, Page } from '../../src/global/classes/Page';
+import { MarcherPage, ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
 
-interface DatabaseResponse {
-    success: boolean;
-    result?: any;
-    errorMessage?: string;
+export class DatabaseResponse {
+    readonly success: boolean;
+    /** Resulting data from the database action. This isn't very well implemented */
+    readonly result?: any;
+    readonly errorMessage?: string;
+
+    constructor(success: boolean, result?: any, errorMessage?: string) {
+        this.success = success;
+        this.result = result;
+        this.errorMessage = errorMessage;
+    }
 }
 
 /* ============================ COORDINATES ============================ */
@@ -262,33 +272,33 @@ export async function getFieldProperties(db?: Database.Database): Promise<Interf
 
 
 /* ============================ Marcher ============================ */
-async function getMarchers(db?: Database.Database): Promise<Interfaces.Marcher[]> {
+async function getMarchers(db?: Database.Database): Promise<Marcher[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
     const result = await stmt.all();
     if (!db) dbToUse.close();
-    return result as Interfaces.Marcher[];
+    return result as Marcher[];
 }
 
-async function getMarcher(marcherId: number, db?: Database.Database): Promise<Interfaces.Marcher> {
+async function getMarcher(marcherId: number, db?: Database.Database): Promise<Marcher> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`);
     const result = await stmt.get({ marcherId });
     if (!db) dbToUse.close();
-    return result as Interfaces.Marcher;
+    return result as Marcher;
 }
 
-async function createMarcher(newMarcher: Interfaces.NewMarcher) {
+async function createMarcher(newMarcher: NewMarcherArgs) {
     return createMarchers([newMarcher]);
 }
 
 /**
  * Updates a list of marchers with the given values.
  *
- * @param newMarchers
+ * @param newMarcherArgs
  * @returns - {success: boolean, errorMessage?: string}
  */
-async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<DatabaseResponse> {
+async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -296,7 +306,7 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<Dat
     // const historyQueries: History.historyQuery[] = [];
     try {
         for (const newMarcher of newMarchers) {
-            const marcherToAdd: Interfaces.Marcher = {
+            const marcherToAdd: Marcher = {
                 id: 0, // Not used, needed for interface
                 id_for_html: '', // Not used, needed for interface
                 name: newMarcher.name || '',
@@ -381,11 +391,11 @@ async function createMarchers(newMarchers: Interfaces.NewMarcher[]): Promise<Dat
 /**
  * Update a list of marchers with the given values.
  *
- * @param marcherUpdates Array of UpdateMarcher objects that contain the id of the
+ * @param modifiedMarchers Array of ModifiedMarcherArgs that contain the id of the
  *                    marcher to update and the values to update it with
  * @returns - {success: boolean, errorMessage: string}
  */
-async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promise<DatabaseResponse> {
+async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -395,9 +405,9 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
     const excludedProperties = ['id'];
 
     try {
-        for (const marcherUpdate of marcherUpdates) {
+        for (const modifiedMarcher of modifiedMarchers) {
             // Generate the SET clause of the SQL query
-            const setClause = Object.keys(marcherUpdate)
+            const setClause = Object.keys(modifiedMarcher)
                 .filter(key => !excludedProperties.includes(key))
                 .map(key => `${key} = @${key}`)
                 .join(', ');
@@ -407,7 +417,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
                 throw new Error('No valid properties to update');
             }
             // Record the original values of the marcher
-            const originalMarcher = await getMarcher(marcherUpdate.id, db);
+            const originalMarcher = await getMarcher(modifiedMarcher.id, db);
 
             const stmt = db.prepare(`
                 UPDATE ${Constants.MarcherTableName}
@@ -415,7 +425,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
                 WHERE id = @id
             `);
 
-            stmt.run({ ...marcherUpdate, new_updated_at: new Date().toISOString() });
+            stmt.run({ ...modifiedMarcher, new_updated_at: new Date().toISOString() });
 
             historyActions.push({
                 tableName: Constants.MarcherTableName,
@@ -424,7 +434,7 @@ async function updateMarchers(marcherUpdates: Interfaces.UpdateMarcher[]): Promi
                 reverseAction: {
                     tableName: Constants.MarcherTableName,
                     setClause: setClause,
-                    previousState: await getMarcher(marcherUpdate.id, db)
+                    previousState: await getMarcher(modifiedMarcher.id, db)
                 }
             });
         }
@@ -474,20 +484,20 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
 }
 
 /* ============================ Page ============================ */
-async function getPages(db?: Database.Database): Promise<Interfaces.Page[]> {
+async function getPages(db?: Database.Database): Promise<Page[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName}`);
     const result = await stmt.all();
     if (!db) dbToUse.close();
-    return result as Interfaces.Page[];
+    return result as Page[];
 }
 
-async function getPage(pageId: number, db?: Database.Database): Promise<Interfaces.Page> {
+async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @pageId`);
     const result = await stmt.get({ pageId });
     if (!db) dbToUse.close();
-    return result as Interfaces.Page;
+    return result as Page;
 }
 
 /**
@@ -497,7 +507,7 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Interfac
  * @param db
  * @returns The page prior to the page with the given id. Null if the page is the first page.
  */
-export async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Interfaces.Page> {
+export async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Page> {
     const dbToUse = db || connect();
     const currentOrder = (await getPage(pageId, dbToUse)).order;
 
@@ -509,13 +519,13 @@ export async function getPreviousPage(pageId: number, db?: Database.Database): P
         LIMIT 1
     `);
 
-    const result = await stmt.get({ currentOrder }) as Interfaces.Page;
+    const result = await stmt.get({ currentOrder }) as Page;
     if (!db) dbToUse.close();
-    return result as Interfaces.Page || null;
+    return result as Page || null;
 
 }
 
-async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResponse> {
+async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -528,7 +538,7 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
             const stmt = db.prepare(`SELECT MAX("order") as maxOrder FROM ${Constants.PageTableName}`);
             const result: any = stmt.get();
             const newOrder = result.maxOrder + 1;
-            const pageToAdd: Interfaces.Page = {
+            const pageToAdd: Page = {
                 id: 0, // Not used, needed for interface
                 id_for_html: '', // Not used, needed for interface
                 name: newPage.name || '',
@@ -606,11 +616,11 @@ async function createPages(newPages: Interfaces.NewPage[]): Promise<DatabaseResp
 /**
  * Update a list of pages with the given values.
  *
- * @param pageUpdates Array of UpdatePage objects that contain the id of the
+ * @param modifiedPages Array of UpdatePage objects that contain the id of the
  *                    page to update and the values to update it with
  * @returns - {success: boolean, errorMessage?: string}
  */
-async function updatePages(pageUpdates: Interfaces.UpdatePage[]): Promise<DatabaseResponse> {
+async function updatePages(modifiedPages: ModifiedMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -620,7 +630,7 @@ async function updatePages(pageUpdates: Interfaces.UpdatePage[]): Promise<Databa
     const excludedProperties = ['id'];
 
     try {
-        for (const pageUpdate of pageUpdates) {
+        for (const pageUpdate of modifiedPages) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(pageUpdate)
                 .filter(key => !excludedProperties.includes(key))
@@ -702,12 +712,12 @@ async function deletePage(page_id: number): Promise<DatabaseResponse> {
 
 /* ============================ MarcherPage ============================ */
 /**
- * Gets all of the marcherPages, or the marcherPages with the given marcher_id or page_id.
+ * Gets all of the marcherPages, or the marcherPages with the given marcher_id and/or page_id.
  *
  * @param args { marcher_id?: number, page_id?: number}
  * @returns Array of marcherPages
  */
-async function getMarcherPages(args: { marcher_id?: number, page_id?: number }): Promise<Interfaces.MarcherPage[]> {
+async function getMarcherPages(args: { marcher_id?: number, page_id?: number }): Promise<MarcherPage[]> {
     const db = connect();
     let stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName}`);
     if (args) {
@@ -720,7 +730,7 @@ async function getMarcherPages(args: { marcher_id?: number, page_id?: number }):
     }
     const result = await stmt.all();
     db.close();
-    return result as Interfaces.MarcherPage[];
+    return result as MarcherPage[];
 }
 
 /**
@@ -730,7 +740,7 @@ async function getMarcherPages(args: { marcher_id?: number, page_id?: number }):
  * @param args { marcher_id: number, page_id: number}
  * @returns The marcherPage
  */
-async function getMarcherPage(args: { marcher_id: number, page_id: number }): Promise<Interfaces.MarcherPage> {
+async function getMarcherPage(args: { marcher_id: number, page_id: number }): Promise<MarcherPage> {
     const marcherPages = await getMarcherPages(args);
     return marcherPages[0];
 }
@@ -745,11 +755,11 @@ async function getMarcherPage(args: { marcher_id: number, page_id: number }): Pr
  * @param newMarcherPage The marcherPage to add
  * @returns
  */
-async function createMarcherPage(db: Database.Database, newMarcherPage: Interfaces.UpdateMarcherPage) {
+async function createMarcherPage(db: Database.Database, newMarcherPage: ModifiedMarcherPageArgs) {
     if (!newMarcherPage.marcher_id || !newMarcherPage.page_id)
         throw new Error('MarcherPage must have marcher_id and page_id');
 
-    const marcherPageToAdd: Interfaces.MarcherPage = {
+    const marcherPageToAdd: MarcherPage = {
         id: 0, // Not used, needed for interface
         id_for_html: '', // Not used, needed for interface
         marcher_id: newMarcherPage.marcher_id,
@@ -802,7 +812,7 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Interfac
  *                  marcherPage to update and the values to update it with
  * @returns - {success: boolean, result: Database.result | string}
  */
-async function updateMarcherPages(marcherPageUpdates: Interfaces.UpdateMarcherPage[]): Promise<DatabaseResponse> {
+async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
     const historyActions: History.UpdateHistoryEntry[] = [];
@@ -872,7 +882,7 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
 
     /* Get the previous marcherPage */
     const currPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @page_id`);
-    const currPage = currPageStmt.get({ page_id }) as Interfaces.Page;
+    const currPage = currPageStmt.get({ page_id }) as Page;
     if (!currPage)
         throw new Error(`Page with id ${page_id} does not exist`);
     if (currPage.order === 1) {
@@ -880,7 +890,7 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         return;
     }
     const previousPage = await getPreviousPage(page_id, db);
-    const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as Interfaces.MarcherPage;
+    const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as MarcherPage;
 
     if (!previousPage)
         throw new Error(`Previous page with page_id ${page_id} does not exist`);
@@ -912,7 +922,7 @@ export async function setAllCoordsToPreviousPage(currentPageId: number, previous
         }
     const marcherPages = await getMarcherPages({ page_id: previousPageId });
 
-    const changes: Interfaces.UpdateMarcherPage[] = [];
+    const changes: ModifiedMarcherPageArgs[] = [];
     for (const marcherPage of marcherPages) {
         changes.push({
             marcher_id: marcherPage.marcher_id,
@@ -942,7 +952,7 @@ export async function roundCoordinates(marcherPages: { marcherId: number, pageId
     const db = connect();
     console.log('roundCoordinates', marcherPages, denominator, xAxis, yAxis);
 
-    const changes: Interfaces.UpdateMarcherPage[] = [];
+    const changes: ModifiedMarcherPageArgs[] = [];
     const stepsPerPixel = 1 / CURRENT_FIELD_PROPERTIES.pixelsPerStep;
     for (const marcherPageArgs of marcherPages) {
         const marcherPage = await getMarcherPage({ marcher_id: marcherPageArgs.marcherId, page_id: marcherPageArgs.pageId });

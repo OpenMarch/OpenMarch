@@ -50,7 +50,8 @@ export class KeyboardAction {
      */
     static makeKeyString({ key, control = false, alt = false, shift = false }:
         { key: string; control?: boolean; alt?: boolean; shift?: boolean; }) {
-        return `${control ? "Ctrl + " : ""}${alt ? "Alt + " : ""}${shift ? "Shift + " : ""}${key.toUpperCase()}`
+        const keyStr = key === " " ? "Space" : key.toUpperCase();
+        return `${control ? "Ctrl + " : ""}${alt ? "Alt + " : ""}${shift ? "Shift + " : ""}${keyStr}`
     }
 
     /**
@@ -63,5 +64,15 @@ export class KeyboardAction {
             && this.control === action.control
             && this.alt === action.alt
             && this.shift === action.shift;
+    }
+
+    /**
+     * Equality check for the action. Returns true if the keys and description are equal.
+     * @param action
+     * @returns
+     */
+    equals(action: KeyboardAction) {
+        return this.keysEqual(action)
+            && this.desc === action.desc;
     }
 }

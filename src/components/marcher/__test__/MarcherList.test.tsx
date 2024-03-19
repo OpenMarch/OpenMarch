@@ -1,9 +1,8 @@
 import { render, fireEvent, act, renderHook, within, Matcher, MatcherOptions, ByRoleMatcher, ByRoleOptions } from "@testing-library/react";
 import MarcherList from "../MarcherList";
-import * as api from '@/api/api';
-import { mockMarchers } from "./mocks";
+import { mockMarchers } from "@/__mocks__/globalMocks";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
-import { Marcher } from "@/global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
 
 describe("MarcherList", () => {
     function validateMarcherRows(marcherRows: HTMLElement[], expectedMarchers: Marcher[]) {
@@ -19,14 +18,14 @@ describe("MarcherList", () => {
 
     let updateMarchersSpy: jest.SpyInstance;
     beforeAll(async () => {
-        jest.mock('@/api/api');
+        jest.mock('@/global/classes/Marcher');
         jest.mock('@/stores/marcher/useMarcherStore');
 
         // Mock the getMarchers function to return the mockMarchers array
-        jest.spyOn(api, 'getMarchers').mockResolvedValue(mockMarchers);
+        jest.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockMarchers);
 
         // Mock the updateMarchers function to return a resolved promise
-        updateMarchersSpy = jest.spyOn(api, 'updateMarchers').mockResolvedValue({ success: true });
+        updateMarchersSpy = jest.spyOn(Marcher, 'updateMarchers').mockResolvedValue({ success: true });
     });
 
     beforeEach(async () => {

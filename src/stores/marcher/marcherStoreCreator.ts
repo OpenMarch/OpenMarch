@@ -1,27 +1,21 @@
 import { type StateCreator } from "zustand";
-import * as api from "../../api/api";
-import * as Interfaces from "../../global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
 
-interface MarcherStoreState {
-    marchers: Interfaces.Marcher[],
-    marchersAreLoading: boolean
-}
-interface MarcherStoreActions {
+export interface MarcherStoreInterface {
+    marchers: Marcher[]
     fetchMarchers: () => Promise<void>;
-    setMarchersAreLoading: (isLoading: boolean) => void;
 }
-export interface MarcherStoreInterface extends MarcherStoreState, MarcherStoreActions { }
 
-export const marcherStoreCreator: StateCreator<MarcherStoreState & MarcherStoreActions> = (set) => ({
+export const marcherStoreCreator: StateCreator<MarcherStoreInterface> = (set) => ({
     marchers: [],
-    marchersAreLoading: true,
 
-    fetchMarchers: async () => {
-        const newMarchers = await api.getMarchers();
-        set({ marchers: newMarchers, marchersAreLoading: false });
+    /**
+     * Fetch the marchers from the database and updates the store.
+     * This is the only way to update retrieve the marchers from the database that ensures the UI is updated.
+     * To access the marchers, use the `marchers` property of the store.
+     */
+    fetchMarchers: async (): Promise<void> => {
+        const newMarchers = await Marcher.getMarchers();
+        set({ marchers: newMarchers });
     },
-
-    setMarchersAreLoading: (isLoading) => {
-        set({ marchersAreLoading: isLoading });
-    }
 });

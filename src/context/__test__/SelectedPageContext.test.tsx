@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import { useSelectedPage, SelectedPageProvider } from "@/context/SelectedPageContext";
-import * as api from '@/api/api';
 import { ElectronApi } from 'electron/preload';
-import { mockPages } from './mocks';
+import { mockPages } from '@/__mocks__/globalMocks';
+import { Page } from '@/global/classes/Page';
 
 // Mock the electron api
 window.electron = {
@@ -12,7 +12,7 @@ window.electron = {
 describe('SelectedPageContext', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        jest.spyOn(api, 'getPages').mockResolvedValue(mockPages);
+        jest.spyOn(Page, 'getPages').mockResolvedValue(mockPages);
     });
 
     it('initial selected pages should be []', async () => {
@@ -22,7 +22,7 @@ describe('SelectedPageContext', () => {
 
     it('set selected page', async () => {
         const { result } = renderHook(() => useSelectedPage(), { wrapper: SelectedPageProvider });
-        const pages = await api.getPages();
+        const pages = await Page.getPages();
 
         // copy the first marcher to avoid reference equality issues
         const expectedPage = [...pages][0];
@@ -32,7 +32,7 @@ describe('SelectedPageContext', () => {
 
     it('set selected page - multiple changes', async () => {
         const { result } = renderHook(() => useSelectedPage(), { wrapper: SelectedPageProvider });
-        const pages = await api.getPages();
+        const pages = await Page.getPages();
 
         // copy the page to avoid reference equality issues
         let expectedPage = [...pages][0];

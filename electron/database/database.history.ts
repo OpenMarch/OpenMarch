@@ -1,7 +1,10 @@
 import { Constants } from '../../src/global/Constants';
-import * as Interfaces from '../../src/global/Interfaces';
+// import * as Interfaces from '../../src/global/Interfaces';
 import Database from 'better-sqlite3';
 import { connect } from './database.services';
+import { Marcher } from '@/global/classes/Marcher';
+import { Page } from '@/global/classes/Page';
+import { MarcherPage } from '@/global/classes/MarcherPage';
 
 /* ============================ Interfaces ============================ */
 /**
@@ -14,7 +17,7 @@ interface HistoryEntryBase {
     action: string;
     table_name: string;
     set_clause?: string;
-    data: string | Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage | { id: number } | { marcher_id: number, page_id: number };
+    data: string | Marcher | Page | MarcherPage | { id: number } | { marcher_id: number, page_id: number };
     history_group_order?: number;
 }
 
@@ -33,7 +36,7 @@ export interface HistoryEntry extends HistoryEntryBase {
 interface UpdateHistoryEntryBase {
     tableName: string;
     setClause: string;
-    previousState: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage;
+    previousState: Marcher | Page | MarcherPage;
 }
 
 /**
@@ -53,7 +56,7 @@ export interface InsertHistoryEntry {
     id: number;
     reverseAction: {
         tableName: string,
-        previousState: Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage
+        previousState: Marcher | Page | MarcherPage
     };
 }
 
@@ -132,26 +135,26 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
                 const updateQuery: UpdateHistoryEntry = {
                     tableName: historyQuery.table_name,
                     setClause: historyQuery.set_clause as string,
-                    previousState: historyQuery.data as Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage,
+                    previousState: historyQuery.data as Marcher | Page | MarcherPage,
                     reverseAction: {
                         tableName: historyQuery.reverse_action.table_name,
                         setClause: historyQuery.reverse_action.set_clause as string,
                         previousState: historyQuery.reverse_action.data as
-                            Interfaces.Marcher | Interfaces.Page | Interfaces.MarcherPage,
+                            Marcher | Page | MarcherPage,
                     }
                 }
 
                 // record the id of the marcher or page that was updated
                 switch (historyQuery.table_name) {
                     case Constants.MarcherTableName:
-                        marcher_id = (updateQuery.previousState as Interfaces.Marcher).id;
+                        marcher_id = (updateQuery.previousState as Marcher).id;
                         break;
                     case Constants.PageTableName:
-                        page_id = (updateQuery.previousState as Interfaces.Page).id;
+                        page_id = (updateQuery.previousState as Page).id;
                         break;
                     case Constants.MarcherPageTableName:
-                        marcher_id = (updateQuery.previousState as Interfaces.MarcherPage).marcher_id;
-                        page_id = (updateQuery.previousState as Interfaces.MarcherPage).page_id;
+                        marcher_id = (updateQuery.previousState as MarcherPage).marcher_id;
+                        page_id = (updateQuery.previousState as MarcherPage).page_id;
                         break;
                     default:
                         throw new Error(`historyQuery.table_name is invalid: ${historyQuery.table_name}`);

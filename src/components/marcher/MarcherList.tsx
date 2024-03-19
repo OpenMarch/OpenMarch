@@ -2,12 +2,11 @@ import { sections } from "../../global/Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
-import { deleteMarcher, updateMarchers } from "../../api/api";
-import { ListFormProps, UpdateMarcher } from "../../global/Interfaces";
+import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
-import { Marcher } from "../../global/Interfaces";
 import * as Interfaces from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
 
 function MarcherList({
     hasHeader = false,
@@ -20,7 +19,7 @@ function MarcherList({
     const [isEditing, setIsEditing] = isEditingStateProp || [isEditingLocal, setIsEditingLocal];
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [false, undefined];
     const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [false, undefined];
-    const { marchers, marchersAreLoading, fetchMarchers } = useMarcherStore();
+    const { marchers } = useMarcherStore();
 
     // localMarchers are the marchers that are displayed in the table
     const [localMarchers, setLocalMarchers] = useState<Marcher[]>();
@@ -31,10 +30,10 @@ function MarcherList({
     async function handleSubmit() {
         setIsEditing(false);
 
-        const marcherUpdates: UpdateMarcher[] = [];
+        const modifiedMarchers: ModifiedMarcherArgs[] = [];
 
         for (const [pageId, changes] of Object.entries(changesRef.current))
-            marcherUpdates.push({ id: Number(pageId), ...changes });
+            modifiedMarchers.push({ id: Number(pageId), ...changes });
 
         if (deletionsRef.current.length > 0) {
             let windowConfirmStr = `-- WARNING --`
@@ -46,11 +45,10 @@ function MarcherList({
                 windowConfirmStr += `\n- ${marchers?.find((marcher) => marcher.id === marcherId)?.drill_number}`;
             if (window.confirm(windowConfirmStr))
                 for (const marcherId of deletionsRef.current)
-                    await deleteMarcher(marcherId);
+                    await Marcher.deleteMarcher(marcherId);
         }
 
-        const result = await updateMarchers(marcherUpdates);
-        fetchMarchers();
+        const result = Marcher.updateMarchers(modifiedMarchers);
         changesRef.current = {};
         deletionsRef.current = [];
         return result;
@@ -135,7 +133,7 @@ function MarcherList({
                         <th scope="col">Name</th>
                     </tr>
                 </thead>
-                {(!marchersAreLoading && localMarchers && marchers) &&
+                {(localMarchers && marchers) &&
                     <tbody>
                         {localMarchers.map((marcher) => (
                             <tr key={marcher.id_for_html}

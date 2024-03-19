@@ -1,4 +1,6 @@
-import { Marcher, Page, MarcherPage } from "@/global/Interfaces";
+import { Marcher } from "@/global/classes/Marcher";
+import { MarcherPage } from "@/global/classes/MarcherPage";
+import { Page } from "@/global/classes/Page";
 
 /**
  * Create marcherPages for each marcher and page for testing purposes.

@@ -1,13 +1,11 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { updatePages } from "../../api/api";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
+import { Page } from "@/global/classes/Page";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
-    const { pages, fetchPages } = usePageStore()!;
-    const countsInputRef = useRef<HTMLInputElement>(null);
-    const formRef = useRef<HTMLFormElement>(null);
+    const { pages } = usePageStore()!;
 
     const countsInputId = "page-counts";
     const formId = "edit-page-form";
@@ -18,7 +16,7 @@ function PageEditor() {
         const counts = form[countsInputId].value;
 
         if (selectedPage) {
-            updatePages([{ id: selectedPage.id, counts: counts }]).then(() => fetchPages());
+            Page.updatePages([{ id: selectedPage.id, counts: counts }]);
         }
 
         // Remove focus from the input field
@@ -95,7 +93,7 @@ function PageEditor() {
                 </div>
                 <div className="input-group">
                     <label htmlFor="page-order">Order</label>
-                    <input type="string" value={selectedPage.order + "/" + pages.length} id="page-order" disabled={true} />
+                    <input type="string" value={(pages.indexOf(selectedPage) + 1) + "/" + pages.length} id="page-order" disabled={true} />
                 </div>
                 {/* <div className="input-group">
                     <label htmlFor="page-sets">Tempo</label>

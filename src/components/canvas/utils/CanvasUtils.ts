@@ -32,8 +32,8 @@ export const buildField = (fieldProperties: FieldProperties) => {
     /* Properties for each field object */
     const borderProps = { stroke: "black", strokeWidth: 3, selectable: false };
     const yardLineProps = { stroke: "black", strokeWidth: 1, selectable: false };
-    const halfLineProps = { stroke: "#AAAAAA", selectable: false };
-    const gridProps = { stroke: "#DDDDDD", selectable: false };
+    const halfLineProps = { stroke: "#AAAAAA", strokeWidth: 1, selectable: false };
+    const gridProps = { stroke: "#DDDDDD", strokeWidth: 1, selectable: false };
     const hashProps = { stroke: "black", strokeWidth: 3, selectable: false };
     const numberProps = { fontSize: 45, fill: "#888888", selectable: false, charSpacing: 160 };
 

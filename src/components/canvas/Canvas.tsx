@@ -1,66 +1,68 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
-import { linearEasing } from "../../global/utils";
 import { useUiSettingsStore } from "../../stores/uiSettings/useUiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
-import { idForHtmlToId } from "../../global/Constants";
-import * as CanvasMarcherUtils from "./utils/CanvasMarcherUtils";
-import { updateMarcherPages } from "../../api/api";
 import * as CanvasUtils from "./utils/CanvasUtils";
-import { CanvasMarcher, UpdateMarcherPage } from "../../global/Interfaces";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { getNextPage } from "../page/PageUtils";
+import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
+import { Page } from "@/global/classes/Page";
+import { CanvasMarcher, tempoToDuration } from "@/global/classes/CanvasMarcher";
 
 function Canvas() {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const { marchers, marchersAreLoading } = useMarcherStore()!;
-    const { pagesAreLoading, pages } = usePageStore()!;
-    const { marcherPages, marcherPagesAreLoading, fetchMarcherPages } = useMarcherPageStore()!;
+    const { marchers } = useMarcherStore()!;
+    const { pages } = usePageStore()!;
+    const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
-    const [isLoading, setIsLoading] = React.useState<boolean>(true);
-    const [canvasMarchers] = React.useState<CanvasMarcher[]>([]);
     const staticGridRef = useRef<fabric.Rect | any>(null);
     const canvas = useRef<fabric.Canvas | any>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const animationCallbacks = useRef<any>([]);
+    const timeoutID = useRef<any>(null);
 
     /* -------------------------- Listener Functions -------------------------- */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleObjectModified = useCallback((e: any) => {
-        const activeObjects = canvas.current.getActiveObjects();
+        if (!selectedPage)
+            throw new Error("Selected page not found - handleObjectModified: Canvas.tsx");
 
-        const changes: UpdateMarcherPage[] = [];
-        activeObjects.forEach((activeObject: any) => {
-            const newCoords = CanvasMarcherUtils.fabricObjectToRealCoords({ canvas: canvas.current, fabricGroup: activeObject as fabric.Group });
-            if (activeObject.id_for_html && newCoords?.x && newCoords?.y) {
-                const marcherId = idForHtmlToId(activeObject.id_for_html);
-                changes.push({ marcher_id: marcherId, page_id: selectedPage!.id, x: newCoords.x, y: newCoords.y });
-            } else {
-                console.error("Marcher or fabric object not found - handleObjectModified: Canvas.tsx");
-            }
+        const activeObjects = canvas.current.getActiveObjects();
+        const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
+        activeObjects.forEach((activeCanvasMarcher: CanvasMarcher) => {
+            if (!(activeCanvasMarcher instanceof CanvasMarcher))
+                return; // If the active object is not a marcher, return
+
+            const newCoords = activeCanvasMarcher.getMarcherCoords();
+            modifiedMarcherPages.push({
+                marcher_id: activeCanvasMarcher.marcherObj.id,
+                page_id: selectedPage!.id,
+                x: newCoords.x,
+                y: newCoords.y
+            });
         });
-        updateMarcherPages(changes).then(() => { fetchMarcherPages() });
-    }, [selectedPage, fetchMarcherPages]);
+
+        MarcherPage.updateMarcherPages(modifiedMarcherPages);
+    }, [selectedPage]);
 
     /**
      * Set the selected marcher when selected element changes
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleSelect = useCallback((e: any) => {
-        const newSelectedMarchers = marchers.filter((marcher) => canvas.current.getActiveObjects()
-            .some((selected: any) => selected.id_for_html === marcher.id_for_html))
-            || []; // If no marchers are selected, set the selected marchers to an empty array
-        setSelectedMarchers(newSelectedMarchers);
+        // Get the marcher ids of the active objects if they are marchers
+        const activeObjectMarcherIds = canvas.current.getActiveObjects().map((activeObject: any) =>
+            activeObject instanceof CanvasMarcher ? activeObject.marcherObj.id : null
+        );
 
-        // Lock X and Y based on current UiSettings
+        const newSelectedMarchers = marchers.filter((marcher) => activeObjectMarcherIds.includes(marcher.id));
+        setSelectedMarchers(newSelectedMarchers);
     }, [marchers, setSelectedMarchers]);
 
     /**
@@ -77,7 +79,14 @@ function Canvas() {
         const evt = opt.e;
         // opt.target checks if the mouse is on the canvas at all
         // Don't move the canvas if the mouse is on a marcher
-        const isMarcherSelection = opt.target && (opt.target?.id_for_html || opt.target._objects?.some((obj: any) => obj.id_for_html));
+        const isMarcherSelection = opt.target &&
+            (
+                opt.target instanceof CanvasMarcher
+                ||
+                // If the target is a group of marchers (currently only checked if any of the objects are marchers)
+                // Will not work when selecting multiple items that aren't marchers
+                opt.target._objects?.some((obj: any) => obj instanceof CanvasMarcher)
+            );
         if (!isMarcherSelection && !evt.shiftKey) {
             canvas.current.isDragging = true;
             canvas.current.selection = false;
@@ -104,7 +113,6 @@ function Canvas() {
     /**
      * Disable dragging mode on mouseup.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleMouseUp = (opt: any) => {
         // on mouse up we want to recalculate new interaction
         // for all objects, so we call setViewportTransform
@@ -143,16 +151,6 @@ function Canvas() {
                 canvas.current.renderAll();
             }
         }, 50);
-
-        // set objectCaching to false after 100ms to improve performance after zooming
-        // This is what prevents the grid from being blurry after zooming
-        clearTimeout(canvas.current.zoomTimeout);
-        canvas.current.zoomTimeout = setTimeout(() => {
-            if (staticGridRef.current.objectCaching) {
-                staticGridRef.current.objectCaching = false;
-                canvas.current.renderAll();
-            }
-        }, 50);
     };
 
     const initiateListeners = useCallback(() => {
@@ -166,7 +164,6 @@ function Canvas() {
         canvas.current.on('mouse:move', handleMouseMove);
         canvas.current.on('mouse:up', handleMouseUp);
         canvas.current.on('mouse:wheel', handleMouseWheel);
-
     }, [handleObjectModified, handleSelect, handleDeselect]);
 
 
@@ -181,19 +178,46 @@ function Canvas() {
         canvas.current.off('mouse:move');
         canvas.current.off('mouse:up');
         canvas.current.off('mouse:wheel');
-
     }, []);
 
-    /* -------------------------- useEffects -------------------------- */
-    // Set Loading
-    useEffect(() => {
-        setIsLoading(marchersAreLoading || pagesAreLoading || marcherPagesAreLoading);
-    }, [pagesAreLoading, marcherPagesAreLoading, marchersAreLoading]);
+    /* -------------------------- Marcher Functions-------------------------- */
+    const renderMarchers = useCallback(() => {
+        if (!(canvas.current && selectedPage && marchers && marcherPages))
+            return;
 
-    /* Initialize the canvas.current */
-    // Update the objectModified listener when the selected page changes
+        const curMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage.id);
+
+        // Get the canvas marchers on the canvas
+        const curCanvasMarchers: CanvasMarcher[] =
+            canvas.current.getObjects().filter((canvasObject: CanvasMarcher) => canvasObject instanceof CanvasMarcher);
+
+        curMarcherPages.forEach((marcherPage) => {
+            // Marcher does not exist on the Canvas, create a new one
+            const curCanvasMarcher = curCanvasMarchers.find((canvasMarcher) => canvasMarcher.marcherObj.id === marcherPage.marcher_id);
+            if (!curCanvasMarcher) {
+                const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
+                if (!curMarcher)
+                    throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
+
+                canvas.current.add(new CanvasMarcher(
+                    { marcher: curMarcher, marcherPage, canvas: canvas.current }
+                ));
+            }
+            // Marcher exists on the Canvas, move it to the new location if it has changed
+            else {
+                curCanvasMarcher.setMarcherCoords(marcherPage);
+            }
+        });
+        canvas.current.requestRenderAll();
+    }, [marchers, selectedPage, marcherPages]);
+
+
+    /* -------------------------- useEffects -------------------------- */
+    /* Initialize the canvas */
     useEffect(() => {
-        if (!(!canvas.current && selectedPage && canvasRef.current && fieldProperties)) return;
+        if (canvas.current || !selectedPage || !canvasRef.current || !fieldProperties)
+            return; // If the canvas is already initialized, or the selected page is not set, return
+
         canvas.current = new fabric.Canvas(canvasRef.current, {});
 
         canvas.current.perfLimitSizeTotal = 225000000;
@@ -202,13 +226,11 @@ function Canvas() {
         // Set canvas.current size
         CanvasUtils.refreshCanvasSize(canvas.current);
         // Update canvas.current size on window resize
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         window.addEventListener('resize', (evt) => {
             CanvasUtils.refreshCanvasSize(canvas.current);
         });
 
         // Set canvas.current configuration options
-        // canvas.current.backgroundColor = getColor('$purple-200');
         canvas.current.selectionColor = "white";
         canvas.current.selectionLineWidth = 8;
         // set initial canvas.current size
@@ -237,39 +259,14 @@ function Canvas() {
         }
     }, [initiateListeners, cleanupListeners]);
 
-
-    // Render the marchers when the canvas.current and marchers are loaded
-    useEffect(() => {
-        if (canvas.current && !isLoading) {
-            CanvasMarcherUtils.updateMarcherLabels({ marchers, canvasMarchers, canvas: canvas.current });
-        }
-    }, [marchers, isLoading, canvasMarchers]);
-
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        if (canvas.current && !isLoading && selectedPage) {
-            CanvasMarcherUtils.renderMarchers({ canvas: canvas.current, marchers, selectedPage, canvasMarchers, marcherPages });
+        if (canvas.current && selectedPage) {
+            renderMarchers();
         }
-    }, [marchers, pages, marcherPages, selectedPage, isLoading, canvasMarchers]);
+    }, [renderMarchers, selectedPage]);
 
-    // TODO implement this for multiple marchers
-    // Change the active object when the selected marcher changes
-    // useEffect(() => {
-    //     if (!(canvas.current && !isLoading && canvasMarchers.length > 0 && selectedMarchers.length > 0))
-    //         return;
-
-    //     const selectedMarcherIds = selectedMarchers.map(marcher => marcher.id);
-    //     const activeObjects = canvasMarchers.filter(canvasMarcher => selectedMarcherIds.includes(canvasMarcher.marcher_id));
-    //     if (activeObjects.length > 0) {
-    //         const fabricObjects = activeObjects.map(activeObject => activeObject.fabricObject);
-    //         canvas.current.discardActiveObject();
-    //         if (fabricObjects && fabricObjects.length > 0)
-    //             canvas.current.setActiveObject(new fabric.ActiveSelection(fabricObjects, {
-    //                 canvas: canvas.current,
-    //             }));
-    //     }
-    // }, [selectedMarchers, isLoading, canvasMarchers]);
-
+    // Lock X
     useEffect(() => {
         if (!(canvas.current && uiSettings)) return;
         canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementX = uiSettings.lockX; });
@@ -283,65 +280,80 @@ function Canvas() {
 
     /* --------------------------Animation Functions-------------------------- */
 
-    // eslint-disable-next-line
-    const startAnimation = useCallback(() => {
-        if (!(canvas.current && selectedPage)) return;
-        const nextPage = getNextPage(selectedPage!, pages);
-        if (!nextPage) return;
-        const nextPageMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === nextPage.id);
-        const duration = 1000;
-
-        canvasMarchers.forEach((canvasMarcher) => {
-            const marcherPageToUse = nextPageMarcherPages.find((marcherPage) => marcherPage.marcher_id === canvasMarcher.marcher_id);
-            const nextLeft = marcherPageToUse?.x;
-            const nextTop = marcherPageToUse?.y;
-            if (!nextLeft || !nextTop) {
-                throw new Error("Marcher page not found - startAnimation: Canvas.tsx");
-            }
-            const newCoords = CanvasMarcherUtils.realCoordsToCanvasCoords({ canvasMarcher, x: nextLeft, y: nextTop });
-            if (!newCoords) return;
-            canvasMarcher?.fabricObject?.animate({
-                left: newCoords.x,
-                top: newCoords.y,
-            }, {
-                duration: duration,
-                onChange: canvas.current!.renderAll.bind(canvas.current),
-                easing: linearEasing,
-            });
-            setTimeout(() => {
-                setSelectedPage(nextPage);
-                setIsPlaying(false);
-            }, duration);
-        });
-    }, [selectedPage, pages, marcherPages, canvasMarchers, setSelectedPage, setIsPlaying]);
-
     useEffect(() => {
-        if (!(canvas.current && !isLoading && isPlaying)) return;
-        startAnimation();
-    }, [isLoading, isPlaying, startAnimation]);
+        if (canvas.current && selectedPage) {
+            if (isPlaying) {
+                const nextPage = Page.getNextPage(selectedPage, pages);
+                if (!nextPage)
+                    return;
+
+                const nextPageMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === nextPage.id);
+                canvas.current.getObjects().forEach((canvasMarcher: CanvasMarcher) => {
+                    // If the active object is not a marcher, return
+                    if (!(canvasMarcher instanceof CanvasMarcher))
+                        return;
+
+                    const marcherPageToUse = nextPageMarcherPages.find((marcherPage) => marcherPage.marcher_id === canvasMarcher.marcherObj.id && marcherPage.page_id === nextPage.id);
+                    if (!marcherPageToUse) {
+                        console.error("Marcher page not found - startAnimation: Canvas.tsx", canvasMarcher);
+                        return;
+                    }
+
+                    const callback = canvasMarcher.setNextAnimation(
+                        {
+                            marcherPage: marcherPageToUse,
+                            tempo: selectedPage.tempo,
+                            counts: selectedPage.counts
+                        }
+                    );
+                    animationCallbacks.current.push(callback);
+                });
+
+                const duration = tempoToDuration(nextPage.tempo);
+                canvas.current.requestRenderAll();
+                // Set the selected page after the animation is done and set isPlaying to false
+                timeoutID.current = setTimeout(() => {
+                    setSelectedPage(nextPage);
+                    setIsPlaying(false);
+                }, duration * selectedPage.counts);
+            }
+            else {
+                animationCallbacks.current.forEach((callback: any) => {
+                    // Not sure why these are two functions in Fabric.js
+                    (callback[0] as () => void)(); // Stop X animation
+                    (callback[1] as () => void)(); // Stop Y animation
+                });
+                if (timeoutID.current) {
+                    clearTimeout(timeoutID.current);
+                }
+                renderMarchers();
+                // canvas.current.getObjects().forEach((canvasMarcher: CanvasMarcher) => {
+                //     canvasMarcher.dispose();
+                // });
+            }
+        }
+    }, [isPlaying, marcherPages, pages, renderMarchers, selectedPage, setIsPlaying, setSelectedPage]);
 
     return (
         <div className="canvas-container-custom">
-            {!isLoading &&
-                ((marchers.length > 0 && pages.length > 0) ?
-                    <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
-                    :
-                    <div className="canvas-loading"
-                        style={{
-                            color: "white",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: "100%",
-                        }}
-                    >
-                        <h3>To start the show, create Marchers and Pages.</h3>
-                        <p>Then {"(Window -> Refresh) or (Ctrl+R)"}</p>
-                        <h5>If anything in OpenMarch ever seems broken, a refresh will often fix it.</h5>
-                    </div>
-                )
-            }
+            {((marchers.length > 0 && pages.length > 0) ?
+                <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
+                : // If there are no marchers or pages, display a message
+                <div className="canvas-loading"
+                    style={{
+                        color: "white",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                    }}
+                >
+                    <h3>To start the show, create Marchers and Pages.</h3>
+                    <p>Then {"(Window -> Refresh) or (Ctrl+R)"}</p>
+                    <h5>If anything in OpenMarch ever seems broken, a refresh will often fix it.</h5>
+                </div>
+            )}
         </div>
     );
 }
