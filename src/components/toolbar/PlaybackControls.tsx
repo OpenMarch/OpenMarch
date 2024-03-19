@@ -110,7 +110,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     <Button variant="secondary" title="First page"
                         value={PlaybackControlsEnum.firstPage}
                         onClick={changeSelectedPageHandler}
-                        disabled={!previousPage}
+                        disabled={!previousPage || isPlaying}
                         ref={firstPageRef}
                     >
                         <FaFastBackward />
@@ -126,7 +126,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     <Button variant="secondary" title="Previous page"
                         value={PlaybackControlsEnum.previousPage}
                         onClick={changeSelectedPageHandler}
-                        disabled={!previousPage}
+                        disabled={!previousPage || isPlaying}
                         ref={previousPageRef}
                     >
                         <FaStepBackward />
@@ -158,7 +158,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     <Button variant="secondary" title="Next page"
                         value={PlaybackControlsEnum.nextPage}
                         onClick={changeSelectedPageHandler}
-                        disabled={!nextPage}
+                        disabled={!nextPage || isPlaying}
                         ref={nextPageRef}
                     >
                         <FaStepForward />
@@ -174,7 +174,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     <Button variant="secondary" title="Last page"
                         value={PlaybackControlsEnum.lastPage}
                         onClick={changeSelectedPageHandler}
-                        disabled={!nextPage}
+                        disabled={!nextPage || isPlaying}
                         ref={lastPageRef}
                     >
                         <FaFastForward />
