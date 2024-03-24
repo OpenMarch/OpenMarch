@@ -1,6 +1,7 @@
 
 import { fabric } from "fabric";
 import { FieldProperties } from "../../../global/Interfaces";
+import { GRID_STROKE_WIDTH } from "@/global/Constants";
 
 /* -------------------------- Canvas Functions -------------------------- */
 /**
@@ -30,11 +31,11 @@ export const buildField = (fieldProperties: FieldProperties) => {
     fieldArray.push(background);
 
     /* Properties for each field object */
-    const borderProps = { stroke: "black", strokeWidth: 3, selectable: false };
-    const yardLineProps = { stroke: "black", strokeWidth: 1, selectable: false };
-    const halfLineProps = { stroke: "#AAAAAA", strokeWidth: 1, selectable: false };
-    const gridProps = { stroke: "#DDDDDD", strokeWidth: 1, selectable: false };
-    const hashProps = { stroke: "black", strokeWidth: 3, selectable: false };
+    const borderProps = { stroke: "black", strokeWidth: GRID_STROKE_WIDTH * 3, selectable: false };
+    const yardLineProps = { stroke: "black", strokeWidth: GRID_STROKE_WIDTH, selectable: false };
+    const halfLineProps = { stroke: "#AAAAAA", strokeWidth: GRID_STROKE_WIDTH, selectable: false };
+    const gridProps = { stroke: "#DDDDDD", strokeWidth: GRID_STROKE_WIDTH, selectable: false };
+    const hashProps = { stroke: "black", strokeWidth: GRID_STROKE_WIDTH * 3, selectable: false };
     const numberProps = { fontSize: 45, fill: "#888888", selectable: false, charSpacing: 160 };
 
     // Grid lines

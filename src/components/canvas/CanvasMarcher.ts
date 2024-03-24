@@ -1,6 +1,7 @@
 import { fabric } from "fabric";
-import { Marcher } from "./Marcher";
-import { MarcherPage } from "./MarcherPage";
+import { Marcher } from "../../global/classes/Marcher";
+import { MarcherPage } from "../../global/classes/MarcherPage";
+import { GRID_STROKE_WIDTH } from "@/global/Constants";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
@@ -9,7 +10,7 @@ import { MarcherPage } from "./MarcherPage";
 export class CanvasMarcher extends fabric.Group {
     // Styles
     private static readonly dotRadius = 5;
-    private static readonly gridOffset = .5; // Stroke width is 1, so this is needed to center the dot on the grid
+    private static readonly gridOffset = GRID_STROKE_WIDTH / 2; // used to center the grid line
     private static readonly color = "red";
     static readonly fabricType = "CanvasMarcher";
 
@@ -21,12 +22,11 @@ export class CanvasMarcher extends fabric.Group {
     /**
      * @param marcher The marcher object to create the canvas object from
      * @param marcherPage The MarcherPage object to set the initial coordinates from
-     * @param canvas The canvas object to add the marcher to
      * @param dotRadius The radius of the dot
      * @param color The color of the dot
      */
-    constructor({ marcher, marcherPage, canvas, dotRadius = CanvasMarcher.dotRadius, color = CanvasMarcher.color }:
-        { marcher: Marcher; marcherPage: MarcherPage; canvas: fabric.Canvas, dotRadius?: number, color?: string }) {
+    constructor({ marcher, marcherPage, dotRadius = CanvasMarcher.dotRadius, color = CanvasMarcher.color }:
+        { marcher: Marcher; marcherPage: MarcherPage; dotRadius?: number, color?: string }) {
         super([
             new fabric.Circle({
                 left: marcherPage.x,

@@ -12,7 +12,8 @@ import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 import { Page } from "@/global/classes/Page";
-import { CanvasMarcher, tempoToDuration } from "@/global/classes/CanvasMarcher";
+import { CanvasMarcher, tempoToDuration } from "@/components/canvas/CanvasMarcher";
+import { StaticCanvasMarcher } from "@/components/canvas/StaticCanvasMarcher";
 
 function Canvas() {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
@@ -181,6 +182,9 @@ function Canvas() {
     }, []);
 
     /* -------------------------- Marcher Functions-------------------------- */
+    /**
+     * Render the marchers for the current page
+     */
     const renderMarchers = useCallback(() => {
         if (!(canvas.current && selectedPage && marchers && marcherPages))
             return;
@@ -200,7 +204,7 @@ function Canvas() {
                     throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
 
                 canvas.current.add(new CanvasMarcher(
-                    { marcher: curMarcher, marcherPage, canvas: canvas.current }
+                    { marcher: curMarcher, marcherPage }
                 ));
             }
             // Marcher exists on the Canvas, move it to the new location if it has changed
@@ -211,6 +215,45 @@ function Canvas() {
         canvas.current.requestRenderAll();
     }, [marchers, selectedPage, marcherPages]);
 
+    /**
+     * Remove the static canvas marchers from the canvas
+     */
+    const removeStaticCanvasMarchers = useCallback(() => {
+        if (!canvas.current)
+            return;
+
+        const curStaticCanvasMarchers: StaticCanvasMarcher[] = canvas.current.getObjects().filter((canvasObject: StaticCanvasMarcher) => canvasObject instanceof StaticCanvasMarcher);
+
+        curStaticCanvasMarchers.forEach((canvasMarcher) => {
+            canvas.current.remove(canvasMarcher);
+        });
+        canvas.current.requestRenderAll();
+    }, []);
+
+    /**
+     * Render static marchers for the given page
+     *
+     * @param page The page to render the static marchers for
+     * @param color The color of the static marchers
+     * @param alpha The transparency of the static marchers
+     */
+    const renderStaticMarchers = useCallback((page: Page, color = "gray", alpha = .5) => {
+        if (!(canvas.current && marchers && marcherPages))
+            return;
+
+        const curMarcherPages = marcherPages.filter((marcherPage) => page.id === marcherPage.page_id);
+
+        curMarcherPages.forEach((marcherPage) => {
+            const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
+            if (!curMarcher)
+                throw new Error("Marcher not found - renderStaticMarchers: Canvas.tsx");
+
+            canvas.current.add(new StaticCanvasMarcher(
+                { marcher: curMarcher, marcherPage, color, alpha }
+            ));
+        });
+        canvas.current.requestRenderAll();
+    }, [marchers, marcherPages]);
 
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
@@ -263,19 +306,28 @@ function Canvas() {
     useEffect(() => {
         if (canvas.current && selectedPage) {
             renderMarchers();
+
+            removeStaticCanvasMarchers();
+            const prevPage = Page.getPreviousPage(selectedPage, pages);
+            const nextPage = Page.getNextPage(selectedPage, pages);
+
+            if (prevPage)
+                renderStaticMarchers(prevPage, "black", 1);
+            if (nextPage)
+                renderStaticMarchers(nextPage, "#00e30d", 1);
         }
-    }, [renderMarchers, selectedPage]);
+    }, [pages, removeStaticCanvasMarchers, renderMarchers, renderStaticMarchers, selectedPage]);
 
     // Lock X
     useEffect(() => {
-        if (!(canvas.current && uiSettings)) return;
-        canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementX = uiSettings.lockX; });
-    }, [uiSettings, uiSettings.lockY]);
+        if (canvas.current && uiSettings)
+            canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementX = uiSettings.lockX; });
+    }, [uiSettings, uiSettings.lockX]);
 
     // Lock Y
     useEffect(() => {
-        if (!(canvas.current && uiSettings)) return;
-        canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementY = uiSettings.lockY; });
+        if (canvas.current && uiSettings)
+            canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementY = uiSettings.lockY; });
     }, [uiSettings, uiSettings.lockY]);
 
     /* --------------------------Animation Functions-------------------------- */

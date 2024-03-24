@@ -12,8 +12,10 @@ export const Constants = {
     NewPageId: "NEW_PAGE",
     MarcherPrefix: "marcher",
     MarcherPagePrefix: "mp",
-    dotRadius: 5
+    dotRadius: 5,
 } as const;
+
+export const GRID_STROKE_WIDTH = 1;
 
 
 export const YARD_LINES = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0] as const;
