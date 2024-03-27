@@ -108,6 +108,10 @@ export interface UiSettings {
     lockX: boolean;
     lockY: boolean;
     isPlaying: boolean;
+    /** Boolean to view previous page's paths/dots */
+    previousPaths: boolean,
+    /** Boolean to view next page's paths/dots */
+    nextPaths: boolean
 }
 
 

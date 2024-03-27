@@ -16,6 +16,8 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
     const lockXRef = useRef<HTMLButtonElement>(null);
     const lockYRef = useRef<HTMLButtonElement>(null);
     const snapToNearestWholeRef = useRef<HTMLButtonElement>(null);
+    const togglePreviousPathsRef = useRef<HTMLButtonElement>(null);
+    const toggleNextPathsRef = useRef<HTMLButtonElement>(null);
 
     // register the button refs for the keyboard shortcuts
     useEffect(() => {
@@ -25,6 +27,10 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
             registerKeyboardAction(DefinedKeyboardActions.lockY.keyString, () => lockYRef.current?.click());
         if (snapToNearestWholeRef.current)
             registerKeyboardAction(DefinedKeyboardActions.snapToNearestWhole.keyString, () => snapToNearestWholeRef.current?.click());
+        if (togglePreviousPathsRef.current)
+            registerKeyboardAction(DefinedKeyboardActions.togglePreviousPagePaths.keyString, () => togglePreviousPathsRef.current?.click());
+        if (toggleNextPathsRef.current)
+            registerKeyboardAction(DefinedKeyboardActions.toggleNextPagePaths.keyString, () => toggleNextPathsRef.current?.click());
     }, [lockXRef, lockYRef, registerKeyboardAction]);
 
     /**
@@ -100,6 +106,47 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
                 >
                     <Button onClick={handleSnapButton} ref={snapToNearestWholeRef}>
                         < TbKeyframeAlignCenterFilled />
+                    </Button>
+                </OverlayTrigger>
+            </ButtonGroup>
+
+            <ButtonGroup className={className}>
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={
+                        <Tooltip id={`tooltip-top`}>
+                            {uiSettings.previousPaths ?
+                                DefinedKeyboardActions.togglePreviousPagePaths.instructionalStringToggleOff :
+                                DefinedKeyboardActions.togglePreviousPagePaths.instructionalStringToggleOn
+                            }
+                        </Tooltip>
+                    }
+                >
+                    <Button
+                        variant={uiSettings.previousPaths ? "primary" : "secondary"}
+                        onClick={() => toggle("previousPaths")}
+                        ref={togglePreviousPathsRef}
+                    >
+                        Prev Dots
+                    </Button>
+                </OverlayTrigger>
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={
+                        <Tooltip id={`tooltip-top`}>
+                            {uiSettings.nextPaths ?
+                                DefinedKeyboardActions.toggleNextPagePaths.instructionalStringToggleOff :
+                                DefinedKeyboardActions.toggleNextPagePaths.instructionalStringToggleOn
+                            }
+                        </Tooltip>
+                    }
+                >
+                    <Button
+                        variant={uiSettings.nextPaths ? "primary" : "secondary"}
+                        onClick={() => toggle("nextPaths")}
+                        ref={toggleNextPathsRef}
+                    >
+                        Next Dots
                     </Button>
                 </OverlayTrigger>
             </ButtonGroup>

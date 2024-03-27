@@ -14,6 +14,8 @@ export interface DefinedKeyboardActionsInterface {
     firstPage: KeyboardAction;
     playPause: KeyboardAction;
     snapToNearestWhole: KeyboardAction;
+    toggleNextPagePaths: KeyboardAction;
+    togglePreviousPagePaths: KeyboardAction;
 }
 
 /**
@@ -27,7 +29,15 @@ export const DefinedKeyboardActions: DefinedKeyboardActionsInterface = {
     previousPage: new KeyboardAction({ key: "q", desc: "Previous page" }),
     firstPage: new KeyboardAction({ key: "q", shift: true, desc: "First page" }),
     playPause: new KeyboardAction({ key: " ", desc: "Play or pause", toggleOnStr: "Play", toggleOffStr: "Pause" }),
-    snapToNearestWhole: new KeyboardAction({ key: "1", desc: "Snap to nearest whole" })
+    snapToNearestWhole: new KeyboardAction({ key: "1", desc: "Snap to nearest whole" }),
+    togglePreviousPagePaths: new KeyboardAction({
+        key: "n", desc: "Toggle viewing previous page paths",
+        toggleOnStr: "Show previous page dots/paths", toggleOffStr: "Hide previous page dots/paths"
+    }),
+    toggleNextPagePaths: new KeyboardAction({
+        key: "m", desc: "Toggle viewing next page paths",
+        toggleOnStr: "Show next page dots/paths", toggleOffStr: "Hide next page dots/paths"
+    }),
 } as const;
 
 /**

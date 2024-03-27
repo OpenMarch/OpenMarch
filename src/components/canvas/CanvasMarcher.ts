@@ -172,6 +172,7 @@ export class CanvasMarcher extends fabric.Group {
         this.top = newCanvasCoords.y;
 
         // This is needed for the canvas to register the change - http://fabricjs.com/fabric-gotchas
+        this.getCanvas().bringToFront(this);
         this.setCoords();
     }
 

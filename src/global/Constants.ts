@@ -1,3 +1,4 @@
+import { IGroupOptions } from "fabric/fabric-impl";
 import { Section } from "./Interfaces";
 
 export const Constants = {
@@ -16,6 +17,22 @@ export const Constants = {
 } as const;
 
 export const GRID_STROKE_WIDTH = 1;
+
+export const CanvasColors = {
+    previousPage: 'rgba(0, 0, 0, 1)',
+    nextPage: 'rgba(0, 175, 13, 1)',
+} as const;
+
+export const NoControls: IGroupOptions = {
+    hasControls: false,
+    hasBorders: false,
+    lockMovementX: true,
+    lockMovementY: true,
+    lockRotation: true,
+    selectable: false,
+    hoverCursor: "default",
+    evented: false,
+} as const;
 
 
 export const YARD_LINES = [50, 45, 40, 35, 30, 25, 20, 15, 10, 5, 0] as const;

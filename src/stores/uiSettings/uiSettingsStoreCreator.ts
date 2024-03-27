@@ -9,11 +9,18 @@ interface UiSettingsStoreActions {
 }
 export interface UiSettingsStoreInterface extends UiSettingsStoreState, UiSettingsStoreActions { }
 
+/**
+ * The UI settings store is where all editable UI settings are stored.
+ */
 export const uiSettingsStoreCreator: StateCreator<UiSettingsStoreState & UiSettingsStoreActions> = (set) => ({
     uiSettings: {
         isPlaying: false,
         lockX: false,
         lockY: false,
+        /** Boolean to view previous page's paths/dots */
+        previousPaths: true,
+        /** Boolean to view next page's paths/dots */
+        nextPaths: true,
     },
 
     /**

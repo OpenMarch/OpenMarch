@@ -14,6 +14,8 @@ import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPa
 import { Page } from "@/global/classes/Page";
 import { CanvasMarcher, tempoToDuration } from "@/components/canvas/CanvasMarcher";
 import { StaticCanvasMarcher } from "@/components/canvas/StaticCanvasMarcher";
+import { Pathway } from "./Pathway";
+import { CanvasColors } from "@/global/Constants";
 
 function Canvas() {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
@@ -215,6 +217,19 @@ function Canvas() {
         canvas.current.requestRenderAll();
     }, [marchers, selectedPage, marcherPages]);
 
+    const sendCanvasMarchersToFront = useCallback(() => {
+        if (!(canvas.current && selectedPage && marchers && marcherPages))
+            return;
+
+        // Get the canvas marchers on the canvas
+        const curCanvasMarchers: CanvasMarcher[] =
+            canvas.current.getObjects().filter((canvasObject: CanvasMarcher) => canvasObject instanceof CanvasMarcher);
+
+        curCanvasMarchers.forEach((canvasMarcher) => {
+            canvas.current.bringToFront(canvasMarcher)
+        })
+    }, [marcherPages, marchers, selectedPage])
+
     /**
      * Remove the static canvas marchers from the canvas
      */
@@ -234,26 +249,71 @@ function Canvas() {
      * Render static marchers for the given page
      *
      * @param page The page to render the static marchers for
-     * @param color The color of the static marchers
-     * @param alpha The transparency of the static marchers
+     * @param color The color of the static marchers (use rgba for transparency)
      */
-    const renderStaticMarchers = useCallback((page: Page, color = "gray", alpha = .5) => {
+    const renderStaticMarchers = useCallback((page: Page, color: string) => {
         if (!(canvas.current && marchers && marcherPages))
             return;
 
-        const curMarcherPages = marcherPages.filter((marcherPage) => page.id === marcherPage.page_id);
+        const theseMarcherPages = marcherPages.filter((marcherPage) => page.id === marcherPage.page_id);
 
-        curMarcherPages.forEach((marcherPage) => {
+        theseMarcherPages.forEach((marcherPage) => {
             const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
             if (!curMarcher)
                 throw new Error("Marcher not found - renderStaticMarchers: Canvas.tsx");
 
-            canvas.current.add(new StaticCanvasMarcher(
-                { marcher: curMarcher, marcherPage, color, alpha }
-            ));
+            const staticMarcher = new StaticCanvasMarcher(
+                { marcher: curMarcher, marcherPage, color }
+            )
+
+            canvas.current.add(staticMarcher);
         });
         canvas.current.requestRenderAll();
     }, [marchers, marcherPages]);
+
+    const removePathways = useCallback(() => {
+        if (!canvas.current)
+            return;
+
+        const curPathways: Pathway[] = canvas.current.getObjects().filter((canvasObject: Pathway) => canvasObject instanceof Pathway);
+
+        curPathways.forEach((pathway) => {
+            canvas.current.remove(pathway);
+        });
+        canvas.current.requestRenderAll();
+    }, []);
+
+    /**
+     * Render the pathways from the selected page to the given one
+     *
+     * @param page the page to render the pathway to from the selected page
+     * @param color color of the pathway
+     */
+    const renderPathways = useCallback((page: Page, color = 'rgba(0, 0, 0, 1)') => {
+        if (!(canvas.current && selectedPage && marcherPages))
+            return;
+
+        const selectedPageMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === selectedPage.id);
+
+        if (!page)
+            return; // If there is no previous page, return
+
+        const previousPageMarcherPages = marcherPages.filter((marcherPage) => marcherPage.page_id === page.id);
+        previousPageMarcherPages.forEach((previousMarcherPage) => {
+            const selectedMarcherPage = selectedPageMarcherPages.find((marcherPage) => marcherPage.marcher_id === previousMarcherPage.marcher_id);
+            if (!selectedMarcherPage)
+                return; // If the marcher does not exist on the selected page, return
+
+            const pathway = new Pathway({
+                start: previousMarcherPage,
+                end: selectedMarcherPage,
+                color,
+            });
+
+            canvas.current.add(pathway);
+        })
+
+    }, [selectedPage, marcherPages]);
 
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
@@ -306,17 +366,30 @@ function Canvas() {
     useEffect(() => {
         if (canvas.current && selectedPage) {
             renderMarchers();
+        }
+    }, [renderMarchers, selectedPage]);
 
-            removeStaticCanvasMarchers();
+    // Renders pathways when selected page or settings change
+    useEffect(() => {
+        if (canvas.current && selectedPage) {
             const prevPage = Page.getPreviousPage(selectedPage, pages);
             const nextPage = Page.getNextPage(selectedPage, pages);
 
-            if (prevPage)
-                renderStaticMarchers(prevPage, "black", 1);
-            if (nextPage)
-                renderStaticMarchers(nextPage, "#00e30d", 1);
+            removePathways();
+            removeStaticCanvasMarchers();
+
+            if (uiSettings.previousPaths && prevPage) {
+                renderStaticMarchers(prevPage, CanvasColors.previousPage);
+                renderPathways(prevPage, CanvasColors.previousPage);
+            }
+            if (uiSettings.nextPaths && nextPage) {
+                renderStaticMarchers(nextPage, CanvasColors.nextPage);
+                renderPathways(nextPage, CanvasColors.nextPage);
+            }
+
+            sendCanvasMarchersToFront();
         }
-    }, [pages, removeStaticCanvasMarchers, renderMarchers, renderStaticMarchers, selectedPage]);
+    }, [pages, removePathways, removeStaticCanvasMarchers, renderPathways, renderStaticMarchers, selectedPage, sendCanvasMarchersToFront, uiSettings.nextPaths, uiSettings.previousPaths])
 
     // Lock X
     useEffect(() => {
