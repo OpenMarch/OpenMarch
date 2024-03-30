@@ -5,6 +5,7 @@ import MarcherListModal from '../marcher/MarcherListModal';
 import PageListModal from '../page/PageListModal';
 import UiSettingsToolbar from './UiSettingsToolbar';
 import ExportCoordinatesModal from '../exporting/ExportCoordinatesModal';
+import AlignmentToolbar from './AlignmentToolbar';
 
 function Topbar() {
     const componentClassName = 'mx-2';
@@ -18,6 +19,7 @@ function Topbar() {
             <PageListModal className={componentClassName} />
             <div className='vertival-divider' />
             <UiSettingsToolbar className={componentClassName} />
+            <AlignmentToolbar className={componentClassName} />
             <ExportCoordinatesModal className={componentClassName} />
         </Container>
     );

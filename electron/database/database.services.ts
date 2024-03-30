@@ -196,10 +196,6 @@ export function initHandlers() {
     ipcMain.handle('marcher_page:getAll', async (_, args) => getMarcherPages(args));
     ipcMain.handle('marcher_page:get', async (_, args) => getMarcherPage(args));
     ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPages(args));
-
-    // Batch actions
-    ipcMain.handle('page:setAllCoordsToPreviousPage', (_, currentPageId, previousPageId) => setAllCoordsToPreviousPage(currentPageId, previousPageId));
-
 }
 
 /* ======================= Exported Functions ======================= */
@@ -855,89 +851,4 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         x: previousMarcherPage.x,
         y: previousMarcherPage.y
     }
-}
-
-/* --------------- MarcherPage Utility Actions --------------- */
-/**
- * Sets the coordinates of all marcherPages on the given page to the coordinates of the previous page.
- *
- * @param currentPageId - the id of the page to set the coordinates on
- * @param previousPageId - the id of the page to get the coordinates from. If not provided, the previous page will be found.
- * @returns {success: boolean, result: Database.result | string}
- */
-export async function setAllCoordsToPreviousPage(currentPageId: number, previousPageId?: number): Promise<DatabaseResponse> {
-    const dbToUse = connect();
-    if (!previousPageId)
-        try {
-            previousPageId = (await getPreviousPage(currentPageId, dbToUse)).id;
-        }
-        catch (error: any) {
-            console.error("setAllCoordsToPreviousPage: error likely caused by currentPage being the first page\n", error);
-            return { success: false, errorMessage: "setAllCoordsToPreviousPage: error likely caused by currentPageId being the first page\n" + error.message };
-        }
-    const marcherPages = await getMarcherPages({ page_id: previousPageId });
-
-    const changes: ModifiedMarcherPageArgs[] = [];
-    for (const marcherPage of marcherPages) {
-        changes.push({
-            marcher_id: marcherPage.marcher_id,
-            page_id: currentPageId,
-            x: marcherPage.x,
-            y: marcherPage.y
-        });
-    }
-
-    const response = await updateMarcherPages(changes);
-
-    return { success: true, result: response };
-}
-
-/**
- * Rounds the coordinates of the marcherPages with the given marcher_id and page_id to the nearest multiple of the denominator.
- *
- * Example: if the denominator is 10, the coordinates will be rounded to the nearest .1.
- * If the denominator is 4, the coordinates will be rounded to the nearest .25.
- *
- * @param marcherId
- * @param pageId
- * @param denominator
- * @returns
- */
-export async function roundCoordinates(marcherPages: { marcherId: number, pageId: number }[], denominator: number, xAxis: boolean, yAxis: boolean): Promise<DatabaseResponse> {
-    const db = connect();
-    console.log('roundCoordinates', marcherPages, denominator, xAxis, yAxis);
-    const currentFieldProperties = await getFieldProperties(db);
-
-    const changes: ModifiedMarcherPageArgs[] = [];
-    const stepsPerPixel = 1 / FieldProperties.PIXELS_PER_STEP;
-    for (const marcherPageArgs of marcherPages) {
-        const marcherPage = await getMarcherPage({ marcher_id: marcherPageArgs.marcherId, page_id: marcherPageArgs.pageId });
-
-        let newX = marcherPage.x;
-        let newY = marcherPage.y;
-
-        if (xAxis) {
-            const xStepsFromOrigin = stepsPerPixel * (currentFieldProperties.centerFrontPoint.xPixels - marcherPage.x);
-            const roundedXSteps = Math.round(xStepsFromOrigin * denominator) / denominator;
-            newX = currentFieldProperties.centerFrontPoint.xPixels - (roundedXSteps / stepsPerPixel);
-        }
-        if (yAxis) {
-            const yStepsFromOrigin = stepsPerPixel * (currentFieldProperties.centerFrontPoint.yPixels - marcherPage.y);
-            const roundedYSteps = Math.round(yStepsFromOrigin * denominator) / denominator;
-            newY = currentFieldProperties.centerFrontPoint.yPixels - (roundedYSteps / stepsPerPixel);
-        }
-        changes.push({
-            marcher_id: marcherPage.marcher_id,
-            page_id: marcherPage.page_id,
-            // 860 pixels, 86 steps, .1 steps per pixel
-            x: newX,
-            y: newY
-        });
-    }
-
-    const response = await updateMarcherPages(changes);
-
-    db.close();
-    return { success: true, result: response };
-
 }

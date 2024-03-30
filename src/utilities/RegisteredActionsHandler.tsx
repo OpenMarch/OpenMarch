@@ -106,6 +106,9 @@ export enum RegisteredActionsEnum {
     firstPage = "firstPage",
     playPause = "playPause",
 
+    // Batch editing
+    setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
+
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
     lockX = "lockX",
@@ -141,6 +144,12 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
     playPause: new RegisteredAction({
         desc: "Play or pause", toggleOnStr: "Play", toggleOffStr: "Pause",
         keyboardShortcut: new KeyboardShortcut({ key: " " })
+    }),
+
+    // Batch editing
+    setAllMarchersToPreviousPage: new RegisteredAction({
+        desc: "Set all marcher coordinates to previous page",
+        keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true })
     }),
 
     // Alignment
@@ -232,7 +241,6 @@ function RegisteredActionsHandler() {
                 break;
             }
             case RegisteredActionsEnum.previousPage: {
-                console.log('previous page');
                 const previousPage = Page.getPreviousPage(selectedPage, pages);
                 if (previousPage) setSelectedPage(previousPage);
                 break;
@@ -245,6 +253,15 @@ function RegisteredActionsHandler() {
             case RegisteredActionsEnum.playPause:
                 setIsPlaying(!isPlaying);
                 break;
+
+            /****************** Alignment ******************/
+            case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
+                const previousPage = Page.getPreviousPage(selectedPage, pages);
+                const previousPageMarcherPages = marcherPages.filter(marcherPage => marcherPage.page_id === previousPage?.id);
+                const changes = previousPageMarcherPages.map(marcherPage => ({ ...marcherPage, page_id: selectedPage.id }));
+                MarcherPage.updateMarcherPages(changes);
+                break;
+            }
 
             /****************** Alignment ******************/
             case RegisteredActionsEnum.snapToNearestWhole: {
@@ -273,8 +290,8 @@ function RegisteredActionsHandler() {
                 console.error(`No action registered for "${registeredActionObject.instructionalString}"`);
                 return;
         }
-    }, [fieldProperties, getSelectedMarcherPages, isPlaying, pages, selectedPage,
-        setIsPlaying, setSelectedPage, setUiSettings, uiSettings]);
+    }, [fieldProperties, getSelectedMarcherPages, isPlaying, marcherPages, pages, selectedPage, setIsPlaying,
+        setSelectedPage, setUiSettings, uiSettings]);
 
     /**
      * Create a dictionary of keyboard shortcuts to actions. This is used to trigger actions from keyboard shortcuts.

@@ -132,13 +132,6 @@ function initGetters() {
     store.set('lockY', lockY as boolean);
   });
 
-  // Snap to grid
-  ipcMain.on('send:snap', async (_, marcherPages: { marcherId: number, pageId: number }[], roundFactor: number, lockX: boolean, lockY: boolean) => {
-    DatabaseServices.roundCoordinates(marcherPages, roundFactor, !lockX, !lockY).then(() => {
-      triggerFetch('marcher_page');
-    });
-  });
-
   // Export Individual Coordinate Sheets
   ipcMain.on('send:exportIndividual', async (_, coordinateSheets: string[]) => await generatePDF(coordinateSheets));
 }
@@ -305,8 +298,12 @@ export async function triggerFetch(type: 'marcher' | 'page' | 'marcher_page') {
   win?.webContents.send('fetch:all', type);
 }
 
-
-
+/**
+ * Sets the active database path and reloads the window.
+ *
+ * @param path path to the database file
+ * @param isNewFile True if this is a new file, false if it is an existing file
+ */
 function setActiveDb(path: string, isNewFile = false) {
   DatabaseServices.setDbPath(path, isNewFile);
   win?.setTitle('OpenMarch - ' + path);
