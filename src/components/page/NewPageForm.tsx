@@ -1,5 +1,5 @@
 import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { NewPageArgs, Page } from "@/global/classes/Page";
 
@@ -19,6 +19,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
     const { pages } = usePageStore!();
+    const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
         if (!typing) {

@@ -85,7 +85,7 @@ const V1_ORIGIN = { x: 800, y: 520 };
 /**
  * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
  */
-export const mockV1FieldProperties: FieldProperties = {
+export const mockNCAAFieldProperties: FieldProperties = {
     frontSideline: 32,
     frontHash: 0,
     backHash: -20,

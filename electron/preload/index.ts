@@ -1,3 +1,4 @@
+import { FieldProperties } from "@/global/classes/FieldProperties"
 import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
 import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
 import { ModifiedPageArgs, NewPageArgs, Page } from "@/global/classes/Page"
@@ -132,7 +133,8 @@ const APP_API = {
   redo: () => ipcRenderer.invoke('history:redo'),
 
   // FieldProperties
-  getFieldProperties: () => ipcRenderer.invoke('field_properties:get'),
+  /** Get the FieldProperties associated with this file */
+  getFieldProperties: () => ipcRenderer.invoke('field_properties:get') as Promise<FieldProperties>,
 
   // Marcher
   getMarchers: () => ipcRenderer.invoke('marcher:getAll') as Promise<Marcher[]>,

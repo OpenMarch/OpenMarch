@@ -42,6 +42,8 @@ function StateInitializer() {
             setSelectedPage(pages[0]);
     }, [pages, selectedPage, setSelectedPage]);
 
+    useEffect(() => { })
+
     const getMarcher = useCallback((id: number) => {
         return marchers.find(marcher => marcher.id === id) || null;
     }, [marchers]);

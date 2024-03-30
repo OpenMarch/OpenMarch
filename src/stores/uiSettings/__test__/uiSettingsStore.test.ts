@@ -12,6 +12,8 @@ describe('uiSettings Store', () => {
         isPlaying: false,
         lockX: false,
         lockY: false,
+        previousPaths: true,
+        nextPaths: true,
     };
 
     beforeEach(() => {

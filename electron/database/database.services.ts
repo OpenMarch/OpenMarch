@@ -3,13 +3,12 @@ import { ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { Constants } from '../../src/global/Constants';
-import * as Interfaces from '../../src/global/Interfaces';
 import * as fs from 'fs';
 import * as History from './database.history';
-import { FieldProperties } from '../../src/global/Interfaces';
 import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '@/global/classes/Marcher';
 import { NewPageArgs, Page } from '../../src/global/classes/Page';
 import { MarcherPage, ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
+import { FieldProperties } from '../../src/global/classes/FieldProperties';
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -23,28 +22,6 @@ export class DatabaseResponse {
         this.errorMessage = errorMessage;
     }
 }
-
-/* ============================ COORDINATES ============================ */
-// The "origin" of a football field is on the 50 yard line on the front hash. This is the pixel position on the canvas.
-export const V1_ORIGIN = { x: 800, y: 520 };
-/**
- * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
- */
-export const V1_COLLEGE_PROPERTIES: FieldProperties = {
-    frontSideline: 32,
-    frontHash: 0,
-    backHash: -20,
-    backSideline: -52,
-    originX: V1_ORIGIN.x,
-    originY: V1_ORIGIN.y,
-    pixelsPerStep: 10,
-    roundFactor: 20, // 1/x. 4 -> nearest .25, 2 -> nearest .5, 10 -> nearest .1, 100 -> nearest .01
-    width: 1600,
-    height: 840,
-    stepsBetweenLines: 8
-};
-
-const CURRENT_FIELD_PROPERTIES = V1_COLLEGE_PROPERTIES;
 
 /* ============================ DATABASE ============================ */
 let DB_PATH = '';
@@ -84,7 +61,7 @@ export function initDatabase() {
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
-    createFieldProperties(db, CURRENT_FIELD_PROPERTIES);
+    createFieldPropertiesTable(db, FieldProperties.Template.NCAA);
     History.createHistoryTables(db);
     console.log('Database created.');
     db.close();
@@ -167,53 +144,28 @@ function createMarcherPageTable(db: Database.Database) {
     }
 }
 
-function createFieldProperties(db: Database.Database, fieldProperties: Interfaces.FieldProperties) {
+function createFieldPropertiesTable(db: Database.Database, template: FieldProperties.Template) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.FieldPropertiesTableName}" (
                 id INTEGER PRIMARY KEY,
-                frontSideline REAL NOT NULL,
-                frontHash REAL NOT NULL,
-                backHash REAL NOT NULL,
-                backSideline REAL NOT NULL,
-                originX REAL NOT NULL,
-                originY REAL NOT NULL,
-                pixelsPerStep REAL NOT NULL,
-                width REAL NOT NULL,
-                height REAL NOT NULL,
-                stepsBetweenLines REAL NOT NULL
+                json_data TEXT
             );
         `);
     } catch (error) {
         console.error('Failed to create field properties table:', error);
     }
-    db.exec(`
+    const fieldProperties: FieldProperties = new FieldProperties(template);
+    const stmt = db.prepare(`
         INSERT INTO ${Constants.FieldPropertiesTableName} (
             id,
-            frontSideline,
-            frontHash,
-            backHash,
-            backSideline,
-            originX,
-            originY,
-            pixelsPerStep,
-            width,
-            height,
-            stepsBetweenLines
+            json_data
         ) VALUES (
             1,
-            ${fieldProperties.frontSideline},
-            ${fieldProperties.frontHash},
-            ${fieldProperties.backHash},
-            ${fieldProperties.backSideline},
-            ${fieldProperties.originX},
-            ${fieldProperties.originY},
-            ${fieldProperties.pixelsPerStep},
-            ${fieldProperties.width},
-            ${fieldProperties.height},
-            ${fieldProperties.stepsBetweenLines}
+            @json_data
         );
     `);
+    stmt.run({ json_data: JSON.stringify(fieldProperties) });
     console.log('Field properties table created.');
 }
 
@@ -262,12 +214,14 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
  * @param db
  * @returns
  */
-export async function getFieldProperties(db?: Database.Database): Promise<Interfaces.FieldProperties> {
+export async function getFieldProperties(db?: Database.Database): Promise<FieldProperties> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.FieldPropertiesTableName}`);
-    const result = await stmt.get() as Interfaces.FieldProperties;
+    const result = await stmt.get({});
+    const jsonData = (result as any).json_data;
+    const fieldProperties = JSON.parse(jsonData) as FieldProperties;
     if (!db) dbToUse.close();
-    return result;
+    return fieldProperties;
 }
 
 
@@ -951,9 +905,10 @@ export async function setAllCoordsToPreviousPage(currentPageId: number, previous
 export async function roundCoordinates(marcherPages: { marcherId: number, pageId: number }[], denominator: number, xAxis: boolean, yAxis: boolean): Promise<DatabaseResponse> {
     const db = connect();
     console.log('roundCoordinates', marcherPages, denominator, xAxis, yAxis);
+    const currentFieldProperties = await getFieldProperties(db);
 
     const changes: ModifiedMarcherPageArgs[] = [];
-    const stepsPerPixel = 1 / CURRENT_FIELD_PROPERTIES.pixelsPerStep;
+    const stepsPerPixel = 1 / FieldProperties.PIXELS_PER_STEP;
     for (const marcherPageArgs of marcherPages) {
         const marcherPage = await getMarcherPage({ marcher_id: marcherPageArgs.marcherId, page_id: marcherPageArgs.pageId });
 
@@ -961,14 +916,14 @@ export async function roundCoordinates(marcherPages: { marcherId: number, pageId
         let newY = marcherPage.y;
 
         if (xAxis) {
-            const xStepsFromOrigin = stepsPerPixel * (CURRENT_FIELD_PROPERTIES.originX - marcherPage.x);
+            const xStepsFromOrigin = stepsPerPixel * (currentFieldProperties.centerFrontPoint.xPixels - marcherPage.x);
             const roundedXSteps = Math.round(xStepsFromOrigin * denominator) / denominator;
-            newX = CURRENT_FIELD_PROPERTIES.originX - (roundedXSteps / stepsPerPixel);
+            newX = currentFieldProperties.centerFrontPoint.xPixels - (roundedXSteps / stepsPerPixel);
         }
         if (yAxis) {
-            const yStepsFromOrigin = stepsPerPixel * (CURRENT_FIELD_PROPERTIES.originY - marcherPage.y);
+            const yStepsFromOrigin = stepsPerPixel * (currentFieldProperties.centerFrontPoint.yPixels - marcherPage.y);
             const roundedYSteps = Math.round(yStepsFromOrigin * denominator) / denominator;
-            newY = CURRENT_FIELD_PROPERTIES.originY - (roundedYSteps / stepsPerPixel);
+            newY = currentFieldProperties.centerFrontPoint.yPixels - (roundedYSteps / stepsPerPixel);
         }
         changes.push({
             marcher_id: marcherPage.marcher_id,

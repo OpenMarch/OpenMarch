@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { FieldProperties } from '../global/Interfaces';
-import { getFieldProperties } from '@/api/api';
+import { FieldProperties } from '@/global/classes/FieldProperties';
+import { ReadableCoords } from '@/global/classes/ReadableCoords';
 
 // Define the type for the context value
 type FieldPropertiesContextProps = {
@@ -12,10 +12,12 @@ const FieldPropertiesContext = createContext<FieldPropertiesContextProps | undef
 export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
     const [fieldProperties, setFieldProperties] = useState<FieldProperties>();
 
-    // Send the selected page to the electron main process
+    // Fetch the field properties from the main process and set the state
     useEffect(() => {
-        getFieldProperties().then((fieldPropertiesResult) => {
+        window.electron.getFieldProperties().then((fieldPropertiesResult) => {
             setFieldProperties(fieldPropertiesResult);
+            // Set the field properties for the ReadableCoords class
+            ReadableCoords.setFieldProperties(fieldPropertiesResult);
         });
     }, []);
 

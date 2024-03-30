@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HASHES, YARD_LINES } from "../../global/Constants";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
-import { ReadableCoords } from "../../global/Interfaces";
-import { canvasCoordsToCollegeRCords, getTerseString } from "../canvas/utils/CoordsUtils";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
+import { ReadableCoords } from "@/global/classes/ReadableCoords";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -17,11 +16,11 @@ function MarcherEditor() {
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
     const xDescriptionRef = useRef<HTMLSelectElement>(null);
-    const yardLineRef = useRef<HTMLSelectElement>(null);
+    const xCheckpointRef = useRef<HTMLSelectElement>(null);
     const fieldSideRef = useRef<HTMLSelectElement>(null);
     const yInputRef = useRef<HTMLInputElement>(null);
     const yDescriptionRef = useRef<HTMLSelectElement>(null);
-    const hashRef = useRef<HTMLSelectElement>(null);
+    const yCheckpointRef = useRef<HTMLSelectElement>(null);
     const detailsFormRef = useRef<HTMLFormElement>(null);
 
     const handleCoordsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -40,7 +39,7 @@ function MarcherEditor() {
             marcherPage.page_id === selectedPage?.id);
         if (marcherPage) {
             if (!fieldProperties) return;
-            const newRcoords = canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y, fieldProperties);
+            const newRcoords = ReadableCoords.fromMarcherPage(marcherPage);
             setRCoords(newRcoords);
         }
     }, [selectedMarchers, marcherPages, selectedPage, fieldProperties]);
@@ -51,11 +50,11 @@ function MarcherEditor() {
         if (rCoords) {
             if (xInputRef.current) xInputRef.current.value = rCoords.xSteps.toString();
             if (xDescriptionRef.current) xDescriptionRef.current.value = rCoords.xDescription;
-            if (yardLineRef.current) yardLineRef.current.value = rCoords.yardLine.toString();
+            if (xCheckpointRef.current) xCheckpointRef.current.value = rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name;
             if (fieldSideRef.current) fieldSideRef.current.value = rCoords.side.toString();
             if (yInputRef.current) yInputRef.current.value = rCoords.ySteps.toString();
             if (yDescriptionRef.current) yDescriptionRef.current.value = rCoords.yDescription;
-            if (hashRef.current) hashRef.current.value = rCoords.hash;
+            if (yCheckpointRef.current) yCheckpointRef.current.value = rCoords.yCheckpoint.terseName || rCoords.yCheckpoint.name;
         }
 
         detailsFormRef.current?.reset();
@@ -100,7 +99,7 @@ function MarcherEditor() {
                                     <option value="outside">out</option>
                                     <option value="on">on</option>
                                 </select>
-                                <select disabled={true} ref={yardLineRef} defaultValue={rCoords.yardLine}>
+                                <select disabled={true} ref={xCheckpointRef} defaultValue={rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name}>
                                     {YARD_LINES.map((yardLine) => (
                                         <option value={yardLine} key={yardLine}>{yardLine}</option>
                                     ))}
@@ -118,9 +117,11 @@ function MarcherEditor() {
                                     <option value="behind">behind</option>
                                     <option value="on">on</option>
                                 </select>
-                                <select disabled={true} ref={hashRef}>
-                                    {HASHES.map((hash) => (
-                                        <option value={hash} key={hash}>{getTerseString(hash)}</option>
+                                <select disabled={true} ref={yCheckpointRef} defaultValue={rCoords.yCheckpoint.terseName || rCoords.yCheckpoint.name}>
+                                    {fieldProperties?.yCheckpoints.map((yCheckpoint) => (
+                                        <option value={yCheckpoint.terseName || yCheckpoint.name} key={yCheckpoint.name}>
+                                            {yCheckpoint.name}
+                                        </option>
                                     ))}
                                 </select>
                             </div>

@@ -1,14 +1,15 @@
-import { GRID_STROKE_WIDTH, NoControls } from "@/global/Constants";
+import { NoControls } from "@/global/Constants";
 import { Marcher } from "../../global/classes/Marcher";
 import { MarcherPage } from "../../global/classes/MarcherPage";
 import { fabric } from "fabric";
+import { FieldProperties } from "@/global/classes/FieldProperties";
 
 /**
  * A StaticCanvasMarcher is fabric circle that cannot be edited by the user.
  * It is used to represent the coordinates on the previous and next pages.
  */
 export class StaticCanvasMarcher extends fabric.Group {
-    private static readonly gridOffset = GRID_STROKE_WIDTH / 2; // used to center the grid line
+    private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
 
     /**
      *

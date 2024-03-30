@@ -16,8 +16,6 @@ export const Constants = {
     dotRadius: 5,
 } as const;
 
-export const GRID_STROKE_WIDTH = 1;
-
 export const CanvasColors = {
     previousPage: 'rgba(0, 0, 0, 1)',
     nextPage: 'rgba(0, 175, 13, 1)',

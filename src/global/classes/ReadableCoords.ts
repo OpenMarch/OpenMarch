@@ -76,7 +76,9 @@ export class ReadableCoords {
     }
 
     /**
-     * @param marcherPage
+     * A factory method to create a ReadableCoords object from a MarcherPage object.
+     *
+     * @param marcherPage The MarcherPage object to create a ReadableCoords object from.
      * @param roundingDenominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
      *  Optional, nearest 1/100 step by default.
      * @returns A new ReadableCoords object created from a MarcherPage object.

@@ -9,6 +9,8 @@
 export class FieldProperties {
     /*********** Constants ***********/
     static readonly PIXELS_PER_STEP = 10;
+    static readonly GRID_STROKE_WIDTH = 1;
+
 
     /*********** Attributes ***********/
     /**
@@ -33,6 +35,8 @@ export class FieldProperties {
     readonly width: number;
     /** In pixels. The height of the field on the y axis. E.g side line to side line */
     readonly height: number;
+    /** The template this FieldProperties object is based on */
+    readonly template: FieldProperties.Template;
 
     constructor(template: FieldProperties.Template) {
         switch (template) {
@@ -40,6 +44,7 @@ export class FieldProperties {
                 this.centerFrontPoint = { xPixels: 800, yPixels: 853.3 };
                 this.xCheckpoints = FieldProperties.createFootballFieldXCheckpoints();
                 this.yCheckpoints = FieldProperties.createNCAAFootballFieldYCheckpoints();
+                this.template = template;
                 break;
             default:
                 throw new Error(`FieldProperties ${template} template not supported`);
@@ -59,6 +64,7 @@ export class FieldProperties {
      */
     private static createFootballFieldXCheckpoints(): Checkpoint[] {
         const xCheckpoints: Checkpoint[] = [];
+
         for (let yards = 0; yards <= 100; yards = yards += 5) {
             const curYardLine = (yards < 50) ? yards : (100 - yards);
             const stepsFromCenterFront = ((yards - 50) / 5) * 8;
@@ -86,7 +92,7 @@ export class FieldProperties {
         const frontSideline: Checkpoint =
         {
             name: "front sideline", axis: "y", stepsFromCenterFront: 0,
-            useAsReference: true, terseName: "FSL"
+            useAsReference: true, terseName: "FSL", visible: false
         };
         const frontHash: Checkpoint =
         {
@@ -105,13 +111,13 @@ export class FieldProperties {
         };
         const gridBackSideline: Checkpoint =
         {
-            name: "grid back sideline", axis: "y", stepsFromCenterFront: -84,
-            useAsReference: true, terseName: "grid:BSL", fieldStandard: fieldStandard
+            name: "grid back sideline", axis: "y", stepsFromCenterFront: -85,
+            useAsReference: true, terseName: "grid:BSL", fieldStandard: fieldStandard, visible: false
         };
         const realBackSideline: Checkpoint =
         {
             name: "real back sideline", axis: "y", stepsFromCenterFront: -85.33,
-            useAsReference: false, terseName: "real:BSL", fieldStandard: fieldStandard
+            useAsReference: false, terseName: "real:BSL", fieldStandard: fieldStandard, visible: false
         };
         return [
             frontSideline,
@@ -136,25 +142,82 @@ export namespace FieldProperties {
     }
 }
 
-
-
 /** A reference point on the field. Yard line, hash, etc. */
 export interface Checkpoint {
-    /** "50 yard line", "front hash", "real college back hash", "grid high school back hash" */
+    /**
+     * "50 yard line", "front hash", "real college back hash", "grid high school back hash"
+     */
     name: string;
+    /**
+     * The axis this checkpoint tracks. Yard line would be "x" and hashes would be "y"
+     */
     axis: "x" | "y";
     /**
      * A shorthand to put on abbreviated coordinates.
      * E.g. back sideline -> bsl; 35 yard line -> 35
      * */
     terseName?: string;
+    /**
+     * The standard this checkpoint relates to if applicable (NCAA, High school, etc.)
+     */
     fieldStandard?: string;
+    /**
+     * How many steps from the center front the checkpoint is on its respective axis.
+     * X axis - toward side 1 is negative, towards side 2 is positive
+     * Y axis - behind the front is negative, in front is positive
+     */
     stepsFromCenterFront: number;
     /**
      * True if you want ReadableCoords to reference this.
      * False if you just want this checkpoint to be visible on the canvas but not referenced.
      */
     useAsReference: boolean;
-    /** If you want the checkpoint labeled on the canvas. Would put '35' for 35 yard line */
+    /**
+     * Number/label to put on the field for reference. E.g. 50 yard line, 20 yard line, etc.
+     */
     fieldLabel?: string;
+    /**
+     * Whether or not this checkpoint should be visible on the canvas.
+     * If false, it will not be drawn. Default is true if not defined.
+     */
+    visible?: boolean;
+}
+
+interface YardNumberCoordinates {
+    /**
+     * Number of steps from the front sideline to the outside of the home number
+     * (closer to the front sideline)
+     */
+    homeStepsFromFrontToOutside: number;
+    /**
+     * Number of steps from the front sideline to the inside of the home number
+     * (closer to the center of the field)
+     */
+    homeStepsFromFrontToInside: number;
+    /**
+     * Number of steps from the front sideline to the inside of the away number
+     * (closer to the center of the field)
+     */
+    awayStepsFromFrontToInside: number;
+    /**
+     * Number of steps from the front sideline to the outside of the away number
+     * (closer to the back sideline)
+     */
+    awayStepsFromFrontToOutside: number;
+}
+
+export function getYardNumberCoordinates(template: FieldProperties.Template): YardNumberCoordinates {
+    switch (template) {
+        case FieldProperties.Template.NCAA: {
+            let coordinates: YardNumberCoordinates = {
+                homeStepsFromFrontToOutside: 11.2,
+                homeStepsFromFrontToInside: 14.4,
+                awayStepsFromFrontToInside: 70.9333,
+                awayStepsFromFrontToOutside: 74.1333
+            };
+            return coordinates;
+        }
+        default:
+            throw new Error(`FieldProperties ${template} template not supported`);
+    }
 }

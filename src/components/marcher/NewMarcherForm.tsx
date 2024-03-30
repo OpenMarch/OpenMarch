@@ -1,6 +1,6 @@
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
 import { sections } from "../../global/Constants";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Section } from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { Marcher } from "@/global/classes/Marcher";

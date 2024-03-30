@@ -1,6 +1,5 @@
 import * as Interfaces from "@/global/Interfaces";
 import { Col, Row, Table } from "react-bootstrap";
-import * as CoordsUtils from '@/components/canvas/utils/CoordsUtils';
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
@@ -9,6 +8,7 @@ import { Marcher } from "@/global/classes/Marcher";
 import { Page } from "@/global/classes/Page";
 import { MarcherPage } from "@/global/classes/MarcherPage";
 
+// TODO, this is broken right now, fix this
 interface MarcherCoordinateSheetProps {
     marcher?: Marcher;
     includeMeasures?: boolean;

@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import { Marcher } from "../../global/classes/Marcher";
 import { MarcherPage } from "../../global/classes/MarcherPage";
-import { GRID_STROKE_WIDTH } from "@/global/Constants";
+import { FieldProperties } from "@/global/classes/FieldProperties";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
@@ -10,7 +10,7 @@ import { GRID_STROKE_WIDTH } from "@/global/Constants";
 export class CanvasMarcher extends fabric.Group {
     // Styles
     private static readonly dotRadius = 5;
-    private static readonly gridOffset = GRID_STROKE_WIDTH / 2; // used to center the grid line
+    private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
     private static readonly color = "red";
     static readonly fabricType = "CanvasMarcher";
 

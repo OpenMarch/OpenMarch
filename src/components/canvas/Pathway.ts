@@ -1,5 +1,6 @@
+import { FieldProperties } from "@/global/classes/FieldProperties";
 import { MarcherPage } from "@/global/classes/MarcherPage";
-import { GRID_STROKE_WIDTH, NoControls } from "@/global/Constants";
+import { NoControls } from "@/global/Constants";
 import { fabric } from "fabric";
 
 /**
@@ -14,7 +15,7 @@ export class Pathway extends fabric.Line {
      */
     constructor({ start, end, color, strokeWidth = 2 }:
         { start: MarcherPage; end: MarcherPage; color: string, strokeWidth?: number }) {
-        const gridOffset = (GRID_STROKE_WIDTH - strokeWidth) / 2;
+        const gridOffset = (FieldProperties.GRID_STROKE_WIDTH - strokeWidth) / 2;
         super([
             start.x + gridOffset,
             start.y + gridOffset,

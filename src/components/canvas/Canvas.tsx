@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { fabric } from "fabric";
 import { useUiSettingsStore } from "../../stores/uiSettings/useUiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
@@ -337,7 +337,7 @@ function Canvas() {
         canvas.current.selectionColor = "white";
         canvas.current.selectionLineWidth = 8;
         // set initial canvas.current size
-        staticGridRef.current = CanvasUtils.buildField(fieldProperties);
+        staticGridRef.current = CanvasUtils.buildField({ fieldProperties });
         canvas.current.add(staticGridRef.current);
         staticGridRef.current.objectCaching = true;
 

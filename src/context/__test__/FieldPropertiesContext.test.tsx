@@ -1,14 +1,16 @@
 import { act, renderHook } from '@testing-library/react';
 import { FieldPropertiesProvider, useFieldProperties } from '../fieldPropertiesContext';
-import * as api from '@/api/api';
-import { mockV1FieldProperties } from "@/__mocks__/globalMocks";
+import { mockNCAAFieldProperties } from "@/__mocks__/globalMocks";
+import { ElectronApi } from 'electron/preload';
 
+window.electron = {
+    getFieldProperties: jest.fn().mockResolvedValue(mockNCAAFieldProperties),
+} as Partial<ElectronApi> as ElectronApi;
 describe('SelectedPageContext', () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
         jest.mock('@/api/api');
-        jest.spyOn(api, 'getFieldProperties').mockResolvedValue(mockV1FieldProperties);
     });
 
     it('initial field properties should be the passed mock', async () => {
@@ -17,6 +19,6 @@ describe('SelectedPageContext', () => {
             ({ result } = renderHook(() => useFieldProperties(), { wrapper: FieldPropertiesProvider }));
         });
         expect(result).toBeDefined();
-        expect(result.current?.fieldProperties).toEqual({ ...mockV1FieldProperties });
+        expect(result.current?.fieldProperties).toEqual({ ...mockNCAAFieldProperties });
     })
 });
