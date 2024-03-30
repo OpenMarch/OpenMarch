@@ -8,7 +8,7 @@
  */
 export class FieldProperties {
     /*********** Constants ***********/
-    static readonly PIXELS_PER_STEP = 10;
+    static readonly PIXELS_PER_STEP: number = 10;
     static readonly GRID_STROKE_WIDTH = 1;
 
 
@@ -56,6 +56,14 @@ export class FieldProperties {
         const maxY = this.yCheckpoints.reduce((max, cur) => (cur.stepsFromCenterFront > max) ? cur.stepsFromCenterFront : max, 0);
         this.width = (maxX - minX) * FieldProperties.PIXELS_PER_STEP;
         this.height = (maxY - minY) * FieldProperties.PIXELS_PER_STEP;
+    }
+
+    static getPixelsPerStep(): number {
+        return FieldProperties.PIXELS_PER_STEP;
+    }
+
+    static getStepsPerPixel(): number {
+        return 1 / FieldProperties.PIXELS_PER_STEP;
     }
 
     /**

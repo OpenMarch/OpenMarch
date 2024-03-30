@@ -8,7 +8,7 @@ import StateInitializer from './StateInitializer';
 import LaunchPage from './components/LaunchPage';
 import { useEffect, useState } from 'react';
 import { FieldPropertiesProvider } from './context/fieldPropertiesContext';
-import KeyboardListener from './KeyboardListeners';
+import RegisteredActionsHandler from './utilities/RegisteredActionsHandler';
 
 function App() {
   const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -23,11 +23,11 @@ function App() {
     <>
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
         <SelectedPageProvider>
-          <KeyboardListener />
           <SelectedMarchersProvider>
             <FieldPropertiesProvider>
               <IsPlayingProvider>
                 <StateInitializer />
+                <RegisteredActionsHandler />
                 <div className="app-container">
                   <Topbar />
                   <div className="secondary-container">
