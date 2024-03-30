@@ -116,7 +116,8 @@ describe('FieldProperties', () => {
                 terseName: 'FSL',
                 axis: 'y',
                 stepsFromCenterFront: 0,
-                useAsReference: true
+                useAsReference: true,
+                visible: false
             });
             const testFrontHash = yCheckpoints.find((checkpoint) => checkpoint.name === 'front hash');
             expect(testFrontHash).toEqual({
@@ -151,8 +152,9 @@ describe('FieldProperties', () => {
                 fieldStandard: 'NCAA',
                 terseName: 'grid:BSL',
                 axis: 'y',
-                stepsFromCenterFront: -84,
-                useAsReference: true
+                stepsFromCenterFront: -85,
+                useAsReference: true,
+                visible: false
             });
             const testRealBackSideline = yCheckpoints.find((checkpoint) => checkpoint.name === 'real back sideline');
             expect(testRealBackSideline).toEqual({
@@ -161,7 +163,8 @@ describe('FieldProperties', () => {
                 terseName: 'real:BSL',
                 axis: 'y',
                 stepsFromCenterFront: -85.33,
-                useAsReference: false
+                useAsReference: false,
+                visible: false
             });
         });
     });

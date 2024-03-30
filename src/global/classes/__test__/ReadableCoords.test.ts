@@ -124,15 +124,15 @@ describe('ReadableCoords', () => {
                     expect(readableCoords.yCheckpoint.name).toEqual("grid back sideline");
                     expect(readableCoords.yCheckpoint.fieldStandard).toEqual("NCAA");
                     expect(readableCoords.xSteps).toBe(0);
-                    expect(readableCoords.ySteps).toBe(9);
+                    expect(readableCoords.ySteps).toBe(10);
                     expect(readableCoords.xDescription).toEqual(X_DESCRIPTION.ON);
                     expect(readableCoords.yDescription).toEqual(Y_DESCRIPTION.IN_FRONT_OF);
                 });
                 it('should format the ReadableCoords object toStrings', () => {
                     expect(readableCoords.toVerboseStringX()).toBe("S2: On 45 yard line");
-                    expect(readableCoords.toVerboseStringY()).toBe("9 in front of grid back sideline");
+                    expect(readableCoords.toVerboseStringY()).toBe("10 in front of grid back sideline");
                     expect(readableCoords.toTerseStringX()).toBe("S2: On 45");
-                    expect(readableCoords.toTerseStringY({ includeFieldStandard: true })).toBe("9 fr. grid:BSL (NCAA)");
+                    expect(readableCoords.toTerseStringY({ includeFieldStandard: true })).toBe("10 fr. grid:BSL (NCAA)");
                 });
             });
         });
@@ -173,9 +173,9 @@ describe('ReadableCoords', () => {
 
                 // Backfield
                 const readableCoords2 = createReadableCoords(0, -200);
-                expect(readableCoords2.ySteps).toBe(116);
+                expect(readableCoords2.ySteps).toBe(115);
                 expect(readableCoords2.yCheckpoint.name).toBe("grid back sideline");
-                expect(readableCoords2.yCheckpoint.stepsFromCenterFront).toBe(-84);
+                expect(readableCoords2.yCheckpoint.stepsFromCenterFront).toBe(-85);
                 expect(readableCoords2.yDescription).toBe(Y_DESCRIPTION.BEHIND);
             });
 
