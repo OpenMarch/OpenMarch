@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { HASHES, YARD_LINES } from "../../global/Constants";
+import { YARD_LINES } from "../../global/Constants";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
