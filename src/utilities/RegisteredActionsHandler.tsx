@@ -108,6 +108,7 @@ export enum RegisteredActionsEnum {
 
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
+    setSelectedMarcherToPreviousPage = "setSelectedMarcherToPreviousPage",
 
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
@@ -149,6 +150,10 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
     // Batch editing
     setAllMarchersToPreviousPage: new RegisteredAction({
         desc: "Set all marcher coordinates to previous page",
+        keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true, control: true })
+    }),
+    setSelectedMarcherToPreviousPage: new RegisteredAction({
+        desc: "Set selected marcher coordinates to previous page",
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true })
     }),
 
@@ -262,6 +267,17 @@ function RegisteredActionsHandler() {
                 MarcherPage.updateMarcherPages(changes);
                 break;
             }
+            case RegisteredActionsEnum.setSelectedMarcherToPreviousPage: {
+                const previousPage = Page.getPreviousPage(selectedPage, pages);
+                const previousMarcherPage = marcherPages.find(
+                    marcherPage => marcherPage.page_id === previousPage?.id
+                        && marcherPage.marcher_id === selectedMarchers[0].id
+                );
+                if (previousMarcherPage) {
+                    MarcherPage.updateMarcherPages([{ ...previousMarcherPage, page_id: selectedPage.id }]);
+                }
+                break;
+            }
 
             /****************** Alignment ******************/
             case RegisteredActionsEnum.snapToNearestWhole: {
@@ -290,8 +306,8 @@ function RegisteredActionsHandler() {
                 console.error(`No action registered for "${registeredActionObject.instructionalString}"`);
                 return;
         }
-    }, [fieldProperties, getSelectedMarcherPages, isPlaying, marcherPages, pages, selectedPage, setIsPlaying,
-        setSelectedPage, setUiSettings, uiSettings]);
+    }, [fieldProperties, getSelectedMarcherPages, isPlaying, marcherPages, pages, selectedMarchers, selectedPage,
+        setIsPlaying, setSelectedPage, setUiSettings, uiSettings]);
 
     /**
      * Create a dictionary of keyboard shortcuts to actions. This is used to trigger actions from keyboard shortcuts.

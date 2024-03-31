@@ -13,6 +13,7 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
     const lockYRef = useRef<HTMLButtonElement>(null);
     const snapToNearestWholeRef = useRef<HTMLButtonElement>(null);
     const setAllMarchersToPreviousPageRef = useRef<HTMLButtonElement>(null);
+    const setSelectedMarcherToPreviousPageRef = useRef<HTMLButtonElement>(null);
 
     // register the button refs for the keyboard shortcuts
     useEffect(() => {
@@ -20,7 +21,8 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
         if (lockYRef.current) linkRegisteredAction(RegisteredActionsEnum.lockY, lockYRef);
         if (snapToNearestWholeRef.current) linkRegisteredAction(RegisteredActionsEnum.snapToNearestWhole, snapToNearestWholeRef);
         if (setAllMarchersToPreviousPageRef.current) linkRegisteredAction(RegisteredActionsEnum.setAllMarchersToPreviousPage, setAllMarchersToPreviousPageRef);
-    }, [linkRegisteredAction]);
+        if (setSelectedMarcherToPreviousPageRef.current) linkRegisteredAction(RegisteredActionsEnum.setSelectedMarcherToPreviousPage, setSelectedMarcherToPreviousPageRef);
+    }, [linkRegisteredAction, lockXRef, lockYRef, snapToNearestWholeRef, setAllMarchersToPreviousPageRef, setSelectedMarcherToPreviousPageRef]);
 
     return (
         <div>
@@ -79,6 +81,16 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
                 >
                     <Button ref={setAllMarchersToPreviousPageRef}>
                         Set all to prev
+                    </Button>
+                </OverlayTrigger>
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {RegisteredActionsObjects.setSelectedMarcherToPreviousPage.instructionalString}
+                    </Tooltip>}
+                >
+                    <Button ref={setSelectedMarcherToPreviousPageRef}>
+                        Set selected to prev
                     </Button>
                 </OverlayTrigger>
             </ButtonGroup>
