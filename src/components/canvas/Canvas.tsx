@@ -202,8 +202,10 @@ function Canvas() {
             const curCanvasMarcher = curCanvasMarchers.find((canvasMarcher) => canvasMarcher.marcherObj.id === marcherPage.marcher_id);
             if (!curCanvasMarcher) {
                 const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
-                if (!curMarcher)
-                    throw new Error("Marcher not found - renderMarchers: Canvas.tsx");
+                if (!curMarcher) {
+                    console.error("Marcher not found - renderMarchers: Canvas.tsx");
+                    return;
+                }
 
                 canvas.current.add(new CanvasMarcher(
                     { marcher: curMarcher, marcherPage }
@@ -259,8 +261,10 @@ function Canvas() {
 
         theseMarcherPages.forEach((marcherPage) => {
             const curMarcher = marchers.find((marcher) => marcher.id === marcherPage.marcher_id);
-            if (!curMarcher)
-                throw new Error("Marcher not found - renderStaticMarchers: Canvas.tsx");
+            if (!curMarcher) {
+                console.error("Marcher not found - renderStaticMarchers: Canvas.tsx");
+                return;
+            }
 
             const staticMarcher = new StaticCanvasMarcher(
                 { marcher: curMarcher, marcherPage, color }

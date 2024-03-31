@@ -40,9 +40,9 @@ export interface topBarComponentProps {
     className?: string;
 }
 
-export interface Section {
-    family: string;
-    name: string;
-    scoreOrder: number;
-    prefix: string;
-}
+// export interface Section {
+//     family: string;
+//     name: string;
+//     scoreOrder: number;
+//     prefix: string;
+// }

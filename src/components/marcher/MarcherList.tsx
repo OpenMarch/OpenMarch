@@ -1,12 +1,11 @@
-import { sections } from "../../global/Constants";
 import { useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
-import * as Interfaces from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
+import { SECTIONS } from "@/global/classes/Sections";
 
 function MarcherList({
     hasHeader = false,
@@ -154,7 +153,7 @@ function MarcherList({
                                             onChange={(event) => handleChange(event, "section", marcher.id)}
                                         >
                                             <option value=""></option>
-                                            {Object.values(sections).map((section: Interfaces.Section) => {
+                                            {Object.values(SECTIONS).map((section) => {
                                                 return <option key={section.name}>{section.name}</option>
                                             })}
                                         </select>

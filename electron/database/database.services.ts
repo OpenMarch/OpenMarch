@@ -5,7 +5,7 @@ import path from 'path';
 import { Constants } from '../../src/global/Constants';
 import * as fs from 'fs';
 import * as History from './database.history';
-import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '@/global/classes/Marcher';
+import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/classes/Marcher';
 import { NewPageArgs, Page } from '../../src/global/classes/Page';
 import { MarcherPage, ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
 import { FieldProperties } from '../../src/global/classes/FieldProperties';
@@ -223,12 +223,16 @@ export async function getFieldProperties(db?: Database.Database): Promise<FieldP
 
 
 /* ============================ Marcher ============================ */
+/**
+ * @param db The database connection, or undefined to create a new connection
+ * @returns A sorted array of marchers, sorted by the Marcher.compareTo method
+ */
 async function getMarchers(db?: Database.Database): Promise<Marcher[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
-    const result = await stmt.all();
+    const result = await stmt.all() as Marcher[];
     if (!db) dbToUse.close();
-    return result as Marcher[];
+    return result;
 }
 
 async function getMarcher(marcherId: number, db?: Database.Database): Promise<Marcher> {
@@ -236,7 +240,7 @@ async function getMarcher(marcherId: number, db?: Database.Database): Promise<Ma
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`);
     const result = await stmt.get({ marcherId });
     if (!db) dbToUse.close();
-    return result as Marcher;
+    return new Marcher(result as Marcher);
 }
 
 async function createMarcher(newMarcher: NewMarcherArgs) {
@@ -257,15 +261,14 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
     // const historyQueries: History.historyQuery[] = [];
     try {
         for (const newMarcher of newMarchers) {
-            const marcherToAdd: Marcher = {
+            const marcherToAdd: Marcher = new Marcher({
                 id: 0, // Not used, needed for interface
                 id_for_html: '', // Not used, needed for interface
                 name: newMarcher.name || '',
                 section: newMarcher.section,
-                drill_number: newMarcher.drill_prefix + newMarcher.drill_order,
                 drill_prefix: newMarcher.drill_prefix,
                 drill_order: newMarcher.drill_order
-            };
+            });
             const db = connect();
             const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.MarcherTableName} (

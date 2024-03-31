@@ -11,7 +11,6 @@ describe('Marcher', () => {
             section: 'Color Guard',
             drill_prefix: 'B',
             drill_order: 1,
-            drill_number: 'F32',
             notes: 'Some notes',
             year: 'Freshman',
         });
@@ -117,4 +116,46 @@ describe('Marcher', () => {
         expect(Marcher.checkForFetchMarchers).toHaveBeenCalled();
         expect(Marcher.fetchMarchers).toHaveBeenCalled();
     });
+
+    describe('compareTo', () => {
+        it('should return a positive number if the section is greater than the other section', () => {
+            let marcher1 = new Marcher({ ...mockMarchers[0], section: 'Trumpet', drill_order: 1 });
+            let marcher2 = new Marcher({ ...mockMarchers[0], section: 'Flute', drill_order: 12 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeGreaterThan(0);
+
+            marcher1 = new Marcher({ ...mockMarchers[0], section: 'Trumpet', drill_order: 12 });
+            marcher2 = new Marcher({ ...mockMarchers[0], section: 'Flute', drill_order: 1 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeGreaterThan(0);
+        });
+
+        it('should return a negative number if the section is less than the other section', () => {
+            let marcher1 = new Marcher({ ...mockMarchers[0], section: 'Tuba', drill_order: 1 });
+            let marcher2 = new Marcher({ ...mockMarchers[0], section: 'AltoSax', drill_order: 12 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeLessThan(0);
+
+            marcher1 = new Marcher({ ...mockMarchers[0], section: 'Tuba', drill_order: 12 });
+            marcher2 = new Marcher({ ...mockMarchers[0], section: 'AltoSax', drill_order: 1 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeLessThan(0);
+        });
+
+        it('should return a positive number if the drill order is greater than the other marcher', () => {
+            let marcher1 = new Marcher({ ...mockMarchers[0], section: 'Tuba', drill_order: 14 });
+            let marcher2 = new Marcher({ ...mockMarchers[0], section: 'Tuba', drill_order: 3 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeGreaterThan(0);
+
+            marcher1 = new Marcher({ ...mockMarchers[0], section: 'Flute', drill_order: 12 });
+            marcher2 = new Marcher({ ...mockMarchers[0], section: 'Flute', drill_order: 1 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeGreaterThan(0);
+        });
+
+        it('should return a negative number if the drill order is less than the other marcher', () => {
+            let marcher1 = new Marcher({ ...mockMarchers[0], section: 'Trumpet', drill_order: 4 });
+            let marcher2 = new Marcher({ ...mockMarchers[0], section: 'Trumpet', drill_order: 5 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeLessThan(0);
+
+            marcher1 = new Marcher({ ...mockMarchers[0], section: 'asdf', drill_order: 9 });
+            marcher2 = new Marcher({ ...mockMarchers[0], section: 'asdf', drill_order: 19 });
+            expect(Marcher.compare(marcher1, marcher2)).toBeLessThan(0);
+        });
+    })
 });

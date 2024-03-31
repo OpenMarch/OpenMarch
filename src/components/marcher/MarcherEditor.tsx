@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { YARD_LINES } from "../../global/Constants";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
@@ -100,8 +99,8 @@ function MarcherEditor() {
                                     <option value="on">on</option>
                                 </select>
                                 <select disabled={true} ref={xCheckpointRef} defaultValue={rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name}>
-                                    {YARD_LINES.map((yardLine) => (
-                                        <option value={yardLine} key={yardLine}>{yardLine}</option>
+                                    {fieldProperties!.xCheckpoints.map((xCheckpoint) => (
+                                        <option value={xCheckpoint.terseName} key={xCheckpoint.name}>{xCheckpoint.terseName}</option>
                                     ))}
                                 </select>
                                 <select disabled={true} ref={fieldSideRef} defaultValue={rCoords.side}>

@@ -1,3 +1,5 @@
+import { getSectionObjectByName } from "./Sections";
+
 /**
  * A class that represents a marcher in the database.
  * This is the standard Marcher object that should be used throughout the application.
@@ -30,16 +32,17 @@ export class Marcher {
      */
     static fetchMarchers: () => Promise<void>;
 
-    constructor(marcher: Marcher) {
-        this.id = marcher.id;
-        this.id_for_html = marcher.id_for_html;
-        this.name = marcher.name;
-        this.section = marcher.section;
-        this.drill_number = marcher.drill_prefix + marcher.drill_order;
-        this.drill_prefix = marcher.drill_prefix;
-        this.drill_order = marcher.drill_order;
-        this.notes = marcher.notes;
-        this.year = marcher.year;
+    constructor({ id, id_for_html, name, section, drill_prefix, drill_order, notes, year }:
+        { id: number, id_for_html: string, name: string, section: string, drill_prefix: string, drill_order: number, notes?: string, year?: string }) {
+        this.id = id;
+        this.id_for_html = id_for_html;
+        this.name = name;
+        this.section = section;
+        this.drill_number = drill_prefix + drill_order;
+        this.drill_prefix = drill_prefix;
+        this.drill_order = drill_order;
+        this.notes = notes;
+        this.year = year;
     }
 
     /**
@@ -103,6 +106,28 @@ export class Marcher {
     static checkForFetchMarchers() {
         if (!this.fetchMarchers)
             console.error("fetchMarchers is not defined. The UI will not update properly.");
+    }
+
+    /**
+     * Compares a marcher to another marcher based on their section and drill order.
+     *
+     * If the sections are different, the comparison is based on the section's compareTo method.
+     * If the sections are the same, the comparison is based on the drill order.
+     *
+     * @param a - The first marcher to compare.
+     * @param b - The second marcher to compare.
+     * @returns The difference between the section and drill order of this marcher and the other marcher.
+     */
+    static compare(a: Marcher, b: Marcher): number {
+        const aSectionObject = getSectionObjectByName(a.section);
+        const bSectionObject = getSectionObjectByName(b.section);
+        const sectionComparison = aSectionObject.compareTo(bSectionObject);
+        if (sectionComparison !== 0)
+            // If the sections are different, return the section comparison, ignoring the drill order
+            return sectionComparison;
+        else
+            // If the sections are the same, return the drill order comparison
+            return a.drill_order - b.drill_order;
     }
 }
 

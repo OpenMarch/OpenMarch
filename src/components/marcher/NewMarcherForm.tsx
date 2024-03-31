@@ -1,9 +1,8 @@
 import { Alert, Button, Col, Form, Row } from "react-bootstrap";
-import { sections } from "../../global/Constants";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Section } from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
+import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
 
 interface NewMarcherFormProps {
     hasHeader?: boolean;
@@ -75,12 +74,10 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
 
     const handleSectionChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSection(defaultSection);
-        const selectedSection = Object.values(sections).find(
-            (section: Section) => section.name === event.target.value
-        );
-        if (selectedSection) {
-            setSection(selectedSection.name);
-            setDrillPrefix(selectedSection.prefix);
+        const selectedSectionObject = getSectionObjectByName(event.target.value);
+        if (selectedSectionObject) {
+            setSection(selectedSectionObject.name);
+            setDrillPrefix(selectedSectionObject.prefix);
             setSectionError("");
         } else {
             console.error("Section not found");
@@ -176,7 +173,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
                         required isInvalid={!!sectionError} value={section}
                     >
                         <option value="default">Choose Section...</option>
-                        {Object.values(sections).map((section: Section) => {
+                        {Object.values(SECTIONS).map((section) => {
                             return <option key={section.name}>{section.name}</option>
                         })}
                     </Form.Select>

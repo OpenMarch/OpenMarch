@@ -141,9 +141,9 @@ describe("MarcherList", () => {
         it("edit the section and name for multiple marchers", async () => {
             const { getAllByTitle, getAllByRole } = render(<MarcherList />);
             const changes = [
-                { marcherId: 1, newName: "Ross Geller", newSection: "Snare", oldMarcher: mockMarchers[0] },
-                { marcherId: 2, newName: "Joey Tribbiani", newSection: "Rifle", oldMarcher: mockMarchers[1] },
-                { marcherId: 3, newName: "Chandler Bing", newSection: "Alto Sax", oldMarcher: mockMarchers[2] },
+                { marcherId: 1, newName: "Ross Geller", newSection: "Snare", oldMarcher: mockMarchers.find(marcher => marcher.id === 1)! },
+                { marcherId: 2, newName: "Joey Tribbiani", newSection: "Rifle", oldMarcher: mockMarchers.find(marcher => marcher.id === 2)! },
+                { marcherId: 3, newName: "Chandler Bing", newSection: "Alto Sax", oldMarcher: mockMarchers.find(marcher => marcher.id === 3)! },
             ];
             await editMarcher(getAllByTitle, getAllByRole, changes);
         })
