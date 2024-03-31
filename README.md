@@ -5,7 +5,9 @@ OpenMarch is an open source drill writing software built on web app frameworks. 
 
 ## What can OpenMarch do?
 
-**Can**
+Check the [website](https://www.OpenMarch.com/) for video demos of what OpenMarch can do!
+
+**Can:**
 
 - Render a navigable canvas of a college football field
 - Move a marcher around and see their coordinates printed in relation to yard lines and hashes
@@ -22,7 +24,7 @@ OpenMarch is an open source drill writing software built on web app frameworks. 
 - Animate marchers in between pages
 - Export individual coordinate sheets
 
-**Cannot**
+**Cannot:**
 
 - Load music of any kind
 - Mark props or non-marcher objects
