@@ -100,7 +100,7 @@ function MarcherEditor() {
                                 </select>
                                 <select disabled={true} ref={xCheckpointRef} defaultValue={rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name}>
                                     {fieldProperties!.xCheckpoints.map((xCheckpoint) => (
-                                        <option value={xCheckpoint.terseName} key={xCheckpoint.name}>{xCheckpoint.terseName}</option>
+                                        <option value={xCheckpoint.terseName} key={xCheckpoint.stepsFromCenterFront}>{xCheckpoint.terseName}</option>
                                     ))}
                                 </select>
                                 <select disabled={true} ref={fieldSideRef} defaultValue={rCoords.side}>

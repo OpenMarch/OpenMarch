@@ -165,8 +165,8 @@ export class CanvasMarcher extends fabric.Group {
         // Offset the new canvas coordinates (center of the dot/label group) by the dot's position
         const newCanvasCoords = this.databaseCoordsToCanvasCoords(marcherPage);
 
-        if (!(this.left && this.top))
-            throw new Error("Fabric group does not have left, top, width, or height properties - setCoords: CanvasMarcher.ts");
+        if (this.left === undefined || this.top === undefined)
+            throw new Error("Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts");
         this.marcherPage = marcherPage;
         this.left = newCanvasCoords.x;
         this.top = newCanvasCoords.y;
@@ -183,8 +183,8 @@ export class CanvasMarcher extends fabric.Group {
      * @returns {x: number, y: number}
      */
     getMarcherCoords(): { x: number, y: number } {
-        if (!(this.left && this.top))
-            throw new Error("Fabric group does not have left, top, width, or height properties - getCoords: CanvasMarcher.ts");
+        if (this.left === undefined || this.top === undefined)
+            throw new Error("Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts");
         const databaseCoords = this.canvasCoordsToDatabaseCoords({
             x: this.left,
             y: this.top

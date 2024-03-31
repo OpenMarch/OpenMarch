@@ -5,7 +5,7 @@ import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
-import { getRoundCoordinates } from "./CoordinateActions";
+import { alignHorizontally, alignVertically, getRoundCoordinates } from "./CoordinateActions";
 import { MarcherPage } from "@/global/classes/MarcherPage";
 import { Page } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
@@ -114,6 +114,8 @@ export enum RegisteredActionsEnum {
     snapToNearestWhole = "snapToNearestWhole",
     lockX = "lockX",
     lockY = "lockY",
+    alignVertically = "alignVertically",
+    alignHorizontally = "alignHorizontally",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -169,6 +171,14 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
     lockY: new RegisteredAction({
         desc: "Lock Y axis", toggleOnStr: "Lock Y movement", toggleOffStr: "Enable Y movement",
         keyboardShortcut: new KeyboardShortcut({ key: "x" })
+    }),
+    alignVertically: new RegisteredAction({
+        desc: "Align vertically",
+        keyboardShortcut: new KeyboardShortcut({ key: "v" })
+    }),
+    alignHorizontally: new RegisteredAction({
+        desc: "Align horizontally",
+        keyboardShortcut: new KeyboardShortcut({ key: "h" })
     }),
 
     // UI settings
@@ -259,7 +269,7 @@ function RegisteredActionsHandler() {
                 setIsPlaying(!isPlaying);
                 break;
 
-            /****************** Alignment ******************/
+            /****************** Batch Editing ******************/
             case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
                 const previousPage = Page.getPreviousPage(selectedPage, pages);
                 const previousPageMarcherPages = marcherPages.filter(marcherPage => marcherPage.page_id === previousPage?.id);
@@ -282,7 +292,7 @@ function RegisteredActionsHandler() {
             /****************** Alignment ******************/
             case RegisteredActionsEnum.snapToNearestWhole: {
                 const roundedCoords = getRoundCoordinates({
-                    marcherPages: getSelectedMarcherPages(), fieldProperites: fieldProperties, denominator: 1,
+                    marcherPages: getSelectedMarcherPages(), fieldProperties: fieldProperties, denominator: 1,
                     xAxis: !uiSettings.lockX, yAxis: !uiSettings.lockY
                 });
                 MarcherPage.updateMarcherPages(roundedCoords);
@@ -294,6 +304,16 @@ function RegisteredActionsHandler() {
             case RegisteredActionsEnum.lockY:
                 setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, 'lockY');
                 break;
+            case RegisteredActionsEnum.alignVertically: {
+                const alignedCoords = alignVertically({ marcherPages: getSelectedMarcherPages() });
+                MarcherPage.updateMarcherPages(alignedCoords);
+                break;
+            }
+            case RegisteredActionsEnum.alignHorizontally: {
+                const alignedCoords = alignHorizontally({ marcherPages: getSelectedMarcherPages() });
+                MarcherPage.updateMarcherPages(alignedCoords);
+                break;
+            }
 
             /****************** UI settings ******************/
             case RegisteredActionsEnum.toggleNextPagePaths:
@@ -313,12 +333,18 @@ function RegisteredActionsHandler() {
      * Create a dictionary of keyboard shortcuts to actions. This is used to trigger actions from keyboard shortcuts.
      */
     useEffect(() => {
-        keyboardShortcutDictionary.current = Object.fromEntries(
-            Object.values(RegisteredActionsEnum).map(
-                (action) => [RegisteredActionsObjects[action].keyboardShortcut?.toString() || "",
-                    action]
-            )
-        );
+        const tempDict: { [shortcutKeyString: string]: RegisteredActionsEnum } = {};
+        Object.keys(RegisteredActionsEnum).forEach(action => {
+            const keyboardShortcut = RegisteredActionsObjects[action as RegisteredActionsEnum].keyboardShortcut?.toString() || undefined;
+            // No keyboard shortcut for this action
+            if (!keyboardShortcut)
+                return;
+            // Check for duplicate keyboard shortcuts
+            if (tempDict[keyboardShortcut] !== undefined)
+                console.error(`Duplicate keyboard shortcut for \`${keyboardShortcut}\` \nAction: \`${action}\` and \`${tempDict[keyboardShortcut]}\``);
+            tempDict[keyboardShortcut] = action as RegisteredActionsEnum;
+        })
+        keyboardShortcutDictionary.current = tempDict;
     }, []);
 
     /**
