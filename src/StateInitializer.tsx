@@ -54,22 +54,26 @@ function StateInitializer() {
 
     // Listen for history actions (undo/redo) from the main process
     useEffect(() => {
-        const handler = (args: { tableName: string, marcher_id: number, page_id: number }) => {
+        const handler = (args: { tableName: string, marcher_ids: number[], page_id: number }) => {
             switch (args.tableName) {
                 case Constants.MarcherTableName:
                     fetchMarchers();
-                    if (args.marcher_id > 0) {
+                    if (args.marcher_ids.length > 0) {
                         // TODO support passing in all of the marchers that were modified in the undo
-                        const newMarcher = getMarcher(args.marcher_id);
-                        setSelectedMarchers(newMarcher ? [newMarcher] : []);
+                        const newMarchers = marchers.filter(marcher => args.marcher_ids.includes(marcher.id));
+                        setSelectedMarchers(newMarchers);
+                    } else {
+                        setSelectedMarchers([]);
                     }
                     break;
                 case Constants.MarcherPageTableName:
                     fetchMarcherPages();
-                    if (args.marcher_id > 0) {
+                    if (args.marcher_ids.length > 0) {
                         // TODO support passing in all of the marchers that were modified in the undo
-                        const newMarcher = getMarcher(args.marcher_id);
-                        setSelectedMarchers(newMarcher ? [newMarcher] : []);
+                        const newMarchers = marchers.filter(marcher => args.marcher_ids.includes(marcher.id));
+                        setSelectedMarchers(newMarchers);
+                    } else {
+                        setSelectedMarchers([]);
                     }
                     if (args.page_id > 0)
                         setSelectedPage(getPage(args.page_id));
@@ -88,7 +92,7 @@ function StateInitializer() {
         return () => {
             window.electron.removeHistoryActionListener(); // Remove the event listener
         };
-    }, [getMarcher, getPage, fetchMarchers, fetchMarcherPages, fetchPages, setSelectedPage, setSelectedMarchers]);
+    }, [getMarcher, getPage, fetchMarchers, fetchMarcherPages, fetchPages, setSelectedPage, setSelectedMarchers, marchers]);
 
     // Listen for fetch actions from the main process
     useEffect(() => {

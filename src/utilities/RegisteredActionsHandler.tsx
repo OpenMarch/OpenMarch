@@ -10,6 +10,7 @@ import { MarcherPage } from "@/global/classes/MarcherPage";
 import { Page } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";
+import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 
 /**
  * A RegisteredAction is a uniform object to represent a function in OpenMarch.
@@ -108,7 +109,7 @@ export enum RegisteredActionsEnum {
 
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
-    setSelectedMarcherToPreviousPage = "setSelectedMarcherToPreviousPage",
+    setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
 
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
@@ -120,6 +121,9 @@ export enum RegisteredActionsEnum {
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
     togglePreviousPagePaths = "togglePreviousPagePaths",
+
+    // Select
+    selectAllMarchers = "selectAllMarchers",
 }
 
 /**
@@ -154,8 +158,8 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
         desc: "Set all marcher coordinates to previous page",
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true, control: true })
     }),
-    setSelectedMarcherToPreviousPage: new RegisteredAction({
-        desc: "Set selected marcher coordinates to previous page",
+    setSelectedMarchersToPreviousPage: new RegisteredAction({
+        desc: "Set selected marcher(s) coordinates to previous page",
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true })
     }),
 
@@ -192,6 +196,12 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
         toggleOnStr: "Show next page dots/paths", toggleOffStr: "Hide next page dots/paths",
         keyboardShortcut: new KeyboardShortcut({ key: "m" })
     }),
+
+    // Select
+    selectAllMarchers: new RegisteredAction({
+        desc: "Select all marchers",
+        keyboardShortcut: new KeyboardShortcut({ key: "a", control: true })
+    }),
 } as const;
 
 /**
@@ -202,11 +212,12 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
  */
 function RegisteredActionsHandler() {
     const { registeredButtonActions } = useRegisteredActionsStore()!;
+    const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { selectedMarchers } = useSelectedMarchers()!;
+    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
 
@@ -277,14 +288,16 @@ function RegisteredActionsHandler() {
                 MarcherPage.updateMarcherPages(changes);
                 break;
             }
-            case RegisteredActionsEnum.setSelectedMarcherToPreviousPage: {
+            case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
                 const previousPage = Page.getPreviousPage(selectedPage, pages);
-                const previousMarcherPage = marcherPages.find(
-                    marcherPage => marcherPage.page_id === previousPage?.id
-                        && marcherPage.marcher_id === selectedMarchers[0].id
+                const selectedMarcherIds = selectedMarchers.map(marcher => marcher.id);
+                const previousMarcherPages = marcherPages.filter(marcherPage =>
+                    marcherPage.page_id === previousPage?.id
+                    && selectedMarcherIds.includes(marcherPage.marcher_id)
                 );
-                if (previousMarcherPage) {
-                    MarcherPage.updateMarcherPages([{ ...previousMarcherPage, page_id: selectedPage.id }]);
+                if (previousMarcherPages) {
+                    const changes = previousMarcherPages.map(marcherPage => ({ ...marcherPage, page_id: selectedPage.id }));
+                    MarcherPage.updateMarcherPages(changes);
                 }
                 break;
             }
@@ -322,12 +335,18 @@ function RegisteredActionsHandler() {
             case RegisteredActionsEnum.togglePreviousPagePaths:
                 setUiSettings({ ...uiSettings, previousPaths: !uiSettings.previousPaths });
                 break;
+
+            /****************** Select ******************/
+            case RegisteredActionsEnum.selectAllMarchers:
+                setSelectedMarchers(marchers);
+                break;
+
             default:
                 console.error(`No action registered for "${registeredActionObject.instructionalString}"`);
                 return;
         }
-    }, [fieldProperties, getSelectedMarcherPages, isPlaying, marcherPages, pages, selectedMarchers, selectedPage,
-        setIsPlaying, setSelectedPage, setUiSettings, uiSettings]);
+    }, [fieldProperties, getSelectedMarcherPages, isPlaying, marcherPages, marchers, pages, selectedMarchers,
+        selectedPage, setIsPlaying, setSelectedMarchers, setSelectedPage, setUiSettings, uiSettings]);
 
     /**
      * Create a dictionary of keyboard shortcuts to actions. This is used to trigger actions from keyboard shortcuts.

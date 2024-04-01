@@ -89,7 +89,7 @@ const template = [
         accelerator: 'Shift+CommandOrControl+Z',
         // role: 'redo',
         click(item: any, focusedWindow: any) {
-          console.log("Undoing");
+          console.log("Redoing");
           // if (focusedWindow) focusedWindow.webContents.undo();
           mainProcess.executeHistoryAction('redo');
         }

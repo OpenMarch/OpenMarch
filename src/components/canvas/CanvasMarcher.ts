@@ -2,6 +2,7 @@ import { fabric } from "fabric";
 import { Marcher } from "../../global/classes/Marcher";
 import { MarcherPage } from "../../global/classes/MarcherPage";
 import { FieldProperties } from "@/global/classes/FieldProperties";
+import { ActiveObjectArgs } from "@/global/Constants";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
@@ -54,6 +55,7 @@ export class CanvasMarcher extends fabric.Group {
                 originY: "center",
                 lockRotation: true,
                 hoverCursor: "pointer",
+                ...ActiveObjectArgs
             });
 
         if (marcher.id !== marcherPage.marcher_id)

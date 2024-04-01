@@ -85,9 +85,20 @@ export function createHistoryTables(db: Database.Database) {
  *
  * @param type 'undo' or 'redo'
  * @param db database connection
- * @returns - {success: boolean, undo_id: number, history_data: { tableName: string, marcher_id: number, page_id: number }}
+ * @returns - {success: boolean, undo_id: number, history_data: { tableName: string, marcher_ids: number[], page_id: number }}
+ * If there is no page_id, it will be -1. If there are no marcher_ids, it will be an empty array [].
  */
-export async function historyAction(type: 'undo' | 'redo', db?: Database.Database) {
+export async function historyAction(type: 'undo' | 'redo', db?: Database.Database):
+    Promise<{
+        success: boolean,
+        undo_id?: number,
+        history_data?: {
+            tableName: string,
+            marcher_ids: number[],
+            page_id: number
+        },
+        errorMessage?: string
+    }> {
     const dbToUse = db || connect();
     let output;
 
@@ -109,12 +120,12 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
             }
         }
 
-        // The ID of the marcher or page that was updated. -1 by default and changes depending on the action.
-        let marcher_id: number = -1;
+        // The ID of the marchers and/or page that was updated. -1 by default and changes depending on the action.
+        let marcher_ids: number[] = [];
         let page_id: number = -1;
         if (!results) {
             console.log('No actions to ' + type);
-            return;
+            return { success: true };
         }
 
         // Array of actions to reverse the action that was just popped off of the history table
@@ -147,13 +158,13 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
                 // record the id of the marcher or page that was updated
                 switch (historyQuery.table_name) {
                     case Constants.MarcherTableName:
-                        marcher_id = (updateQuery.previousState as Marcher).id;
+                        marcher_ids.push((updateQuery.previousState as Marcher).id);
                         break;
                     case Constants.PageTableName:
                         page_id = (updateQuery.previousState as Page).id;
                         break;
                     case Constants.MarcherPageTableName:
-                        marcher_id = (updateQuery.previousState as MarcherPage).marcher_id;
+                        marcher_ids.push((updateQuery.previousState as MarcherPage).marcher_id);
                         page_id = (updateQuery.previousState as MarcherPage).page_id;
                         break;
                     default:
@@ -196,7 +207,7 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
             success: true,
             history_data: {
                 tableName: results[0].table_name,
-                marcher_id, page_id
+                marcher_ids, page_id
             }
         };
     } catch (error: unknown) {

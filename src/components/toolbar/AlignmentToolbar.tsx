@@ -15,7 +15,7 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
     const lockYRef = useRef<HTMLButtonElement>(null);
     const snapToNearestWholeRef = useRef<HTMLButtonElement>(null);
     const setAllMarchersToPreviousPageRef = useRef<HTMLButtonElement>(null);
-    const setSelectedMarcherToPreviousPageRef = useRef<HTMLButtonElement>(null);
+    const setSelectedMarchersToPreviousPageRef = useRef<HTMLButtonElement>(null);
     const alignVerticallyRef = useRef<HTMLButtonElement>(null);
     const alignHorizontallyRef = useRef<HTMLButtonElement>(null);
 
@@ -25,10 +25,10 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
         if (lockYRef.current) linkRegisteredAction(RegisteredActionsEnum.lockY, lockYRef);
         if (snapToNearestWholeRef.current) linkRegisteredAction(RegisteredActionsEnum.snapToNearestWhole, snapToNearestWholeRef);
         if (setAllMarchersToPreviousPageRef.current) linkRegisteredAction(RegisteredActionsEnum.setAllMarchersToPreviousPage, setAllMarchersToPreviousPageRef);
-        if (setSelectedMarcherToPreviousPageRef.current) linkRegisteredAction(RegisteredActionsEnum.setSelectedMarcherToPreviousPage, setSelectedMarcherToPreviousPageRef);
+        if (setSelectedMarchersToPreviousPageRef.current) linkRegisteredAction(RegisteredActionsEnum.setSelectedMarchersToPreviousPage, setSelectedMarchersToPreviousPageRef);
         if (alignVerticallyRef.current) linkRegisteredAction(RegisteredActionsEnum.alignVertically, alignVerticallyRef);
         if (alignHorizontallyRef.current) linkRegisteredAction(RegisteredActionsEnum.alignHorizontally, alignHorizontallyRef);
-    }, [linkRegisteredAction, lockXRef, lockYRef, snapToNearestWholeRef, setAllMarchersToPreviousPageRef, setSelectedMarcherToPreviousPageRef]);
+    }, [linkRegisteredAction, lockXRef, lockYRef, snapToNearestWholeRef, setAllMarchersToPreviousPageRef, setSelectedMarchersToPreviousPageRef]);
 
     return (
         <div>
@@ -92,10 +92,10 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
                 <OverlayTrigger
                     placement="bottom"
                     overlay={<Tooltip id={`tooltip-top`}>
-                        {RegisteredActionsObjects.setSelectedMarcherToPreviousPage.instructionalString}
+                        {RegisteredActionsObjects.setSelectedMarchersToPreviousPage.instructionalString}
                     </Tooltip>}
                 >
-                    <Button ref={setSelectedMarcherToPreviousPageRef}>
+                    <Button ref={setSelectedMarchersToPreviousPageRef}>
                         Set selected to prev
                     </Button>
                 </OverlayTrigger>
