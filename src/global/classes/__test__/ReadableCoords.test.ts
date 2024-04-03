@@ -11,7 +11,7 @@ function createReadableCoords(xStepsFromCenter: number, yStepsFromCenter: number
     const centerFrontPoint = ReadableCoords.getFieldProperties().centerFrontPoint;
     const x = centerFrontPoint.xPixels + (xStepsFromCenter * pixelsPerStep);
     const y = centerFrontPoint.yPixels + (yStepsFromCenter * pixelsPerStep);
-    return new ReadableCoords(x, y);
+    return new ReadableCoords({ x, y });
 }
 
 describe('ReadableCoords', () => {

@@ -33,9 +33,9 @@ export class ReadableCoords {
     /* ----------- Attributes ----------- */
 
     /** The X coordinate of the marcher on the canvas */
-    readonly orginalX: number;
+    readonly originalX: number;
     /** The Y coordinate of the marcher on the canvas */
-    readonly orginalY: number;
+    readonly originalY: number;
     /** The amount of steps the marcher is from the X-Checkpoint (e.g. yard line)  */
     readonly xSteps: number;
     /** The amount of steps the marcher is from the nearest Y-Checkpoint (e.g front hash or back sideline) */
@@ -61,9 +61,10 @@ export class ReadableCoords {
      * @param roundingDenominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
      *  Optional, nearest 1/100 step by default.
      */
-    constructor(x: number, y: number, roundingDenominator = 100) {
-        this.orginalX = x;
-        this.orginalY = y;
+    constructor({ x, y, roundingDenominator = 100 }:
+        { x: number; y: number; roundingDenominator?: number; }) {
+        this.originalX = x;
+        this.originalY = y;
         this.roundingDenominator = roundingDenominator;
         const readableCoords = this.parseCanvasCoords(x, y);
         this.xCheckpoint = readableCoords.xCheckpoint;
@@ -84,7 +85,7 @@ export class ReadableCoords {
      * @returns A new ReadableCoords object created from a MarcherPage object.
      */
     static fromMarcherPage(marcherPage: MarcherPage, roundingDenominator = 100) {
-        return new ReadableCoords(marcherPage.x, marcherPage.y, roundingDenominator);
+        return new ReadableCoords({ x: marcherPage.x, y: marcherPage.y, roundingDenominator });
     }
 
     /**

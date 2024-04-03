@@ -1,4 +1,3 @@
-import * as Interfaces from "@/global/Interfaces";
 import { Col, Row, Table } from "react-bootstrap";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useEffect, useState } from "react";
@@ -7,6 +6,8 @@ import { usePageStore } from "@/stores/page/usePageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import { Page } from "@/global/classes/Page";
 import { MarcherPage } from "@/global/classes/MarcherPage";
+import { FieldProperties } from "@/global/classes/FieldProperties";
+import { ReadableCoords } from "@/global/classes/ReadableCoords";
 
 // TODO, this is broken right now, fix this
 interface MarcherCoordinateSheetProps {
@@ -35,7 +36,7 @@ interface MarcherCoordinateSheetProps {
     useXY?: boolean;
 }
 
-export default function MacherCoordinateSheet(
+export default function MarcherCoordinateSheet(
     { marcher, includeMeasures = true, roundingDenominator = 4,
         example = false, terse = false, useXY = false }: MarcherCoordinateSheetProps) {
     const { marcherPages } = useMarcherPageStore()!;
@@ -46,6 +47,11 @@ export default function MacherCoordinateSheet(
     const [marcherPagesToUse, setMarcherPagesToUse] = useState<MarcherPage[]>([]);
 
     useEffect(() => {
+        if (!fieldProperties) {
+            console.error("Field properties not found in context - MarcherCoordinateSheet.tsx");
+            return;
+        }
+        const pixelsPerStep = fieldProperties ? FieldProperties.PIXELS_PER_STEP : 0;
         if (example && fieldProperties) {
             setMarcherToUse({
                 id: 1, name: "Example Marcher", drill_number: "B1", section: "Baritone",
@@ -59,17 +65,17 @@ export default function MacherCoordinateSheet(
             setMarcherPagesToUse([
                 {
                     id: 1, marcher_id: 1, page_id: 1, id_for_html: "example-marcher-page-1",
-                    x: fieldProperties.originX, y: fieldProperties.originY,
+                    x: fieldProperties.centerFrontPoint.xPixels, y: fieldProperties.centerFrontPoint.yPixels,
                 },
                 {
                     id: 2, marcher_id: 1, page_id: 2, id_for_html: "example-marcher-page-2",
-                    x: fieldProperties.originX + (2.1 * fieldProperties.pixelsPerStep),
-                    y: fieldProperties.originY + (2 * fieldProperties.pixelsPerStep),
+                    x: fieldProperties.centerFrontPoint.xPixels + (2.1 * pixelsPerStep),
+                    y: fieldProperties.centerFrontPoint.yPixels + (2 * pixelsPerStep),
                 },
                 {
                     id: 3, marcher_id: 1, page_id: 3, id_for_html: "example-marcher-page-3",
-                    x: fieldProperties.originX - (5.21 * fieldProperties.pixelsPerStep),
-                    y: fieldProperties.originY + ((fieldProperties.frontSideline * fieldProperties.pixelsPerStep) - (2.32 * fieldProperties.pixelsPerStep))
+                    x: fieldProperties.centerFrontPoint.xPixels - (5.21 * pixelsPerStep),
+                    y: fieldProperties.centerFrontPoint.yPixels + ((fieldProperties.yCheckpoints[0].stepsFromCenterFront * pixelsPerStep) - (2.32 * pixelsPerStep))
                 },
             ]);
         } else {
@@ -90,7 +96,7 @@ interface StaticCoordinateSheetProps {
     marcher: Marcher;
     pages: Page[];
     marcherPages: MarcherPage[];
-    fieldProperties: Interfaces.FieldProperties;
+    fieldProperties: FieldProperties;
     includeMeasures?: boolean;
     /**
      * The denominator to round to. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
@@ -122,6 +128,11 @@ export function StaticMarcherCoordinateSheet({
     }
 
     const headingStyle = { backgroundColor: "#ddd", display: "flex", alignItems: "center" };
+
+    // Ensure ReadableCoords has the field properties
+    if (!ReadableCoords.getFieldProperties())
+        ReadableCoords.setFieldProperties(fieldProperties!);
+
     return (
         <div className="m-3">
             {!fieldProperties || !marcher || pages.length === 0 || marcherPages.length === 0 ?
@@ -134,48 +145,65 @@ export function StaticMarcherCoordinateSheet({
                 </>
                 :
                 <>
-                    <Row style={{ backgroundColor: '#ddd' }}>
+                    <Row style={{ backgroundColor: '#ddd' }} aria-label="marcher header">
                         <Col sm={2} style={headingStyle}>
-                            <h2>{marcher.drill_number}</h2>
+                            <h2 aria-label='marcher drill number'>{marcher.drill_number}</h2>
                         </Col>
                         <Col sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
-                            <h4>{marcher.name}</h4>
+                            <h4 aria-label='marcher name'>{marcher.name}</h4>
                         </Col>
                         <Col sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
-                            <h4>{marcher.section}</h4>
+                            <h4 aria-label='marcher section'>{marcher.section}</h4>
                         </Col>
                     </Row>
                     <Row>
                         <Table striped bordered size="sm">
                             <thead>
-                                <tr >
-                                    <th className="text-center">Page</th>
-                                    <th className="text-center">Counts</th>
-                                    {includeMeasures && <th className="text-center">Measure</th>}
-                                    <th>{useXY ? "X" : "Side to Side"}</th>
-                                    <th>{useXY ? "Y" : "Front to Back"}</th>
+                                <tr aria-label='coordinates header row'>
+                                    <th className="text-center" aria-label='page header'>
+                                        Page
+                                    </th>
+                                    <th className="text-center" aria-label='counts header'>
+                                        Counts
+                                    </th>
+                                    {includeMeasures && <th className="text-center" aria-label='measure header'>
+                                        Measure
+                                    </th>}
+                                    <th aria-label='x header'>
+                                        {useXY ? "X" : "Side to Side"}
+                                    </th>
+                                    <th aria-label='y header'>
+                                        {useXY ? "Y" : "Front to Back"}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {marcherPages.filter((marcherPage) => marcherPage.marcher_id === marcher.id).sort(sortMarcherPages)
-                                    .map((marcherPage) => {
+                                    .map((marcherPage: MarcherPage) => {
                                         if (!fieldProperties) return null;
 
                                         const page = pages.find((page) => page.id === marcherPage.page_id);
-                                        const rCoords = CoordsUtils.canvasCoordsToCollegeRCords(marcherPage.x, marcherPage.y, fieldProperties);
+                                        const rCoords = new ReadableCoords({ x: marcherPage.x, y: marcherPage.y, roundingDenominator });
 
                                         if (!page || !rCoords) return null;
 
-                                        rCoords.xSteps = Math.round(rCoords.xSteps * roundingDenominator) / roundingDenominator;
-                                        rCoords.ySteps = Math.round(rCoords.ySteps * roundingDenominator) / roundingDenominator;
-
                                         return (
                                             <tr key={marcherPage.id_for_html}>
-                                                <td className="text-center">{page.name}</td>
-                                                <td className="text-center">{page.counts}</td>
-                                                {includeMeasures && <td className="text-center">N/A</td>}
-                                                <td>{terse ? CoordsUtils.getTerseStringX(rCoords) : CoordsUtils.getVerboseStringX(rCoords)}</td>
-                                                <td>{terse ? CoordsUtils.getTerseStringY(rCoords) : CoordsUtils.getVerboseStringY(rCoords)}</td>
+                                                <td className="text-center" aria-label='page name'>
+                                                    {page.name}
+                                                </td>
+                                                <td className="text-center" aria-label='page counts'>
+                                                    {page.counts}
+                                                </td>
+                                                {includeMeasures && <td className="text-center" aria-label='page measures'
+                                                >N/A
+                                                </td>}
+                                                <td aria-label='x coordinate'>
+                                                    {terse ? rCoords.toTerseStringX() : rCoords.toVerboseStringX()}
+                                                </td>
+                                                <td aria-label='y coordinate'>
+                                                    {terse ? rCoords.toTerseStringY() : rCoords.toVerboseStringY()}
+                                                </td>
                                             </tr>
                                         );
                                     })}

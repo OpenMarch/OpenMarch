@@ -14,7 +14,7 @@ export const marcherStoreCreator: StateCreator<MarcherStoreInterface> = (set) =>
      * This is the only way to update retrieve the marchers from the database that ensures the UI is updated.
      * To access the marchers, use the `marchers` property of the store.
      */
-    fetchMarchers: async (): Promise<void> => {
+    fetchMarchers: async () => {
         const receivedMarchers = await Marcher.getMarchers();
         const sortedMarchers = receivedMarchers.sort((a, b) => Marcher.compare(a, b));
         set({ marchers: sortedMarchers });
