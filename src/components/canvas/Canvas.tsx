@@ -425,17 +425,16 @@ function Canvas() {
         }
     }, [pages, removePathways, removeStaticCanvasMarchers, renderPathways, renderStaticMarchers, selectedPage, sendCanvasMarchersToFront, uiSettings.nextPaths, uiSettings.previousPaths])
 
-    // Lock X
+    // Lock X and Y axis when the settings change
     useEffect(() => {
-        if (canvas.current && uiSettings)
-            canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementX = uiSettings.lockX; });
-    }, [uiSettings, uiSettings.lockX]);
-
-    // Lock Y
-    useEffect(() => {
-        if (canvas.current && uiSettings)
-            canvas.current.getObjects().forEach((canvasObj: any) => { canvasObj.lockMovementY = uiSettings.lockY; });
-    }, [uiSettings, uiSettings.lockY]);
+        if (canvas.current && uiSettings) {
+            const activeObject = canvas.current.getActiveObject();
+            if (activeObject) {
+                activeObject.lockMovementX = uiSettings.lockX;
+                activeObject.lockMovementY = uiSettings.lockY;
+            }
+        }
+    }, [uiSettings, uiSettings.lockX, uiSettings.lockY]);
 
     // Set the active object to the selected marchers when they change outside of user-canvas-interaction
     useEffect(() => {
