@@ -217,23 +217,23 @@ export class ReadableCoords {
         return roundedSteps + stepString + trailingSpace;
     }
 
-    private static getTerseXDescription(xDescription: X_DESCRIPTION) {
+    static getTerseXDescription(xDescription: X_DESCRIPTION) {
         switch (xDescription) {
             case X_DESCRIPTION.INSIDE:
-                return "in";
+                return "IN";
             case X_DESCRIPTION.OUTSIDE:
-                return "out";
+                return "OUT";
             case X_DESCRIPTION.ON:
                 return "On";
         }
     }
 
-    private static getTerseYDescription(yDescription: Y_DESCRIPTION) {
+    static getTerseYDescription(yDescription: Y_DESCRIPTION) {
         switch (yDescription) {
             case Y_DESCRIPTION.IN_FRONT_OF:
-                return "fr.";
+                return "FR";
             case Y_DESCRIPTION.BEHIND:
-                return "be.";
+                return "BE";
             case Y_DESCRIPTION.ON:
                 return "On";
         }

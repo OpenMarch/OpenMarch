@@ -3,7 +3,7 @@ import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
-import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import { ReadableCoords, X_DESCRIPTION, Y_DESCRIPTION } from "@/global/classes/ReadableCoords";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -93,14 +93,22 @@ function MarcherEditor() {
                             <div className="input-group">
                                 {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
                                 <input disabled={true} type="number" defaultValue={rCoords?.xSteps} ref={xInputRef} />
-                                <select disabled={true} defaultValue={rCoords.xDescription} ref={xDescriptionRef}>
-                                    <option value="inside">in</option>
-                                    <option value="outside">out</option>
-                                    <option value="on">on</option>
+                                <select
+                                    disabled={true}
+                                    value={(rCoords.xDescription)}
+                                    ref={xDescriptionRef}
+                                >
+                                    {Object.values(X_DESCRIPTION).map((xDescription) => (
+                                        <option value={(xDescription)} key={xDescription}>
+                                            {(xDescription)}
+                                        </option>
+                                    ))}
                                 </select>
                                 <select disabled={true} ref={xCheckpointRef} defaultValue={rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name}>
                                     {fieldProperties!.xCheckpoints.map((xCheckpoint) => (
-                                        <option value={xCheckpoint.terseName} key={xCheckpoint.stepsFromCenterFront}>{xCheckpoint.terseName}</option>
+                                        <option value={xCheckpoint.terseName} key={xCheckpoint.stepsFromCenterFront}>
+                                            {xCheckpoint.terseName}
+                                        </option>
                                     ))}
                                 </select>
                                 <select disabled={true} ref={fieldSideRef} defaultValue={rCoords.side}>
@@ -111,15 +119,21 @@ function MarcherEditor() {
                             <label htmlFor="yInput">Y</label>
                             <div className="input-group">
                                 <input disabled={true} type="number" value={rCoords?.ySteps} ref={yInputRef} />
-                                <select disabled={true} value={rCoords.yDescription} ref={yDescriptionRef}>
-                                    <option value="in front of">front</option>
-                                    <option value="behind">behind</option>
-                                    <option value="on">on</option>
+                                <select
+                                    disabled={true}
+                                    value={(rCoords.yDescription)}
+                                    ref={yDescriptionRef}
+                                >
+                                    {Object.values(Y_DESCRIPTION).map((yDescription) => (
+                                        <option value={yDescription} key={yDescription}>
+                                            {(yDescription)}
+                                        </option>
+                                    ))}
                                 </select>
                                 <select disabled={true} ref={yCheckpointRef} defaultValue={rCoords.yCheckpoint.terseName || rCoords.yCheckpoint.name}>
                                     {fieldProperties?.yCheckpoints.map((yCheckpoint) => (
-                                        <option value={yCheckpoint.terseName || yCheckpoint.name} key={yCheckpoint.name}>
-                                            {yCheckpoint.name}
+                                        <option value={yCheckpoint.terseName} key={yCheckpoint.stepsFromCenterFront}>
+                                            {yCheckpoint.terseName}
                                         </option>
                                     ))}
                                 </select>

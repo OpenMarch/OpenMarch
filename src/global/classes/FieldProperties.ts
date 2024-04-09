@@ -164,7 +164,7 @@ export interface Checkpoint {
      * A shorthand to put on abbreviated coordinates.
      * E.g. back sideline -> bsl; 35 yard line -> 35
      * */
-    terseName?: string;
+    terseName: string;
     /**
      * The standard this checkpoint relates to if applicable (NCAA, High school, etc.)
      */
