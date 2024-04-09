@@ -485,7 +485,7 @@ function Canvas() {
                         {
                             marcherPage: marcherPageToUse,
                             tempo: selectedPage.tempo,
-                            counts: selectedPage.counts
+                            counts: nextPage.counts
                         }
                     );
                     animationCallbacks.current.push(callback);
@@ -497,7 +497,7 @@ function Canvas() {
                 timeoutID.current = setTimeout(() => {
                     setSelectedPage(nextPage);
                     setIsPlaying(false);
-                }, duration * selectedPage.counts);
+                }, duration * nextPage.counts);
             }
             else {
                 animationCallbacks.current.forEach((callback: any) => {

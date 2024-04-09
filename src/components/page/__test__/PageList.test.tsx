@@ -5,14 +5,20 @@ import { usePageStore } from "@/stores/page/usePageStore";
 import { Page } from "@/global/classes/Page";
 
 function validatePageRows(pageRows: HTMLElement[], expectedPages: Page[]) {
-    pageRows.forEach(pageRow => {
-        const pageInRow = {
-            name: within(pageRow).getByTitle("Page name").textContent,
-            // Use negative one to ensure test fail in case of missing page counts
-            counts: parseInt(within(pageRow).getByTitle("Page counts").textContent || "-1"),
-        }
-        expect(expectedPages).toContainEqual(expect.objectContaining(pageInRow));
-    });
+    const sortedExpectedPages = Page.sortPagesByOrder(expectedPages);
+    for (let i = 0; i < sortedExpectedPages.length; i++) {
+        const pageRow = pageRows[i];
+        const page = sortedExpectedPages[i];
+        expect(within(pageRow).getByTitle("Page name").textContent).toBe(page.name);
+        const counts = parseInt(within(pageRow).getByTitle("Page counts").textContent?.trim() || "-1");
+        expect(counts).toBe(i === 0 ? 0 : page.counts);
+    }
+}
+
+function createModifiedPages(changes: { pageId: number, newCounts?: number }[]) {
+    return changes.map(change => {
+        return { id: change.pageId, counts: change.newCounts?.toString() };
+    })
 }
 
 describe("PageList", () => {
@@ -104,12 +110,16 @@ describe("PageList", () => {
             })
         }
 
+
+
         it("edit a single page's name", async () => {
             const { getAllByTitle, getAllByRole } = render(<PageList />);
             const changes = [
                 { pageId: 1, newCounts: 26, oldPage: mockPages[0] }
             ];
             await editPage(getAllByTitle, getAllByRole, changes);
+
+            expect(updatePagesSpy).toHaveBeenCalledWith(createModifiedPages(changes));
         });
 
         it("edit multiple pages' counts", async () => {
@@ -120,6 +130,7 @@ describe("PageList", () => {
                 { pageId: 3, newCounts: 58, oldPage: mockPages[2] },
             ];
             await editPage(getAllByTitle, getAllByRole, changes);
+            expect(updatePagesSpy).toHaveBeenCalledWith(createModifiedPages(changes));
         })
     });
 });

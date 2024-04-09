@@ -13,7 +13,7 @@ export class Page {
     readonly id_for_html: string;
     /** The name of the page. E.g. "2A" */
     readonly name: string;
-    /** Amount of counts in the page */
+    /** Number of counts to get to this page */
     readonly counts: number;
     /** The order of the page in the show. E.g. 1, 2, 3, etc. */
     readonly order: number;

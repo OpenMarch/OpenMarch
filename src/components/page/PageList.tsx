@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { Page } from "@/global/classes/Page";
-import { ModifiedMarcherArgs } from "@/global/classes/Marcher";
+import { ModifiedPageArgs, Page } from "@/global/classes/Page";
 
 
 function PageList({
@@ -30,7 +29,7 @@ function PageList({
     async function handleSubmit() {
         setIsEditing(false);
 
-        const modifiedPages: ModifiedMarcherArgs[] = [];
+        const modifiedPages: ModifiedPageArgs[] = [];
 
         if (deletionsRef.current.length > 0) {
             let windowConfirmStr = `-- WARNING --`
@@ -56,14 +55,14 @@ function PageList({
 
     function handleCancel() {
         setIsEditing(false);
-        setLocalPages(pages);
+        setLocalPagesModified(pages);
         deletionsRef.current = [];
         changesRef.current = {};
     }
 
     function handleDeletePage(pageId: number) {
         deletionsRef.current.push(pageId);
-        setLocalPages(localPages?.filter((page) => page.id !== pageId));
+        setLocalPagesModified(localPages?.filter((page) => page.id !== pageId));
     }
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -76,10 +75,18 @@ function PageList({
         changesRef.current[pageId][attribute] = event.target.value;
     }
 
+    // Set local pages to the pages prop
+    const setLocalPagesModified = useCallback((pages: Page[] | undefined) => {
+        if (!pages || pages.length === 0) return;
+        const pagesCopy = [...pages];
+        pagesCopy[0] = { ...pagesCopy[0], counts: 0 };
+        setLocalPages(pagesCopy);
+    }, []);
+
     // Update local pages when pages are fetched
     useEffect(() => {
-        setLocalPages(pages);
-    }, [pages]);
+        setLocalPagesModified(pages);
+    }, [pages, setLocalPagesModified]);
 
     // Activate submit with an external activator (like a button in a parent component)
     useEffect(() => {
@@ -136,11 +143,15 @@ function PageList({
                                 </th>
                                 <td title="Page counts" aria-label="Page counts">
                                     {isEditing ?
-                                        <input type="number" className="form-control"
+                                        <input type="number"
+                                            className="form-control"
                                             aria-label="Page counts input"
                                             title="Page counts input"
-                                            defaultValue={page.counts} disabled={!isEditing}
-                                            key={page.id_for_html} min={0} step={1}
+                                            defaultValue={page.counts}
+                                            disabled={!isEditing || (page.id === pages[0].id)}
+                                            key={page.id_for_html}
+                                            min={0}
+                                            step={1}
                                             onChange={(event) => handleChange(event, "counts", page.id)}
                                         />
                                         :

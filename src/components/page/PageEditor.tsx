@@ -1,11 +1,12 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { Page } from "@/global/classes/Page";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
     const { pages } = usePageStore()!;
+    const [isFirstPage, setIsFirstPage] = useState(false);
 
     const countsInputId = "page-counts";
     const formId = "edit-page-form";
@@ -75,6 +76,13 @@ function PageEditor() {
         resetForm();
     }, [selectedPage]);
 
+    useEffect(() => {
+        if (pages.length > 0) {
+            const firstPage = Page.getFirstPage(pages);
+            setIsFirstPage(selectedPage === firstPage);
+        }
+    }, [pages, selectedPage]);
+
     return (
         <>{selectedPage && <div className="page-editor editor">
             <h3 className="header">
@@ -88,8 +96,14 @@ function PageEditor() {
                 </div> */}
                 <div className="input-group">
                     <label htmlFor={countsInputId}>Counts</label>
-                    <input type="number" defaultValue={selectedPage.counts}
-                        id={countsInputId} onKeyDown={handleKeyDown} onBlur={handleBlur} />
+                    <input
+                        type="number"
+                        disabled={isFirstPage}
+                        defaultValue={isFirstPage ? 0 : selectedPage.counts}
+                        id={countsInputId}
+                        onKeyDown={handleKeyDown}
+                        onBlur={handleBlur}
+                    />
                 </div>
                 <div className="input-group">
                     <label htmlFor="page-order">Order</label>
