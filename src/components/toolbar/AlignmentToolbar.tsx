@@ -6,6 +6,7 @@ import { MdAlignHorizontalCenter, MdAlignVerticalCenter } from "react-icons/md";
 import * as Interfaces from "../../global/Interfaces";
 import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";
 import { RegisteredActionsEnum, RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import { FaEllipsisH, FaEllipsisV } from "react-icons/fa";
 
 export default function UiSettingsToolbar({ className }: Interfaces.topBarComponentProps) {
     const { uiSettings } = useUiSettingsStore();
@@ -18,6 +19,8 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
     const setSelectedMarchersToPreviousPageRef = useRef<HTMLButtonElement>(null);
     const alignVerticallyRef = useRef<HTMLButtonElement>(null);
     const alignHorizontallyRef = useRef<HTMLButtonElement>(null);
+    const evenlyDistVerticallyRef = useRef<HTMLButtonElement>(null);
+    const evenlyDistHorizontallyRef = useRef<HTMLButtonElement>(null);
 
     // register the button refs for the keyboard shortcuts
     useEffect(() => {
@@ -28,6 +31,8 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
         if (setSelectedMarchersToPreviousPageRef.current) linkRegisteredAction(RegisteredActionsEnum.setSelectedMarchersToPreviousPage, setSelectedMarchersToPreviousPageRef);
         if (alignVerticallyRef.current) linkRegisteredAction(RegisteredActionsEnum.alignVertically, alignVerticallyRef);
         if (alignHorizontallyRef.current) linkRegisteredAction(RegisteredActionsEnum.alignHorizontally, alignHorizontallyRef);
+        if (evenlyDistVerticallyRef.current) linkRegisteredAction(RegisteredActionsEnum.evenlyDistributeVertically, evenlyDistVerticallyRef);
+        if (evenlyDistHorizontallyRef.current) linkRegisteredAction(RegisteredActionsEnum.evenlyDistributeHorizontally, evenlyDistHorizontallyRef);
     }, [linkRegisteredAction, lockXRef, lockYRef, snapToNearestWholeRef, setAllMarchersToPreviousPageRef, setSelectedMarchersToPreviousPageRef]);
 
     return (
@@ -119,6 +124,26 @@ export default function UiSettingsToolbar({ className }: Interfaces.topBarCompon
                 >
                     <Button ref={alignHorizontallyRef}>
                         <MdAlignHorizontalCenter />
+                    </Button>
+                </OverlayTrigger>
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {RegisteredActionsObjects.evenlyDistributeVertically.instructionalString}
+                    </Tooltip>}
+                >
+                    <Button ref={evenlyDistVerticallyRef}>
+                        <FaEllipsisV />
+                    </Button>
+                </OverlayTrigger>
+                <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip id={`tooltip-top`}>
+                        {RegisteredActionsObjects.evenlyDistributeHorizontally.instructionalString}
+                    </Tooltip>}
+                >
+                    <Button ref={evenlyDistHorizontallyRef}>
+                        <FaEllipsisH />
                     </Button>
                 </OverlayTrigger>
             </ButtonGroup>

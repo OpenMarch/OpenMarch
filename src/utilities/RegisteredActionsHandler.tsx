@@ -5,7 +5,7 @@ import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
-import { alignHorizontally, alignVertically, getRoundCoordinates } from "./CoordinateActions";
+import * as CoordinateActions from "./CoordinateActions";
 import { MarcherPage } from "@/global/classes/MarcherPage";
 import { Page } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
@@ -117,6 +117,8 @@ export enum RegisteredActionsEnum {
     lockY = "lockY",
     alignVertically = "alignVertically",
     alignHorizontally = "alignHorizontally",
+    evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
+    evenlyDistributeVertically = "evenlyDistributeVertically",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -183,6 +185,14 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
     alignHorizontally: new RegisteredAction({
         desc: "Align horizontally",
         keyboardShortcut: new KeyboardShortcut({ key: "h" })
+    }),
+    evenlyDistributeVertically: new RegisteredAction({
+        desc: "Evenly distribute marchers vertically",
+        keyboardShortcut: new KeyboardShortcut({ key: "v", shift: true })
+    }),
+    evenlyDistributeHorizontally: new RegisteredAction({
+        desc: "Evenly distribute marchers horizontally",
+        keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true })
     }),
 
     // UI settings
@@ -304,7 +314,7 @@ function RegisteredActionsHandler() {
 
             /****************** Alignment ******************/
             case RegisteredActionsEnum.snapToNearestWhole: {
-                const roundedCoords = getRoundCoordinates({
+                const roundedCoords = CoordinateActions.getRoundCoordinates({
                     marcherPages: getSelectedMarcherPages(), fieldProperties: fieldProperties, denominator: 1,
                     xAxis: !uiSettings.lockX, yAxis: !uiSettings.lockY
                 });
@@ -318,13 +328,27 @@ function RegisteredActionsHandler() {
                 setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, 'lockY');
                 break;
             case RegisteredActionsEnum.alignVertically: {
-                const alignedCoords = alignVertically({ marcherPages: getSelectedMarcherPages() });
+                const alignedCoords = CoordinateActions.alignVertically({ marcherPages: getSelectedMarcherPages() });
                 MarcherPage.updateMarcherPages(alignedCoords);
                 break;
             }
             case RegisteredActionsEnum.alignHorizontally: {
-                const alignedCoords = alignHorizontally({ marcherPages: getSelectedMarcherPages() });
+                const alignedCoords = CoordinateActions.alignHorizontally({ marcherPages: getSelectedMarcherPages() });
                 MarcherPage.updateMarcherPages(alignedCoords);
+                break;
+            }
+            case RegisteredActionsEnum.evenlyDistributeVertically: {
+                const distributedCoords = CoordinateActions.evenlyDistributeVertically({
+                    marcherPages: getSelectedMarcherPages()
+                });
+                MarcherPage.updateMarcherPages(distributedCoords);
+                break;
+            }
+            case RegisteredActionsEnum.evenlyDistributeHorizontally: {
+                const distributedCoords = CoordinateActions.evenlyDistributeHorizontally({
+                    marcherPages: getSelectedMarcherPages()
+                });
+                MarcherPage.updateMarcherPages(distributedCoords);
                 break;
             }
 

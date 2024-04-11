@@ -62,8 +62,8 @@ describe('ReadableCoords', () => {
                     expect(readableCoords.toVerboseStringX({ includeStepsString: true })).toBe("S1: 1 step inside 35 yard line");
                     expect(readableCoords.toVerboseStringY({ includeStepsString: true, includeFieldStandard: true }))
                         .toBe("10 steps behind front sideline");
-                    expect(readableCoords.toTerseStringX()).toBe("S1: 1 in 35");
-                    expect(readableCoords.toTerseStringY()).toBe("10 be. FSL");
+                    expect(readableCoords.toTerseStringX()).toBe("S1: 1 IN 35");
+                    expect(readableCoords.toTerseStringY()).toBe("10 BE FSL");
                 });
             });
 
@@ -85,8 +85,8 @@ describe('ReadableCoords', () => {
                 it('should format the ReadableCoords object toStrings', () => {
                     expect(readableCoords.toVerboseStringX()).toBe("S2: 1.6 outside 10 yard line");
                     expect(readableCoords.toVerboseStringY({ includeFieldStandard: true })).toBe("2.77 in front of front hash (NCAA)");
-                    expect(readableCoords.toTerseStringX()).toBe("S2: 1.6 out 10");
-                    expect(readableCoords.toTerseStringY({ includeFieldStandard: true })).toBe("2.77 fr. FH (NCAA)");
+                    expect(readableCoords.toTerseStringX()).toBe("S2: 1.6 OUT 10");
+                    expect(readableCoords.toTerseStringY({ includeFieldStandard: true })).toBe("2.77 FR FH (NCAA)");
                 });
             });
 
@@ -108,8 +108,8 @@ describe('ReadableCoords', () => {
                 it('should format the ReadableCoords object toStrings', () => {
                     expect(readableCoords.toVerboseStringX()).toBe("S1: 0.08 inside 0 yard line");
                     expect(readableCoords.toVerboseStringY({ includeFieldStandard: true })).toBe("0.99 behind grid back hash (NCAA)");
-                    expect(readableCoords.toTerseStringX()).toBe("S1: 0.08 in 0");
-                    expect(readableCoords.toTerseStringY()).toBe("0.99 be. grid:BH");
+                    expect(readableCoords.toTerseStringX()).toBe("S1: 0.08 IN 0");
+                    expect(readableCoords.toTerseStringY()).toBe("0.99 BE grid:BH");
                 });
             });
 
@@ -132,7 +132,7 @@ describe('ReadableCoords', () => {
                     expect(readableCoords.toVerboseStringX()).toBe("S2: On 45 yard line");
                     expect(readableCoords.toVerboseStringY()).toBe("10 in front of grid back sideline");
                     expect(readableCoords.toTerseStringX()).toBe("S2: On 45");
-                    expect(readableCoords.toTerseStringY({ includeFieldStandard: true })).toBe("10 fr. grid:BSL (NCAA)");
+                    expect(readableCoords.toTerseStringY({ includeFieldStandard: true })).toBe("10 FR grid:BSL (NCAA)");
                 });
             });
         });

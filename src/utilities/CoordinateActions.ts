@@ -113,3 +113,41 @@ export function alignHorizontally({ marcherPages }: { marcherPages: MarcherPage[
 
     return changes;
 }
+
+export function evenlyDistributeHorizontally({ marcherPages }: { marcherPages: MarcherPage[]; }): ModifiedMarcherPageArgs[] {
+    const changes: ModifiedMarcherPageArgs[] = [];
+    checkMarcherPagesAreSamePage(marcherPages);
+
+    const sortedMarcherPages = marcherPages.sort((a, b) => a.x - b.x);
+    const firstX = sortedMarcherPages[0].x;
+    const lastX = sortedMarcherPages[sortedMarcherPages.length - 1].x;
+    const totalWidth = lastX - firstX;
+    const numMarchers = sortedMarcherPages.length;
+    const spaceBetween = totalWidth / (numMarchers - 1);
+
+    changes.push(...sortedMarcherPages.map((marcherPage, index) => ({
+        ...marcherPage,
+        x: firstX + (index * spaceBetween)
+    })));
+
+    return changes;
+}
+
+export function evenlyDistributeVertically({ marcherPages }: { marcherPages: MarcherPage[]; }): ModifiedMarcherPageArgs[] {
+    const changes: ModifiedMarcherPageArgs[] = [];
+    checkMarcherPagesAreSamePage(marcherPages);
+
+    const sortedMarcherPages = marcherPages.sort((a, b) => a.y - b.y);
+    const firstY = sortedMarcherPages[0].y;
+    const lastY = sortedMarcherPages[sortedMarcherPages.length - 1].y;
+    const totalHeight = lastY - firstY;
+    const numMarchers = sortedMarcherPages.length;
+    const spaceBetween = totalHeight / (numMarchers - 1);
+
+    changes.push(...sortedMarcherPages.map((marcherPage, index) => ({
+        ...marcherPage,
+        y: firstY + (index * spaceBetween)
+    })));
+
+    return changes;
+}
