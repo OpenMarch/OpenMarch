@@ -37,3 +37,7 @@ yarn.lock
 
 # generated testing
 coverage/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
