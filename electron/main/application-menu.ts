@@ -1,20 +1,31 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import * as db from '../database/database.services';
-import Store from 'electron-store'
 import * as mainProcess from './index';
+import { MenuItem } from 'electron';
 const { app, dialog, Menu } = require('electron');
 
-interface MenuItem {
-  label: string;
-  accelerator?: string;
-  role: string;
-  type?: string;
-  submenu?: MenuItem[];
+const isMac = process.platform === 'darwin'
+
+const template: MenuItem[] = [];
+
+if (isMac) {
+  template.push(new MenuItem({
+    label: app.name,
+    submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+    ]
+  }))
 }
 
-const template = [
-  {
+template.push(...[
+  // { role: 'fileMenu' }
+  new MenuItem({
     label: 'File',
     submenu: [
       {
@@ -54,22 +65,10 @@ const template = [
           mainProcess.saveFile();
         },
       },
-      // {
-      //   label: 'Export HTML',
-      //   accelerator: 'Shift+CommandOrControl+S',
-      //   click(item:any, focusedWindow:any) {
-      //     if (!focusedWindow) {
-      //       return dialog.showErrorBox(
-      //         'Cannot Save or Export',
-      //         'There is currently no active document to save or export.'
-      //       );
-      //     }
-      //     focusedWindow.webContents.send('save-html');
-      //   },
-      // },
-    ],
-  },
-  {
+    ]
+  }),
+  // { role: 'editMenu' }
+  new MenuItem({
     label: 'Edit',
     submenu: [
       {
@@ -94,126 +93,57 @@ const template = [
           mainProcess.executeHistoryAction('redo');
         }
       },
-      // {
-      //   label: 'Cut',
-      //   accelerator: 'CommandOrControl+X',
-      //   role: 'cut',
-      // },
-      // {
-      //   label: 'Copy',
-      //   accelerator: 'CommandOrControl+C',
-      //   role: 'copy',
-      // },
-      // {
-      //   label: 'Paste',
-      //   accelerator: 'CommandOrControl+V',
-      //   role: 'paste',
-      // },
-      // {
-      //   label: 'Select All',
-      //   accelerator: 'CommandOrControl+A',
-      //   role: 'selectall',
-      // },
-    ],
-  },
-  {
-    label: 'Window',
+    ]
+  }),
+  // { role: 'viewMenu' }
+  new MenuItem({
+    label: 'View',
     submenu: [
-      {
-        label: 'Minimize',
-        accelerator: 'CommandOrControl+M',
-        role: 'minimize',
-      },
-      {
-        label: 'Close',
-        accelerator: 'CommandOrControl+W',
-        role: 'close',
-      },
-      {
-        label: 'Refresh',
-        accelerator: 'CommandOrControl+R',
-        click(item: any, focusedWindow: any) {
-          if (focusedWindow) {
-            // Reload the current window
-            focusedWindow.reload();
-          }
-        },
-      },
-    ],
-  },
-  {
-    label: 'Help',
+      { role: 'reload' },
+      { role: 'forceReload' },
+      { role: 'toggleDevTools' },
+      { type: 'separator' },
+      { role: 'resetZoom' },
+      { role: 'zoomIn' },
+      { role: 'zoomOut' },
+      { type: 'separator' },
+      { role: 'togglefullscreen' }
+    ]
+  }),
+  // { role: 'windowMenu' }
+  (isMac ?
+    new MenuItem({
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' },
+        { type: 'separator' },
+        { role: 'window' }
+      ]
+    }) :
+    new MenuItem({
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { role: 'close' }
+      ]
+    })
+  ),
+  new MenuItem({
     role: 'help',
     submenu: [
-      // {
-      //   label: 'Visit Website',
-      //   click() { /* To be implemented */ }
-      // },
       {
-        label: 'Toggle Developer Tools',
-        click(item: any, focusedWindow: any) {
-          if (focusedWindow) focusedWindow.webContents.toggleDevTools();
+        label: 'Learn More',
+        click: async () => {
+          const { shell } = require('electron')
+          await shell.openExternal('https://electronjs.org')
         }
       }
-    ],
-  }
-];
+    ]
+  })
+]);
 
-if (process.platform === 'darwin') {
-  const name = 'OpenMarch';
-  template.unshift({
-    label: name,
-    submenu: [
-      {
-        label: `About ${name}`,
-        role: 'about',
-        accelerator: '',
-      },
-      { type: 'separator' },
-      {
-        label: 'Services',
-        role: 'services',
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        submenu: [{ label: 'No Services', enabled: false }],
-      },
-      { type: 'separator' },
-      {
-        label: `Hide ${name}`,
-        accelerator: 'Command+H',
-        role: 'hide',
-      },
-      {
-        label: 'Hide Others',
-        accelerator: 'Command+Alt+H',
-        role: 'hideothers',
-      },
-      {
-        label: 'Show All',
-        role: 'unhide',
-        accelerator: '',
-      },
-      { type: 'separator' },
-      {
-        label: `Quit ${name}`,
-        accelerator: 'Command+Q',
-        click() { app.quit(); }, // A
-      },
-    ],
-  });
-
-  const windowMenu = template.find(item => item.label === 'Window'); // B
-  if (!windowMenu) throw new Error(`Menu template does not have a submenu item 'Window'`);
-  windowMenu.role = 'window';
-  windowMenu.submenu.push(
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    { type: 'separator' },
-    {
-      label: 'Bring All to Front',
-      role: 'front',
-    }
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// module.exports = Menu.buildFromTemplate(template);
 export const applicationMenu = Menu.buildFromTemplate(template);

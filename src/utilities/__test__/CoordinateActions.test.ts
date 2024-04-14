@@ -296,7 +296,6 @@ describe('CoordinateActions', () => {
             const result = evenlyDistributeHorizontally({
                 marcherPages,
             });
-            console.log(result)
             result.sort((a, b) => a.x - b.x).forEach((marcherPage, index) => {
                 expect(marcherPage.x).toBe(expectedXs[index]);
             });
@@ -315,7 +314,6 @@ describe('CoordinateActions', () => {
             const result = evenlyDistributeHorizontally({
                 marcherPages,
             });
-            console.log(result)
             result.sort((a, b) => a.x - b.x).forEach((marcherPage, index) => {
                 expect(marcherPage.x).toBe(expectedXs[index]);
             });
@@ -372,7 +370,6 @@ describe('CoordinateActions', () => {
             const result = evenlyDistributeVertically({
                 marcherPages,
             });
-            console.log(result)
             result.sort((a, b) => a.y - b.y).forEach((marcherPage, index) => {
                 expect(marcherPage.y).toBe(expectedYs[index]);
             });
@@ -391,7 +388,6 @@ describe('CoordinateActions', () => {
             const result = evenlyDistributeVertically({
                 marcherPages,
             });
-            console.log(result)
             result.sort((a, b) => a.y - b.y).forEach((marcherPage, index) => {
                 expect(marcherPage.y).toBe(expectedYs[index]);
             });

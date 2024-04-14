@@ -267,28 +267,38 @@ function RegisteredActionsHandler() {
         switch (action) {
             /****************** Navigation and playback ******************/
             case RegisteredActionsEnum.nextPage: {
-                const nextPage = Page.getNextPage(selectedPage, pages);
-                if (nextPage) setSelectedPage(nextPage);
+                if (!isPlaying) {
+                    const nextPage = Page.getNextPage(selectedPage, pages);
+                    if (nextPage) setSelectedPage(nextPage);
+                }
                 break;
             }
             case RegisteredActionsEnum.lastPage: {
-                const lastPage = Page.getLastPage(pages);
-                if (lastPage) setSelectedPage(lastPage);
+                if (!isPlaying) {
+                    const lastPage = Page.getLastPage(pages);
+                    if (lastPage) setSelectedPage(lastPage);
+                }
                 break;
             }
             case RegisteredActionsEnum.previousPage: {
-                const previousPage = Page.getPreviousPage(selectedPage, pages);
-                if (previousPage) setSelectedPage(previousPage);
+                if (!isPlaying) {
+                    const previousPage = Page.getPreviousPage(selectedPage, pages);
+                    if (previousPage) setSelectedPage(previousPage);
+                }
                 break;
             }
             case RegisteredActionsEnum.firstPage: {
-                const firstPage = Page.getFirstPage(pages);
-                if (firstPage) setSelectedPage(firstPage);
+                if (!isPlaying) {
+                    const firstPage = Page.getFirstPage(pages);
+                    if (firstPage) setSelectedPage(firstPage);
+                }
                 break;
             }
-            case RegisteredActionsEnum.playPause:
-                setIsPlaying(!isPlaying);
+            case RegisteredActionsEnum.playPause: {
+                const nextPage = Page.getNextPage(selectedPage, pages);
+                if (nextPage) setIsPlaying(!isPlaying);
                 break;
+            }
 
             /****************** Batch Editing ******************/
             case RegisteredActionsEnum.setAllMarchersToPreviousPage: {

@@ -4,17 +4,17 @@
 {
   "appId": "com.openmarch.app",
   "productName": "OpenMarch",
-  "version": "0.0.1",
+  "buildVersion": "0.0.1",
   "asar": true,
   "directories": {
-    "output": "release/${version}"
+    "output": "release/${buildVersion}"
   },
   "files": [
     "dist-electron",
     "dist"
   ],
   "mac": {
-    "artifactName": "${productName}_${version}.${ext}",
+    "artifactName": "${productName}_${buildVersion}.${ext}",
     "target": [
       "dmg",
       "zip"
@@ -29,7 +29,7 @@
         ]
       }
     ],
-    "artifactName": "${productName}_${version}.${ext}"
+    "artifactName": "${productName}_${buildVersion}.${ext}"
   },
   "nsis": {
     "oneClick": false,
