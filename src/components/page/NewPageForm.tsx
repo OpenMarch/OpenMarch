@@ -80,7 +80,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                 newPageArgs.push(newPageArg);
             }
 
-            const response = await Page.createPages(newPageArgs, pages);
+            const response = await Page.createPages(newPageArgs);
 
             if (response.success && response.newPages) {
                 const newPageNames = response.newPages.map(page => page.name);
@@ -180,7 +180,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                                 setFormCounts(counts.toString())
                         }}
                         value={formCounts} onChange={handleCountsChange}
-                        required min={1} step={1} disabled={quantity > 1}
+                        required min={1} step={1}
                     />
                 </Form.Group>
 
@@ -197,7 +197,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                                 setFormTempo(tempo.toString())
                         }}
                         value={formTempo} onChange={handleTempoChange}
-                        required min={1} step={1} disabled={quantity > 1}
+                        required min={1} step={1}
                     />
                 </Form.Group>
             </Row>

@@ -47,17 +47,12 @@ describe('Page', () => {
     });
 
     it('should fetch all pages from the database', async () => {
-        const mockResponse = [
-            { id: 1, name: '1' },
-            { id: 2, name: '2' }
-        ];
         const getPagesSpy = jest.spyOn(Page, 'getPages');
-
-        getPagesSpy.mockResolvedValue(mockResponse as Page[]);
+        getPagesSpy.mockResolvedValue(mockPages);
 
         const pages = await Page.getPages();
 
-        expect(pages).toEqual(mockResponse);
+        expect(pages).toEqual(mockPages);
         expect(getPagesSpy).toHaveBeenCalled();
     });
 
@@ -118,7 +113,6 @@ describe('Page', () => {
                     notes: 'Some notes',
                 },
                 {
-                    // id 2
                     name: '2',
                     order: 1,
                     counts: 8,
@@ -127,7 +121,6 @@ describe('Page', () => {
                     notes: 'Other notes',
                 },
                 {
-                    // id 3
                     name: '2A',
                     order: 2,
                     counts: 32,
@@ -135,7 +128,6 @@ describe('Page', () => {
                     time_signature: '5/8',
                 },
                 {
-                    // id 4
                     name: '2B',
                     rehearsal_mark: 'B',
                     order: 3,
@@ -144,7 +136,6 @@ describe('Page', () => {
                     time_signature: '4/8',
                 },
                 {
-                    // id 5
                     name: '2C',
                     order: 4,
                     counts: 1,
@@ -152,7 +143,6 @@ describe('Page', () => {
                     time_signature: '4/8',
                 },
                 {
-                    // id 6
                     name: '3',
                     order: 5,
                     counts: 1,
@@ -165,15 +155,17 @@ describe('Page', () => {
         it('should create a new page in the database', async () => {
             const mockResponse = { success: true, newPages: [newPageContainers[0]] };
 
+            jest.spyOn(Page, 'getPages').mockResolvedValue([]);
+
             const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
             const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
             const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
             const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
 
-            const response = await Page.createPages([newPageArgs[0]], []);
+            const response = await Page.createPages([newPageArgs[0]]);
             expect(response).toEqual(mockResponse);
             expect(electronCreatePagesSpy).toHaveBeenCalledWith([newPageContainers[0]]);
-            expect(electronUpdatePagesSpy).toHaveBeenCalledWith([], false)
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith([], false, true);
             expect(checkForFetchPagesSpy).toHaveBeenCalled();
             expect(fetchPagesSpy).toHaveBeenCalled();
         });
@@ -181,15 +173,17 @@ describe('Page', () => {
         it('should create multiple new pages in the database', async () => {
             const mockResponse = { success: true, newPages: newPageContainers };
 
+            jest.spyOn(Page, 'getPages').mockResolvedValue([]);
+
             const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
             const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
             const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
             const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
-            const response = await Page.createPages(newPageArgs, []);
+            const response = await Page.createPages(newPageArgs)
 
             expect(response).toEqual(mockResponse);
             expect(electronCreatePagesSpy).toHaveBeenCalledWith(newPageContainers);
-            expect(electronUpdatePagesSpy).toHaveBeenCalledWith([], false)
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith([], false, true);
             expect(checkForFetchPagesSpy).toHaveBeenCalled();
             expect(fetchPagesSpy).toHaveBeenCalled();
         });
@@ -198,7 +192,8 @@ describe('Page', () => {
             const existingPages = newPageContainers.map((page, index) => {
                 return new Page({
                     ...page,
-                    id: index + 1,
+                    // Reverse index to test non-sequential ID order
+                    id: newPageContainers.length - index,
                     id_for_html: `page_${index + 1}`,
                 })
             });
@@ -211,12 +206,13 @@ describe('Page', () => {
                 time_signature: TimeSignature.fromString('4/8'),
             }
 
+            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
 
             const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
             const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
             const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
             const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
-            const response = await Page.createPages([newPage], existingPages);
+            const response = await Page.createPages([newPage]);
 
             const expectedNewPages: NewPageContainer[] = [
                 {
@@ -229,27 +225,27 @@ describe('Page', () => {
             ];
             const expectedModifiedPages: ModifiedPageContainer[] = [
                 {
-                    id: 2,
+                    id: 5,
                     name: '3',
                     order: 2,
                 },
                 {
-                    id: 3,
+                    id: 4,
                     name: '3A',
                     order: 3,
                 },
                 {
-                    id: 4,
+                    id: 3,
                     name: '3B',
                     order: 4,
                 },
                 {
-                    id: 5,
+                    id: 2,
                     name: '3C',
                     order: 5,
                 },
                 {
-                    id: 6,
+                    id: 1,
                     name: '4',
                     order: 6,
                 }
@@ -258,7 +254,7 @@ describe('Page', () => {
 
             expect(response).toEqual(mockResponse);
             expect(electronCreatePagesSpy).toHaveBeenCalledWith(expectedNewPages);
-            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false, true);
             expect(checkForFetchPagesSpy).toHaveBeenCalled();
             expect(fetchPagesSpy).toHaveBeenCalled();
         })
@@ -280,11 +276,13 @@ describe('Page', () => {
                 time_signature: TimeSignature.fromString('4/8'),
             }
 
+            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
+
             const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
             const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
             const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
             const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
-            const response = await Page.createPages([newPage], existingPages);
+            const response = await Page.createPages([newPage]);
 
             const expectedNewPages: NewPageContainer[] = [
                 {
@@ -317,7 +315,7 @@ describe('Page', () => {
 
             expect(response).toEqual(mockResponse);
             expect(electronCreatePagesSpy).toHaveBeenCalledWith(expectedNewPages);
-            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false, true);
             expect(checkForFetchPagesSpy).toHaveBeenCalled();
             expect(fetchPagesSpy).toHaveBeenCalled();
         })
@@ -370,11 +368,13 @@ describe('Page', () => {
                 },
             ]
 
+            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
+
             const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
             const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
             const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
             const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
-            const response = await Page.createPages(newPages, existingPages);
+            const response = await Page.createPages(newPages);
 
             const expectedNewPages: NewPageContainer[] = newPageContainers = [
                 {
@@ -445,7 +445,7 @@ describe('Page', () => {
 
             expect(response).toEqual(mockResponse);
             expect(electronCreatePagesSpy).toHaveBeenCalledWith(expectedNewPages);
-            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false, true);
             expect(checkForFetchPagesSpy).toHaveBeenCalled();
             expect(fetchPagesSpy).toHaveBeenCalled();
         })
@@ -476,21 +476,133 @@ describe('Page', () => {
         });
     });
 
-    it('should delete a page from the database', async () => {
-        const pageId = 1;
+    describe('deleting pages', () => {
+        const existingPagesMock: Page[] = [
+            new Page({
+                id: 1,
+                id_for_html: 'page_1',
+                name: '1',
+                counts: 16,
+                order: 0,
+                tempo: 120,
+                time_signature: TimeSignature.fromString('4/4'),
+                notes: 'Some notes',
+            }),
+            new Page({
+                id: 2,
+                id_for_html: 'page_2',
+                name: '2',
+                counts: 8,
+                order: 1,
+                tempo: 140,
+                time_signature: TimeSignature.fromString('3/4'),
+                notes: 'Other notes',
+            }),
+            new Page({
+                id: 3,
+                id_for_html: 'page_3',
+                name: '3',
+                counts: 32,
+                order: 2,
+                tempo: 100,
+                time_signature: TimeSignature.fromString('5/8'),
+            }),
+            new Page({
+                id: 4,
+                id_for_html: 'page_4',
+                name: '3A',
+                counts: 90,
+                order: 3,
+                tempo: 34,
+                time_signature: TimeSignature.fromString('8/8'),
+            }),
+            new Page({
+                id: 5,
+                id_for_html: 'page_5',
+                name: '3B',
+                counts: 39,
+                order: 4,
+                tempo: 110,
+                time_signature: TimeSignature.fromString('4/4'),
+            }),
+            new Page({
+                id: 6,
+                id_for_html: 'page_6',
+                name: '4',
+                counts: 29,
+                order: 5,
+                tempo: 102,
+                time_signature: TimeSignature.fromString('6/4'),
+            }),
+        ] as const;
+        it('should delete a page from the database', async () => {
+            const pageIdToDelete = existingPagesMock[1].id;
+            const expectedModifiedPages: ModifiedPageContainer[] = [
+                {
+                    id: 3,
+                    name: '2',
+                    order: 1,
+                },
+                {
+                    id: 4,
+                    name: '2A',
+                    order: 2,
+                },
+                {
+                    id: 5,
+                    name: '2B',
+                    order: 3,
+                },
+                {
+                    id: 6,
+                    name: '3',
+                    order: 4,
+                },
+            ]
 
-        const mockResponse = { success: true };
+            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPagesMock);
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const mockResponse = { success: true };
+            const deletePageSpy = jest.spyOn(Page, 'deletePage');
+            const response = await Page.deletePage(pageIdToDelete);
 
-        const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-        const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            expect(response).toEqual(mockResponse);
+            expect(deletePageSpy).toHaveBeenCalledWith(pageIdToDelete);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        });
+        it('should delete a subset page from the database', async () => {
+            const pageIdToDelete = existingPagesMock[3].id;
+            const expectedModifiedPages: ModifiedPageContainer[] = [
+                {
+                    id: 5,
+                    name: '3A',
+                    order: 3,
+                },
+                {
+                    id: 6,
+                    name: '4',
+                    order: 4,
+                },
+            ]
 
-        const deletePageSpy = jest.spyOn(Page, 'deletePage');
-        const response = await Page.deletePage(pageId);
+            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPagesMock);
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const mockResponse = { success: true };
+            const deletePageSpy = jest.spyOn(Page, 'deletePage');
+            const response = await Page.deletePage(pageIdToDelete);
 
-        expect(response).toEqual(mockResponse);
-        expect(deletePageSpy).toHaveBeenCalledWith(pageId);
-        expect(checkForFetchPagesSpy).toHaveBeenCalled();
-        expect(fetchPagesSpy).toHaveBeenCalled();
+            expect(response).toEqual(mockResponse);
+            expect(deletePageSpy).toHaveBeenCalledWith(pageIdToDelete);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        });
     });
 
     it('should sort pages by order', () => {

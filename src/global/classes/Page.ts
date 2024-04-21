@@ -69,12 +69,16 @@ export class Page {
      * Creates one or more new pages in the database and updates the store.
      *
      * @param newPagesArg - The new pages to be created in order of how they should be created.
-     * @param existingPages - The current list of pages. Must be provided to create correct page names and orders.
      * @returns DatabaseResponse: { success: boolean; error?: Error; newPages?: NewPageContainer[];}
      */
-    static async createPages(newPagesArgs: NewPageArgs[], existingPages: Page[]):
+    static async createPages(newPagesArgs: NewPageArgs[]):
         Promise<{ success: boolean; error?: { message: string, stack?: string }; newPages?: NewPageContainer[]; }> {
 
+        // Get the existing pages and create them as objects. (Electron only returns serialized data)
+        const existingPages = Page.sortPagesByOrder(
+            await Page.getPages()).map((page) => {
+                return new Page(page)
+            });
         // What all the new pages will look like
         const futurePages: ModifiedPageArgs[] = existingPages.map((page) => {
             const isSubset = page.splitPageName().subset !== null;
@@ -89,6 +93,7 @@ export class Page {
             };
         });
 
+        // Fit the new pages into the existing ones
         const newPageTempId = -1;
         newPagesArgs.forEach((newPageArg) => {
             // If there is no previous page, add the new page to the end of the show
@@ -107,7 +112,7 @@ export class Page {
             futurePages.splice(newPageIdx, 0, { ...newPageArg, id: newPageTempId });
         })
 
-
+        // Generate the page names for all the pages (if one was appended in the middle, all the following will change)
         const futurePageNames = this.generatePageNames(futurePages.map((page) => page.isSubset || false));
         let currentOrder = 0;
         // If we are adding a new page, we need to modify the following existing pages
@@ -116,6 +121,7 @@ export class Page {
         const newPageContainers: NewPageContainer[] = [];
         const modifiedPageContainers: ModifiedPageContainer[] = [];
 
+        // Create containers for the new pages and the existing pages that will to be modified
         futurePages.forEach((futurePage, i) => {
             if (futurePage.id === newPageTempId) {
                 const newPageContainer: NewPageContainer = {
@@ -146,7 +152,7 @@ export class Page {
 
         try {
             // Update the existing pages names and orders
-            let response = await window.electron.updatePages(modifiedPageContainers, false);
+            let response = await window.electron.updatePages(modifiedPageContainers, false, true);
             if (!response.success) {
                 throw response.error;
             }
@@ -185,14 +191,19 @@ export class Page {
      */
     static async updatePages(modifiedPagesArg: ModifiedPageArgs[]) {
         const modifiedPagesToSend: ModifiedPageContainer[] = modifiedPagesArg.map((page) => {
-            return {
-                id: page.id,
-                counts: page.counts,
-                tempo: page.tempo,
-                time_signature: page.time_signature ? page.time_signature.toString() : undefined,
-                rehearsal_mark: page.rehearsal_mark,
-                notes: page.notes
-            };
+            const modifiedPage: ModifiedPageContainer = { id: page.id };
+            if (page.counts)
+                modifiedPage.counts = page.counts;
+            if (page.tempo)
+                modifiedPage.tempo = page.tempo;
+            if (page.time_signature)
+                modifiedPage.time_signature = page.time_signature.toString();
+            if (page.rehearsal_mark)
+                modifiedPage.rehearsal_mark = page.rehearsal_mark;
+            if (page.notes)
+                modifiedPage.notes = page.notes;
+
+            return modifiedPage;
         });
         const response = await window.electron.updatePages(modifiedPagesToSend);
         // fetch the pages to update the store
@@ -210,11 +221,66 @@ export class Page {
      * @returns Response data from the server.
      */
     static async deletePage(page_id: number) {
-        const response = await window.electron.deletePage(page_id);
-        // fetch the pages to update the store
-        this.checkForFetchPages();
-        this.fetchPages();
-        return response;
+        // Get the existing pages and create them as objects. (Electron only returns serialized data)
+        const existingPages = Page.sortPagesByOrder(
+            await Page.getPages()).map((page) => {
+                return new Page(page)
+            });
+        const deletedPage = existingPages.find((page) => page.id === page_id);
+
+        if (!deletedPage) {
+            console.error("Error deleting page: Page not found");
+            return { success: false, error: new Error(`Error deleting page: Page with id: ${page_id} not found`) };
+        }
+
+        const futurePages: ModifiedPageArgs[] = [];
+        existingPages.forEach((page) => {
+            // Only update the order of the pages after the deleted page
+            if (page.id !== deletedPage!.id) {
+                const isSubset = page.splitPageName().subset !== null;
+                futurePages.push({
+                    id: page.id,
+                    counts: page.counts,
+                    tempo: page.tempo,
+                    time_signature: page.time_signature,
+                    rehearsal_mark: page.rehearsal_mark,
+                    notes: page.notes,
+                    isSubset: isSubset
+                });
+            }
+        });
+
+        const futurePageNames = this.generatePageNames(futurePages.map((page) => page.isSubset || false));
+        let currentOrder = 0;
+        const modifiedPageContainers: ModifiedPageContainer[] = [];
+        futurePages.forEach((futurePage, i) => {
+            if (currentOrder >= deletedPage!.order) {
+                modifiedPageContainers.push({
+                    id: futurePage.id,
+                    name: futurePageNames[i],
+                    order: currentOrder
+                });
+            }
+            currentOrder++;
+        });
+
+        try {
+            this.checkForFetchPages();
+            let response = await window.electron.deletePage(page_id);
+            if (!response.success) {
+                throw response.error;
+            }
+            response = await window.electron.updatePages(modifiedPageContainers, false);
+            if (!response.success) {
+                throw response.error;
+            }
+            // fetch the pages to update the store
+            this.fetchPages();
+            return response;
+        } catch (error: any) {
+            console.error("Error deleting page: ", error);
+            return { success: false, error: error || new Error("Error deleting page") };
+        }
     }
 
     /**

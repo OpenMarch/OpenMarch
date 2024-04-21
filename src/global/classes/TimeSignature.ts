@@ -33,7 +33,11 @@ export class TimeSignature {
     }
 
     static instanceOf(obj: any): obj is TimeSignature {
-        return obj.numerator !== undefined && obj.denominator !== undefined;
+        try {
+            return obj.numerator !== undefined && obj.denominator !== undefined;
+        } catch (TypeError) {
+            return false;
+        }
     }
 
     /**

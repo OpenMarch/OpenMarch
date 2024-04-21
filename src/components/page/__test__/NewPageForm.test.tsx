@@ -17,6 +17,8 @@ describe('NewPageForm', () => {
             updatePages: jest.fn().mockResolvedValue({ success: true }),
         } as Partial<ElectronApi> as ElectronApi;
 
+        jest.spyOn(Page, 'getPages').mockResolvedValue(mockPages);
+
         Page.fetchPages = jest.fn();
         jest.spyOn(Page, 'getPages').mockResolvedValue(mockPages);
         jest.mock('@/stores/page/usePageStore');
@@ -65,7 +67,7 @@ describe('NewPageForm', () => {
         const form = screen.getByLabelText('New Page Form');
         act(() => fireEvent.submit(form));
 
-        await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage], mockPages));
+        await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage]));
         await waitFor(() => expect(screen.getByLabelText('create page response')).toBeDefined());
         // Only way I could think of to test success message
         expect(screen.getByLabelText('create page response').className).toContain('alert-success');
@@ -120,7 +122,7 @@ describe('NewPageForm', () => {
         const form = screen.getByLabelText('New Page Form');
         act(() => fireEvent.submit(form));
 
-        await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith(expectedNewPages, mockPages));
+        await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith(expectedNewPages));
         await waitFor(() => expect(screen.getByLabelText('create page response')).toBeDefined());
         // Only way I could think of to test success message
         expect(screen.getByLabelText('create page response').className).toContain('alert-success');
@@ -167,7 +169,7 @@ describe('NewPageForm', () => {
         // Disable console.error so that the error message doesn't show up in the console
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
 
-        await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage], mockPages));
+        await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage]));
         await waitFor(() => expect(screen.getByLabelText('create page response')).toBeDefined());
         // Only way I could think of to test success message
         expect(screen.getByLabelText('create page response').className).toContain('alert-danger');

@@ -193,8 +193,10 @@ export function initHandlers() {
     // Page
     ipcMain.handle('page:getAll', async () => getPages());
     ipcMain.handle('page:insert', async (_, args) => createPages(args));
-    ipcMain.handle('page:update', async (_, pages: ModifiedPageContainer[], addToHistoryQueue: boolean) =>
-        updatePages(pages, addToHistoryQueue));
+    ipcMain.handle('page:update', async (
+        _, pages: ModifiedPageContainer[], addToHistoryQueue: boolean, updateInReverse: boolean
+    ) =>
+        updatePages(pages, addToHistoryQueue, updateInReverse));
     ipcMain.handle('page:delete', async (_, page_id) => deletePage(page_id));
 
     // MarcherPage
@@ -551,9 +553,13 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
  *                    page to update and the values to update it with
  * @param addToHistoryQueue - whether to add the changes to the history queue. Default is true.
  *                    Only set to false when updating as the response to adding a new page.
+ * @param updateInReverse - whether to update the pages in reverse order. Default is false.
+ *                    This is used to satisfy the unique constraint on the order and name column when adding pages.
  * @returns - {success: boolean, error?: string}
  */
-async function updatePages(modifiedPages: ModifiedPageContainer[], addToHistoryQueue: Boolean = true):
+async function updatePages(modifiedPages: ModifiedPageContainer[],
+    addToHistoryQueue: Boolean = true, updateInReverse = false
+):
     Promise<DatabaseResponse> {
 
     const db = connect();
@@ -563,9 +569,10 @@ async function updatePages(modifiedPages: ModifiedPageContainer[], addToHistoryQ
     const historyActions: History.UpdateHistoryEntry[] = [];
     // List of properties to exclude
     const excludedProperties = ['id'];
+    const sortedModifiedPages = modifiedPages.sort((a, b) => (a.order ? a.order : 0) - (b.order ? b.order : 0));
 
     try {
-        for (const pageUpdate of modifiedPages.toReversed()) {
+        for (const pageUpdate of updateInReverse ? sortedModifiedPages.toReversed() : sortedModifiedPages) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(pageUpdate)
                 .filter(key => !excludedProperties.includes(key))

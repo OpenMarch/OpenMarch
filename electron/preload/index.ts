@@ -154,8 +154,8 @@ const APP_API = {
   getPages: () => ipcRenderer.invoke('page:getAll') as Promise<Page[]>,
   createPages: (pages: NewPageContainer[]) =>
     ipcRenderer.invoke('page:insert', pages) as Promise<DatabaseResponse>,
-  updatePages: (modifiedPages: ModifiedPageContainer[], addToHistoryQueue = true) =>
-    ipcRenderer.invoke('page:update', modifiedPages, addToHistoryQueue) as Promise<DatabaseResponse>,
+  updatePages: (modifiedPages: ModifiedPageContainer[], addToHistoryQueue?: boolean, updateInReverse?: boolean) =>
+    ipcRenderer.invoke('page:update', modifiedPages, addToHistoryQueue, updateInReverse) as Promise<DatabaseResponse>,
   deletePage: (id: number) => ipcRenderer.invoke('page:delete', id) as Promise<DatabaseResponse>,
 
   // MarcherPage
