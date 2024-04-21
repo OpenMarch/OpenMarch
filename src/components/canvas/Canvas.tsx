@@ -406,8 +406,8 @@ function Canvas() {
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas.current && selectedPage) {
-            const prevPage = Page.getPreviousPage(selectedPage, pages);
-            const nextPage = Page.getNextPage(selectedPage, pages);
+            const prevPage = selectedPage.getPreviousPage(pages);
+            const nextPage = selectedPage.getNextPage(pages);
 
             removePathways();
             removeStaticCanvasMarchers();
@@ -465,7 +465,7 @@ function Canvas() {
     useEffect(() => {
         if (canvas.current && selectedPage) {
             if (isPlaying) {
-                const nextPage = Page.getNextPage(selectedPage, pages);
+                const nextPage = selectedPage.getNextPage(pages);
                 if (!nextPage)
                     return;
 

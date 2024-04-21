@@ -17,6 +17,7 @@ export const marcherStoreCreator: StateCreator<MarcherStoreInterface> = (set) =>
     fetchMarchers: async () => {
         const receivedMarchers = await Marcher.getMarchers();
         const sortedMarchers = receivedMarchers.sort((a, b) => Marcher.compare(a, b));
-        set({ marchers: sortedMarchers });
+        const marcherObjects = sortedMarchers.map(marcher => new Marcher(marcher));
+        set({ marchers: marcherObjects });
     },
 });

@@ -58,9 +58,18 @@ export default function MarcherCoordinateSheet(
                 id_for_html: "example-marcher", drill_prefix: "B", drill_order: 1
             });
             setPagesToUse([
-                { id: 1, name: "1", counts: 8, order: 1, id_for_html: "example-page-1", tempo: 120, time_signature: "4/4" },
-                { id: 2, name: "2", counts: 16, order: 2, id_for_html: "example-page-2", tempo: 120, time_signature: "4/4" },
-                { id: 3, name: "2A", counts: 5, order: 3, id_for_html: "example-page-3", tempo: 120, time_signature: "4/4" },
+                new Page({
+                    id: 1, name: "1", counts: 8, order: 1, id_for_html: "example-page-1",
+                    tempo: 120, time_signature: "4/4"
+                }),
+                new Page({
+                    id: 2, name: "2", counts: 16, order: 2, id_for_html: "example-page-2",
+                    tempo: 120, time_signature: "4/4"
+                }),
+                new Page({
+                    id: 3, name: "2A", counts: 5, order: 3, id_for_html: "example-page-3",
+                    tempo: 120, time_signature: "4/4"
+                }),
             ]);
             setMarcherPagesToUse([
                 {

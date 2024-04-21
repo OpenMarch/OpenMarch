@@ -25,8 +25,8 @@ describe('SelectedPageContext', () => {
         const pages = await Page.getPages();
 
         // copy the first marcher to avoid reference equality issues
-        const expectedPage = [...pages][0];
-        act(() => result.current?.setSelectedPage({ ...expectedPage }));
+        const expectedPage = pages[0];
+        act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
     });
 
@@ -35,13 +35,13 @@ describe('SelectedPageContext', () => {
         const pages = await Page.getPages();
 
         // copy the page to avoid reference equality issues
-        let expectedPage = [...pages][0];
-        act(() => result.current?.setSelectedPage({ ...expectedPage }));
+        let expectedPage = pages[0];
+        act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
 
         // copy the page to avoid reference equality issues
-        expectedPage = [...pages][2];
-        act(() => result.current?.setSelectedPage({ ...expectedPage }));
+        expectedPage = pages[2];
+        act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
 
         // no page
@@ -49,8 +49,8 @@ describe('SelectedPageContext', () => {
         expect(result.current?.selectedPage).toEqual(null);
 
         // copy the page to avoid reference equality issues
-        expectedPage = [...pages][1];
-        act(() => result.current?.setSelectedPage({ ...expectedPage }));
+        expectedPage = pages[1];
+        act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
     });
 });

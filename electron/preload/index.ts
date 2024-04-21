@@ -1,7 +1,7 @@
 import { FieldProperties } from "@/global/classes/FieldProperties"
 import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
 import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
-import { ModifiedPageArgs, NewPageArgs, Page } from "@/global/classes/Page"
+import { ModifiedPageContainer, NewPageContainer, Page } from "@/global/classes/Page"
 import { contextBridge, ipcRenderer } from "electron"
 import { DatabaseResponse } from "electron/database/database.services"
 
@@ -135,16 +135,28 @@ const APP_API = {
   getFieldProperties: () => ipcRenderer.invoke('field_properties:get') as Promise<FieldProperties>,
 
   // Marcher
+  /**
+   * @returns A serialized array of all marchers in the database.
+   * This means you must call `new Marcher(marcher)` on each marcher or else the methods will not work.
+   */
   getMarchers: () => ipcRenderer.invoke('marcher:getAll') as Promise<Marcher[]>,
-  createMarcher: (newMarcher: NewMarcherArgs) => ipcRenderer.invoke('marcher:insert', newMarcher) as Promise<DatabaseResponse>,
-  updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) => ipcRenderer.invoke('marcher:update', modifiedMarchers),
+  createMarcher: (newMarcher: NewMarcherArgs) =>
+    ipcRenderer.invoke('marcher:insert', newMarcher) as Promise<DatabaseResponse>,
+  updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
+    ipcRenderer.invoke('marcher:update', modifiedMarchers) as Promise<DatabaseResponse>,
   deleteMarcher: (id: number) => ipcRenderer.invoke('marcher:delete', id),
 
   // Page
+  /**
+   * @returns A serialized array of all pages in the database.
+   * This means you must call `new Page(page)` on each page or else the methods will not work.
+   */
   getPages: () => ipcRenderer.invoke('page:getAll') as Promise<Page[]>,
-  createPages: (pages: NewPageArgs[]) => ipcRenderer.invoke('page:insert', pages),
-  updatePages: (modifiedPages: ModifiedPageArgs[]) => ipcRenderer.invoke('page:update', modifiedPages),
-  deletePage: (id: number) => ipcRenderer.invoke('page:delete', id),
+  createPages: (pages: NewPageContainer[]) =>
+    ipcRenderer.invoke('page:insert', pages) as Promise<DatabaseResponse>,
+  updatePages: (modifiedPages: ModifiedPageContainer[], addToHistoryQueue = true) =>
+    ipcRenderer.invoke('page:update', modifiedPages, addToHistoryQueue) as Promise<DatabaseResponse>,
+  deletePage: (id: number) => ipcRenderer.invoke('page:delete', id) as Promise<DatabaseResponse>,
 
   // MarcherPage
   getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll', args) as Promise<MarcherPage[]>,

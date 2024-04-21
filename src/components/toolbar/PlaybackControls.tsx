@@ -45,8 +45,8 @@ function PlaybackControls({ className }: topBarComponentProps) {
             setPreviousPage(null);
             setNextPage(null);
         } else {
-            setPreviousPage(Page.getPreviousPage(selectedPage, pages));
-            setNextPage(Page.getNextPage(selectedPage, pages));
+            setPreviousPage(selectedPage.getPreviousPage(pages));
+            setNextPage(selectedPage.getNextPage(pages));
         }
     }, [pages, selectedPage]);
 

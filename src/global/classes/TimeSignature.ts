@@ -23,13 +23,17 @@ export class TimeSignature {
      * @param timeSignature A string representation of a time signature. E.g. "4/4"
      * @returns
      */
-    static timeSignatureFromString(timeSignature: string): TimeSignature {
+    static fromString(timeSignature: string): TimeSignature {
         const split = timeSignature.split("/");
         if (split.length !== 2)
             throw new Error("Invalid time signature string. Must be in the form of '4/4'");
         const numerator = parseInt(split[0]);
         const denominator = parseInt(split[1]);
         return new TimeSignature({ numerator, denominator });
+    }
+
+    static instanceOf(obj: any): obj is TimeSignature {
+        return obj.numerator !== undefined && obj.denominator !== undefined;
     }
 
     /**

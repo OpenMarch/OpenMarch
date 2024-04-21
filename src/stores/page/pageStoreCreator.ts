@@ -23,8 +23,13 @@ export const pageStoreCreator: StateCreator<PageStoreInterface> = (set) => ({
      */
     fetchPages: async (): Promise<void> => {
         const newPages = await Page.getPages();
+
+        // Create new Page objects from the API response. This is necessary to ensure the instance methods work.
+        let pagesToUse = newPages.map(page => new Page(page));
+        pagesToUse = Page.sortPagesByOrder(pagesToUse);
+
         set({
-            pages: Page.sortPagesByOrder(newPages),
+            pages: pagesToUse,
         });
     },
 });

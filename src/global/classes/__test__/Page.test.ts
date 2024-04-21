@@ -1,4 +1,4 @@
-import { Page, NewPageArgs, ModifiedPageArgs } from '../Page';
+import { Page, NewPageContainer, ModifiedPageArgs, NewPageArgs, ModifiedPageContainer } from '../Page';
 import { mockPages } from '@/__mocks__/globalMocks';
 import { TimeSignature } from '../TimeSignature';
 import { ElectronApi } from 'electron/preload';
@@ -61,79 +61,419 @@ describe('Page', () => {
         expect(getPagesSpy).toHaveBeenCalled();
     });
 
-    it('should create a new page in the database', async () => {
-        const newPage: NewPageArgs = {
-            name: 'Page 1',
-            counts: 16,
-            tempo: 120,
-            time_signature: '4/4',
-            notes: 'Some notes',
-        };
+    describe('creating pages', () => {
+        let newPageArgs: NewPageArgs[], newPageContainers: NewPageContainer[];
+        beforeEach(() => {
+            newPageArgs = [
+                {
+                    rehearsal_mark: 'A',
+                    isSubset: false,
+                    counts: 16,
+                    tempo: 120,
+                    time_signature: TimeSignature.fromString('4/4'),
+                    notes: 'Some notes',
+                },
+                {
+                    counts: 8,
+                    tempo: 140,
+                    isSubset: false,
+                    time_signature: TimeSignature.fromString('3/4'),
+                    notes: 'Other notes',
+                },
+                {
+                    counts: 32,
+                    tempo: 100,
+                    isSubset: true,
+                    time_signature: TimeSignature.fromString('5/8'),
+                },
+                {
+                    rehearsal_mark: 'B',
+                    counts: 1,
+                    tempo: 100,
+                    isSubset: true,
+                    time_signature: TimeSignature.fromString('4/8'),
+                },
+                {
+                    counts: 1,
+                    tempo: 100,
+                    isSubset: true,
+                    time_signature: TimeSignature.fromString('4/8'),
+                },
+                {
+                    counts: 1,
+                    tempo: 100,
+                    isSubset: false,
+                    time_signature: TimeSignature.fromString('4/4'),
+                }
+            ]
 
-        const mockResponse = { success: true };
+            newPageContainers = [
+                {
+                    name: '1',
+                    rehearsal_mark: 'A',
+                    order: 0,
+                    counts: 16,
+                    tempo: 120,
+                    time_signature: '4/4',
+                    notes: 'Some notes',
+                },
+                {
+                    // id 2
+                    name: '2',
+                    order: 1,
+                    counts: 8,
+                    tempo: 140,
+                    time_signature: '3/4',
+                    notes: 'Other notes',
+                },
+                {
+                    // id 3
+                    name: '2A',
+                    order: 2,
+                    counts: 32,
+                    tempo: 100,
+                    time_signature: '5/8',
+                },
+                {
+                    // id 4
+                    name: '2B',
+                    rehearsal_mark: 'B',
+                    order: 3,
+                    counts: 1,
+                    tempo: 100,
+                    time_signature: '4/8',
+                },
+                {
+                    // id 5
+                    name: '2C',
+                    order: 4,
+                    counts: 1,
+                    tempo: 100,
+                    time_signature: '4/8',
+                },
+                {
+                    // id 6
+                    name: '3',
+                    order: 5,
+                    counts: 1,
+                    tempo: 100,
+                    time_signature: '4/4',
+                }
+            ];
+        });
 
-        const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-        const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-        const createPageSpy = jest.spyOn(Page, 'createPage');
+        it('should create a new page in the database', async () => {
+            const mockResponse = { success: true, newPages: [newPageContainers[0]] };
 
-        const response = await Page.createPage(newPage);
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
 
-        expect(response).toEqual(mockResponse);
-        expect(createPageSpy).toHaveBeenCalledWith(newPage);
-        expect(checkForFetchPagesSpy).toHaveBeenCalled();
-        expect(fetchPagesSpy).toHaveBeenCalled();
-    });
+            const response = await Page.createPages([newPageArgs[0]], []);
+            expect(response).toEqual(mockResponse);
+            expect(electronCreatePagesSpy).toHaveBeenCalledWith([newPageContainers[0]]);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith([], false)
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        });
 
-    it('should create multiple new pages in the database', async () => {
-        const newPages: NewPageArgs[] = [
-            {
-                name: 'Page 1',
-                counts: 16,
-                tempo: 120,
-                time_signature: '4/4',
-                notes: 'Some notes',
-            },
-            {
-                name: 'Page 2',
-                counts: 8,
-                tempo: 140,
-                time_signature: '3/4',
-                notes: 'Other notes',
-            },
-        ];
+        it('should create multiple new pages in the database', async () => {
+            const mockResponse = { success: true, newPages: newPageContainers };
 
-        const mockResponse = { success: true };
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const response = await Page.createPages(newPageArgs, []);
 
-        const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-        const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            expect(response).toEqual(mockResponse);
+            expect(electronCreatePagesSpy).toHaveBeenCalledWith(newPageContainers);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith([], false)
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        });
 
-        const createPagesSpy = jest.spyOn(Page, 'createPages');
-        const response = await Page.createPages(newPages);
+        it('should update all page names when a page is added in the middle', async () => {
+            const existingPages = newPageContainers.map((page, index) => {
+                return new Page({
+                    ...page,
+                    id: index + 1,
+                    id_for_html: `page_${index + 1}`,
+                })
+            });
 
-        expect(response).toEqual(mockResponse);
-        expect(createPagesSpy).toHaveBeenCalledWith(newPages);
-        expect(checkForFetchPagesSpy).toHaveBeenCalled();
-        expect(fetchPagesSpy).toHaveBeenCalled();
-    });
+            const newPage = {
+                previousPage: existingPages[0],
+                counts: 1,
+                tempo: 99,
+                isSubset: false,
+                time_signature: TimeSignature.fromString('4/8'),
+            }
 
-    it('should update one or many pages in the database', async () => {
-        const modifiedPages: ModifiedPageArgs[] = [
-            { id: 1, counts: 8 },
-            { id: 2, tempo: 140, time_signature: '3/4' },
-        ];
 
-        const mockResponse = { success: true };
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const response = await Page.createPages([newPage], existingPages);
 
-        const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-        const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const expectedNewPages: NewPageContainer[] = [
+                {
+                    name: '2',
+                    order: 1,
+                    counts: 1,
+                    tempo: 99,
+                    time_signature: '4/8',
+                },
+            ];
+            const expectedModifiedPages: ModifiedPageContainer[] = [
+                {
+                    id: 2,
+                    name: '3',
+                    order: 2,
+                },
+                {
+                    id: 3,
+                    name: '3A',
+                    order: 3,
+                },
+                {
+                    id: 4,
+                    name: '3B',
+                    order: 4,
+                },
+                {
+                    id: 5,
+                    name: '3C',
+                    order: 5,
+                },
+                {
+                    id: 6,
+                    name: '4',
+                    order: 6,
+                }
+            ];
+            const mockResponse = { success: true, newPages: expectedNewPages };
 
-        const updatePagesSpy = jest.spyOn(Page, 'updatePages');
-        const response = await Page.updatePages(modifiedPages);
+            expect(response).toEqual(mockResponse);
+            expect(electronCreatePagesSpy).toHaveBeenCalledWith(expectedNewPages);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        })
 
-        expect(response).toEqual(mockResponse);
-        expect(updatePagesSpy).toHaveBeenCalledWith(modifiedPages);
-        expect(checkForFetchPagesSpy).toHaveBeenCalled();
-        expect(fetchPagesSpy).toHaveBeenCalled();
+        it('should update some page names when a subset page is added in the middle', async () => {
+            const existingPages = newPageContainers.map((page, index) => {
+                return new Page({
+                    ...page,
+                    id: index + 1,
+                    id_for_html: `page_${index + 1}`,
+                })
+            });
+
+            const newPage = {
+                previousPage: existingPages[2],
+                counts: 2,
+                tempo: 99,
+                isSubset: true,
+                time_signature: TimeSignature.fromString('4/8'),
+            }
+
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const response = await Page.createPages([newPage], existingPages);
+
+            const expectedNewPages: NewPageContainer[] = [
+                {
+                    name: '2B',
+                    order: 3,
+                    counts: 2,
+                    tempo: 99,
+                    time_signature: '4/8',
+                },
+            ];
+
+            const expectedModifiedPages: ModifiedPageContainer[] = [
+                {
+                    id: 4,
+                    name: '2C',
+                    order: 4,
+                },
+                {
+                    id: 5,
+                    name: '2D',
+                    order: 5,
+                },
+                {
+                    id: 6,
+                    name: '3',
+                    order: 6,
+                },
+            ]
+            const mockResponse = { success: true, newPages: expectedNewPages };
+
+            expect(response).toEqual(mockResponse);
+            expect(electronCreatePagesSpy).toHaveBeenCalledWith(expectedNewPages);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        })
+
+        it('should update all page names when multiple types of pages are added', async () => {
+            const existingPages = newPageContainers.map((page, index) => {
+                return new Page({
+                    ...page,
+                    id: index + 1,
+                    id_for_html: `page_${index + 1}`,
+                })
+            });
+
+            const newPages: NewPageArgs[] = [
+                {
+                    previousPage: existingPages[0],
+                    counts: 6,
+                    tempo: 90,
+                    isSubset: false,
+                    time_signature: TimeSignature.fromString('2/4'),
+                },
+                {
+                    previousPage: existingPages[2],
+                    counts: 2,
+                    tempo: 99,
+                    isSubset: true,
+                    time_signature: TimeSignature.fromString('4/8'),
+                },
+                {
+                    previousPage: existingPages[2],
+                    counts: 3,
+                    tempo: 98,
+                    isSubset: true,
+                    time_signature: TimeSignature.fromString('4/4'),
+                    notes: 'Some notes for this page',
+                },
+                {
+                    previousPage: existingPages[3],
+                    counts: 17,
+                    tempo: 120,
+                    isSubset: false,
+                    time_signature: TimeSignature.fromString('4/4'),
+                },
+                {
+                    previousPage: existingPages[4],
+                    counts: 3,
+                    tempo: 98,
+                    isSubset: false,
+                    time_signature: TimeSignature.fromString('4/4'),
+                },
+            ]
+
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const response = await Page.createPages(newPages, existingPages);
+
+            const expectedNewPages: NewPageContainer[] = newPageContainers = [
+                {
+                    name: '2',
+                    order: 1,
+                    counts: 6,
+                    tempo: 90,
+                    time_signature: '2/4',
+                },
+                {
+                    name: '3B',
+                    order: 4,
+                    counts: 2,
+                    tempo: 99,
+                    time_signature: '4/8',
+                },
+                {
+                    name: '3C',
+                    order: 5,
+                    counts: 3,
+                    tempo: 98,
+                    time_signature: '4/4',
+                    notes: 'Some notes for this page',
+                },
+                {
+                    name: '4',
+                    order: 7,
+                    counts: 17,
+                    tempo: 120,
+                    time_signature: '4/4',
+                },
+                {
+                    name: '5',
+                    order: 9,
+                    counts: 3,
+                    tempo: 98,
+                    time_signature: '4/4',
+                }
+            ];
+            const expectedModifiedPages: ModifiedPageContainer[] = [
+                {
+                    id: 2,
+                    name: '3',
+                    order: 2,
+                },
+                {
+                    id: 3,
+                    name: '3A',
+                    order: 3,
+                },
+                {
+                    id: 4,
+                    name: '3D',
+                    order: 6,
+                },
+                {
+                    id: 5,
+                    name: '4A',
+                    order: 8,
+                },
+                {
+                    id: 6,
+                    name: '6',
+                    order: 10,
+                }
+            ];
+            const mockResponse = { success: true, newPages: expectedNewPages };
+
+            expect(response).toEqual(mockResponse);
+            expect(electronCreatePagesSpy).toHaveBeenCalledWith(expectedNewPages);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(expectedModifiedPages, false);
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        })
+
+        it('should update one or many pages in the database', async () => {
+            const modifiedPages: ModifiedPageArgs[] = [
+                { id: 1, counts: 8 },
+                { id: 2, tempo: 140, time_signature: TimeSignature.fromString('3/4') },
+            ];
+
+            const mockResponse = { success: true };
+
+            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+
+            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const response = await Page.updatePages(modifiedPages);
+
+            const modifiedPagesContainers: ModifiedPageContainer[] = [
+                { id: 1, counts: 8 },
+                { id: 2, tempo: 140, time_signature: '3/4' },
+            ]
+
+            expect(response).toEqual(mockResponse);
+            expect(electronUpdatePagesSpy).toHaveBeenCalledWith(modifiedPagesContainers);
+            expect(checkForFetchPagesSpy).toHaveBeenCalled();
+            expect(fetchPagesSpy).toHaveBeenCalled();
+        });
     });
 
     it('should delete a page from the database', async () => {
@@ -181,29 +521,6 @@ describe('Page', () => {
         }
     });
 
-    it('should validate time signatures and convert them to strings when updating and creating', () => {
-        const newPages = [
-            { name: 'Page 1', time_signature: new TimeSignature({ numerator: 5, denominator: 4 }) },
-            { name: 'Page 2', time_signature: '3/4' },
-        ];
-        const expectedValidatedNewPages = [
-            { name: 'Page 1', time_signature: '5/4' },
-            { name: 'Page 2', time_signature: '3/4' },
-        ];
-        const createPagesSpy = jest.spyOn(Page, "createPages");
-        Page.createPages(newPages as NewPageArgs[]);
-        expect(createPagesSpy).toHaveBeenCalledWith(expectedValidatedNewPages);
-
-        const modifiedPages = [{ ...newPages[0], id: 1 }, { ...newPages[1], id: 2 }];
-        const expectedValidatedPages = [
-            { ...expectedValidatedNewPages[0], id: 1 },
-            { ...expectedValidatedNewPages[1], id: 2 },
-        ];
-        const updatePagesSpy = jest.spyOn(Page, "updatePages");
-        Page.updatePages(modifiedPages as ModifiedPageArgs[]);
-        expect(updatePagesSpy).toHaveBeenCalledWith(expectedValidatedPages);
-    });
-
     describe('getNextPage', () => {
         it('should get the next page, sequential order', () => {
             const firstPage = mockPages[0];
@@ -211,12 +528,12 @@ describe('Page', () => {
             const nextPage2 = mockPages[2];
             let mocksToUse = mockPages.slice(0, 3);
 
-            let nextPage = Page.getNextPage(firstPage, mocksToUse);
+            let nextPage = firstPage.getNextPage(mocksToUse);
             expect(nextPage).toBe(nextPage1);
-            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            nextPage = nextPage!.getNextPage(mocksToUse);
             expect(nextPage).toBe(nextPage2);
             // Return null on last page
-            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            nextPage = nextPage!.getNextPage(mocksToUse);
             expect(nextPage).toBe(null);
         });
 
@@ -226,28 +543,28 @@ describe('Page', () => {
             const nextPage2 = mockPages[2];
             let mocksToUse = [mockPages[0], mockPages[1], mockPages[2]];
 
-            let nextPage = Page.getNextPage(firstPage, mocksToUse);
+            let nextPage = firstPage.getNextPage(mocksToUse);
             expect(nextPage).toEqual(nextPage1);
-            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            nextPage = nextPage!.getNextPage(mocksToUse);
             expect(nextPage).toEqual(nextPage2);
             // Return null on last page
-            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            nextPage = nextPage!.getNextPage(mocksToUse);
             expect(nextPage).toEqual(null);
 
             mocksToUse = [mockPages[2], mockPages[0], mockPages[1]];
-            nextPage = Page.getNextPage(firstPage, mocksToUse);
+            nextPage = firstPage.getNextPage(mocksToUse);
             expect(nextPage).toEqual(nextPage1);
-            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            nextPage = nextPage!.getNextPage(mocksToUse);
             expect(nextPage).toEqual(nextPage2);
             // Return null on last page
-            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            nextPage = nextPage!.getNextPage(mocksToUse);
             expect(nextPage).toEqual(null);
 
             mocksToUse = [mockPages[0], mockPages[2]];
-            nextPage = Page.getNextPage(firstPage, mocksToUse);
+            nextPage = firstPage.getNextPage(mocksToUse);
             expect(nextPage).toEqual(nextPage2);
             // Return null on last page
-            nextPage = Page.getNextPage(nextPage!, mocksToUse);
+            nextPage = nextPage!.getNextPage(mocksToUse);
             expect(nextPage).toEqual(null);
         });
     });
@@ -259,12 +576,12 @@ describe('Page', () => {
             const previousPage2 = mockPages[0];
             let mocksToUse = mockPages.slice(0, 3);
 
-            let previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            let previousPage = lastPage.getPreviousPage(mocksToUse);
             expect(previousPage).toBe(previousPage1);
-            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            previousPage = previousPage!.getPreviousPage(mocksToUse);
             expect(previousPage).toBe(previousPage2);
             // Return null on first page
-            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            previousPage = previousPage!.getPreviousPage(mocksToUse);
             expect(previousPage).toBe(null);
         });
 
@@ -274,28 +591,28 @@ describe('Page', () => {
             const previousPage2 = mockPages[0];
             let mocksToUse = [mockPages[0], mockPages[1], mockPages[2]];
 
-            let previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            let previousPage = lastPage.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(previousPage1);
-            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            previousPage = previousPage!.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(previousPage2);
             // Return null on first page
-            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            previousPage = previousPage!.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(null);
 
             mocksToUse = [mockPages[2], mockPages[0], mockPages[1]];
-            previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            previousPage = lastPage.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(previousPage1);
-            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            previousPage = previousPage!.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(previousPage2);
             // Return null on last page
-            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            previousPage = previousPage!.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(null);
 
             mocksToUse = [mockPages[0], mockPages[2]];
-            previousPage = Page.getPreviousPage(lastPage, mocksToUse);
+            previousPage = lastPage.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(previousPage2);
             // Return null on last page
-            previousPage = Page.getPreviousPage(previousPage!, mocksToUse);
+            previousPage = previousPage!.getPreviousPage(mocksToUse);
             expect(previousPage).toEqual(null);
         });
     });

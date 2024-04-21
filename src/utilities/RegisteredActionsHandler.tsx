@@ -268,7 +268,7 @@ function RegisteredActionsHandler() {
             /****************** Navigation and playback ******************/
             case RegisteredActionsEnum.nextPage: {
                 if (!isPlaying) {
-                    const nextPage = Page.getNextPage(selectedPage, pages);
+                    const nextPage = selectedPage.getNextPage(pages);
                     if (nextPage) setSelectedPage(nextPage);
                 }
                 break;
@@ -282,7 +282,7 @@ function RegisteredActionsHandler() {
             }
             case RegisteredActionsEnum.previousPage: {
                 if (!isPlaying) {
-                    const previousPage = Page.getPreviousPage(selectedPage, pages);
+                    const previousPage = selectedPage.getPreviousPage(pages);
                     if (previousPage) setSelectedPage(previousPage);
                 }
                 break;
@@ -295,21 +295,21 @@ function RegisteredActionsHandler() {
                 break;
             }
             case RegisteredActionsEnum.playPause: {
-                const nextPage = Page.getNextPage(selectedPage, pages);
+                const nextPage = selectedPage.getNextPage(pages);
                 if (nextPage) setIsPlaying(!isPlaying);
                 break;
             }
 
             /****************** Batch Editing ******************/
             case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
-                const previousPage = Page.getPreviousPage(selectedPage, pages);
+                const previousPage = selectedPage.getPreviousPage(pages);
                 const previousPageMarcherPages = marcherPages.filter(marcherPage => marcherPage.page_id === previousPage?.id);
                 const changes = previousPageMarcherPages.map(marcherPage => ({ ...marcherPage, page_id: selectedPage.id }));
                 MarcherPage.updateMarcherPages(changes);
                 break;
             }
             case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
-                const previousPage = Page.getPreviousPage(selectedPage, pages);
+                const previousPage = selectedPage.getPreviousPage(pages);
                 const selectedMarcherIds = selectedMarchers.map(marcher => marcher.id);
                 const previousMarcherPages = marcherPages.filter(marcherPage =>
                     marcherPage.page_id === previousPage?.id

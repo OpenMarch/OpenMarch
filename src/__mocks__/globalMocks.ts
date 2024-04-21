@@ -48,36 +48,36 @@ export const mockMarchers: Marcher[] = [
 ] as const;
 
 export const mockPages: Page[] = [
-    {
+    new Page({
         id: 1,
         id_for_html: 'page_1',
         name: '1',
         counts: 16,
         order: 1,
         tempo: 120,
-        time_signature: TimeSignature.timeSignatureFromString('4/4'),
+        time_signature: TimeSignature.fromString('4/4'),
         notes: 'This is the first page'
-    },
-    {
+    }),
+    new Page({
         id: 2,
         id_for_html: 'page_2',
         name: '2',
         counts: 8,
         order: 2,
         tempo: 89,
-        time_signature: TimeSignature.timeSignatureFromString('12/8'),
+        time_signature: TimeSignature.fromString('12/8'),
         notes: 'This is the second page'
-    },
-    {
+    }),
+    new Page({
         id: 3,
         id_for_html: 'page_3',
         name: '3',
         counts: 16,
         order: 3,
         tempo: 2,
-        time_signature: TimeSignature.timeSignatureFromString('15/1'),
+        time_signature: TimeSignature.fromString('15/1'),
         notes: undefined
-    }
+    })
 ] as const;
 
 export const mockMarcherPages: MarcherPage[] = [

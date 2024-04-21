@@ -1,20 +1,29 @@
 import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { NewPageArgs, Page } from "@/global/classes/Page";
+import { TimeSignature } from "@/global/classes/TimeSignature";
 
 interface NewPageFormProps {
     hasHeader?: boolean;
     disabledProp?: boolean;
 }
 
+/**
+ * A form to create new pages.
+ *
+ * @param {boolean} hasHeader - Whether to display a header. False by default.
+ * @param {boolean} disabledProp - Whether the form is disabled. False by default.
+ * @returns NewPageForm component.
+ */
 // eslint-disable-next-line react/prop-types
 const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledProp = false }) => {
-    const [pageName, setPageName] = useState<string>("");
+    const [previousPage, setPreviousPage] = useState<Page | undefined>(undefined);
     const [counts, setCounts] = useState<number>(8);
     const [formCounts, setFormCounts] = useState<string>(counts.toString() || "8"); // used to reset the form when counts changes
+    const [tempo, setTempo] = useState<number>(120);
+    const [formTempo, setFormTempo] = useState<string>(tempo.toString() || "120"); // used to reset the form when tempo changes
     const [quantity, setQuantity] = useState<number>(1);
-    const [pageNameError, setPageNameError] = useState<string>("");
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
@@ -52,54 +61,48 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     }, [typing, counts, isSubset]);
 
     const resetForm = () => {
-        setPageName("");
         setQuantity(1);
-        setPageNameError("");
-
-        if (formRef.current)
-            formRef.current.reset();
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        if (!pageNameError && pageName && counts && quantity) {
+        if (counts && quantity) {
             const newAlertMessages = [...alertMessages];
-            let newPageName = pageName;
+            const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
-                const newPage: NewPageArgs = {
-                    name: newPageName,
+                const newPageArg: NewPageArgs = {
+                    previousPage: previousPage,
+                    isSubset: isSubset,
                     counts: counts,
-                    tempo: 120,
-                    time_signature: "4/4"
+                    tempo: tempo,
+                    time_signature: TimeSignature.fromString("4/4")
                 }
-
-                const response = await Page.createPage(newPage);
-
-                if (response.success)
-                    newAlertMessages.unshift(`Page ${newPageName} (${counts} count${counts > 1 ? "s" : ""}) created successfully`);
-                else {
-                    console.error(`Error creating page ${newPageName} (${counts} counts):`, response.errorMessage);
-                    newAlertMessages.unshift(`Error creating page ${newPageName} (${counts} counts)`);
-                }
-                newPageName = getNextPageName(newPageName, isSubset) || "Error";
+                newPageArgs.push(newPageArg);
             }
+
+            const response = await Page.createPages(newPageArgs, pages);
+
+            if (response.success && response.newPages) {
+                const newPageNames = response.newPages.map(page => page.name);
+                newAlertMessages.unshift(`Page ${newPageNames.toString()} created successfully`);
+            }
+            else {
+                console.error(`Error creating pages:`, response.error?.message || "");
+                newAlertMessages.unshift(`Error creating pages`);
+            }
+
             setAlertMessages(newAlertMessages);
             resetForm();
         }
     };
 
-    const handlePageNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const name = event.target.value;
-        setPageName(name);
-        if (name === "")
-            setPageNameError("Page name cannot be empty");
-        else if (pages.some((page: Page) => page.name === name))
-            setPageNameError("Page name already exists");
-        else if (!/^\d+[A-Za-z]*$/.test(name))
-            setPageNameError("Page must be one or more digits followed by zero or more letters. (e.g. 23, 1A)");
+    const handlePreviousPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedPageId = parseInt(event.target.value);
+        if (selectedPageId === -1)
+            setPreviousPage(undefined);
         else
-            setPageNameError("");
-    }
+            setPreviousPage(pages.find(page => page.id === selectedPageId) || undefined);
+    };
 
     const handleCountsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.value === "") {
@@ -109,6 +112,17 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
         else {
             setFormCounts(event.target.value);
             setCounts(parseInt(event.target.value));
+        }
+    };
+
+    const handleTempoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.value === "") {
+            setFormTempo("");
+            setTempo(0);
+        }
+        else {
+            setFormTempo(event.target.value);
+            setTempo(parseInt(event.target.value));
         }
     };
 
@@ -132,46 +146,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
         return "Create " + suffix;
     }
 
-    const getNewPageName = useCallback(() => {
-        if (pages.length === 0) return "1";
-        const lastPage = pages[pages.length - 1];
-        return getNextPageName(lastPage.name, isSubset);
-    }, [pages, isSubset]);
-
-    function getNextPageName(pageName: string, isSubsetArg = false) {
-        if (pageName.length < 1) {
-            console.error("Invalid page name: length < 1");
-            return;
-        }
-        let pageNumber = 0;
-        let subsetLetter = '';
-        // extract the page number from the name
-        const match = pageName.match(/^(\d+)([A-Za-z]*)$/);
-        if (match) {
-            pageNumber = parseInt(match[1], 10);
-
-            // If subsetLetter is not present, set it to an empty string
-            if (isSubsetArg) {
-                subsetLetter = match[2];
-                if (!subsetLetter) {
-                    subsetLetter = 'A';
-                } else {
-                    // Increment the subset letter
-                    subsetLetter = String.fromCharCode(subsetLetter.charCodeAt(0) + 1);
-                }
-            }
-            return pageNumber + ((isSubsetArg && pageNumber > 0) ? 0 : 1) + subsetLetter;
-        } else {
-            console.error("Invalid page name: " + pageName);
-            return;
-        }
-    }
-
-    useEffect(() => {
-        const newPageNumber = getNewPageName()?.toString() || "invalid";
-        setPageName(newPageNumber);
-    }, [getNewPageName, pages, isSubset]);
-
     // Update the form counts when counts changes
     useEffect(() => {
         if (formCounts !== "" && counts !== 1) {
@@ -180,20 +154,20 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     }, [counts, formCounts]);
 
     return (
-        <Form onSubmit={handleSubmit} id="newPageForm" ref={formRef}>
+        <Form onSubmit={handleSubmit} id="newPageForm" ref={formRef} aria-label="New Page Form">
             {hasHeader && <h4>Create new pages</h4>}
             <Row className="mb-3">
-                <Form.Group as={Col} md={4} controlId="drillPrefixForm">
-                    <Form.Label>Page #</Form.Label>
-                    <Form.Control type="text" placeholder="-"
-                        onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
-                        onChange={handlePageNameChange}
-                        value={pageName} required readOnly={isSubset}
-                        isInvalid={!!pageNameError} />
-                    <Form.Control.Feedback type="invalid">{pageNameError}</Form.Control.Feedback>
+                <Form.Group as={Col} md={4} controlId="previous page" aria-label="new page previous page">
+                    <Form.Label>Prev. Pg.</Form.Label>
+                    <Form.Select aria-label="Select the previous page" onChange={handlePreviousPageChange}>
+                        <option value={-1}>Last</option>
+                        {pages.map((page, index) => (
+                            <option key={index} value={page.id}>{page.name}</option>
+                        ))}
+                    </Form.Select>
                 </Form.Group>
 
-                <Form.Group as={Col} md={4} controlId="drillOrderForm">
+                <Form.Group as={Col} md={4} controlId="counts" aria-label="new page counts">
                     <Form.Label>Counts</Form.Label>
                     <Form.Control type="number" placeholder="-"
                         onFocus={() => setTyping(true)}
@@ -210,15 +184,32 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                     />
                 </Form.Group>
 
-                <Form.Group as={Col} md={4} controlId="quantityForm">
+                <Form.Group as={Col} md={4} controlId="tempo" aria-label="new page tempo">
+                    <Form.Label>Tempo</Form.Label>
+                    <Form.Control type="number" placeholder="-"
+                        onFocus={() => setTyping(true)}
+                        onBlur={() => {
+                            setTyping(false);
+                            if (tempo === 0) {
+                                setTempo(1);
+                                setFormTempo("1");
+                            } else
+                                setFormTempo(tempo.toString())
+                        }}
+                        value={formTempo} onChange={handleTempoChange}
+                        required min={1} step={1} disabled={quantity > 1}
+                    />
+                </Form.Group>
+            </Row>
+            <Row className="mb-3">
+
+                <Form.Group as={Col} md={4} controlId="quantityForm" aria-label="new page quantity">
                     <Form.Label>Quantity</Form.Label>
                     <Form.Control type="number" defaultValue={1}
                         onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
                         onChange={handleQuantityChange} step={1} min={1} />
                 </Form.Group>
-            </Row>
-            <Row className="mb-3">
-                <Form.Group as={Col} md={8} controlId="subsetCheck">
+                <Form.Group as={Col} md={4} controlId="subsetCheck" aria-label="new page is subset checkbox">
                     <Form.Check type="checkbox" label="Subset" checked={isSubset} onChange={handleIsSubsetChange} />
                 </Form.Group>
                 <Dropdown as={Col} md={4}>
@@ -231,20 +222,21 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                         <Dropdown.Item href="#/action-2">Use up/down to increment count by 1.</Dropdown.Item>
                         <Dropdown.Item href="#/action-3">Press [S] to toggle subset.</Dropdown.Item>
                         <Dropdown.Item href="#/action-4">Press [Enter] to submit.</Dropdown.Item>
-                        <Dropdown.Item href="#/action-5">Page numbers will automatically increment.</Dropdown.Item>
                     </Dropdown.Menu>
                 </Dropdown>
             </Row>
             <Row className="py-2">
-                <Button variant="primary" type="submit"
-                    disabled={!pageName || disabledProp}
+                <Button variant="primary" type="submit" aria-label="create page button"
+                    disabled={disabledProp}
                 >
                     {makeButtonString(quantity)}
                 </Button>
             </Row>
             {alertMessages.map((message, index) => (
                 <Alert key={index} variant={message.startsWith('Error') ? 'danger' : 'success'} className="mt-3"
-                    onClose={() => setAlertMessages(alertMessages.filter((_, i) => i !== index))} dismissible>
+                    onClose={() => setAlertMessages(alertMessages.filter((_, i) => i !== index))} dismissible
+                    aria-label='create page response'
+                >
                     {message}
                 </Alert>
             ))}

@@ -70,9 +70,9 @@ describe('TimeSignature', () => {
         });
     });
 
-    describe('timeSignatureFromString', () => {
+    describe('fromString', () => {
         it('should create a valid time signature object from a string', () => {
-            const timeSignature = TimeSignature.timeSignatureFromString('4/4');
+            const timeSignature = TimeSignature.fromString('4/4');
 
             expect(timeSignature).toBeInstanceOf(TimeSignature);
             expect(timeSignature.numerator).toBe(4);
@@ -80,27 +80,27 @@ describe('TimeSignature', () => {
         });
 
         it('should create a valid time signature object with many kinds of numerators and denominators from string', () => {
-            let timeSignature = TimeSignature.timeSignatureFromString('5/4');
+            let timeSignature = TimeSignature.fromString('5/4');
             expect(timeSignature).toBeInstanceOf(TimeSignature);
             expect(timeSignature.numerator).toBe(5);
             expect(timeSignature.denominator).toBe(4);
 
-            timeSignature = TimeSignature.timeSignatureFromString('20/4');
+            timeSignature = TimeSignature.fromString('20/4');
             expect(timeSignature).toBeInstanceOf(TimeSignature);
             expect(timeSignature.numerator).toBe(20);
             expect(timeSignature.denominator).toBe(4);
 
-            timeSignature = TimeSignature.timeSignatureFromString('2/8');
+            timeSignature = TimeSignature.fromString('2/8');
             expect(timeSignature).toBeInstanceOf(TimeSignature);
             expect(timeSignature.numerator).toBe(2);
             expect(timeSignature.denominator).toBe(8);
 
-            timeSignature = TimeSignature.timeSignatureFromString('3/16');
+            timeSignature = TimeSignature.fromString('3/16');
             expect(timeSignature).toBeInstanceOf(TimeSignature);
             expect(timeSignature.numerator).toBe(3);
             expect(timeSignature.denominator).toBe(16);
 
-            timeSignature = TimeSignature.timeSignatureFromString('1/1');
+            timeSignature = TimeSignature.fromString('1/1');
             expect(timeSignature).toBeInstanceOf(TimeSignature);
             expect(timeSignature.numerator).toBe(1);
             expect(timeSignature.denominator).toBe(1);
@@ -108,35 +108,35 @@ describe('TimeSignature', () => {
 
         it('should throw an error for invalid time signature string', () => {
             expect(() => {
-                TimeSignature.timeSignatureFromString('4');
+                TimeSignature.fromString('4');
             }).toThrow();
 
             expect(() => {
-                TimeSignature.timeSignatureFromString('4/4/4');
+                TimeSignature.fromString('4/4/4');
             }).toThrow();
 
             expect(() => {
-                TimeSignature.timeSignatureFromString('-4/4');
+                TimeSignature.fromString('-4/4');
             }).toThrow();
 
             expect(() => {
-                TimeSignature.timeSignatureFromString('4/-4');
+                TimeSignature.fromString('4/-4');
             }).toThrow();
 
             expect(() => {
-                TimeSignature.timeSignatureFromString('4/0');
+                TimeSignature.fromString('4/0');
             }).toThrow();
 
             expect(() => {
-                TimeSignature.timeSignatureFromString('4/3');
+                TimeSignature.fromString('4/3');
             }).toThrow();
 
             expect(() => {
-                TimeSignature.timeSignatureFromString('4/5');
+                TimeSignature.fromString('4/5');
             }).toThrow();
 
             expect(() => {
-                TimeSignature.timeSignatureFromString('4/-2');
+                TimeSignature.fromString('4/-2');
             }).toThrow();
         });
     });

@@ -6,20 +6,23 @@ import { Constants } from '../../src/global/Constants';
 import * as fs from 'fs';
 import * as History from './database.history';
 import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/classes/Marcher';
-import { NewPageArgs, Page } from '../../src/global/classes/Page';
+import { ModifiedPageContainer, NewPageContainer, Page } from '../../src/global/classes/Page';
 import { MarcherPage, ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
 import { FieldProperties } from '../../src/global/classes/FieldProperties';
 
 export class DatabaseResponse {
     readonly success: boolean;
-    /** Resulting data from the database action. This isn't very well implemented */
-    readonly result?: any;
-    readonly errorMessage?: string;
+    /**
+     * Resulting data from the database action. This isn't very well implemented
+     * and likely will not be used.
+     */
+    readonly result?: Marcher[] | Page[] | MarcherPage[] | FieldProperties;
+    readonly error?: { message: string, stack?: string };
 
-    constructor(success: boolean, result?: any, errorMessage?: string) {
+    constructor(success: boolean, result?: any, error?: Error) {
         this.success = success;
         this.result = result;
-        this.errorMessage = errorMessage;
+        this.error = error;
     }
 }
 
@@ -112,6 +115,7 @@ function createPageTable(db: Database.Database) {
                 "measure"	TEXT,
                 "tempo"	REAL NOT NULL,
                 "time_signature"	TEXT,
+                "rehearsal_mark"	TEXT,
                 "counts"	INTEGER NOT NULL,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
@@ -189,7 +193,8 @@ export function initHandlers() {
     // Page
     ipcMain.handle('page:getAll', async () => getPages());
     ipcMain.handle('page:insert', async (_, args) => createPages(args));
-    ipcMain.handle('page:update', async (_, args) => updatePages(args));
+    ipcMain.handle('page:update', async (_, pages: ModifiedPageContainer[], addToHistoryQueue: boolean) =>
+        updatePages(pages, addToHistoryQueue));
     ipcMain.handle('page:delete', async (_, page_id) => deletePage(page_id));
 
     // MarcherPage
@@ -240,7 +245,7 @@ async function getMarcher(marcherId: number, db?: Database.Database): Promise<Ma
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`);
     const result = await stmt.get({ marcherId });
     if (!db) dbToUse.close();
-    return new Marcher(result as Marcher);
+    return result as Marcher;
 }
 
 async function createMarcher(newMarcher: NewMarcherArgs) {
@@ -251,7 +256,7 @@ async function createMarcher(newMarcher: NewMarcherArgs) {
  * Updates a list of marchers with the given values.
  *
  * @param newMarcherArgs
- * @returns - {success: boolean, errorMessage?: string}
+ * @returns - {success: boolean, error?: string}
  */
 async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
@@ -335,7 +340,7 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
         }
     } catch (error: any) {
         console.error(error);
-        output = { success: false, errorMessage: error.message };
+        output = { success: false, error: { message: error.message, stack: error.stack } };
     } finally {
         db.close();
     }
@@ -347,7 +352,7 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
  *
  * @param modifiedMarchers Array of ModifiedMarcherArgs that contain the id of the
  *                    marcher to update and the values to update it with
- * @returns - {success: boolean, errorMessage: string}
+ * @returns - {success: boolean, error: string}
  */
 async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<DatabaseResponse> {
     const db = connect();
@@ -395,7 +400,7 @@ async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<
         History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
-        output = { success: false, errorMessage: error.message };
+        output = { success: false, error: { message: error.message, stack: error.stack } };
     } finally {
         db.close();
     }
@@ -409,7 +414,7 @@ async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<
  * Deletes the marcher with the given id and all of their marcherPages.
  *
  * @param marcher_id
- * @returns {success: boolean, errorMessage?: string}
+ * @returns {success: boolean, error?: string}
  */
 async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
     const db = connect();
@@ -429,7 +434,7 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
     }
     catch (error: any) {
         console.error(error);
-        output = { success: false, errorMessage: error.message };
+        output = { success: false, error: { message: error.message, stack: error.stack } };
     }
     finally {
         db.close();
@@ -441,9 +446,9 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
 async function getPages(db?: Database.Database): Promise<Page[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName}`);
-    const result = await stmt.all();
+    const result = await stmt.all() as Page[];
     if (!db) dbToUse.close();
-    return result as Page[];
+    return result;
 }
 
 async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
@@ -453,33 +458,7 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
     if (!db) dbToUse.close();
     return result as Page;
 }
-
-/**
- * Returns the previous page in the order of pages.
- *
- * @param pageId
- * @param db
- * @returns The page prior to the page with the given id. Null if the page is the first page.
- */
-export async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Page> {
-    const dbToUse = db || connect();
-    const currentOrder = (await getPage(pageId, dbToUse)).order;
-
-    const stmt = dbToUse.prepare(`
-        SELECT *
-        FROM pages
-        WHERE "order" < @currentOrder
-        ORDER BY "order" DESC
-        LIMIT 1
-    `);
-
-    const result = await stmt.get({ currentOrder }) as Page;
-    if (!db) dbToUse.close();
-    return result as Page || null;
-
-}
-
-async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
+async function createPages(newPages: NewPageContainer[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -489,16 +468,12 @@ async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
     try {
         for (const newPage of newPages) {
             // Get the max order
-            const stmt = db.prepare(`SELECT MAX("order") as maxOrder FROM ${Constants.PageTableName}`);
-            const result: any = stmt.get();
-            const newOrder = result.maxOrder + 1;
-            const pageToAdd: Page = {
-                id: 0, // Not used, needed for interface
-                id_for_html: '', // Not used, needed for interface
-                name: newPage.name || '',
+            const pageToAdd: NewPageContainer = {
+                name: newPage.name,
                 notes: newPage.notes || '',
-                order: newOrder,
+                order: newPage.order,
                 tempo: newPage.tempo,
+                rehearsal_mark: newPage.rehearsal_mark,
                 time_signature: newPage.time_signature,
                 counts: newPage.counts
             };
@@ -509,6 +484,7 @@ async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
                     "order",
                     tempo,
                     time_signature,
+                    rehearsal_mark,
                     counts,
                     created_at,
                     updated_at
@@ -518,6 +494,7 @@ async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
                     @order,
                     @tempo,
                     @time_signature,
+                    @rehearsal_mark,
                     @counts,
                     @created_at,
                     @updated_at
@@ -560,7 +537,7 @@ async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
 
     } catch (error: any) {
         console.error(error);
-        output = { success: false, result: error.message };
+        output = { success: false, error: { message: error.message, stack: error.stack } };
     } finally {
         db.close();
     }
@@ -572,9 +549,13 @@ async function createPages(newPages: NewPageArgs[]): Promise<DatabaseResponse> {
  *
  * @param modifiedPages Array of UpdatePage objects that contain the id of the
  *                    page to update and the values to update it with
- * @returns - {success: boolean, errorMessage?: string}
+ * @param addToHistoryQueue - whether to add the changes to the history queue. Default is true.
+ *                    Only set to false when updating as the response to adding a new page.
+ * @returns - {success: boolean, error?: string}
  */
-async function updatePages(modifiedPages: ModifiedMarcherArgs[]): Promise<DatabaseResponse> {
+async function updatePages(modifiedPages: ModifiedPageContainer[], addToHistoryQueue: Boolean = true):
+    Promise<DatabaseResponse> {
+
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -584,11 +565,11 @@ async function updatePages(modifiedPages: ModifiedMarcherArgs[]): Promise<Databa
     const excludedProperties = ['id'];
 
     try {
-        for (const pageUpdate of modifiedPages) {
+        for (const pageUpdate of modifiedPages.toReversed()) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(pageUpdate)
                 .filter(key => !excludedProperties.includes(key))
-                .map(key => `${key} = @${key}`)
+                .map(key => `"${key}" = @${key}`)
                 .join(', ');
 
             // Check if the SET clause is empty
@@ -607,22 +588,24 @@ async function updatePages(modifiedPages: ModifiedMarcherArgs[]): Promise<Databa
             `);
             stmt.run({ ...pageUpdate, new_updated_at: new Date().toISOString() });
 
-            historyActions.push({
-                tableName: Constants.PageTableName,
-                setClause: setClause,
-                previousState: originalPage,
-                reverseAction: {
+            if (addToHistoryQueue) {
+                historyActions.push({
                     tableName: Constants.PageTableName,
                     setClause: setClause,
-                    previousState: await getPage(pageUpdate.id, db)
-                }
-            });
-
+                    previousState: originalPage,
+                    reverseAction: {
+                        tableName: Constants.PageTableName,
+                        setClause: setClause,
+                        previousState: await getPage(pageUpdate.id, db)
+                    }
+                });
+            }
         }
-        History.insertUpdateHistory(historyActions, db);
+        if (addToHistoryQueue)
+            History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
-        output = { success: false, errorMessage: error.message };
+        output = { success: false, error: { message: error.message, stack: error.stack } };
     } finally {
         db.close();
     }
@@ -636,7 +619,7 @@ async function updatePages(modifiedPages: ModifiedMarcherArgs[]): Promise<Databa
  * Deletes the page with the given id and all of its marcherPages.
  *
  * @param page_id
- * @returns {success: boolean, errorMessage?: string}
+ * @returns {success: boolean, error?: string}
  */
 async function deletePage(page_id: number): Promise<DatabaseResponse> {
     const db = connect();
@@ -656,7 +639,7 @@ async function deletePage(page_id: number): Promise<DatabaseResponse> {
     }
     catch (error: any) {
         console.error(error);
-        output = { success: false, errorMessage: error.message };
+        output = { success: false, error: error };
     }
     finally {
         db.close();
@@ -817,7 +800,7 @@ async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[])
         output = { success: true };
     } catch (error: any) {
         console.error(error);
-        output = { success: false, errorMessage: error.message };
+        output = { success: false, error: { message: error.message, stack: error.stack } };
     } finally {
         db.close();
     }
@@ -854,4 +837,29 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         x: previousMarcherPage.x,
         y: previousMarcherPage.y
     }
+}
+
+/**
+ * Returns the previous page in the order of pages.
+ *
+ * @param pageId
+ * @param db
+ * @returns The page prior to the page with the given id. Null if the page is the first page.
+ */
+async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Page> {
+    const dbToUse = db || connect();
+    const currentOrder = (await getPage(pageId, dbToUse)).order;
+
+    const stmt = dbToUse.prepare(`
+        SELECT *
+        FROM pages
+        WHERE "order" < @currentOrder
+        ORDER BY "order" DESC
+        LIMIT 1
+    `);
+
+    const result = await stmt.get({ currentOrder }) as Page;
+    if (!db) dbToUse.close();
+    return result as Page || null;
+
 }
