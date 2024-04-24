@@ -1,19 +1,28 @@
 /**
+ * Pre-defined time signature denominators supported by OpenMarch.
+ */
+export enum BeatUnit {
+    WHOLE = 1,
+    HALF = 2,
+    QUARTER = 4,
+    EIGHTH = 8,
+    SIXTEENTH = 16,
+    THIRTY_SECOND = 32,
+    SIXTY_FOURTH = 64
+}
+
+/**
  * A class representing a time signature ensuring valid numerator and denominator.
  */
 export class TimeSignature {
     readonly numerator: number;
-    readonly denominator: number;
+    readonly denominator: BeatUnit;
 
     constructor(timeSignature: TimeSignature) {
         const numer = timeSignature.numerator;
         if (numer <= 0 || !Number.isInteger(numer))
             throw new Error("Invalid time signature numerator. Must be a positive integer.");
         this.numerator = timeSignature.numerator;
-        const denom = timeSignature.denominator;
-        if (!Number.isInteger(denom) || denom <= 0 || (denom !== 1 && denom % 2 !== 0)) {
-            throw new Error("Invalid time signature denominator. Must be an integer power of 2. E.g. 1, 2, 4, 8, 16, 32, etc.");
-        }
         this.denominator = timeSignature.denominator;
     }
 
@@ -28,7 +37,10 @@ export class TimeSignature {
         if (split.length !== 2)
             throw new Error("Invalid time signature string. Must be in the form of '4/4'");
         const numerator = parseInt(split[0]);
-        const denominator = parseInt(split[1]);
+        const denominator: BeatUnit = parseInt(split[1]);
+        if (!Object.values(BeatUnit).includes(denominator))
+            throw new Error("Invalid time signature denominator. Must be a defined BeatUnit (1, 2, 4, 8, 16, 32, 64)");
+
         return new TimeSignature({ numerator, denominator });
     }
 
@@ -47,3 +59,4 @@ export class TimeSignature {
         return `${this.numerator}/${this.denominator}`;
     }
 }
+
