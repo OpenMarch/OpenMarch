@@ -1,4 +1,17 @@
 /**
+ * Pre-defined time signature denominators supported by OpenMarch.
+ */
+export enum BeatUnit {
+    WHOLE = 1,
+    HALF = 2,
+    QUARTER = 4,
+    EIGHTH = 8,
+    SIXTEENTH = 16,
+    THIRTY_SECOND = 32,
+    SIXTY_FOURTH = 64
+}
+
+/**
  * A class representing a time signature ensuring valid numerator and denominator.
  */
 class TimeSignature {
