@@ -16,6 +16,8 @@ import { BeatUnit, TimeSignature } from "./TimeSignature";
 export class Measure {
     /** INTEGER - The number of the measure in the piece */
     readonly number: number;
+    /** The rehearsal mark of the measure. E.g. "A" or "12" (for measure 12) */
+    readonly rehearsalMark: string | null;
     /** Beats per minute of the measure */
     readonly bpm: number;
     /**
@@ -31,16 +33,21 @@ export class Measure {
     /** The duration, in seconds, that the measure is */
     readonly duration: number;
 
-    constructor(number: number, bpm: number, beatUnit: BeatUnit, beatUnitDots: number, timeSignature: TimeSignature) {
+    constructor({ number, rehearsalMark = null, bpm, tempoBeatUnit, tempoBeatUnitDots, timeSignature }:
+        {
+            number: number; rehearsalMark?: string | null; bpm: number; tempoBeatUnit: BeatUnit; tempoBeatUnitDots: number;
+            timeSignature: TimeSignature;
+        }) {
         if (!Number.isInteger(number))
             throw new Error("Measure number must be an integer.")
-        if (!Number.isInteger(beatUnitDots))
-            throw new Error("Measure beatUnitDots must be an integer.")
+        if (!Number.isInteger(tempoBeatUnitDots))
+            throw new Error("Measure tempoBeatUnitDots must be an integer.")
 
         this.number = number;
+        this.rehearsalMark = rehearsalMark;
         this.bpm = bpm;
-        this.tempoBeatUnit = beatUnit;
-        this.tempoBeatUnitDots = beatUnitDots;
+        this.tempoBeatUnit = tempoBeatUnit;
+        this.tempoBeatUnitDots = tempoBeatUnitDots;
         this.timeSignature = timeSignature;
         this.duration = this.calculateDuration();
     }
