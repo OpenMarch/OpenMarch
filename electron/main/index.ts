@@ -90,6 +90,7 @@ async function createWindow(title?: string) {
 
 app.whenReady().then(async () => {
   app.setName('OpenMarch');
+  console.log('NODE:', process.versions.node);
   Menu.setApplicationMenu(applicationMenu);
   const previousPath = store.get('databasePath') as string;
   if (previousPath && previousPath.length > 0)

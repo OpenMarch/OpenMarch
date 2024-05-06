@@ -19,7 +19,7 @@
     "preview": "vite preview",
     "pree2e": "vite build --mode=test",
     "e2e": "playwright test",
-    "postinstall": "electron-rebuild -f -w better-sqlite3 && install-app-deps",
+    "postinstall": "electron-rebuild -f -w better-sqlite3 && install-app-deps && npm rebuild canvas --update-binary",
     "lint": "eslint .",
     "test": "eslint . && jest",
     "test:watch": "eslint . && jest --watch",
