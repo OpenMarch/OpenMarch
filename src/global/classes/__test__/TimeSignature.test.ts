@@ -1,4 +1,4 @@
-import { TimeSignature } from '../TimeSignature';
+import TimeSignature from '../TimeSignature';
 
 describe('TimeSignature', () => {
     describe('constructor', () => {

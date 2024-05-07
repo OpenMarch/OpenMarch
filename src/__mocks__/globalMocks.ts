@@ -1,7 +1,6 @@
 import { Marcher } from "@/global/classes/Marcher";
 import { Page } from "@/global/classes/Page";
 import { MarcherPage } from "@/global/classes/MarcherPage";
-import { TimeSignature } from "@/global/classes/TimeSignature";
 import { FieldProperties } from "@/global/classes/FieldProperties";
 
 export const mockMarchers: Marcher[] = [
@@ -55,7 +54,6 @@ export const mockPages: Page[] = [
         counts: 16,
         order: 1,
         tempo: 120,
-        time_signature: TimeSignature.fromString('4/4'),
         notes: 'This is the first page'
     }),
     new Page({
@@ -65,7 +63,6 @@ export const mockPages: Page[] = [
         counts: 8,
         order: 2,
         tempo: 89,
-        time_signature: TimeSignature.fromString('12/8'),
         notes: 'This is the second page'
     }),
     new Page({
@@ -75,7 +72,6 @@ export const mockPages: Page[] = [
         counts: 16,
         order: 3,
         tempo: 2,
-        time_signature: TimeSignature.fromString('15/1'),
         notes: undefined
     })
 ] as const;

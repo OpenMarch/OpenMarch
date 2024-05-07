@@ -1,26 +1,13 @@
 /**
- * Pre-defined time signature denominators supported by OpenMarch.
- */
-export enum BeatUnit {
-    WHOLE = 1,
-    HALF = 2,
-    QUARTER = 4,
-    EIGHTH = 8,
-    SIXTEENTH = 16,
-    THIRTY_SECOND = 32,
-    SIXTY_FOURTH = 64
-}
-
-/**
  * A class representing a time signature ensuring valid numerator and denominator.
  */
-export class TimeSignature {
+class TimeSignature {
     readonly numerator: number;
-    readonly denominator: BeatUnit;
+    readonly denominator: 1 | 2 | 4 | 8 | 16 | 32 | 64;
 
     constructor(timeSignature: TimeSignature) {
-        const numer = timeSignature.numerator;
-        if (numer <= 0 || !Number.isInteger(numer))
+        const numerator = timeSignature.numerator;
+        if (numerator <= 0 || !Number.isInteger(numerator))
             throw new Error("Invalid time signature numerator. Must be a positive integer.");
         this.numerator = timeSignature.numerator;
         this.denominator = timeSignature.denominator;
@@ -37,11 +24,12 @@ export class TimeSignature {
         if (split.length !== 2)
             throw new Error("Invalid time signature string. Must be in the form of '4/4'");
         const numerator = parseInt(split[0]);
-        const denominator: BeatUnit = parseInt(split[1]);
-        if (!Object.values(BeatUnit).includes(denominator))
-            throw new Error("Invalid time signature denominator. Must be a defined BeatUnit (1, 2, 4, 8, 16, 32, 64)");
+        const denominator = parseInt(split[1]);
+        const validDenominators = [1, 2, 4, 8, 16, 32, 64];
+        if (!validDenominators.includes(denominator))
+            throw new Error("Invalid time signature denominator. Must be 1, 2, 4, 8, 16, 32, or 64");
 
-        return new TimeSignature({ numerator, denominator });
+        return new TimeSignature({ numerator, denominator: denominator as 1 | 2 | 4 | 8 | 16 | 32 | 64 });
     }
 
     static instanceOf(obj: any): obj is TimeSignature {
@@ -60,3 +48,4 @@ export class TimeSignature {
     }
 }
 
+export default TimeSignature;

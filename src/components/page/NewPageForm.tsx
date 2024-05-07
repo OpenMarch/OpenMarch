@@ -2,7 +2,6 @@ import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
 import { useEffect, useRef, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { NewPageArgs, Page } from "@/global/classes/Page";
-import { TimeSignature } from "@/global/classes/TimeSignature";
 
 interface NewPageFormProps {
     hasHeader?: boolean;
@@ -75,7 +74,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                     isSubset: isSubset,
                     counts: counts,
                     tempo: tempo,
-                    time_signature: TimeSignature.fromString("4/4")
                 }
                 newPageArgs.push(newPageArg);
             }

@@ -226,13 +226,14 @@ export class CanvasMarcher extends fabric.Group {
 
         return callback;
     }
-
-    private changeHandler() {
-        this.getCanvas().requestRenderAll.bind(this.getCanvas());
-        this.setCoords();
-    }
 }
 
+/**
+ * Gets the duration (in milliseconds) of a single beat at a given tempo (beats per minute)
+ *
+ * @param tempo The tempo to convert to duration in beats per minute
+ * @returns The duration of a single beat in milliseconds
+ */
 export function tempoToDuration(tempo: number) {
     return 60 / tempo * 1000;
 }

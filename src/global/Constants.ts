@@ -1,4 +1,5 @@
 import { IGroupOptions } from "fabric/fabric-impl";
+
 export const Constants = {
     PageTableName: "pages",
     MarcherTableName: "marchers",
@@ -8,17 +9,23 @@ export const Constants = {
     FieldPropertiesTableName: "field_properties",
 
     PagePrefix: "page",
-    NewPageId: "NEW_PAGE",
+    NewPageId: "NEW_PAGE", // deprecated?
     MarcherPrefix: "marcher",
     MarcherPagePrefix: "mp",
-    dotRadius: 5,
+    dotRadius: 5, //deprecated?
 } as const;
 
+/**
+ * The colors for the canvas.
+ */
 export const CanvasColors = {
     previousPage: 'rgba(0, 0, 0, 1)',
     nextPage: 'rgba(0, 175, 13, 1)',
 } as const;
 
+/**
+ * Options for the background image on the canvas.
+ */
 export const NoControls: IGroupOptions = {
     hasControls: false,
     hasBorders: false,
@@ -41,3 +48,6 @@ export const ActiveObjectArgs: IGroupOptions = {
     borderColor: '#0d6efd',
     borderScaleFactor: 2,
 } as const;
+
+export default Constants;
+

@@ -114,8 +114,6 @@ function createPageTable(db: Database.Database) {
                 "order"	INTEGER NOT NULL UNIQUE,
                 "measure"	TEXT,
                 "tempo"	REAL NOT NULL,
-                "time_signature"	TEXT,
-                "rehearsal_mark"	TEXT,
                 "counts"	INTEGER NOT NULL,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
@@ -475,8 +473,6 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                 notes: newPage.notes || '',
                 order: newPage.order,
                 tempo: newPage.tempo,
-                rehearsal_mark: newPage.rehearsal_mark,
-                time_signature: newPage.time_signature,
                 counts: newPage.counts
             };
             const insertStmt = db.prepare(`
@@ -485,8 +481,6 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                     notes,
                     "order",
                     tempo,
-                    time_signature,
-                    rehearsal_mark,
                     counts,
                     created_at,
                     updated_at
@@ -495,8 +489,6 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                     @notes,
                     @order,
                     @tempo,
-                    @time_signature,
-                    @rehearsal_mark,
                     @counts,
                     @created_at,
                     @updated_at
