@@ -1,16 +1,6 @@
 import BeatUnit from "./BeatUnit";
 import TimeSignature from "./TimeSignature";
 
-// const BeatUnitNames: { [key in BeatUnit]: string } = {
-//     [BeatUnit.WHOLE]: "whole",
-//     [BeatUnit.HALF]: "half",
-//     [BeatUnit.QUARTER]: "quarter",
-//     [BeatUnit.EIGHTH]: "eighth",
-//     [BeatUnit.SIXTEENTH]: "16th",
-//     [BeatUnit.THIRTY_SECOND]: "32nd",
-//     [BeatUnit.SIXTY_FOURTH]: "64th"
-// }
-
 /**
  * A Measure represents a measure in the music is used in conjunction with Page objects to define a show's length.
  */
@@ -61,32 +51,10 @@ class Measure {
     private calculateDuration() {
         const beatsPerMeasure = this.timeSignature.numerator;
         // The ratio of the measure's beat unit to the pulse's beat unit
-        const tempoRatio = (1 / this.timeSignature.denominator) / this.beatUnit;
+        const tempoRatio = (1 / this.timeSignature.denominator) / this.beatUnit.value;
         // The duration of one beat in seconds
         const tempoBeatDuration = 60 / this.tempo;
         return tempoRatio * beatsPerMeasure * tempoBeatDuration;
-    }
-
-    /**
-     * Calculate the value of the beat unit with the beat unit dots.
-     *
-     * E.g. a quarter note = 1/4. A dotted quarter note = 1/4 + 1/8 = 3/8.
-     * A double dotted quarter note = 1/4 + 1/8 + 1/16 = 7/16
-     *
-     * @param beatUnit
-     * @param beatUnitDots INTEGER - The number of dots the beat unit has. E.g. dotted quarter would have one dot.
-     * @returns The value of the beat unit with the beat unit dots.
-     */
-    private static calculateBeatValue(beatUnit: BeatUnit, beatUnitDots: number): number {
-        // The fraction of the pulse's beat unit
-        let beatUnitValue = 1 / beatUnit;
-        for (let i = 1; i <= beatUnitDots; i++) {
-            // Add half of the beat unit value to the pulse for each dot.
-            // E.g. dotted quarter = 1/4 + 1/8 = 3/8
-            // Double dotted quarter = 1/4 + 1/8 + 1/16 = 7/16
-            beatUnitValue += (1 / beatUnit) / (Math.pow(2, i));
-        }
-        return beatUnitValue;
     }
 }
 
