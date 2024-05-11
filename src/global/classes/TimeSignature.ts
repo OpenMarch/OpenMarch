@@ -5,7 +5,7 @@ class TimeSignature {
     readonly numerator: number;
     readonly denominator: 1 | 2 | 4 | 8 | 16 | 32 | 64;
 
-    constructor(timeSignature: TimeSignature) {
+    constructor(timeSignature: { numerator: number, denominator: 1 | 2 | 4 | 8 | 16 | 32 | 64 }) {
         const numerator = timeSignature.numerator;
         if (numerator <= 0 || !Number.isInteger(numerator))
             throw new Error("Invalid time signature numerator. Must be a positive integer.");
@@ -32,6 +32,20 @@ class TimeSignature {
         return new TimeSignature({ numerator, denominator: denominator as 1 | 2 | 4 | 8 | 16 | 32 | 64 });
     }
 
+    /**
+     * @param other The other TimeSignature to compare to.
+     * @returns true if the other TimeSignature is equal to this TimeSignature.
+     */
+    equals(other: TimeSignature): boolean {
+        return this.numerator === other.numerator && this.denominator === other.denominator;
+    }
+
+    /**
+     * Checks if an object is an instance of TimeSignature.
+     *
+     * @param obj The object to check if it is a TimeSignature.
+     * @returns True if the object is a TimeSignature, false otherwise.
+     */
     static instanceOf(obj: any): obj is TimeSignature {
         try {
             return obj.numerator !== undefined && obj.denominator !== undefined;

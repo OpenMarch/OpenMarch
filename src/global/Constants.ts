@@ -7,6 +7,7 @@ export const Constants = {
     UndoHistoryTableName: "history_undo",
     RedoHistoryTableName: "history_redo",
     FieldPropertiesTableName: "field_properties",
+    MeasureTableName: "measures",
 
     PagePrefix: "page",
     NewPageId: "NEW_PAGE", // deprecated?

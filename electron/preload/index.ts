@@ -1,7 +1,8 @@
-import { FieldProperties } from "@/global/classes/FieldProperties"
-import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
-import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
-import { ModifiedPageContainer, NewPageContainer, Page } from "@/global/classes/Page"
+import FieldProperties from "@/global/classes/FieldProperties"
+import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
+import MarcherPage, { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
+import { MeasureDatabaseContainer } from "@/global/classes/Measure"
+import Page, { ModifiedPageContainer, NewPageContainer } from "@/global/classes/Page"
 import { contextBridge, ipcRenderer } from "electron"
 import { DatabaseResponse } from "electron/database/database.services"
 
@@ -137,7 +138,7 @@ const APP_API = {
   // Marcher
   /**
    * @returns A serialized array of all marchers in the database.
-   * This means you must call `new Marcher(marcher)` on each marcher or else the methods will not work.
+   * This means you must call `new Marcher(marcher)` on each marcher or else the instance methods will not work.
    */
   getMarchers: () => ipcRenderer.invoke('marcher:getAll') as Promise<Marcher[]>,
   createMarcher: (newMarcher: NewMarcherArgs) =>
@@ -149,7 +150,7 @@ const APP_API = {
   // Page
   /**
    * @returns A serialized array of all pages in the database.
-   * This means you must call `new Page(page)` on each page or else the methods will not work.
+   * This means you must call `new Page(page)` on each page or else the instance methods will not work.
    */
   getPages: () => ipcRenderer.invoke('page:getAll') as Promise<Page[]>,
   createPages: (pages: NewPageContainer[]) =>
@@ -162,6 +163,18 @@ const APP_API = {
   getMarcherPages: (args: { marcher_id?: number, page_id?: number }) => ipcRenderer.invoke('marcher_page:getAll', args) as Promise<MarcherPage[]>,
   getMarcherPage: (id: { marcher_id: number, page_id: number }) => ipcRenderer.invoke('marcher_page:get', id),
   updateMarcherPages: (args: ModifiedMarcherPageArgs[]) => ipcRenderer.invoke('marcher_page:update', args),
+
+  // Measure
+  /**
+   * @returns A serialized array of all measures in the database.
+   * This means you must call `new Measure(measure)` on each measure or else the instance methods will not work.
+   */
+  getMeasures: () => ipcRenderer.invoke('measure:getAll') as Promise<MeasureDatabaseContainer[]>,
+  createMeasures: (newMeasure: MeasureDatabaseContainer[]) =>
+    ipcRenderer.invoke('measure:insert', newMeasure) as Promise<DatabaseResponse>,
+  updateMeasures: (modifiedMeasures: MeasureDatabaseContainer[]) =>
+    ipcRenderer.invoke('measure:update', modifiedMeasures) as Promise<DatabaseResponse>,
+  deleteMeasures: (measureIds: number[]) => ipcRenderer.invoke('measure:delete', measureIds),
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)

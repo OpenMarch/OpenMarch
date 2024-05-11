@@ -468,6 +468,8 @@ export class Page {
     }
 }
 
+export default Page;
+
 /**
  * The arguments needed to create a new page.
  */

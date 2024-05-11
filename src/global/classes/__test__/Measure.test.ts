@@ -1,3 +1,4 @@
+import { ElectronApi } from 'electron/preload';
 import BeatUnit from '../BeatUnit';
 import Measure from '../Measure';
 import TimeSignature from '../TimeSignature';
@@ -70,4 +71,121 @@ describe('Measure', () => {
             }).toThrow();
         });
     })
+
+    describe('toDatabaseContainer', () => {
+
+        it('should convert the measure object to a database container object when calling create', () => {
+            window.electron = {
+                createMeasures: jest.fn().mockResolvedValue({ success: true }),
+            } as Partial<ElectronApi> as ElectronApi;
+            const createMeasuresSpy = jest.spyOn(window.electron, 'createMeasures');
+
+            Measure.fetchMeasures = jest.fn();
+
+            const measure = new Measure({
+                number: 1,
+                rehearsalMark: 'A',
+                tempo: 120,
+                beatUnit: BeatUnit.QUARTER,
+                timeSignature: TimeSignature.fromString('4/4'),
+                notes: 'C D E F'
+            });
+            const expectedContainer = {
+                id: -1,
+                number: 1,
+                rehearsal_mark: 'A',
+                tempo: 120,
+                beat_unit: 'QUARTER',
+                time_signature: '4/4',
+                duration: 2,
+                notes: 'C D E F'
+            };
+
+            Measure.createMeasures([measure]);
+            expect(createMeasuresSpy).toHaveBeenCalledWith([expectedContainer]);
+        });
+
+        it('should convert the measure object to a database container object when calling update', () => {
+            window.electron = {
+                updateMeasures: jest.fn().mockResolvedValue({ success: true }),
+            } as Partial<ElectronApi> as ElectronApi;
+            const updateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasures');
+
+            Measure.fetchMeasures = jest.fn();
+
+            const measure = new Measure({
+                id: 23,
+                number: 1,
+                rehearsalMark: 'A',
+                tempo: 120,
+                beatUnit: BeatUnit.QUARTER,
+                timeSignature: TimeSignature.fromString('4/4'),
+                notes: 'C D E F'
+            });
+            const expectedContainer = {
+                id: 23,
+                number: 1,
+                rehearsal_mark: 'A',
+                tempo: 120,
+                beat_unit: 'QUARTER',
+                time_signature: '4/4',
+                duration: 2,
+                notes: 'C D E F'
+            };
+
+            Measure.updateMeasures([measure]);
+            expect(updateMeasuresSpy).toHaveBeenCalledWith([expectedContainer]);
+        });
+    });
+
+    describe('fromMeasureDatabaseContainer', () => {
+        it('should create a measure object from a database container object', () => {
+            window.electron = {
+                getMeasures: jest.fn().mockResolvedValue([{
+                    id: 1,
+                    number: 1,
+                    rehearsal_mark: 'A',
+                    tempo: 120,
+                    beat_unit: 'QUARTER',
+                    time_signature: '4/4',
+                    duration: 2,
+                    notes: 'C D E F'
+                },
+                {
+                    id: 2,
+                    number: 2,
+                    rehearsal_mark: 'B',
+                    tempo: 120,
+                    beat_unit: 'QUARTER',
+                    time_signature: '4/4',
+                    duration: 2,
+                    notes: 'C D E F'
+                }
+                ]),
+            } as Partial<ElectronApi> as ElectronApi;
+
+            const expectedMeasures = [
+                new Measure({
+                    id: 1,
+                    number: 1,
+                    rehearsalMark: 'A',
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                    timeSignature: TimeSignature.fromString('4/4'),
+                    notes: 'C D E F'
+                }),
+                new Measure({
+                    id: 2,
+                    number: 2,
+                    rehearsalMark: 'B',
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                    timeSignature: TimeSignature.fromString('4/4'),
+                    notes: 'C D E F'
+                })
+            ];
+
+            expect(Measure.getMeasures()).resolves.toEqual(expectedMeasures);
+        });
+    });
 });

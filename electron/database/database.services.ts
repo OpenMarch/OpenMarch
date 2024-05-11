@@ -2,13 +2,14 @@
 import { ipcMain } from 'electron';
 import Database from 'better-sqlite3';
 import path from 'path';
-import { Constants } from '../../src/global/Constants';
+import Constants from '../../src/global/Constants';
 import * as fs from 'fs';
 import * as History from './database.history';
-import { Marcher, ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/classes/Marcher';
-import { ModifiedPageContainer, NewPageContainer, Page } from '../../src/global/classes/Page';
-import { MarcherPage, ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
-import { FieldProperties } from '../../src/global/classes/FieldProperties';
+import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/classes/Marcher';
+import Page, { ModifiedPageContainer, NewPageContainer } from '../../src/global/classes/Page';
+import MarcherPage, { ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
+import FieldProperties from '../../src/global/classes/FieldProperties';
+import { MeasureDatabaseContainer } from '@/global/classes/Measure';
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -65,6 +66,7 @@ export function initDatabase() {
     createPageTable(db);
     createMarcherPageTable(db);
     createFieldPropertiesTable(db, FieldProperties.Template.NCAA);
+    createMeasureTable(db);
     History.createHistoryTables(db);
     console.log('Database created.');
     db.close();
@@ -171,6 +173,25 @@ function createFieldPropertiesTable(db: Database.Database, template: FieldProper
     console.log('Field properties table created.');
 }
 
+function createMeasureTable(db: Database.Database) {
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "number" INTEGER NOT NULL,
+                "rehearsal_mark" TEXT,
+                "tempo" REAL NOT NULL,
+                "beat_unit" TEXT NOT NULL,
+                "time_signature" TEXT NOT NULL,
+                "duration" REAL NOT NULL,
+                "notes" TEXT
+            );
+        `);
+    } catch (error) {
+        console.error('Failed to create measures table:', error);
+    }
+}
+
 /* ============================ Handlers ============================ */
 /**
  * Handlers for the app api.
@@ -201,6 +222,12 @@ export function initHandlers() {
     ipcMain.handle('marcher_page:getAll', async (_, args) => getMarcherPages(args));
     ipcMain.handle('marcher_page:get', async (_, args) => getMarcherPage(args));
     ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPages(args));
+
+    // Measure
+    ipcMain.handle('measure:getAll', async () => getMeasures());
+    ipcMain.handle('measure:insert', async (_, newMeasures) => createMeasures(newMeasures));
+    ipcMain.handle('measure:update', async (_, modifiedMeasures) => updateMeasures(modifiedMeasures));
+    ipcMain.handle('measure:delete', async (_, measureIds) => deleteMeasures(measureIds));
 }
 
 /* ======================= Exported Functions ======================= */
@@ -443,6 +470,12 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
 }
 
 /* ============================ Page ============================ */
+/**
+ * Gets all of the pages in the database.
+ *
+ * @param db The database connection, or undefined to create a new connection
+ * @returns List of all pages
+ */
 async function getPages(db?: Database.Database): Promise<Page[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName}`);
@@ -451,6 +484,13 @@ async function getPages(db?: Database.Database): Promise<Page[]> {
     return result;
 }
 
+/**
+ * Gets a single page from the database.
+ *
+ * @param pageId The id of the page to get
+ * @param db The database connection, or undefined to create a new connection
+ * @returns The page with the given ID. (I think returns null for no match)
+ */
 async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @pageId`);
@@ -458,6 +498,13 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
     if (!db) dbToUse.close();
     return result as Page;
 }
+
+/**
+ * Create one or many new pages.
+ *
+ * @param newPages The new pages to create.
+ * @returns The response from the database.
+ */
 async function createPages(newPages: NewPageContainer[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
@@ -861,4 +908,138 @@ async function getPreviousPage(pageId: number, db?: Database.Database): Promise<
     if (!db) dbToUse.close();
     return result as Page || null;
 
+}
+
+/* ============================ Measures ============================ */
+/***** NOTE - Measures are currently not part of the history table *****/
+
+/**
+ * Gets all of the measures from the database.
+ *
+ * @param db The database connection
+ * @returns Array of measures
+ */
+async function getMeasures(db?: Database.Database): Promise<MeasureDatabaseContainer[]> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MeasureTableName}`);
+    const measures = stmt.all() as MeasureDatabaseContainer[];
+    if (!db) dbToUse.close();
+    return measures;
+}
+
+/**
+ * Creates a new measure in the database.
+ *
+ * @param newMeasure The new measure to create
+ * @returns The ID of the newly created measure
+ */
+async function createMeasures(newMeasures: MeasureDatabaseContainer[]): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: false }
+    try {
+        for (const newMeasure of newMeasures) {
+            const insertStmt = db.prepare(`
+                INSERT INTO ${Constants.MeasureTableName} (
+                    number,
+                    rehearsal_mark,
+                    tempo,
+                    beat_unit,
+                    time_signature,
+                    duration,
+                    notes,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    @number,
+                    @rehearsal_mark,
+                    @tempo,
+                    @beat_unit,
+                    @time_signature,
+                    @duration,
+                    @notes,
+                    @created_at,
+                    @updated_at
+                )
+            `);
+            const created_at = new Date().toISOString();
+            insertStmt.run(
+                {
+                    ...newMeasure,
+                    created_at,
+                    updated_at: created_at
+                }
+            );
+        }
+        output = { success: true }
+    } catch (error: any) {
+        console.error(error);
+        output = { success: false, error: { message: error.message, stack: error.stack } };
+    } finally {
+        db.close();
+    }
+    return output;
+}
+
+/**
+ * Updates measures with the given values.
+ *
+ * @param modifiedMeasures The modified measures. The ID is what identifies the measure to be changed.
+ * @returns {success: boolean, error?: string}
+ */
+async function updateMeasures(modifiedMeasures: MeasureDatabaseContainer[]): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: false }
+    try {
+        for (const modifiedMeasure of modifiedMeasures) {
+            // Generate the SET clause of the SQL query
+            const setClause = Object.keys(modifiedMeasure)
+                .map(key => `${key} = @${key}`)
+                .join(', ');
+
+            // Check if the SET clause is empty
+            if (setClause.length === 0) {
+                throw new Error('No valid properties to update in the Measure table');
+            }
+
+            const updateStmt = db.prepare(`
+                UPDATE ${Constants.MeasureTableName}
+                SET ${setClause}, updated_at = @new_updated_at
+                WHERE id = @id
+            `);
+
+            updateStmt.run({ ...modifiedMeasure, new_updated_at: new Date().toISOString() });
+        }
+        output = { success: true }
+    } catch (error: any) {
+        console.error(error);
+        output = { success: false, error: { message: error.message, stack: error.stack } };
+    } finally {
+        db.close();
+    }
+    return output
+}
+
+/**
+ * Delete measures from the database.
+ *
+ * @param measureIds The IDs of the measures to delete
+ * @returns {success: boolean, error?: string}
+ */
+async function deleteMeasures(measureIds: number[]): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: false }
+    try {
+        for (const measureId of measureIds) {
+            const deleteStmt = db.prepare(`DELETE FROM ${Constants.MeasureTableName} WHERE id = @measureId`);
+            deleteStmt.run({ measureId });
+        }
+    } catch (error: any) {
+        console.error(error);
+        output = { success: false, error: { message: error.message, stack: error.stack } };
+    }
+    finally {
+        db.close();
+    }
+    return output;
 }

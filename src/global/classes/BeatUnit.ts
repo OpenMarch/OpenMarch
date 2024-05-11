@@ -12,17 +12,17 @@ class BeatUnit {
     }
 
     // The following are the beat units that are available
-    static WHOLE = new BeatUnit(1, "whole");
-    static HALF = new BeatUnit(1 / 2, "half");
-    static DOTTED_HALF = new BeatUnit(3 / 4, "dotted half");
-    static QUARTER = new BeatUnit(1 / 4, "quarter");
-    static DOTTED_QUARTER = new BeatUnit(3 / 8, "dotted quarter");
-    static EIGHTH = new BeatUnit(1 / 8, "eighth");
-    static DOTTED_EIGHTH = new BeatUnit(3 / 16, "dotted eighth");
-    static SIXTEENTH = new BeatUnit(1 / 16, "16th");
-    static DOTTED_SIXTEENTH = new BeatUnit(3 / 32, "dotted 16th");
-    static THIRTY_SECOND = new BeatUnit(1 / 32, "32nd");
-    static SIXTY_FOURTH = new BeatUnit(1 / 64, "64th");
+    static WHOLE = new BeatUnit(1, "WHOLE");
+    static HALF = new BeatUnit(1 / 2, "HALF");
+    static DOTTED_HALF = new BeatUnit(3 / 4, "DOTTED HALF");
+    static QUARTER = new BeatUnit(1 / 4, "QUARTER");
+    static DOTTED_QUARTER = new BeatUnit(3 / 8, "DOTTED QUARTER");
+    static EIGHTH = new BeatUnit(1 / 8, "EIGHTH");
+    static DOTTED_EIGHTH = new BeatUnit(3 / 16, "DOTTED EIGHTH");
+    static SIXTEENTH = new BeatUnit(1 / 16, "16TH");
+    static DOTTED_SIXTEENTH = new BeatUnit(3 / 32, "DOTTED 16TH");
+    static THIRTY_SECOND = new BeatUnit(1 / 32, "32ND");
+    static SIXTY_FOURTH = new BeatUnit(1 / 64, "64TH");
 
     /**
      * Returns the string representation of the beat unit.
@@ -32,22 +32,30 @@ class BeatUnit {
     }
 
     /**
+     * @param other The other beat unit to compare to.
+     * @returns True if the other beat unit is equal to this beat unit.
+     */
+    equals(other: BeatUnit): boolean {
+        return this.value === other.value && this.name === other.name;
+    }
+
+    /**
      * Returns the beat unit from the string representation.
      * @param name The name of the beat unit.
      */
     static fromString(name: string): BeatUnit {
         switch (name) {
-            case "whole": return BeatUnit.WHOLE;
-            case "half": return BeatUnit.HALF;
-            case "dotted half": return BeatUnit.DOTTED_HALF;
-            case "quarter": return BeatUnit.QUARTER;
-            case "dotted quarter": return BeatUnit.DOTTED_QUARTER;
-            case "eighth": return BeatUnit.EIGHTH;
-            case "dotted eighth": return BeatUnit.DOTTED_EIGHTH;
-            case "16th": return BeatUnit.SIXTEENTH;
-            case "dotted 16th": return BeatUnit.DOTTED_SIXTEENTH;
-            case "32nd": return BeatUnit.THIRTY_SECOND;
-            case "64th": return BeatUnit.SIXTY_FOURTH;
+            case "WHOLE": return BeatUnit.WHOLE;
+            case "HALF": return BeatUnit.HALF;
+            case "DOTTED HALF": return BeatUnit.DOTTED_HALF;
+            case "QUARTER": return BeatUnit.QUARTER;
+            case "DOTTED QUARTER": return BeatUnit.DOTTED_QUARTER;
+            case "EIGHTH": return BeatUnit.EIGHTH;
+            case "DOTTED EIGHTH": return BeatUnit.DOTTED_EIGHTH;
+            case "16TH": return BeatUnit.SIXTEENTH;
+            case "DOTTED 16TH": return BeatUnit.DOTTED_SIXTEENTH;
+            case "32ND": return BeatUnit.THIRTY_SECOND;
+            case "64TH": return BeatUnit.SIXTY_FOURTH;
             default: throw new Error(`Invalid beat unit name: ${name}`);
         }
     }
