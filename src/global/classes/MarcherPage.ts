@@ -78,6 +78,8 @@ export class MarcherPage {
     }
 }
 
+export default MarcherPage;
+
 /**
  * Defines the editable fields of a MarcherPage.
  * `marcher_id` and `page_id` are used to identify the marcherPage and cannot be changed.

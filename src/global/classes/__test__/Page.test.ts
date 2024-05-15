@@ -1,6 +1,5 @@
 import { Page, NewPageContainer, ModifiedPageArgs, NewPageArgs, ModifiedPageContainer } from '../Page';
 import { mockPages } from '@/__mocks__/globalMocks';
-import { TimeSignature } from '../TimeSignature';
 import { ElectronApi } from 'electron/preload';
 
 describe('Page', () => {
@@ -28,7 +27,6 @@ describe('Page', () => {
             counts: 16,
             order: 1,
             tempo: 120,
-            time_signature: '4/4',
             notes: 'Some notes',
         };
 
@@ -41,8 +39,6 @@ describe('Page', () => {
         expect(page.counts).toBe(16);
         expect(page.order).toBe(1);
         expect(page.tempo).toBe(120);
-        expect(page.time_signature).toBeInstanceOf(TimeSignature);
-        expect(page.time_signature.toString()).toBe('4/4');
         expect(page.notes).toBe('Some notes');
     });
 
@@ -61,55 +57,45 @@ describe('Page', () => {
         beforeEach(() => {
             newPageArgs = [
                 {
-                    rehearsal_mark: 'A',
                     isSubset: false,
                     counts: 16,
                     tempo: 120,
-                    time_signature: TimeSignature.fromString('4/4'),
                     notes: 'Some notes',
                 },
                 {
                     counts: 8,
                     tempo: 140,
                     isSubset: false,
-                    time_signature: TimeSignature.fromString('3/4'),
                     notes: 'Other notes',
                 },
                 {
                     counts: 32,
                     tempo: 100,
                     isSubset: true,
-                    time_signature: TimeSignature.fromString('5/8'),
-                },
-                {
-                    rehearsal_mark: 'B',
-                    counts: 1,
-                    tempo: 100,
-                    isSubset: true,
-                    time_signature: TimeSignature.fromString('4/8'),
                 },
                 {
                     counts: 1,
                     tempo: 100,
                     isSubset: true,
-                    time_signature: TimeSignature.fromString('4/8'),
+                },
+                {
+                    counts: 1,
+                    tempo: 100,
+                    isSubset: true,
                 },
                 {
                     counts: 1,
                     tempo: 100,
                     isSubset: false,
-                    time_signature: TimeSignature.fromString('4/4'),
                 }
             ]
 
             newPageContainers = [
                 {
                     name: '1',
-                    rehearsal_mark: 'A',
                     order: 0,
                     counts: 16,
                     tempo: 120,
-                    time_signature: '4/4',
                     notes: 'Some notes',
                 },
                 {
@@ -117,7 +103,6 @@ describe('Page', () => {
                     order: 1,
                     counts: 8,
                     tempo: 140,
-                    time_signature: '3/4',
                     notes: 'Other notes',
                 },
                 {
@@ -125,29 +110,24 @@ describe('Page', () => {
                     order: 2,
                     counts: 32,
                     tempo: 100,
-                    time_signature: '5/8',
                 },
                 {
                     name: '2B',
-                    rehearsal_mark: 'B',
                     order: 3,
                     counts: 1,
                     tempo: 100,
-                    time_signature: '4/8',
                 },
                 {
                     name: '2C',
                     order: 4,
                     counts: 1,
                     tempo: 100,
-                    time_signature: '4/8',
                 },
                 {
                     name: '3',
                     order: 5,
                     counts: 1,
                     tempo: 100,
-                    time_signature: '4/4',
                 }
             ];
         });
@@ -203,7 +183,6 @@ describe('Page', () => {
                 counts: 1,
                 tempo: 99,
                 isSubset: false,
-                time_signature: TimeSignature.fromString('4/8'),
             }
 
             jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
@@ -220,7 +199,6 @@ describe('Page', () => {
                     order: 1,
                     counts: 1,
                     tempo: 99,
-                    time_signature: '4/8',
                 },
             ];
             const expectedModifiedPages: ModifiedPageContainer[] = [
@@ -273,7 +251,6 @@ describe('Page', () => {
                 counts: 2,
                 tempo: 99,
                 isSubset: true,
-                time_signature: TimeSignature.fromString('4/8'),
             }
 
             jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
@@ -290,7 +267,6 @@ describe('Page', () => {
                     order: 3,
                     counts: 2,
                     tempo: 99,
-                    time_signature: '4/8',
                 },
             ];
 
@@ -335,21 +311,18 @@ describe('Page', () => {
                     counts: 6,
                     tempo: 90,
                     isSubset: false,
-                    time_signature: TimeSignature.fromString('2/4'),
                 },
                 {
                     previousPage: existingPages[2],
                     counts: 2,
                     tempo: 99,
                     isSubset: true,
-                    time_signature: TimeSignature.fromString('4/8'),
                 },
                 {
                     previousPage: existingPages[2],
                     counts: 3,
                     tempo: 98,
                     isSubset: true,
-                    time_signature: TimeSignature.fromString('4/4'),
                     notes: 'Some notes for this page',
                 },
                 {
@@ -357,14 +330,12 @@ describe('Page', () => {
                     counts: 17,
                     tempo: 120,
                     isSubset: false,
-                    time_signature: TimeSignature.fromString('4/4'),
                 },
                 {
                     previousPage: existingPages[4],
                     counts: 3,
                     tempo: 98,
                     isSubset: false,
-                    time_signature: TimeSignature.fromString('4/4'),
                 },
             ]
 
@@ -382,21 +353,18 @@ describe('Page', () => {
                     order: 1,
                     counts: 6,
                     tempo: 90,
-                    time_signature: '2/4',
                 },
                 {
                     name: '3B',
                     order: 4,
                     counts: 2,
                     tempo: 99,
-                    time_signature: '4/8',
                 },
                 {
                     name: '3C',
                     order: 5,
                     counts: 3,
                     tempo: 98,
-                    time_signature: '4/4',
                     notes: 'Some notes for this page',
                 },
                 {
@@ -404,14 +372,12 @@ describe('Page', () => {
                     order: 7,
                     counts: 17,
                     tempo: 120,
-                    time_signature: '4/4',
                 },
                 {
                     name: '5',
                     order: 9,
                     counts: 3,
                     tempo: 98,
-                    time_signature: '4/4',
                 }
             ];
             const expectedModifiedPages: ModifiedPageContainer[] = [
@@ -453,7 +419,7 @@ describe('Page', () => {
         it('should update one or many pages in the database', async () => {
             const modifiedPages: ModifiedPageArgs[] = [
                 { id: 1, counts: 8 },
-                { id: 2, tempo: 140, time_signature: TimeSignature.fromString('3/4') },
+                { id: 2, tempo: 140 },
             ];
 
             const mockResponse = { success: true };
@@ -466,7 +432,7 @@ describe('Page', () => {
 
             const modifiedPagesContainers: ModifiedPageContainer[] = [
                 { id: 1, counts: 8 },
-                { id: 2, tempo: 140, time_signature: '3/4' },
+                { id: 2, tempo: 140 },
             ]
 
             expect(response).toEqual(mockResponse);
@@ -485,7 +451,6 @@ describe('Page', () => {
                 counts: 16,
                 order: 0,
                 tempo: 120,
-                time_signature: TimeSignature.fromString('4/4'),
                 notes: 'Some notes',
             }),
             new Page({
@@ -495,7 +460,6 @@ describe('Page', () => {
                 counts: 8,
                 order: 1,
                 tempo: 140,
-                time_signature: TimeSignature.fromString('3/4'),
                 notes: 'Other notes',
             }),
             new Page({
@@ -505,7 +469,6 @@ describe('Page', () => {
                 counts: 32,
                 order: 2,
                 tempo: 100,
-                time_signature: TimeSignature.fromString('5/8'),
             }),
             new Page({
                 id: 4,
@@ -514,7 +477,6 @@ describe('Page', () => {
                 counts: 90,
                 order: 3,
                 tempo: 34,
-                time_signature: TimeSignature.fromString('8/8'),
             }),
             new Page({
                 id: 5,
@@ -523,7 +485,6 @@ describe('Page', () => {
                 counts: 39,
                 order: 4,
                 tempo: 110,
-                time_signature: TimeSignature.fromString('4/4'),
             }),
             new Page({
                 id: 6,
@@ -532,7 +493,6 @@ describe('Page', () => {
                 counts: 29,
                 order: 5,
                 tempo: 102,
-                time_signature: TimeSignature.fromString('6/4'),
             }),
         ] as const;
         it('should delete a page from the database', async () => {

@@ -5,9 +5,11 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { Marcher } from "./global/classes/Marcher";
-import { Page } from "./global/classes/Page";
-import { MarcherPage } from "./global/classes/MarcherPage";
+import useMeasureStore from "./stores/measure/useMeasureStore";
+import Marcher from "./global/classes/Marcher";
+import Page from "./global/classes/Page";
+import MarcherPage from "./global/classes/MarcherPage";
+import Measure from "./global/classes/Measure";
 
 /**
  * A component that initializes the state of the application.
@@ -19,8 +21,18 @@ function StateInitializer() {
     const { pages, fetchPages } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
+    const { fetchMeasures } = useMeasureStore()!;
 
-    // Set the fetchMarchers function in the Marcher class and fetch marchers from the database
+    /**
+     * These functions set the fetch function in each respective class.
+     * This is how the classes are able to ensure that state in OpenMarch is constantly synced.
+     * Functionally, these vanilla Typescript classes are able to control and update react state,
+     * this may be bad practice, but for now, it works!
+     *
+     * These functions also are what gives OpenMarch state at the start.
+     * This component exists so that OpenMarch doesn't rely on other components
+     * to ensure the initial state has been retrieved.
+     */
     useEffect(() => {
         Marcher.fetchMarchers = fetchMarchers;
         fetchMarchers();
@@ -35,6 +47,12 @@ function StateInitializer() {
         Page.fetchPages = fetchPages;
         fetchPages();
     }, [fetchPages]);
+
+    useEffect(() => {
+        Measure.fetchMeasures = fetchMeasures;
+        fetchMeasures();
+    }, [fetchMeasures]);
+    /*******************************************************************/
 
     // Select the first page if none are selected. Intended to activate at the initial loading of a webpage
     useEffect(() => {

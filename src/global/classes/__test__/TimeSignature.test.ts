@@ -1,4 +1,4 @@
-import { TimeSignature } from '../TimeSignature';
+import TimeSignature from '../TimeSignature';
 
 describe('TimeSignature', () => {
     describe('constructor', () => {
@@ -48,24 +48,6 @@ describe('TimeSignature', () => {
 
             expect(() => {
                 new TimeSignature({ numerator: 2.5, denominator: 4 });
-            }).toThrow();
-        });
-
-        it('should throw an error for invalid denominator', () => {
-            expect(() => {
-                new TimeSignature({ numerator: 4, denominator: 0 });
-            }).toThrow();
-
-            expect(() => {
-                new TimeSignature({ numerator: 4, denominator: 3 });
-            }).toThrow();
-
-            expect(() => {
-                new TimeSignature({ numerator: 4, denominator: 5 });
-            }).toThrow();
-
-            expect(() => {
-                new TimeSignature({ numerator: 4, denominator: -1 });
             }).toThrow();
         });
     });

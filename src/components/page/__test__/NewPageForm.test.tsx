@@ -1,7 +1,6 @@
 import { render, screen, fireEvent, act, waitFor, renderHook } from '@testing-library/react';
 import NewPageForm from '../NewPageForm';
 import { NewPageArgs, Page } from '@/global/classes/Page';
-import { TimeSignature } from '@/global/classes/TimeSignature';
 import { ElectronApi } from 'electron/preload';
 import { mockPages } from '@/__mocks__/globalMocks';
 import { usePageStore } from '@/stores/page/usePageStore';
@@ -43,7 +42,6 @@ describe('NewPageForm', () => {
         const mockQuantity = 1;
 
         const expectedNewPage: NewPageArgs = {
-            time_signature: TimeSignature.fromString('4/4'),
             isSubset: true,
             counts: mockCounts,
             tempo: mockTempo,
@@ -83,21 +81,18 @@ describe('NewPageForm', () => {
         const expectedNewPages: NewPageArgs[] = [
             {
                 previousPage: mockPages[0],
-                time_signature: TimeSignature.fromString('4/4'),
                 isSubset: false,
                 counts: mockCounts,
                 tempo: mockTempo,
             },
             {
                 previousPage: mockPages[0],
-                time_signature: TimeSignature.fromString('4/4'),
                 isSubset: false,
                 counts: mockCounts,
                 tempo: mockTempo,
             },
             {
                 previousPage: mockPages[0],
-                time_signature: TimeSignature.fromString('4/4'),
                 isSubset: false,
                 counts: mockCounts,
                 tempo: mockTempo,
@@ -142,7 +137,6 @@ describe('NewPageForm', () => {
         const mockQuantity = 1;
 
         const expectedNewPage: NewPageArgs = {
-            time_signature: TimeSignature.fromString('4/4'),
             isSubset: true,
             counts: mockCounts,
             tempo: mockTempo,

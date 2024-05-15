@@ -131,6 +131,8 @@ export class Marcher {
     }
 }
 
+export default Marcher;
+
 /**
  * Defines the required/available fields of a new marcher.
  */

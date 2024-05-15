@@ -1,5 +1,3 @@
-import { TimeSignature } from "./TimeSignature";
-
 /**
  * A class that represents a Page in the database.
  * This is the standard Page object that should be used throughout the application.
@@ -17,41 +15,33 @@ export class Page {
     readonly counts: number;
     /** The order of the page in the show. E.g. 1, 2, 3, etc. */
     readonly order: number;
-    /** The tempo of the page in BPM. Currently only in quarter notes */
+    /** The tempo of the page in BPM. Each beat is a step */
     readonly tempo: number;
-    /** NOT IMPLEMENTED - The time signature of the page. E.g. "4/4" */
-    readonly time_signature: TimeSignature;
-    /** NOT IMPLEMENTED - The rehearsal letter of the page. Optional */
-    readonly rehearsal_mark?: string;
     /** NOT IMPLEMENTED - Any notes about the page. Optional */
     readonly notes?: string;
+
     /**
      * Fetches all of the pages from the database.
      * This is attached to the Page store and needs to be updated in a useEffect hook so that the UI is updated.
      */
     static fetchPages: () => Promise<void>;
 
-    constructor(args: {
-        id: number, id_for_html: string, name: string, counts: number, order: number, tempo: number,
-        time_signature: TimeSignature | string, rehearsal_mark?: string, notes?: string
+    constructor({ id, id_for_html, name, counts, order, tempo, notes }: {
+        id: number, id_for_html: string, name: string, counts: number, order: number, tempo: number, notes?: string
     }) {
-        this.id = args.id;
-        this.id_for_html = args.id_for_html;
-        this.rehearsal_mark = args.rehearsal_mark;
-        this.name = args.name;
-        if (args.counts < 0)
+        this.id = id;
+        this.id_for_html = id_for_html;
+        this.name = name;
+
+        if (counts < 0)
             this.counts = 1;
         else
-            this.counts = args.counts;
-        this.order = args.order;
-        this.tempo = args.tempo || 120;
+            this.counts = counts;
 
-        if (TimeSignature.instanceOf(args.time_signature))
-            this.time_signature = args.time_signature;
-        else
-            this.time_signature = TimeSignature.fromString(args.time_signature);
+        this.order = order;
+        this.tempo = tempo || 120;
 
-        this.notes = args.notes;
+        this.notes = notes;
     }
 
     /**
@@ -86,8 +76,6 @@ export class Page {
                 id: page.id,
                 counts: page.counts,
                 tempo: page.tempo,
-                time_signature: page.time_signature,
-                rehearsal_mark: page.rehearsal_mark,
                 notes: page.notes,
                 isSubset: isSubset
             };
@@ -129,10 +117,7 @@ export class Page {
                     counts: futurePage.counts!,
                     order: currentOrder,
                     tempo: futurePage.tempo!,
-                    time_signature: futurePage.time_signature!.toString()
                 };
-                if (futurePage.rehearsal_mark)
-                    newPageContainer.rehearsal_mark = futurePage.rehearsal_mark;
                 if (futurePage.notes)
                     newPageContainer.notes = futurePage.notes;
 
@@ -196,10 +181,6 @@ export class Page {
                 modifiedPage.counts = page.counts;
             if (page.tempo)
                 modifiedPage.tempo = page.tempo;
-            if (page.time_signature)
-                modifiedPage.time_signature = page.time_signature.toString();
-            if (page.rehearsal_mark)
-                modifiedPage.rehearsal_mark = page.rehearsal_mark;
             if (page.notes)
                 modifiedPage.notes = page.notes;
 
@@ -242,8 +223,6 @@ export class Page {
                     id: page.id,
                     counts: page.counts,
                     tempo: page.tempo,
-                    time_signature: page.time_signature,
-                    rehearsal_mark: page.rehearsal_mark,
                     notes: page.notes,
                     isSubset: isSubset
                 });
@@ -301,6 +280,55 @@ export class Page {
     }
 
     /**
+     * Retrieves the first Page based on the list of all Pages.
+     *
+     * @param allPages - The list of all Pages.
+     * @returns The first Page or null if there are no Pages.
+     */
+    static getFirstPage(allPages: Page[]): Page | null {
+        if (!allPages || allPages.length === 0)
+            return null;
+
+        const firstPage = allPages.reduce((nearestFirstPage, current) => {
+            if (nearestFirstPage === null || current.order < nearestFirstPage.order) {
+                return current;
+            }
+            return nearestFirstPage;
+        });
+
+        return firstPage;
+    }
+
+    /**
+     * Retrieves the last Page based on the list of all Pages.
+     *
+     * @param allPages - The list of all Pages.
+     * @returns The last Page or null if there are no Pages.
+     */
+    static getLastPage(allPages: Page[]): Page | null {
+        if (!allPages || allPages.length === 0)
+            return null;
+
+        const lastPage = allPages.reduce((nearestLastPage, current) => {
+            if (nearestLastPage === null || current.order > nearestLastPage.order) {
+                return current;
+            }
+            return nearestLastPage;
+        });
+
+        return lastPage;
+    }
+
+    /**
+     * Calculates the duration of the page based on counts and tempo.
+     *
+     * @returns The duration of the page in milliseconds.
+     */
+    getDuration() {
+        return (60 / this.tempo * 1000) * this.counts;
+    }
+
+    /**
      * Retrieves the next Page based on this Page and the list of all Pages.
      * If the current Page is the last Page, null is returned.
      *
@@ -354,46 +382,6 @@ export class Page {
         });
 
         return previousPage !== this ? previousPage : null;
-    }
-
-    /**
-     * Retrieves the first Page based on the list of all Pages.
-     *
-     * @param allPages - The list of all Pages.
-     * @returns The first Page or null if there are no Pages.
-     */
-    static getFirstPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0)
-            return null;
-
-        const firstPage = allPages.reduce((nearestFirstPage, current) => {
-            if (nearestFirstPage === null || current.order < nearestFirstPage.order) {
-                return current;
-            }
-            return nearestFirstPage;
-        });
-
-        return firstPage;
-    }
-
-    /**
-     * Retrieves the last Page based on the list of all Pages.
-     *
-     * @param allPages - The list of all Pages.
-     * @returns The last Page or null if there are no Pages.
-     */
-    static getLastPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0)
-            return null;
-
-        const lastPage = allPages.reduce((nearestLastPage, current) => {
-            if (nearestLastPage === null || current.order > nearestLastPage.order) {
-                return current;
-            }
-            return nearestLastPage;
-        });
-
-        return lastPage;
     }
 
     /**
@@ -480,6 +468,8 @@ export class Page {
     }
 }
 
+export default Page;
+
 /**
  * The arguments needed to create a new page.
  */
@@ -496,8 +486,6 @@ export interface NewPageArgs {
     isSubset: boolean;
     counts: number;
     tempo: number;
-    time_signature: TimeSignature;
-    rehearsal_mark?: string;
     notes?: string;
 }
 
@@ -513,8 +501,6 @@ export interface ModifiedPageArgs {
     isSubset?: boolean;
     counts?: number;
     tempo?: number;
-    time_signature?: TimeSignature;
-    rehearsal_mark?: string;
     notes?: string;
 }
 
@@ -527,8 +513,6 @@ export interface NewPageContainer {
     counts: number;
     order: number;
     tempo: number;
-    time_signature: string;
-    rehearsal_mark?: string;
     notes?: string;
 }
 
@@ -544,8 +528,6 @@ export interface ModifiedPageContainer {
     counts?: number;
     order?: number;
     tempo?: number;
-    rehearsal_mark?: string;
-    time_signature?: string;
     notes?: string;
 }
 

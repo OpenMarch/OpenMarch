@@ -1,19 +1,28 @@
 /**
+ * Pre-defined time signature denominators supported by OpenMarch.
+ */
+export enum BeatUnit {
+    WHOLE = 1,
+    HALF = 2,
+    QUARTER = 4,
+    EIGHTH = 8,
+    SIXTEENTH = 16,
+    THIRTY_SECOND = 32,
+    SIXTY_FOURTH = 64
+}
+
+/**
  * A class representing a time signature ensuring valid numerator and denominator.
  */
-export class TimeSignature {
+class TimeSignature {
     readonly numerator: number;
-    readonly denominator: number;
+    readonly denominator: 1 | 2 | 4 | 8 | 16 | 32 | 64;
 
-    constructor(timeSignature: TimeSignature) {
-        const numer = timeSignature.numerator;
-        if (numer <= 0 || !Number.isInteger(numer))
+    constructor(timeSignature: { numerator: number, denominator: 1 | 2 | 4 | 8 | 16 | 32 | 64 }) {
+        const numerator = timeSignature.numerator;
+        if (numerator <= 0 || !Number.isInteger(numerator))
             throw new Error("Invalid time signature numerator. Must be a positive integer.");
         this.numerator = timeSignature.numerator;
-        const denom = timeSignature.denominator;
-        if (!Number.isInteger(denom) || denom <= 0 || (denom !== 1 && denom % 2 !== 0)) {
-            throw new Error("Invalid time signature denominator. Must be an integer power of 2. E.g. 1, 2, 4, 8, 16, 32, etc.");
-        }
         this.denominator = timeSignature.denominator;
     }
 
@@ -29,9 +38,27 @@ export class TimeSignature {
             throw new Error("Invalid time signature string. Must be in the form of '4/4'");
         const numerator = parseInt(split[0]);
         const denominator = parseInt(split[1]);
-        return new TimeSignature({ numerator, denominator });
+        const validDenominators = [1, 2, 4, 8, 16, 32, 64];
+        if (!validDenominators.includes(denominator))
+            throw new Error("Invalid time signature denominator. Must be 1, 2, 4, 8, 16, 32, or 64");
+
+        return new TimeSignature({ numerator, denominator: denominator as 1 | 2 | 4 | 8 | 16 | 32 | 64 });
     }
 
+    /**
+     * @param other The other TimeSignature to compare to.
+     * @returns true if the other TimeSignature is equal to this TimeSignature.
+     */
+    equals(other: TimeSignature): boolean {
+        return this.numerator === other.numerator && this.denominator === other.denominator;
+    }
+
+    /**
+     * Checks if an object is an instance of TimeSignature.
+     *
+     * @param obj The object to check if it is a TimeSignature.
+     * @returns True if the object is a TimeSignature, false otherwise.
+     */
     static instanceOf(obj: any): obj is TimeSignature {
         try {
             return obj.numerator !== undefined && obj.denominator !== undefined;
@@ -47,3 +74,5 @@ export class TimeSignature {
         return `${this.numerator}/${this.denominator}`;
     }
 }
+
+export default TimeSignature;
