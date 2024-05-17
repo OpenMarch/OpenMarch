@@ -1,15 +1,4 @@
-/**
- * Pre-defined time signature denominators supported by OpenMarch.
- */
-export enum BeatUnit {
-    WHOLE = 1,
-    HALF = 2,
-    QUARTER = 4,
-    EIGHTH = 8,
-    SIXTEENTH = 16,
-    THIRTY_SECOND = 32,
-    SIXTY_FOURTH = 64
-}
+import BeatUnit from "./BeatUnit";
 
 /**
  * A class representing a time signature ensuring valid numerator and denominator.
@@ -72,6 +61,14 @@ class TimeSignature {
      */
     toString(): string {
         return `${this.numerator}/${this.denominator}`;
+    }
+
+    /**
+     *
+     * @returns The beat unit of the time signature's denominator. E.g. 4/4 has a beat unit of 1/4
+     */
+    getBeatUnit(): BeatUnit {
+        return BeatUnit.fromString(`1/${this.denominator.toString()}`);
     }
 }
 

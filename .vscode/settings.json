@@ -25,5 +25,6 @@
   ],
   "[typescriptreact]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
-  } // set as "true" to run 'prettier' last not first
+  },
+  "jest.jestCommandLine": "node_modules/.bin/jest" // set as "true" to run 'prettier' last not first
 }

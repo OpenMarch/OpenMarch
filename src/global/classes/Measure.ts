@@ -5,8 +5,6 @@ import TimeSignature from "./TimeSignature";
  * A Measure represents a measure in the music is used in conjunction with Page objects to define a show's length.
  */
 export class Measure {
-    /** The unique identifier of the measure for the database */
-    readonly id: number;
     /** INTEGER - The number of the measure in the piece */
     readonly number: number;
     /** The rehearsal mark of the measure. E.g. "A" or "12" (for measure 12) */
@@ -30,9 +28,9 @@ export class Measure {
      */
     static fetchMeasures: () => Promise<void>;
 
-    constructor({ id = -1, number, rehearsalMark = null, timeSignature, tempo, beatUnit, notes = null }:
+    constructor({ number, rehearsalMark = null, timeSignature, tempo, beatUnit, notes = null }:
         {
-            id?: number, number: number; rehearsalMark?: string | null; timeSignature: TimeSignature;
+            number: number; rehearsalMark?: string | null; timeSignature: TimeSignature;
             beatUnit: BeatUnit, tempo: number; notes?: string | null;
         }) {
         if (!Number.isInteger(number))
@@ -40,7 +38,6 @@ export class Measure {
         if (tempo <= 0)
             throw new Error("Tempo must be > 0")
 
-        this.id = id;
         this.number = number;
         this.rehearsalMark = rehearsalMark;
         this.timeSignature = timeSignature;
@@ -136,8 +133,7 @@ export class Measure {
      * @returns If this measure is equal to the other measure.
      */
     equals(other: Measure): boolean {
-        return this.id === other.id
-            && this.number === other.number
+        return this.number === other.number
             && this.rehearsalMark === other.rehearsalMark
             && this.timeSignature.equals(other.timeSignature)
             && this.tempo === other.tempo
@@ -172,7 +168,6 @@ export class Measure {
      */
     private toDatabaseContainer(): MeasureDatabaseContainer {
         const container: MeasureDatabaseContainer = {
-            id: this.id,
             number: this.number,
             rehearsal_mark: this.rehearsalMark,
             time_signature: this.timeSignature.toString(),
@@ -192,7 +187,6 @@ export class Measure {
      */
     private static fromMeasureDatabaseContainer(container: MeasureDatabaseContainer): Measure {
         return new Measure({
-            id: container.id,
             number: container.number,
             rehearsalMark: container.rehearsal_mark,
             timeSignature: TimeSignature.fromString(container.time_signature),
@@ -210,7 +204,6 @@ export default Measure;
  */
 export interface MeasureDatabaseContainer {
     /** The unique identifier of the measure for the database. This is not used for new Measures */
-    readonly id: number;
     readonly number: number;
     readonly rehearsal_mark: string | null;
     readonly time_signature: string;

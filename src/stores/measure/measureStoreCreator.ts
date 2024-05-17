@@ -15,10 +15,10 @@ export const measureStoreCreator: StateCreator<MeasureStoreInterface> = (set) =>
      * To access the measures, use the `measures` property of the store.
      */
     fetchMeasures: async () => {
-        const receivedMeasures = await Measure.getMeasures();
-        const sortedMeasures = receivedMeasures.sort((a, b) => a.number - b.number);
-        const measureObjects = sortedMeasures.map(measure => new Measure(measure));
-        set({ measures: measureObjects });
+        // const receivedMeasures = await Measure.getMeasures();
+        // const sortedMeasures = receivedMeasures.sort((a, b) => a.number - b.number);
+        // const measureObjects = sortedMeasures.map(measure => new Measure(measure));
+        // set({ measures: measureObjects });
     },
 });
 

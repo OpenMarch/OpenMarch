@@ -91,7 +91,6 @@ describe('Measure', () => {
                 notes: 'C D E F'
             });
             const expectedContainer = {
-                id: -1,
                 number: 1,
                 rehearsal_mark: 'A',
                 tempo: 120,
@@ -114,7 +113,6 @@ describe('Measure', () => {
             Measure.fetchMeasures = jest.fn();
 
             const measure = new Measure({
-                id: 23,
                 number: 1,
                 rehearsalMark: 'A',
                 tempo: 120,
@@ -123,7 +121,6 @@ describe('Measure', () => {
                 notes: 'C D E F'
             });
             const expectedContainer = {
-                id: 23,
                 number: 1,
                 rehearsal_mark: 'A',
                 tempo: 120,
@@ -142,7 +139,6 @@ describe('Measure', () => {
         it('should create a measure object from a database container object', () => {
             window.electron = {
                 getMeasures: jest.fn().mockResolvedValue([{
-                    id: 1,
                     number: 1,
                     rehearsal_mark: 'A',
                     tempo: 120,
@@ -152,7 +148,6 @@ describe('Measure', () => {
                     notes: 'C D E F'
                 },
                 {
-                    id: 2,
                     number: 2,
                     rehearsal_mark: 'B',
                     tempo: 120,
@@ -166,7 +161,6 @@ describe('Measure', () => {
 
             const expectedMeasures = [
                 new Measure({
-                    id: 1,
                     number: 1,
                     rehearsalMark: 'A',
                     tempo: 120,
@@ -175,7 +169,6 @@ describe('Measure', () => {
                     notes: 'C D E F'
                 }),
                 new Measure({
-                    id: 2,
                     number: 2,
                     rehearsalMark: 'B',
                     tempo: 120,

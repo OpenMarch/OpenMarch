@@ -131,4 +131,38 @@ describe('TimeSignature', () => {
             expect(timeSignatureString).toBe('4/4');
         });
     });
+
+    describe('beatUnit', () => {
+        it('should return the beat unit of the time signature x/4', () => {
+            const timeSignature = new TimeSignature({ numerator: 4, denominator: 4 });
+            const beatUnit = timeSignature.getBeatUnit();
+
+            expect(beatUnit.name).toBe('QUARTER');
+            expect(beatUnit.value).toBe(1 / 4);
+        });
+
+        it('should return the beat unit of the time signature x/2', () => {
+            const timeSignature = new TimeSignature({ numerator: 1, denominator: 2 });
+            const beatUnit = timeSignature.getBeatUnit();
+
+            expect(beatUnit.name).toBe('HALF');
+            expect(beatUnit.value).toBe(1 / 2);
+        });
+
+        it('should return the beat unit of the time signature x/8', () => {
+            const timeSignature = new TimeSignature({ numerator: 7, denominator: 8 });
+            const beatUnit = timeSignature.getBeatUnit();
+
+            expect(beatUnit.name).toBe('EIGHTH');
+            expect(beatUnit.value).toBe(1 / 8);
+        });
+
+        it('should return the beat unit of the time signature x/16', () => {
+            const timeSignature = new TimeSignature({ numerator: 4, denominator: 16 });
+            const beatUnit = timeSignature.getBeatUnit();
+
+            expect(beatUnit.name).toBe('SIXTEENTH');
+            expect(beatUnit.value).toBe(1 / 16);
+        });
+    });
 });

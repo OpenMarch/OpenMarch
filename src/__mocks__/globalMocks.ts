@@ -165,7 +165,6 @@ export const mockMarcherPages: MarcherPage[] = [
 
 export const mockMeasures: Measure[] = [
     new Measure({
-        id: 1,
         number: 1,
         beatUnit: BeatUnit.QUARTER,
         timeSignature: TimeSignature.fromString('4/4'),
@@ -173,7 +172,6 @@ export const mockMeasures: Measure[] = [
         rehearsalMark: 'A'
     }),
     new Measure({
-        id: 2,
         number: 2,
         beatUnit: BeatUnit.HALF,
         timeSignature: TimeSignature.fromString('2/2'),
@@ -181,7 +179,6 @@ export const mockMeasures: Measure[] = [
         notes: 'This is the second measure'
     }),
     new Measure({
-        id: 3,
         number: 3,
         beatUnit: BeatUnit.DOTTED_QUARTER,
         timeSignature: TimeSignature.fromString('6/8'),

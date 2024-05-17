@@ -4,6 +4,7 @@ module.exports = {
   testEnvironment: "jsdom",
   testEnvironmentOptions: {
     customExportConditions: ["react-native"],
+    nodeOptions: "--experimental-vm-modules --loader=swc"
   },
   testPathIgnorePatterns: [
     // Ignore any files in the directory where Playwright tests are kept
