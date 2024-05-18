@@ -9,7 +9,6 @@ import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/c
 import Page, { ModifiedPageContainer, NewPageContainer } from '../../src/global/classes/Page';
 import MarcherPage, { ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
 import FieldProperties from '../../src/global/classes/FieldProperties';
-import { MeasureDatabaseContainer } from '@/global/classes/Measure';
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -26,6 +25,26 @@ export class DatabaseResponse {
         this.error = error;
     }
 }
+
+const TEMP_MEASURES = `
+X:1
+T:Untitled score
+C:Composer / arranger
+%%measurenb 1
+L:1/4
+Q:3/8=100
+M:4/4
+I:linebreak $
+K:C
+V:1 treble nm="Oboe" snm="Ob."
+V:1
+ G z z2 | z4 |[M:3/4][Q:1/4=100]"^A" z3 | z3 |[M:4/4][Q:1/2=100]"^12" z4 | z4 | %6
+[M:5/4][Q:1/4=200] z5"^C" | z5 |[M:6/8] z3 | z3 |[M:5/8][Q:1/8=100] z5/2"^B;akjd" | %11
+[M:12/8][Q:3/16=100] z6 |[Q:3/8=100] z6 |[M:2/2][Q:1/2=100] z4 | z4 |[M:4/4][Q:1/4=120] z4 | z4 | %17
+[M:2/2][Q:1/4=120] z4 | z4 |[M:7/16][Q:1/8=100] z7/4 | z7/4 |[M:5/4][Q:1/4=100] z5 | z5 | %23
+[M:4/4][Q:1/4=120] z4 | z4 | z4 |[Q:3/8=120] z4 | z4 | %28
+[Q:1/4=120] z4 |[Q:3/8=120] z4 |"^accel." z4 | z4 | z4 | z4 | z4 | z4 |] %36
+`
 
 /* ============================ DATABASE ============================ */
 let DB_PATH = '';
@@ -67,6 +86,7 @@ export function initDatabase() {
     createMarcherPageTable(db);
     createFieldPropertiesTable(db, FieldProperties.Template.NCAA);
     createMeasureTable(db);
+    createMeasures(TEMP_MEASURES);
     History.createHistoryTables(db);
     console.log('Database created.');
     db.close();
@@ -114,7 +134,6 @@ function createPageTable(db: Database.Database) {
                 "name"	TEXT NOT NULL UNIQUE,
                 "notes"	TEXT,
                 "order"	INTEGER NOT NULL UNIQUE,
-                "measure"	TEXT,
                 "tempo"	REAL NOT NULL,
                 "counts"	INTEGER NOT NULL,
                 "created_at"	TEXT NOT NULL,
@@ -173,23 +192,27 @@ function createFieldPropertiesTable(db: Database.Database, template: FieldProper
     console.log('Field properties table created.');
 }
 
+/**
+ * Measures in OpenMarch use a simplified version of ABC notation.
+ * There is only ever one entry in this table, and it is the ABC notation string.
+ * When updating measures, this string will be modified.
+ *
+ * @param db Database object to use
+ */
 function createMeasureTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "number" INTEGER NOT NULL,
-                "rehearsal_mark" TEXT,
-                "tempo" REAL NOT NULL,
-                "beat_unit" TEXT NOT NULL,
-                "time_signature" TEXT NOT NULL,
-                "duration" REAL NOT NULL,
-                "notes" TEXT
+                id INTEGER PRIMARY KEY,
+                abc_data TEXT,
+                "created_at"	TEXT NOT NULL,
+                "updated_at"	TEXT NOT NULL
             );
         `);
     } catch (error) {
-        console.error('Failed to create measures table:', error);
+        console.error('Failed to create field properties table:', error);
     }
+    console.log('Measures table created.');
 }
 
 /* ============================ Handlers ============================ */
@@ -226,8 +249,10 @@ export function initHandlers() {
     // Measure
     ipcMain.handle('measure:getAll', async () => getMeasures());
     ipcMain.handle('measure:insert', async (_, newMeasures) => createMeasures(newMeasures));
-    ipcMain.handle('measure:update', async (_, modifiedMeasures) => updateMeasures(modifiedMeasures));
-    ipcMain.handle('measure:delete', async (_, measureIds) => deleteMeasures(measureIds));
+    // ipcMain.handle('measure:update', async (_, modifiedMeasures) => updateMeasures(modifiedMeasures));
+    // ipcMain.handle('measure:delete', async (_, measureIds) => deleteMeasures(measureIds));
+    ipcMain.handle('measure:update', async (_, modifiedMeasures) => console.log("Update measures not implemented"));
+    ipcMain.handle('measure:delete', async (_, measureIds) => console.log("delete measures not implemented"));
 }
 
 /* ======================= Exported Functions ======================= */
@@ -919,97 +944,46 @@ async function getPreviousPage(pageId: number, db?: Database.Database): Promise<
  * @param db The database connection
  * @returns Array of measures
  */
-async function getMeasures(db?: Database.Database): Promise<MeasureDatabaseContainer[]> {
+async function getMeasures(db?: Database.Database): Promise<string> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MeasureTableName}`);
-    const measures = stmt.all() as MeasureDatabaseContainer[];
+    const response = stmt.all() as { abc_data: string, created_at: string, updated_at: string }[];
     if (!db) dbToUse.close();
-    return measures;
+    return response[0].abc_data;
 }
 
 /**
- * Creates a new measure in the database.
+ * Creates new measures in the database, completely replacing the old ABC string.
+ * See documentation in createMeasureTable for how measures in OpenMarch are stored.
  *
- * @param newMeasure The new measure to create
- * @returns The ID of the newly created measure
+ * @param new_ABC_data The new ABC string to put into the database
+ * @returns DatabaseResponse
  */
-async function createMeasures(newMeasures: MeasureDatabaseContainer[]): Promise<DatabaseResponse> {
+async function createMeasures(new_ABC_data: string): Promise<DatabaseResponse> {
+    new_ABC_data = TEMP_MEASURES;
     const db = connect();
     let output: DatabaseResponse = { success: false }
     try {
-        for (const newMeasure of newMeasures) {
-            const insertStmt = db.prepare(`
+        const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.MeasureTableName} (
-                    number,
-                    rehearsal_mark,
-                    tempo,
-                    beat_unit,
-                    time_signature,
-                    duration,
-                    notes,
+                    abc_data,
                     created_at,
                     updated_at
                 )
                 VALUES (
-                    @number,
-                    @rehearsal_mark,
-                    @tempo,
-                    @beat_unit,
-                    @time_signature,
-                    @duration,
-                    @notes,
+                    @abc_data,
                     @created_at,
                     @updated_at
                 )
             `);
-            const created_at = new Date().toISOString();
-            insertStmt.run(
-                {
-                    ...newMeasure,
-                    created_at,
-                    updated_at: created_at
-                }
-            );
-        }
-        output = { success: true }
-    } catch (error: any) {
-        console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
-    } finally {
-        db.close();
-    }
-    return output;
-}
-
-/**
- * Updates measures with the given values.
- *
- * @param modifiedMeasures The modified measures. The ID is what identifies the measure to be changed.
- * @returns {success: boolean, error?: string}
- */
-async function updateMeasures(modifiedMeasures: MeasureDatabaseContainer[]): Promise<DatabaseResponse> {
-    const db = connect();
-    let output: DatabaseResponse = { success: false }
-    try {
-        for (const modifiedMeasure of modifiedMeasures) {
-            // Generate the SET clause of the SQL query
-            const setClause = Object.keys(modifiedMeasure)
-                .map(key => `${key} = @${key}`)
-                .join(', ');
-
-            // Check if the SET clause is empty
-            if (setClause.length === 0) {
-                throw new Error('No valid properties to update in the Measure table');
+        const created_at = new Date().toISOString();
+        insertStmt.run(
+            {
+                abc_data: new_ABC_data,
+                created_at,
+                updated_at: created_at
             }
-
-            const updateStmt = db.prepare(`
-                UPDATE ${Constants.MeasureTableName}
-                SET ${setClause}, updated_at = @new_updated_at
-                WHERE id = @id
-            `);
-
-            updateStmt.run({ ...modifiedMeasure, new_updated_at: new Date().toISOString() });
-        }
+        );
         output = { success: true }
     } catch (error: any) {
         console.error(error);
@@ -1017,29 +991,68 @@ async function updateMeasures(modifiedMeasures: MeasureDatabaseContainer[]): Pro
     } finally {
         db.close();
     }
-    return output
-}
-
-/**
- * Delete measures from the database.
- *
- * @param measureIds The IDs of the measures to delete
- * @returns {success: boolean, error?: string}
- */
-async function deleteMeasures(measureIds: number[]): Promise<DatabaseResponse> {
-    const db = connect();
-    let output: DatabaseResponse = { success: false }
-    try {
-        for (const measureId of measureIds) {
-            const deleteStmt = db.prepare(`DELETE FROM ${Constants.MeasureTableName} WHERE id = @measureId`);
-            deleteStmt.run({ measureId });
-        }
-    } catch (error: any) {
-        console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
-    }
-    finally {
-        db.close();
-    }
     return output;
 }
+
+// /**
+//  * Updates measures with the given values.
+//  *
+//  * @param modifiedMeasures The modified measures. The ID is what identifies the measure to be changed.
+//  * @returns {success: boolean, error?: string}
+//  */
+// async function updateMeasures(modifiedMeasures: MeasureDatabaseContainer[]): Promise<DatabaseResponse> {
+//     const db = connect();
+//     let output: DatabaseResponse = { success: false }
+//     try {
+//         for (const modifiedMeasure of modifiedMeasures) {
+//             // Generate the SET clause of the SQL query
+//             const setClause = Object.keys(modifiedMeasure)
+//                 .map(key => `${key} = @${key}`)
+//                 .join(', ');
+
+//             // Check if the SET clause is empty
+//             if (setClause.length === 0) {
+//                 throw new Error('No valid properties to update in the Measure table');
+//             }
+
+//             const updateStmt = db.prepare(`
+//                 UPDATE ${Constants.MeasureTableName}
+//                 SET ${setClause}, updated_at = @new_updated_at
+//                 WHERE id = @id
+//             `);
+
+//             updateStmt.run({ ...modifiedMeasure, new_updated_at: new Date().toISOString() });
+//         }
+//         output = { success: true }
+//     } catch (error: any) {
+//         console.error(error);
+//         output = { success: false, error: { message: error.message, stack: error.stack } };
+//     } finally {
+//         db.close();
+//     }
+//     return output
+// }
+
+// /**
+//  * Delete measures from the database.
+//  *
+//  * @param measureIds The IDs of the measures to delete
+//  * @returns {success: boolean, error?: string}
+//  */
+// async function deleteMeasures(measureIds: number[]): Promise<DatabaseResponse> {
+//     const db = connect();
+//     let output: DatabaseResponse = { success: false }
+//     try {
+//         for (const measureId of measureIds) {
+//             const deleteStmt = db.prepare(`DELETE FROM ${Constants.MeasureTableName} WHERE id = @measureId`);
+//             deleteStmt.run({ measureId });
+//         }
+//     } catch (error: any) {
+//         console.error(error);
+//         output = { success: false, error: { message: error.message, stack: error.stack } };
+//     }
+//     finally {
+//         db.close();
+//     }
+//     return output;
+// }

@@ -9,6 +9,7 @@ import LaunchPage from './components/LaunchPage';
 import { useEffect, useState } from 'react';
 import { FieldPropertiesProvider } from './context/fieldPropertiesContext';
 import RegisteredActionsHandler from './utilities/RegisteredActionsHandler';
+import TimelineContainer from './components/timeline/TimelineContainer';
 
 function App() {
   const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -33,6 +34,7 @@ function App() {
                   <div className="secondary-container">
                     <Sidebar />
                     <Canvas />
+                    <TimelineContainer />
                   </div>
                 </div>
               </IsPlayingProvider>

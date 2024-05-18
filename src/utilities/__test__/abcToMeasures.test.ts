@@ -15,7 +15,7 @@ Q:1/4=100
 M:4/4
 `;
 
-    expect(abcToMeasures(abcString)).toEqual([]);
+    expect(abcToMeasures(abcString, true)).toEqual([]);
   });
 
   it("parses multiple measures with same time signature and tempo", () => {
@@ -33,8 +33,6 @@ V:1 treble nm="Oboe" snm="Ob."
 V:1 G z z2   | z4
 |  %6
 `;
-
-    console.log("JEFF", abcString);
 
     const expectedMeasures = [
       new Measure({

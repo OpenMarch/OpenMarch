@@ -2,13 +2,20 @@ import BeatUnit from "@/global/classes/BeatUnit";
 import Measure from "@/global/classes/Measure";
 import TimeSignature from "@/global/classes/TimeSignature";
 
-export default function abcToMeasures(abcString: string): Measure[] {
+/**
+ * Parses an abc string and returns an array of Measure objects.
+ *
+ * @param abcString The abc string to parse
+ * @returns An array of Measure objects
+ */
+export default function abcToMeasures(abcString: string, testing = false): Measure[] {
 
-    // TODO maybe actually make these into measures?
-
+    if (!abcString || abcString.length === 0)
+        return [];
     if (abcString.indexOf('V:1') < 0) {
         // V:1 means voice 1, which is what we're looking for
-        console.error('No measures found in abcString. No V:1 found.')
+        if (!testing)
+            console.error('No measures found in abcString. No V:1 found.')
         return [];
     }
 
@@ -125,22 +132,3 @@ function parseTempo(abcString: string): { bpm: number, beatUnit: BeatUnit } | un
     const beatUnit = BeatUnit.fromString(beatUnitString);
     return { bpm: parseInt(tempoMatch[3], 10), beatUnit };
 }
-
-console.log(abcToMeasures(`
-X:1
-T:Untitled score
-C:Composer / arranger
-%%measurenb 1
-L:1/4
-Q:2/4=100
-M:4/4
-I:linebreak $
-K:C
-V:1 treble nm="Oboe" snm="Ob."
-V:1
- G z z2 | z4 |[M:3/4][Q:1/4=120]"^A" z3 | z3 |[M:4/4][Q:1/2=100]"^12" z4 | z4 | %6
-[M:5/4][Q:1/4=200] z5"^C" | z5 |[M:6/8] z3 | z3 |[M:5/8][Q:1/8=100] z5/2"^B;akjd" | %11
-V:2
- G z z2 | z4 |[M:3/4][Q:1/4=120]"^A" z3 | z3 |[M:4/4][Q:1/2=100]"^12" z4 | z4 | %6
-[M:5/4][Q:1/4=200] z5"^C" | z5 |[M:6/8] z3 | z3 |[M:5/8][Q:1/8=100] z5/2"^B;akjd" | %11
-`))

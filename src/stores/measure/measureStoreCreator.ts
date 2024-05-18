@@ -1,8 +1,9 @@
 import { type StateCreator } from "zustand";
 import Measure from "@/global/classes/Measure";
+import abcToMeasures from "@/utilities/abcToMeasures";
 
 export interface MeasureStoreInterface {
-    measures: Measure[]
+    measures: Measure[];
     fetchMeasures: () => Promise<void>;
 }
 
@@ -15,10 +16,9 @@ export const measureStoreCreator: StateCreator<MeasureStoreInterface> = (set) =>
      * To access the measures, use the `measures` property of the store.
      */
     fetchMeasures: async () => {
-        // const receivedMeasures = await Measure.getMeasures();
-        // const sortedMeasures = receivedMeasures.sort((a, b) => a.number - b.number);
-        // const measureObjects = sortedMeasures.map(measure => new Measure(measure));
-        // set({ measures: measureObjects });
+        const abc_data = await Measure.getMeasures();
+        const measures = abcToMeasures(abc_data);
+        set({ measures });
     },
 });
 

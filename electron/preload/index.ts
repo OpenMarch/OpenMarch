@@ -169,7 +169,7 @@ const APP_API = {
    * @returns A serialized array of all measures in the database.
    * This means you must call `new Measure(measure)` on each measure or else the instance methods will not work.
    */
-  getMeasures: () => ipcRenderer.invoke('measure:getAll') as Promise<MeasureDatabaseContainer[]>,
+  getMeasures: () => ipcRenderer.invoke('measure:getAll') as Promise<string>,
   createMeasures: (newMeasure: MeasureDatabaseContainer[]) =>
     ipcRenderer.invoke('measure:insert', newMeasure) as Promise<DatabaseResponse>,
   updateMeasures: (modifiedMeasures: MeasureDatabaseContainer[]) =>

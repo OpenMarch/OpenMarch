@@ -71,13 +71,13 @@ export class Measure {
      * and the fetchMeasures function is attached to the store and updates the UI.
      * @returns a list of all measures
      */
-    static async getMeasures(): Promise<Measure[]> {
-        const response: MeasureDatabaseContainer[] = await window.electron.getMeasures();
-        const measures: Measure[] = [];
-        for (const container of response) {
-            measures.push(Measure.fromMeasureDatabaseContainer(container));
-        }
-        return measures;
+    static async getMeasures(): Promise<string> {
+        const response = await window.electron.getMeasures();
+        // const measures: Measure[] = [];
+        // for (const container of response) {
+        //     measures.push(Measure.fromMeasureDatabaseContainer(container));
+        // }
+        return response;
     }
 
     /**

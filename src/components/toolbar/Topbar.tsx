@@ -6,6 +6,7 @@ import PageListModal from '../page/PageListModal';
 import UiSettingsToolbar from './UiSettingsToolbar';
 import ExportCoordinatesModal from '../exporting/ExportCoordinatesModal';
 import AlignmentToolbar from './AlignmentToolbar';
+import MeasuresModal from '../measures/MeasuresModal';
 
 function Topbar() {
     const componentClassName = 'mx-2';
@@ -17,6 +18,7 @@ function Topbar() {
             <PlaybackControls className={componentClassName} />
             <MarcherListModal className={componentClassName} />
             <PageListModal className={componentClassName} />
+            {/* <MeasuresModal className={componentClassName} /> */}
             <div className='vertival-divider' />
             <UiSettingsToolbar className={componentClassName} />
             <AlignmentToolbar className={componentClassName} />
