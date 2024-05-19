@@ -50,7 +50,12 @@ const ModalLauncher: React.FC<ModalLauncherProps> =
 
         return (
             <div>
-                {launchButton && <Button onClick={openModal} className={buttonClassName}>{launchButton}</Button>}
+                {
+                    launchButton &&
+                    <Button onClick={openModal} className={buttonClassName}>
+                        {launchButton}
+                    </Button>
+                }
                 <Modal
                     show={modalIsOpen} onHide={closeModal} style={style} className={modalClassName}
                 >
@@ -64,9 +69,9 @@ const ModalLauncher: React.FC<ModalLauncherProps> =
                     </Modal.Body>
                     <Modal.Footer className="justify-content-between">
                         {bottomButton || <div />}
-                        <Button variant="secondary" onClick={closeModal}>
+                        <button className="btn-secondary rounded-lg" onClick={closeModal}>
                             Close
-                        </Button>
+                        </button>
                     </Modal.Footer>
                 </Modal>
             </div>

@@ -46,7 +46,7 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
     return (
         <ModalLauncher
             components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers" modalClassName="modal-xl"
-            bottomButton={marchers.length > 0 && editFormButtons()} buttonClassName={className}
+            bottomButton={marchers.length > 0 && editFormButtons()} buttonClassName={`${className} rounded-lg`}
             setModelIsOpenProp={setModalIsOpen}
         />
     );

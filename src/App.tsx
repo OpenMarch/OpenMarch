@@ -21,7 +21,7 @@ function App() {
   }, []);
   return (
     // Context for the selected page. Will change when more specialized
-    <>
+    <main className='dark bg-white dark:bg-gray-900 fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600'>
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
         <SelectedPageProvider>
           <SelectedMarchersProvider>
@@ -29,12 +29,12 @@ function App() {
               <IsPlayingProvider>
                 <StateInitializer />
                 <RegisteredActionsHandler />
-                <div className="app-container">
+                <div >
                   <Topbar />
                   <div className="secondary-container">
                     <Sidebar />
                     <Canvas />
-                    <TimelineContainer />
+                    {/* <TimelineContainer /> */}
                   </div>
                 </div>
               </IsPlayingProvider>
@@ -42,7 +42,7 @@ function App() {
           </SelectedMarchersProvider>
         </SelectedPageProvider >
       }
-    </>
+    </main>
   );
 }
 

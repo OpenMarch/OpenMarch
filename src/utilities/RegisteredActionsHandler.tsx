@@ -13,13 +13,54 @@ import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegister
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 
 /**
+ * The interface for the registered actions. This exists so it is easy to see what actions are available.
+ */
+export enum RegisteredActionsEnum {
+    // Electron interactions
+    launchLoadFileDialogue = "launchLoadFileDialogue",
+    launchSaveFileDialogue = "launchSaveFileDialogue",
+    launchNewFileDialogue = "launchNewFileDialogue",
+    performUndo = "performUndo",
+    performRedo = "performRedo",
+
+    // Navigation and playback
+    nextPage = "nextPage",
+    lastPage = "lastPage",
+    previousPage = "previousPage",
+    firstPage = "firstPage",
+    playPause = "playPause",
+
+    // Batch editing
+    setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
+    setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
+
+    // Alignment
+    snapToNearestWhole = "snapToNearestWhole",
+    lockX = "lockX",
+    lockY = "lockY",
+    alignVertically = "alignVertically",
+    alignHorizontally = "alignHorizontally",
+    evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
+    evenlyDistributeVertically = "evenlyDistributeVertically",
+
+    // UI settings
+    toggleNextPagePaths = "toggleNextPagePaths",
+    togglePreviousPagePaths = "togglePreviousPagePaths",
+
+    // Select
+    selectAllMarchers = "selectAllMarchers",
+}
+
+/**
+ * THIS SHOULD NOT BE USED DIRECTLY. Use the RegisteredActionsEnum and RegisteredActionsObjects instead.
+ *
  * A RegisteredAction is a uniform object to represent a function in OpenMarch.
  * RegisteredActions can be triggered by a keyboard shortcut or by registering
  * a button ref to the RegisteredActionsStore.
  *
  * Use the getRegisteredAction function to get the RegisteredAction object for a given action.
  */
-class RegisteredAction {
+export class RegisteredAction {
     /** The KeyboardShortcut to trigger the action */
     readonly keyboardShortcut?: KeyboardShortcut;
     /** The description of the action. Also used for the instructional string
@@ -33,6 +74,8 @@ class RegisteredAction {
     /** Instructional string to toggle off the given action (only relevant for toggle-based actions)
      * E.g. "Lock X axis [Shift + X]" */
     readonly instructionalStringToggleOff: string;
+    /** The string representation of the action. E.g. "lockX" */
+    readonly enumString: string;
 
     /**
      *
@@ -41,8 +84,8 @@ class RegisteredAction {
      * @param toggleOnStr The string to display in the UI for the keyboard shortcut when the action is toggled on. Defaults to the desc
      * @param toggleOffStr The string to display in the UI for the keyboard shortcut when the action is toggled off. Defaults to the desc
      */
-    constructor({ keyboardShortcut, desc, toggleOnStr, toggleOffStr }:
-        { keyboardShortcut?: KeyboardShortcut; desc: string; action?: () => any; toggleOnStr?: string; toggleOffStr?: string; }) {
+    constructor({ keyboardShortcut, desc, toggleOnStr, toggleOffStr, enumString }:
+        { keyboardShortcut?: KeyboardShortcut; desc: string; action?: () => any; toggleOnStr?: string; toggleOffStr?: string; enumString: string }) {
 
         this.keyboardShortcut = keyboardShortcut;
         this.desc = desc;
@@ -50,6 +93,11 @@ class RegisteredAction {
         this.instructionalString = this.desc + keyString;
         this.instructionalStringToggleOn = toggleOnStr ? (toggleOnStr + keyString) : this.instructionalString;
         this.instructionalStringToggleOff = toggleOffStr ? (toggleOffStr + keyString) : this.instructionalString;
+
+        if (!Object.values(RegisteredActionsEnum).includes(enumString as RegisteredActionsEnum))
+            console.error(`Invalid enumString: ${enumString}. This should be a RegisteredActionsEnum value.
+        \nRegistered action for "${desc}" will not be registered to buttons.`);
+        this.enumString = enumString;
     }
 }
 
@@ -97,120 +145,127 @@ class KeyboardShortcut {
 }
 
 /**
- * The interface for the registered actions. This exists so it is easy to see what actions are available.
- */
-export enum RegisteredActionsEnum {
-    // Navigation and playback
-    nextPage = "nextPage",
-    lastPage = "lastPage",
-    previousPage = "previousPage",
-    firstPage = "firstPage",
-    playPause = "playPause",
-
-    // Batch editing
-    setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
-    setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
-
-    // Alignment
-    snapToNearestWhole = "snapToNearestWhole",
-    lockX = "lockX",
-    lockY = "lockY",
-    alignVertically = "alignVertically",
-    alignHorizontally = "alignHorizontally",
-    evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
-    evenlyDistributeVertically = "evenlyDistributeVertically",
-
-    // UI settings
-    toggleNextPagePaths = "toggleNextPagePaths",
-    togglePreviousPagePaths = "togglePreviousPagePaths",
-
-    // Select
-    selectAllMarchers = "selectAllMarchers",
-}
-
-/**
  * Details for all the registered actions.
  * This is useful for getting the details of a registered action at compile time.
  */
 export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: RegisteredAction } = {
+    // Electron interactions
+    launchLoadFileDialogue: new RegisteredAction({
+        desc: "Launch load file dialogue",
+        enumString: "launchLoadFileDialogue"
+    }),
+    launchSaveFileDialogue: new RegisteredAction({
+        desc: "Launch save file dialogue",
+        enumString: "launchSaveFileDialogue"
+    }),
+    launchNewFileDialogue: new RegisteredAction({
+        desc: "Launch new file dialogue",
+        enumString: "launchNewFileDialogue"
+    }),
+    performUndo: new RegisteredAction({
+        desc: "Perform undo",
+        enumString: "performUndo"
+    }),
+    performRedo: new RegisteredAction({
+        desc: "Perform redo",
+        enumString: "performRedo"
+    }),
+
     // Navigation and playback
     nextPage: new RegisteredAction({
         desc: "Next page",
-        keyboardShortcut: new KeyboardShortcut({ key: "e" })
+        keyboardShortcut: new KeyboardShortcut({ key: "e" }),
+        enumString: "nextPage",
     }),
     lastPage: new RegisteredAction({
         desc: "Last page",
-        keyboardShortcut: new KeyboardShortcut({ key: "e", shift: true })
+        keyboardShortcut: new KeyboardShortcut({ key: "e", shift: true }),
+        enumString: "lastPage"
     }),
     previousPage: new RegisteredAction({
         desc: "Previous page",
-        keyboardShortcut: new KeyboardShortcut({ key: "q" })
+        keyboardShortcut: new KeyboardShortcut({ key: "q" }),
+        enumString: "previousPage"
     }),
     firstPage: new RegisteredAction({
         desc: "First page",
-        keyboardShortcut: new KeyboardShortcut({ key: "q", shift: true })
+        keyboardShortcut: new KeyboardShortcut({ key: "q", shift: true }),
+        enumString: "firstPage"
     }),
     playPause: new RegisteredAction({
         desc: "Play or pause", toggleOnStr: "Play", toggleOffStr: "Pause",
-        keyboardShortcut: new KeyboardShortcut({ key: " " })
+        keyboardShortcut: new KeyboardShortcut({ key: " " }),
+        enumString: "playPause"
     }),
 
     // Batch editing
     setAllMarchersToPreviousPage: new RegisteredAction({
         desc: "Set all marcher coordinates to previous page",
-        keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true, control: true })
+        keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true, control: true }),
+        enumString: "setAllMarchersToPreviousPage"
     }),
     setSelectedMarchersToPreviousPage: new RegisteredAction({
         desc: "Set selected marcher(s) coordinates to previous page",
-        keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true })
+        keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true }),
+        enumString: "setSelectedMarchersToPreviousPage"
     }),
 
     // Alignment
     snapToNearestWhole: new RegisteredAction({
         desc: "Snap to nearest whole",
-        keyboardShortcut: new KeyboardShortcut({ key: "1" })
+        keyboardShortcut: new KeyboardShortcut({ key: "1" }),
+        enumString: "snapToNearestWhole"
     }),
     lockX: new RegisteredAction({
         desc: "Lock X axis", toggleOnStr: "Lock X movement", toggleOffStr: "Enable X movement",
-        keyboardShortcut: new KeyboardShortcut({ key: "z" })
+        keyboardShortcut: new KeyboardShortcut({ key: "z" }),
+        enumString: "lockX"
     }),
     lockY: new RegisteredAction({
         desc: "Lock Y axis", toggleOnStr: "Lock Y movement", toggleOffStr: "Enable Y movement",
-        keyboardShortcut: new KeyboardShortcut({ key: "x" })
+        keyboardShortcut: new KeyboardShortcut({ key: "x" }),
+        enumString: "lockY"
     }),
     alignVertically: new RegisteredAction({
         desc: "Align vertically",
-        keyboardShortcut: new KeyboardShortcut({ key: "v" })
+        keyboardShortcut: new KeyboardShortcut({ key: "v" }),
+        enumString: "alignVertically"
     }),
     alignHorizontally: new RegisteredAction({
         desc: "Align horizontally",
-        keyboardShortcut: new KeyboardShortcut({ key: "h" })
+        keyboardShortcut: new KeyboardShortcut({ key: "h" }),
+        enumString: "alignHorizontally"
     }),
     evenlyDistributeVertically: new RegisteredAction({
         desc: "Evenly distribute marchers vertically",
-        keyboardShortcut: new KeyboardShortcut({ key: "v", shift: true })
+        keyboardShortcut: new KeyboardShortcut({ key: "v", shift: true }),
+        enumString: "evenlyDistributeVertically"
     }),
     evenlyDistributeHorizontally: new RegisteredAction({
         desc: "Evenly distribute marchers horizontally",
-        keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true })
+        keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true }),
+        enumString: "evenlyDistributeHorizontally"
     }),
 
     // UI settings
     togglePreviousPagePaths: new RegisteredAction({
         desc: "Toggle viewing previous page paths",
         toggleOnStr: "Show previous page dots/paths", toggleOffStr: "Hide previous page dots/paths",
-        keyboardShortcut: new KeyboardShortcut({ key: "n" })
+        keyboardShortcut: new KeyboardShortcut({ key: "n" }),
+        enumString: "togglePreviousPagePaths"
     }),
     toggleNextPagePaths: new RegisteredAction({
         desc: "Toggle viewing next page paths",
         toggleOnStr: "Show next page dots/paths", toggleOffStr: "Hide next page dots/paths",
-        keyboardShortcut: new KeyboardShortcut({ key: "m" })
+        keyboardShortcut: new KeyboardShortcut({ key: "m" }),
+        enumString: "toggleNextPagePaths"
     }),
 
     // Select
     selectAllMarchers: new RegisteredAction({
         desc: "Select all marchers",
-        keyboardShortcut: new KeyboardShortcut({ key: "a", control: true })
+        keyboardShortcut: new KeyboardShortcut({ key: "a", control: true }),
+        enumString: "selectAllMarchers"
     }),
 } as const;
 
@@ -265,6 +320,22 @@ function RegisteredActionsHandler() {
         }
         const registeredActionObject = RegisteredActionsObjects[action];
         switch (action) {
+            /****************** Navigation and playback ******************/
+            case RegisteredActionsEnum.launchLoadFileDialogue:
+                window.electron.databaseLoad();
+                break;
+            case RegisteredActionsEnum.launchSaveFileDialogue:
+                window.electron.databaseSave();
+                break;
+            case RegisteredActionsEnum.launchNewFileDialogue:
+                window.electron.databaseCreate();
+                break;
+            case RegisteredActionsEnum.performUndo:
+                window.electron.undo();
+                break;
+            case RegisteredActionsEnum.performRedo:
+                window.electron.redo();
+                break;
             /****************** Navigation and playback ******************/
             case RegisteredActionsEnum.nextPage: {
                 if (!isPlaying) {

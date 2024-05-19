@@ -1,6 +1,5 @@
 import FileControls from './FileControls';
 import PlaybackControls from './PlaybackControls';
-import { Container } from 'react-bootstrap';
 import MarcherListModal from '../marcher/MarcherListModal';
 import PageListModal from '../page/PageListModal';
 import UiSettingsToolbar from './UiSettingsToolbar';
@@ -13,7 +12,7 @@ function Topbar() {
 
 
     return (
-        <Container fluid className="topbar p-3">
+        <nav className="bg-gray-300 dark:bg-gray-700 flex flex-wrap items-center justify-between p-4 m-0" >
             <FileControls className={componentClassName} />
             <PlaybackControls className={componentClassName} />
             <MarcherListModal className={componentClassName} />
@@ -23,7 +22,7 @@ function Topbar() {
             <UiSettingsToolbar className={componentClassName} />
             <AlignmentToolbar className={componentClassName} />
             <ExportCoordinatesModal className={componentClassName} />
-        </Container>
+        </nav>
     );
 }
 

@@ -27,12 +27,14 @@
     "test:clearCache": "jest --clearCache"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.19",
     "better-sqlite3": "^9.6.0",
     "bootstrap": "^5.3.2",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.1",
     "fabric": "^5.3.0",
     "nan": "^2.19.0",
+    "postcss": "^8.4.38",
     "puppeteer": "^20.3.0",
     "react": "^18.2.0",
     "react-bootstrap": "^2.9.2",
