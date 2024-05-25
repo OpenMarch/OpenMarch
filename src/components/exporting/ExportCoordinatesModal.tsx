@@ -14,6 +14,7 @@ function ExportModalContents() {
     const [includeMeasures, setIncludeMeasures] = useState(true);
     const [useXY, setUseXY] = useState(false);
     const [roundingDenominator, setRoundingDenominator] = useState(4);
+    const [fontSize, setFontSize] = useState(18);
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { marcherPages } = useMarcherPageStore()!;
@@ -31,7 +32,7 @@ function ExportModalContents() {
             coordinateSheets.push(ReactDOMServer.renderToString(
                 <StaticMarcherCoordinateSheet marcher={marcher} pages={pages} marcherPages={marcherPages}
                     includeMeasures={includeMeasures} terse={isTerse} useXY={useXY} fieldProperties={fieldProperties}
-                    roundingDenominator={roundingDenominator}
+                    roundingDenominator={roundingDenominator} fontSize={fontSize}
                 />)
             );
         });
@@ -39,7 +40,7 @@ function ExportModalContents() {
         window.electron.sendExportIndividualCoordinateSheets(coordinateSheets).then(
             () => setIsLoading(false)
         );
-    }, [fieldProperties, marchers, pages, marcherPages, includeMeasures, isTerse, useXY, roundingDenominator]);
+    }, [fieldProperties, marchers, pages, marcherPages, includeMeasures, isTerse, useXY, roundingDenominator, fontSize]);
 
     return (
         <div>
@@ -66,8 +67,13 @@ function ExportModalContents() {
                                             onChange={(e) => setRoundingDenominator(parseInt(e.target.value) || 4)} />
                                     </Col>
                                     <Form.Text className="text-muted">
-                                        {'4 -> 1/4 = nearest quarter step'}<br />{'10 -> 1/10 = nearest tenth step'}
+                                        {'4 -> 1/4 = nearest quarter step'}<br />{'10 -> 1/10 = nearest tenth step'}<br />
                                     </Form.Text>
+                                    <Form.Label>Font Size:</Form.Label>
+                                    <Col sm={3}>
+                                        <Form.Control type="number" defaultValue={fontSize} step={1} min={8} max={40}
+                                            onChange={(e) => setFontSize(parseInt(e.target.value) || 18)} />
+                                    </Col>
                                 </Col>
                             </Row>
                         </Form.Group>
@@ -81,6 +87,7 @@ function ExportModalContents() {
                     <MarcherCoordinateSheet example={true} terse={isTerse}
                         includeMeasures={includeMeasures} useXY={useXY}
                         roundingDenominator={roundingDenominator || 4}
+                        fontSize={fontSize || 18}
                     />
                 </Col>
             </Row>

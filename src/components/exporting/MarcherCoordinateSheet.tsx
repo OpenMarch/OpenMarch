@@ -17,6 +17,7 @@ interface MarcherCoordinateSheetProps {
      * The denominator to round to. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
      */
     roundingDenominator?: number;
+    fontSize?: number;
     /**
      * Whether this is a printing preview or an example for the user to see.
      */
@@ -37,7 +38,7 @@ interface MarcherCoordinateSheetProps {
 }
 
 export default function MarcherCoordinateSheet(
-    { marcher, includeMeasures = true, roundingDenominator = 4,
+    { marcher, includeMeasures = true, roundingDenominator = 4, fontSize = 12, 
         example = false, terse = false, useXY = false }: MarcherCoordinateSheetProps) {
     const { marcherPages } = useMarcherPageStore()!;
     const { pages } = usePageStore()!;
@@ -97,7 +98,7 @@ export default function MarcherCoordinateSheet(
     return (
         <StaticMarcherCoordinateSheet marcher={marcherToUse!} pages={pagesToUse} marcherPages={marcherPagesToUse}
             fieldProperties={fieldProperties!} includeMeasures={includeMeasures} roundingDenominator={roundingDenominator}
-            terse={terse} useXY={useXY} />
+            fontSize = {fontSize} terse={terse} useXY={useXY} />
     );
 }
 
@@ -111,6 +112,7 @@ interface StaticCoordinateSheetProps {
      * The denominator to round to. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
      */
     roundingDenominator?: number;
+    fontSize?: number;
     /**
      * True if the coordinate strings should be terse. False if they should be verbose.
      * Default is false.
@@ -127,7 +129,7 @@ interface StaticCoordinateSheetProps {
 }
 
 export function StaticMarcherCoordinateSheet({
-    marcher, fieldProperties, marcherPages, pages, includeMeasures = true, roundingDenominator = 4,
+    marcher, fieldProperties, marcherPages, pages, includeMeasures = true, roundingDenominator = 4, fontSize =12,
     terse = false, useXY = false }: StaticCoordinateSheetProps) {
 
     const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
@@ -166,7 +168,7 @@ export function StaticMarcherCoordinateSheet({
                         </Col>
                     </Row>
                     <Row>
-                        <Table striped bordered size="sm">
+                        <Table striped bordered size="sm" style={{ fontSize: fontSize }}>
                             <thead>
                                 <tr aria-label='coordinates header row'>
                                     <th className="text-center" aria-label='page header'>
