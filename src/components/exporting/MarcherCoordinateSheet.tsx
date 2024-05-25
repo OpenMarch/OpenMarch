@@ -155,13 +155,13 @@ export function StaticMarcherCoordinateSheet({
                 :
                 <>
                     <Row style={{ backgroundColor: '#ddd' }} aria-label="marcher header">
-                        <Col sm={2} style={headingStyle}>
+                        <Col xs= {2} sm={2} style={headingStyle}>
                             <h2 aria-label='marcher drill number'>{marcher.drill_number}</h2>
                         </Col>
-                        <Col sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
+                        <Col xs= {5} sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
                             <h4 aria-label='marcher name'>{marcher.name}</h4>
                         </Col>
-                        <Col sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
+                        <Col xs= {5} sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
                             <h4 aria-label='marcher section'>{marcher.section}</h4>
                         </Col>
                     </Row>
