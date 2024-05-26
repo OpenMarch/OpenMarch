@@ -29,7 +29,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
         <div className={`playback-controls ${className}`} aria-label="Playback Controls" title="Playback Controls">
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
-                className="btn-primary rounded-l-lg group"
+                className="btn-primary rounded-none rounded-l group"
                 disabled={!previousPage || isPlaying}
             >
                 <FaFastBackward />
@@ -37,7 +37,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.previousPage}
-                className="btn-primary"
+                className="btn-primary rounded-none"
                 disabled={!previousPage || isPlaying}
             >
                 <FaStepBackward />
@@ -45,7 +45,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                className="btn-primary"
+                className="btn-primary rounded-none"
                 disabled={!nextPage}
             >
                 {isPlaying ? <FaPause /> : <FaPlay />}
@@ -53,7 +53,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.nextPage}
-                className="btn-primary"
+                className="btn-primary rounded-none"
                 disabled={!nextPage || isPlaying}
             >
                 <FaStepForward />
@@ -61,7 +61,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.lastPage}
-                className="btn-primary rounded-r-lg"
+                className="btn-primary rounded-none rounded-r"
                 disabled={!nextPage || isPlaying}
             >
                 <FaFastForward />

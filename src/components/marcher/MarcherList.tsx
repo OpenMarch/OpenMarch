@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
@@ -99,7 +98,7 @@ function MarcherList({
     }, [cancelActivator, setCancelActivator]);
 
     return (
-        <Form id={"marcherListForm"} onSubmit={(event) => {
+        <form id={"marcherListForm"} onSubmit={(event) => {
             event.preventDefault();
             handleSubmit();
         }}
@@ -115,21 +114,21 @@ function MarcherList({
                         handleSubmit={handleSubmit}
                     />
                     :
-                    <Button variant="primary" onClick={() => setIsEditing(true)}>
+                    <button className="btn-primary  rounded-md" onClick={() => setIsEditing(true)}>
                         Edit Marchers
-                    </Button>)
+                    </button>)
                 }
             </div>
             <table
-                className={"table " + (isEditing ? "table-hover" : "")}
+                className="w-full table-fixed table h-full"
                 style={{ cursor: "default" }}
                 title="marcher-list-table"
             >
-                <thead className="thead-dark">
+                <thead className="thead-dark text-left">
                     <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Section</th>
-                        <th scope="col">Name</th>
+                        <th className="w-1/6" scope="col">#</th>
+                        <th className="w-1/3" scope="col">Section</th>
+                        <th className="w-auto" scope="col">Name</th>
                     </tr>
                 </thead>
                 {(localMarchers && marchers) &&
@@ -140,7 +139,7 @@ function MarcherList({
                                 title="Marcher row"
                                 aria-label="Marcher Row"
                             >
-                                <th scope="row" title="Marcher drill number">
+                                <th scope="row" title="Marcher drill number" className="text-left">
                                     {marcher.drill_prefix + marcher.drill_order}
                                 </th>
                                 <td title="Marcher section" aria-label="Marcher section">
@@ -174,16 +173,16 @@ function MarcherList({
                                 </td>
                                 {isEditing &&
                                     <td >
-                                        <Button variant="danger" onClick={() => handleDeleteMarcher(marcher.id)}>
+                                        <button className="btn-danger float-right" onClick={() => handleDeleteMarcher(marcher.id)}>
                                             <FaTrashAlt />
-                                        </Button>
+                                        </button>
                                     </td>
                                 }
                             </tr>
                         ))}
                     </tbody>}
             </table>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className='flex justify-between'>
                 <div />
                 {/* Do not show this button if the form is being controlled by a parent component.
                   Form buttons exist on both the bottom and top of the form */}
@@ -195,15 +194,15 @@ function MarcherList({
                             handleSubmit={handleSubmit}
                         />
                         :
-                        <Button variant="primary" onClick={() => setIsEditing(true)}>
+                        <button className="btn-primary" onClick={() => setIsEditing(true)}>
                             Edit Marchers
-                        </Button>)
+                        </button>)
                     :
                     // exists to ensure default submit behavior
                     <button type="submit" hidden={true} />
                 }
             </div>
-        </Form>
+        </form>
     );
 }
 

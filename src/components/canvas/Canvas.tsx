@@ -17,7 +17,7 @@ import { StaticCanvasMarcher } from "@/components/canvas/StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
 import { ActiveObjectArgs, CanvasColors } from "@/global/Constants";
 
-function Canvas() {
+function Canvas({ className = "" }: { className?: string }) {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
@@ -514,22 +514,14 @@ function Canvas() {
     }, [isPlaying, marcherPages, pages, renderMarchers, selectedPage, setIsPlaying, setSelectedPage]);
 
     return (
-        <div className="canvas-container-custom">
+        <div className={`${className}`}>
             {((marchers.length > 0 && pages.length > 0) ?
-                <canvas ref={canvasRef} id="fieldCanvas" className="field-canvas" />
+                <canvas ref={canvasRef} id="fieldCanvas" />
                 : // If there are no marchers or pages, display a message
-                <div className="canvas-loading"
-                    style={{
-                        color: "white",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        height: "100%",
-                    }}
+                <div className="flex bg-gray-900 text-white h-full w-full align-middle flex-col justify-center text-center"
                 >
-                    <h3>To start the show, create Marchers and Pages.</h3>
-                    <p>Then {"(Window -> Refresh) or (Ctrl+R)"}</p>
+                    <h3>To start the show, create Marchers and Pages</h3>
+                    <p>Then {"`Window -> Refresh` (or `Ctrl+R`)"}</p>
                     <h5>If anything in OpenMarch ever seems broken, a refresh will often fix it.</h5>
                 </div>
             )}

@@ -1,5 +1,3 @@
-import { Button, Col, Row } from "react-bootstrap";
-
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
 }
@@ -16,26 +14,26 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     }
 
     return (
-        <div className="launch-page">
-            <h1>Welcome to OpenMarch!</h1>
-            <h4>The open source drill writing software project</h4>
-            <Row>
-                <Col style={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch' }}>
-                    <Button style={{ margin: '10px', whiteSpace: 'nowrap' }} onClick={handleCreateNew}>
-                        Create New
-                    </Button>
-                    <Button style={{ margin: '10px', whiteSpace: 'nowrap' }} onClick={handleOpenExisting}>
-                        Open Existing
-                    </Button>
-                </Col>
-            </Row>
+        <div className="flex bg-gray-700 text-white h-full w-full justify-center flex-col items-center text-center">
+            <h1 className="text-5xl font-normal mb-1">Welcome to OpenMarch!</h1>
+            <h4 className="font-normal text-xl mt-1">The open source drill writing software project</h4>
+            <div className="my-8">
+                <button className="btn-primary rounded mx-6 whitespace-nowrap text-lg" onClick={handleCreateNew}>
+                    Create New
+                </button>
+                <button className="btn-primary rounded mx-6 whitespace-nowrap text-lg" onClick={handleOpenExisting}>
+                    Open Existing
+                </button>
+            </div>
             <br />
-            <p style={{ justifyContent: 'center' }}>
-                NOTE: This software is currently not released for production.
-            </p>
-            <p>
-                By using OpenMarch, you accept there may be glitches and quirks that come with using software that is still in development.
-            </p>
+            <div className="lg:w-2/5 mx-8">
+                <p><strong>
+                    WARNING - This software is currently not released for production.
+                </strong></p>
+                <p>
+                    By using OpenMarch, you accept there may be glitches and quirks that come with using software that is still in development.
+                </p>
+            </div>
         </div>
     );
 }

@@ -1,4 +1,3 @@
-import { Col, Row } from "react-bootstrap";
 import ModalLauncher from "../toolbar/ModalLauncher";
 import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
@@ -21,17 +20,17 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
 
     function MarcherModalContents() {
         return (
-            <Row>
-                <Col md={7} style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div className="flex flex-grow flex-row h-full">
+                <div className="h-[100%] w-3/5 overflow-scroll">
                     <MarcherList isEditingStateProp={[listIsEditing, setListIsEditing]}
                         submitActivatorStateProp={[submitActivator, setSubmitActivator]}
                         cancelActivatorStateProp={[cancelActivator, setCancelActivator]} />
                     {/* <MarcherList /> */}
-                </Col>
-                <Col md={5} className="px-4">
+                </div>
+                <div className="w-2/5 px-4  overflow-scroll">
                     <NewMarcherForm hasHeader={true} disabledProp={listIsEditing} />
-                </Col>
-            </Row>
+                </div>
+            </div>
         );
     }
 
@@ -45,9 +44,9 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
 
     return (
         <ModalLauncher
-            components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers" modalClassName="modal-xl"
-            bottomButton={marchers.length > 0 && editFormButtons()} buttonClassName={`${className} rounded-lg`}
-            setModelIsOpenProp={setModalIsOpen}
+            components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers" modalClassName=""
+            bottomButton={marchers.length > 0 && editFormButtons()} buttonClassName={`btn-primary rounded-md ${className}`}
+            setModelIsOpenProp={setModalIsOpen} bodyClassName="h-[75vh]"
         />
     );
 }

@@ -1,7 +1,8 @@
-import { Alert, Button, Col, Dropdown, Form, Row } from "react-bootstrap";
+import * as Form from "@/components/templates/Form";
 import { useEffect, useRef, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { NewPageArgs, Page } from "@/global/classes/Page";
+import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp } from "react-icons/fa";
 
 interface NewPageFormProps {
     hasHeader?: boolean;
@@ -26,6 +27,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
+    const [showShortcuts, setShowShortcuts] = useState<boolean>(false);
     const { pages } = usePageStore!();
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -152,10 +154,10 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     }, [counts, formCounts]);
 
     return (
-        <Form onSubmit={handleSubmit} id="newPageForm" ref={formRef} aria-label="New Page Form">
+        <form onSubmit={handleSubmit} id="newPageForm" ref={formRef} aria-label="New Page Form">
             {hasHeader && <h4>Create new pages</h4>}
-            <Row className="mb-3">
-                <Form.Group as={Col} md={4} controlId="previous page" aria-label="new page previous page">
+            <div className="grid grid-cols-3">
+                <Form.Group aria-label="new page previous page">
                     <Form.Label>Prev. Pg.</Form.Label>
                     <Form.Select aria-label="Select the previous page" onChange={handlePreviousPageChange}>
                         <option value={-1}>Last</option>
@@ -165,9 +167,9 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                     </Form.Select>
                 </Form.Group>
 
-                <Form.Group as={Col} md={4} controlId="counts" aria-label="new page counts">
+                <Form.Group aria-label="new page counts">
                     <Form.Label>Counts</Form.Label>
-                    <Form.Control type="number" placeholder="-"
+                    <Form.Input type="number" placeholder="-"
                         onFocus={() => setTyping(true)}
                         onBlur={() => {
                             setTyping(false);
@@ -182,9 +184,9 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                     />
                 </Form.Group>
 
-                <Form.Group as={Col} md={4} controlId="tempo" aria-label="new page tempo">
+                <Form.Group aria-label="new page tempo">
                     <Form.Label>Tempo</Form.Label>
-                    <Form.Control type="number" placeholder="-"
+                    <Form.Input type="number" placeholder="-"
                         onFocus={() => setTyping(true)}
                         onBlur={() => {
                             setTyping(false);
@@ -198,47 +200,54 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                         required min={1} step={1}
                     />
                 </Form.Group>
-            </Row>
-            <Row className="mb-3">
+            </div>
+            <div className="grid grid-cols-2">
 
-                <Form.Group as={Col} md={4} controlId="quantityForm" aria-label="new page quantity">
+                <Form.Group aria-label="new page quantity">
                     <Form.Label>Quantity</Form.Label>
-                    <Form.Control type="number" defaultValue={1}
+                    <Form.Input type="number" defaultValue={1}
                         onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
                         onChange={handleQuantityChange} step={1} min={1} />
                 </Form.Group>
-                <Form.Group as={Col} md={4} controlId="subsetCheck" aria-label="new page is subset checkbox">
-                    <Form.Check type="checkbox" label="Subset" checked={isSubset} onChange={handleIsSubsetChange} />
+                <Form.Group aria-label="new page is subset checkbox">
+                    <Form.Label>Subset</Form.Label>
+                    <Form.Input type="checkbox" className='w-fit' checked={isSubset} onChange={handleIsSubsetChange} />
                 </Form.Group>
-                <Dropdown as={Col} md={4}>
-                    <Dropdown.Toggle variant="info" id="dropdown-basic">
-                        Shortcuts
-                    </Dropdown.Toggle>
+            </div>
 
-                    <Dropdown.Menu>
-                        <Dropdown.Item href="#/action-1">Use left/right to increment counts by 4.</Dropdown.Item>
-                        <Dropdown.Item href="#/action-2">Use up/down to increment count by 1.</Dropdown.Item>
-                        <Dropdown.Item href="#/action-3">Press [S] to toggle subset.</Dropdown.Item>
-                        <Dropdown.Item href="#/action-4">Press [Enter] to submit.</Dropdown.Item>
-                    </Dropdown.Menu>
-                </Dropdown>
-            </Row>
-            <Row className="py-2">
-                <Button variant="primary" type="submit" aria-label="create page button"
+            <div className="bg-gray-500 py-1 px-2 rounded text-gray-100 transition-all duration-150
+                hover:bg-gray-600 hover:cursor-pointer w-fit text-sm float-right"
+                onClick={() => setShowShortcuts(!showShortcuts)} aria-label="new page form tips">
+                {showShortcuts ? "Hide Shortcuts" : "Shortcuts"}
+            </div>
+            {showShortcuts && <div className="" id="new page form tooltips">
+                <ul className="list-inside text-gray-500 bg-gray-200 p-2 rounded border-solid border-1 border-gray-400">
+                    <li><FaArrowLeft /> <FaArrowRight /> to increment counts by 4.</li>
+                    <li><FaArrowUp /> <FaArrowDown /> to increment count by 1.</li>
+                    <li className="">
+                        <span className="key bg-gray-500 text-gray-50 border-gray-600">S</span> to toggle subset.
+                    </li>
+                    <li>
+                        <span className="key bg-gray-500 text-gray-50 border-gray-600">Enter</span> to submit.
+                    </li>
+                </ul>
+            </div>}
+            <div className="py-2">
+                <button className="btn-primary" type="submit" aria-label="create page button"
                     disabled={disabledProp}
                 >
                     {makeButtonString(quantity)}
-                </Button>
-            </Row>
+                </button>
+            </div>
             {alertMessages.map((message, index) => (
-                <Alert key={index} variant={message.startsWith('Error') ? 'danger' : 'success'} className="mt-3"
+                <Form.Alert key={index} type={message.startsWith('Error') ? 'error' : 'success'} className="mt-3"
                     onClose={() => setAlertMessages(alertMessages.filter((_, i) => i !== index))} dismissible
                     aria-label='create page response'
                 >
                     {message}
-                </Alert>
+                </Form.Alert>
             ))}
-        </Form>
+        </form>
     );
 }
 

@@ -1,4 +1,3 @@
-import { Col, Row } from "react-bootstrap";
 import ModalLauncher from "../toolbar/ModalLauncher";
 import { useEffect, useState } from "react";
 import FormButtons from "../FormButtons";
@@ -21,17 +20,17 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
 
     function PageModalContents() {
         return (
-            <Row>
-                <Col md={6} style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div className="flex flex-grow flex-row h-full">
+                <div className="h-[100%] w-3/5 overflow-scroll">
                     <PageList isEditingStateProp={[listIsEditing, setListIsEditing]}
                         submitActivatorStateProp={[submitActivator, setSubmitActivator]}
                         cancelActivatorStateProp={[cancelActivator, setCancelActivator]} />
                     {/* <MarcherList /> */}
-                </Col>
-                <Col md={6} className="px-4">
+                </div>
+                <div className="w-2/5 px-4 overflow-scroll">
                     <NewPageForm hasHeader={true} disabledProp={listIsEditing} />
-                </Col>
-            </Row>
+                </div>
+            </div>
         );
     }
 
@@ -46,8 +45,8 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
     return (
         <ModalLauncher
             components={[PageModalContents()]} launchButton="Pages" header="Pages" modalClassName="modal-lg"
-            bottomButton={pages.length > 0 && editFormButtons()} buttonClassName={`${className} rounded-lg`}
-            setModelIsOpenProp={setModalIsOpen}
+            bottomButton={pages.length > 0 && editFormButtons()} buttonClassName={`btn-primary ${className}`}
+            setModelIsOpenProp={setModalIsOpen} bodyClassName="h-[75vh]"
         />
     );
 }

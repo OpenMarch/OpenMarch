@@ -49,7 +49,7 @@
   --tw-contain-size:  ;
   --tw-contain-layout:  ;
   --tw-contain-paint:  ;
-  --tw-contain-style:  
+  --tw-contain-style:
 }
 
 ::backdrop {
@@ -103,7 +103,7 @@
   --tw-contain-size:  ;
   --tw-contain-layout:  ;
   --tw-contain-paint:  ;
-  --tw-contain-style:  
+  --tw-contain-style:
 }
 
 .container {
@@ -255,7 +255,7 @@
   border-radius: 0.25rem
 }
 
-.rounded-lg {
+.rounded-md {
   border-radius: 0.5rem
 }
 

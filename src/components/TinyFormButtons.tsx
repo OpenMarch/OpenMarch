@@ -1,4 +1,3 @@
-import { Button } from "react-bootstrap";
 import { FaEdit, FaTimes, FaCheck } from "react-icons/fa";
 
 interface TinyFormButtonsProps {
@@ -11,28 +10,26 @@ export default function TinyFormButtons({ isEditing, setIsEditing, handleCancel 
     return (
         <div className="edit-form-button-container">
             {!isEditing ?
-                < Button size="sm"
+                < button
                     onClick={() => setIsEditing(!isEditing)}
-                    className="edit-form-button" variant="light"
+                    className="text-sm btn-secondary"
                 >
                     <FaEdit />
-                </Button>
+                </button>
                 :
                 <>
-                    <Button // Cancel button
-                        size="sm" variant="outline-danger"
-                        className="edit-form-button"
+                    <button // Cancel button
+                        className="text-sm btn-secondary"
                         onClick={() => handleCancel()}
                     >
                         <FaTimes />
-                    </Button>
-                    <Button // Submit button
-                        size="sm" variant="success"
-                        className="edit-form-button"
+                    </button>
+                    <button // Submit button
+                        className="text-sm btn-primary"
                         type="submit"
                     >
                         <FaCheck />
-                    </Button>
+                    </button>
                 </>
             }
         </div>

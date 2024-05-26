@@ -85,7 +85,7 @@ function PageEditor() {
 
     return (
         <>{selectedPage && <div className="page-editor editor">
-            <h3 className="header">
+            <h3 className="text-xl font-sans">
                 <span>Page</span>
                 <span>{selectedPage.name}</span>
             </h3>

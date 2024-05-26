@@ -1,4 +1,4 @@
-import { Button, Col, Form, Row } from "react-bootstrap";
+import * as Form from "@/components/templates/Form";
 import ModalLauncher from "../toolbar/ModalLauncher";
 import { useCallback, useState } from "react";
 import { topBarComponentProps } from "@/global/Interfaces";
@@ -19,7 +19,6 @@ function ExportModalContents() {
     const { marcherPages } = useMarcherPageStore()!;
     const { fieldProperties } = useFieldProperties()!;
     const [isLoading, setIsLoading] = useState(false);
-    const rowClassname = "mx-2";
     // const fourSheets = useRef(false);
 
     const handleExport = useCallback(() => {
@@ -42,54 +41,48 @@ function ExportModalContents() {
     }, [fieldProperties, marchers, pages, marcherPages, includeMeasures, isTerse, useXY, roundingDenominator]);
 
     return (
-        <div>
-            <h5>Settings</h5>
-            <Row className={rowClassname}>
-                <Col>
-                    <Form>
-                        <Form.Group>
-                            <Row>
-                                <Col>
-                                    <Form.Check type="checkbox" label="Include measures" checked={includeMeasures}
-                                        onChange={(e) => setIncludeMeasures(e.target.checked)}
-                                    />
-                                    <Form.Check type="checkbox" label="Abbreviate coordinate descriptions" checked={isTerse}
-                                        onChange={(e) => setIsTerse(e.target.checked)}
-                                    />
-                                    <Form.Check type="checkbox" label="Use X/Y headers" checked={useXY}
-                                        onChange={(e) => setUseXY(e.target.checked)} />
-                                </Col>
-                                <Col>
-                                    <Form.Label>Rounding denominator:</Form.Label>
-                                    <Col sm={3}>
-                                        <Form.Control type="number" defaultValue={roundingDenominator} step={1} min={1}
-                                            onChange={(e) => setRoundingDenominator(parseInt(e.target.value) || 4)} />
-                                    </Col>
-                                    <Form.Text className="text-muted">
-                                        {'4 -> 1/4 = nearest quarter step'}<br />{'10 -> 1/10 = nearest tenth step'}
-                                    </Form.Text>
-                                </Col>
-                            </Row>
-                        </Form.Group>
-                    </Form>
-                </Col>
-            </Row>
+        <div className="">
+            <h5 className="text-xl">Settings</h5>
+            <div className="mx-2">
+                <form className="grid grid-cols-2">
+                    <div className="grid grid-rows-3 gap-0">
+                        <Form.Check type="checkbox" label="Include measures" checked={includeMeasures}
+                            onChange={(e) => setIncludeMeasures(e.target.checked)}
+                        />
+                        <Form.Check type="checkbox" label="Abbreviate coordinate descriptions" checked={isTerse}
+                            onChange={(e) => setIsTerse(e.target.checked)}
+                        />
+                        <Form.Check type="checkbox" label="Use X/Y headers" checked={useXY}
+                            onChange={(e) => setUseXY(e.target.checked)} />
+                    </div>
+                    <div>
+                        <Form.Label>Rounding denominator:</Form.Label>
+                        <div>
+                            <Form.Input type="number" defaultValue={roundingDenominator} step={1} min={1}
+                                onChange={(e) => setRoundingDenominator(parseInt(e.target.value) || 4)} />
+                        </div>
+                        <p className="text-muted">
+                            {'4 -> 1/4 = nearest quarter step'}<br />{'10 -> 1/10 = nearest tenth step'}
+                        </p>
+                    </div>
+                </form>
+            </div>
             <br />
             <h5>Preview</h5>
-            <Row className={rowClassname} >
-                <Col className="mx-2" style={{ border: "2px solid #aaa" }}>
+            <div  >
+                <div className="mx-2" style={{ border: "2px solid #aaa" }}>
                     <MarcherCoordinateSheet example={true} terse={isTerse}
                         includeMeasures={includeMeasures} useXY={useXY}
                         roundingDenominator={roundingDenominator || 4}
                     />
-                </Col>
-            </Row>
+                </div>
+            </div>
             <br />
-            <Row className="mx-2">
-                <Button variant="primary" onClick={handleExport} disabled={isLoading}>
+            <div className="mx-2">
+                <button className="btn-primary" onClick={handleExport} disabled={isLoading}>
                     {isLoading ? "Exporting... Please wait" : "Export Individual Coordinate Sheets"}
-                </Button>
-            </Row>
+                </button>
+            </div>
         </div >
     );
 }
@@ -99,7 +92,7 @@ export default function ExportCoordinatesModal({ className }: topBarComponentPro
         <ModalLauncher
             components={[ExportModalContents()]} launchButton="Export"
             header="Export Individual Coordinate Sheets" modalClassName="modal-lg"
-            buttonClassName={className}
+            buttonClassName={`btn-primary rounded ${className}`}
         />
     );
 }

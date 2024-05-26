@@ -1,4 +1,3 @@
-import { Button } from "react-bootstrap";
 interface FormButtonsProps {
     isEditingProp?: boolean;
     setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
@@ -17,32 +16,31 @@ export default function FormButtons({ handleCancel,
     return (
         <div style={{ display: 'flex' }}>
             {!isEditingProp ?
-                <Button
-                    variant="primary"
+                <button
+                    className="btn-primary rounded-md"
                     title="edit-form-button"
                     onClick={setIsEditingProp && (() => setIsEditingProp(true))}
                 >
                     {editButton}
-                </Button>
+                </button>
                 :
                 <>
                     {/* handle if handleSubmit is a function */}
                     {handleSubmit ?
-                        <Button variant="primary" title="Submit form button" onClick={handleSubmit}>
+                        <button className="btn-primary rounded-md" title="Submit form button" onClick={handleSubmit}>
                             Save Changes
-                        </Button> :
-                        <Button variant="primary" title="Submit form button" type="submit">
+                        </button> :
+                        <button className="btn-primary rounded-md" title="Submit form button" type="submit">
                             Save Changes
-                        </Button>
+                        </button>
                     }
-                    <Button variant="secondary"
+                    <button className="btn-secondary rounded-md mx-1"
                         title="Cancel form button"
                         type="button"
                         onClick={handleCancel}
-                        className="mx-1"
                     >
                         Cancel
-                    </Button>
+                    </button>
                 </>
             }
         </div>

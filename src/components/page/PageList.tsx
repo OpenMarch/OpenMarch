@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Button, Form } from "react-bootstrap";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
@@ -108,7 +107,7 @@ function PageList({
 
 
     return (
-        <Form id={"pageListForm"} onSubmit={(event) => {
+        <form id={"pageListForm"} onSubmit={(event) => {
             event.preventDefault();
             handleSubmit();
         }}
@@ -122,26 +121,26 @@ function PageList({
                         handleSubmit={handleSubmit}
                     />
                     :
-                    <Button variant="primary" onClick={() => setIsEditing(true)}>
+                    <button className="btn-primary" onClick={() => setIsEditing(true)}>
                         Edit Pages
-                    </Button>)
+                    </button>)
                 }
             </div>
-            <table className={"table " + (isEditing && "table-hover")} style={{ cursor: "default" }}>
-                <thead className="thead-dark">
+            <table className="w-full table-fixed table h-full" style={{ cursor: "default" }}>
+                <thead className="thead-dark text-left">
                     <tr>
-                        <th scope="col">Page #</th>
-                        <th scope="col">Counts</th>
+                        <th className="w-1/6" scope="col">Page #</th>
+                        <th className="w-auto" scope="col">Counts</th>
                     </tr>
                 </thead>
                 {(pages && localPages) &&
                     <tbody>
                         {localPages.map((page) => (
                             <tr key={page.id} aria-label="Page row" title="Page row" data-id={page.id}>
-                                <th title="Page name" aria-label="Page name" scope="row">
+                                <th title="Page name" aria-label="Page name" scope="row" className="text-left">
                                     {page.name}
                                 </th>
-                                <td title="Page counts" aria-label="Page counts">
+                                <td title="Page counts" aria-label="Page counts" className="text-left">
                                     {isEditing ?
                                         <input type="number"
                                             className="form-control"
@@ -160,9 +159,9 @@ function PageList({
                                 </td>
                                 {isEditing &&
                                     <td >
-                                        <Button variant="danger" onClick={() => handleDeletePage(page.id)}>
+                                        <button className="btn-danger danger float-right" onClick={() => handleDeletePage(page.id)}>
                                             <FaTrashAlt />
-                                        </Button>
+                                        </button>
                                     </td>
                                 }
                             </tr>
@@ -179,15 +178,15 @@ function PageList({
                             handleSubmit={handleSubmit}
                         />
                         :
-                        <Button variant="primary" onClick={() => setIsEditing(true)}>
+                        <button className="btn-primary" onClick={() => setIsEditing(true)}>
                             Edit Pages
-                        </Button>)
+                        </button>)
                     :
                     // exists to ensure default submit behavior
                     <button type="submit" hidden={true} />
                 }
             </div>
-        </Form>
+        </form>
     );
 }
 

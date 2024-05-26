@@ -1,4 +1,3 @@
-import { Col, Row, Table } from "react-bootstrap";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
@@ -143,7 +142,7 @@ export function StaticMarcherCoordinateSheet({
         ReadableCoords.setFieldProperties(fieldProperties!);
 
     return (
-        <div className="m-3">
+        <div className="">
             {!fieldProperties || !marcher || pages.length === 0 || marcherPages.length === 0 ?
                 <>
                     <h5>Error exporting coordinate sheet</h5>
@@ -154,71 +153,69 @@ export function StaticMarcherCoordinateSheet({
                 </>
                 :
                 <>
-                    <Row style={{ backgroundColor: '#ddd' }} aria-label="marcher header">
-                        <Col sm={2} style={headingStyle}>
+                    <div className="grid grid-cols-12 px-2 m-0" style={{ backgroundColor: '#ddd' }} aria-label="marcher header">
+                        <div className="col-span-2" style={headingStyle}>
                             <h2 aria-label='marcher drill number'>{marcher.drill_number}</h2>
-                        </Col>
-                        <Col sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
+                        </div>
+                        <div className="col-span-5 pl-2" style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
                             <h4 aria-label='marcher name'>{marcher.name}</h4>
-                        </Col>
-                        <Col sm={5} style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
+                        </div>
+                        <div className="col-span-5 pl-2" style={{ ...headingStyle, borderLeft: "1px solid #888", }}>
                             <h4 aria-label='marcher section'>{marcher.section}</h4>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Table striped bordered size="sm">
-                            <thead>
-                                <tr aria-label='coordinates header row'>
-                                    <th className="text-center" aria-label='page header'>
-                                        Page
-                                    </th>
-                                    <th className="text-center" aria-label='counts header'>
-                                        Counts
-                                    </th>
-                                    {includeMeasures && <th className="text-center" aria-label='measure header'>
-                                        Measure
-                                    </th>}
-                                    <th aria-label='x header'>
-                                        {useXY ? "X" : "Side to Side"}
-                                    </th>
-                                    <th aria-label='y header'>
-                                        {useXY ? "Y" : "Front to Back"}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {marcherPages.filter((marcherPage) => marcherPage.marcher_id === marcher.id).sort(sortMarcherPages)
-                                    .map((marcherPage: MarcherPage) => {
-                                        if (!fieldProperties) return null;
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr aria-label='coordinates header row'>
+                                <th className="text-center" aria-label='page header'>
+                                    Page
+                                </th>
+                                <th className="text-center" aria-label='counts header'>
+                                    Counts
+                                </th>
+                                {includeMeasures && <th className="text-center" aria-label='measure header'>
+                                    Measure
+                                </th>}
+                                <th aria-label='x header'>
+                                    {useXY ? "X" : "Side to Side"}
+                                </th>
+                                <th aria-label='y header'>
+                                    {useXY ? "Y" : "Front to Back"}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {marcherPages.filter((marcherPage) => marcherPage.marcher_id === marcher.id).sort(sortMarcherPages)
+                                .map((marcherPage: MarcherPage) => {
+                                    if (!fieldProperties) return null;
 
-                                        const page = pages.find((page) => page.id === marcherPage.page_id);
-                                        const rCoords = new ReadableCoords({ x: marcherPage.x, y: marcherPage.y, roundingDenominator });
+                                    const page = pages.find((page) => page.id === marcherPage.page_id);
+                                    const rCoords = new ReadableCoords({ x: marcherPage.x, y: marcherPage.y, roundingDenominator });
 
-                                        if (!page || !rCoords) return null;
+                                    if (!page || !rCoords) return null;
 
-                                        return (
-                                            <tr key={marcherPage.id_for_html}>
-                                                <td className="text-center" aria-label='page name'>
-                                                    {page.name}
-                                                </td>
-                                                <td className="text-center" aria-label='page counts'>
-                                                    {page.counts}
-                                                </td>
-                                                {includeMeasures && <td className="text-center" aria-label='page measures'
-                                                >N/A
-                                                </td>}
-                                                <td aria-label='x coordinate'>
-                                                    {terse ? rCoords.toTerseStringX() : rCoords.toVerboseStringX()}
-                                                </td>
-                                                <td aria-label='y coordinate'>
-                                                    {terse ? rCoords.toTerseStringY() : rCoords.toVerboseStringY()}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                            </tbody>
-                        </Table>
-                    </Row>
+                                    return (
+                                        <tr key={marcherPage.id_for_html}>
+                                            <td className="text-center" aria-label='page name'>
+                                                {page.name}
+                                            </td>
+                                            <td className="text-center" aria-label='page counts'>
+                                                {page.counts}
+                                            </td>
+                                            {includeMeasures && <td className="text-center" aria-label='page measures'
+                                            >N/A
+                                            </td>}
+                                            <td aria-label='x coordinate'>
+                                                {terse ? rCoords.toTerseStringX() : rCoords.toVerboseStringX()}
+                                            </td>
+                                            <td aria-label='y coordinate'>
+                                                {terse ? rCoords.toTerseStringY() : rCoords.toVerboseStringY()}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                        </tbody>
+                    </table>
                 </>}
         </div>
     );

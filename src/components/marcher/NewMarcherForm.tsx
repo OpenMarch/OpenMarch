@@ -1,4 +1,4 @@
-import { Alert, Button, Col, Form, Row } from "react-bootstrap";
+import * as Form from "@/components/templates/Form";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
@@ -64,7 +64,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
                     newAlertMessages.unshift(`Marcher ${drillPrefix + newDrillOrder} created successfully`);
                 else {
                     newAlertMessages.unshift(`Error creating marcher ${drillPrefix + newDrillOrder}`);
-                    console.error(`Error creating marcher ${drillPrefix + newDrillOrder}:`, response.errorMessage);
+                    console.error(`Error creating marcher ${drillPrefix + newDrillOrder}:`, response.error);
                 }
             }
             setAlertMessages(newAlertMessages);
@@ -164,64 +164,64 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({ hasHeader = false, disa
     }, [section, drillPrefix, drillOrder, sectionError, drillPrefixError, drillOrderError]);
 
     return (
-        <Form onSubmit={handleSubmit} id="newMarcherForm" ref={formRef}>
+        <form onSubmit={handleSubmit} id="newMarcherForm" ref={formRef}>
             {hasHeader && <h4>Create new marchers</h4>}
-            <Row className="mb-3">
-                <Form.Group as={Col} md={12} controlId="sectionForm">
+            <div className="mb-3">
+                <Form.Group>
                     <Form.Label>Section</Form.Label>
                     <Form.Select onChange={handleSectionChange}
-                        required isInvalid={!!sectionError} value={section}
+                        required isInvalid={!!sectionError} value={section} invalidMessage={sectionError}
                     >
                         <option value="default">Choose Section...</option>
                         {Object.values(SECTIONS).map((section) => {
                             return <option key={section.name}>{section.name}</option>
                         })}
                     </Form.Select>
-                    <Form.Control.Feedback type="invalid">{sectionError}</Form.Control.Feedback>
                 </Form.Group>
+            </div>
 
-            </Row>
-
-            <Row className="mb-3">
-                <Form.Group as={Col} md={4} controlId="drillPrefixForm">
+            <div className="grid grid-cols-3">
+                <Form.Group>
                     <Form.Label>Drill Prefix</Form.Label>
-                    <Form.Control type="text" placeholder="-"
+                    <Form.Input type="text" placeholder="-"
                         onChange={handlePrefixChange} value={drillPrefix} required
-                        maxLength={3} isInvalid={!!drillPrefixError} />
-                    <Form.Control.Feedback type="invalid">{drillPrefixError}</Form.Control.Feedback>
+                        maxLength={3} isInvalid={!!drillPrefixError} invalidMessage={drillPrefixError}
+                    />
                 </Form.Group>
 
-                <Form.Group as={Col} md={4} controlId="drillOrderForm">
+                <Form.Group>
                     <Form.Label>Drill #</Form.Label>
-                    <Form.Control type="number" placeholder="-"
+                    <Form.Input type="number" placeholder="-"
                         onChange={handleOrderChange} value={drillOrder}
                         isInvalid={!!drillOrderError} required
                         min={1} step={1} disabled={quantity > 1}
+                        invalidMessage={drillOrderError}
                     />
-                    <Form.Control.Feedback type="invalid">{drillOrderError}</Form.Control.Feedback>
+                    {/* <Form.Feedback type="invalid">{drillOrderError}</Form.Feedback> */}
                 </Form.Group>
 
-                <Form.Group as={Col} md={4} controlId="quantityForm">
+                <Form.Group>
                     <Form.Label>Quantity</Form.Label>
-                    <Form.Control type="number" defaultValue={1}
-                        onChange={handleQuantityChange} step={1} min={1} />
+                    <Form.Input type="number" defaultValue={1}
+                        onChange={handleQuantityChange} step={1} min={1}
+                    />
                 </Form.Group>
-            </Row>
-            <Row className="py-2">
-                <Button variant="primary" type="submit"
+            </div>
+            <div className="py-2">
+                <button className="btn-primary" type="submit"
                     disabled={submitIsDisabled || disabledProp}
                 >
                     {makeButtonString(quantity, section)}
-                </Button>
-            </Row>
+                </button>
+            </div>
             <span>Dev Note: new marchers may not show up until a refresh</span>
             {alertMessages.map((message, index) => (
-                <Alert key={index} variant={message.startsWith('Error') ? 'danger' : 'success'} className="mt-3"
+                <Form.Alert key={index} type={message.startsWith('Error') ? 'error' : 'success'} className="mt-3"
                     onClose={() => setAlertMessages(alertMessages.filter((_, i) => i !== index))} dismissible>
                     {message}
-                </Alert>
+                </Form.Alert>
             ))}
-        </Form>
+        </form>
     );
 }
 

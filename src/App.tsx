@@ -21,7 +21,7 @@ function App() {
   }, []);
   return (
     // Context for the selected page. Will change when more specialized
-    <main className='dark bg-white dark:bg-gray-900 fixed w-full z-20 top-0 start-0 border-b border-gray-200 dark:border-gray-600'>
+    <main className='font-sans dark bg-gray-800 fixed h-full w-full z-20 top-0 start-0'>
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
         <SelectedPageProvider>
           <SelectedMarchersProvider>
@@ -29,13 +29,12 @@ function App() {
               <IsPlayingProvider>
                 <StateInitializer />
                 <RegisteredActionsHandler />
-                <div >
-                  <Topbar />
-                  <div className="secondary-container">
-                    <Sidebar />
-                    <Canvas />
-                    {/* <TimelineContainer /> */}
-                  </div>
+                <div className='h-full grid justify-stretch' style={{ gridTemplateRows: "100px 1fr 100px", gridTemplateColumns: "250px 1fr" }} >
+                  <Topbar className='col-span-full ' />
+                  <Sidebar className='row-span-2' />
+                  <Canvas className='h-1/2' />
+                  <div className='bg-green-200' />
+                  {/* <TimelineContainer /> */}
                 </div>
               </IsPlayingProvider>
             </FieldPropertiesProvider>

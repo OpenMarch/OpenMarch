@@ -29,19 +29,19 @@ function FileControls({ className }: topBarComponentProps) {
 
                 {/* <ButtonGroup aria-label="File controls" className={className}> */}
                 <button
-                    className="btn-secondary rounded-l-lg"
+                    className="btn-secondary rounded-none rounded-l"
                     ref={saveButtonRef}
                 >
                     <FaSave size={ICON_SIZE} />
                 </button >
                 <button
-                    className="btn-secondary"
+                    className="btn-secondary rounded-none"
                     onClick={api.launchLoadFileDialogue}
                 >
                     <FaFolderOpen size={ICON_SIZE} />
                 </button>
                 <button
-                    className="btn-secondary rounded-r-lg"
+                    className="btn-secondary rounded-none rounded-r"
                     onClick={api.launchNewFileDialogue}
                 // type="button"
                 >
@@ -51,10 +51,10 @@ function FileControls({ className }: topBarComponentProps) {
             </div >
             <div className="history-controls" >
                 {/* <buttonGroup aria-label="History controls" className={className}> */}
-                <button onClick={api.performUndo} className="btn-secondary rounded-l-lg">
+                <button onClick={api.performUndo} className="btn-secondary rounded-none rounded-l">
                     <FaUndo size={ICON_SIZE} />
                 </button>
-                <button onClick={api.performRedo} className="btn-secondary rounded-r-lg">
+                <button onClick={api.performRedo} className="btn-secondary rounded-none rounded-r">
                     <FaRedo size={ICON_SIZE} />
                 </button>
                 {/* </ButtonGroup > */}
