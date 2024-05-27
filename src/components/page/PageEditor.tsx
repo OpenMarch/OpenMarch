@@ -84,19 +84,19 @@ function PageEditor() {
     }, [pages, selectedPage]);
 
     return (
-        <>{selectedPage && <div className="page-editor editor">
-            <h3 className="text-xl font-sans">
-                <span>Page</span>
-                <span>{selectedPage.name}</span>
+        <>{selectedPage && <div className="m-0 p-0  top-0 page-editor editor mb-4">
+            <h3 className="pl-4 py-2 text-xl border-0 border-solid border-b-2 border-b-gray-500 bg-gray-700 mt-0">
+                Page {selectedPage.name}
             </h3>
-            <form className="edit-group" id={formId} onSubmit={handleSubmit}>
+            <form className="edit-group ml-2" id={formId} onSubmit={handleSubmit}>
                 {/* <div className="input-group">
                     <label htmlFor="page-name">Name</label>
                     <input type="text" value={selectedPage.name} onChange={undefined} id="page-name" />
                 </div> */}
-                <div className="input-group">
+                <div>
                     <label htmlFor={countsInputId}>Counts</label>
                     <input
+                        className="bg-transparent text-inherit ml-3 border-none"
                         type="number"
                         disabled={isFirstPage}
                         defaultValue={isFirstPage ? 0 : selectedPage.counts}
@@ -105,11 +105,11 @@ function PageEditor() {
                         onBlur={handleBlur}
                     />
                 </div>
-                <div className="input-group">
+                <div>
                     <label htmlFor="page-order">Order</label>
-                    <input type="string" value={(pages.indexOf(selectedPage) + 1) + "/" + pages.length} id="page-order" disabled={true} />
+                    <input className="bg-transparent text-inherit ml-3 border-none" type="string" value={(pages.indexOf(selectedPage) + 1) + "/" + pages.length} id="page-order" disabled={true} />
                 </div>
-                {/* <div className="input-group">
+                {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
                     Not yet implemented
                 </div> */}

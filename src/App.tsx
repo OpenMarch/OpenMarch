@@ -21,7 +21,7 @@ function App() {
   }, []);
   return (
     // Context for the selected page. Will change when more specialized
-    <main className='font-sans dark bg-gray-800 fixed h-full w-full z-20 top-0 start-0'>
+    <main className='font-sans dark bg-gray-900 fixed h-full w-full z-20 top-0 start-0'>
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
         <SelectedPageProvider>
           <SelectedMarchersProvider>
@@ -33,7 +33,7 @@ function App() {
                   <Topbar className='col-span-full ' />
                   <Sidebar className='row-span-2' />
                   <Canvas className='h-1/2' />
-                  <div className='bg-green-200' />
+                  {/* <div className='bg-green-200' /> */}
                   {/* <TimelineContainer /> */}
                 </div>
               </IsPlayingProvider>

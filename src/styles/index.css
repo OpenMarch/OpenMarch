@@ -5,7 +5,7 @@
 @layer components {
     .btn-primary {
       @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
-      text-white bg-purple-600 enabled:hover:bg-purple-500
+      text-white bg-purple-600 enabled:hover:bg-purple-700
       disabled:cursor-default disabled:bg-purple-900 disabled:text-opacity-75;
     }
     /* A primary button that looks disabled but isn't actually */
@@ -16,11 +16,9 @@
 
     .btn-secondary {
       @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
-      text-gray-900 bg-white disabled:bg-gray-300
-      enabled:hover:bg-gray-100 enabled:hover:text-blue-700
-      dark:bg-slate-500 dark:text-white dark:enabled:hover:text-white
-      dark:enabled:hover:bg-slate-700 disabled:cursor-default
-      disabled:dark:bg-slate-800 disabled:text-opacity-75;
+      bg-gray-500 text-white enabled:hover:text-white
+      enabled:hover:bg-gray-600 disabled:cursor-default
+      disabled:bg-gray-800 disabled:text-opacity-75;
     }
     .btn-danger {
       @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
