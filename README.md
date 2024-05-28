@@ -66,7 +66,7 @@ Main packages
 
 Supporting packages
 
-- [**Bootstrap**](https://getbootstrap.com/) - bootstrap
+- [**Tailwind**](https://tailwindcss.com/)
 - [**Fabric.js**](http://fabricjs.com/) - the football field "canvas" GUI with marcher dots
 - [**Zustand**](https://github.com/pmndrs/zustand) - global state management
 
