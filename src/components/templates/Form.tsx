@@ -3,7 +3,7 @@ import { FaX } from "react-icons/fa6";
 
 /** A series of components for a styled form in OpenMarch */
 
-interface GroupProps extends React.FieldsetHTMLAttributes<HTMLFieldSetElement> {
+interface GroupProps extends React.HTMLAttributes<HTMLDivElement> {
     className?: string;
     children?: React.ReactNode;
 }
@@ -16,7 +16,7 @@ interface GroupProps extends React.FieldsetHTMLAttributes<HTMLFieldSetElement> {
  * @returns A styled <label> element
  */
 export function Group({ className, children, ...rest }: GroupProps) {
-    return <fieldset className={`${className} flex flex-col gap-2 m-1`} {...rest}>{children}</fieldset>
+    return <div className={`${className} flex flex-col gap-2 m-1`} {...rest}>{children}</div>
 }
 
 interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
