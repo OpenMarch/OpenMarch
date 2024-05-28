@@ -107,16 +107,12 @@ function MarcherList({
                 {(hasHeader && <h4>Marcher List</h4>) || <div />}
                 {/* Do not show this button if the form is being controlled by a parent component.
                   Form buttons exist on both the bottom and top of the form */}
-                {!isEditingStateProp && (isEditing ?
+                {!isEditingStateProp &&
                     <FormButtons
                         handleCancel={handleCancel} editButton={"Edit Marchers"}
                         isEditingProp={isEditing} setIsEditingProp={setIsEditing}
                         handleSubmit={handleSubmit}
                     />
-                    :
-                    <button className="btn-primary  rounded-md" onClick={() => setIsEditing(true)}>
-                        Edit Marchers
-                    </button>)
                 }
             </div>
             <table
@@ -135,9 +131,9 @@ function MarcherList({
                     <tbody>
                         {localMarchers.map((marcher) => (
                             <tr key={marcher.id_for_html}
-                                data-id={marcher.id}
-                                title="Marcher row"
-                                aria-label="Marcher Row"
+                                data-testid={'marcher row'}
+                                title={`${marcher.drill_number} marcher row`}
+                                aria-label={`${marcher.drill_number} marcher row`}
                             >
                                 <th scope="row" title="Marcher drill number" className="text-left">
                                     {marcher.drill_prefix + marcher.drill_order}
@@ -187,16 +183,11 @@ function MarcherList({
                 {/* Do not show this button if the form is being controlled by a parent component.
                   Form buttons exist on both the bottom and top of the form */}
                 {(!isEditingStateProp) ?
-                    (isEditing ?
-                        <FormButtons
-                            handleCancel={handleCancel} editButton={"Edit Marchers"}
-                            isEditingProp={isEditing} setIsEditingProp={setIsEditing}
-                            handleSubmit={handleSubmit}
-                        />
-                        :
-                        <button className="btn-primary" onClick={() => setIsEditing(true)}>
-                            Edit Marchers
-                        </button>)
+                    <FormButtons
+                        handleCancel={handleCancel} editButton={"Edit Marchers"}
+                        isEditingProp={isEditing} setIsEditingProp={setIsEditing}
+                        handleSubmit={handleSubmit}
+                    />
                     :
                     // exists to ensure default submit behavior
                     <button type="submit" hidden={true} />

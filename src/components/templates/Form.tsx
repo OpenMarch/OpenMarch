@@ -3,7 +3,7 @@ import { FaX } from "react-icons/fa6";
 
 /** A series of components for a styled form in OpenMarch */
 
-interface GroupProps extends React.HTMLAttributes<HTMLDivElement> {
+interface GroupProps extends React.FieldsetHTMLAttributes<HTMLFieldSetElement> {
     className?: string;
     children?: React.ReactNode;
 }
@@ -16,7 +16,7 @@ interface GroupProps extends React.HTMLAttributes<HTMLDivElement> {
  * @returns A styled <label> element
  */
 export function Group({ className, children, ...rest }: GroupProps) {
-    return <div className={`${className} flex flex-col gap-2 m-1`} {...rest}>{children}</div>
+    return <fieldset className={`${className} flex flex-col gap-2 m-1`} {...rest}>{children}</fieldset>
 }
 
 interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
@@ -114,7 +114,7 @@ export function Alert({ children, className, type, onClose, dismissible, ...rest
             classNameToUse += " bg-red-100 text-red-900 border-red-500 border-2 border-solid";
             break;
     }
-    return <div className={`flex ${classNameToUse}`} {...rest}>
+    return <div className={`flex ${classNameToUse} alert-${type}`} title="form alert" {...rest}>
         <div className="flex-grow max-w-[90%]">{children}</div>
         <FaX className="transition-colors duration-150 cursor-pointer hover:text-gray-400" onClick={onClose} />
     </div>;

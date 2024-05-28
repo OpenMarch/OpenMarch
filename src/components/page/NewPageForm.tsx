@@ -167,9 +167,11 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                     </Form.Select>
                 </Form.Group>
 
-                <Form.Group aria-label="new page counts">
-                    <Form.Label>Counts</Form.Label>
+                <Form.Group>
+                    <Form.Label htmlFor="countsForm">Counts</Form.Label>
                     <Form.Input type="number" placeholder="-"
+                        aria-label="new page counts"
+                        id="countsForm"
                         onFocus={() => setTyping(true)}
                         onBlur={() => {
                             setTyping(false);
@@ -184,9 +186,11 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                     />
                 </Form.Group>
 
-                <Form.Group aria-label="new page tempo">
-                    <Form.Label>Tempo</Form.Label>
+                <Form.Group>
+                    <Form.Label htmlFor="tempoForm">Tempo</Form.Label>
                     <Form.Input type="number" placeholder="-"
+                        aria-label="new page tempo"
+                        id="tempoForm"
                         onFocus={() => setTyping(true)}
                         onBlur={() => {
                             setTyping(false);
@@ -204,14 +208,15 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
             <div className="grid grid-cols-2">
 
                 <Form.Group aria-label="new page quantity">
-                    <Form.Label>Quantity</Form.Label>
+                    <Form.Label htmlFor="quantityForm">Quantity</Form.Label>
                     <Form.Input type="number" defaultValue={1}
+                        id="quantityForm"
                         onFocus={() => setTyping(true)} onBlur={() => setTyping(false)}
                         onChange={handleQuantityChange} step={1} min={1} />
                 </Form.Group>
                 <Form.Group aria-label="new page is subset checkbox">
-                    <Form.Label>Subset</Form.Label>
-                    <Form.Input type="checkbox" className='w-fit' checked={isSubset} onChange={handleIsSubsetChange} />
+                    <Form.Label htmlFor="subsetForm">Subset</Form.Label>
+                    <Form.Input type="checkbox" id="subsetForm" className='w-fit' checked={isSubset} onChange={handleIsSubsetChange} />
                 </Form.Group>
             </div>
 

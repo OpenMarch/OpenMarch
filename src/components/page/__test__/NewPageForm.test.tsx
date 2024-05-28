@@ -68,7 +68,7 @@ describe('NewPageForm', () => {
         await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage]));
         await waitFor(() => expect(screen.getByLabelText('create page response')).toBeDefined());
         // Only way I could think of to test success message
-        expect(screen.getByLabelText('create page response').className).toContain('alert-success');
+        expect(screen.getByTitle('form alert').className).toContain('alert-success');
     });
 
     it('submits the form and creates new pages', async () => {
@@ -120,7 +120,7 @@ describe('NewPageForm', () => {
         await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith(expectedNewPages));
         await waitFor(() => expect(screen.getByLabelText('create page response')).toBeDefined());
         // Only way I could think of to test success message
-        expect(screen.getByLabelText('create page response').className).toContain('alert-success');
+        expect(screen.getByTitle('form alert').className).toContain('alert-success');
     });
 
 
@@ -166,7 +166,7 @@ describe('NewPageForm', () => {
         await waitFor(() => expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage]));
         await waitFor(() => expect(screen.getByLabelText('create page response')).toBeDefined());
         // Only way I could think of to test success message
-        expect(screen.getByLabelText('create page response').className).toContain('alert-danger');
+        expect(screen.getByTitle('form alert').className).toContain('alert-error');
 
         consoleErrorSpy.mockRestore();
     });

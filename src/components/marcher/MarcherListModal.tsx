@@ -22,7 +22,8 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
         return (
             <div className="flex flex-grow flex-row h-full">
                 <div className="h-[100%] w-3/5 overflow-scroll">
-                    <MarcherList isEditingStateProp={[listIsEditing, setListIsEditing]}
+                    <MarcherList
+                        isEditingStateProp={[listIsEditing, setListIsEditing]}
                         submitActivatorStateProp={[submitActivator, setSubmitActivator]}
                         cancelActivatorStateProp={[cancelActivator, setCancelActivator]} />
                     {/* <MarcherList /> */}

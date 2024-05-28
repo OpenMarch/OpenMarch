@@ -39,13 +39,13 @@ describe("MarcherList", () => {
     });
 
     it("displays the correct number of marchers", () => {
-        const { getAllByTitle } = render(<MarcherList />);
-        expect(getAllByTitle("Marcher row")).toHaveLength(mockMarchers.length);
+        const { getAllByTestId } = render(<MarcherList />);
+        expect(getAllByTestId("marcher row")).toHaveLength(mockMarchers.length);
     });
 
     it("displays the correct information for each marcher", () => {
-        const { getAllByTitle } = render(<MarcherList />);
-        const marcherRows = getAllByTitle("Marcher row");
+        const { getAllByTestId } = render(<MarcherList />);
+        const marcherRows = getAllByTestId("marcher row");
         validateMarcherRows(marcherRows, mockMarchers);
     })
 
@@ -61,7 +61,7 @@ describe("MarcherList", () => {
 
     describe("editing", () => {
         async function editMarcher(
-            getAllByTitle: (id: Matcher, options?: MatcherOptions | undefined) => HTMLElement[],
+            getByTitle: (id: Matcher, options?: MatcherOptions | undefined) => HTMLElement,
             getAllByRole: (role: ByRoleMatcher, options?: ByRoleOptions | undefined) => HTMLElement[],
             changes: { marcherId: number, newName?: string, newSection?: string, oldMarcher: Marcher }[]
         ) {
@@ -74,9 +74,7 @@ describe("MarcherList", () => {
                 expect(change.oldMarcher.id).toBe(change.marcherId);
 
                 // Get the first row in the table
-                const marcherRows = getAllByTitle("Marcher row");
-                const marcherRow = marcherRows.find(row => parseInt(row.getAttribute('data-id')!) === change.marcherId);
-                expect(marcherRow).toBeDefined();
+                const marcherRow = getByTitle(`${change.oldMarcher.drill_number} marcher row`);
                 if (!marcherRow) fail("No row found for marcher");
 
                 if (change.newName) {
@@ -114,38 +112,38 @@ describe("MarcherList", () => {
         }
 
         it("edit a single marcher's name", async () => {
-            const { getAllByTitle, getAllByRole } = render(<MarcherList />);
+            const { getByTitle, getAllByRole } = render(<MarcherList />);
             const changes = [
                 { marcherId: 1, newName: "Gordon Freeman", oldMarcher: mockMarchers[0] }
             ];
-            await editMarcher(getAllByTitle, getAllByRole, changes);
+            await editMarcher(getByTitle, getAllByRole, changes);
         });
 
         it("edit a single marcher's section", async () => {
-            const { getAllByTitle, getAllByRole } = render(<MarcherList />);
+            const { getByTitle, getAllByRole } = render(<MarcherList />);
 
             const changes = [
                 { marcherId: 1, newSection: "Tuba", oldMarcher: mockMarchers[0] }
             ];
-            await editMarcher(getAllByTitle, getAllByRole, changes);
+            await editMarcher(getByTitle, getAllByRole, changes);
         });
 
         it("edit section and name for a single marcher", async () => {
-            const { getAllByTitle, getAllByRole } = render(<MarcherList />);
+            const { getByTitle, getAllByRole } = render(<MarcherList />);
             const changes = [
                 { marcherId: 1, newName: "Gordon Freeman", newSection: "Tuba", oldMarcher: mockMarchers[0] }
             ];
-            await editMarcher(getAllByTitle, getAllByRole, changes);
+            await editMarcher(getByTitle, getAllByRole, changes);
         });
 
         it("edit the section and name for multiple marchers", async () => {
-            const { getAllByTitle, getAllByRole } = render(<MarcherList />);
+            const { getByTitle, getAllByRole } = render(<MarcherList />);
             const changes = [
                 { marcherId: 1, newName: "Ross Geller", newSection: "Snare", oldMarcher: mockMarchers.find(marcher => marcher.id === 1)! },
                 { marcherId: 2, newName: "Joey Tribbiani", newSection: "Rifle", oldMarcher: mockMarchers.find(marcher => marcher.id === 2)! },
                 { marcherId: 3, newName: "Chandler Bing", newSection: "Alto Sax", oldMarcher: mockMarchers.find(marcher => marcher.id === 3)! },
             ];
-            await editMarcher(getAllByTitle, getAllByRole, changes);
+            await editMarcher(getByTitle, getAllByRole, changes);
         })
     });
 });

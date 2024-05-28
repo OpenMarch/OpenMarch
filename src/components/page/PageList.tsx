@@ -114,16 +114,12 @@ function PageList({
         >
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 {(hasHeader && <h4>Page List</h4>) || <div />}
-                {!isEditingStateProp && (isEditing ?
+                {!isEditingStateProp &&
                     <FormButtons
                         handleCancel={handleCancel} editButton={"Edit Pages"}
                         isEditingProp={isEditing} setIsEditingProp={setIsEditing}
                         handleSubmit={handleSubmit}
                     />
-                    :
-                    <button className="btn-primary" onClick={() => setIsEditing(true)}>
-                        Edit Pages
-                    </button>)
                 }
             </div>
             <table className="w-full table-fixed table h-full" style={{ cursor: "default" }}>
@@ -171,16 +167,11 @@ function PageList({
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div />
                 {(!isEditingStateProp) ?
-                    (isEditing ?
-                        <FormButtons
-                            handleCancel={handleCancel} editButton={"Edit Pages"}
-                            isEditingProp={isEditing} setIsEditingProp={setIsEditing}
-                            handleSubmit={handleSubmit}
-                        />
-                        :
-                        <button className="btn-primary" onClick={() => setIsEditing(true)}>
-                            Edit Pages
-                        </button>)
+                    <FormButtons
+                        handleCancel={handleCancel} editButton={"Edit Pages"}
+                        isEditingProp={isEditing} setIsEditingProp={setIsEditing}
+                        handleSubmit={handleSubmit}
+                    />
                     :
                     // exists to ensure default submit behavior
                     <button type="submit" hidden={true} />
