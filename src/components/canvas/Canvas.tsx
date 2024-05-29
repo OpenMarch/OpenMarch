@@ -67,22 +67,9 @@ function Canvas({ className = "" }: { className?: string }) {
             return;
 
         handleSelectLock.current = true;
-        if (e.selected.length > 1) {
-            // The current active object needs to be discarded before creating a new active selection
-            // This is due to buggy behavior in Fabric.js
-            (canvas.current as fabric.Canvas).discardActiveObject();
-            const selectedCanvasMarchers: CanvasMarcher[] =
-                e.selected.filter((canvasObject: CanvasMarcher) => canvasObject instanceof CanvasMarcher);
-            const activeSelection = new fabric.ActiveSelection(selectedCanvasMarchers, {
-                canvas: canvas.current,
-                ...ActiveObjectArgs
-            });
-
-            (canvas.current as fabric.Canvas).setActiveObject(activeSelection);
-            canvas.current.requestRenderAll();
-        }
 
         const activeObject = canvas.current.getActiveObject()
+        activeObject.set(ActiveObjectArgs)
         activeObject.lockMovementX = uiSettings.lockX;
         activeObject.lockMovementY = uiSettings.lockY;
 
