@@ -5,7 +5,7 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
-import useMeasureStore from "./stores/measure/useMeasureStore";
+import { useMeasureStore } from "./stores/measure/useMeasureStore";
 import Marcher from "./global/classes/Marcher";
 import Page from "./global/classes/Page";
 import MarcherPage from "./global/classes/MarcherPage";

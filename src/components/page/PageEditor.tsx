@@ -109,6 +109,10 @@ function PageEditor() {
                     <label htmlFor="page-order">Order</label>
                     <input className="bg-transparent text-inherit ml-3 border-none" type="string" value={(pages.indexOf(selectedPage) + 1) + "/" + pages.length} id="page-order" disabled={true} />
                 </div>
+                <div>
+                    <label htmlFor="page-tempo">Tempo</label>
+                    <input className="bg-transparent text-inherit ml-3 border-none" type="number" value={isFirstPage ? 0 : selectedPage.tempo} id="page-tempo" disabled={true} />
+                </div>
                 {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
                     Not yet implemented

@@ -10,7 +10,7 @@ import MeasuresModal from '../measures/MeasuresModal';
 function Topbar({ className = "" }: { className?: string }) {
     const componentClassName = '';
     return (
-        <div className={`overflow-scroll box-border gap-2 flex bg-gray-700 border-gray-500 border-0 border-b-2 border-solid w-full flex-wrap items-center p-4 m-0 ${className}`} >
+        <div className={`overflow-scroll gap-2 flex bg-gray-700 w-full flex-wrap items-center p-4 m-0 ${className}`} >
             <FileControls className={componentClassName} />
             <PlaybackControls className={componentClassName} />
             <MarcherListModal className={componentClassName} />
