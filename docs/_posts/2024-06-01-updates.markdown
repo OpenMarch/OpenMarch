@@ -1,0 +1,73 @@
+---
+layout: post
+title: "April 2024 Update"
+date: 2024-06-01 12:00:00 -0500
+categories: jekyll update
+---
+
+#### Update Video
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/vqapgMpsmNA?si=_w9lFMKGqNiZcgTi" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<br/>
+
+### What's changed?
+
+Bootstrap has been completely removed and Tailwind has been put in. Music is _very_ close to being done.
+
+#### Development Improvements
+
+- Tailwind provides **a lot** more flexibility when it comes to style.
+  - No more random css files and relying on Bootstrap to have the component I'm looking for
+- We can now import and parse measures from music xml into abc format, which is how they will be stored.
+  - Now, the pages just need to be aligned with the measures.
+
+#### New UI Features
+
+- Some things look cleaner thanks to tailwind!
+  - Other things still need work
+- There are tooltips in the bottom left when hovering over a button (rather than it coming from the button itself)
+- A timeline! This will be more fleshed out when I get the measures integrated.
+
+### Goals accomplished this month
+
+Ehhh nothing really got _finished_, but we're close!
+
+Must haves -
+
+- [ ] Finish music implementation with MusicXMLs
+  - Almost done with this!
+  - We're converting musicXMLs into ABC notation, and then reducing them to just measures and tempos.
+- [ ] Workflow for creating pages with MusicXML or just raw
+  - Close!
+
+Nice to haves -
+
+- [ ] Create pages just on an audio file with no MusicXML
+- [x] Organize buttons in the UI
+  - It looks better, but not really fixed
+- [ ] Misc bugs (lots of old issues that need to be addressed)
+
+### Plans for May
+
+We're really close to making a lot of breakthroughs.
+I will probably finish a lot of these tasks either tomorrow or this coming week.
+
+Measures will be the "time containers" of OpenMarch.
+They will dictate the tempo and the pages will just be aligned to measures based on how many counts they are
+
+Must haves -
+
+- Finish music implementation
+  - Importing musicXML files
+  - Aligning the pages with the measures
+    - Pages will no longer hold their own tempo. They will be calculated at runtime based on the measures
+  - Importing music file and making sure it plays correctly
+- Clean up the timeline and make it more practical
+- Making continuous animation (not just stopping at each page)
+
+Nice to haves -
+
+- UI for creating your own measures. Right now it's just MusicXML import
+
+Remember, you can always check the [GitHub](https://github.com/AlexDumo/OpenMarch) project to see what current issues are in the queue.
