@@ -484,7 +484,7 @@ function Canvas({ className = "" }: { className?: string }) {
                     const callback = canvasMarcher.setNextAnimation(
                         {
                             marcherPage: marcherPageToUse,
-                            tempo: selectedPage.tempo,
+                            tempo: nextPage.tempo,
                             counts: nextPage.counts
                         }
                     );
@@ -514,7 +514,7 @@ function Canvas({ className = "" }: { className?: string }) {
     }, [isPlaying, marcherPages, pages, renderMarchers, selectedPage, setIsPlaying, setSelectedPage]);
 
     return (
-        <div className={`${className}`}>
+        <div className={`overflow-hidden ${className}`}>
             {((marchers.length > 0 && pages.length > 0) ?
                 <canvas ref={canvasRef} id="fieldCanvas" />
                 : // If there are no marchers or pages, display a message
