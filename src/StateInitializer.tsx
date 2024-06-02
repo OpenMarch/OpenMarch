@@ -18,8 +18,9 @@ import Measure from "./global/classes/Measure";
 function StateInitializer() {
     const { marchers, fetchMarchers } = useMarcherStore();
     const { fetchMarcherPages } = useMarcherPageStore()!;
-    const { pages, fetchPages } = usePageStore();
+    const { pages, setPages, fetchPages } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
 
@@ -39,17 +40,21 @@ function StateInitializer() {
     }, [fetchMarchers]);
 
     useEffect(() => {
-        MarcherPage.fetchMarcherPages = fetchMarcherPages;
-        fetchMarcherPages();
-    }, [fetchMarcherPages, pages, marchers]);
-
-    useEffect(() => {
         Page.fetchPages = fetchPages;
         fetchPages();
     }, [fetchPages]);
 
     useEffect(() => {
+        MarcherPage.fetchMarcherPages = fetchMarcherPages;
+        fetchMarcherPages();
+    }, [fetchMarcherPages, pages, marchers]);
+
+    useEffect(() => {
         Measure.fetchMeasures = fetchMeasures;
+        fetchMeasures();
+    }, [fetchMeasures]);
+
+    useEffect(() => {
         fetchMeasures();
     }, [fetchMeasures]);
     /*******************************************************************/
@@ -134,6 +139,14 @@ function StateInitializer() {
             window.electron.removeFetchListener(); // Remove the event listener
         }
     }, [fetchMarchers, fetchMarcherPages, fetchPages]);
+
+    // Listen for when measures or pages change so that the pages can be aligned to the measures
+    useEffect(() => {
+        if (pages.length > 0 && measures.length > 0 && pages[0].hasBeenAligned === false) {
+            const newPages = Page.alignWithMeasures(pages, measures);
+            setPages(newPages);
+        }
+    }, [measures, pages, setPages]);
 
     return <></>; // Empty fragment
 }

@@ -57,6 +57,32 @@ describe('Measure', () => {
         expect(measure.duration).toBeCloseTo(10 / 3);
     });
 
+    it('gets the correct number of big beats for a measure', () => {
+        const measure = new Measure(
+            {
+                number: 1, rehearsalMark: "A", tempo: 120, beatUnit: BeatUnit.QUARTER,
+                timeSignature: TimeSignature.fromString('4/4')
+            }
+        );
+        expect(measure.getBigBeats()).toBe(4);
+
+        const measure2 = new Measure(
+            {
+                number: 1, rehearsalMark: "A", tempo: 120, beatUnit: BeatUnit.DOTTED_QUARTER,
+                timeSignature: TimeSignature.fromString('6/8')
+            }
+        );
+        expect(measure2.getBigBeats()).toBe(2);
+
+        const measure3 = new Measure(
+            {
+                number: 1, rehearsalMark: "A", tempo: 120, beatUnit: BeatUnit.EIGHTH,
+                timeSignature: TimeSignature.fromString('6/8')
+            }
+        );
+        expect(measure3.getBigBeats()).toBe(6);
+    })
+
     describe('expected errors', () => {
 
         // Add more test cases for different time signatures and beat units

@@ -2,7 +2,7 @@
 // import { CanvasMarcher } from "@/global/Interfaces";
 // import { Marcher } from "@/global/classes/Marcher";
 // import { MarcherPage } from "@/global/classes/MarcherPage";
-// import { Page } from "@/global/classes/Page";
+// import Page from "@/global/classes/Page";
 // import { fabric } from "fabric";
 // import { IGroupOptions } from "fabric/fabric-impl";
 

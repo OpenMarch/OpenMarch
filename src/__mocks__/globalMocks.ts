@@ -2,6 +2,9 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import FieldProperties from "@/global/classes/FieldProperties";
+import BeatUnit from "@/global/classes/BeatUnit";
+import TimeSignature from "@/global/classes/TimeSignature";
+import Measure from "@/global/classes/Measure";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({
@@ -53,7 +56,6 @@ export const mockPages: Page[] = [
         name: '1',
         counts: 16,
         order: 1,
-        tempo: 120,
         notes: 'This is the first page'
     }),
     new Page({
@@ -62,7 +64,6 @@ export const mockPages: Page[] = [
         name: '2',
         counts: 8,
         order: 2,
-        tempo: 89,
         notes: 'This is the second page'
     }),
     new Page({
@@ -71,7 +72,6 @@ export const mockPages: Page[] = [
         name: '3',
         counts: 16,
         order: 3,
-        tempo: 2,
         notes: undefined
     })
 ] as const;
@@ -160,29 +160,29 @@ export const mockMarcherPages: MarcherPage[] = [
     },
 ] as const;
 
-// export const mockMeasures: Measure[] = [
-//     new Measure({
-//         number: 1,
-//         beatUnit: BeatUnit.QUARTER,
-//         timeSignature: TimeSignature.fromString('4/4'),
-//         tempo: 120,
-//         rehearsalMark: 'A'
-//     }),
-//     new Measure({
-//         number: 2,
-//         beatUnit: BeatUnit.HALF,
-//         timeSignature: TimeSignature.fromString('2/2'),
-//         tempo: 89,
-//         notes: 'This is the second measure'
-//     }),
-//     new Measure({
-//         number: 3,
-//         beatUnit: BeatUnit.DOTTED_QUARTER,
-//         timeSignature: TimeSignature.fromString('6/8'),
-//         tempo: 2,
-//         rehearsalMark: '17'
-//     })
-// ] as const;
+export const mockMeasures: Measure[] = [
+    new Measure({
+        number: 1,
+        beatUnit: BeatUnit.QUARTER,
+        timeSignature: TimeSignature.fromString('4/4'),
+        tempo: 120,
+        rehearsalMark: 'A'
+    }),
+    new Measure({
+        number: 2,
+        beatUnit: BeatUnit.HALF,
+        timeSignature: TimeSignature.fromString('2/2'),
+        tempo: 89,
+        notes: 'This is the second measure'
+    }),
+    new Measure({
+        number: 3,
+        beatUnit: BeatUnit.DOTTED_QUARTER,
+        timeSignature: TimeSignature.fromString('6/8'),
+        tempo: 2,
+        rehearsalMark: '17'
+    })
+] as const;
 
 
 /**
