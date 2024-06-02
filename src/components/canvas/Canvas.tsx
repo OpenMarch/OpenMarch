@@ -484,20 +484,18 @@ function Canvas({ className = "" }: { className?: string }) {
                     const callback = canvasMarcher.setNextAnimation(
                         {
                             marcherPage: marcherPageToUse,
-                            tempo: nextPage.tempo,
-                            counts: nextPage.counts
+                            durationMilliseconds: nextPage.duration * 1000,
                         }
                     );
                     animationCallbacks.current.push(callback);
                 });
 
-                const duration = tempoToDuration(nextPage.tempo);
                 canvas.current.requestRenderAll();
                 // Set the selected page after the animation is done and set isPlaying to false
                 timeoutID.current = setTimeout(() => {
                     setSelectedPage(nextPage);
                     setIsPlaying(false);
-                }, duration * nextPage.counts);
+                }, nextPage.duration * 1000);
             }
             else {
                 animationCallbacks.current.forEach((callback: any) => {

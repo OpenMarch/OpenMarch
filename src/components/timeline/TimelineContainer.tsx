@@ -45,7 +45,7 @@ export default function TimelineContainer({ className = "" }: { className?: stri
                                         <div
                                             className={`flex items-center h-10 text-xl font-bold px-2 justify-end
                                                 transition-all duration-100 border-solid cursor-pointer
-                                        ${page.id === selectedPage?.id ? 'bg-purple-500 hover:bg-purple-600' : 'bg-purple-300 hover:bg-purple-400'}`
+                                        ${page.id === selectedPage?.id ? 'bg-purple-600 hover:bg-purple-800 text-gray-200 border-black' : 'bg-purple-300 hover:bg-purple-400'}`
                                             }
                                             onClick={() => setSelectedPage(page)}
                                         >
@@ -86,7 +86,7 @@ export default function TimelineContainer({ className = "" }: { className?: stri
                                         <div
                                             className={
                                                 `text-xl text-gray-300 font-bold select-none border-solid
-                                                border-black row-span-2 h-9 col-span-full bg-purple-800
+                                                border-black row-span-2 h-9 col-span-full bg-purple-900
                                                 flex items-center px-1`
                                             }
                                         >
