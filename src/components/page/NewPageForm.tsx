@@ -1,7 +1,7 @@
 import * as Form from "@/components/templates/Form";
 import { useEffect, useRef, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { NewPageArgs, Page } from "@/global/classes/Page";
+import Page, { NewPageArgs } from "@/global/classes/Page";
 import { FaArrowDown, FaArrowLeft, FaArrowRight, FaArrowUp } from "react-icons/fa";
 
 interface NewPageFormProps {
@@ -21,8 +21,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     const [previousPage, setPreviousPage] = useState<Page | undefined>(undefined);
     const [counts, setCounts] = useState<number>(8);
     const [formCounts, setFormCounts] = useState<string>(counts.toString() || "8"); // used to reset the form when counts changes
-    const [tempo, setTempo] = useState<number>(120);
-    const [formTempo, setFormTempo] = useState<string>(tempo.toString() || "120"); // used to reset the form when tempo changes
     const [quantity, setQuantity] = useState<number>(1);
     const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const [isSubset, setIsSubset] = useState<boolean>(false);
@@ -75,7 +73,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                     previousPage: previousPage,
                     isSubset: isSubset,
                     counts: counts,
-                    tempo: tempo,
                 }
                 newPageArgs.push(newPageArg);
             }
@@ -115,17 +112,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
         }
     };
 
-    const handleTempoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.value === "") {
-            setFormTempo("");
-            setTempo(0);
-        }
-        else {
-            setFormTempo(event.target.value);
-            setTempo(parseInt(event.target.value));
-        }
-    };
-
     const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.value === "")
             setQuantity(1);
@@ -156,7 +142,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
     return (
         <form onSubmit={handleSubmit} id="newPageForm" ref={formRef} aria-label="New Page Form">
             {hasHeader && <h4>Create new pages</h4>}
-            <div className="grid grid-cols-3">
+            <div className="grid grid-cols-2">
                 <Form.Group aria-label="new page previous page">
                     <Form.Label>Prev. Pg.</Form.Label>
                     <Form.Select aria-label="Select the previous page" onChange={handlePreviousPageChange}>
@@ -182,25 +168,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
                                 setFormCounts(counts.toString())
                         }}
                         value={formCounts} onChange={handleCountsChange}
-                        required min={1} step={1}
-                    />
-                </Form.Group>
-
-                <Form.Group>
-                    <Form.Label htmlFor="tempoForm">Tempo</Form.Label>
-                    <Form.Input type="number" placeholder="-"
-                        aria-label="new page tempo"
-                        id="tempoForm"
-                        onFocus={() => setTyping(true)}
-                        onBlur={() => {
-                            setTyping(false);
-                            if (tempo === 0) {
-                                setTempo(1);
-                                setFormTempo("1");
-                            } else
-                                setFormTempo(tempo.toString())
-                        }}
-                        value={formTempo} onChange={handleTempoChange}
                         required min={1} step={1}
                     />
                 </Form.Group>

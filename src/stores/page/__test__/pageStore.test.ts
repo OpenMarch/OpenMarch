@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { usePageStore } from "../usePageStore";
 import { mockPages } from '@/__mocks__/globalMocks';
-import { Page } from '@/global/classes/Page';
+import Page from '@/global/classes/Page';
 
 jest.mock('@/api/api');
 

@@ -4,7 +4,7 @@ import TimeSignature from "./TimeSignature";
 /**
  * A Measure represents a measure in the music is used in conjunction with Page objects to define a show's length.
  */
-export class Measure {
+class Measure {
     /** INTEGER - The number of the measure in the piece */
     readonly number: number;
     /** The rehearsal mark of the measure. E.g. "A" or "12" (for measure 12) */
@@ -158,6 +158,18 @@ export class Measure {
     private static checkForFetchMeasures() {
         if (!this.fetchMeasures)
             console.error("fetchMeasures is not defined. The UI will not update properly.");
+    }
+
+    /**
+     * Get the number of big beats in the measure.
+     *
+     * E.g.
+     * A 4/4 measure with beat unit of QUARTER has 4 big beats.
+     * 6/8, DOTTED_QUARTER has 2 big beats.
+     * 6/8, EIGHTH has 6 big beats.
+     */
+    getBigBeats(): number {
+        return this.timeSignature.numerator / (this.timeSignature.denominator * this.beatUnit.value);
     }
 
     /**

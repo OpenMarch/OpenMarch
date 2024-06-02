@@ -2,7 +2,7 @@ import { Constants } from '../../src/global/Constants';
 import Database from 'better-sqlite3';
 import { connect } from './database.services';
 import { Marcher } from '@/global/classes/Marcher';
-import { Page } from '@/global/classes/Page';
+import Page from '@/global/classes/Page';
 import { MarcherPage } from '@/global/classes/MarcherPage';
 
 /* ============================ Interfaces ============================ */

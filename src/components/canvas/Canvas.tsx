@@ -11,7 +11,7 @@ import { usePageStore } from "@/stores/page/usePageStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
-import { Page } from "@/global/classes/Page";
+import Page from "@/global/classes/Page";
 import { CanvasMarcher, tempoToDuration } from "@/components/canvas/CanvasMarcher";
 import { StaticCanvasMarcher } from "@/components/canvas/StaticCanvasMarcher";
 import { Pathway } from "./Pathway";

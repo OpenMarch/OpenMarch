@@ -9,6 +9,7 @@ import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/c
 import Page, { ModifiedPageContainer, NewPageContainer } from '../../src/global/classes/Page';
 import MarcherPage, { ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
 import FieldProperties from '../../src/global/classes/FieldProperties';
+import { truncateSync } from 'node:original-fs';
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -32,7 +33,7 @@ T:Untitled score
 C:Composer / arranger
 %%measurenb 1
 L:1/4
-Q:3/8=100
+Q:1/4=100
 M:4/4
 I:linebreak $
 K:C
@@ -134,7 +135,6 @@ function createPageTable(db: Database.Database) {
                 "name"	TEXT NOT NULL UNIQUE,
                 "notes"	TEXT,
                 "order"	INTEGER NOT NULL UNIQUE,
-                "tempo"	REAL NOT NULL,
                 "counts"	INTEGER NOT NULL,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
@@ -539,12 +539,15 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
 
     try {
         for (const newPage of newPages) {
+            if (newPage.order === 0) {
+                // Ensure the first page has no counts
+                newPage.counts = 0;
+            }
             // Get the max order
             const pageToAdd: NewPageContainer = {
                 name: newPage.name,
                 notes: newPage.notes || '',
                 order: newPage.order,
-                tempo: newPage.tempo,
                 counts: newPage.counts
             };
             const insertStmt = db.prepare(`
@@ -552,7 +555,6 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                     name,
                     notes,
                     "order",
-                    tempo,
                     counts,
                     created_at,
                     updated_at
@@ -560,7 +562,6 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                     @name,
                     @notes,
                     @order,
-                    @tempo,
                     @counts,
                     @created_at,
                     @updated_at
@@ -591,12 +592,14 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
             const marchers = await getMarchers();
             // For each marcher, create a new MarcherPage
             for (const marcher of marchers) {
-                const previousMarcherPageCoords = await getCoordsOfPreviousPage(marcher.id, id);
+                let previousMarcherPageCoords = await getCoordsOfPreviousPage(marcher.id, id);
+                if (!previousMarcherPageCoords)
+                    previousMarcherPageCoords = { x: 100, y: 100 };
                 createMarcherPage(db, {
                     marcher_id: marcher.id,
                     page_id: id,
-                    x: previousMarcherPageCoords?.x || 100,
-                    y: previousMarcherPageCoords?.y || 100
+                    x: previousMarcherPageCoords.x,
+                    y: previousMarcherPageCoords.y
                 });
             }
         }
@@ -637,6 +640,10 @@ async function updatePages(modifiedPages: ModifiedPageContainer[],
 
     try {
         for (const pageUpdate of updateInReverse ? sortedModifiedPages.toReversed() : sortedModifiedPages) {
+            if (pageUpdate.order === 0) {
+                // Ensure the first page has no counts
+                pageUpdate.counts = 0;
+            }
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(pageUpdate)
                 .filter(key => !excludedProperties.includes(key))
@@ -883,7 +890,7 @@ async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[])
  *
  * @param db database connection
  * @param marcher_id marcher_id of the marcher whose coordinates will change
- * @param page_id the page_id of the page that the coordinates will be updated on (not the previous page's id).
+ * @param page_id the page_id of the page that the coordinates will be updated on (not the previous page's id). Null if the page is the first page.
  */
 async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
     const db = connect();
@@ -898,6 +905,8 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         return;
     }
     const previousPage = await getPreviousPage(page_id, db);
+    if (!previousPage)
+        return null;
     const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as MarcherPage;
 
     if (!previousPage)

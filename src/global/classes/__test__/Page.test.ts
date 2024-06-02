@@ -1,6 +1,9 @@
-import { Page, NewPageContainer, ModifiedPageArgs, NewPageArgs, ModifiedPageContainer } from '../Page';
-import { mockPages } from '@/__mocks__/globalMocks';
+import Page, { NewPageContainer, ModifiedPageArgs, NewPageArgs, ModifiedPageContainer } from '../Page';
+import { mockPages, mockMeasures } from '@/__mocks__/globalMocks';
 import { ElectronApi } from 'electron/preload';
+import Measure from '../Measure';
+import TimeSignature from '../TimeSignature';
+import BeatUnit from '../BeatUnit';
 
 describe('Page', () => {
     beforeEach(() => {
@@ -26,7 +29,6 @@ describe('Page', () => {
             name: '2A',
             counts: 16,
             order: 1,
-            tempo: 120,
             notes: 'Some notes',
         };
 
@@ -38,7 +40,6 @@ describe('Page', () => {
         expect(page.name).toBe('2A');
         expect(page.counts).toBe(16);
         expect(page.order).toBe(1);
-        expect(page.tempo).toBe(120);
         expect(page.notes).toBe('Some notes');
     });
 
@@ -59,33 +60,27 @@ describe('Page', () => {
                 {
                     isSubset: false,
                     counts: 16,
-                    tempo: 120,
                     notes: 'Some notes',
                 },
                 {
                     counts: 8,
-                    tempo: 140,
                     isSubset: false,
                     notes: 'Other notes',
                 },
                 {
                     counts: 32,
-                    tempo: 100,
                     isSubset: true,
                 },
                 {
                     counts: 1,
-                    tempo: 100,
                     isSubset: true,
                 },
                 {
                     counts: 1,
-                    tempo: 100,
                     isSubset: true,
                 },
                 {
                     counts: 1,
-                    tempo: 100,
                     isSubset: false,
                 }
             ]
@@ -95,39 +90,33 @@ describe('Page', () => {
                     name: '1',
                     order: 0,
                     counts: 16,
-                    tempo: 120,
                     notes: 'Some notes',
                 },
                 {
                     name: '2',
                     order: 1,
                     counts: 8,
-                    tempo: 140,
                     notes: 'Other notes',
                 },
                 {
                     name: '2A',
                     order: 2,
                     counts: 32,
-                    tempo: 100,
                 },
                 {
                     name: '2B',
                     order: 3,
                     counts: 1,
-                    tempo: 100,
                 },
                 {
                     name: '2C',
                     order: 4,
                     counts: 1,
-                    tempo: 100,
                 },
                 {
                     name: '3',
                     order: 5,
                     counts: 1,
-                    tempo: 100,
                 }
             ];
         });
@@ -198,7 +187,6 @@ describe('Page', () => {
                     name: '2',
                     order: 1,
                     counts: 1,
-                    tempo: 99,
                 },
             ];
             const expectedModifiedPages: ModifiedPageContainer[] = [
@@ -266,7 +254,6 @@ describe('Page', () => {
                     name: '2B',
                     order: 3,
                     counts: 2,
-                    tempo: 99,
                 },
             ];
 
@@ -309,32 +296,27 @@ describe('Page', () => {
                 {
                     previousPage: existingPages[0],
                     counts: 6,
-                    tempo: 90,
                     isSubset: false,
                 },
                 {
                     previousPage: existingPages[2],
                     counts: 2,
-                    tempo: 99,
                     isSubset: true,
                 },
                 {
                     previousPage: existingPages[2],
                     counts: 3,
-                    tempo: 98,
                     isSubset: true,
                     notes: 'Some notes for this page',
                 },
                 {
                     previousPage: existingPages[3],
                     counts: 17,
-                    tempo: 120,
                     isSubset: false,
                 },
                 {
                     previousPage: existingPages[4],
                     counts: 3,
-                    tempo: 98,
                     isSubset: false,
                 },
             ]
@@ -352,32 +334,27 @@ describe('Page', () => {
                     name: '2',
                     order: 1,
                     counts: 6,
-                    tempo: 90,
                 },
                 {
                     name: '3B',
                     order: 4,
                     counts: 2,
-                    tempo: 99,
                 },
                 {
                     name: '3C',
                     order: 5,
                     counts: 3,
-                    tempo: 98,
                     notes: 'Some notes for this page',
                 },
                 {
                     name: '4',
                     order: 7,
                     counts: 17,
-                    tempo: 120,
                 },
                 {
                     name: '5',
                     order: 9,
                     counts: 3,
-                    tempo: 98,
                 }
             ];
             const expectedModifiedPages: ModifiedPageContainer[] = [
@@ -419,7 +396,7 @@ describe('Page', () => {
         it('should update one or many pages in the database', async () => {
             const modifiedPages: ModifiedPageArgs[] = [
                 { id: 1, counts: 8 },
-                { id: 2, tempo: 140 },
+                { id: 2, counts: 16, notes: 'Some notes' },
             ];
 
             const mockResponse = { success: true };
@@ -432,7 +409,7 @@ describe('Page', () => {
 
             const modifiedPagesContainers: ModifiedPageContainer[] = [
                 { id: 1, counts: 8 },
-                { id: 2, tempo: 140 },
+                { id: 2, counts: 16, notes: 'Some notes' },
             ]
 
             expect(response).toEqual(mockResponse);
@@ -450,7 +427,6 @@ describe('Page', () => {
                 name: '1',
                 counts: 16,
                 order: 0,
-                tempo: 120,
                 notes: 'Some notes',
             }),
             new Page({
@@ -459,7 +435,6 @@ describe('Page', () => {
                 name: '2',
                 counts: 8,
                 order: 1,
-                tempo: 140,
                 notes: 'Other notes',
             }),
             new Page({
@@ -468,7 +443,6 @@ describe('Page', () => {
                 name: '3',
                 counts: 32,
                 order: 2,
-                tempo: 100,
             }),
             new Page({
                 id: 4,
@@ -476,7 +450,6 @@ describe('Page', () => {
                 name: '3A',
                 counts: 90,
                 order: 3,
-                tempo: 34,
             }),
             new Page({
                 id: 5,
@@ -484,7 +457,6 @@ describe('Page', () => {
                 name: '3B',
                 counts: 39,
                 order: 4,
-                tempo: 110,
             }),
             new Page({
                 id: 6,
@@ -492,7 +464,6 @@ describe('Page', () => {
                 name: '4',
                 counts: 29,
                 order: 5,
-                tempo: 102,
             }),
         ] as const;
         it('should delete a page from the database', async () => {
@@ -719,5 +690,71 @@ describe('Page', () => {
         mocksToUse = [mockPages[2], mockPages[1], mockPages[0]];
         testLastPage = Page.getLastPage(mocksToUse);
         expect(testLastPage).toBe(lastPage);
+    });
+
+    describe('alignWithMeasures', () => {
+        it('should align simple pages with simple measures and set their durations', () => {
+            const measures = [
+                new Measure({ number: 1, timeSignature: TimeSignature.fromString('4/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+                new Measure({ number: 2, timeSignature: TimeSignature.fromString('4/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+                new Measure({ number: 3, timeSignature: TimeSignature.fromString('4/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+                new Measure({ number: 3, timeSignature: TimeSignature.fromString('4/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+            ]
+            const pages = [
+                new Page({ id: 1, id_for_html: 'page_1', name: '1', counts: 8, order: 1 }),
+                new Page({ id: 2, id_for_html: 'page_2', name: '2', counts: 4, order: 2 }),
+                new Page({ id: 3, id_for_html: 'page_3', name: '3', counts: 4, order: 3 }),
+            ];
+            const alignedPages = Page.alignWithMeasures(pages, measures);
+
+            expect(alignedPages.length).toBe(pages.length);
+
+            // Check the duration of each page
+            expect(alignedPages[0].duration).toBe(4); // 16 counts * 500 ms per count = 4 seconds
+            expect(alignedPages[1].duration).toBe(2); // 8 counts * 500 ms per count = 2 seconds
+            expect(alignedPages[2].duration).toBe(2); // 32 counts * 500 ms per count = 8 seconds
+
+            // Check that the measures are inserted correctly
+            expect(alignedPages[0].measures).toEqual([measures[0], measures[1]]);
+            expect(alignedPages[1].measures).toEqual([measures[2]]);
+            expect(alignedPages[2].measures).toEqual([measures[3]]);
+
+            // expect all measure beats to be 1 (as in the first beat of the measure)
+            expect(alignedPages[0].measureBeatToStartOn).toBe(1);
+            expect(alignedPages[1].measureBeatToStartOn).toBe(1);
+            expect(alignedPages[2].measureBeatToStartOn).toBe(1);
+        });
+
+        it('should align pages with measures and set their durations when measures and page counts don\'t align', () => {
+            const measures = [
+                new Measure({ number: 1, timeSignature: TimeSignature.fromString('4/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+                new Measure({ number: 2, timeSignature: TimeSignature.fromString('4/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+                new Measure({ number: 3, timeSignature: TimeSignature.fromString('3/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+                new Measure({ number: 4, timeSignature: TimeSignature.fromString('5/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
+            ]
+            const pages = [
+                new Page({ id: 1, id_for_html: 'page_1', name: '1', counts: 6, order: 1 }),
+                new Page({ id: 2, id_for_html: 'page_2', name: '2', counts: 3, order: 2 }),
+                new Page({ id: 3, id_for_html: 'page_3', name: '3', counts: 7, order: 3 }),
+            ];
+            const alignedPages = Page.alignWithMeasures(pages, measures);
+
+            expect(alignedPages.length).toBe(pages.length);
+
+            // Check the duration of each page
+            expect(alignedPages[0].duration).toBe(3); // 6 counts * 500 ms per count = 3 seconds
+            expect(alignedPages[1].duration).toBe(1.5); // 3 counts * 500 ms per count = 1.5 seconds
+            expect(alignedPages[2].duration).toBe(3.5); // 7 counts * 500 ms per count = 3.5 seconds
+
+            // Check that the measures are inserted correctly
+            expect(alignedPages[0].measures).toEqual([measures[0], measures[1]]);
+            expect(alignedPages[1].measures).toEqual([measures[1], measures[2]]);
+            expect(alignedPages[2].measures).toEqual([measures[2], measures[3]]);
+
+            // expect all measure offsets to be 0
+            expect(alignedPages[0].measureBeatToStartOn).toBe(1);
+            expect(alignedPages[1].measureBeatToStartOn).toBe(3);
+            expect(alignedPages[2].measureBeatToStartOn).toBe(2);
+        });
     });
 });
