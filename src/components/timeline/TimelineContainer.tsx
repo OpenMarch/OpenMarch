@@ -14,7 +14,12 @@ export default function TimelineContainer({ className = "" }: { className?: stri
         <div className={`p-0 overflow-x-scroll overflow-y-hidden ${className}`} >
             <div className='w-max h-full'>
                 {/* <div className='bg-gray-300 p w-32 mr-10 h-full' /> */}
-                <div className='h-full grid grid-cols-1 grid-rows-5' style={{ gridTemplateColumns: '40px 1fr' }}>
+                <div className='h-full grid grid-cols-1 grid-rows-6' style={{ gridTemplateColumns: '40px 1fr' }}>
+
+                    <div className='fixed right-0'>
+                        <button onClick={() => setPxPerSecond(pxPerSecond * 1.2)}>+</button>
+                        <button onClick={() => setPxPerSecond(pxPerSecond * 0.8)}>-</button>
+                    </div>
                     {pages.length > 0 &&
                         <div className={`flex text-2xl font-bold items-center justify-center
                         col-span-1 row-span-full cursor-pointer border-solid
@@ -43,7 +48,7 @@ export default function TimelineContainer({ className = "" }: { className?: stri
                                     title={`page ${page.name}`} aria-label={`page ${page.name}`}>
                                     <div>
                                         <div
-                                            className={`flex items-center h-10 text-xl font-bold px-2 justify-end
+                                            className={` h-10 text-xl font-bold px-2 text-right
                                                 transition-all duration-100 border-solid cursor-pointer
                                         ${page.id === selectedPage?.id ? 'bg-purple-600 hover:bg-purple-800 text-gray-200 border-black' : 'bg-purple-300 hover:bg-purple-400'}`
                                             }
@@ -87,7 +92,7 @@ export default function TimelineContainer({ className = "" }: { className?: stri
                                             className={
                                                 `text-xl text-gray-300 font-bold select-none border-solid
                                                 border-black row-span-2 h-9 col-span-full bg-purple-900
-                                                flex items-center px-1`
+                                                px-1`
                                             }
                                         >
                                             {measure.number}

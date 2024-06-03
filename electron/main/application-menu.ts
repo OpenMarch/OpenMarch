@@ -41,7 +41,7 @@ template.push(...[
           //   newWindow.on('show', () => {
           //     mainProcess.getFileFromUser(newWindow);
           //   });
-          mainProcess.loadFile();
+          mainProcess.loadDatabaseFile();
         },
       },
       { type: 'separator' },
@@ -64,6 +64,13 @@ template.push(...[
           }
           mainProcess.saveFile();
         },
+      },
+      { type: 'separator' },
+      {
+        label: 'Load Audio',
+        click() {
+          mainProcess.loadAudioFile();
+        }
       },
     ]
   }),

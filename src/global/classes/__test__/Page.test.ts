@@ -714,6 +714,12 @@ describe('Page', () => {
             expect(alignedPages[1].duration).toBe(2); // 8 counts * 500 ms per count = 2 seconds
             expect(alignedPages[2].duration).toBe(2); // 32 counts * 500 ms per count = 8 seconds
 
+            // Check that the timestamps are inserted correctly
+            expect(alignedPages[0].timestamp).toEqual(0);
+            expect(alignedPages[1].timestamp).toEqual(4);
+            expect(alignedPages[2].timestamp).toEqual(6);
+
+
             // Check that the measures are inserted correctly
             expect(alignedPages[0].measures).toEqual([measures[0], measures[1]]);
             expect(alignedPages[1].measures).toEqual([measures[2]]);
@@ -745,6 +751,12 @@ describe('Page', () => {
             expect(alignedPages[0].duration).toBe(3); // 6 counts * 500 ms per count = 3 seconds
             expect(alignedPages[1].duration).toBe(1.5); // 3 counts * 500 ms per count = 1.5 seconds
             expect(alignedPages[2].duration).toBe(3.5); // 7 counts * 500 ms per count = 3.5 seconds
+
+            // Check that the timestamps are inserted correctly
+            expect(alignedPages[0].timestamp).toEqual(0);
+            expect(alignedPages[1].timestamp).toEqual(3);
+            expect(alignedPages[2].timestamp).toEqual(4.5);
+
 
             // Check that the measures are inserted correctly
             expect(alignedPages[0].measures).toEqual([measures[0], measures[1]]);

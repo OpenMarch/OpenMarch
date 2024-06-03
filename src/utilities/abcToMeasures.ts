@@ -5,6 +5,8 @@ import TimeSignature from "@/global/classes/TimeSignature";
 /**
  * Parses an abc string and returns an array of Measure objects.
  *
+ * ABC is a music notation language that is used to represent music in text form.
+ *
  * @param abcString The abc string to parse
  * @returns An array of Measure objects
  */
@@ -19,14 +21,15 @@ export default function abcToMeasures(abcString: string, testing = false): Measu
         return [];
     }
 
-    let currentTimeSignature = parseTimeSignature(abcString);
+    const abcHeader = abcString.substring(0, abcString.indexOf('V:1'));
+    let currentTimeSignature = parseTimeSignature(abcHeader);
     if (!currentTimeSignature) {
-        console.error('No time signature found in abcString. Defaulting to 4/4.');
+        console.error('No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4.');
         currentTimeSignature = TimeSignature.fromString('4/4');
     }
-    let currentTempo = parseTempo(abcString);
+    let currentTempo = parseTempo(abcHeader);
     if (!currentTempo) {
-        console.error('No tempo found in abcString. Defaulting to 120 bpm.');
+        console.error('No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4. To fix this, add a tempo in the first measure.');
         currentTempo = { bpm: 120, beatUnit: BeatUnit.QUARTER };
     }
 

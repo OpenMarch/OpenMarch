@@ -103,7 +103,7 @@ app.whenReady().then(async () => {
   // File IO handlers
   ipcMain.handle('database:isReady', DatabaseServices.databaseIsReady);
   ipcMain.handle('database:save', async () => saveFile());
-  ipcMain.handle('database:load', async () => loadFile());
+  ipcMain.handle('database:load', async () => loadDatabaseFile());
   ipcMain.handle('database:create', async () => newFile());
   ipcMain.handle('history:undo', async () => executeHistoryAction("undo"));
   ipcMain.handle('history:redo', async () => executeHistoryAction("redo"));
@@ -246,8 +246,8 @@ export async function saveFile() {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function loadFile() {
-  console.log('loadFile');
+export async function loadDatabaseFile() {
+  console.log('loadDatabaseFile');
 
   if (!win) return -1;
 
@@ -263,6 +263,37 @@ export async function loadFile() {
       return -1;
 
     setActiveDb(path.filePaths[0]);
+    return 200;
+  }).catch((err) => {
+    console.log(err);
+    return -1;
+  });
+}
+
+
+/**
+ * Opens a dialog to load a database file path to connect to.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function loadAudioFile() {
+  console.log('loadDatabaseFile');
+
+  if (!win) return -1;
+
+  // If there is no previous path, open a dialog
+  dialog.showOpenDialog(win, {
+    filters: [{ name: 'Audio File', extensions: ['mp3', 'wav', 'ogg'] }]
+  }).then((path) => {
+    console.log(path.filePaths[0]);
+    DatabaseServices.setDbPath(path.filePaths[0]);
+    // store.set('databasePath', path.filePaths[0]); // Save the path for next time
+
+    // If the user cancels the dialog, and there is no previous path, return -1
+    if (path.canceled || !path.filePaths[0])
+      return -1;
+
+    // setActiveDb(path.filePaths[0]);
     return 200;
   }).catch((err) => {
     console.log(err);

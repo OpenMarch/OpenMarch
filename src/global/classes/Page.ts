@@ -7,8 +7,8 @@ import Measure from "./Measure";
  * Note: this class has no/should not have instance methods. All methods are static.
  */
 class Page {
-    /********** Database Items **********/
-    // These are the items that are stored in the database and are not editable by the user.
+    /********** Database Attributes **********/
+    // These are the Attributes that are stored in the database and are not editable by the user.
 
     /** The id of the page in the database */
     readonly id: number;
@@ -23,8 +23,8 @@ class Page {
     /** NOT IMPLEMENTED - Any notes about the page. Optional */
     readonly notes?: string;
 
-    /********** Runtime Items **********/
-    // These are items that are calculated at runtime and are not stored in the database.
+    /********** Runtime Attributes **********/
+    // These are Attributes that are calculated at runtime and are not stored in the database.
 
     /** Duration of the page in seconds */
     private _duration: number = 5;
@@ -39,7 +39,8 @@ class Page {
     private _measureBeatToStartOn: number = 1;
     /** Whether or not the Page object has been aligned with the measures */
     private _hasBeenAligned: boolean = false;
-
+    /** Where the start of this page is in the music */
+    private _timestamp: number = 0;
 
     /**
      * Fetches all of the pages from the database.
@@ -88,6 +89,11 @@ class Page {
     /** Whether or not the Page object has been aligned with the measures */
     public get hasBeenAligned() {
         return this._hasBeenAligned;
+    }
+
+    /** Where the start of this page is in the music */
+    public get timestamp() {
+        return this._timestamp;
     }
 
     /**************** Public Static Methods ****************/
@@ -373,6 +379,7 @@ class Page {
         const outputPages = [...pages];
         let currentMeasureIndex = 0;
         let currentMeasureBeat = 1;
+        let currentTimestamp = 0;
 
         for (let currentPageIndex = 0; currentPageIndex < outputPages.length; currentPageIndex++) {
             if (currentMeasureIndex >= measures.length) {
@@ -411,6 +418,9 @@ class Page {
 
                 remainingCounts -= offsetBigBeats;
             }
+
+            currentTimestamp += outputPages[currentPageIndex]._duration;
+            outputPages[currentPageIndex]._timestamp = currentTimestamp;
         }
 
         return outputPages;
