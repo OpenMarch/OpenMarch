@@ -1,14 +1,14 @@
 import { fabric } from "fabric";
-import { Marcher } from "../../global/classes/Marcher";
-import { MarcherPage } from "../../global/classes/MarcherPage";
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import Marcher from "../../global/classes/Marcher";
+import MarcherPage from "../../global/classes/MarcherPage";
+import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/global/Constants";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
  * It includes things such as the fabric objects and other canvas-specific properties.
  */
-export class CanvasMarcher extends fabric.Group {
+export default class CanvasMarcher extends fabric.Group {
     // Styles
     private static readonly dotRadius = 5;
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line

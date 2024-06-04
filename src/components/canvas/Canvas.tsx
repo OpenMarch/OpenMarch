@@ -12,8 +12,8 @@ import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { MarcherPage, ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
-import { CanvasMarcher, tempoToDuration } from "@/components/canvas/CanvasMarcher";
-import { StaticCanvasMarcher } from "@/components/canvas/StaticCanvasMarcher";
+import CanvasMarcher from "@/components/canvas/CanvasMarcher";
+import StaticCanvasMarcher from "@/components/canvas/StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
 import { ActiveObjectArgs, CanvasColors } from "@/global/Constants";
 
@@ -493,8 +493,10 @@ function Canvas({ className = "" }: { className?: string }) {
                 canvas.current.requestRenderAll();
                 // Set the selected page after the animation is done and set isPlaying to false
                 timeoutID.current = setTimeout(() => {
-                    setSelectedPage(nextPage);
-                    setIsPlaying(false);
+                    if (nextPage === null)
+                        setIsPlaying(false);
+                    else
+                        setSelectedPage(nextPage);
                 }, nextPage.duration * 1000);
             }
             else {

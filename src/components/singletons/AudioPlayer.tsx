@@ -13,29 +13,19 @@ export default function AudioPlayer() {
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
     const audioRef = useRef<HTMLAudioElement>(null);
-    const audioPath = '/Users/alex/Documents/OpenMarch Junk/Cadets_2016_Awakening.mp3'
 
     useEffect(() => {
         if (!audioRef.current) return;
 
         const audio = audioRef.current;
 
-        audio.currentTime = selectedPage?.timestamp || 0;
-
         if (isPlaying) {
-            console.log("playing")
-            console.log("current time", audio.currentTime)
             audio.play();
         } else {
+            audio.currentTime = selectedPage?.timestamp || 0;
             audio.pause();
         }
-
-
     }, [isPlaying, selectedPage, selectedPage?.timestamp]);
-
-    const getLocalFilePath = (filePath: string) => {
-        return `file://${filePath.replace(/\\/g, '/')}`;
-    };
 
     return (
         <audio ref={audioRef} src={audioFile} preload="auto" />
