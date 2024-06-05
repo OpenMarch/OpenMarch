@@ -30,7 +30,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
                 className="btn-secondary rounded-none rounded-l group"
-                disabled={!previousPage || isPlaying}
+                disabled={!previousPage}
             >
                 <FaFastBackward />
             </RegisteredActionButton>
@@ -38,7 +38,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.previousPage}
                 className="btn-secondary rounded-none"
-                disabled={!previousPage || isPlaying}
+                disabled={!previousPage}
             >
                 <FaStepBackward />
             </RegisteredActionButton>
@@ -54,7 +54,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.nextPage}
                 className="btn-secondary rounded-none"
-                disabled={!nextPage || isPlaying}
+                disabled={!nextPage}
             >
                 <FaStepForward />
             </RegisteredActionButton>
@@ -62,7 +62,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.lastPage}
                 className="btn-secondary rounded-none rounded-r"
-                disabled={!nextPage || isPlaying}
+                disabled={!nextPage}
             >
                 <FaFastForward />
             </RegisteredActionButton>

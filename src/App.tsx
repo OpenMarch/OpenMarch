@@ -24,10 +24,10 @@ function App() {
     // Context for the selected page. Will change when more specialized
     <main className='font-sans dark bg-gray-900 fixed h-full w-full z-20 top-0 start-0'>
       {!databaseIsReady ? <LaunchPage setDatabaseIsReady={setDatabaseIsReady} /> :
-        <SelectedPageProvider>
-          <SelectedMarchersProvider>
-            <FieldPropertiesProvider>
-              <IsPlayingProvider>
+        <IsPlayingProvider>
+          <SelectedPageProvider>
+            <SelectedMarchersProvider>
+              <FieldPropertiesProvider>
                 <StateInitializer />
                 <AudioPlayer />
                 <RegisteredActionsHandler />
@@ -37,10 +37,10 @@ function App() {
                   <Canvas />
                   <TimelineContainer className='box-border bg-gray-800 border-gray-500 border-0 border-t-2 border-solid' />
                 </div>
-              </IsPlayingProvider>
-            </FieldPropertiesProvider>
-          </SelectedMarchersProvider>
-        </SelectedPageProvider >
+              </FieldPropertiesProvider>
+            </SelectedMarchersProvider>
+          </SelectedPageProvider >
+        </IsPlayingProvider>
       }
     </main>
   );

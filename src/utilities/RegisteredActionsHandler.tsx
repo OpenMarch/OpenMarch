@@ -338,31 +338,23 @@ function RegisteredActionsHandler() {
                 break;
             /****************** Navigation and playback ******************/
             case RegisteredActionsEnum.nextPage: {
-                if (!isPlaying) {
-                    const nextPage = selectedPage.getNextPage(pages);
-                    if (nextPage) setSelectedPage(nextPage);
-                }
+                const nextPage = selectedPage.getNextPage(pages);
+                if (nextPage) setSelectedPage(nextPage);
                 break;
             }
             case RegisteredActionsEnum.lastPage: {
-                if (!isPlaying) {
-                    const lastPage = Page.getLastPage(pages);
-                    if (lastPage) setSelectedPage(lastPage);
-                }
+                const lastPage = Page.getLastPage(pages);
+                if (lastPage) setSelectedPage(lastPage);
                 break;
             }
             case RegisteredActionsEnum.previousPage: {
-                if (!isPlaying) {
-                    const previousPage = selectedPage.getPreviousPage(pages);
-                    if (previousPage) setSelectedPage(previousPage);
-                }
+                const previousPage = selectedPage.getPreviousPage(pages);
+                if (previousPage) setSelectedPage(previousPage);
                 break;
             }
             case RegisteredActionsEnum.firstPage: {
-                if (!isPlaying) {
-                    const firstPage = Page.getFirstPage(pages);
-                    if (firstPage) setSelectedPage(firstPage);
-                }
+                const firstPage = Page.getFirstPage(pages);
+                if (firstPage) setSelectedPage(firstPage);
                 break;
             }
             case RegisteredActionsEnum.playPause: {
