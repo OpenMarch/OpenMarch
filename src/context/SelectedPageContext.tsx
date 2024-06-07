@@ -1,7 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { usePageStore } from '@/stores/page/usePageStore';
 import Page from '@/global/classes/Page';
-import { useIsPlaying } from './IsPlayingContext';
 
 // Define the type for the context value
 type SelectedPageContextProps = {
@@ -13,7 +12,6 @@ const SelectedPageContext = createContext<SelectedPageContextProps | undefined>(
 
 export function SelectedPageProvider({ children }: { children: ReactNode }) {
     const { pages } = usePageStore();
-    const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const [selectedPage, setSelectedPage] = useState<Page | null>(null);
 
     // Send the selected page to the electron main process
@@ -32,11 +30,7 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     // Create the context value object
     const contextValue: SelectedPageContextProps = {
         selectedPage,
-        setSelectedPage: (page: Page | null) => {
-            if (isPlaying)
-                setIsPlaying(false);
-            setSelectedPage(page);
-        },
+        setSelectedPage
     };
 
     return (
