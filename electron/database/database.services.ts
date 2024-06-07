@@ -265,9 +265,34 @@ function createMeasureTable(db: Database.Database) {
             );
         `);
     } catch (error) {
-        console.error('Failed to create field properties table:', error);
+        console.error('Failed to create Measures table:', error);
     }
     console.log('Measures table created.');
+}
+
+/**
+ * Audio files are stored in the database as BLOBs.
+ * There can be multiple audio files in the database, but only one is used at a time.
+ * They can be used to differentiate tracks with metronome, simplified parts, etc.
+ *
+ * @param db Database object to use
+ */
+function createAudioFileTable(db: Database.Database) {
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
+                id INTEGER PRIMARY KEY,
+                filename TEXT NOT NULL,
+                nickname TEXT,
+                data BLOB,
+                "created_at"	TEXT NOT NULL,
+                "updated_at"	TEXT NOT NULL
+            );
+        `);
+    } catch (error) {
+        console.error('Failed to create audio file table:', error);
+    }
+    console.log('audio file table created.');
 }
 
 /* ============================ Handlers ============================ */
