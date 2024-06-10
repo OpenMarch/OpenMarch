@@ -4,7 +4,7 @@ import MarcherPage, { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPa
 import { MeasureDatabaseContainer } from "@/global/classes/Measure"
 import Page, { ModifiedPageContainer, NewPageContainer } from "@/global/classes/Page"
 import { contextBridge, ipcRenderer } from "electron"
-import { DatabaseResponse } from "electron/database/database.services"
+import { DatabaseResponse, insertAudioFile } from "electron/database/database.services"
 
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {
@@ -175,6 +175,9 @@ const APP_API = {
   updateMeasures: (modifiedMeasures: MeasureDatabaseContainer[]) =>
     ipcRenderer.invoke('measure:update', modifiedMeasures) as Promise<DatabaseResponse>,
   deleteMeasures: (measureIds: number[]) => ipcRenderer.invoke('measure:delete', measureIds),
+
+  // Audio File
+  launchInsertAudioFileDialogue: () => ipcRenderer.invoke('audio:insert') as Promise<DatabaseResponse>,
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)

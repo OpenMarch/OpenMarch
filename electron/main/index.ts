@@ -108,6 +108,8 @@ app.whenReady().then(async () => {
   ipcMain.handle('history:undo', async () => executeHistoryAction("undo"));
   ipcMain.handle('history:redo', async () => executeHistoryAction("redo"));
 
+  ipcMain.handle('audio:insert', async () => insertAudioFile());
+
   // Getters
   initGetters();
 
@@ -276,29 +278,40 @@ export async function loadDatabaseFile() {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function loadAudioFile() {
-  console.log('loadDatabaseFile');
+export async function insertAudioFile(): Promise<DatabaseServices.DatabaseResponse> {
+  console.log('insertAudioFile');
 
-  if (!win) return -1;
+  if (!win) return { success: false, error: { message: "insertAudioFile: window not loaded" } };
 
+  let databaseResponse: DatabaseServices.DatabaseResponse;
   // If there is no previous path, open a dialog
   dialog.showOpenDialog(win, {
     filters: [{ name: 'Audio File', extensions: ['mp3', 'wav', 'ogg'] }]
   }).then((path) => {
-    console.log(path.filePaths[0]);
-    DatabaseServices.setDbPath(path.filePaths[0]);
-    // store.set('databasePath', path.filePaths[0]); // Save the path for next time
+    console.log("loading audio file into buffer:", path.filePaths[0]);
+    fs.readFile(path.filePaths[0], (err, data) => {
+      if (err) {
+        console.error('Error reading audio file:', err);
+        return -1;
+      }
 
-    // If the user cancels the dialog, and there is no previous path, return -1
+      // 'data' is a buffer containing the file contents
+      // Id is -1 to conform with interface
+      DatabaseServices.insertAudioFile({ id: -1, data, filename: path.filePaths[0], nickname: path.filePaths[0] }).then((response) => {
+        databaseResponse = response;
+      })
+    });
     if (path.canceled || !path.filePaths[0])
-      return -1;
+      return { success: false, error: { message: "insertAudioFile: Operation was cancelled or no audio file was provided" } };
 
     // setActiveDb(path.filePaths[0]);
-    return 200;
+    return databaseResponse;
   }).catch((err) => {
+    // TODO how to print/return stack here?
     console.log(err);
-    return -1;
+    return { success: false, error: { message: err } };
   });
+  return { success: false, error: { message: "Error inserting audio file" } }
 }
 
 /**

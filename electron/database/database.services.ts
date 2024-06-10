@@ -26,26 +26,6 @@ export class DatabaseResponse {
     }
 }
 
-// const TEMP_MEASURES = `
-// X:1
-// T:Untitled score
-// C:Composer / arranger
-// %%measurenb 1
-// L:1/4
-// Q:1/4=100
-// M:4/4
-// I:linebreak $
-// K:C
-// V:1 treble nm="Oboe" snm="Ob."
-// V:1
-//  G z z2 | z4 |[M:3/4][Q:1/4=100]"^A" z3 | z3 |[M:4/4][Q:1/2=100]"^12" z4 | z4 | %6
-// [M:5/4][Q:1/4=200] z5"^C" | z5 |[M:6/8] z3 | z3 |[M:5/8][Q:1/8=100] z5/2"^B;akjd" | %11
-// [M:12/8][Q:3/16=100] z6 |[Q:3/8=100] z6 |[M:2/2][Q:1/2=100] z4 | z4 |[M:4/4][Q:1/4=120] z4 | z4 | %17
-// [M:2/2][Q:1/4=120] z4 | z4 |[M:7/16][Q:1/8=100] z7/4 | z7/4 |[M:5/4][Q:1/4=100] z5 | z5 | %23
-// [M:4/4][Q:1/4=120] z4 | z4 | z4 |[Q:3/8=120] z4 | z4 | %28
-// [Q:1/4=120] z4 |[Q:3/8=120] z4 |"^accel." z4 | z4 | z4 | z4 | z4 | z4 |] %36
-// `
-
 const TEMP_MEASURES = `
 X:1
 T:The Cadets 2016 "Awakening"
@@ -142,7 +122,9 @@ export function initDatabase() {
     createMarcherPageTable(db);
     createFieldPropertiesTable(db, FieldProperties.Template.NCAA);
     createMeasureTable(db);
+    // TODO Remove after measures are implemented
     createMeasures(TEMP_MEASURES);
+    createAudioFileTable(db);
     History.createHistoryTables(db);
     console.log('Database created.');
     db.close();
@@ -280,7 +262,7 @@ function createMeasureTable(db: Database.Database) {
 function createAudioFileTable(db: Database.Database) {
     try {
         db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
+            CREATE TABLE IF NOT EXISTS "${Constants.AudioFilesTableName}" (
                 id INTEGER PRIMARY KEY,
                 filename TEXT NOT NULL,
                 nickname TEXT,
@@ -1145,3 +1127,72 @@ async function createMeasures(new_ABC_data: string): Promise<DatabaseResponse> {
 //     }
 //     return output;
 // }
+
+/* ============================ Audio Files ============================ */
+/***** NOTE - Audio Files are currently not part of the history table *****/
+
+interface AudioFile {
+    readonly id: number;
+    readonly data: Buffer;
+    readonly filename: string;
+    readonly nickname?: string;
+}
+
+/**
+ * Gets all of the audio files from the database.
+ *
+ * @param db The database connection
+ * @returns Array of measures
+ */
+async function getAudioFiles(db?: Database.Database): Promise<AudioFile[]> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName}`);
+    const response = stmt.all() as AudioFile[];
+    if (!db) dbToUse.close();
+    return response;
+}
+
+/**
+ * Creates new measures in the database, completely replacing the old ABC string.
+ * See documentation in createMeasureTable for how measures in OpenMarch are stored.
+ *
+ * @param new_ABC_data The new ABC string to put into the database
+ * @returns DatabaseResponse
+ */
+export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: false }
+    try {
+        const insertStmt = db.prepare(`
+                INSERT INTO ${Constants.AudioFilesTableName} (
+                    data,
+                    filename,
+                    nickname,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    @data,
+                    @filename,
+                    @nickname,
+                    @created_at,
+                    @updated_at
+                )
+            `);
+        const created_at = new Date().toISOString();
+        insertStmt.run(
+            {
+                ...audioFile,
+                created_at,
+                updated_at: created_at
+            }
+        );
+        output = { success: true }
+    } catch (error: any) {
+        console.error(error);
+        output = { success: false, error: { message: error.message, stack: error.stack } };
+    } finally {
+        db.close();
+    }
+    return output;
+}

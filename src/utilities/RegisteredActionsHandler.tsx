@@ -17,38 +17,39 @@ import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
  */
 export enum RegisteredActionsEnum {
     // Electron interactions
-    launchLoadFileDialogue = "launchLoadFileDialogue",
-    launchSaveFileDialogue = "launchSaveFileDialogue",
-    launchNewFileDialogue = "launchNewFileDialogue",
-    performUndo = "performUndo",
-    performRedo = "performRedo",
+    launchLoadFileDialogue = 'launchLoadFileDialogue',
+    launchSaveFileDialogue = 'launchSaveFileDialogue',
+    launchNewFileDialogue = 'launchNewFileDialogue',
+    launchInsertAudioFileDialogue = 'launchInsertAudioFileDialogue',
+    performUndo = 'performUndo',
+    performRedo = 'performRedo',
 
     // Navigation and playback
-    nextPage = "nextPage",
-    lastPage = "lastPage",
-    previousPage = "previousPage",
-    firstPage = "firstPage",
-    playPause = "playPause",
+    nextPage = 'nextPage',
+    lastPage = 'lastPage',
+    previousPage = 'previousPage',
+    firstPage = 'firstPage',
+    playPause = 'playPause',
 
     // Batch editing
-    setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
-    setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
+    setAllMarchersToPreviousPage = 'setAllMarchersToPreviousPage',
+    setSelectedMarchersToPreviousPage = 'setSelectedMarchersToPreviousPage',
 
     // Alignment
-    snapToNearestWhole = "snapToNearestWhole",
-    lockX = "lockX",
-    lockY = "lockY",
-    alignVertically = "alignVertically",
-    alignHorizontally = "alignHorizontally",
-    evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
-    evenlyDistributeVertically = "evenlyDistributeVertically",
+    snapToNearestWhole = 'snapToNearestWhole',
+    lockX = 'lockX',
+    lockY = 'lockY',
+    alignVertically = 'alignVertically',
+    alignHorizontally = 'alignHorizontally',
+    evenlyDistributeHorizontally = 'evenlyDistributeHorizontally',
+    evenlyDistributeVertically = 'evenlyDistributeVertically',
 
     // UI settings
-    toggleNextPagePaths = "toggleNextPagePaths",
-    togglePreviousPagePaths = "togglePreviousPagePaths",
+    toggleNextPagePaths = 'toggleNextPagePaths',
+    togglePreviousPagePaths = 'togglePreviousPagePaths',
 
     // Select
-    selectAllMarchers = "selectAllMarchers",
+    selectAllMarchers = 'selectAllMarchers',
 }
 
 /**
@@ -161,6 +162,10 @@ export const RegisteredActionsObjects: { [key in RegisteredActionsEnum]: Registe
     launchNewFileDialogue: new RegisteredAction({
         desc: "Launch new file dialogue",
         enumString: "launchNewFileDialogue"
+    }),
+    launchInsertAudioFileDialogue: new RegisteredAction({
+        desc: "Load new audio file into the show",
+        enumString: "launchInsertAudioFileDialogue"
     }),
     performUndo: new RegisteredAction({
         desc: "Perform undo",
@@ -329,6 +334,9 @@ function RegisteredActionsHandler() {
                 break;
             case RegisteredActionsEnum.launchNewFileDialogue:
                 window.electron.databaseCreate();
+                break;
+            case RegisteredActionsEnum.launchInsertAudioFileDialogue:
+                window.electron.launchInsertAudioFileDialogue();
                 break;
             case RegisteredActionsEnum.performUndo:
                 window.electron.undo();

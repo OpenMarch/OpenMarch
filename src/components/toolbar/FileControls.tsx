@@ -1,9 +1,10 @@
-import { FaFile, FaFolderOpen, FaRedo, FaSave, FaUndo } from "react-icons/fa";
+import { FaFile, FaFolderOpen, FaMusic, FaRedo, FaSave, FaUndo } from "react-icons/fa";
 import * as api from "../../api/api";
 import { topBarComponentProps } from "@/global/Interfaces";
 import { useEffect, useRef } from "react";
 import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";
-import { RegisteredActionsEnum } from "@/utilities/RegisteredActionsHandler";
+import { RegisteredActionsEnum, RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import RegisteredActionButton from "../RegisteredActionButton";
 
 function FileControls({ className }: topBarComponentProps) {
     const { linkRegisteredAction } = useRegisteredActionsStore();
@@ -28,26 +29,30 @@ function FileControls({ className }: topBarComponentProps) {
             <div aria-label="File controls">
 
                 {/* <ButtonGroup aria-label="File controls" className={className}> */}
-                <button
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.launchSaveFileDialogue}
                     className="btn-secondary rounded-none rounded-l"
-                    ref={saveButtonRef}
                 >
                     <FaSave size={ICON_SIZE} />
-                </button >
-                <button
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.launchLoadFileDialogue}
                     className="btn-secondary rounded-none"
-                    onClick={api.launchLoadFileDialogue}
                 >
                     <FaFolderOpen size={ICON_SIZE} />
-                </button>
-                <button
-                    className="btn-secondary rounded-none rounded-r"
-                    onClick={api.launchNewFileDialogue}
-                // type="button"
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.launchNewFileDialogue}
+                    className="btn-secondary rounded-none"
                 >
                     <FaFile size={ICON_SIZE} />
-                </button>
-                {/* </buttonGroup > */}
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.launchInsertAudioFileDialogue}
+                    className="btn-secondary rounded-none rounded-r"
+                >
+                    <FaMusic size={ICON_SIZE} />
+                </RegisteredActionButton>
             </div >
             <div className="history-controls" >
                 {/* <buttonGroup aria-label="History controls" className={className}> */}

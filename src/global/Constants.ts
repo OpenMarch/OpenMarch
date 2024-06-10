@@ -8,6 +8,7 @@ export const Constants = {
     RedoHistoryTableName: "history_redo",
     FieldPropertiesTableName: "field_properties",
     MeasureTableName: "measures",
+    AudioFilesTableName: "audio_files",
 
     PagePrefix: "page",
     NewPageId: "NEW_PAGE", // deprecated?
