@@ -63,7 +63,7 @@ export default function TimelineContainer({ className = "" }: { className?: stri
                             );
                         })}
                     </div>
-                    <div className='row-span-3'>
+                    {/* <div className='row-span-3'>
                         {measures.map((measure, index) => {
                             // if (page.measures.length > 0) {
                             //     console.log("PAGE", page.name, page.duration)
@@ -101,7 +101,7 @@ export default function TimelineContainer({ className = "" }: { className?: stri
                                 </div>
                             );
                         })}
-                    </div>
+                    </div> */}
                     {/* <div>
                         {measures.map((measure, index) => {
                             const width = measure.duration * pxPerSecond;

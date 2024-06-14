@@ -29,7 +29,7 @@ function App() {
             <FieldPropertiesProvider>
               <IsPlayingProvider>
                 <StateInitializer />
-                <AudioPlayer />
+                {/* <AudioPlayer /> This is not ready */}
                 <RegisteredActionsHandler />
                 <div className='h-full grid justify-stretch' style={{ gridTemplateRows: "100px 1fr 100px", gridTemplateColumns: "250px 1fr" }} >
                   <Topbar className='col-span-full box-border border-gray-500 border-0 border-b-2 border-solid' />
