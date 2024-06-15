@@ -11,6 +11,7 @@ import { FieldPropertiesProvider } from './context/fieldPropertiesContext';
 import RegisteredActionsHandler from './utilities/RegisteredActionsHandler';
 import TimelineContainer from './components/timeline/TimelineContainer';
 import AudioPlayer from './components/singletons/AudioPlayer';
+import { SelectedAudioFileProvider } from './context/SelectedAudioFileContext';
 
 function App() {
   const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -27,17 +28,19 @@ function App() {
         <IsPlayingProvider>
           <SelectedPageProvider>
             <SelectedMarchersProvider>
-              <FieldPropertiesProvider>
-                <StateInitializer />
-                <AudioPlayer />
-                <RegisteredActionsHandler />
-                <div className='h-full grid justify-stretch' style={{ gridTemplateRows: "100px 1fr 100px", gridTemplateColumns: "250px 1fr" }} >
-                  <Topbar className='col-span-full box-border border-gray-500 border-0 border-b-2 border-solid' />
-                  <Sidebar className='row-span-2 box-border border-gray-500 border-0 border-r-2 border-solid' />
-                  <Canvas />
-                  <TimelineContainer className='box-border bg-gray-800 border-gray-500 border-0 border-t-2 border-solid' />
-                </div>
-              </FieldPropertiesProvider>
+              <SelectedAudioFileProvider>
+                <FieldPropertiesProvider>
+                  <StateInitializer />
+                  <AudioPlayer />
+                  <RegisteredActionsHandler />
+                  <div className='h-full grid justify-stretch' style={{ gridTemplateRows: "100px 1fr 100px", gridTemplateColumns: "250px 1fr" }} >
+                    <Topbar className='col-span-full box-border border-gray-500 border-0 border-b-2 border-solid' />
+                    <Sidebar className='row-span-2 box-border border-gray-500 border-0 border-r-2 border-solid' />
+                    <Canvas />
+                    <TimelineContainer className='box-border bg-gray-800 border-gray-500 border-0 border-t-2 border-solid' />
+                  </div>
+                </FieldPropertiesProvider>
+              </SelectedAudioFileProvider>
             </SelectedMarchersProvider>
           </SelectedPageProvider >
         </IsPlayingProvider>

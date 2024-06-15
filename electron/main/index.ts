@@ -297,7 +297,7 @@ export async function insertAudioFile(): Promise<DatabaseServices.DatabaseRespon
 
       // 'data' is a buffer containing the file contents
       // Id is -1 to conform with interface
-      DatabaseServices.insertAudioFile({ id: -1, data, filename: path.filePaths[0], nickname: path.filePaths[0] }).then((response) => {
+      DatabaseServices.insertAudioFile({ id: -1, data, path: path.filePaths[0], nickname: path.filePaths[0] }).then((response) => {
         databaseResponse = response;
       })
     });

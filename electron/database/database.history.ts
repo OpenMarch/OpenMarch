@@ -4,6 +4,7 @@ import { connect } from './database.services';
 import { Marcher } from '@/global/classes/Marcher';
 import Page from '@/global/classes/Page';
 import { MarcherPage } from '@/global/classes/MarcherPage';
+import AudioFile from '@/global/classes/AudioFile';
 
 /* ============================ Interfaces ============================ */
 /**
@@ -35,7 +36,7 @@ export interface HistoryEntry extends HistoryEntryBase {
 interface UpdateHistoryEntryBase {
     tableName: string;
     setClause: string;
-    previousState: Marcher | Page | MarcherPage;
+    previousState: Marcher | Page | MarcherPage | AudioFile;
 }
 
 /**

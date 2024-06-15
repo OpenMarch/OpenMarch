@@ -6,6 +6,7 @@ import UiSettingsToolbar from './UiSettingsToolbar';
 import ExportCoordinatesModal from '../exporting/ExportCoordinatesModal';
 import AlignmentToolbar from './AlignmentToolbar';
 import MeasuresModal from '../measures/MeasuresModal';
+import AudioSelector from './AudioSelector';
 
 function Topbar({ className = "" }: { className?: string }) {
     const componentClassName = '';
@@ -15,6 +16,7 @@ function Topbar({ className = "" }: { className?: string }) {
             <PlaybackControls className={componentClassName} />
             <MarcherListModal className={componentClassName} />
             <PageListModal className={componentClassName} />
+            <AudioSelector className={componentClassName} />
             {/* <MeasuresModal className={componentClassName} /> */}
             {/* <div className='h-full w-[1px] bg-gray-500' /> */}
             <UiSettingsToolbar className={`${componentClassName}`} />

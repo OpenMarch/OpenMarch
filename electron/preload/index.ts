@@ -1,10 +1,11 @@
+import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile"
 import FieldProperties from "@/global/classes/FieldProperties"
 import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
 import MarcherPage, { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
 import { MeasureDatabaseContainer } from "@/global/classes/Measure"
 import Page, { ModifiedPageContainer, NewPageContainer } from "@/global/classes/Page"
 import { contextBridge, ipcRenderer } from "electron"
-import { DatabaseResponse, insertAudioFile } from "electron/database/database.services"
+import { DatabaseResponse } from "electron/database/database.services"
 
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {
@@ -178,6 +179,13 @@ const APP_API = {
 
   // Audio File
   launchInsertAudioFileDialogue: () => ipcRenderer.invoke('audio:insert') as Promise<DatabaseResponse>,
+  getAudioFilesDetails: () => ipcRenderer.invoke('audio:getAll') as Promise<AudioFile[]>,
+  getSelectedAudioFile: () => ipcRenderer.invoke('audio:getSelected') as Promise<AudioFile>,
+  setSelectedAudioFile: (audioFileId: number) => ipcRenderer.invoke('audio:select', audioFileId) as Promise<AudioFile>,
+  updateAudioFiles: (modifiedAudioFileArgs: ModifiedAudioFileArgs[]) =>
+    ipcRenderer.invoke('audio:update', modifiedAudioFileArgs) as Promise<AudioFile[]>,
+  deleteAudioFile: (audioFileId: number) => ipcRenderer.invoke('audio:delete', audioFileId) as Promise<AudioFile[]>,
+
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)

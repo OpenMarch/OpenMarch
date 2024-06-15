@@ -9,6 +9,7 @@ import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/c
 import Page, { ModifiedPageContainer, NewPageContainer } from '../../src/global/classes/Page';
 import MarcherPage, { ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
 import FieldProperties from '../../src/global/classes/FieldProperties';
+import AudioFile, { ModifiedAudioFileArgs } from '@/global/classes/AudioFile';
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -264,9 +265,10 @@ function createAudioFileTable(db: Database.Database) {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.AudioFilesTableName}" (
                 id INTEGER PRIMARY KEY,
-                filename TEXT NOT NULL,
+                path TEXT NOT NULL,
                 nickname TEXT,
                 data BLOB,
+                selected INTEGER NOT NULL DEFAULT 0,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
             );
@@ -315,6 +317,14 @@ export function initHandlers() {
     // ipcMain.handle('measure:delete', async (_, measureIds) => deleteMeasures(measureIds));
     ipcMain.handle('measure:update', async (_, modifiedMeasures) => console.log("Update measures not implemented"));
     ipcMain.handle('measure:delete', async (_, measureIds) => console.log("delete measures not implemented"));
+
+    // Audio Files
+    // Insert audio file is defined in main index.ts
+    ipcMain.handle('audio:getAll', async () => getAudioFilesDetails());
+    ipcMain.handle('audio:getSelected', async () => getSelectedAudioFile());
+    ipcMain.handle('audio:select', async (_, audioFileId: number) => setSelectAudioFile(audioFileId));
+    ipcMain.handle('audio:update', async (_, args: ModifiedAudioFileArgs[]) => updateAudioFiles(args))
+    ipcMain.handle('audio:delete', async (_, audioFileId: number) => deleteAudioFile(audioFileId))
 }
 
 /* ======================= Exported Functions ======================= */
@@ -1129,28 +1139,64 @@ async function createMeasures(new_ABC_data: string): Promise<DatabaseResponse> {
 // }
 
 /* ============================ Audio Files ============================ */
-/***** NOTE - Audio Files are currently not part of the history table *****/
-
-interface AudioFile {
-    readonly id: number;
-    readonly data: Buffer;
-    readonly filename: string;
-    readonly nickname?: string;
-}
-
 /**
- * Gets all of the audio files from the database.
+ * Gets the information on the audio files in the database.
+ * I.e. just the path and nickname. This is to save memory so the whole audio file isn't loaded when not needed.
  *
  * @param db The database connection
  * @returns Array of measures
  */
-async function getAudioFiles(db?: Database.Database): Promise<AudioFile[]> {
+async function getAudioFilesDetails(db?: Database.Database): Promise<AudioFile[]> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName}`);
+    const stmt = dbToUse.prepare(`SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`);
     const response = stmt.all() as AudioFile[];
     if (!db) dbToUse.close();
     return response;
 }
+
+/**
+ * Gets the currently selected audio file in the database.
+ *
+ * If no audio file is selected, the first audio file in the database is selected.
+ *
+ * @returns The currently selected audio file in the database. Includes audio data.
+ */
+export async function getSelectedAudioFile(db?: Database.Database): Promise<AudioFile | null> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`);
+    const result = await stmt.get();
+    if (!result) {
+        const firstAudioFileStmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`);
+        const firstAudioFile = await firstAudioFileStmt.get() as AudioFile;
+        if (!firstAudioFile) {
+            console.error('No audio files in the database');
+            return null;
+        }
+        await setSelectAudioFile(firstAudioFile.id);
+        return firstAudioFile as AudioFile;
+    }
+    dbToUse.close();
+    return result as AudioFile;
+}
+
+/**
+ * Sets the audio file with the given ID as "selected" meaning that this audio file will be used for playback.
+ * This is done by setting the selected column to 1 for the selected audio file and 0 for all others.
+ *
+ * @param audioFileId The ID of the audio file to get
+ * @returns The newly selected AudioFile object including the audio data
+ */
+async function setSelectAudioFile(audioFileId: number): Promise<AudioFile | null> {
+    const db = connect();
+    const stmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 0`);
+    stmt.run();
+    const selectStmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 1 WHERE id = @audioFileId`);
+    await selectStmt.run({ audioFileId });
+    const result = await getSelectedAudioFile(db);
+    db.close();
+    return result as AudioFile;
+}
+
 
 /**
  * Creates new measures in the database, completely replacing the old ABC string.
@@ -1166,14 +1212,14 @@ export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseRes
         const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.AudioFilesTableName} (
                     data,
-                    filename,
+                    path,
                     nickname,
                     created_at,
                     updated_at
                 )
                 VALUES (
                     @data,
-                    @filename,
+                    @path,
                     @nickname,
                     @created_at,
                     @updated_at
@@ -1196,3 +1242,100 @@ export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseRes
     }
     return output;
 }
+
+/**
+ * Updates a list of audio files. The only thing that can be changed is the nickname.
+ *
+ * @param audioFileUpdates: Array of ModifiedAudioFileArgs objects to update the objects with
+ * @returns - DatabaseResponse{success: boolean, result: Database.result | string}
+ */
+async function updateAudioFiles(audioFileUpdates: ModifiedAudioFileArgs[]): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: true };
+    const historyActions: History.UpdateHistoryEntry[] = [];
+    try {
+        for (const audioFileUpdate of audioFileUpdates) {
+            // Generate the SET clause of the SQL query
+            const setClause = Object.keys(audioFileUpdate)
+                .map(key => `${key} = @${key}`)
+                .join(', ');
+
+            // Check if the SET clause is empty
+            if (setClause.length === 0) {
+                throw new Error('No valid properties to update');
+            }
+
+            // Record the original values of the marcherPage for the history table
+            let existingAudioFiles = await getAudioFilesDetails();
+            const previousState = existingAudioFiles.find((audioFile) => audioFile.id === audioFileUpdate.id)
+            if (!previousState) {
+                console.error(`No audio file found with ID ${audioFileUpdate.id}`)
+                continue;
+            }
+            const stmt = db.prepare(`
+                UPDATE ${Constants.AudioFilesTableName}
+                SET ${setClause}, updated_at = @new_updated_at
+                WHERE id = @id
+            `);
+
+            await stmt.run({ ...audioFileUpdate, new_updated_at: new Date().toISOString() });
+
+            // Get the new audio file
+            existingAudioFiles = await getAudioFilesDetails();
+            const newAudioFile = existingAudioFiles.find((audioFile) => audioFile.id === audioFileUpdate.id)
+            if (!newAudioFile) {
+                console.error(`No audio file found with ID ${audioFileUpdate.id}`)
+                continue;
+            }
+
+            const updateHistoryEntry = {
+                tableName: Constants.AudioFilesTableName,
+                setClause: setClause,
+                previousState: previousState,
+                reverseAction: {
+                    tableName: Constants.AudioFilesTableName,
+                    setClause: setClause,
+                    previousState: newAudioFile
+                }
+            }
+
+            historyActions.push(updateHistoryEntry);
+        }
+        History.insertUpdateHistory(historyActions, db);
+
+        output = { success: true };
+    } catch (error: any) {
+        console.error(error);
+        output = { success: false, error: { message: error.message, stack: error.stack } };
+    } finally {
+        db.close();
+    }
+    return output;
+}
+
+/**
+ * Deletes an audio file with the given id.
+ *
+ * @param audioFileId
+ * @returns {success: boolean, error?: string}
+ */
+async function deleteAudioFile(audioFileId: number): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: true };
+    try {
+        const pageStmt = db.prepare(`
+            DELETE FROM ${Constants.AudioFilesTableName}
+            WHERE id = @audioFileId
+        `);
+        pageStmt.run({ audioFileId });
+    }
+    catch (error: any) {
+        console.error(error);
+        output = { success: false, error: error };
+    }
+    finally {
+        db.close();
+    }
+    return output;
+}
+
