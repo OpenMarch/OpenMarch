@@ -1,16 +1,13 @@
-// import ModalLauncher from "../toolbar/ModalLauncher";
-import { topBarComponentProps } from "@/global/Interfaces";
-// import useMeasureStore from "@/stores/measure/useMeasureStore";
-// import { OpenSheetMusicDisplay as OSMD } from "opensheetmusicdisplay";
-// import { useState, useRef, useEffect } from "react";
-// import { Vex } from "vexflow";
+import { useMeasureStore } from "@/stores/measure/useMeasureStore";
+import { useState, useRef, useEffect } from "react";
 
+export default function MeasureEditor() {
 
-export default function MarcherListModal({ className }: topBarComponentProps) {
     // const { measures } = useMeasureStore()!;
     // const [dataReady, setDataReady] = useState(false);
     // const divRef = useRef<HTMLDivElement | null>(null);
     // let osmd = useRef<OSMD | null>(null);
+    // const { Renderer, Stave } = Vex.Flow;
 
     // useEffect(() => {
     //     if (!divRef.current) return;
@@ -19,8 +16,6 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
     //     osmd.current.load('score.xml"').then(() => osmd.current!.render());
     // }, [dataReady]);
 
-    // const { Renderer, Stave } = Vex.Flow;
-    // const divRef = useRef<HTMLDivElement | null>(null);
 
     // useEffect(() => {
     //     if (!divRef.current) return;
@@ -39,24 +34,9 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
     //     // Connect it to the rendering context and draw!
     //     stave.setContext(context).draw();
     // }, [Renderer, Stave]);
-
-    // function MeasureModalContents() {
-    //     return (
-    //         <>
-    //             This is a measure modal.
-    //             <div ref={divRef} />
-    //         </>
-    //     );
-    // }
-
-
     return (
-        <h2>
-            Measures
-        </h2>
-        // <ModalLauncher
-        //     components={[MeasureModalContents()]} launchButton="Marchers" header="Marchers" modalClassName="modal-xl"
-        //     className={className}
-        // />
+        <div>
+            Measure Editor
+        </div>
     );
 }
