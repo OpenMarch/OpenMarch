@@ -285,7 +285,7 @@ export async function insertAudioFile(): Promise<DatabaseServices.DatabaseRespon
 
   let databaseResponse: DatabaseServices.DatabaseResponse;
   // If there is no previous path, open a dialog
-  dialog.showOpenDialog(win, {
+  databaseResponse = await dialog.showOpenDialog(win, {
     filters: [{ name: 'Audio File', extensions: ['mp3', 'wav', 'ogg'] }]
   }).then((path) => {
     console.log("loading audio file into buffer:", path.filePaths[0]);
@@ -297,7 +297,7 @@ export async function insertAudioFile(): Promise<DatabaseServices.DatabaseRespon
 
       // 'data' is a buffer containing the file contents
       // Id is -1 to conform with interface
-      DatabaseServices.insertAudioFile({ id: -1, data, path: path.filePaths[0], nickname: path.filePaths[0] }).then((response) => {
+      DatabaseServices.insertAudioFile({ id: -1, data, path: path.filePaths[0], nickname: path.filePaths[0], selected: true }).then((response) => {
         databaseResponse = response;
       })
     });
@@ -311,7 +311,7 @@ export async function insertAudioFile(): Promise<DatabaseServices.DatabaseRespon
     console.log(err);
     return { success: false, error: { message: err } };
   });
-  return { success: false, error: { message: "Error inserting audio file" } }
+  return databaseResponse || { success: false, error: { message: "Error inserting audio file" } }
 }
 
 /**

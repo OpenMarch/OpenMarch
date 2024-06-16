@@ -11,6 +11,8 @@ import Page from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
+import AudioFile from "@/global/classes/AudioFile";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -288,6 +290,7 @@ function RegisteredActionsHandler() {
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
+    const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
 
@@ -336,7 +339,13 @@ function RegisteredActionsHandler() {
                 window.electron.databaseCreate();
                 break;
             case RegisteredActionsEnum.launchInsertAudioFileDialogue:
-                window.electron.launchInsertAudioFileDialogue();
+                window.electron.launchInsertAudioFileDialogue().then(() => {
+                    AudioFile.getSelectedAudioFile().then((response) => {
+                        const selectedAudioFileWithoutAudio = { ...response, data: undefined };
+                        setSelectedAudioFile(selectedAudioFileWithoutAudio);
+                    }
+                    );
+                });
                 break;
             case RegisteredActionsEnum.performUndo:
                 window.electron.undo();
@@ -450,8 +459,7 @@ function RegisteredActionsHandler() {
                 console.error(`No action registered for "${registeredActionObject.instructionalString}"`);
                 return;
         }
-    }, [fieldProperties, getSelectedMarcherPages, isPlaying, marcherPages, marchers, pages, selectedMarchers,
-        selectedPage, setIsPlaying, setSelectedMarchers, setSelectedPage, setUiSettings, uiSettings]);
+    }, [fieldProperties, getSelectedMarcherPages, isPlaying, marcherPages, marchers, pages, selectedMarchers, selectedPage, setIsPlaying, setSelectedAudioFile, setSelectedMarchers, setSelectedPage, setUiSettings, uiSettings]);
 
     /**
      * Create a dictionary of keyboard shortcuts to actions. This is used to trigger actions from keyboard shortcuts.

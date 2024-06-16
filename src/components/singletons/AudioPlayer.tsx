@@ -33,11 +33,9 @@ export default function AudioPlayer() {
     useEffect(() => {
         if (!selectedAudioFile) return;
         AudioFile.getSelectedAudioFile().then((audioFile) => {
-            console.log("audio file response", selectedAudioFile);
             if (!audioFile.data) return;
             const blob = new Blob([audioFile.data], { type: "audio/wav" });
             const url = URL.createObjectURL(blob);
-            console.log("audio url", url);
             setAudioFileUrl(url);
         });
         return () => { if (audioFileUrl) window.URL.revokeObjectURL(audioFileUrl); }

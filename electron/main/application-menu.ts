@@ -65,13 +65,6 @@ template.push(...[
           mainProcess.saveFile();
         },
       },
-      { type: 'separator' },
-      {
-        label: 'Load Audio',
-        click() {
-          mainProcess.loadAudioFile();
-        }
-      },
     ]
   }),
   // { role: 'editMenu' }

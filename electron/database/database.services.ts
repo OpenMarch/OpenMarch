@@ -17,7 +17,7 @@ export class DatabaseResponse {
      * Resulting data from the database action. This isn't very well implemented
      * and likely will not be used.
      */
-    readonly result?: Marcher[] | Page[] | MarcherPage[] | FieldProperties;
+    readonly result?: Marcher[] | Page[] | MarcherPage[] | FieldProperties | AudioFile[];
     readonly error?: { message: string, stack?: string };
 
     constructor(success: boolean, result?: any, error?: Error) {
@@ -1201,12 +1201,15 @@ async function setSelectAudioFile(audioFileId: number): Promise<AudioFile | null
 /**
  * Creates new measures in the database, completely replacing the old ABC string.
  * See documentation in createMeasureTable for how measures in OpenMarch are stored.
+ * This also selects the newly created audio file.
  *
  * @param new_ABC_data The new ABC string to put into the database
  * @returns DatabaseResponse
  */
 export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseResponse> {
     const db = connect();
+    const stmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 0`);
+    stmt.run();
     let output: DatabaseResponse = { success: false }
     try {
         const insertStmt = db.prepare(`
@@ -1214,6 +1217,7 @@ export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseRes
                     data,
                     path,
                     nickname,
+                    selected,
                     created_at,
                     updated_at
                 )
@@ -1221,21 +1225,25 @@ export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseRes
                     @data,
                     @path,
                     @nickname,
+                    @selected,
                     @created_at,
                     @updated_at
                 )
             `);
         const created_at = new Date().toISOString();
-        insertStmt.run(
+        const insertResult = insertStmt.run(
             {
                 ...audioFile,
+                selected: 1,
                 created_at,
                 updated_at: created_at
             }
         );
-        output = { success: true }
+        const id = insertResult.lastInsertRowid;
+
+        output = { success: true, result: [{ ...audioFile, id: id as number }] }
     } catch (error: any) {
-        console.error(error);
+        console.error("Insert audio file error:", error);
         output = { success: false, error: { message: error.message, stack: error.stack } };
     } finally {
         db.close();

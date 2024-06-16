@@ -6,11 +6,11 @@ export default function AudioSelector({ className = "" }: { className?: string }
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
 
-    const refreshAudioFiles = () => {
+    const refreshAudioFiles = useCallback(() => {
         AudioFile.getAudioFilesDetails().then((audioFiles) => {
             setAudioFiles(audioFiles);
         });
-    };
+    }, [setAudioFiles]);
 
     const handleSelectChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedAudioFileId = parseInt(event.target.value);
@@ -21,7 +21,7 @@ export default function AudioSelector({ className = "" }: { className?: string }
 
     useEffect(() => {
         refreshAudioFiles();
-    }, []);
+    }, [refreshAudioFiles, selectedAudioFile]);
 
     return (
         <div className={className}>
