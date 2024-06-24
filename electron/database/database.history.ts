@@ -36,7 +36,7 @@ export interface HistoryEntry extends HistoryEntryBase {
 interface UpdateHistoryEntryBase {
     tableName: string;
     setClause: string;
-    previousState: Marcher | Page | MarcherPage | AudioFile;
+    previousState: Marcher | Page | MarcherPage | AudioFile | { id: number, data: string };
 }
 
 /**

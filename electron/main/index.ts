@@ -272,11 +272,10 @@ export async function loadDatabaseFile() {
   });
 }
 
-
 /**
- * Opens a dialog to load a database file path to connect to.
+ * Opens a dialog to import an audio file to the database.
  *
- * @returns 200 for success, -1 for failure
+ * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
  */
 export async function insertAudioFile(): Promise<DatabaseServices.DatabaseResponse> {
   console.log('insertAudioFile');
@@ -287,6 +286,47 @@ export async function insertAudioFile(): Promise<DatabaseServices.DatabaseRespon
   // If there is no previous path, open a dialog
   databaseResponse = await dialog.showOpenDialog(win, {
     filters: [{ name: 'Audio File', extensions: ['mp3', 'wav', 'ogg'] }]
+  }).then((path) => {
+    console.log("loading audio file into buffer:", path.filePaths[0]);
+    fs.readFile(path.filePaths[0], (err, data) => {
+      if (err) {
+        console.error('Error reading audio file:', err);
+        return -1;
+      }
+
+      // 'data' is a buffer containing the file contents
+      // Id is -1 to conform with interface
+      DatabaseServices.insertAudioFile({ id: -1, data, path: path.filePaths[0], nickname: path.filePaths[0], selected: true }).then((response) => {
+        databaseResponse = response;
+      })
+    });
+    if (path.canceled || !path.filePaths[0])
+      return { success: false, error: { message: "insertAudioFile: Operation was cancelled or no audio file was provided" } };
+
+    // setActiveDb(path.filePaths[0]);
+    return databaseResponse;
+  }).catch((err) => {
+    // TODO how to print/return stack here?
+    console.log(err);
+    return { success: false, error: { message: err } };
+  });
+  return databaseResponse || { success: false, error: { message: "Error inserting audio file" } }
+}
+
+/**
+ * Opens a dialog to import a MusicXML file as measures. This will overwrite any existing measures.
+ *
+ * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
+ */
+export async function importMusicXML(): Promise<DatabaseServices.DatabaseResponse> {
+  console.log('importMusicXML');
+
+  if (!win) return { success: false, error: { message: "importMusicXML: window not loaded" } };
+
+  let databaseResponse: DatabaseServices.DatabaseResponse;
+  // If there is no previous path, open a dialog
+  databaseResponse = await dialog.showOpenDialog(win, {
+    filters: [{ name: 'MusicXML', extensions: ['mp3', 'wav', 'ogg'] }]
   }).then((path) => {
     console.log("loading audio file into buffer:", path.filePaths[0]);
     fs.readFile(path.filePaths[0], (err, data) => {

@@ -160,31 +160,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
 ] as const;
 
-export const mockMeasures: Measure[] = [
-    new Measure({
-        number: 1,
-        beatUnit: BeatUnit.QUARTER,
-        timeSignature: TimeSignature.fromString('4/4'),
-        tempo: 120,
-        rehearsalMark: 'A'
-    }),
-    new Measure({
-        number: 2,
-        beatUnit: BeatUnit.HALF,
-        timeSignature: TimeSignature.fromString('2/2'),
-        tempo: 89,
-        notes: 'This is the second measure'
-    }),
-    new Measure({
-        number: 3,
-        beatUnit: BeatUnit.DOTTED_QUARTER,
-        timeSignature: TimeSignature.fromString('6/8'),
-        tempo: 2,
-        rehearsalMark: '17'
-    })
-] as const;
-
-
 /**
  * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
  */

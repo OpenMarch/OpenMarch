@@ -10,8 +10,6 @@ import Marcher from "../../global/classes/Marcher";
 import Page from "../../global/classes/Page";
 import MarcherPage from "../../global/classes/MarcherPage";
 import Measure from "../../global/classes/Measure";
-import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
-import AudioFile from "@/global/classes/AudioFile";
 
 /**
  * A component that initializes the state of the application.
@@ -25,7 +23,6 @@ function StateInitializer() {
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
-    const { setSelectedAudioFile } = useSelectedAudioFile()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -60,14 +57,6 @@ function StateInitializer() {
     useEffect(() => {
         fetchMeasures();
     }, [fetchMeasures]);
-
-    useEffect(() => {
-        AudioFile.getSelectedAudioFile().then((audioFile) => {
-            // Make the audio file not have a buffer to save memory
-            const audioFileNoBuffer = { ...audioFile, buffer: null };
-            setSelectedAudioFile(audioFileNoBuffer)
-        });
-    }, [setSelectedAudioFile]);
     /*******************************************************************/
 
     // Select the first page if none are selected. Intended to activate at the initial loading of a webpage

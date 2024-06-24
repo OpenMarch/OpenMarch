@@ -3,8 +3,11 @@ import TimeSignature from "./TimeSignature";
 
 /**
  * A Measure represents a measure in the music is used in conjunction with Page objects to define a show's length.
+ *
+ * Measures in OpenMarch are stored in the database as a single string in ABC notation.
+ * While this makes updating the database a bit more cumbersome, it allows for easy parsing of the measures.
  */
-class Measure {
+export default class Measure {
     /** INTEGER - The number of the measure in the piece */
     readonly number: number;
     /** The rehearsal mark of the measure. E.g. "A" or "12" (for measure 12) */
@@ -13,17 +16,18 @@ class Measure {
     readonly tempo: number;
     /**
      * The type of note that the bpm defines in this measure.
-     * E.g. 6/8 has dotted quarter = 120, or 4/4 has half note = 80
+     * E.g. if the tempo is quarter = 120, the beat unit would be 1/4. Half note would be 1/2.
+     * Dotted quarter would be 3/8
      */
     readonly beatUnit: BeatUnit;
     /** Time signature of the measure */
     readonly timeSignature: TimeSignature;
     /** The duration, in seconds, that the measure is */
     readonly duration: number;
-    /** The notes for the measure */
+    /** NOT IMPLEMENTED - The notes for the measure */
     readonly notes: string | null;
     /**
-     * Fetches all of the measures from the database.
+     * Fetches all of the measures from the database and updates the global state.
      * This is attached to the Measure store and needs to be updated in a useEffect hook so that the UI is updated.
      */
     static fetchMeasures: () => Promise<void>;
@@ -48,47 +52,38 @@ class Measure {
     }
 
     /**
-     * Calculates the duration of the measure (in seconds) based on the time signature, tempo, and beat unit.
-     *
-     * The time signature (numerator specifically) will determine how many beats are in the measure.
-     *
-     * The tempo (beats per minute) defines how many time the beat unit occurs in one minute.
-     *
-     * The beat unit determines what note gets the pulse. E.g. quarter = 144 == half = 72
-     */
-    private calculateDuration() {
-        const beatsPerMeasure = this.timeSignature.numerator;
-        // The ratio of the measure's beat unit to the pulse's beat unit
-        const tempoRatio = (1 / this.timeSignature.denominator) / this.beatUnit.value;
-        // The duration of one beat in seconds
-        const tempoBeatDuration = 60 / this.tempo;
-        return tempoRatio * beatsPerMeasure * tempoBeatDuration;
-    }
-
-    /**
      * Fetches all of the measures from the database.
      * This SHOULD NOT be called outside of the measure store - as the current measures are stored already in the store
      * and the fetchMeasures function is attached to the store and updates the UI.
+     *
+     * @param testing A boolean to determine if the function is being tested. If true, it will not print errors to the console.
      * @returns a list of all measures
      */
-    static async getMeasures(): Promise<string> {
-        const response = await window.electron.getMeasures();
-        // const measures: Measure[] = [];
-        // for (const container of response) {
-        //     measures.push(Measure.fromMeasureDatabaseContainer(container));
-        // }
-        return response;
+    static async getMeasures(testing = false): Promise<Measure[]> {
+        const response = await window.electron.getMeasuresAbcString();
+        const measures = Measure.abcToMeasures(response, testing);
+        return measures;
     }
 
     /**
-     * Creates new measures in the database and updates the store.
+     * Creates a new measure in the database and updates the store.
      *
-     * @param newMeasures - The new measure objects to be created.
+     * Pushes back the existing measure with the same number and all following measures.
+     *
+     * @param newMeasure - The new measure object to be created.
+     * @param existingMeasures - The existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async createMeasures(newMeasures: Measure[]) {
-        const containers: MeasureDatabaseContainer[] = newMeasures.map(measure => measure.toDatabaseContainer());
-        const response = await window.electron.createMeasures(containers);
+    static async insertMeasure({ newMeasure, existingMeasures }: { newMeasure: Measure; existingMeasures?: Measure[]; }) {
+        const existingMeasuresCopy = existingMeasures ? [...existingMeasures] : await Measure.getMeasures();
+        const indexOfPreviousMeasure = existingMeasuresCopy.findIndex(measure => measure.number === newMeasure.number);
+        if (indexOfPreviousMeasure > -1) {
+            existingMeasuresCopy.splice(indexOfPreviousMeasure, 0, newMeasure);
+        } else {
+            existingMeasuresCopy.push(newMeasure);
+        }
+        const abcString = Measure.toAbcString(existingMeasuresCopy);
+        const response = await window.electron.updateMeasureAbcString(abcString);
         // fetch the measures to update the store
         this.checkForFetchMeasures();
         this.fetchMeasures();
@@ -96,14 +91,25 @@ class Measure {
     }
 
     /**
-     * Update one or many measures with the provided arguments.
+     * Update one measure with the provided arguments.
      *
-     * @param modifiedMeasures - The objects to update the measures with.
+     * Note that the number of the measure cannot be changed and is how the measure is identified.
+     * Does nothing if the measure number is not found in the existing measures.
+     *
+     * @param modifiedMeasure - The modified measure object.
+     * @param existingMeasures - The existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async updateMeasures(modifiedMeasures: Measure[]) {
-        const containers: MeasureDatabaseContainer[] = modifiedMeasures.map(measure => measure.toDatabaseContainer());
-        const response = await window.electron.updateMeasures(containers);
+    static async updateMeasure({ modifiedMeasure, existingMeasures }: { modifiedMeasure: Measure; existingMeasures?: Measure[]; }) {
+        const existingMeasuresCopy = existingMeasures ? [...existingMeasures] : await Measure.getMeasures();
+        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === modifiedMeasure.number);
+
+        if (indexOfMeasure < 0)
+            throw new Error(`Measure ${modifiedMeasure.number} not found in existing measures.`);
+
+        existingMeasuresCopy[indexOfMeasure] = modifiedMeasure;
+        const abcString = Measure.toAbcString(existingMeasuresCopy);
+        const response = await window.electron.updateMeasureAbcString(abcString);
         // fetch the measures to update the store
         this.checkForFetchMeasures();
         this.fetchMeasures();
@@ -111,19 +117,34 @@ class Measure {
     }
 
     /**
-     * Deletes specified measures from the database.
-     * CAUTION - this will delete all of the measurePages associated with the measure.
-     * THIS CANNOT BE UNDONE.
+     * Deletes a single measure from the database.
      *
-     * @param measure_id - The ids of the measures to delete. Do not use id_for_html.
-     * @returns Response data from the server.
+     * @param measureNumber the number of the measure to delete
+     * @param existingMeasures the existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
+     * @returns
      */
-    static async deleteMeasure(measureIds: number[]) {
-        const response = await window.electron.deleteMeasures(measureIds);
+    static async deleteMeasure({ measureNumber, existingMeasures }: { measureNumber: number; existingMeasures?: Measure[]; }) {
+        const existingMeasuresCopy = existingMeasures ? [...existingMeasures] : await Measure.getMeasures();
+        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === measureNumber);
+
+        if (indexOfMeasure < 0)
+            throw new Error(`Measure ${measureNumber} not found in existing measures.`);
+
+        existingMeasuresCopy.splice(indexOfMeasure, 1);
+        const abcString = Measure.toAbcString(existingMeasuresCopy);
+        const response = await window.electron.updateMeasureAbcString(abcString);
         // fetch the measures to update the store
         this.checkForFetchMeasures();
         this.fetchMeasures();
         return response;
+    }
+
+    /**
+     * Checks if fetchMeasures is defined. If not, it logs an error to the console.
+     */
+    static checkForFetchMeasures() {
+        if (!this.fetchMeasures)
+            console.error("fetchMeasures is not defined. The UI will not update properly.");
     }
 
     /**
@@ -153,14 +174,6 @@ class Measure {
     }
 
     /**
-     * Checks if fetchMeasures is defined. If not, it logs an error to the console.
-     */
-    private static checkForFetchMeasures() {
-        if (!this.fetchMeasures)
-            console.error("fetchMeasures is not defined. The UI will not update properly.");
-    }
-
-    /**
      * Get the number of big beats in the measure.
      *
      * E.g.
@@ -173,54 +186,213 @@ class Measure {
     }
 
     /**
-     * Use this function to convert a Measure object to a MeasureDatabaseContainer object.
-     * MeasureDatabaseContainer objects are used to send data to the database for updating and creating.
+     * Calculates the duration of the measure (in seconds) based on the time signature, tempo, and beat unit.
      *
-     * @returns A MeasureDatabaseContainer object of this measure that can be sent to the database.
+     * The time signature (numerator specifically) will determine how many beats are in the measure.
+     *
+     * The tempo (beats per minute) defines how many time the beat unit occurs in one minute.
+     *
+     * The beat unit determines what note gets the pulse. E.g. quarter = 144 == half = 72
      */
-    private toDatabaseContainer(): MeasureDatabaseContainer {
-        const container: MeasureDatabaseContainer = {
-            number: this.number,
-            rehearsal_mark: this.rehearsalMark,
-            time_signature: this.timeSignature.toString(),
-            tempo: this.tempo,
-            beat_unit: this.beatUnit.toString(),
-            duration: this.duration,
-            notes: this.notes,
+    private calculateDuration() {
+        const beatsPerMeasure = this.timeSignature.numerator;
+        // The ratio of the measure's beat unit to the pulse's beat unit
+        const tempoRatio = (1 / this.timeSignature.denominator) / this.beatUnit.value;
+        // The duration of one beat in seconds
+        const tempoBeatDuration = 60 / this.tempo;
+        return tempoRatio * beatsPerMeasure * tempoBeatDuration;
+    }
+
+    /********** MEASURE -> ABC **********/
+    /**
+     * Converts an array of Measure objects to an abc string.
+     *
+     * @param measures The measures to convert to an abc string
+     * @returns The abc string.
+     */
+    private static toAbcString(measures: Measure[]) {
+        if (measures.length === 0) return '';
+
+        let output = 'X:1\n';
+        // Time Signature
+        output += `M:${measures[0].timeSignature.toString()}\n`;
+        // Tempo
+        output += `Q:${measures[0].beatUnit.toFractionString()}=${measures[0].tempo}\n`;
+        // Voice placeholder
+        output += 'V:1 baritone\nV:1\n';
+
+        // First measure
+        let previousMeasure;
+        for (const measure of measures) {
+            output += measure.toMeasureAbcString(previousMeasure);
+            previousMeasure = measure;
         }
-        return container;
+
+        return output;
     }
 
     /**
-     * Use this function to create new Measure objects when receiving MeasureDatabaseContainers from the database.
+     * Helper function to convert a single measure to an abc string.
      *
-     * @param container The MeasureDatabaseContainer to create the Measure from.
-     * @returns A Measure object
+     * @param previousMeasure The previous measure to compare tempo and time signature to.
+     * @returns The abc string for the measure.
      */
-    private static fromMeasureDatabaseContainer(container: MeasureDatabaseContainer): Measure {
-        return new Measure({
-            number: container.number,
-            rehearsalMark: container.rehearsal_mark,
-            timeSignature: TimeSignature.fromString(container.time_signature),
-            tempo: container.tempo,
-            beatUnit: BeatUnit.fromString(container.beat_unit),
-            notes: container.notes
-        });
+    private toMeasureAbcString(previousMeasure?: Measure) {
+        let output = '';
+        // Rehearsal mark
+        if (this.rehearsalMark)
+            output += `"^${this.rehearsalMark}" `;
+
+        // Time signature
+        if (previousMeasure && !this.timeSignature.equals(previousMeasure.timeSignature))
+            output += `[M:${this.timeSignature.toString()}] `;
+
+        // Tempo
+        if (previousMeasure && this.tempo !== previousMeasure.tempo)
+            output += `[Q:${this.beatUnit.toFractionString()}=${this.tempo}] `;
+
+        // Beats
+        output += `z${this.getBigBeats()} `;
+
+        // barline
+        output += '| ';
+
+        return output;
     }
-}
 
-export default Measure;
+    /********** ABC -> MEASURE **********/
+    /**
+     * Parses an abc string and returns an array of Measure objects.
+     *
+     * ABC is a music notation language that is used to represent music in text form.
+     *
+     * @param abcString The abc string to parse
+     * @param testing A boolean to determine if the function is being tested. If true, it will not print errors to the console.
+     * @returns An array of Measure objects
+     */
+    private static abcToMeasures(abcString: string, testing = false): Measure[] {
 
-/**
- * This is the type that you will actually send to the database for creating and updating.
- */
-export interface MeasureDatabaseContainer {
-    /** The unique identifier of the measure for the database. This is not used for new Measures */
-    readonly number: number;
-    readonly rehearsal_mark: string | null;
-    readonly time_signature: string;
-    readonly tempo: number;
-    readonly beat_unit: string;
-    readonly duration: number;
-    readonly notes: string | null;
+        if (!abcString || abcString.length === 0)
+            return [];
+        if (abcString.indexOf('V:1') < 0) {
+            // V:1 means voice 1, which is what we're looking for
+            if (!testing)
+                console.error('No measures found in abcString. No V:1 found.')
+            return [];
+        }
+
+        const abcHeader = abcString.substring(0, abcString.indexOf('V:1'));
+        let currentTimeSignature = Measure.parseTimeSignature(abcHeader);
+        if (!currentTimeSignature) {
+            console.error('No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4.');
+            currentTimeSignature = TimeSignature.fromString('4/4');
+        }
+        let currentTempo = Measure.parseTempo(abcHeader);
+        if (!currentTempo) {
+            console.error('No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4. To fix this, add a tempo in the first measure.');
+            currentTempo = { bpm: 120, beatUnit: BeatUnit.QUARTER };
+        }
+
+        // Create a new string to modify
+        let newAbcString = abcString;
+
+        // only get the first voice
+        while (newAbcString.includes('V:1')) {
+            newAbcString = newAbcString.substring(newAbcString.indexOf('V:1') + 4);
+        }
+        // Remove any following voices
+        const nextVoiceIndex = newAbcString.indexOf('V:');
+        if (nextVoiceIndex > 0)
+            newAbcString = newAbcString.substring(0, nextVoiceIndex);
+
+        // make each bar a new line. We don't care about what type of barline it is
+        const multiBarlines = new Set(['|]', '[|', '||', '|:', ':|', '::']);
+        for (const barline of multiBarlines) {
+            while (newAbcString.includes(barline)) {
+                newAbcString = newAbcString.replace(barline, '\n');
+            }
+        }
+        // Single barline is after so that it doesn't replace the multi-barlines
+        const singleBarline = '|';
+        while (newAbcString.includes(singleBarline)) {
+            newAbcString = newAbcString.replace(singleBarline, '\n');
+        }
+
+        const measureStrings = newAbcString.split('\n');
+
+        // Remove all comments (text that starts with %)
+        for (let i = 0; i < measureStrings.length; i++) {
+            if (measureStrings[i].trim()[0] === '%' || measureStrings[i].trim() === '') {
+                measureStrings.splice(i, 1);
+                i--;
+            }
+        }
+
+        // initialize empty object to store measures
+        const output: Measure[] = [];
+        // loop through each measure, checking for time signature and tempo changes
+        for (const measureString of measureStrings) {
+            const timeSignature = Measure.parseTimeSignature(measureString);
+            if (timeSignature) {
+                currentTimeSignature = timeSignature;
+            }
+
+            const tempo = Measure.parseTempo(measureString);
+            if (tempo) {
+                currentTempo = tempo;
+            }
+
+            if (currentTimeSignature && currentTempo) {
+                output.push(new Measure({
+                    number: output.length + 1,
+                    timeSignature: currentTimeSignature,
+                    tempo: currentTempo.bpm,
+                    beatUnit: currentTempo.beatUnit,
+                }));
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * Gets the first occurrence of a time signature in an abc string and returns it as a TimeSignature object.
+     *
+     * @param abcString The abc string to parse the time signature from (e.g. "M:4/4")
+     * @returns TimeSignature object representing the time signature
+     */
+    private static parseTimeSignature(abcString: string): TimeSignature | undefined {
+        if (!abcString.includes('M:'))
+            return; // no time signature found, don't print an error
+
+        const timeSignatureRegex = /M:(\d+)\/(\d+)/;
+        const timeSignatureMatch = abcString.match(timeSignatureRegex);
+        if (!timeSignatureMatch) {
+            console.error('No time signature found in abcString');
+            return;
+        }
+        const timeSignatureString = `${parseInt(timeSignatureMatch[1], 10)}/${parseInt(timeSignatureMatch[2], 10)}`;
+        return TimeSignature.fromString(timeSignatureString);
+    }
+
+    /**
+     * Gets the first occurrence of a tempo in an abc string and returns it as a bpm and beat unit object.
+     *
+     * @param abcString The abc string to parse the tempo from (e.g. "Q:1/4=100")
+     * @returns { bpm: number, beatUnit: BeatUnit} | undefined The tempo as a bpm and beat unit object
+     */
+    private static parseTempo(abcString: string): { bpm: number, beatUnit: BeatUnit } | undefined {
+        if (!abcString.includes('Q:'))
+            return; // no tempo found, don't print an error
+
+        const tempoRegex = /Q:(\d+)\/(\d+)=(\d+)/;
+        const tempoMatch = abcString.match(tempoRegex);
+        if (!tempoMatch) {
+            console.error('No tempo found in abcString');
+            return;
+        }
+        const beatUnitString = `${parseInt(tempoMatch[1], 10)}/${parseInt(tempoMatch[2], 10)}`;
+        const beatUnit = BeatUnit.fromString(beatUnitString);
+        return { bpm: parseInt(tempoMatch[3], 10), beatUnit };
+    }
 }

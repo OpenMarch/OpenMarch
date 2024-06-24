@@ -2,7 +2,6 @@ import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile"
 import FieldProperties from "@/global/classes/FieldProperties"
 import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
 import MarcherPage, { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
-import { MeasureDatabaseContainer } from "@/global/classes/Measure"
 import Page, { ModifiedPageContainer, NewPageContainer } from "@/global/classes/Page"
 import { contextBridge, ipcRenderer } from "electron"
 import { DatabaseResponse } from "electron/database/database.services"
@@ -170,12 +169,9 @@ const APP_API = {
    * @returns A serialized array of all measures in the database.
    * This means you must call `new Measure(measure)` on each measure or else the instance methods will not work.
    */
-  getMeasures: () => ipcRenderer.invoke('measure:getAll') as Promise<string>,
-  createMeasures: (newMeasure: MeasureDatabaseContainer[]) =>
-    ipcRenderer.invoke('measure:insert', newMeasure) as Promise<DatabaseResponse>,
-  updateMeasures: (modifiedMeasures: MeasureDatabaseContainer[]) =>
-    ipcRenderer.invoke('measure:update', modifiedMeasures) as Promise<DatabaseResponse>,
-  deleteMeasures: (measureIds: number[]) => ipcRenderer.invoke('measure:delete', measureIds),
+  getMeasuresAbcString: () => ipcRenderer.invoke('measure:getAll') as Promise<string>,
+  updateMeasureAbcString: (abcString: string) =>
+    ipcRenderer.invoke('measure:update', abcString) as Promise<DatabaseResponse>,
 
   // Audio File
   launchInsertAudioFileDialogue: () => ipcRenderer.invoke('audio:insert') as Promise<DatabaseResponse>,

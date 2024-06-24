@@ -15,6 +15,7 @@ describe('Page', () => {
         } as Partial<ElectronApi> as ElectronApi;
 
         Page.fetchPages = jest.fn();
+        Measure.fetchMeasures = jest.fn();
         Page.checkForFetchPages = jest.fn();
     });
 

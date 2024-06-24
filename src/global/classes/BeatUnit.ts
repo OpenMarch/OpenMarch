@@ -32,6 +32,28 @@ class BeatUnit {
     }
 
     /**
+     * Returns the fraction representation in a string.
+     *
+     * E.g. Half -> 1/2, dotted quarter -> 3/8
+     */
+    toFractionString() {
+        switch (this.name) {
+            case "WHOLE": return '1/1';
+            case "HALF": return '1/2';
+            case "DOTTED HALF": return '3/4';
+            case "QUARTER": return '1/4';
+            case "DOTTED QUARTER": return '3/8';
+            case "EIGHTH": return '1/8';
+            case "DOTTED_EIGHTH": return '3/16';
+            case "SIXTEENTH": return '1/16';
+            case "DOTTED_SIXTEENTH": return '3/32';
+            case "THIRTY_SECOND": return '1/32';
+            case "SIXTY_FOURTH": return '1/64';
+            default: throw new Error(`Invalid beat unit name: ${this.name}`);
+        }
+    }
+
+    /**
      * @param other The other beat unit to compare to.
      * @returns True if the other beat unit is equal to this beat unit.
      */
