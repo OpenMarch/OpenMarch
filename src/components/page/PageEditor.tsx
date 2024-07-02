@@ -2,7 +2,6 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
 import Page from "@/global/classes/Page";
-import { FaArrowRight } from "react-icons/fa";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;

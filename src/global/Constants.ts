@@ -18,6 +18,15 @@ export const Constants = {
 } as const;
 
 /**
+ * Tables whose changes are added to the history table
+ */
+export const TablesWithHistory = [
+    Constants.MarcherTableName,
+    Constants.PageTableName,
+    Constants.MarcherPageTableName,
+] as const;
+
+/**
  * The colors for the canvas.
  */
 export const CanvasColors = {

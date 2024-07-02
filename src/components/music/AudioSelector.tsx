@@ -2,7 +2,11 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useCallback, useEffect, useState } from "react";
 
-export default function AudioSelector({ className = "" }: { className?: string }) {
+export default function AudioSelector({
+    className = "",
+}: {
+    className?: string;
+}) {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
 
@@ -12,12 +16,17 @@ export default function AudioSelector({ className = "" }: { className?: string }
         });
     }, [setAudioFiles]);
 
-    const handleSelectChange = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedAudioFileId = parseInt(event.target.value);
-        AudioFile.setSelectedAudioFile(selectedAudioFileId).then((audioFile) => {
-            setSelectedAudioFile(audioFile);
-        });
-    }, [setSelectedAudioFile]);
+    const handleSelectChange = useCallback(
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
+            const selectedAudioFileId = parseInt(event.target.value);
+            AudioFile.setSelectedAudioFile(selectedAudioFileId).then(
+                (audioFile) => {
+                    setSelectedAudioFile(audioFile);
+                }
+            );
+        },
+        [setSelectedAudioFile]
+    );
 
     useEffect(() => {
         refreshAudioFiles();
@@ -25,14 +34,24 @@ export default function AudioSelector({ className = "" }: { className?: string }
 
     return (
         <div className={className}>
-            <label htmlFor="audio-selector">Select an audio file:</label>
-            <select id="audio-selector" onClick={refreshAudioFiles} onChange={handleSelectChange} value={selectedAudioFile?.id}>
-                {audioFiles.map((audioFile) => (
-                    <option key={audioFile.id} value={audioFile.id}>
-                        {audioFile.nickname}
-                    </option>
-                ))}
-            </select>
+            <div className="flex">
+                <label htmlFor="audio-selector" className="mr-2">
+                    Select the audio file to use:
+                </label>
+                <select
+                    id="audio-selector"
+                    onClick={refreshAudioFiles}
+                    onChange={handleSelectChange}
+                    value={selectedAudioFile?.id}
+                    className="p-1 border-gray-400 rounded flex-grow"
+                >
+                    {audioFiles.map((audioFile) => (
+                        <option key={audioFile.id} value={audioFile.id}>
+                            {audioFile.nickname}
+                        </option>
+                    ))}
+                </select>
+            </div>
         </div>
     );
 }

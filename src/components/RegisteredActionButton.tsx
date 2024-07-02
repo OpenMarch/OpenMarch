@@ -1,8 +1,12 @@
 import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";
-import { RegisteredAction, RegisteredActionsEnum } from "@/utilities/RegisteredActionsHandler";
+import {
+    RegisteredAction,
+    RegisteredActionsEnum,
+} from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
 
-interface registeredActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface registeredActionButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     registeredAction: RegisteredAction;
     instructionalString?: string;
     children?: React.ReactNode;
@@ -18,17 +22,41 @@ interface registeredActionButtonProps extends React.ButtonHTMLAttributes<HTMLBut
  * @param rest The rest of the button props. (e.g. className, onClick, etc.)
  * @returns
  */
-export default function RegisteredActionButton({ registeredAction, children, instructionalString, ...rest }: registeredActionButtonProps) {
-    const { linkRegisteredAction } = useRegisteredActionsStore();
+export default function RegisteredActionButton({
+    registeredAction,
+    children,
+    instructionalString,
+    ...rest
+}: registeredActionButtonProps) {
+    const { linkRegisteredAction, removeRegisteredAction } =
+        useRegisteredActionsStore();
     const buttonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         const enumString = registeredAction.enumString;
-        if (!Object.values(RegisteredActionsEnum).includes(enumString as RegisteredActionsEnum))
-            console.error(`RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`);
-        const registeredActionEnum = RegisteredActionsEnum[registeredAction.enumString as keyof typeof RegisteredActionsEnum];
-        if (buttonRef.current) linkRegisteredAction(registeredActionEnum, buttonRef);
-    }, [linkRegisteredAction, registeredAction.enumString, registeredAction.instructionalString]);
+        if (
+            !Object.values(RegisteredActionsEnum).includes(
+                enumString as RegisteredActionsEnum
+            )
+        )
+            console.error(
+                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`
+            );
+        const registeredActionEnum =
+            RegisteredActionsEnum[
+                registeredAction.enumString as keyof typeof RegisteredActionsEnum
+            ];
+        if (buttonRef.current)
+            linkRegisteredAction(registeredActionEnum, buttonRef);
+
+        // Remove on unmount
+        return () => removeRegisteredAction(registeredActionEnum, buttonRef);
+    }, [
+        linkRegisteredAction,
+        registeredAction.enumString,
+        registeredAction.instructionalString,
+        removeRegisteredAction,
+    ]);
 
     return (
         <button
@@ -39,12 +67,16 @@ export default function RegisteredActionButton({ registeredAction, children, ins
             className={`${rest?.className ? rest.className : ""} group`}
         >
             {children}
-            <span className="absolute w-auto p-2 m-2 min-w-max
+            <span
+                className="absolute w-auto p-2 m-2 min-w-max
             bottom-0 right-[90%] left-0
             rounded-md shadow-md
             text-white bg-gray-900
-            text-xs font-bold transition-opacity duration-200 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100">
-                {instructionalString ? instructionalString : registeredAction.instructionalString}
+            text-xs font-bold transition-opacity duration-200 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100"
+            >
+                {instructionalString
+                    ? instructionalString
+                    : registeredAction.instructionalString}
             </span>
         </button>
     );

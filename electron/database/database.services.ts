@@ -1059,18 +1059,6 @@ async function updateMeasuresAbcString(abcString: string | { id: number, data: s
             `);
         await stmt.run({ abc_data: abcStringToUse, new_updated_at: new Date().toISOString() });
         output = { success: true };
-
-        const updateHistoryEntry = {
-            tableName: Constants.MeasureTableName,
-            setClause: 'abc_data = @abc_data',
-            previousState: { data: await getMeasures(db), id: 1 },
-            reverseAction: {
-                tableName: Constants.MeasureTableName,
-                setClause: 'abc_data = @abc_data',
-                previousState: { data: abcStringToUse, id: 1 }
-            }
-        }
-        History.insertUpdateHistory([updateHistoryEntry], db);
     } catch (error: any) {
         console.error(error);
         output = { success: false, error: { message: error.message, stack: error.stack } };
@@ -1202,7 +1190,6 @@ export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseRes
 async function updateAudioFiles(audioFileUpdates: ModifiedAudioFileArgs[]): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
-    const historyActions: History.UpdateHistoryEntry[] = [];
     try {
         for (const audioFileUpdate of audioFileUpdates) {
             // Generate the SET clause of the SQL query
@@ -1215,7 +1202,6 @@ async function updateAudioFiles(audioFileUpdates: ModifiedAudioFileArgs[]): Prom
                 throw new Error('No valid properties to update');
             }
 
-            // Record the original values of the marcherPage for the history table
             let existingAudioFiles = await getAudioFilesDetails();
             const previousState = existingAudioFiles.find((audioFile) => audioFile.id === audioFileUpdate.id)
             if (!previousState) {
@@ -1237,22 +1223,7 @@ async function updateAudioFiles(audioFileUpdates: ModifiedAudioFileArgs[]): Prom
                 console.error(`No audio file found with ID ${audioFileUpdate.id}`)
                 continue;
             }
-
-            const updateHistoryEntry = {
-                tableName: Constants.AudioFilesTableName,
-                setClause: setClause,
-                previousState: previousState,
-                reverseAction: {
-                    tableName: Constants.AudioFilesTableName,
-                    setClause: setClause,
-                    previousState: newAudioFile
-                }
-            }
-
-            historyActions.push(updateHistoryEntry);
         }
-        History.insertUpdateHistory(historyActions, db);
-
         output = { success: true };
     } catch (error: any) {
         console.error(error);
