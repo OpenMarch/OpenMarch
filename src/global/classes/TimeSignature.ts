@@ -1,13 +1,15 @@
 import BeatUnit from "./BeatUnit";
 
+
 /**
  * A class representing a time signature ensuring valid numerator and denominator.
  */
 class TimeSignature {
     readonly numerator: number;
-    readonly denominator: 1 | 2 | 4 | 8 | 16 | 32 | 64;
+    static readonly validDenominators = [1, 2, 4, 8, 16, 32, 64] as const;
+    readonly denominator: typeof TimeSignature.validDenominators[number];
 
-    constructor(timeSignature: { numerator: number, denominator: 1 | 2 | 4 | 8 | 16 | 32 | 64 }) {
+    constructor(timeSignature: { numerator: number, denominator: typeof TimeSignature.validDenominators[number] }) {
         const numerator = timeSignature.numerator;
         if (numerator <= 0 || !Number.isInteger(numerator))
             throw new Error("Invalid time signature numerator. Must be a positive integer.");

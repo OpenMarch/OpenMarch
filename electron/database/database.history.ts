@@ -1,9 +1,9 @@
 import { Constants } from '../../src/global/Constants';
 import Database from 'better-sqlite3';
 import { connect } from './database.services';
-import { Marcher } from '@/global/classes/Marcher';
+import Marcher from '@/global/classes/Marcher';
 import Page from '@/global/classes/Page';
-import { MarcherPage } from '@/global/classes/MarcherPage';
+import MarcherPage from '@/global/classes/MarcherPage';
 
 /* ============================ Interfaces ============================ */
 /**
@@ -35,7 +35,7 @@ export interface HistoryEntry extends HistoryEntryBase {
 interface UpdateHistoryEntryBase {
     tableName: string;
     setClause: string;
-    previousState: Marcher | Page | MarcherPage;
+    previousState: Marcher | Page | MarcherPage | { id: number, data: string };
 }
 
 /**
@@ -165,6 +165,9 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
                     case Constants.MarcherPageTableName:
                         marcher_ids.push((updateQuery.previousState as MarcherPage).marcher_id);
                         page_id = (updateQuery.previousState as MarcherPage).page_id;
+                        break;
+                    case Constants.MeasureTableName:
+                        // do nothing
                         break;
                     default:
                         throw new Error(`historyQuery.table_name is invalid: ${historyQuery.table_name}`);

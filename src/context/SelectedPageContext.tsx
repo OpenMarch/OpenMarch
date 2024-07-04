@@ -30,7 +30,7 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     // Create the context value object
     const contextValue: SelectedPageContextProps = {
         selectedPage,
-        setSelectedPage,
+        setSelectedPage
     };
 
     return (

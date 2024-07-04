@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { Constants } from "@/global/Constants";
+import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
@@ -10,6 +10,8 @@ import Marcher from "../../global/classes/Marcher";
 import Page from "../../global/classes/Page";
 import MarcherPage from "../../global/classes/MarcherPage";
 import Measure from "../../global/classes/Measure";
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
+import AudioFile from "@/global/classes/AudioFile";
 
 /**
  * A component that initializes the state of the application.
@@ -20,6 +22,7 @@ function StateInitializer() {
     const { fetchMarcherPages } = useMarcherPageStore()!;
     const { pages, setPages, fetchPages } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
@@ -54,36 +57,53 @@ function StateInitializer() {
         fetchMeasures();
     }, [fetchMeasures]);
 
-    useEffect(() => {
-        fetchMeasures();
-    }, [fetchMeasures]);
     /*******************************************************************/
 
     // Select the first page if none are selected. Intended to activate at the initial loading of a webpage
     useEffect(() => {
-        if (selectedPage == null && pages.length > 0)
-            setSelectedPage(pages[0]);
+        if (selectedPage == null && pages.length > 0) setSelectedPage(pages[0]);
     }, [pages, selectedPage, setSelectedPage]);
 
-    useEffect(() => { })
+    useEffect(() => {});
 
-    const getMarcher = useCallback((id: number) => {
-        return marchers.find(marcher => marcher.id === id) || null;
-    }, [marchers]);
+    // Select the currently selected audio file
+    useEffect(() => {
+        if (!selectedAudioFile) {
+            AudioFile.getSelectedAudioFile().then((audioFile) => {
+                setSelectedAudioFile({ ...audioFile, data: undefined });
+            });
+        }
+    }, [selectedAudioFile, setSelectedAudioFile]);
 
-    const getPage = useCallback((id: number) => {
-        return pages.find(page => page.id === id) || null;
-    }, [pages]);
+    const getMarcher = useCallback(
+        (id: number) => {
+            return marchers.find((marcher) => marcher.id === id) || null;
+        },
+        [marchers]
+    );
+
+    const getPage = useCallback(
+        (id: number) => {
+            return pages.find((page) => page.id === id) || null;
+        },
+        [pages]
+    );
 
     // Listen for history actions (undo/redo) from the main process
     useEffect(() => {
-        const handler = (args: { tableName: string, marcher_ids: number[], page_id: number }) => {
+        const handler = (args: {
+            tableName: string;
+            marcher_ids: number[];
+            page_id: number;
+        }) => {
             switch (args.tableName) {
                 case Constants.MarcherTableName:
                     fetchMarchers();
                     if (args.marcher_ids.length > 0) {
                         // TODO support passing in all of the marchers that were modified in the undo
-                        const newMarchers = marchers.filter(marcher => args.marcher_ids.includes(marcher.id));
+                        const newMarchers = marchers.filter((marcher) =>
+                            args.marcher_ids.includes(marcher.id)
+                        );
                         setSelectedMarchers(newMarchers);
                     } else {
                         setSelectedMarchers([]);
@@ -93,7 +113,9 @@ function StateInitializer() {
                     fetchMarcherPages();
                     if (args.marcher_ids.length > 0) {
                         // TODO support passing in all of the marchers that were modified in the undo
-                        const newMarchers = marchers.filter(marcher => args.marcher_ids.includes(marcher.id));
+                        const newMarchers = marchers.filter((marcher) =>
+                            args.marcher_ids.includes(marcher.id)
+                        );
                         setSelectedMarchers(newMarchers);
                     } else {
                         setSelectedMarchers([]);
@@ -107,7 +129,7 @@ function StateInitializer() {
                         setSelectedPage(getPage(args.page_id));
                     break;
             }
-            return "SUCCESS"
+            return "SUCCESS";
         };
 
         window.electron.onHistoryAction(handler);
@@ -115,34 +137,47 @@ function StateInitializer() {
         return () => {
             window.electron.removeHistoryActionListener(); // Remove the event listener
         };
-    }, [getMarcher, getPage, fetchMarchers, fetchMarcherPages, fetchPages, setSelectedPage, setSelectedMarchers, marchers]);
+    }, [
+        getMarcher,
+        getPage,
+        fetchMarchers,
+        fetchMarcherPages,
+        fetchPages,
+        setSelectedPage,
+        setSelectedMarchers,
+        marchers,
+    ]);
 
     // Listen for fetch actions from the main process
     useEffect(() => {
-        const handler = (type: 'marcher' | 'page' | 'marcher_page') => {
+        const handler = (type: (typeof TablesWithHistory)[number][number]) => {
             switch (type) {
-                case 'marcher':
+                case Constants.MarcherTableName:
                     fetchMarchers();
                     break;
-                case 'page':
+                case Constants.PageTableName:
                     fetchPages();
                     break;
-                case 'marcher_page':
+                case Constants.MarcherPageTableName:
                     fetchMarcherPages();
                     break;
             }
-        }
+        };
 
         window.electron.onFetch(handler);
 
         return () => {
             window.electron.removeFetchListener(); // Remove the event listener
-        }
+        };
     }, [fetchMarchers, fetchMarcherPages, fetchPages]);
 
     // Listen for when measures or pages change so that the pages can be aligned to the measures
     useEffect(() => {
-        if (pages.length > 0 && measures.length > 0 && pages[0].hasBeenAligned === false) {
+        if (
+            pages.length > 0 &&
+            measures.length > 0 &&
+            pages[0].hasBeenAligned === false
+        ) {
             const newPages = Page.alignWithMeasures(pages, measures);
             setPages(newPages);
         }

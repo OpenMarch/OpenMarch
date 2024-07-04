@@ -1,5 +1,5 @@
 import Page, { NewPageContainer, ModifiedPageArgs, NewPageArgs, ModifiedPageContainer } from '../Page';
-import { mockPages, mockMeasures } from '@/__mocks__/globalMocks';
+import { mockPages } from '@/__mocks__/globalMocks';
 import { ElectronApi } from 'electron/preload';
 import Measure from '../Measure';
 import TimeSignature from '../TimeSignature';
@@ -15,6 +15,7 @@ describe('Page', () => {
         } as Partial<ElectronApi> as ElectronApi;
 
         Page.fetchPages = jest.fn();
+        Measure.fetchMeasures = jest.fn();
         Page.checkForFetchPages = jest.fn();
     });
 
@@ -701,6 +702,7 @@ describe('Page', () => {
                 new Measure({ number: 3, timeSignature: TimeSignature.fromString('4/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
             ]
             const pages = [
+                new Page({ id: 0, id_for_html: 'page_0', name: '0', counts: 0, order: 0 }),
                 new Page({ id: 1, id_for_html: 'page_1', name: '1', counts: 8, order: 1 }),
                 new Page({ id: 2, id_for_html: 'page_2', name: '2', counts: 4, order: 2 }),
                 new Page({ id: 3, id_for_html: 'page_3', name: '3', counts: 4, order: 3 }),
@@ -710,25 +712,29 @@ describe('Page', () => {
             expect(alignedPages.length).toBe(pages.length);
 
             // Check the duration of each page
-            expect(alignedPages[0].duration).toBe(4); // 16 counts * 500 ms per count = 4 seconds
-            expect(alignedPages[1].duration).toBe(2); // 8 counts * 500 ms per count = 2 seconds
-            expect(alignedPages[2].duration).toBe(2); // 32 counts * 500 ms per count = 8 seconds
+            expect(alignedPages[0].duration).toBe(0); // 16 counts * 500 ms per count = 4 seconds
+            expect(alignedPages[1].duration).toBe(4); // 16 counts * 500 ms per count = 4 seconds
+            expect(alignedPages[2].duration).toBe(2); // 8 counts * 500 ms per count = 2 seconds
+            expect(alignedPages[3].duration).toBe(2); // 32 counts * 500 ms per count = 8 seconds
 
             // Check that the timestamps are inserted correctly
             expect(alignedPages[0].timestamp).toEqual(0);
             expect(alignedPages[1].timestamp).toEqual(4);
             expect(alignedPages[2].timestamp).toEqual(6);
+            expect(alignedPages[3].timestamp).toEqual(8);
 
 
             // Check that the measures are inserted correctly
-            expect(alignedPages[0].measures).toEqual([measures[0], measures[1]]);
-            expect(alignedPages[1].measures).toEqual([measures[2]]);
-            expect(alignedPages[2].measures).toEqual([measures[3]]);
+            expect(alignedPages[0].measures).toEqual([]);
+            expect(alignedPages[1].measures).toEqual([measures[0], measures[1]]);
+            expect(alignedPages[2].measures).toEqual([measures[2]]);
+            expect(alignedPages[3].measures).toEqual([measures[3]]);
 
             // expect all measure beats to be 1 (as in the first beat of the measure)
             expect(alignedPages[0].measureBeatToStartOn).toBe(1);
             expect(alignedPages[1].measureBeatToStartOn).toBe(1);
             expect(alignedPages[2].measureBeatToStartOn).toBe(1);
+            expect(alignedPages[3].measureBeatToStartOn).toBe(1);
         });
 
         it('should align pages with measures and set their durations when measures and page counts don\'t align', () => {
@@ -739,34 +745,39 @@ describe('Page', () => {
                 new Measure({ number: 4, timeSignature: TimeSignature.fromString('5/4'), tempo: 120, beatUnit: BeatUnit.QUARTER }),
             ]
             const pages = [
-                new Page({ id: 1, id_for_html: 'page_1', name: '1', counts: 6, order: 1 }),
-                new Page({ id: 2, id_for_html: 'page_2', name: '2', counts: 3, order: 2 }),
-                new Page({ id: 3, id_for_html: 'page_3', name: '3', counts: 7, order: 3 }),
+                new Page({ id: 1, id_for_html: 'page_1', name: '1', counts: 0, order: 0 }),
+                new Page({ id: 2, id_for_html: 'page_2', name: '2', counts: 6, order: 1 }),
+                new Page({ id: 3, id_for_html: 'page_3', name: '3', counts: 3, order: 2 }),
+                new Page({ id: 4, id_for_html: 'page_4', name: '4', counts: 7, order: 3 }),
             ];
             const alignedPages = Page.alignWithMeasures(pages, measures);
 
             expect(alignedPages.length).toBe(pages.length);
 
             // Check the duration of each page
-            expect(alignedPages[0].duration).toBe(3); // 6 counts * 500 ms per count = 3 seconds
-            expect(alignedPages[1].duration).toBe(1.5); // 3 counts * 500 ms per count = 1.5 seconds
-            expect(alignedPages[2].duration).toBe(3.5); // 7 counts * 500 ms per count = 3.5 seconds
+            expect(alignedPages[0].duration).toBe(0); // 6 counts * 500 ms per count = 3 seconds
+            expect(alignedPages[1].duration).toBe(3); // 3 counts * 500 ms per count = 1.5 seconds
+            expect(alignedPages[2].duration).toBe(1.5); // 7 counts * 500 ms per count = 3.5 seconds
+            expect(alignedPages[3].duration).toBe(3.5); // 7 counts * 500 ms per count = 3.5 seconds
 
             // Check that the timestamps are inserted correctly
             expect(alignedPages[0].timestamp).toEqual(0);
             expect(alignedPages[1].timestamp).toEqual(3);
             expect(alignedPages[2].timestamp).toEqual(4.5);
+            expect(alignedPages[3].timestamp).toEqual(8);
 
 
             // Check that the measures are inserted correctly
-            expect(alignedPages[0].measures).toEqual([measures[0], measures[1]]);
-            expect(alignedPages[1].measures).toEqual([measures[1], measures[2]]);
-            expect(alignedPages[2].measures).toEqual([measures[2], measures[3]]);
+            expect(alignedPages[0].measures).toEqual([]);
+            expect(alignedPages[1].measures).toEqual([measures[0], measures[1]]);
+            expect(alignedPages[2].measures).toEqual([measures[1], measures[2]]);
+            expect(alignedPages[3].measures).toEqual([measures[2], measures[3]]);
 
             // expect all measure offsets to be 0
             expect(alignedPages[0].measureBeatToStartOn).toBe(1);
-            expect(alignedPages[1].measureBeatToStartOn).toBe(3);
-            expect(alignedPages[2].measureBeatToStartOn).toBe(2);
+            expect(alignedPages[1].measureBeatToStartOn).toBe(1);
+            expect(alignedPages[2].measureBeatToStartOn).toBe(3);
+            expect(alignedPages[3].measureBeatToStartOn).toBe(2);
         });
     });
 });

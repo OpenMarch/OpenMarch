@@ -1,8 +1,9 @@
+import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile"
 import FieldProperties from "@/global/classes/FieldProperties"
 import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
 import MarcherPage, { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
-import { MeasureDatabaseContainer } from "@/global/classes/Measure"
 import Page, { ModifiedPageContainer, NewPageContainer } from "@/global/classes/Page"
+import { TablesWithHistory } from "@/global/Constants"
 import { contextBridge, ipcRenderer } from "electron"
 import { DatabaseResponse } from "electron/database/database.services"
 
@@ -111,7 +112,7 @@ const APP_API = {
 
   // Triggers
   onFetch: (callback:
-    (type: 'marcher' | 'page' | 'marcher_page') => void) =>
+    (type: typeof TablesWithHistory[number]) => void) =>
     ipcRenderer.on('fetch:all', (event, type) => callback(type)),
   removeFetchListener: () => ipcRenderer.removeAllListeners('fetch:all'),
   sendSelectedPage: (selectedPageId: number) => ipcRenderer.send('send:selectedPage', (selectedPageId)),
@@ -169,12 +170,20 @@ const APP_API = {
    * @returns A serialized array of all measures in the database.
    * This means you must call `new Measure(measure)` on each measure or else the instance methods will not work.
    */
-  getMeasures: () => ipcRenderer.invoke('measure:getAll') as Promise<string>,
-  createMeasures: (newMeasure: MeasureDatabaseContainer[]) =>
-    ipcRenderer.invoke('measure:insert', newMeasure) as Promise<DatabaseResponse>,
-  updateMeasures: (modifiedMeasures: MeasureDatabaseContainer[]) =>
-    ipcRenderer.invoke('measure:update', modifiedMeasures) as Promise<DatabaseResponse>,
-  deleteMeasures: (measureIds: number[]) => ipcRenderer.invoke('measure:delete', measureIds),
+  getMeasuresAbcString: () => ipcRenderer.invoke('measure:getAll') as Promise<string>,
+  updateMeasureAbcString: (abcString: string) =>
+    ipcRenderer.invoke('measure:update', abcString) as Promise<DatabaseResponse>,
+  launchImportMusicXmlFileDialogue: () => ipcRenderer.invoke('measure:insert') as Promise<string | undefined>,
+
+  // Audio File
+  launchInsertAudioFileDialogue: () => ipcRenderer.invoke('audio:insert') as Promise<DatabaseResponse>,
+  getAudioFilesDetails: () => ipcRenderer.invoke('audio:getAll') as Promise<AudioFile[]>,
+  getSelectedAudioFile: () => ipcRenderer.invoke('audio:getSelected') as Promise<AudioFile>,
+  setSelectedAudioFile: (audioFileId: number) => ipcRenderer.invoke('audio:select', audioFileId) as Promise<AudioFile>,
+  updateAudioFiles: (modifiedAudioFileArgs: ModifiedAudioFileArgs[]) =>
+    ipcRenderer.invoke('audio:update', modifiedAudioFileArgs) as Promise<AudioFile[]>,
+  deleteAudioFile: (audioFileId: number) => ipcRenderer.invoke('audio:delete', audioFileId) as Promise<AudioFile[]>,
+
 }
 
 contextBridge.exposeInMainWorld('electron', APP_API)
