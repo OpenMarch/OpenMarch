@@ -10,6 +10,8 @@ import Marcher from "../../global/classes/Marcher";
 import Page from "../../global/classes/Page";
 import MarcherPage from "../../global/classes/MarcherPage";
 import Measure from "../../global/classes/Measure";
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
+import AudioFile from "@/global/classes/AudioFile";
 
 /**
  * A component that initializes the state of the application.
@@ -20,6 +22,7 @@ function StateInitializer() {
     const { fetchMarcherPages } = useMarcherPageStore()!;
     const { pages, setPages, fetchPages } = usePageStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
@@ -62,6 +65,15 @@ function StateInitializer() {
     }, [pages, selectedPage, setSelectedPage]);
 
     useEffect(() => {});
+
+    // Select the currently selected audio file
+    useEffect(() => {
+        if (!selectedAudioFile) {
+            AudioFile.getSelectedAudioFile().then((audioFile) => {
+                setSelectedAudioFile({ ...audioFile, data: undefined });
+            });
+        }
+    }, [selectedAudioFile, setSelectedAudioFile]);
 
     const getMarcher = useCallback(
         (id: number) => {

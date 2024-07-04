@@ -13,6 +13,7 @@ import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegister
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
+import Measure from "@/global/classes/Measure";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -413,15 +414,14 @@ function RegisteredActionsHandler() {
                     });
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
-                    window.electron.launchImportMusicXmlFileDialogue();
-                    // .then((xmlString) => {
-                    //     if (xmlString) {
-                    //         // Convert the xmlString to an abcString
-                    //         const abcString = xml2abcInterpreter(xmlString);
-                    //         console.log(abcString);
-                    //         // window.electron.updateMeasureAbcString(abcString);
-                    //     }
-                    // });
+                    window.electron
+                        .launchImportMusicXmlFileDialogue()
+                        .then((xmlString) => {
+                            if (xmlString) {
+                                // Convert the xmlString to an abcString
+                                Measure.updateWithXml(xmlString);
+                            }
+                        });
                     break;
                 case RegisteredActionsEnum.performUndo:
                     window.electron.undo();
@@ -432,22 +432,23 @@ function RegisteredActionsHandler() {
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
                     const nextPage = selectedPage.getNextPage(pages);
-                    if (nextPage) setSelectedPage(nextPage);
+                    if (nextPage && !isPlaying) setSelectedPage(nextPage);
                     break;
                 }
                 case RegisteredActionsEnum.lastPage: {
                     const lastPage = Page.getLastPage(pages);
-                    if (lastPage) setSelectedPage(lastPage);
+                    if (lastPage && !isPlaying) setSelectedPage(lastPage);
                     break;
                 }
                 case RegisteredActionsEnum.previousPage: {
                     const previousPage = selectedPage.getPreviousPage(pages);
-                    if (previousPage) setSelectedPage(previousPage);
+                    if (previousPage && !isPlaying)
+                        setSelectedPage(previousPage);
                     break;
                 }
                 case RegisteredActionsEnum.firstPage: {
                     const firstPage = Page.getFirstPage(pages);
-                    if (firstPage) setSelectedPage(firstPage);
+                    if (firstPage && !isPlaying) setSelectedPage(firstPage);
                     break;
                 }
                 case RegisteredActionsEnum.playPause: {

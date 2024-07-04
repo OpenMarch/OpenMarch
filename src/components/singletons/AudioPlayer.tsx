@@ -28,7 +28,7 @@ export default function AudioPlayer() {
             audio.currentTime = selectedPage?.timestamp || 0;
             audio.pause();
         }
-    }, [isPlaying, selectedPage, selectedPage?.timestamp]);
+    }, [audioFileUrl, isPlaying, selectedPage, selectedPage?.timestamp]);
 
     useEffect(() => {
         if (!selectedAudioFile) return;
@@ -38,13 +38,17 @@ export default function AudioPlayer() {
             const url = URL.createObjectURL(blob);
             setAudioFileUrl(url);
         });
-        return () => { if (audioFileUrl) window.URL.revokeObjectURL(audioFileUrl); }
+        return () => {
+            if (audioFileUrl) window.URL.revokeObjectURL(audioFileUrl);
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedAudioFile, setAudioFileUrl]);
 
     return (
         <div>
-            {audioFileUrl && <audio ref={audioRef} src={audioFileUrl} preload="auto" />}
+            {audioFileUrl && (
+                <audio ref={audioRef} src={audioFileUrl} preload="auto" />
+            )}
         </div>
     );
 }

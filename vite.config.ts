@@ -19,6 +19,7 @@ export default defineConfig(({ command }) => {
       alias: {
         '@': path.join(__dirname, 'src')
       },
+      extensions: ['.js', '.ts', '.jsx', '.tsx', '.json']
     },
     plugins: [
       react(),
@@ -39,7 +40,8 @@ export default defineConfig(({ command }) => {
               minify: isBuild,
               outDir: 'dist-electron/main',
               rollupOptions: {
-                external: ['better-sqlite3'].concat(Object.keys('dependencies' in pkg ? pkg.dependencies : {})),
+                external: ['better-sqlite3',
+                  'electron/xml2abc-js/xml2abc.js'].concat(Object.keys('dependencies' in pkg ? pkg.dependencies : {})),
               },
             },
           },

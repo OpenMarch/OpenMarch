@@ -62,9 +62,9 @@ export default function RegisteredActionButton({
         <button
             title={registeredAction.instructionalString}
             aria-label={registeredAction.instructionalString}
-            {...rest}
             ref={buttonRef}
             className={`${rest?.className ? rest.className : ""} group`}
+            {...rest}
         >
             {children}
             <span

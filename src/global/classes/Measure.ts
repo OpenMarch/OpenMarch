@@ -1,5 +1,7 @@
+import xml2abcInterpreter from "@/utilities/xml2abc-js/xml2abcInterpreter";
 import BeatUnit from "./BeatUnit";
 import TimeSignature from "./TimeSignature";
+
 
 /**
  * A Measure represents a measure in the music is used in conjunction with Page objects to define a show's length.
@@ -51,6 +53,7 @@ export default class Measure {
         this.notes = notes;
     }
 
+    /*********************** PUBLIC STATIC METHODS ***********************/
     /**
      * Fetches all of the measures from the database.
      * This SHOULD NOT be called outside of the measure store - as the current measures are stored already in the store
@@ -148,6 +151,21 @@ export default class Measure {
     }
 
     /**
+     * Updates the ABC string in the database with a converted MusicXML string.
+     *
+     * @param xml The MusicXML string to convert and update the database with
+     * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
+     */
+    static async updateWithXml(xml: string) {
+        const abcString = xml2abcInterpreter(xml);
+        const response = await window.electron.updateMeasureAbcString(abcString);
+        Measure.checkForFetchMeasures();
+        Measure.fetchMeasures();
+        return response;
+    }
+
+    /*********************** PUBLIC INSTANCE METHODS ***********************/
+    /**
      * Compares two measures to see if they are equal.
      *
      * @param other The measure to compare to.
@@ -185,6 +203,7 @@ export default class Measure {
         return this.timeSignature.numerator / (this.timeSignature.denominator * this.beatUnit.value);
     }
 
+    /*********************** PRIVATE INSTANCE METHODS ***********************/
     /**
      * Calculates the duration of the measure (in seconds) based on the time signature, tempo, and beat unit.
      *
@@ -203,7 +222,7 @@ export default class Measure {
         return tempoRatio * beatsPerMeasure * tempoBeatDuration;
     }
 
-    /********** MEASURE -> ABC **********/
+    /*********************** MEASURE -> ABC ***********************/
     /**
      * Converts an array of Measure objects to an abc string.
      *
@@ -260,7 +279,7 @@ export default class Measure {
         return output;
     }
 
-    /********** ABC -> MEASURE **********/
+    /*********************** ABC -> MEASURE ***********************/
     /**
      * Parses an abc string and returns an array of Measure objects.
      *

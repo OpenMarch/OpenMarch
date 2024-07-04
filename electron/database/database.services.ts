@@ -123,8 +123,6 @@ export function initDatabase() {
     createMarcherPageTable(db);
     createFieldPropertiesTable(db, FieldProperties.Template.NCAA);
     createMeasureTable(db);
-    // TODO Remove after measures are implemented
-    updateMeasuresAbcString(TEMP_MEASURES);
     createAudioFileTable(db);
     History.createHistoryTables(db);
     console.log('Database created.');
@@ -249,20 +247,24 @@ function createMeasureTable(db: Database.Database) {
         `);
         // Create a default entry
         const stmt = db.prepare(`
-            INSERT INTO ${Constants.FieldPropertiesTableName} (
+            INSERT INTO ${Constants.MeasureTableName} (
                 id,
-                abc_data
+                abc_data,
+                "created_at",
+                "updated_at"
             ) VALUES (
                 1,
-                @abc_data
+                @abc_data,
+                @created_at,
+                @updated_at
             );
         `);
-        stmt.run({ abc_data: '' });
-        console.log('Field properties table created.');
+        const created_at = new Date().toISOString();
+        stmt.run({ abc_data: defaultMeasures, created_at, updated_at: created_at });
+        console.log('Measures table created.');
     } catch (error) {
         console.error('Failed to create Measures table:', error);
     }
-    console.log('Measures table created.');
 }
 
 /**
@@ -1025,6 +1027,13 @@ async function getPreviousPage(pageId: number, db?: Database.Database): Promise<
 }
 
 /* ============================ Measures ============================ */
+const defaultMeasures = `X:1
+Q:1/4=120
+M:4/4
+V:1 baritone
+V:1
+z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
+`
 /***** NOTE - Measures are currently not part of the history table *****/
 
 /**
@@ -1037,6 +1046,10 @@ async function getMeasures(db?: Database.Database): Promise<string> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`);
     const response = stmt.all() as { abc_data: string, created_at: string, updated_at: string }[];
+    if (response.length === 0 || response[0].abc_data.length < 20) {
+        response[0].abc_data = defaultMeasures;
+        updateMeasuresAbcString(defaultMeasures);
+    }
     if (!db) dbToUse.close();
     return response[0].abc_data;
 }
@@ -1047,17 +1060,16 @@ async function getMeasures(db?: Database.Database): Promise<string> {
  * @param abcString The new ABC string to put into the database
  * @returns DatabaseResponse
  */
-async function updateMeasuresAbcString(abcString: string | { id: number, data: string }): Promise<DatabaseResponse> {
+async function updateMeasuresAbcString(abcString: string): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: false }
-    const abcStringToUse = typeof abcString === 'string' ? abcString : abcString.data;
     try {
         const stmt = db.prepare(`
                 UPDATE ${Constants.MeasureTableName}
                 SET abc_data = @abc_data, updated_at = @new_updated_at
                 WHERE id = 1
             `);
-        await stmt.run({ abc_data: abcStringToUse, new_updated_at: new Date().toISOString() });
+        await stmt.run({ abc_data: abcString, new_updated_at: new Date().toISOString() });
         output = { success: true };
     } catch (error: any) {
         console.error(error);
