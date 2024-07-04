@@ -27,62 +27,6 @@ export class DatabaseResponse {
     }
 }
 
-const TEMP_MEASURES = `
-X:1
-T:The Cadets 2016 "Awakening"
-%%scale 0.83
-%%pagewidth 21.59cm
-%%leftmargin 1.00cm
-%%rightmargin 1.00cm
-L:1/8
-Q:1/4=120
-M:6/4
-I:linebreak $
-K:none
-V:1 treble transpose=-2 nm="Solo B♭ Trumpet" snm="S. B♭ Tpt."
-V:1
-[K:C] z12 |[M:4/4] z8 |[M:6/4] z12 ||[M:4/4] z8 | z8 | z8 | z8 | z8 ||[K:C][M:5/4][Q:1/4=88] z10 | %9
- z10 | z10 | z10 | z10 | z10 | z10 | z10 | z10 | z10 |[M:4/4][Q:1/4=76] z8 || z8 | z8 | z8 | z8 | %23
-"^Mute" z z/ B/ e2- eB (3eBe | z z/ G/ c2- cG (3cGc || d/c/-c- c6 | z8 | z8 | z8 |[K:Bb] z8 | z8 || %31
-[K:Eb] z8 | z8 | z8 | z8 ||[K:C] z8 | z8 | z8 | z8 |[K:E] z8 ||[K:G] z8 |[K:B] z8 |[K:C#] z8 || %43
-[K:F] z8 | z8 | z8 | z8 | z8 | z8 | z8 || z8 | z8 | z8 |[K:G][M:2/4][Q:1/4=184] z4 | z4 | z4 | z4 | %57
- z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | %76
- z4 | z4 | z4 | z4 | z4 | z4 || z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |"^C" z4 || z4 | z4 | z4 | %94
- z4 | z4 | z4 | z4 | z4 | z4 ||"^D" z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 || %111
-"^E" z4 | z4 | z4 | z4 | z4 || z4 | z4 |[K:G]"^E8" z4 | z4 | z4 | z4 | z4 | z4 || %124
-[M:3/8][Q:3/16=184]"^E14" z3 | z3 | z3 | z3 | z3 | z3 || z3 |[K:Bb]"^F" z3 | z3 | z3 | z3 | %135
-"^F5" z3 |[M:6/8] z6 ||[K:Eb][M:3/8] z3 | z3 | z3 | z3 | z3 | z3 ||"^F11" z3 | z3 | z3 | z3 | z3 | %148
- z3 | z3 | z3 | z3 | z3 | z3 | z3 ||[K:A]"^F23" z3 | z3 | z3 | z3 |"^F27" z3 | z3 | z3 | z3 || %163
-"^F31" z3 | z3 | z3 | z3 ||[M:2/4][Q:1/4=184]"^G" z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | %177
- z4 | z4 ||[K:Ab]"^H" z4 | z4 | z4 | z4 | z4 | z4 ||"^H7" z4 | z4 | z4 | z4 | z4 | z4 || %191
-[K:C]"^I" z2 (3z z"^Staff Text" G | (3c z c (3e z e | (3ded (3cBA | (3G z G (3c z c | (3e z e d2 | %196
- c z z2 | z4 | z4 | z4 | z4 ||[K:Bb]"^J" z4 | z4 | z4 | z4 | z4 | z4 | z4 || %208
-[K:F][M:3/8][Q:3/16=184]"^K" z3 | z3 | z3 | z3 | z3 | z3 | z3 | z3 ||"^K9" z3 | z3 | z3 | z3 | %220
-"^K13" z3 | z3 | z3 ||"^K16" z3 |[M:9/16] z9/2 |[M:3/8] z3 ||"^K19" z3 | z3 | z3 | z3 | z3 | %231
-[M:2/4][Q:1/4=184] z4 || z4 | z4 | z4 ||[M:4/4]"^K28" z8 | z8 |[M:2/4][Q:1/4=112] z4 | z4 | z4 | %240
- z4 ||[M:2/4] z4 | z4 | z2!f! .c(c/4d/4e/4f/4) | .g/.f/.g/.f/ e/.f/.g | ag/.f/ g.g/.e/ | %246
- .d A2 f/e/ | .d A2 e |[Q:1/4=128] ._d z z2 | z4 | z4 | z4 | z4 |[K:E] z4 | z4 | z4 | z4 | z4 | %258
- z4 |[Q:1/4=190] z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |[Q:1/4=200] z4 |[M:4/4] z8 | z8 | %272
- z8 | z8 | z8 | z8 | z8 | z8 | z8 ||[K:Bb] z8 | z8 | z8 | z8 |[K:C] z8 | z8 | z8 | z8 | z8 | z8 | %289
- z8 | z8 | z8 || z8 | z8 | z8 | z8 ||[Q:1/4=92] z8 | z8 |!mf! E4 e4- | e8 | z8 | z8 | E6 e2- | e8 | %304
- z8 || z8 | z4 z3/2 .a/ ^f3/2(g/4f/4 |[M:6/4] B4) f8 |[M:4/4] z8 | z8 | z8 | z8 | z8 | z8 | z8 | %315
-[M:7/4]!f![Q:1/4=74] c8- c6- |[M:3/4][Q:1/4=56] c6- |[M:4/4][Q:1/4=112] c2 (B2 A2 E2) | G2 F4 c2- | %319
- c2 B2 A2 E2 | d2 ed e2 g2- | g2 f2 _e2 c2 | d4 ^c4 | c'4 _b4 |[M:2/4][Q:1/4=56] _a4 | %325
-[M:4/4][Q:1/4=100] g8 |[M:6/4]"^rit." z12 |[M:4/4][Q:1/4=90] z8 | z8 | z8 | z8 | z8 | z8 | z8 | %334
- z8 |"^rit." z8 | z8 |[Q:1/4=52] z8 | z8 | z8 ||[Q:1/4=90] z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | %348
- z8 | z8 || z8 | z8 | z8 | z8 ||[M:12/8][Q:3/8=184] z12 | z12 | z12 | z12 || %358
-!f!"^Muted" b3/2 z/ _b a3/2 z/ b =b3 (^ga_b) | b3/2 z/ _a g3/2 z/ _b =b3/2 z/ g ^f3/2 z/ _b | %360
- f6 z2 z4 | z12 | z12 | z12 | z12 | z6 z2 a _ag_g | f3/2 z/ g _a3/2 z/ c' _d'3/2 z/ z e3/2 z z/ | %367
- ^d6 B3/2 z/ z d3/2 z/ z | _a3/2 z/ z B3/2 z/ z ^A6 |[M:3/4] g[Q:1/4=184] z4 z | z6 |[M:4/4] z8 | %372
- z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | %391
- z8 | z8 | z8 || z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 ||[K:Bb][Q:1/4=96] z8 | z8 | %407
- z8 | z8 | z8 | z8 | z8 | z8 || z8 | z8 | z8 |[M:3/4][Q:1/4=198] z6 | z6 | z6 | z6 || %420
-[K:Eb][M:4/4] z8 | z8 | z8 |[K:Bb] z8 | z8 | z8 |[K:G] z8 | z8 |[K:C#] z8 | z8 |[Q:1/4=80] z8 | %431
- z8 ||[K:C][Q:1/4=76] z8 | z8 |[K:B] z8 |[K:C#] z8 |[K:F] z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | %444
- z8 | z8 |] %446
-
-`
-
 /* ============================ DATABASE ============================ */
 let DB_PATH = '';
 
