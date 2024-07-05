@@ -62,14 +62,14 @@ export default function RegisteredActionButton({
         <button
             title={registeredAction.instructionalString}
             aria-label={registeredAction.instructionalString}
+            {...rest}
             ref={buttonRef}
             className={`${rest?.className ? rest.className : ""} group`}
-            {...rest}
         >
             {children}
             <span
                 className="absolute w-auto p-2 m-2 min-w-max
-            bottom-0 right-[90%] left-0
+            bottom-0 left-0 right-[90%]
             rounded-md shadow-md
             text-white bg-gray-900
             text-xs font-bold transition-opacity duration-200 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100"
