@@ -5,8 +5,11 @@ import { release } from 'node:os'
 import { join } from 'node:path'
 import { update } from './update'
 import * as DatabaseServices from '../database/database.services'
-import { applicationMenu } from './application-menu';
-import { generatePDF } from './export-coordinates';
+import { applicationMenu } from './application-menu'
+import { generatePDF } from './export-coordinates'
+// const xml2abc = require('../xml2abc-js/xml2abc.js')
+// const xml2abc = require('./xml2abc.js')
+// const $ = require('jquery');
 
 // The built directory structure
 //
@@ -103,10 +106,13 @@ app.whenReady().then(async () => {
   // File IO handlers
   ipcMain.handle('database:isReady', DatabaseServices.databaseIsReady);
   ipcMain.handle('database:save', async () => saveFile());
-  ipcMain.handle('database:load', async () => loadFile());
+  ipcMain.handle('database:load', async () => loadDatabaseFile());
   ipcMain.handle('database:create', async () => newFile());
   ipcMain.handle('history:undo', async () => executeHistoryAction("undo"));
   ipcMain.handle('history:redo', async () => executeHistoryAction("redo"));
+
+  ipcMain.handle('audio:insert', async () => insertAudioFile());
+  ipcMain.handle('measure:insert', async () => launchImportMusicXmlFileDialogue());
 
   // Getters
   initGetters();
@@ -246,8 +252,8 @@ export async function saveFile() {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function loadFile() {
-  console.log('loadFile');
+export async function loadDatabaseFile() {
+  console.log('loadDatabaseFile');
 
   if (!win) return -1;
 
@@ -268,6 +274,86 @@ export async function loadFile() {
     console.log(err);
     return -1;
   });
+}
+
+/**
+ * Opens a dialog to import an audio file to the database.
+ *
+ * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
+ */
+export async function insertAudioFile(): Promise<DatabaseServices.DatabaseResponse> {
+  console.log('insertAudioFile');
+
+  if (!win) return { success: false, error: { message: "insertAudioFile: window not loaded" } };
+
+  let databaseResponse: DatabaseServices.DatabaseResponse;
+  // If there is no previous path, open a dialog
+  databaseResponse = await dialog.showOpenDialog(win, {
+    filters: [{ name: 'Audio File', extensions: ['mp3', 'wav', 'ogg'] }]
+  }).then((path) => {
+    console.log("loading audio file into buffer:", path.filePaths[0]);
+    fs.readFile(path.filePaths[0], (err, data) => {
+      if (err) {
+        console.error('Error reading audio file:', err);
+        return -1;
+      }
+
+      // 'data' is a buffer containing the file contents
+      // Id is -1 to conform with interface
+      DatabaseServices.insertAudioFile({ id: -1, data, path: path.filePaths[0], nickname: path.filePaths[0], selected: true }).then((response) => {
+        databaseResponse = response;
+      })
+    });
+    if (path.canceled || !path.filePaths[0])
+      return { success: false, error: { message: "insertAudioFile: Operation was cancelled or no audio file was provided" } };
+
+    // setActiveDb(path.filePaths[0]);
+    return databaseResponse;
+  }).catch((err) => {
+    // TODO how to print/return stack here?
+    console.log(err);
+    return { success: false, error: { message: err } };
+  });
+  return databaseResponse || { success: false, error: { message: "Error inserting audio file" } }
+}
+
+/**
+ * Opens a dialog to import a MusicXML file into OpenMarch.
+ *
+ * This function does not actually insert the file into the database, but rather reads the file and returns the xml data.
+ * This was done due to issues getting xml2abc to work in the main process.
+ *
+ * @returns Promise<string | undefined> - The string xml data of the musicxml file, or undefined if the operation was cancelled/failed.
+ */
+export async function launchImportMusicXmlFileDialogue(): Promise<string | undefined> {
+  console.log('readMusicXmlFile');
+
+  if (!win) {
+    console.error("window not loaded");
+    return;
+  }
+
+  // If there is no previous path, open a dialog
+  const dialogueResponse = await dialog.showOpenDialog(win, {
+    filters: [{ name: 'MusicXML File (compressed or uncompressed)', extensions: [/**'mxl',**/ 'musicxml', 'xml'] }]
+  });
+
+
+  if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
+    console.error("Operation was cancelled or no audio file was provided");
+    return;
+  }
+
+  console.log("loading musicxml file:", dialogueResponse.filePaths[0]);
+  const filePath = dialogueResponse.filePaths[0];
+
+  let xmlString;
+  if (filePath.endsWith('.mxl')) {
+    console.error("compressed MusicXML not supported yet")
+  } else {
+    xmlString = fs.readFileSync(filePath, 'utf8');
+  }
+  return xmlString;
 }
 
 /**

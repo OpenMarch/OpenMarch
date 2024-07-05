@@ -1,14 +1,14 @@
 import { fabric } from "fabric";
-import { Marcher } from "../../global/classes/Marcher";
-import { MarcherPage } from "../../global/classes/MarcherPage";
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import Marcher from "../../global/classes/Marcher";
+import MarcherPage from "../../global/classes/MarcherPage";
+import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/global/Constants";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
  * It includes things such as the fabric objects and other canvas-specific properties.
  */
-export class CanvasMarcher extends fabric.Group {
+export default class CanvasMarcher extends fabric.Group {
     // Styles
     private static readonly dotRadius = 5;
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
@@ -196,11 +196,9 @@ export class CanvasMarcher extends fabric.Group {
 
     /**
      * @param marcherPage MarcherPage object to set the next animation to
-     * @param tempo The tempo of the animation
-     * @param counts The counts of the animation
+     * @param durationMilliseconds The duration of the animation in milliseconds
      */
-    setNextAnimation({ marcherPage, tempo, counts }: { marcherPage: MarcherPage; tempo: number; counts: number }) {
-        const duration = tempoToDuration(tempo);
+    setNextAnimation({ marcherPage, durationMilliseconds }: { marcherPage: MarcherPage; durationMilliseconds: number }) {
         const groupOffset = this.getGroupOffset();
         const dotOffset = this.getDotOffset();
 
@@ -213,7 +211,7 @@ export class CanvasMarcher extends fabric.Group {
             left: newCanvasCoords.x,
             top: newCanvasCoords.y
         }, {
-            duration: duration * counts,
+            duration: durationMilliseconds,
             onChange: () => {
                 this.getCanvas().requestRenderAll();
                 // Set coords so that objects offscreen are still rendered

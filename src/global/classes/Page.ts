@@ -1,10 +1,15 @@
+import Measure from "./Measure";
+
 /**
  * A class that represents a Page in the database.
  * This is the standard Page object that should be used throughout the application.
  *
  * Note: this class has no/should not have instance methods. All methods are static.
  */
-export class Page {
+class Page {
+    /********** Database Attributes **********/
+    // These are the Attributes that are stored in the database and are not editable by the user.
+
     /** The id of the page in the database */
     readonly id: number;
     /** The id of the page for use in the HTML. E.g. "page_2" for page with ID of 2 */
@@ -15,10 +20,27 @@ export class Page {
     readonly counts: number;
     /** The order of the page in the show. E.g. 1, 2, 3, etc. */
     readonly order: number;
-    /** The tempo of the page in BPM. Each beat is a step */
-    readonly tempo: number;
     /** NOT IMPLEMENTED - Any notes about the page. Optional */
     readonly notes?: string;
+
+    /********** Runtime Attributes **********/
+    // These are Attributes that are calculated at runtime and are not stored in the database.
+
+    /** Duration of the page in seconds */
+    private _duration: number = 5;
+    /** Measures in the page */
+    private _measures: Measure[] = [];
+    /**
+     * The beat in the first measure that the page starts on.
+     * Remember that music is 1-indexed, meaning the first beat is 1, not 0.
+     *
+     * E.g. 3 means the page starts on beat 3 of measures[0]
+     */
+    private _measureBeatToStartOn: number = 1;
+    /** Whether or not the Page object has been aligned with the measures */
+    private _hasBeenAligned: boolean = false;
+    /** Where the start of this page is in the music */
+    private _timestamp: number = 0;
 
     /**
      * Fetches all of the pages from the database.
@@ -26,8 +48,8 @@ export class Page {
      */
     static fetchPages: () => Promise<void>;
 
-    constructor({ id, id_for_html, name, counts, order, tempo, notes }: {
-        id: number, id_for_html: string, name: string, counts: number, order: number, tempo: number, notes?: string
+    constructor({ id, id_for_html, name, counts, order, notes }: {
+        id: number, id_for_html: string, name: string, counts: number, order: number, notes?: string
     }) {
         this.id = id;
         this.id_for_html = id_for_html;
@@ -39,10 +61,42 @@ export class Page {
             this.counts = counts;
 
         this.order = order;
-        this.tempo = tempo || 120;
 
         this.notes = notes;
     }
+
+    /**************** Getters and Setters ****************/
+
+    /** Duration of the page in seconds */
+    public get duration() {
+        return this._duration;
+    }
+
+    /** Measures in the page */
+    public get measures() {
+        return this._measures;
+    }
+
+    /**
+     * An offset that defines how many beats into the measure the page starts.
+     *
+     * E.g. an offset of 2 means page starts on beat 3 of measure[0] (because we are 2 beats in, so we start at 3)
+     */
+    public get measureBeatToStartOn() {
+        return this._measureBeatToStartOn;
+    }
+
+    /** Whether or not the Page object has been aligned with the measures */
+    public get hasBeenAligned() {
+        return this._hasBeenAligned;
+    }
+
+    /** Where the start of this page is in the music */
+    public get timestamp() {
+        return this._timestamp;
+    }
+
+    /**************** Public Static Methods ****************/
 
     /**
      * Fetches all of the pages from the database.
@@ -75,7 +129,6 @@ export class Page {
             return {
                 id: page.id,
                 counts: page.counts,
-                tempo: page.tempo,
                 notes: page.notes,
                 isSubset: isSubset
             };
@@ -116,7 +169,6 @@ export class Page {
                     name: futurePageNames[i],
                     counts: futurePage.counts!,
                     order: currentOrder,
-                    tempo: futurePage.tempo!,
                 };
                 if (futurePage.notes)
                     newPageContainer.notes = futurePage.notes;
@@ -179,8 +231,6 @@ export class Page {
             const modifiedPage: ModifiedPageContainer = { id: page.id };
             if (page.counts)
                 modifiedPage.counts = page.counts;
-            if (page.tempo)
-                modifiedPage.tempo = page.tempo;
             if (page.notes)
                 modifiedPage.notes = page.notes;
 
@@ -222,7 +272,6 @@ export class Page {
                 futurePages.push({
                     id: page.id,
                     counts: page.counts,
-                    tempo: page.tempo,
                     notes: page.notes,
                     isSubset: isSubset
                 });
@@ -320,13 +369,64 @@ export class Page {
     }
 
     /**
-     * Calculates the duration of the page based on counts and tempo.
+     * Using a list of Measures, all pages are given a duration based on their counts and the measures they align to.
      *
-     * @returns The duration of the page in milliseconds.
+     * @param pages - List of all pages
+     * @param measures - List of all measures
+     * @returns The list of pages with their durations set and the measures inserted.
      */
-    getDuration() {
-        return (60 / this.tempo * 1000) * this.counts;
+    static alignWithMeasures(pages: Page[], measures: Measure[]): Page[] {
+        const outputPages = [...pages];
+        let currentMeasureIndex = 0;
+        let currentMeasureBeat = 1;
+        let currentTimestamp = 0;
+
+        for (let currentPageIndex = 0; currentPageIndex < outputPages.length; currentPageIndex++) {
+            if (currentMeasureIndex >= measures.length) {
+                console.log("Not enough measures to align with pages.");
+                break;
+            }
+            let remainingCounts = outputPages[currentPageIndex].counts;
+
+            outputPages[currentPageIndex]._hasBeenAligned = true;
+            outputPages[currentPageIndex]._measures = [];
+            outputPages[currentPageIndex]._duration = 0;
+            outputPages[currentPageIndex]._measureBeatToStartOn = currentMeasureBeat;
+
+            // Loop through the measures until the page is filled, or there are no more measures
+            while (remainingCounts > 0) {
+                if (currentMeasureIndex >= measures.length) {
+                    break;
+                }
+
+                const currentMeasure = measures[currentMeasureIndex];
+
+                outputPages[currentPageIndex]._measures.push(currentMeasure);
+                // Add the offset of the current measure beat
+                const offsetBigBeats = currentMeasure.getBigBeats() - currentMeasureBeat + 1;
+                if (remainingCounts - offsetBigBeats >= 0) {
+                    // there are enough remaining counts in the page to complete the measure
+                    outputPages[currentPageIndex]._duration += (offsetBigBeats / currentMeasure.getBigBeats()) * currentMeasure.duration;
+                    currentMeasureIndex++;
+                    currentMeasureBeat = 1;
+                } else {
+                    // there are not enough counts in the page to complete the measure. Add the remaining counts to the duration
+                    outputPages[currentPageIndex]._duration += (remainingCounts / currentMeasure.getBigBeats()) * currentMeasure.duration;
+                    currentMeasureBeat = remainingCounts + 1;
+                    break;
+                }
+
+                remainingCounts -= offsetBigBeats;
+            }
+
+            currentTimestamp += outputPages[currentPageIndex]._duration;
+            outputPages[currentPageIndex]._timestamp = currentTimestamp;
+        }
+
+        return outputPages;
     }
+
+    /**************** Public Instance Methods ****************/
 
     /**
      * Retrieves the next Page based on this Page and the list of all Pages.
@@ -384,6 +484,8 @@ export class Page {
         return previousPage !== this ? previousPage : null;
     }
 
+    /**************** Private Static Methods ****************/
+
     /**
      * Creates a list of page names based on the list of booleans that pages are subsets or not.
      *
@@ -418,7 +520,6 @@ export class Page {
                 curSubsetLetter = "";
             }
         }
-
         return pageNames;
     }
 
@@ -451,6 +552,8 @@ export class Page {
 
         return newPageNumber + newSubsetString;
     }
+
+    /**************** Private Instance Methods ****************/
 
     /**
      * Splits a page name into its number and subset letter.
@@ -485,7 +588,6 @@ export interface NewPageArgs {
     /** If a page is a subset, its name will have an alphabetical letter appended. */
     isSubset: boolean;
     counts: number;
-    tempo: number;
     notes?: string;
 }
 
@@ -500,7 +602,6 @@ export interface ModifiedPageArgs {
     /** If a page is a subset, its name will have an alphabetical letter appended. */
     isSubset?: boolean;
     counts?: number;
-    tempo?: number;
     notes?: string;
 }
 
@@ -512,7 +613,6 @@ export interface NewPageContainer {
     name: string;
     counts: number;
     order: number;
-    tempo: number;
     notes?: string;
 }
 
@@ -527,7 +627,6 @@ export interface ModifiedPageContainer {
     name?: string;
     counts?: number;
     order?: number;
-    tempo?: number;
     notes?: string;
 }
 

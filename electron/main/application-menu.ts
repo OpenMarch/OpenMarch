@@ -41,7 +41,7 @@ template.push(...[
           //   newWindow.on('show', () => {
           //     mainProcess.getFileFromUser(newWindow);
           //   });
-          mainProcess.loadFile();
+          mainProcess.loadDatabaseFile();
         },
       },
       { type: 'separator' },

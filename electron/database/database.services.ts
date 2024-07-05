@@ -9,6 +9,7 @@ import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/c
 import Page, { ModifiedPageContainer, NewPageContainer } from '../../src/global/classes/Page';
 import MarcherPage, { ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
 import FieldProperties from '../../src/global/classes/FieldProperties';
+import AudioFile, { ModifiedAudioFileArgs } from '@/global/classes/AudioFile';
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -16,7 +17,7 @@ export class DatabaseResponse {
      * Resulting data from the database action. This isn't very well implemented
      * and likely will not be used.
      */
-    readonly result?: Marcher[] | Page[] | MarcherPage[] | FieldProperties;
+    readonly result?: Marcher[] | Page[] | MarcherPage[] | FieldProperties | AudioFile[];
     readonly error?: { message: string, stack?: string };
 
     constructor(success: boolean, result?: any, error?: Error) {
@@ -25,26 +26,6 @@ export class DatabaseResponse {
         this.error = error;
     }
 }
-
-const TEMP_MEASURES = `
-X:1
-T:Untitled score
-C:Composer / arranger
-%%measurenb 1
-L:1/4
-Q:3/8=100
-M:4/4
-I:linebreak $
-K:C
-V:1 treble nm="Oboe" snm="Ob."
-V:1
- G z z2 | z4 |[M:3/4][Q:1/4=100]"^A" z3 | z3 |[M:4/4][Q:1/2=100]"^12" z4 | z4 | %6
-[M:5/4][Q:1/4=200] z5"^C" | z5 |[M:6/8] z3 | z3 |[M:5/8][Q:1/8=100] z5/2"^B;akjd" | %11
-[M:12/8][Q:3/16=100] z6 |[Q:3/8=100] z6 |[M:2/2][Q:1/2=100] z4 | z4 |[M:4/4][Q:1/4=120] z4 | z4 | %17
-[M:2/2][Q:1/4=120] z4 | z4 |[M:7/16][Q:1/8=100] z7/4 | z7/4 |[M:5/4][Q:1/4=100] z5 | z5 | %23
-[M:4/4][Q:1/4=120] z4 | z4 | z4 |[Q:3/8=120] z4 | z4 | %28
-[Q:1/4=120] z4 |[Q:3/8=120] z4 |"^accel." z4 | z4 | z4 | z4 | z4 | z4 |] %36
-`
 
 /* ============================ DATABASE ============================ */
 let DB_PATH = '';
@@ -86,7 +67,7 @@ export function initDatabase() {
     createMarcherPageTable(db);
     createFieldPropertiesTable(db, FieldProperties.Template.NCAA);
     createMeasureTable(db);
-    createMeasures(TEMP_MEASURES);
+    createAudioFileTable(db);
     History.createHistoryTables(db);
     console.log('Database created.');
     db.close();
@@ -134,7 +115,6 @@ function createPageTable(db: Database.Database) {
                 "name"	TEXT NOT NULL UNIQUE,
                 "notes"	TEXT,
                 "order"	INTEGER NOT NULL UNIQUE,
-                "tempo"	REAL NOT NULL,
                 "counts"	INTEGER NOT NULL,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
@@ -209,10 +189,52 @@ function createMeasureTable(db: Database.Database) {
                 "updated_at"	TEXT NOT NULL
             );
         `);
+        // Create a default entry
+        const stmt = db.prepare(`
+            INSERT INTO ${Constants.MeasureTableName} (
+                id,
+                abc_data,
+                "created_at",
+                "updated_at"
+            ) VALUES (
+                1,
+                @abc_data,
+                @created_at,
+                @updated_at
+            );
+        `);
+        const created_at = new Date().toISOString();
+        stmt.run({ abc_data: defaultMeasures, created_at, updated_at: created_at });
+        console.log('Measures table created.');
     } catch (error) {
-        console.error('Failed to create field properties table:', error);
+        console.error('Failed to create Measures table:', error);
     }
-    console.log('Measures table created.');
+}
+
+/**
+ * Audio files are stored in the database as BLOBs.
+ * There can be multiple audio files in the database, but only one is used at a time.
+ * They can be used to differentiate tracks with metronome, simplified parts, etc.
+ *
+ * @param db Database object to use
+ */
+function createAudioFileTable(db: Database.Database) {
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS "${Constants.AudioFilesTableName}" (
+                id INTEGER PRIMARY KEY,
+                path TEXT NOT NULL,
+                nickname TEXT,
+                data BLOB,
+                selected INTEGER NOT NULL DEFAULT 0,
+                "created_at"	TEXT NOT NULL,
+                "updated_at"	TEXT NOT NULL
+            );
+        `);
+    } catch (error) {
+        console.error('Failed to create audio file table:', error);
+    }
+    console.log('audio file table created.');
 }
 
 /* ============================ Handlers ============================ */
@@ -248,11 +270,15 @@ export function initHandlers() {
 
     // Measure
     ipcMain.handle('measure:getAll', async () => getMeasures());
-    ipcMain.handle('measure:insert', async (_, newMeasures) => createMeasures(newMeasures));
-    // ipcMain.handle('measure:update', async (_, modifiedMeasures) => updateMeasures(modifiedMeasures));
-    // ipcMain.handle('measure:delete', async (_, measureIds) => deleteMeasures(measureIds));
-    ipcMain.handle('measure:update', async (_, modifiedMeasures) => console.log("Update measures not implemented"));
-    ipcMain.handle('measure:delete', async (_, measureIds) => console.log("delete measures not implemented"));
+    ipcMain.handle('measure:update', async (_, abcString: string) => updateMeasuresAbcString(abcString));
+
+    // Audio Files
+    // Insert audio file is defined in main index.ts
+    ipcMain.handle('audio:getAll', async () => getAudioFilesDetails());
+    ipcMain.handle('audio:getSelected', async () => getSelectedAudioFile());
+    ipcMain.handle('audio:select', async (_, audioFileId: number) => setSelectAudioFile(audioFileId));
+    ipcMain.handle('audio:update', async (_, args: ModifiedAudioFileArgs[]) => updateAudioFiles(args))
+    ipcMain.handle('audio:delete', async (_, audioFileId: number) => deleteAudioFile(audioFileId))
 }
 
 /* ======================= Exported Functions ======================= */
@@ -539,12 +565,15 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
 
     try {
         for (const newPage of newPages) {
+            if (newPage.order === 0) {
+                // Ensure the first page has no counts
+                newPage.counts = 0;
+            }
             // Get the max order
             const pageToAdd: NewPageContainer = {
                 name: newPage.name,
                 notes: newPage.notes || '',
                 order: newPage.order,
-                tempo: newPage.tempo,
                 counts: newPage.counts
             };
             const insertStmt = db.prepare(`
@@ -552,7 +581,6 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                     name,
                     notes,
                     "order",
-                    tempo,
                     counts,
                     created_at,
                     updated_at
@@ -560,7 +588,6 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                     @name,
                     @notes,
                     @order,
-                    @tempo,
                     @counts,
                     @created_at,
                     @updated_at
@@ -591,12 +618,14 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
             const marchers = await getMarchers();
             // For each marcher, create a new MarcherPage
             for (const marcher of marchers) {
-                const previousMarcherPageCoords = await getCoordsOfPreviousPage(marcher.id, id);
+                let previousMarcherPageCoords = await getCoordsOfPreviousPage(marcher.id, id);
+                if (!previousMarcherPageCoords)
+                    previousMarcherPageCoords = { x: 100, y: 100 };
                 createMarcherPage(db, {
                     marcher_id: marcher.id,
                     page_id: id,
-                    x: previousMarcherPageCoords?.x || 100,
-                    y: previousMarcherPageCoords?.y || 100
+                    x: previousMarcherPageCoords.x,
+                    y: previousMarcherPageCoords.y
                 });
             }
         }
@@ -637,6 +666,10 @@ async function updatePages(modifiedPages: ModifiedPageContainer[],
 
     try {
         for (const pageUpdate of updateInReverse ? sortedModifiedPages.toReversed() : sortedModifiedPages) {
+            if (pageUpdate.order === 0) {
+                // Ensure the first page has no counts
+                pageUpdate.counts = 0;
+            }
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(pageUpdate)
                 .filter(key => !excludedProperties.includes(key))
@@ -883,7 +916,7 @@ async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[])
  *
  * @param db database connection
  * @param marcher_id marcher_id of the marcher whose coordinates will change
- * @param page_id the page_id of the page that the coordinates will be updated on (not the previous page's id).
+ * @param page_id the page_id of the page that the coordinates will be updated on (not the previous page's id). Null if the page is the first page.
  */
 async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
     const db = connect();
@@ -898,6 +931,8 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
         return;
     }
     const previousPage = await getPreviousPage(page_id, db);
+    if (!previousPage)
+        return null;
     const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as MarcherPage;
 
     if (!previousPage)
@@ -936,6 +971,13 @@ async function getPreviousPage(pageId: number, db?: Database.Database): Promise<
 }
 
 /* ============================ Measures ============================ */
+const defaultMeasures = `X:1
+Q:1/4=120
+M:4/4
+V:1 baritone
+V:1
+z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
+`
 /***** NOTE - Measures are currently not part of the history table *****/
 
 /**
@@ -946,45 +988,33 @@ async function getPreviousPage(pageId: number, db?: Database.Database): Promise<
  */
 async function getMeasures(db?: Database.Database): Promise<string> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MeasureTableName}`);
+    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`);
     const response = stmt.all() as { abc_data: string, created_at: string, updated_at: string }[];
+    if (response.length === 0 || response[0].abc_data.length < 20) {
+        response[0].abc_data = defaultMeasures;
+        updateMeasuresAbcString(defaultMeasures);
+    }
     if (!db) dbToUse.close();
     return response[0].abc_data;
 }
 
 /**
- * Creates new measures in the database, completely replacing the old ABC string.
- * See documentation in createMeasureTable for how measures in OpenMarch are stored.
+ * Updates the ABC representation of the measures in the database.
  *
- * @param new_ABC_data The new ABC string to put into the database
+ * @param abcString The new ABC string to put into the database
  * @returns DatabaseResponse
  */
-async function createMeasures(new_ABC_data: string): Promise<DatabaseResponse> {
-    new_ABC_data = TEMP_MEASURES;
+async function updateMeasuresAbcString(abcString: string): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: false }
     try {
-        const insertStmt = db.prepare(`
-                INSERT INTO ${Constants.MeasureTableName} (
-                    abc_data,
-                    created_at,
-                    updated_at
-                )
-                VALUES (
-                    @abc_data,
-                    @created_at,
-                    @updated_at
-                )
+        const stmt = db.prepare(`
+                UPDATE ${Constants.MeasureTableName}
+                SET abc_data = @abc_data, updated_at = @new_updated_at
+                WHERE id = 1
             `);
-        const created_at = new Date().toISOString();
-        insertStmt.run(
-            {
-                abc_data: new_ABC_data,
-                created_at,
-                updated_at: created_at
-            }
-        );
-        output = { success: true }
+        await stmt.run({ abc_data: abcString, new_updated_at: new Date().toISOString() });
+        output = { success: true };
     } catch (error: any) {
         console.error(error);
         output = { success: false, error: { message: error.message, stack: error.stack } };
@@ -994,65 +1024,195 @@ async function createMeasures(new_ABC_data: string): Promise<DatabaseResponse> {
     return output;
 }
 
-// /**
-//  * Updates measures with the given values.
-//  *
-//  * @param modifiedMeasures The modified measures. The ID is what identifies the measure to be changed.
-//  * @returns {success: boolean, error?: string}
-//  */
-// async function updateMeasures(modifiedMeasures: MeasureDatabaseContainer[]): Promise<DatabaseResponse> {
-//     const db = connect();
-//     let output: DatabaseResponse = { success: false }
-//     try {
-//         for (const modifiedMeasure of modifiedMeasures) {
-//             // Generate the SET clause of the SQL query
-//             const setClause = Object.keys(modifiedMeasure)
-//                 .map(key => `${key} = @${key}`)
-//                 .join(', ');
+/* ============================ Audio Files ============================ */
+/**
+ * Gets the information on the audio files in the database.
+ * I.e. just the path and nickname. This is to save memory so the whole audio file isn't loaded when not needed.
+ *
+ * @param db The database connection
+ * @returns Array of measures
+ */
+async function getAudioFilesDetails(db?: Database.Database): Promise<AudioFile[]> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(`SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`);
+    const response = stmt.all() as AudioFile[];
+    if (!db) dbToUse.close();
+    return response;
+}
 
-//             // Check if the SET clause is empty
-//             if (setClause.length === 0) {
-//                 throw new Error('No valid properties to update in the Measure table');
-//             }
+/**
+ * Gets the currently selected audio file in the database.
+ *
+ * If no audio file is selected, the first audio file in the database is selected.
+ *
+ * @returns The currently selected audio file in the database. Includes audio data.
+ */
+export async function getSelectedAudioFile(db?: Database.Database): Promise<AudioFile | null> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`);
+    const result = await stmt.get();
+    if (!result) {
+        const firstAudioFileStmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`);
+        const firstAudioFile = await firstAudioFileStmt.get() as AudioFile;
+        if (!firstAudioFile) {
+            console.error('No audio files in the database');
+            return null;
+        }
+        await setSelectAudioFile(firstAudioFile.id);
+        return firstAudioFile as AudioFile;
+    }
+    dbToUse.close();
+    return result as AudioFile;
+}
 
-//             const updateStmt = db.prepare(`
-//                 UPDATE ${Constants.MeasureTableName}
-//                 SET ${setClause}, updated_at = @new_updated_at
-//                 WHERE id = @id
-//             `);
+/**
+ * Sets the audio file with the given ID as "selected" meaning that this audio file will be used for playback.
+ * This is done by setting the selected column to 1 for the selected audio file and 0 for all others.
+ *
+ * @param audioFileId The ID of the audio file to get
+ * @returns The newly selected AudioFile object including the audio data
+ */
+async function setSelectAudioFile(audioFileId: number): Promise<AudioFile | null> {
+    const db = connect();
+    const stmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 0`);
+    stmt.run();
+    const selectStmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 1 WHERE id = @audioFileId`);
+    await selectStmt.run({ audioFileId });
+    const result = await getSelectedAudioFile(db);
+    db.close();
+    return result as AudioFile;
+}
 
-//             updateStmt.run({ ...modifiedMeasure, new_updated_at: new Date().toISOString() });
-//         }
-//         output = { success: true }
-//     } catch (error: any) {
-//         console.error(error);
-//         output = { success: false, error: { message: error.message, stack: error.stack } };
-//     } finally {
-//         db.close();
-//     }
-//     return output
-// }
 
-// /**
-//  * Delete measures from the database.
-//  *
-//  * @param measureIds The IDs of the measures to delete
-//  * @returns {success: boolean, error?: string}
-//  */
-// async function deleteMeasures(measureIds: number[]): Promise<DatabaseResponse> {
-//     const db = connect();
-//     let output: DatabaseResponse = { success: false }
-//     try {
-//         for (const measureId of measureIds) {
-//             const deleteStmt = db.prepare(`DELETE FROM ${Constants.MeasureTableName} WHERE id = @measureId`);
-//             deleteStmt.run({ measureId });
-//         }
-//     } catch (error: any) {
-//         console.error(error);
-//         output = { success: false, error: { message: error.message, stack: error.stack } };
-//     }
-//     finally {
-//         db.close();
-//     }
-//     return output;
-// }
+/**
+ * Creates new measures in the database, completely replacing the old ABC string.
+ * See documentation in createMeasureTable for how measures in OpenMarch are stored.
+ * This also selects the newly created audio file.
+ *
+ * @param new_ABC_data The new ABC string to put into the database
+ * @returns DatabaseResponse
+ */
+export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseResponse> {
+    const db = connect();
+    const stmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 0`);
+    stmt.run();
+    let output: DatabaseResponse = { success: false }
+    try {
+        const insertStmt = db.prepare(`
+                INSERT INTO ${Constants.AudioFilesTableName} (
+                    data,
+                    path,
+                    nickname,
+                    selected,
+                    created_at,
+                    updated_at
+                )
+                VALUES (
+                    @data,
+                    @path,
+                    @nickname,
+                    @selected,
+                    @created_at,
+                    @updated_at
+                )
+            `);
+        const created_at = new Date().toISOString();
+        const insertResult = insertStmt.run(
+            {
+                ...audioFile,
+                selected: 1,
+                created_at,
+                updated_at: created_at
+            }
+        );
+        const id = insertResult.lastInsertRowid;
+
+        output = { success: true, result: [{ ...audioFile, id: id as number }] }
+    } catch (error: any) {
+        console.error("Insert audio file error:", error);
+        output = { success: false, error: { message: error.message, stack: error.stack } };
+    } finally {
+        db.close();
+    }
+    return output;
+}
+
+/**
+ * Updates a list of audio files. The only thing that can be changed is the nickname.
+ *
+ * @param audioFileUpdates: Array of ModifiedAudioFileArgs objects to update the objects with
+ * @returns - DatabaseResponse{success: boolean, result: Database.result | string}
+ */
+async function updateAudioFiles(audioFileUpdates: ModifiedAudioFileArgs[]): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: true };
+    try {
+        for (const audioFileUpdate of audioFileUpdates) {
+            // Generate the SET clause of the SQL query
+            const setClause = Object.keys(audioFileUpdate)
+                .map(key => `${key} = @${key}`)
+                .join(', ');
+
+            // Check if the SET clause is empty
+            if (setClause.length === 0) {
+                throw new Error('No valid properties to update');
+            }
+
+            let existingAudioFiles = await getAudioFilesDetails();
+            const previousState = existingAudioFiles.find((audioFile) => audioFile.id === audioFileUpdate.id)
+            if (!previousState) {
+                console.error(`No audio file found with ID ${audioFileUpdate.id}`)
+                continue;
+            }
+            const stmt = db.prepare(`
+                UPDATE ${Constants.AudioFilesTableName}
+                SET ${setClause}, updated_at = @new_updated_at
+                WHERE id = @id
+            `);
+
+            await stmt.run({ ...audioFileUpdate, new_updated_at: new Date().toISOString() });
+
+            // Get the new audio file
+            existingAudioFiles = await getAudioFilesDetails();
+            const newAudioFile = existingAudioFiles.find((audioFile) => audioFile.id === audioFileUpdate.id)
+            if (!newAudioFile) {
+                console.error(`No audio file found with ID ${audioFileUpdate.id}`)
+                continue;
+            }
+        }
+        output = { success: true };
+    } catch (error: any) {
+        console.error(error);
+        output = { success: false, error: { message: error.message, stack: error.stack } };
+    } finally {
+        db.close();
+    }
+    return output;
+}
+
+/**
+ * Deletes an audio file with the given id.
+ *
+ * @param audioFileId
+ * @returns {success: boolean, error?: string}
+ */
+async function deleteAudioFile(audioFileId: number): Promise<DatabaseResponse> {
+    const db = connect();
+    let output: DatabaseResponse = { success: true };
+    try {
+        const pageStmt = db.prepare(`
+            DELETE FROM ${Constants.AudioFilesTableName}
+            WHERE id = @audioFileId
+        `);
+        pageStmt.run({ audioFileId });
+    }
+    catch (error: any) {
+        console.error(error);
+        output = { success: false, error: error };
+    }
+    finally {
+        db.close();
+    }
+    return output;
+}
+

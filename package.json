@@ -1,7 +1,7 @@
 {
   "name": "openmarch",
   "productName": "OpenMarch",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "dist-electron/main/index.js",
   "description": "Electron Vite React boilerplate.",
   "author": "Alex Dumouchelle",
@@ -33,13 +33,15 @@
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.1",
     "fabric": "^5.3.0",
+    "jquery": "^3.7.1",
     "nan": "^2.19.0",
     "postcss": "^8.4.38",
-    "puppeteer": "^20.3.0",
+    "puppeteer": "^18.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.12.0",
     "sass": "^1.70.0",
+    "xml2abc": "file:external-packages/xml2abc.tgz",
     "zustand": "^4.4.7"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import { usePageStore } from '@/stores/page/usePageStore';
-import { Page } from '@/global/classes/Page';
+import Page from '@/global/classes/Page';
 
 // Define the type for the context value
 type SelectedPageContextProps = {
@@ -30,7 +30,7 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     // Create the context value object
     const contextValue: SelectedPageContextProps = {
         selectedPage,
-        setSelectedPage,
+        setSelectedPage
     };
 
     return (

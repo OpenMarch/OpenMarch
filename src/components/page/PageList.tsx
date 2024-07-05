@@ -3,7 +3,7 @@ import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { ModifiedPageArgs, Page } from "@/global/classes/Page";
+import Page, { ModifiedPageArgs } from "@/global/classes/Page";
 
 
 function PageList({

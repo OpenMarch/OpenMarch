@@ -1,7 +1,7 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { Page } from "@/global/classes/Page";
+import Page from "@/global/classes/Page";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
@@ -85,10 +85,15 @@ function PageEditor() {
 
     return (
         <>{selectedPage && <div className="m-0 p-0  top-0 page-editor editor mb-4">
-            <h3 className="pl-4 py-2 text-xl border-0 border-solid border-b-2 border-b-gray-500 bg-gray-700 mt-0">
-                Page {selectedPage.name}
-            </h3>
-            <form className="edit-group ml-2" id={formId} onSubmit={handleSubmit}>
+            <div className="flex gap-2 pl-2 py-2 text-xl font-bold border-0 border-solid border-b-2 border-b-gray-500 bg-gray-700 mt-0">
+                <div>Page</div>
+                {/* {!isFirstPage && <>
+                    <div>{selectedPage.getPreviousPage(pages)?.name} </div>
+                    <div className="text-lg"><FaArrowRight /></div>
+                </>}  */}
+                {selectedPage.name}
+            </div>
+            <form className="edit-group ml-2 mt-2" id={formId} onSubmit={handleSubmit}>
                 {/* <div className="input-group">
                     <label htmlFor="page-name">Name</label>
                     <input type="text" value={selectedPage.name} onChange={undefined} id="page-name" />
@@ -108,6 +113,13 @@ function PageEditor() {
                 <div>
                     <label htmlFor="page-order">Order</label>
                     <input className="bg-transparent text-inherit ml-3 border-none" type="string" value={(pages.indexOf(selectedPage) + 1) + "/" + pages.length} id="page-order" disabled={true} />
+                </div>
+                <div>
+                    <label>Measures</label>
+                    {selectedPage.measures.map((measure, index) => {
+                        return <span key={index}>{" "}{measure.number}{index !== selectedPage.measures.length - 1 && ","}</span>;
+
+                    })}
                 </div>
                 {/* <div>
                     <label htmlFor="page-sets">Tempo</label>

@@ -8,6 +8,7 @@ export const Constants = {
     RedoHistoryTableName: "history_redo",
     FieldPropertiesTableName: "field_properties",
     MeasureTableName: "measures",
+    AudioFilesTableName: "audio_files",
 
     PagePrefix: "page",
     NewPageId: "NEW_PAGE", // deprecated?
@@ -15,6 +16,15 @@ export const Constants = {
     MarcherPagePrefix: "mp",
     dotRadius: 5, //deprecated?
 } as const;
+
+/**
+ * Tables whose changes are added to the history table
+ */
+export const TablesWithHistory = [
+    Constants.MarcherTableName,
+    Constants.PageTableName,
+    Constants.MarcherPageTableName,
+] as const;
 
 /**
  * The colors for the canvas.

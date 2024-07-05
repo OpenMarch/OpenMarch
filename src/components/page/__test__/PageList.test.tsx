@@ -2,7 +2,7 @@ import { render, fireEvent, act, renderHook, within, Matcher, MatcherOptions, By
 import PageList from "../PageList";
 import { mockPages } from "@/__mocks__/globalMocks";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { Page } from "@/global/classes/Page";
+import Page from "@/global/classes/Page";
 
 function validatePageRows(pageRows: HTMLElement[], expectedPages: Page[]) {
     const sortedExpectedPages = Page.sortPagesByOrder(expectedPages);

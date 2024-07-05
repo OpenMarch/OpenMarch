@@ -9,9 +9,15 @@ export type RegisteredActionsStoreType = {
      *
      * @param registeredAction The RegisteredActionEnum to be triggered by the button.
      * @param buttonRef The button element that will trigger the action.
-     * @returns
-     */
+    */
     linkRegisteredAction: (registeredAction: RegisteredActionsEnum, buttonRef: React.RefObject<HTMLButtonElement>) => void;
+    /**
+     * Removes a button ref from the store of registered actions. Use this on unmount.
+    *
+      * @param registeredAction The RegisteredActionEnum that belongs to the button.
+      * @param buttonRef The button ref to remove
+      */
+    removeRegisteredAction: (registeredAction: RegisteredActionsEnum, buttonRef: React.RefObject<HTMLButtonElement>) => void;
 };
 
 export const registeredActionsStoreCreator: StateCreator<RegisteredActionsStoreType> = (set) => ({
@@ -21,4 +27,10 @@ export const registeredActionsStoreCreator: StateCreator<RegisteredActionsStoreT
             return { ...state, registeredButtonActions: [...state.registeredButtonActions, { registeredAction, buttonRef }] };
         })
     },
+    removeRegisteredAction: (registeredAction, buttonRef) => {
+        set((state) => {
+            const updatedButtonActions = state.registeredButtonActions.filter(action => action.registeredAction !== registeredAction || action.buttonRef !== buttonRef);
+            return { ...state, registeredButtonActions: updatedButtonActions };
+        })
+    }
 });

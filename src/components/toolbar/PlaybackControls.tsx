@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
-import { FaFastBackward, FaPause, FaPlay, FaFastForward, FaStepBackward, FaStepForward } from "react-icons/fa";
+import {
+    FaFastBackward,
+    FaPause,
+    FaPlay,
+    FaFastForward,
+    FaStepBackward,
+    FaStepForward,
+} from "react-icons/fa";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useIsPlaying } from "../../context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
 import { usePageStore } from "@/stores/page/usePageStore";
-import { Page } from "../../global/classes/Page";
+import Page from "../../global/classes/Page";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
 
@@ -26,7 +33,11 @@ function PlaybackControls({ className }: topBarComponentProps) {
     }, [pages, selectedPage]);
 
     return (
-        <div className={`playback-controls ${className}`} aria-label="Playback Controls" title="Playback Controls">
+        <div
+            className={`playback-controls ${className}`}
+            aria-label="Playback Controls"
+            title="Playback Controls"
+        >
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
                 className="btn-secondary rounded-none rounded-l group"

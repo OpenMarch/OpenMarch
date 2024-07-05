@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act, waitFor, renderHook } from '@testing-library/react';
 import NewPageForm from '../NewPageForm';
-import { NewPageArgs, Page } from '@/global/classes/Page';
+import Page, { NewPageArgs } from '@/global/classes/Page';
 import { ElectronApi } from 'electron/preload';
 import { mockPages } from '@/__mocks__/globalMocks';
 import { usePageStore } from '@/stores/page/usePageStore';
@@ -38,13 +38,11 @@ describe('NewPageForm', () => {
     it('submits the form and creates a new page', async () => {
         // Mock the necessary dependencies and props
         const mockCounts = 12;
-        const mockTempo = 80;
         const mockQuantity = 1;
 
         const expectedNewPage: NewPageArgs = {
             isSubset: true,
             counts: mockCounts,
-            tempo: mockTempo,
             previousPage: undefined,
         };
 
@@ -54,9 +52,6 @@ describe('NewPageForm', () => {
 
         const quantityInput = screen.getByLabelText('Quantity');
         act(() => fireEvent.change(quantityInput, { target: { value: mockQuantity } }));
-
-        const tempoInput = screen.getByLabelText('Tempo');
-        act(() => fireEvent.change(tempoInput, { target: { value: mockTempo } }));
 
         const isSubsetCheckbox = screen.getByLabelText('Subset');
         act(() => fireEvent.click(isSubsetCheckbox));
@@ -74,7 +69,6 @@ describe('NewPageForm', () => {
     it('submits the form and creates new pages', async () => {
         // Mock the necessary dependencies and props
         const mockCounts = 12;
-        const mockTempo = 80;
         const mockQuantity = 3;
         const createPagesSpy = jest.spyOn(Page, 'createPages');
 
@@ -83,19 +77,16 @@ describe('NewPageForm', () => {
                 previousPage: mockPages[0],
                 isSubset: false,
                 counts: mockCounts,
-                tempo: mockTempo,
             },
             {
                 previousPage: mockPages[0],
                 isSubset: false,
                 counts: mockCounts,
-                tempo: mockTempo,
             },
             {
                 previousPage: mockPages[0],
                 isSubset: false,
                 counts: mockCounts,
-                tempo: mockTempo,
             }
         ];
 
@@ -106,9 +97,6 @@ describe('NewPageForm', () => {
 
         const quantityInput = screen.getByLabelText('Quantity');
         act(() => fireEvent.change(quantityInput, { target: { value: mockQuantity } }));
-
-        const tempoInput = screen.getByLabelText('Tempo');
-        act(() => fireEvent.change(tempoInput, { target: { value: mockTempo } }));
 
         const previousPageInput = screen.getByLabelText('Select the previous page');
         act(() => fireEvent.change(previousPageInput, { target: { value: mockPages[0].name } }));
@@ -133,13 +121,11 @@ describe('NewPageForm', () => {
 
         // Mock the necessary dependencies and props
         const mockCounts = 12;
-        const mockTempo = 80;
         const mockQuantity = 1;
 
         const expectedNewPage: NewPageArgs = {
             isSubset: true,
             counts: mockCounts,
-            tempo: mockTempo,
             previousPage: undefined,
         };
 
@@ -149,9 +135,6 @@ describe('NewPageForm', () => {
 
         const quantityInput = screen.getByLabelText('Quantity');
         act(() => fireEvent.change(quantityInput, { target: { value: mockQuantity } }));
-
-        const tempoInput = screen.getByLabelText('Tempo');
-        act(() => fireEvent.change(tempoInput, { target: { value: mockTempo } }));
 
         const isSubsetCheckbox = screen.getByLabelText('Subset');
         act(() => fireEvent.click(isSubsetCheckbox));

@@ -1,0 +1,83 @@
+---
+layout: post
+title: "July 2024 Update"
+date: 2024-07-04 12:00:00 -0500
+categories: jekyll update
+---
+
+#### Update Video
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/C71E3LK9m2c?si=vwRRck-Ejq8MYJ7d" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+<br/>
+
+### What's changed?
+
+Designers can now import MusicXML and audio files to design their show off of.
+
+#### New Features
+
+- MusicXML files (uncompressed) can be imported and their measures parsed into OpenMarch
+- Multiple audio files can be imported and selected from to use during playback
+- The timeline now has measures, in addition to pages
+  - With this, you can align pages to the measures' rhythms
+- Measures can be edited
+
+#### The relationship between measures and pages
+
+Before this month, pages defined the tempo of the show and played the role of measures.
+Now, measures are a separate entity that pages are aligned to.
+This to align with the idea that drill writers will design drill with a set amount of music already.
+
+Drill writers shouldn't be worried about maintaining music structure.
+It should be defined at the point of starting the design and easily built on top of.
+
+**Pages**
+
+- Define where marchers should be located at each point in the show
+- Contain an amount of "counts" that defines how many steps the marcher needs to take to get to that page
+- Can span multiple measures or even partial measures
+- Can be edited often
+
+**Measures**
+
+- The tempo and time signature information of the music the show is based off of
+- The "beat unit" can be changed to define what beat value the marcher steps on
+  - E.g. "Quarter note = 120" vs. "Half note = 60"
+- Can be edited when needed, but likely won't be
+
+### Goals accomplished this month
+
+Ehhh nothing really got _finished_, but we're close!
+
+Must haves -
+
+- [x] Finish music implementation
+  - [x] Importing musicXML files
+  - [x] Aligning the pages with the measures
+    - [x] Pages will no longer hold their own tempo. They will be calculated at runtime based on the measures
+  - [x] Importing music file and making sure it plays correctly
+- [x] Clean up the timeline and make it more practical
+- [x] Making continuous animation (not just stopping at each page)
+
+Nice to haves -
+
+- [ ] UI for creating your own measures. Right now it's just MusicXML import
+  - Didn't get to this, but this would be very useful for non-music based shows
+
+### Plans for August
+
+I think now it's important to get into bug fixing mode.
+Once we get to August, OpenMarch should be much more mature.
+
+Must haves -
+
+- Start testing things in electron
+  - Database entries
+  - History table
+- Start E2E or integration testing
+  - Getting things from the UI into the database
+  - Make sure the canvas is rendering correctly
+- Fix bugs/issues that have built up in the repo
+
+Remember, you can always check the [GitHub](https://github.com/AlexDumo/OpenMarch) project to see what current issues are in the queue.

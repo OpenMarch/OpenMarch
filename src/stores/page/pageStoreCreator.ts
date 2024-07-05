@@ -1,5 +1,5 @@
 import { type StateCreator } from "zustand";
-import { Page } from "@/global/classes/Page";
+import Page from "@/global/classes/Page";
 
 export interface PageStoreInterface {
     /**
@@ -11,6 +11,11 @@ export interface PageStoreInterface {
      * @returns A promise that resolves when the pages have been fetched
      */
     fetchPages: () => Promise<void>;
+    /**
+     * THIS SHOULD NOT BE CALLED OUTSIDE OF THE STATE INITIALIZER
+     * @param pages - The pages to set in the store
+     */
+    setPages: (pages: Page[]) => void;
 }
 
 export const pageStoreCreator: StateCreator<PageStoreInterface> = (set) => ({
@@ -30,6 +35,16 @@ export const pageStoreCreator: StateCreator<PageStoreInterface> = (set) => ({
 
         set({
             pages: pagesToUse,
+        });
+    },
+
+    /**
+     * THIS SHOULD NOT BE CALLED OUTSIDE OF THE STATE INITIALIZER
+     * @param pages - The pages to set in the store
+     */
+    setPages: (pages: Page[]) => {
+        set({
+            pages: pages,
         });
     },
 });
