@@ -21,10 +21,10 @@
 - Move multiple marchers at once
 - Animate marchers in between pages
 - Export individual coordinate sheets
+- Load audio files and MusicXML files to base the show off of
 
 **Cannot**
 
-- Load music of any kind
 - Mark props or non-marcher objects
 - Export the drill into a pdf of the grid
 - Create drill based on shape

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "April 2024 Update"
+title: "May 2024 Update"
 date: 2024-06-01 12:00:00 -0500
 categories: jekyll update
 ---
@@ -18,7 +18,7 @@ Bootstrap has been completely removed and Tailwind has been put in. Music is _ve
 #### Development Improvements
 
 - Tailwind provides **a lot** more flexibility when it comes to style.
-  - No more random css files and relying on Bootstrap to have the component I'm looking for
+- No more random css files and relying on Bootstrap to have the component I'm looking for
 - We can now import and parse measures from music xml into abc format, which is how they will be stored.
   - Now, the pages just need to be aligned with the measures.
 
@@ -48,7 +48,7 @@ Nice to haves -
   - It looks better, but not really fixed
 - [ ] Misc bugs (lots of old issues that need to be addressed)
 
-### Plans for May
+### Plans for June
 
 We're really close to making a lot of breakthroughs.
 I will probably finish a lot of these tasks either tomorrow or this coming week.
