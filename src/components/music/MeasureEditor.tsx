@@ -16,33 +16,30 @@ export default function MeasureEditor() {
     const [tempoBpm, setTempoBpm] = useState(120);
     const [hasChanged, setHasChanged] = useState(false);
 
-    const handleSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>) => {
-            if (selectedMeasure) {
-                const newMeasure: Measure = new Measure({
-                    ...selectedMeasure,
-                    timeSignature: new TimeSignature({
-                        numerator: timeSignatureNumerator,
-                        denominator: timeSignatureDenominator,
-                    }),
-                    beatUnit: beatUnit,
-                    tempo: tempoBpm,
-                });
-                Measure.updateMeasure({
-                    modifiedMeasure: newMeasure,
-                    existingMeasures: measures,
-                });
-            }
-        },
-        [
-            beatUnit,
-            measures,
-            selectedMeasure,
-            tempoBpm,
-            timeSignatureDenominator,
-            timeSignatureNumerator,
-        ]
-    );
+    const handleSubmit = useCallback(() => {
+        if (selectedMeasure) {
+            const newMeasure: Measure = new Measure({
+                ...selectedMeasure,
+                timeSignature: new TimeSignature({
+                    numerator: timeSignatureNumerator,
+                    denominator: timeSignatureDenominator,
+                }),
+                beatUnit: beatUnit,
+                tempo: tempoBpm,
+            });
+            Measure.updateMeasure({
+                modifiedMeasure: newMeasure,
+                existingMeasures: measures,
+            });
+        }
+    }, [
+        beatUnit,
+        measures,
+        selectedMeasure,
+        tempoBpm,
+        timeSignatureDenominator,
+        timeSignatureNumerator,
+    ]);
 
     const resetForm = useCallback(() => {
         if (selectedMeasure) {
@@ -125,7 +122,10 @@ export default function MeasureEditor() {
                 <form
                     ref={formRef}
                     id="Edit measure form"
-                    onSubmit={handleSubmit}
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        handleSubmit();
+                    }}
                 >
                     {selectedMeasure && (
                         <div id="edit measure form">
