@@ -10,6 +10,7 @@ interface registeredActionButtonProps
     registeredAction: RegisteredAction;
     instructionalString?: string;
     children?: React.ReactNode;
+    showTooltip?: boolean;
 }
 
 /**
@@ -19,6 +20,7 @@ interface registeredActionButtonProps
  * @param registeredAction The RegisteredActionObject to be triggered by the button.
  * @param children The content of the button.
  * @param instructionalString The instructional string to be displayed in the tooltip. Optional, by default `registeredAction.instructionalString`.
+ * @param showTooltip Whether to show the tooltip or not. Optional, by default `true`.
  * @param rest The rest of the button props. (e.g. className, onClick, etc.)
  * @returns
  */
@@ -26,6 +28,7 @@ export default function RegisteredActionButton({
     registeredAction,
     children,
     instructionalString,
+    showTooltip = true,
     ...rest
 }: registeredActionButtonProps) {
     const { linkRegisteredAction, removeRegisteredAction } =
@@ -67,17 +70,19 @@ export default function RegisteredActionButton({
             className={`${rest?.className ? rest.className : ""} group`}
         >
             {children}
-            <span
-                className="absolute w-auto p-2 m-2 min-w-max
+            {showTooltip && (
+                <span
+                    className="absolute w-auto p-2 m-2 min-w-max
             bottom-0 left-0 right-[90%]
             rounded-md shadow-md
             text-white bg-gray-900
             text-xs font-bold transition-opacity duration-200 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100"
-            >
-                {instructionalString
-                    ? instructionalString
-                    : registeredAction.instructionalString}
-            </span>
+                >
+                    {instructionalString
+                        ? instructionalString
+                        : registeredAction.instructionalString}
+                </span>
+            )}
         </button>
     );
 }

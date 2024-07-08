@@ -22,6 +22,7 @@ export default function MusicModal({ className }: topBarComponentProps) {
                                 RegisteredActionsObjects.launchImportMusicXmlFileDialogue
                             }
                             className="btn-primary w-full"
+                            showTooltip={false}
                         >
                             Import MusicXML file
                         </RegisteredActionButton>
@@ -37,6 +38,7 @@ export default function MusicModal({ className }: topBarComponentProps) {
                             RegisteredActionsObjects.launchInsertAudioFileDialogue
                         }
                         className="btn-secondary"
+                        showTooltip={false}
                     >
                         Import new audio file
                     </RegisteredActionButton>

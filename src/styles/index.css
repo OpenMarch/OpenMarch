@@ -4,40 +4,40 @@
 
 @layer components {
     .btn-primary {
-      @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
+        @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
       text-white bg-purple-600 enabled:hover:bg-purple-700
       disabled:cursor-default disabled:bg-purple-900 disabled:text-opacity-75;
     }
     /* A primary button that looks disabled but isn't actually */
     .btn-primary-appear-disabled {
-      @apply transition-all border-0 cursor-pointer px-4 py-2 enabled:hover:bg-purple-800
+        @apply transition-all border-0 cursor-pointer px-4 py-2 enabled:hover:bg-purple-800
       text-white bg-purple-900 text-opacity-75;
     }
 
     .btn-secondary {
-      @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
+        @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
       bg-gray-500 text-white enabled:hover:text-white
       enabled:hover:bg-gray-600 disabled:cursor-default
       disabled:bg-gray-800 disabled:text-opacity-75;
     }
     .btn-danger {
-      @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
-      text-white bg-red-600 enabled:hover:bg-red-800
+        @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
+      text-white bg-red-700 enabled:hover:bg-red-800
       disabled:cursor-default disabled:bg-red-900 disabled:text-opacity-75;
     }
 
     .key {
-      @apply rounded text-sm border-solid py-[1px] px-1;
+        @apply rounded text-sm border-solid py-[1px] px-1;
     }
-  }
+}
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 .example::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
 /* Hide scrollbar for IE, Edge and Firefox */
 .example {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
 }

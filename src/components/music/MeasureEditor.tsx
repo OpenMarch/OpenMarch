@@ -55,6 +55,20 @@ export default function MeasureEditor() {
         }
     }, [selectedMeasure]);
 
+    const deleteMeasure = useCallback(() => {
+        if (selectedMeasure) {
+            if (
+                window.confirm(
+                    `Are you sure you want to delete measure ${selectedMeasure.number}? \nYou CANNOT UNDO THIS (yet).`
+                )
+            )
+                Measure.deleteMeasure({
+                    measureNumber: selectedMeasure.number,
+                    existingMeasures: measures,
+                });
+        }
+    }, [selectedMeasure, measures]);
+
     // Check if any of the form values are different than the initial value
     useEffect(() => {
         if (
@@ -263,6 +277,14 @@ export default function MeasureEditor() {
                         </div>
                     )}
                     <div className="flex gap-2">
+                        <button
+                            disabled={!selectedMeasure}
+                            type="button"
+                            className="btn-danger"
+                            onClick={deleteMeasure}
+                        >
+                            Delete Measure
+                        </button>
                         <div className="flex-grow" />
                         <button
                             disabled={!hasChanged}
