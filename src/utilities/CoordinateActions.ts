@@ -114,11 +114,36 @@ export function alignHorizontally({ marcherPages }: { marcherPages: MarcherPage[
     return changes;
 }
 
-export function evenlyDistributeHorizontally({ marcherPages }: { marcherPages: MarcherPage[]; }): ModifiedMarcherPageArgs[] {
+/**
+ * Evenly distributes the given marcherPages horizontally.
+ *
+ * @param marcherPages - The marcherPages to evenly distribute horizontally.
+ * @param sortingThreshold - In steps. If the X difference between two marcher's is less than this threshold, they will be sorted by Y coordinate. By default, this is .1 steps.
+ * @returns - The changes to be made to the marcherPages to evenly distribute them horizontally.
+ *           Pass these changes to MarcherPage.updateMarcherPages(changes) to apply the changes.
+ */
+export function evenlyDistributeHorizontally({ marcherPages, sortingThreshold = .1 }: { marcherPages: MarcherPage[]; sortingThreshold?: number }): ModifiedMarcherPageArgs[] {
+    // If there are less than 2 marcherPages, there is nothing to distribute.
+    if (marcherPages.length <= 2)
+        return [];
+
     const changes: ModifiedMarcherPageArgs[] = [];
     checkMarcherPagesAreSamePage(marcherPages);
 
-    const sortedMarcherPages = marcherPages.sort((a, b) => a.x - b.x);
+    // Find the direction of the slope of the marchers
+    const marcherWithSmallestX = marcherPages.reduce((min, marcherPage) => marcherPage.x < min.x ? marcherPage : min);
+    const marcherWithLargestX = marcherPages.reduce((max, marcherPage) => marcherPage.x > max.x ? marcherPage : max);
+    const slopeDirection = marcherWithSmallestX.y < marcherWithLargestX.y ? 1 : -1;
+
+    const sortedMarcherPages = marcherPages.sort((a, b) => {
+        // If the X difference is less than the threshold, sort by Y coordinate. Otherwise, sort by X coordinate.
+        if ((Math.abs(a.x - b.x)) < (FieldProperties.getPixelsPerStep() * sortingThreshold))
+            // If the slope is positive, sort by Y coordinate in ascending order. Otherwise, sort by Y coordinate in descending order.
+            return slopeDirection > 0 ? a.y - b.y : b.y - a.y;
+        else
+            return a.x - b.x
+    });
+    // Find the even distribution of the marchers
     const firstX = sortedMarcherPages[0].x;
     const lastX = sortedMarcherPages[sortedMarcherPages.length - 1].x;
     const totalWidth = lastX - firstX;
@@ -133,11 +158,37 @@ export function evenlyDistributeHorizontally({ marcherPages }: { marcherPages: M
     return changes;
 }
 
-export function evenlyDistributeVertically({ marcherPages }: { marcherPages: MarcherPage[]; }): ModifiedMarcherPageArgs[] {
+/**
+ * Evenly distributes the given marcherPages vertically.
+ *
+ * @param marcherPages - The marcherPages to evenly distribute vertically.
+ * @param sortingThreshold - In steps. If the Y difference between two marcher's is less than this threshold, they will be sorted by X coordinate. By default, this is .1 steps.
+ * @returns - The changes to be made to the marcherPages to evenly distribute them vertically.
+ *           Pass these changes to MarcherPage.updateMarcherPages(changes) to apply the changes.
+ */
+export function evenlyDistributeVertically({ marcherPages, sortingThreshold = .1 }: { marcherPages: MarcherPage[]; sortingThreshold?: number }): ModifiedMarcherPageArgs[] {
+    // If there are less than 2 marcherPages, there is nothing to distribute.
+    if (marcherPages.length <= 2)
+        return [];
+
     const changes: ModifiedMarcherPageArgs[] = [];
     checkMarcherPagesAreSamePage(marcherPages);
 
-    const sortedMarcherPages = marcherPages.sort((a, b) => a.y - b.y);
+    // Find the direction of the slope of the marchers
+    const marcherWithSmallestY = marcherPages.reduce((min, marcherPage) => marcherPage.y < min.y ? marcherPage : min);
+    const marcherWithLargestY = marcherPages.reduce((max, marcherPage) => marcherPage.y > max.y ? marcherPage : max);
+    const slopeDirection = marcherWithSmallestY.x < marcherWithLargestY.x ? 1 : -1;
+
+    const sortedMarcherPages = marcherPages.sort((a, b) => {
+        // If the Y difference is less than the threshold, sort by X coordinate. Otherwise, sort by Y coordinate.
+        if ((Math.abs(a.y - b.y)) < (FieldProperties.getPixelsPerStep() * sortingThreshold))
+            // If the slope is positive, sort by X coordinate in ascending order. Otherwise, sort by X coordinate in descending order.
+            return slopeDirection > 0 ? a.x - b.x : b.x - a.x;
+        else
+            return a.y - b.y
+    });
+
+    // Find the even distribution of the marchers
     const firstY = sortedMarcherPages[0].y;
     const lastY = sortedMarcherPages[sortedMarcherPages.length - 1].y;
     const totalHeight = lastY - firstY;
