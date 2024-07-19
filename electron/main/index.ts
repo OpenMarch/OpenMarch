@@ -3,7 +3,6 @@ import Store from 'electron-store'
 import * as fs from 'fs';
 import { release } from 'node:os'
 import { join } from 'node:path'
-import { update } from './update'
 import * as DatabaseServices from '../database/database.services'
 import { applicationMenu } from './application-menu'
 import { generatePDF } from './export-coordinates'
@@ -88,7 +87,7 @@ async function createWindow(title?: string) {
   })
 
   // Apply electron-updater
-  update(win)
+  // update(win)
 }
 
 app.whenReady().then(async () => {
