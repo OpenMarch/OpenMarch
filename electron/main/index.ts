@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import * as DatabaseServices from '../database/database.services'
 import { applicationMenu } from './application-menu'
 import { generatePDF } from './export-coordinates'
+import { update } from './update';
 // const xml2abc = require('../xml2abc-js/xml2abc.js')
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');
@@ -87,7 +88,7 @@ async function createWindow(title?: string) {
   })
 
   // Apply electron-updater
-  // update(win)
+  update(win)
 }
 
 app.whenReady().then(async () => {
