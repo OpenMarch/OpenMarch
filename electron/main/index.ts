@@ -3,10 +3,10 @@ import Store from 'electron-store'
 import * as fs from 'fs';
 import { release } from 'node:os'
 import { join } from 'node:path'
-import { update } from './update'
 import * as DatabaseServices from '../database/database.services'
 import { applicationMenu } from './application-menu'
 import { generatePDF } from './export-coordinates'
+import { update } from './update';
 // const xml2abc = require('../xml2abc-js/xml2abc.js')
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');

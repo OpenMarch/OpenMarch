@@ -1,6 +1,5 @@
 import { dialog } from 'electron'
 import * as fs from 'fs';
-import path from 'path';
 import puppeteer, { Browser } from 'puppeteer';
 
 let browser: Browser;
@@ -12,15 +11,10 @@ export async function generatePDF(renderedPages: string[]) {
 
     const page = await browser.newPage();
 
-    // Add styles to page
-    const cssFilePath = path.join(__dirname, '../../node_modules/bootstrap/dist/css/bootstrap.min.css');
-    const css = fs.readFileSync(cssFilePath, 'utf8');
-
     const combinedHtml = renderedPages.join('<div style="page-break-after: always"></div>');
 
     // Set page content
     await page.setContent(combinedHtml);
-    await page.addStyleTag({ content: css });
 
     // Generate PDF
     const pdfBuffer = await page.pdf({
