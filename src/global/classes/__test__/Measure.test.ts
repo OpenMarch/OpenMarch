@@ -435,12 +435,37 @@ G z z2  | z4 |  %2
                 expect(fetchMeasuresSpy).toHaveBeenCalled();
             });
 
-            it('should insert multiple measures when there are existing measures', async () => { });
+            it('should insert a measure when the existing measures are provided', async () => {
+                const newMeasure = new Measure(
+                    {
+                        number: 4, tempo: 120, beatUnit: BeatUnit.QUARTER,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                let existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+                const existingMeasures = Measure.abcToMeasures(existingMeasuresAbcString);
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.insertMeasure({ newMeasure, existingMeasures });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith(existingMeasuresAbcString + 'z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
         });
     });
 
     describe('updateMeasure', () => {
-
         it('should update a single measure at the end when there are existing measures', async () => {
             const modifiedMeasure = new Measure(
                 {
@@ -449,7 +474,8 @@ G z z2  | z4 |  %2
                 }
             );
 
-            let existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+            const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
             window.electron = {
                 updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
                 getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
@@ -466,6 +492,344 @@ G z z2  | z4 |  %2
             expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | [M:9/8] [Q:3/8=90] z3 | [M:4/4] [Q:1/4=120] z4 | ');
             expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
             expect(fetchMeasuresSpy).toHaveBeenCalled();
+        });
+        describe('single measure at the start', () => {
+            it('should update a single measure\'s tempo at the start ', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 1, tempo: 90, beatUnit: BeatUnit.QUARTER,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=90\nV:1 baritone\nV:1\nz4 | [Q:1/4=120] z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s beat unit at the start ', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 1, tempo: 120, beatUnit: BeatUnit.HALF,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/2=120\nV:1 baritone\nV:1\nz2 | [Q:1/4=120] z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s beat unit and tempo at the start ', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 1, tempo: 62, beatUnit: BeatUnit.HALF,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/2=62\nV:1 baritone\nV:1\nz2 | [Q:1/4=120] z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s rehearsal mark at the start when there was none', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 1, tempo: 120, beatUnit: BeatUnit.QUARTER, rehearsalMark: "A",
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\n"^A" z4 | z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s rehearsal mark at the start when there was one', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 1, tempo: 120, beatUnit: BeatUnit.QUARTER, rehearsalMark: "0",
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\n"^A" z4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\n"^0" z4 | z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('remove a single measure\'s rehearsal mark at the start when there was one', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 1, tempo: 120, beatUnit: BeatUnit.QUARTER,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\n"^A" z4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+        });
+        describe('single measure in the middle', () => {
+            it('should update a single measure\'s tempo in the middle ', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 2, tempo: 90, beatUnit: BeatUnit.QUARTER,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | [Q:1/4=90] z4 | [Q:1/4=120] z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s beat unit in the middle ', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 2, tempo: 120, beatUnit: BeatUnit.HALF,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | [Q:1/2=120] z2 | [Q:1/4=120] z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s beat unit and tempo in the middle ', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 2, tempo: 62, beatUnit: BeatUnit.HALF,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | [Q:1/2=62] z2 | [Q:1/4=120] z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s rehearsal mark in the middle when there was none', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 2, tempo: 120, beatUnit: BeatUnit.QUARTER, rehearsalMark: "A",
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | "^A" z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('should update a single measure\'s rehearsal mark in the middle when there was one', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 2, tempo: 120, beatUnit: BeatUnit.QUARTER, rehearsalMark: "0",
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | "^A" z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | "^0" z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
+
+            it('remove a single measure\'s rehearsal mark in the middle when there was one', async () => {
+                const modifiedMeasure = new Measure(
+                    {
+                        number: 2, tempo: 120, beatUnit: BeatUnit.QUARTER,
+                        timeSignature: TimeSignature.fromString('4/4')
+                    }
+                );
+
+                const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | "^A" z4 | z4 | ';
+
+                window.electron = {
+                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                } as Partial<ElectronApi> as ElectronApi;
+                // Spies
+                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+
+                const response = await Measure.updateMeasure({ modifiedMeasure });
+
+                // Checks
+                expect(response).toEqual({ success: true });
+                expect(electronUpdateMeasuresSpy).toHaveBeenCalledWith('X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ');
+                expect(checkForFetchMeasuresSpy).toHaveBeenCalled();
+                expect(fetchMeasuresSpy).toHaveBeenCalled();
+            });
         });
     });
 
