@@ -77,13 +77,15 @@ export default class Measure {
      * @param existingMeasures - The existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async insertMeasure({ newMeasure, existingMeasures }: { newMeasure: Measure; existingMeasures?: Measure[]; }) {
-        const existingMeasuresCopy = existingMeasures ? [...existingMeasures] : await Measure.getMeasures();
-        const indexOfPreviousMeasure = existingMeasuresCopy.findIndex(measure => measure.number === newMeasure.number);
+    static async insertMeasure(args: { newMeasure: Measure; existingMeasures?: Measure[]; }) {
+        // console.debug("INSERT MEASURES\nArguments:\n", args);
+
+        const existingMeasuresCopy = args.existingMeasures ? [...args.existingMeasures] : await Measure.getMeasures();
+        const indexOfPreviousMeasure = existingMeasuresCopy.findIndex(measure => measure.number === args.newMeasure.number);
         if (indexOfPreviousMeasure > -1) {
-            existingMeasuresCopy.splice(indexOfPreviousMeasure, 0, newMeasure);
+            existingMeasuresCopy.splice(indexOfPreviousMeasure, 0, args.newMeasure);
         } else {
-            existingMeasuresCopy.push(newMeasure);
+            existingMeasuresCopy.push(args.newMeasure);
         }
         const abcString = Measure.toAbcString(existingMeasuresCopy);
         const response = await window.electron.updateMeasureAbcString(abcString);
@@ -103,16 +105,19 @@ export default class Measure {
      * @param existingMeasures - The existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async updateMeasure({ modifiedMeasure, existingMeasures }: { modifiedMeasure: Measure; existingMeasures?: Measure[]; }) {
-        const existingMeasuresCopy = existingMeasures ? [...existingMeasures] : await Measure.getMeasures();
-        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === modifiedMeasure.number);
+    static async updateMeasure(args: { modifiedMeasure: Measure; existingMeasures?: Measure[]; }) {
+        // console.debug("UPDATE MEASURES\nArguments:\n", args);
+
+        const existingMeasuresCopy = args.existingMeasures ? [...args.existingMeasures] : await Measure.getMeasures();
+        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === args.modifiedMeasure.number);
 
         if (indexOfMeasure < 0)
-            throw new Error(`Measure ${modifiedMeasure.number} not found in existing measures.`);
+            throw new Error(`Measure ${args.modifiedMeasure.number} not found in existing measures.`);
 
-        existingMeasuresCopy[indexOfMeasure] = modifiedMeasure;
-        const abcString = Measure.toAbcString(existingMeasuresCopy);
-        const response = await window.electron.updateMeasureAbcString(abcString);
+        existingMeasuresCopy[indexOfMeasure] = args.modifiedMeasure;
+        const newAbcString = Measure.toAbcString(existingMeasuresCopy);
+        const response = await window.electron.updateMeasureAbcString(newAbcString);
+
         // fetch the measures to update the store
         this.checkForFetchMeasures();
         this.fetchMeasures();
@@ -126,12 +131,14 @@ export default class Measure {
      * @param existingMeasures the existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns
      */
-    static async deleteMeasure({ measureNumber, existingMeasures }: { measureNumber: number; existingMeasures?: Measure[]; }) {
-        const existingMeasuresCopy = existingMeasures ? [...existingMeasures] : await Measure.getMeasures();
-        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === measureNumber);
+    static async deleteMeasure(args: { measureNumber: number; existingMeasures?: Measure[]; }) {
+        // console.debug("DELETE MEASURES\nArguments:\n", args);
+
+        const existingMeasuresCopy = args.existingMeasures ? [...args.existingMeasures] : await Measure.getMeasures();
+        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === args.measureNumber);
 
         if (indexOfMeasure < 0)
-            throw new Error(`Measure ${measureNumber} not found in existing measures.`);
+            throw new Error(`Measure ${args.measureNumber} not found in existing measures.`);
 
         existingMeasuresCopy.splice(indexOfMeasure, 1);
         const abcString = Measure.toAbcString(existingMeasuresCopy);
@@ -267,7 +274,7 @@ export default class Measure {
             output += `[M:${this.timeSignature.toString()}] `;
 
         // Tempo
-        if (previousMeasure && this.tempo !== previousMeasure.tempo)
+        if (previousMeasure && (this.tempo !== previousMeasure.tempo || !this.beatUnit.equals(previousMeasure.beatUnit)))
             output += `[Q:${this.beatUnit.toFractionString()}=${this.tempo}] `;
 
         // Beats
@@ -285,11 +292,13 @@ export default class Measure {
      *
      * ABC is a music notation language that is used to represent music in text form.
      *
+     * NOTE - This is only public for testing purposes. There should be no reason to use this outside of the Measure class.
+     *
      * @param abcString The abc string to parse
      * @param testing A boolean to determine if the function is being tested. If true, it will not print errors to the console.
      * @returns An array of Measure objects
      */
-    private static abcToMeasures(abcString: string, testing = false): Measure[] {
+    static abcToMeasures(abcString: string, testing = false): Measure[] {
 
         if (!abcString || abcString.length === 0)
             return [];
