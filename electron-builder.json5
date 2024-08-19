@@ -2,44 +2,42 @@
  * @see https://www.electron.build/configuration/configuration
  */
 {
-  "appId": "com.openmarch.app",
-  "productName": "OpenMarch",
-  "buildVersion": "0.0.2",
-  "asar": true,
-  "directories": {
-    "output": "release/${buildVersion}"
-  },
-  "files": [
-    "dist-electron",
-    "dist"
-  ],
-  "mac": {
-    "artifactName": "${productName}_${buildVersion}.${ext}",
-    "target": [
-      "dmg",
-      "zip"
-    ]
-  },
-  "win": {
-    "target": [
-      {
-        "target": "nsis",
-        "arch": [
-          "x64"
-        ]
-      }
-    ],
-    "artifactName": "${productName}_${buildVersion}.${ext}"
-  },
-  "nsis": {
-    "oneClick": false,
-    "perMachine": false,
-    "allowToChangeInstallationDirectory": true,
-    "deleteAppDataOnUninstall": false
-  },
-  "publish": {
-    "provider": "generic",
-    "channel": "latest",
-    "url": "https://www.openmarch.com/"
-  }
+    appId: "com.openmarch.app",
+    productName: "OpenMarch",
+    buildVersion: "0.0.2",
+    asar: true,
+    directories: {
+        output: "release/${buildVersion}",
+    },
+    files: ["dist-electron", "dist"],
+    mac: {
+        artifactName: "${productName}_${buildVersion}.${ext}",
+        target: [
+            {
+                target: "dmg",
+                arch: "universal",
+            },
+        ],
+        notarize: true,
+    },
+    win: {
+        target: [
+            {
+                target: "nsis",
+                arch: ["x64"],
+            },
+        ],
+        artifactName: "${productName}_${buildVersion}.${ext}",
+    },
+    nsis: {
+        oneClick: false,
+        perMachine: false,
+        allowToChangeInstallationDirectory: true,
+        deleteAppDataOnUninstall: false,
+    },
+    publish: {
+        provider: "generic",
+        channel: "latest",
+        url: "https://www.openmarch.com/",
+    },
 }

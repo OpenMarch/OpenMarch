@@ -14,8 +14,8 @@
     },
     "scripts": {
         "dev": "eslint . && vite",
-        "build:mac": "tsc && vite build && electron-builder --mac",
-        "build:win": "tsc && vite build && electron-builder --win",
+        "build-mac": "tsc && vite build && electron-builder --mac ",
+        "build-win": "tsc && vite build && electron-builder --win",
         "preview": "vite preview",
         "pree2e": "vite build --mode=test",
         "e2e": "playwright test",
