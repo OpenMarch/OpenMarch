@@ -20,7 +20,12 @@ import StaticCanvasMarcher from "@/components/canvas/StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
 import { ActiveObjectArgs, CanvasColors } from "@/global/Constants";
 
-function Canvas({ className = "" }: { className?: string }) {
+// The drag start time is used to determine if the mouse was clicked or dragged
+const DRAG_TIMER_MILLISECONDS = 200;
+// The distance threshold is used to determine if the mouse was clicked or dragged
+const DISTANCE_THRESHOLD = 5;
+
+export default function Canvas({ className = "" }: { className?: string }) {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
@@ -34,6 +39,11 @@ function Canvas({ className = "" }: { className?: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
+    const dragStart = useRef<{ x: number; y: number; time: number }>({
+        x: 0,
+        y: 0,
+        time: Date.now(),
+    });
     // Not a real lock, just a way to prevent infinite loops
     const handleSelectLock = useRef<boolean>(false);
 
@@ -47,8 +57,25 @@ function Canvas({ className = "" }: { className?: string }) {
 
             const activeObjects = canvas.current.getActiveObjects();
             const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
+
+            // Determine if the mouse was clicked or dragged
+            // If the mouse was clicked, likely the user does not want to move the marcher
+            // This prevents the marcher from moving a little bit when it's just trying to be selected
+            const mouseDistance = Math.sqrt(
+                (e.e.clientX - dragStart.current.x) ** 2 +
+                    (e.e.clientY - dragStart.current.y) ** 2
+            );
+            if (
+                mouseDistance < DISTANCE_THRESHOLD &&
+                Date.now() - dragStart.current.time < DRAG_TIMER_MILLISECONDS
+            ) {
+                // If the mouse was clicked and not dragged, return and don't update the marcher
+                return;
+            }
+
             activeObjects.forEach((activeCanvasMarcher: CanvasMarcher) => {
-                if (!(activeCanvasMarcher instanceof CanvasMarcher)) return; // If the active object is not a marcher, return
+                // If the active object is not a marcher, return
+                if (!(activeCanvasMarcher instanceof CanvasMarcher)) return;
 
                 const newCoords = activeCanvasMarcher.getMarcherCoords();
                 modifiedMarcherPages.push({
@@ -172,7 +199,10 @@ function Canvas({ className = "" }: { className?: string }) {
     };
 
     /**
-     * Disable dragging mode on mouseup.
+     * Handler for the mouse up event
+     * Disables dragging and re-enables selection
+     *
+     * If the mouse was only clicked and not dragged, select the marcher and do not move it
      */
     const handleMouseUp = (opt: any) => {
         // on mouse up we want to recalculate new interaction
@@ -289,14 +319,6 @@ function Canvas({ className = "" }: { className?: string }) {
                 curCanvasMarcher.setMarcherCoords(marcherPage);
             }
         });
-
-        // Refresh the selection
-        // const selectedMarcherIds = selectedMarchers.map((marcher) => marcher.id);
-        // const activeSelection = new fabric.ActiveSelection(
-        //     curCanvasMarchers.filter((canvasMarcher) => selectedMarcherIds.includes(canvasMarcher.marcherObj.id)),
-        //     { canvas: canvas.current, }
-        // );
-        // canvas.current.setActiveObject(activeSelection);
 
         canvas.current.requestRenderAll();
     }, [selectedPage, marchers, marcherPages]);
@@ -634,5 +656,3 @@ function Canvas({ className = "" }: { className?: string }) {
         </div>
     );
 }
-
-export default Canvas;
