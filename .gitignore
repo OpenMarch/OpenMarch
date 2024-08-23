@@ -41,3 +41,6 @@ coverage/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# misc OS generated files
+.DS_Store

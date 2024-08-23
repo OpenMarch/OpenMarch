@@ -6,6 +6,7 @@ import {
 import { ElectronApi } from "electron/preload";
 import { mockPages } from "@/__mocks__/globalMocks";
 import Page from "@/global/classes/Page";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the electron api
 window.electron = {
