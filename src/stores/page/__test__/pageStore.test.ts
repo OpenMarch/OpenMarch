@@ -1,17 +1,18 @@
-import { act, renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { usePageStore } from "../usePageStore";
 import { mockPages } from '@/__mocks__/globalMocks';
 import Page from '@/global/classes/Page';
+import { describe, expect, it, vi, afterEach } from "vitest";
 
-jest.mock('@/api/api');
+vi.mock('@/api/api');
 
 describe('pageStore', () => {
     afterEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         const { result } = renderHook(() => usePageStore());
-        jest.spyOn(Page, 'getPages').mockResolvedValue([]);
+        vi.spyOn(Page, 'getPages').mockResolvedValue([]);
         await act(async () => { result.current.fetchPages() });
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('pageStore - initial state []', async () => {
@@ -22,7 +23,7 @@ describe('pageStore', () => {
 
     it('pageStore - fetches pages', async () => {
         const mockToUse = mockPages;
-        jest.spyOn(Page, 'getPages').mockResolvedValue(mockToUse);
+        vi.spyOn(Page, 'getPages').mockResolvedValue(mockToUse);
 
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => usePageStore());
@@ -37,7 +38,7 @@ describe('pageStore', () => {
 
     it('pageStore - fetches single page', async () => {
         const mockToUse = [mockPages[0]];
-        jest.spyOn(Page, 'getPages').mockResolvedValue(mockToUse);
+        vi.spyOn(Page, 'getPages').mockResolvedValue(mockToUse);
 
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => usePageStore());
@@ -52,7 +53,7 @@ describe('pageStore', () => {
 
     it('pageStore - fetch no pages', async () => {
         const mockToUse: Page[] = [];
-        jest.spyOn(Page, 'getPages').mockResolvedValue(mockToUse);
+        vi.spyOn(Page, 'getPages').mockResolvedValue(mockToUse);
 
         const { result } = renderHook(() => usePageStore());
         await act(async () => { result.current.fetchPages() });

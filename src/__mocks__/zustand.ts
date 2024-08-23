@@ -1,8 +1,12 @@
 import * as zustand from 'zustand'
 import { act } from '@testing-library/react'
+import { afterEach, vi } from 'vitest'
 
+/** THIS FILE IS CURRENTLY NOT IN USE */
+
+// TODO fix this
 const { create: actualCreate, createStore: actualCreateStore } =
-    jest.requireActual<typeof zustand>('zustand')
+    vi.requireActual<typeof zustand>('zustand')
 
 // a variable to hold reset functions for all stores declared in the app
 export const storeResetFns = new Set<() => void>()

@@ -1,6 +1,12 @@
 import { MarcherPage } from '@/global/classes/MarcherPage';
 import { alignHorizontally, alignVertically, checkMarcherPagesAreSamePage, evenlyDistributeHorizontally, evenlyDistributeVertically, getRoundCoordinates } from '../CoordinateActions';
 import { FieldProperties } from '@/global/classes/FieldProperties';
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
 
 describe('CoordinateActions', () => {
     describe('checkMarcherPagesAreSamePage', () => {
@@ -34,7 +40,7 @@ describe('CoordinateActions', () => {
         } as FieldProperties;
 
         // ensure pixels per step is 10
-        jest.spyOn(FieldProperties, 'getPixelsPerStep').mockReturnValue(10);
+        vi.spyOn(FieldProperties, 'getPixelsPerStep').mockReturnValue(10);
 
         describe('nearest whole step', () => {
             const marcherPages = [

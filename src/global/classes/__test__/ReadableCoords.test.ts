@@ -1,5 +1,6 @@
 import { FieldProperties } from '../FieldProperties';
 import { ReadableCoords, X_DESCRIPTION, Y_DESCRIPTION } from '../ReadableCoords';
+import { describe, expect, it, beforeAll } from "vitest";
 
 /**
  * @param xSteps Negative for side 1, positive for side 2

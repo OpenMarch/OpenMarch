@@ -1,16 +1,16 @@
-import { act, renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useMarcherPageStore } from "../useMarcherPageStore";
 import { mockMarcherPages } from '@/__mocks__/globalMocks';
 import { MarcherPage } from '@/global/classes/MarcherPage';
-
+import { describe, expect, it, vi, afterEach } from "vitest";
 
 describe('marcherPageStore', () => {
     afterEach(async () => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         const { result } = renderHook(() => useMarcherPageStore());
-        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue([]);
+        vi.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue([]);
         await act(async () => { result.current.fetchMarcherPages() });
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('marcherPagesStore - initial state', async () => {
@@ -21,7 +21,7 @@ describe('marcherPageStore', () => {
 
     it('marcherPagesStore - fetch all', async () => {
         const mockToUse = mockMarcherPages;
-        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
+        vi.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
 
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherPageStore());
@@ -35,7 +35,7 @@ describe('marcherPageStore', () => {
 
     it('marcherPagesStore - fetches single marcherPage', async () => {
         const mockToUse = [mockMarcherPages[0]];
-        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
+        vi.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
 
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherPageStore());
@@ -49,7 +49,7 @@ describe('marcherPageStore', () => {
 
     it('marcherPagesStore - fetch no marcherPages', async () => {
         const mockToUse: MarcherPage[] = [];
-        jest.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
+        vi.spyOn(MarcherPage, 'getMarcherPages').mockResolvedValue(mockToUse);
 
         const { result } = renderHook(() => useMarcherPageStore());
         await act(async () => { result.current.fetchMarcherPages() });

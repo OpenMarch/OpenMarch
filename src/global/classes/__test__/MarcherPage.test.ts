@@ -1,22 +1,23 @@
 import { mockMarcherPages } from '@/__mocks__/globalMocks';
 import { MarcherPage, ModifiedMarcherPageArgs } from '../MarcherPage';
 import { ElectronApi } from 'electron/preload';
+import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
 
 describe('MarcherPage', () => {
     beforeEach(() => {
         window.electron = {
-            getMarcherPages: jest.fn().mockResolvedValue(mockMarcherPages),
-            createPages: jest.fn().mockResolvedValue({ success: true }),
-            updateMarcherPages: jest.fn().mockResolvedValue({ success: true }),
-            deletePage: jest.fn().mockResolvedValue({ success: true }),
+            getMarcherPages: vi.fn().mockResolvedValue(mockMarcherPages),
+            createPages: vi.fn().mockResolvedValue({ success: true }),
+            updateMarcherPages: vi.fn().mockResolvedValue({ success: true }),
+            deletePage: vi.fn().mockResolvedValue({ success: true }),
         } as Partial<ElectronApi> as ElectronApi;
 
-        MarcherPage.fetchMarcherPages = jest.fn();
-        MarcherPage.checkForFetchMarcherPages = jest.fn();
+        MarcherPage.fetchMarcherPages = vi.fn();
+        MarcherPage.checkForFetchMarcherPages = vi.fn();
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('constructor', () => {
@@ -45,7 +46,7 @@ describe('MarcherPage', () => {
     });
     it('should fetch all MarcherPages from the database', async () => {
         const mockResponse = mockMarcherPages;
-        const getMarcherPagesSpy = jest.spyOn(MarcherPage, 'getMarcherPages');
+        const getMarcherPagesSpy = vi.spyOn(MarcherPage, 'getMarcherPages');
 
         getMarcherPagesSpy.mockResolvedValue(mockResponse as MarcherPage[]);
 
@@ -65,10 +66,10 @@ describe('MarcherPage', () => {
 
         const mockResponse = { success: true };
 
-        const checkForFetchMarcherPagesSpy = jest.spyOn(MarcherPage, 'checkForFetchMarcherPages');
-        const fetchMarcherPagesSpy = jest.spyOn(MarcherPage, 'fetchMarcherPages');
+        const checkForFetchMarcherPagesSpy = vi.spyOn(MarcherPage, 'checkForFetchMarcherPages');
+        const fetchMarcherPagesSpy = vi.spyOn(MarcherPage, 'fetchMarcherPages');
 
-        const updatePagesSpy = jest.spyOn(MarcherPage, 'updateMarcherPages');
+        const updatePagesSpy = vi.spyOn(MarcherPage, 'updateMarcherPages');
         const response = await MarcherPage.updateMarcherPages(modifiedMarcherPages);
 
         expect(response).toEqual(mockResponse);

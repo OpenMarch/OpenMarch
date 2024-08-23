@@ -19,7 +19,6 @@
         "paths": {
             "@/*": ["src/*"]
         },
-        "types": ["jest"],
         "typeRoots": ["./node_modules/@types", "./types"]
     },
     "include": [

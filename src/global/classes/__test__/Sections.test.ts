@@ -1,4 +1,5 @@
 import { SECTIONS } from '../Sections';
+import { describe, expect, it, } from "vitest";
 
 describe('Section', () => {
 

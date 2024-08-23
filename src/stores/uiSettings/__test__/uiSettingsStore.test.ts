@@ -1,10 +1,11 @@
-import { act, renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useUiSettingsStore } from '../useUiSettingsStore';
 import { ElectronApi } from 'electron/preload';
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
 window.electron = {
-    sendLockX: jest.fn(),
-    sendLockY: jest.fn(),
+    sendLockX: vi.fn(),
+    sendLockY: vi.fn(),
 } as Partial<ElectronApi> as ElectronApi;
 
 describe('uiSettings Store', () => {
@@ -20,7 +21,7 @@ describe('uiSettings Store', () => {
         const { result } = renderHook(() => useUiSettingsStore());
         // Reset the settings to the initial state
         act(() => result.current.setUiSettings({ ...initialSettings }));
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('uiSettingsStore - initial settings', async () => {

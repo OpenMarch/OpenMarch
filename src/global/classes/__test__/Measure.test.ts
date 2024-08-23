@@ -2,13 +2,14 @@ import { ElectronApi } from 'electron/preload';
 import BeatUnit from '../BeatUnit';
 import Measure from '../Measure';
 import TimeSignature from '../TimeSignature';
+import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
 
 describe('Measure', () => {
     beforeEach(() => {
-        Measure.fetchMeasures = jest.fn();
-        Measure.checkForFetchMeasures = jest.fn();
+        Measure.fetchMeasures = vi.fn();
+        Measure.checkForFetchMeasures = vi.fn();
     });
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => { vi.clearAllMocks() });
 
     it('should create a measure object', () => {
         const measure = new Measure(
@@ -105,8 +106,8 @@ describe('Measure', () => {
     })
 
     describe("abcToMeasures", () => {
-        beforeEach(() => Measure.fetchMeasures = jest.fn());
-        afterEach(() => jest.clearAllMocks());
+        beforeEach(() => Measure.fetchMeasures = vi.fn());
+        afterEach(() => { vi.clearAllMocks() });
 
         it("Returns empty when no measure", async () => {
             const abcString = `
@@ -118,7 +119,7 @@ L:1/4
 Q:1/4=100
 M:4/4`;
             window.electron = {
-                getMeasuresAbcString: jest.fn().mockResolvedValue(abcString)
+                getMeasuresAbcString: vi.fn().mockResolvedValue(abcString)
             } as Partial<ElectronApi> as ElectronApi;
 
             expect(await Measure.getMeasures(true)).toEqual([]);
@@ -140,7 +141,7 @@ V:1 G z z2   | z4
 |  %6
       `;
             window.electron = {
-                getMeasuresAbcString: jest.fn().mockResolvedValue(abcString)
+                getMeasuresAbcString: vi.fn().mockResolvedValue(abcString)
             } as Partial<ElectronApi> as ElectronApi;
 
             const expectedMeasures = [
@@ -177,7 +178,7 @@ G z z2   | z4   |[M:3/4][Q:1/4=120]"^A" z3 | %3
       `;
 
             window.electron = {
-                getMeasuresAbcString: jest.fn().mockResolvedValue(abcString)
+                getMeasuresAbcString: vi.fn().mockResolvedValue(abcString)
             } as Partial<ElectronApi> as ElectronApi;
 
             const expectedMeasures = [
@@ -245,7 +246,7 @@ G z z2  | z4 |  %2
       `;
 
             window.electron = {
-                getMeasuresAbcString: jest.fn().mockResolvedValue(abcString)
+                getMeasuresAbcString: vi.fn().mockResolvedValue(abcString)
             } as Partial<ElectronApi> as ElectronApi;
 
             const expectedMeasures = [
@@ -269,13 +270,13 @@ G z z2  | z4 |  %2
         describe('no existing measures', () => {
             it('should insert a single measure when there are none', async () => {
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue('')
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue('')
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 let newMeasure = new Measure(
                     {
@@ -357,13 +358,13 @@ G z z2  | z4 |  %2
                 let existingMeasures: Measure[] = [];
                 for (const measureData of measures) {
                     window.electron = {
-                        updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                        getMeasuresAbcString: jest.fn().mockResolvedValue(expectedAbcString)
+                        updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                        getMeasuresAbcString: vi.fn().mockResolvedValue(expectedAbcString)
                     } as Partial<ElectronApi> as ElectronApi;
                     // Spies
-                    const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                    const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                    const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                    const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                    const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                    const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                     const response = await Measure.insertMeasure({ newMeasure: measureData.measure, existingMeasures });
 
@@ -390,13 +391,13 @@ G z z2  | z4 |  %2
 
                 let existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.insertMeasure({ newMeasure });
 
@@ -417,13 +418,13 @@ G z z2  | z4 |  %2
 
                 let existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.insertMeasure({ newMeasure });
 
@@ -447,12 +448,12 @@ G z z2  | z4 |  %2
                 const existingMeasures = Measure.abcToMeasures(existingMeasuresAbcString);
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.insertMeasure({ newMeasure, existingMeasures });
 
@@ -477,13 +478,13 @@ G z z2  | z4 |  %2
             const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
             window.electron = {
-                updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
             } as Partial<ElectronApi> as ElectronApi;
             // Spies
-            const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-            const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-            const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+            const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+            const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+            const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
             const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -505,13 +506,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -533,13 +534,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -561,13 +562,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -589,13 +590,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -617,13 +618,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\n"^A" z4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -645,13 +646,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\n"^A" z4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -674,13 +675,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -702,13 +703,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -730,13 +731,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -758,13 +759,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -786,13 +787,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | "^A" z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -814,13 +815,13 @@ G z z2  | z4 |  %2
                 const existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | "^A" z4 | z4 | ';
 
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.updateMeasure({ modifiedMeasure });
 
@@ -836,8 +837,8 @@ G z z2  | z4 |  %2
     describe('deleteMeasure', () => {
         it('should return success when there are no measures to delete', async () => {
             window.electron = {
-                updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                getMeasuresAbcString: jest.fn().mockResolvedValue('')
+                updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                getMeasuresAbcString: vi.fn().mockResolvedValue('')
             } as Partial<ElectronApi> as ElectronApi;
 
             // Couldn't find a way to test if an error is thrown with toThrow()
@@ -853,13 +854,13 @@ G z z2  | z4 |  %2
             it('should delete a single measure at the end when there are existing measures', async () => {
                 let existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | z4 | z4 | ';
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.deleteMeasure({ measureNumber: 3 });
 
@@ -873,13 +874,13 @@ G z z2  | z4 |  %2
             it('should delete a single measure at the end when there are existing measures with different time signatures and tempos', async () => {
                 let existingMeasuresAbcString = 'X:1\nM:4/4\nQ:1/4=120\nV:1 baritone\nV:1\nz4 | [M:2/2] [Q:1/2=60] z2 | [M:4/4] [Q:1/4=120] z4 | z4 | ';
                 window.electron = {
-                    updateMeasureAbcString: jest.fn().mockResolvedValue({ success: true }),
-                    getMeasuresAbcString: jest.fn().mockResolvedValue(existingMeasuresAbcString)
+                    updateMeasureAbcString: vi.fn().mockResolvedValue({ success: true }),
+                    getMeasuresAbcString: vi.fn().mockResolvedValue(existingMeasuresAbcString)
                 } as Partial<ElectronApi> as ElectronApi;
                 // Spies
-                const checkForFetchMeasuresSpy = jest.spyOn(Measure, 'checkForFetchMeasures');
-                const fetchMeasuresSpy = jest.spyOn(Measure, 'fetchMeasures');
-                const electronUpdateMeasuresSpy = jest.spyOn(window.electron, 'updateMeasureAbcString');
+                const checkForFetchMeasuresSpy = vi.spyOn(Measure, 'checkForFetchMeasures');
+                const fetchMeasuresSpy = vi.spyOn(Measure, 'fetchMeasures');
+                const electronUpdateMeasuresSpy = vi.spyOn(window.electron, 'updateMeasureAbcString');
 
                 const response = await Measure.deleteMeasure({ measureNumber: 2 });
 

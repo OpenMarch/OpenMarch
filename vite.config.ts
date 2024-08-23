@@ -21,6 +21,9 @@ export default defineConfig(({ command }) => {
       },
       extensions: ['.js', '.ts', '.jsx', '.tsx', '.json']
     },
+    test: {
+      environment: 'jsdom'
+    },
     plugins: [
       react(),
       electron([

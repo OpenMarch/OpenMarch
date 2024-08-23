@@ -4,23 +4,24 @@ import { ElectronApi } from 'electron/preload';
 import Measure from '../Measure';
 import TimeSignature from '../TimeSignature';
 import BeatUnit from '../BeatUnit';
+import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
 
 describe('Page', () => {
     beforeEach(() => {
         window.electron = {
-            getPages: jest.fn().mockResolvedValue(mockPages),
-            createPages: jest.fn().mockResolvedValue({ success: true }),
-            updatePages: jest.fn().mockResolvedValue({ success: true }),
-            deletePage: jest.fn().mockResolvedValue({ success: true }),
+            getPages: vi.fn().mockResolvedValue(mockPages),
+            createPages: vi.fn().mockResolvedValue({ success: true }),
+            updatePages: vi.fn().mockResolvedValue({ success: true }),
+            deletePage: vi.fn().mockResolvedValue({ success: true }),
         } as Partial<ElectronApi> as ElectronApi;
 
-        Page.fetchPages = jest.fn();
-        Measure.fetchMeasures = jest.fn();
-        Page.checkForFetchPages = jest.fn();
+        Page.fetchPages = vi.fn();
+        Measure.fetchMeasures = vi.fn();
+        Page.checkForFetchPages = vi.fn();
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create a page object', () => {
@@ -45,7 +46,7 @@ describe('Page', () => {
     });
 
     it('should fetch all pages from the database', async () => {
-        const getPagesSpy = jest.spyOn(Page, 'getPages');
+        const getPagesSpy = vi.spyOn(Page, 'getPages');
         getPagesSpy.mockResolvedValue(mockPages);
 
         const pages = await Page.getPages();
@@ -125,12 +126,12 @@ describe('Page', () => {
         it('should create a new page in the database', async () => {
             const mockResponse = { success: true, newPages: [newPageContainers[0]] };
 
-            jest.spyOn(Page, 'getPages').mockResolvedValue([]);
+            vi.spyOn(Page, 'getPages').mockResolvedValue([]);
 
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = vi.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
 
             const response = await Page.createPages([newPageArgs[0]]);
             expect(response).toEqual(mockResponse);
@@ -143,12 +144,12 @@ describe('Page', () => {
         it('should create multiple new pages in the database', async () => {
             const mockResponse = { success: true, newPages: newPageContainers };
 
-            jest.spyOn(Page, 'getPages').mockResolvedValue([]);
+            vi.spyOn(Page, 'getPages').mockResolvedValue([]);
 
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = vi.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
             const response = await Page.createPages(newPageArgs)
 
             expect(response).toEqual(mockResponse);
@@ -175,12 +176,12 @@ describe('Page', () => {
                 isSubset: false,
             }
 
-            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
+            vi.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
 
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = vi.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
             const response = await Page.createPages([newPage]);
 
             const expectedNewPages: NewPageContainer[] = [
@@ -242,12 +243,12 @@ describe('Page', () => {
                 isSubset: true,
             }
 
-            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
+            vi.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
 
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = vi.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
             const response = await Page.createPages([newPage]);
 
             const expectedNewPages: NewPageContainer[] = [
@@ -322,12 +323,12 @@ describe('Page', () => {
                 },
             ]
 
-            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
+            vi.spyOn(Page, 'getPages').mockResolvedValue(existingPages);
 
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-            const electronCreatePagesSpy = jest.spyOn(window.electron, 'createPages');
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
+            const electronCreatePagesSpy = vi.spyOn(window.electron, 'createPages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
             const response = await Page.createPages(newPages);
 
             const expectedNewPages: NewPageContainer[] = newPageContainers = [
@@ -402,10 +403,10 @@ describe('Page', () => {
 
             const mockResponse = { success: true };
 
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
 
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
             const response = await Page.updatePages(modifiedPages);
 
             const modifiedPagesContainers: ModifiedPageContainer[] = [
@@ -492,12 +493,12 @@ describe('Page', () => {
                 },
             ]
 
-            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPagesMock);
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            vi.spyOn(Page, 'getPages').mockResolvedValue(existingPagesMock);
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
             const mockResponse = { success: true };
-            const deletePageSpy = jest.spyOn(Page, 'deletePage');
+            const deletePageSpy = vi.spyOn(Page, 'deletePage');
             const response = await Page.deletePage(pageIdToDelete);
 
             expect(response).toEqual(mockResponse);
@@ -521,12 +522,12 @@ describe('Page', () => {
                 },
             ]
 
-            jest.spyOn(Page, 'getPages').mockResolvedValue(existingPagesMock);
-            const checkForFetchPagesSpy = jest.spyOn(Page, 'checkForFetchPages');
-            const fetchPagesSpy = jest.spyOn(Page, 'fetchPages');
-            const electronUpdatePagesSpy = jest.spyOn(window.electron, 'updatePages');
+            vi.spyOn(Page, 'getPages').mockResolvedValue(existingPagesMock);
+            const checkForFetchPagesSpy = vi.spyOn(Page, 'checkForFetchPages');
+            const fetchPagesSpy = vi.spyOn(Page, 'fetchPages');
+            const electronUpdatePagesSpy = vi.spyOn(window.electron, 'updatePages');
             const mockResponse = { success: true };
-            const deletePageSpy = jest.spyOn(Page, 'deletePage');
+            const deletePageSpy = vi.spyOn(Page, 'deletePage');
             const response = await Page.deletePage(pageIdToDelete);
 
             expect(response).toEqual(mockResponse);

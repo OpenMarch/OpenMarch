@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react';
-import { StaticMarcherCoordinateSheet } from '../MarcherCoordinateSheet';
-import * as globalMocks from '@/__mocks__/globalMocks'
-import { FieldProperties } from '@/global/classes/FieldProperties';
-import { Marcher } from '@/global/classes/Marcher';
+import { cleanup, render, screen } from "@testing-library/react";
+import { StaticMarcherCoordinateSheet } from "../MarcherCoordinateSheet";
+import * as globalMocks from "@/__mocks__/globalMocks";
+import { FieldProperties } from "@/global/classes/FieldProperties";
+import { Marcher } from "@/global/classes/Marcher";
+import { describe, expect, it, afterEach } from "vitest";
 
-describe('StaticMarcherCoordinateSheet', () => {
+describe("StaticMarcherCoordinateSheet", () => {
     const mockMarcher = globalMocks.mockMarchers[0];
 
     const mockFieldProperties = globalMocks.mockNCAAFieldProperties;
@@ -13,7 +14,11 @@ describe('StaticMarcherCoordinateSheet', () => {
 
     const mockMarcherPages = globalMocks.mockMarcherPages;
 
-    it('renders without error', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
+    it("renders without error", () => {
         render(
             <StaticMarcherCoordinateSheet
                 marcher={mockMarcher}
@@ -24,8 +29,8 @@ describe('StaticMarcherCoordinateSheet', () => {
         );
     });
 
-    describe('error messages', () => {
-        it('displays error message when field properties are not provided', () => {
+    describe("error messages", () => {
+        it("displays error message when field properties are not provided", () => {
             render(
                 <StaticMarcherCoordinateSheet
                     marcher={mockMarcher}
@@ -35,11 +40,15 @@ describe('StaticMarcherCoordinateSheet', () => {
                 />
             );
 
-            expect(screen.findByText('Error exporting coordinate sheet')).toBeTruthy();
-            expect(screen.findByText('No field properties provided')).toBeTruthy();
+            expect(
+                screen.findByText("Error exporting coordinate sheet")
+            ).toBeTruthy();
+            expect(
+                screen.findByText("No field properties provided")
+            ).toBeTruthy();
         });
 
-        it('displays error message when marcher is not provided', () => {
+        it("displays error message when marcher is not provided", () => {
             render(
                 <StaticMarcherCoordinateSheet
                     marcher={undefined as unknown as Marcher}
@@ -49,11 +58,13 @@ describe('StaticMarcherCoordinateSheet', () => {
                 />
             );
 
-            expect(screen.findByText('Error exporting coordinate sheet')).toBeTruthy();
-            expect(screen.findByText('No marcher provided')).toBeTruthy();
+            expect(
+                screen.findByText("Error exporting coordinate sheet")
+            ).toBeTruthy();
+            expect(screen.findByText("No marcher provided")).toBeTruthy();
         });
 
-        it('displays error message when no pages are provided', () => {
+        it("displays error message when no pages are provided", () => {
             render(
                 <StaticMarcherCoordinateSheet
                     marcher={mockMarcher}
@@ -63,11 +74,13 @@ describe('StaticMarcherCoordinateSheet', () => {
                 />
             );
 
-            expect(screen.findByText('Error exporting coordinate sheet')).toBeTruthy();
-            expect(screen.findByText('No pages provided')).toBeTruthy();
+            expect(
+                screen.findByText("Error exporting coordinate sheet")
+            ).toBeTruthy();
+            expect(screen.findByText("No pages provided")).toBeTruthy();
         });
 
-        it('displays error message when no marcher pages are provided', () => {
+        it("displays error message when no marcher pages are provided", () => {
             render(
                 <StaticMarcherCoordinateSheet
                     marcher={mockMarcher}
@@ -77,11 +90,13 @@ describe('StaticMarcherCoordinateSheet', () => {
                 />
             );
 
-            expect(screen.findByText('Error exporting coordinate sheet')).toBeTruthy();
-            expect(screen.findByText('No marcher pages provided')).toBeTruthy();
+            expect(
+                screen.findByText("Error exporting coordinate sheet")
+            ).toBeTruthy();
+            expect(screen.findByText("No marcher pages provided")).toBeTruthy();
         });
 
-        it('displays all error messages', () => {
+        it("displays all error messages", () => {
             render(
                 <StaticMarcherCoordinateSheet
                     marcher={undefined as unknown as Marcher}
@@ -91,18 +106,20 @@ describe('StaticMarcherCoordinateSheet', () => {
                 />
             );
 
-            expect(screen.findByText('Error exporting coordinate sheet')).toBeTruthy();
-            expect(screen.findByText('No field properties provided')).toBeTruthy();
-            expect(screen.findByText('No marcher provided')).toBeTruthy();
-            expect(screen.findByText('No pages provided')).toBeTruthy();
-            expect(screen.findByText('No marcher pages provided')).toBeTruthy();
+            expect(
+                screen.findByText("Error exporting coordinate sheet")
+            ).toBeTruthy();
+            expect(
+                screen.findByText("No field properties provided")
+            ).toBeTruthy();
+            expect(screen.findByText("No marcher provided")).toBeTruthy();
+            expect(screen.findByText("No pages provided")).toBeTruthy();
+            expect(screen.findByText("No marcher pages provided")).toBeTruthy();
         });
     });
 
-
-
-    describe('header', () => {
-        it('displays the correct header (mockMarcher[0])', () => {
+    describe("header", () => {
+        it("displays the correct header (mockMarcher[0])", () => {
             const mockMarcher = globalMocks.mockMarchers[0];
             render(
                 <StaticMarcherCoordinateSheet
@@ -113,13 +130,19 @@ describe('StaticMarcherCoordinateSheet', () => {
                 />
             );
 
-            expect(screen.getByLabelText('marcher header')).toBeTruthy();
-            expect(screen.getByLabelText('marcher drill number').textContent).toEqual(mockMarcher.drill_number);
-            expect(screen.getByLabelText('marcher name').textContent).toEqual(mockMarcher.name);
-            expect(screen.getByLabelText('marcher section').textContent).toEqual(mockMarcher.section);
+            expect(screen.getByLabelText("marcher header")).toBeTruthy();
+            expect(
+                screen.getByLabelText("marcher drill number").textContent
+            ).toEqual(mockMarcher.drill_number);
+            expect(screen.getByLabelText("marcher name").textContent).toEqual(
+                mockMarcher.name
+            );
+            expect(
+                screen.getByLabelText("marcher section").textContent
+            ).toEqual(mockMarcher.section);
         });
 
-        it('displays the correct header (mockMarcher[0])', () => {
+        it("displays the correct header (mockMarcher[0])", () => {
             const mockMarcher = globalMocks.mockMarchers[1];
             render(
                 <StaticMarcherCoordinateSheet
@@ -130,10 +153,16 @@ describe('StaticMarcherCoordinateSheet', () => {
                 />
             );
 
-            expect(screen.getByLabelText('marcher header')).toBeTruthy();
-            expect(screen.getByLabelText('marcher drill number').textContent).toEqual(mockMarcher.drill_number);
-            expect(screen.getByLabelText('marcher name').textContent).toEqual(mockMarcher.name);
-            expect(screen.getByLabelText('marcher section').textContent).toEqual(mockMarcher.section);
+            expect(screen.getByLabelText("marcher header")).toBeTruthy();
+            expect(
+                screen.getByLabelText("marcher drill number").textContent
+            ).toEqual(mockMarcher.drill_number);
+            expect(screen.getByLabelText("marcher name").textContent).toEqual(
+                mockMarcher.name
+            );
+            expect(
+                screen.getByLabelText("marcher section").textContent
+            ).toEqual(mockMarcher.section);
         });
     });
 
