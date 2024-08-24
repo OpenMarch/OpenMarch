@@ -21,7 +21,7 @@ export default function TimelineContainer({
     }, [measures, pages]);
 
     return (
-        <div className={`p-0 overflow-x-scroll overflow-y-hidden ${className}`}>
+        <div className={`p-0 overflow-x-auto overflow-y-hidden ${className}`}>
             <div className="w-max h-full">
                 {/* <div className='bg-gray-300 p w-32 mr-10 h-full' /> */}
                 <div
