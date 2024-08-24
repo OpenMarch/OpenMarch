@@ -21,9 +21,9 @@ import { Pathway } from "./Pathway";
 import { ActiveObjectArgs, CanvasColors } from "@/global/Constants";
 
 // The drag start time is used to determine if the mouse was clicked or dragged
-const DRAG_TIMER_MILLISECONDS = 200;
+const DRAG_TIMER_MILLISECONDS = 300;
 // The distance threshold is used to determine if the mouse was clicked or dragged
-const DISTANCE_THRESHOLD = 5;
+const DISTANCE_THRESHOLD = 20;
 
 export default function Canvas({ className = "" }: { className?: string }) {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
@@ -46,232 +46,6 @@ export default function Canvas({ className = "" }: { className?: string }) {
     });
     // Not a real lock, just a way to prevent infinite loops
     const handleSelectLock = useRef<boolean>(false);
-
-    /* -------------------------- Listener Functions -------------------------- */
-    const handleObjectModified = useCallback(
-        (e: any) => {
-            if (!selectedPage)
-                throw new Error(
-                    "Selected page not found - handleObjectModified: Canvas.tsx"
-                );
-
-            const activeObjects = canvas.current.getActiveObjects();
-            const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
-
-            // Determine if the mouse was clicked or dragged
-            // If the mouse was clicked, likely the user does not want to move the marcher
-            // This prevents the marcher from moving a little bit when it's just trying to be selected
-            const mouseDistance = Math.sqrt(
-                (e.e.clientX - dragStart.current.x) ** 2 +
-                    (e.e.clientY - dragStart.current.y) ** 2
-            );
-            if (
-                mouseDistance < DISTANCE_THRESHOLD &&
-                Date.now() - dragStart.current.time < DRAG_TIMER_MILLISECONDS
-            ) {
-                // If the mouse was clicked and not dragged, return and don't update the marcher
-                return;
-            }
-
-            activeObjects.forEach((activeCanvasMarcher: CanvasMarcher) => {
-                // If the active object is not a marcher, return
-                if (!(activeCanvasMarcher instanceof CanvasMarcher)) return;
-
-                const newCoords = activeCanvasMarcher.getMarcherCoords();
-                modifiedMarcherPages.push({
-                    marcher_id: activeCanvasMarcher.marcherObj.id,
-                    page_id: selectedPage!.id,
-                    x: newCoords.x,
-                    y: newCoords.y,
-                });
-            });
-
-            MarcherPage.updateMarcherPages(modifiedMarcherPages);
-        },
-        [selectedPage]
-    );
-
-    /**
-     * Set the selected marcher(s) when selected element changes
-     */
-    const handleSelect = useCallback(
-        (e: { selected: any[] }) => {
-            // Ensure that the handleSelect function is not called while the lockHandelSelect is true. Prevents infinite loop
-            // This semaphore is resolved in a useEffect that sets the active object to the selected marchers
-            if (handleSelectLock.current) return;
-
-            // When multiple marchers are selected, mark as them as the active object
-            // This is how the view of the most current active marcher is maintained
-            handleSelectLock.current = true;
-            if (e.selected.length > 1) {
-                // The current active object needs to be discarded before creating a new active selection
-                // This is due to buggy behavior in Fabric.js
-                (canvas.current as fabric.Canvas).discardActiveObject();
-                const selectedCanvasMarchers: CanvasMarcher[] =
-                    e.selected.filter(
-                        (canvasObject: CanvasMarcher) =>
-                            canvasObject instanceof CanvasMarcher
-                    );
-
-                const activeSelection = new fabric.ActiveSelection(
-                    selectedCanvasMarchers,
-                    {
-                        canvas: canvas.current,
-                        ...ActiveObjectArgs,
-                    }
-                );
-
-                (canvas.current as fabric.Canvas).setActiveObject(
-                    activeSelection
-                );
-                canvas.current.requestRenderAll();
-            }
-
-            const activeObject = canvas.current.getActiveObject();
-            if (activeObject) {
-                activeObject.lockMovementX = uiSettings.lockX;
-                activeObject.lockMovementY = uiSettings.lockY;
-            }
-
-            const activeObjectMarcherIds = canvas.current
-                .getActiveObjects()
-                .map((activeObject: any) =>
-                    activeObject instanceof CanvasMarcher
-                        ? activeObject.marcherObj.id
-                        : null
-                );
-            const newSelectedMarchers = marchers.filter((marcher) =>
-                activeObjectMarcherIds.includes(marcher.id)
-            );
-            setSelectedMarchers(newSelectedMarchers);
-        },
-        [marchers, setSelectedMarchers, uiSettings.lockX, uiSettings.lockY]
-    );
-
-    /**
-     * Deselect the marcher when the selection is cleared
-     */
-    const handleDeselect = useCallback(
-        (e: any) => {
-            if (e.deselected) {
-                setSelectedMarchers([]);
-            }
-        },
-        [setSelectedMarchers]
-    );
-
-    /**
-     * Set the canvas to dragging mode on mousedown.
-     */
-    const handleMouseDown = (opt: any) => {
-        const evt = opt.e;
-        // opt.target checks if the mouse is on the canvas at all
-        // Don't move the canvas if the mouse is on a marcher
-        const isMarcherSelection =
-            opt.target &&
-            (opt.target instanceof CanvasMarcher ||
-                // If the target is a group of marchers (currently only checked if any of the objects are marchers)
-                // Will not work when selecting multiple items that aren't marchers
-                opt.target._objects?.some(
-                    (obj: any) => obj instanceof CanvasMarcher
-                ));
-        if (!isMarcherSelection && !evt.shiftKey) {
-            canvas.current.isDragging = true;
-            canvas.current.selection = false;
-            canvas.current.lastPosX = evt.clientX;
-            canvas.current.lastPosY = evt.clientY;
-        }
-    };
-
-    /**
-     * Move the canvas on mousemove when in dragging mode
-     */
-    const handleMouseMove = (opt: any) => {
-        if (canvas.current.isDragging) {
-            const e = opt.e;
-            const vpt = canvas.current.viewportTransform;
-            vpt[4] += e.clientX - canvas.current.lastPosX;
-            vpt[5] += e.clientY - canvas.current.lastPosY;
-            canvas.current.requestRenderAll();
-            canvas.current.lastPosX = e.clientX;
-            canvas.current.lastPosY = e.clientY;
-        }
-    };
-
-    /**
-     * Handler for the mouse up event
-     * Disables dragging and re-enables selection
-     *
-     * If the mouse was only clicked and not dragged, select the marcher and do not move it
-     */
-    const handleMouseUp = (opt: any) => {
-        // on mouse up we want to recalculate new interaction
-        // for all objects, so we call setViewportTransform
-        canvas.current.setViewportTransform(canvas.current.viewportTransform);
-        canvas.current.isDragging = false;
-        canvas.current.selection = true;
-    };
-
-    /**
-     * Zoom in and out with the mouse wheel
-     */
-    const handleMouseWheel = (opt: any) => {
-        // set objectCaching to true to improve performance while zooming
-        if (!staticGridRef.current.objectCaching)
-            staticGridRef.current.objectCaching = true;
-
-        // set objectCaching to true to improve performance while zooming
-        if (!staticGridRef.current.objectCaching)
-            staticGridRef.current.objectCaching = true;
-
-        const delta = opt.e.deltaY;
-        let zoom = canvas.current.getZoom();
-        zoom *= 0.999 ** delta;
-        if (zoom > 25) zoom = 25;
-        if (zoom < 0.35) zoom = 0.35;
-        canvas.current.zoomToPoint(
-            { x: opt.e.offsetX, y: opt.e.offsetY },
-            zoom
-        );
-        opt.e.preventDefault();
-        opt.e.stopPropagation();
-
-        // set objectCaching to false after 100ms to improve performance after zooming
-        // This is what prevents the grid from being blurry after zooming
-        clearTimeout(canvas.current.zoomTimeout);
-        canvas.current.zoomTimeout = setTimeout(() => {
-            if (staticGridRef.current.objectCaching) {
-                staticGridRef.current.objectCaching = false;
-                canvas.current.renderAll();
-            }
-        }, 50);
-    };
-
-    const initiateListeners = useCallback(() => {
-        if (!canvas.current) return;
-        canvas.current.on("object:modified", handleObjectModified);
-        canvas.current.on("selection:updated", handleSelect);
-        canvas.current.on("selection:created", handleSelect);
-        canvas.current.on("selection:cleared", handleDeselect);
-
-        canvas.current.on("mouse:down", handleMouseDown);
-        canvas.current.on("mouse:move", handleMouseMove);
-        canvas.current.on("mouse:up", handleMouseUp);
-        canvas.current.on("mouse:wheel", handleMouseWheel);
-    }, [handleObjectModified, handleSelect, handleDeselect]);
-
-    const cleanupListeners = useCallback(() => {
-        if (!canvas.current) return;
-        canvas.current.off("object:modified");
-        canvas.current.off("selection:updated");
-        canvas.current.off("selection:created");
-        canvas.current.off("selection:cleared");
-
-        canvas.current.off("mouse:down");
-        canvas.current.off("mouse:move");
-        canvas.current.off("mouse:up");
-        canvas.current.off("mouse:wheel");
-    }, []);
 
     /* -------------------------- Marcher Functions-------------------------- */
     /**
@@ -448,6 +222,243 @@ export default function Canvas({ className = "" }: { className?: string }) {
         },
         [selectedPage, marcherPages]
     );
+
+    /* -------------------------- Listener Functions -------------------------- */
+    const handleObjectModified = useCallback(
+        (e: any) => {
+            if (!selectedPage)
+                throw new Error(
+                    "Selected page not found - handleObjectModified: Canvas.tsx"
+                );
+
+            const activeObjects = canvas.current.getActiveObjects();
+            const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
+
+            /*
+                ---- Determine if the mouse was clicked or dragged ----
+                If the mouse was clicked, likely the user does not want to move the marcher
+                This prevents the marcher from moving a little bit when it's just trying to be selected
+            */
+            // Check if the timing threshold has past before checking the distance (saves compute)
+            if (Date.now() - dragStart.current.time < DRAG_TIMER_MILLISECONDS) {
+                const mouseDistance = Math.sqrt(
+                    (e.e.clientX - dragStart.current.x) ** 2 +
+                        (e.e.clientY - dragStart.current.y) ** 2
+                );
+                // Check if the mouse has moved more than the threshold
+                if (mouseDistance < DISTANCE_THRESHOLD) {
+                    // If the mouse was clicked and not dragged, return and don't update the marcher
+                    renderMarchers();
+                    return;
+                }
+            }
+
+            activeObjects.forEach((activeCanvasMarcher: CanvasMarcher) => {
+                // If the active object is not a marcher, return
+                if (!(activeCanvasMarcher instanceof CanvasMarcher)) return;
+
+                const newCoords = activeCanvasMarcher.getMarcherCoords();
+                modifiedMarcherPages.push({
+                    marcher_id: activeCanvasMarcher.marcherObj.id,
+                    page_id: selectedPage!.id,
+                    x: newCoords.x,
+                    y: newCoords.y,
+                });
+            });
+
+            MarcherPage.updateMarcherPages(modifiedMarcherPages);
+        },
+        [renderMarchers, selectedPage]
+    );
+
+    /**
+     * Set the selected marcher(s) when selected element changes
+     */
+    const handleSelect = useCallback(
+        (e: { selected: any[] }) => {
+            // Ensure that the handleSelect function is not called while the lockHandelSelect is true. Prevents infinite loop
+            // This semaphore is resolved in a useEffect that sets the active object to the selected marchers
+            if (handleSelectLock.current) return;
+
+            // When multiple marchers are selected, mark as them as the active object
+            // This is how the view of the most current active marcher is maintained
+            handleSelectLock.current = true;
+            if (e.selected.length > 1) {
+                // The current active object needs to be discarded before creating a new active selection
+                // This is due to buggy behavior in Fabric.js
+                (canvas.current as fabric.Canvas).discardActiveObject();
+                const selectedCanvasMarchers: CanvasMarcher[] =
+                    e.selected.filter(
+                        (canvasObject: CanvasMarcher) =>
+                            canvasObject instanceof CanvasMarcher
+                    );
+
+                const activeSelection = new fabric.ActiveSelection(
+                    selectedCanvasMarchers,
+                    {
+                        canvas: canvas.current,
+                        ...ActiveObjectArgs,
+                    }
+                );
+
+                (canvas.current as fabric.Canvas).setActiveObject(
+                    activeSelection
+                );
+                canvas.current.requestRenderAll();
+            }
+
+            const activeObject = canvas.current.getActiveObject();
+            if (activeObject) {
+                activeObject.lockMovementX = uiSettings.lockX;
+                activeObject.lockMovementY = uiSettings.lockY;
+            }
+
+            const activeObjectMarcherIds = canvas.current
+                .getActiveObjects()
+                .map((activeObject: any) =>
+                    activeObject instanceof CanvasMarcher
+                        ? activeObject.marcherObj.id
+                        : null
+                );
+            const newSelectedMarchers = marchers.filter((marcher) =>
+                activeObjectMarcherIds.includes(marcher.id)
+            );
+            setSelectedMarchers(newSelectedMarchers);
+        },
+        [marchers, setSelectedMarchers, uiSettings.lockX, uiSettings.lockY]
+    );
+
+    /**
+     * Deselect the marcher when the selection is cleared
+     */
+    const handleDeselect = useCallback(
+        (e: any) => {
+            if (e.deselected) {
+                setSelectedMarchers([]);
+            }
+        },
+        [setSelectedMarchers]
+    );
+
+    /**
+     * Set the canvas to dragging mode on mousedown.
+     */
+    const handleMouseDown = (opt: any) => {
+        const evt = opt.e;
+        // opt.target checks if the mouse is on the canvas at all
+        // Don't move the canvas if the mouse is on a marcher
+        const isMarcherSelection =
+            opt.target &&
+            (opt.target instanceof CanvasMarcher ||
+                // If the target is a group of marchers (currently only checked if any of the objects are marchers)
+                // Will not work when selecting multiple items that aren't marchers
+                opt.target._objects?.some(
+                    (obj: any) => obj instanceof CanvasMarcher
+                ));
+        if (isMarcherSelection) {
+            dragStart.current = {
+                x: evt.clientX,
+                y: evt.clientY,
+                time: Date.now(),
+            };
+        } else if (!evt.shiftKey) {
+            // If no marcher is selected and the shift key is not pressed, move the canvas with the mouse
+            canvas.current.isDragging = true;
+            canvas.current.selection = false;
+            canvas.current.lastPosX = evt.clientX;
+            canvas.current.lastPosY = evt.clientY;
+        }
+    };
+
+    /**
+     * Move the canvas on mousemove when in dragging mode
+     */
+    const handleMouseMove = (opt: any) => {
+        if (canvas.current.isDragging) {
+            const e = opt.e;
+            const vpt = canvas.current.viewportTransform;
+            vpt[4] += e.clientX - canvas.current.lastPosX;
+            vpt[5] += e.clientY - canvas.current.lastPosY;
+            canvas.current.requestRenderAll();
+            canvas.current.lastPosX = e.clientX;
+            canvas.current.lastPosY = e.clientY;
+        }
+    };
+
+    /**
+     * Handler for the mouse up event
+     * Disables dragging and re-enables selection
+     *
+     * If the mouse was only clicked and not dragged, select the marcher and do not move it
+     */
+    const handleMouseUp = (opt: any) => {
+        // on mouse up we want to recalculate new interaction
+        // for all objects, so we call setViewportTransform
+        canvas.current.setViewportTransform(canvas.current.viewportTransform);
+        canvas.current.isDragging = false;
+        canvas.current.selection = true;
+    };
+
+    /**
+     * Zoom in and out with the mouse wheel
+     */
+    const handleMouseWheel = (opt: any) => {
+        // set objectCaching to true to improve performance while zooming
+        if (!staticGridRef.current.objectCaching)
+            staticGridRef.current.objectCaching = true;
+
+        // set objectCaching to true to improve performance while zooming
+        if (!staticGridRef.current.objectCaching)
+            staticGridRef.current.objectCaching = true;
+
+        const delta = opt.e.deltaY;
+        let zoom = canvas.current.getZoom();
+        zoom *= 0.999 ** delta;
+        if (zoom > 25) zoom = 25;
+        if (zoom < 0.35) zoom = 0.35;
+        canvas.current.zoomToPoint(
+            { x: opt.e.offsetX, y: opt.e.offsetY },
+            zoom
+        );
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+
+        // set objectCaching to false after 100ms to improve performance after zooming
+        // This is what prevents the grid from being blurry after zooming
+        clearTimeout(canvas.current.zoomTimeout);
+        canvas.current.zoomTimeout = setTimeout(() => {
+            if (staticGridRef.current.objectCaching) {
+                staticGridRef.current.objectCaching = false;
+                canvas.current.renderAll();
+            }
+        }, 50);
+    };
+
+    const initiateListeners = useCallback(() => {
+        if (!canvas.current) return;
+        canvas.current.on("object:modified", handleObjectModified);
+        canvas.current.on("selection:updated", handleSelect);
+        canvas.current.on("selection:created", handleSelect);
+        canvas.current.on("selection:cleared", handleDeselect);
+
+        canvas.current.on("mouse:down", handleMouseDown);
+        canvas.current.on("mouse:move", handleMouseMove);
+        canvas.current.on("mouse:up", handleMouseUp);
+        canvas.current.on("mouse:wheel", handleMouseWheel);
+    }, [handleObjectModified, handleSelect, handleDeselect]);
+
+    const cleanupListeners = useCallback(() => {
+        if (!canvas.current) return;
+        canvas.current.off("object:modified");
+        canvas.current.off("selection:updated");
+        canvas.current.off("selection:created");
+        canvas.current.off("selection:cleared");
+
+        canvas.current.off("mouse:down");
+        canvas.current.off("mouse:move");
+        canvas.current.off("mouse:up");
+        canvas.current.off("mouse:wheel");
+    }, []);
 
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
