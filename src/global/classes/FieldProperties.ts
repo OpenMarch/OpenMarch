@@ -140,8 +140,6 @@ export class FieldProperties {
     // TODO High school, NFL, checkpoints. With high school, you need to consider how the step sizes change
 }
 
-export default FieldProperties
-
 export namespace FieldProperties {
     /**
      * The templates for the field properties. E.g. NCAA, NFL, High School

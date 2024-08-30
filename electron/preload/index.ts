@@ -1,5 +1,5 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile"
-import FieldProperties from "@/global/classes/FieldProperties"
+import { FieldProperties } from "@/global/classes/FieldProperties"
 import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher"
 import MarcherPage, { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage"
 import Page, { ModifiedPageContainer, NewPageContainer } from "@/global/classes/Page"

@@ -1,7 +1,7 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
-import FieldProperties from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@/global/classes/FieldProperties";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({

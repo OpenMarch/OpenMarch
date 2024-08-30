@@ -660,21 +660,21 @@ function RegisteredActionsHandler() {
                 const code = e.code;
                 let key = e.key;
                 // These do not change with the option key
-                const ignoredKeys = [
+                const ignoredKeys = new Set([
                     "Shift",
                     "Control",
                     "Alt",
                     "Meta",
-                    "Space",
+                    " ", // Space
                     "Enter",
-                ];
+                ]);
                 if (code.includes("Key")) {
                     key = code.replace("Key", "");
                 } else if (code.includes("Digit")) {
                     key = code.replace("Digit", "");
-                } else if (!ignoredKeys.includes(key)) {
+                } else if (!ignoredKeys.has(key)) {
                     console.error(
-                        `RegisteredAction Warning: No keyCode handler found for ${code}.`,
+                        `RegisteredAction Warning: No keyCode handler found for "${code}".`,
                         "This key may not work as expected if using as a registered action shortcut."
                     );
                     key = e.key;
