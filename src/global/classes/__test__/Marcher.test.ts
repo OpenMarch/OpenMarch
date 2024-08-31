@@ -1,6 +1,7 @@
 import { ElectronApi } from 'electron/preload';
 import { Marcher, NewMarcherArgs, ModifiedMarcherArgs } from '../Marcher';
 import { mockMarchers } from '@/__mocks__/globalMocks';
+import { describe, expect, it, vi } from "vitest";
 
 describe('Marcher', () => {
     it('should create a marcher object', () => {
@@ -29,7 +30,7 @@ describe('Marcher', () => {
 
     it('should fetch marchers from the database', async () => {
 
-        jest.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockMarchers);
+        vi.spyOn(Marcher, 'getMarchers').mockResolvedValue(mockMarchers);
 
         const getMarchersResult = await Marcher.getMarchers();
 
@@ -52,11 +53,11 @@ describe('Marcher', () => {
 
         // Mock the electron api
         window.electron = {
-            createMarcher: jest.fn().mockResolvedValue(mockResponse),
+            createMarcher: vi.fn().mockResolvedValue(mockResponse),
         } as Partial<ElectronApi> as ElectronApi;
 
-        Marcher.checkForFetchMarchers = jest.fn();
-        Marcher.fetchMarchers = jest.fn();
+        Marcher.checkForFetchMarchers = vi.fn();
+        Marcher.fetchMarchers = vi.fn();
 
         const response = await Marcher.createMarcher(newMarcher);
 
@@ -80,11 +81,11 @@ describe('Marcher', () => {
 
         // Mock the electron api
         window.electron = {
-            updateMarchers: jest.fn().mockResolvedValue(mockResponse),
+            updateMarchers: vi.fn().mockResolvedValue(mockResponse),
         } as Partial<ElectronApi> as ElectronApi;
 
-        Marcher.checkForFetchMarchers = jest.fn();
-        Marcher.fetchMarchers = jest.fn();
+        Marcher.checkForFetchMarchers = vi.fn();
+        Marcher.fetchMarchers = vi.fn();
 
         const response = await Marcher.updateMarchers(modifiedMarchers);
 
@@ -103,11 +104,11 @@ describe('Marcher', () => {
 
         // Mock the electron api
         window.electron = {
-            deleteMarcher: jest.fn().mockResolvedValue(mockResponse),
+            deleteMarcher: vi.fn().mockResolvedValue(mockResponse),
         } as Partial<ElectronApi> as ElectronApi;
 
-        Marcher.checkForFetchMarchers = jest.fn();
-        Marcher.fetchMarchers = jest.fn();
+        Marcher.checkForFetchMarchers = vi.fn();
+        Marcher.fetchMarchers = vi.fn();
 
         const response = await Marcher.deleteMarcher(marcherId);
 

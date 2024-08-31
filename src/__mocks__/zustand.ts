@@ -1,55 +1,59 @@
-import * as zustand from 'zustand'
-import { act } from '@testing-library/react'
+// import * as zustand from 'zustand'
+// import { act } from '@testing-library/react'
+// import { afterEach, vi } from 'vitest'
 
-const { create: actualCreate, createStore: actualCreateStore } =
-    jest.requireActual<typeof zustand>('zustand')
+// /** THIS FILE IS CURRENTLY NOT IN USE */
 
-// a variable to hold reset functions for all stores declared in the app
-export const storeResetFns = new Set<() => void>()
+// // TODO fix this
+// // const { create: actualCreate, createStore: actualCreateStore } =
+// //     vi.requireActual<typeof zustand>('zustand')
 
-const createUncurried = <T>(stateCreator: zustand.StateCreator<T>) => {
-    const store = actualCreate(stateCreator)
-    const initialState = store.getInitialState()
-    storeResetFns.add(() => {
-        store.setState(initialState, true)
-    })
-    return store
-}
+// // a variable to hold reset functions for all stores declared in the app
+// export const storeResetFns = new Set<() => void>()
 
-// when creating a store, we get its initial state, create a reset function and add it in the set
-export const create = (<T>(stateCreator: zustand.StateCreator<T>) => {
-    // console.log('zustand create mock')
+// const createUncurried = <T>(stateCreator: zustand.StateCreator<T>) => {
+//     const store = actualCreate(stateCreator)
+//     const initialState = store.getInitialState()
+//     storeResetFns.add(() => {
+//         store.setState(initialState, true)
+//     })
+//     return store
+// }
 
-    // to support curried version of create
-    return typeof stateCreator === 'function'
-        ? createUncurried(stateCreator)
-        : createUncurried
-}) as typeof zustand.create
+// // when creating a store, we get its initial state, create a reset function and add it in the set
+// export const create = (<T>(stateCreator: zustand.StateCreator<T>) => {
+//     // console.log('zustand create mock')
 
-const createStoreUncurried = <T>(stateCreator: zustand.StateCreator<T>) => {
-    const store = actualCreateStore(stateCreator)
-    const initialState = store.getInitialState()
-    storeResetFns.add(() => {
-        store.setState(initialState, true)
-    })
-    return store
-}
+//     // to support curried version of create
+//     return typeof stateCreator === 'function'
+//         ? createUncurried(stateCreator)
+//         : createUncurried
+// }) as typeof zustand.create
 
-// when creating a store, we get its initial state, create a reset function and add it in the set
-export const createStore = (<T>(stateCreator: zustand.StateCreator<T>) => {
-    // console.log('zustand createStore mock')
+// const createStoreUncurried = <T>(stateCreator: zustand.StateCreator<T>) => {
+//     const store = actualCreateStore(stateCreator)
+//     const initialState = store.getInitialState()
+//     storeResetFns.add(() => {
+//         store.setState(initialState, true)
+//     })
+//     return store
+// }
 
-    // to support curried version of createStore
-    return typeof stateCreator === 'function'
-        ? createStoreUncurried(stateCreator)
-        : createStoreUncurried
-}) as typeof zustand.createStore
+// // when creating a store, we get its initial state, create a reset function and add it in the set
+// export const createStore = (<T>(stateCreator: zustand.StateCreator<T>) => {
+//     // console.log('zustand createStore mock')
 
-// reset all stores after each test run
-afterEach(() => {
-    act(() => {
-        storeResetFns.forEach((resetFn) => {
-            resetFn()
-        })
-    })
-})
+//     // to support curried version of createStore
+//     return typeof stateCreator === 'function'
+//         ? createStoreUncurried(stateCreator)
+//         : createStoreUncurried
+// }) as typeof zustand.createStore
+
+// // reset all stores after each test run
+// afterEach(() => {
+//     act(() => {
+//         storeResetFns.forEach((resetFn) => {
+//             resetFn()
+//         })
+//     })
+// })

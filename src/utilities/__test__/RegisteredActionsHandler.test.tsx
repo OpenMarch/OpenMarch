@@ -8,10 +8,11 @@
 // import { FieldPropertiesProvider } from '@/context/fieldPropertiesContext';
 // import { ElectronApi } from 'electron/preload';
 // import { mockNCAAFieldProperties } from '@/__mocks__/globalMocks';
+import { expect, it } from "vitest";
 
-it('passes, todo', () => {
+it("passes, todo", () => {
     expect(true).toBe(true);
-})
+});
 
 // /**
 //  * TODO - figure out how the heck to test this
@@ -30,9 +31,9 @@ it('passes, todo', () => {
 //         </IsPlayingProvider >
 //     );
 //     window.electron = {
-//         getFieldProperties: jest.fn().mockResolvedValue(mockNCAAFieldProperties),
-//         sendSelectedMarchers: jest.fn(),
-//         sendSelectedPage: jest.fn(),
+//         getFieldProperties: vi.fn().mockResolvedValue(mockNCAAFieldProperties),
+//         sendSelectedMarchers: vi.fn(),
+//         sendSelectedPage: vi.fn(),
 //     } as Partial<ElectronApi> as ElectronApi;
 //     it('should trigger the appropriate action when a keyboard shortcut is pressed', () => {
 //         return

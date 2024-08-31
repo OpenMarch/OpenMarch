@@ -5,6 +5,7 @@
  */
 
 import xml2abcInterpreter from "../xml2abcInterpreter";
+import { describe, expect, it } from "vitest";
 
 
 const expectedAbc = `X:1

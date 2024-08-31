@@ -1,10 +1,11 @@
-// import { act, renderHook } from '@testing-library/react';
+// import { renderHook, act } from '@testing-library/react';
+import { describe, expect, it, vi } from "vitest";
 // import { useMeasureStore } from "../useMeasureStore";
 // import Measure from '@/global/classes/Measure';
 // import TimeSignature from '@/global/classes/TimeSignature';
 // import BeatUnit from '@/global/classes/BeatUnit';
 
-jest.mock('@/global/classes/Measure');
+vi.mock('@/global/classes/Measure');
 
 // TODO - These aren't working for some reason, don't know why. Is this worth testing?
 describe('measureStore', () => {
@@ -12,11 +13,11 @@ describe('measureStore', () => {
         expect(true).toBe(true);
     });
     // afterEach(async () => {
-    //     jest.clearAllMocks();
+    //     vi.clearAllMocks();
     //     const { result } = renderHook(() => useMeasureStore());
-    //     jest.spyOn(Measure, 'getMeasures').mockResolvedValue(``);
+    //     vi.spyOn(Measure, 'getMeasures').mockResolvedValue(``);
     //     await act(async () => { result.current.fetchMeasures() });
-    //     jest.clearAllMocks();
+    //     vi.clearAllMocks();
     // });
 
     // it('measureStore - initial state', async () => {
@@ -39,7 +40,7 @@ describe('measureStore', () => {
     // V:1 treble nm="Oboe" snm="Ob."
     // V:1 G z z2   | z4
     // |  %6`
-    //         jest.spyOn(Measure, 'getMeasures').mockResolvedValue(mockAbcString);
+    //         vi.spyOn(Measure, 'getMeasures').mockResolvedValue(mockAbcString);
 
     //         // Expect the initial state to be an empty array
     //         const { result } = renderHook(() => useMeasureStore());
@@ -68,7 +69,7 @@ describe('measureStore', () => {
 
     // it('measureStore - fetches single measure', async () => {
     //     const mockToUse = [mockMeasures[0]];
-    //     jest.spyOn(Measure, 'getMeasures').mockResolvedValue(mockToUse);
+    //     vi.spyOn(Measure, 'getMeasures').mockResolvedValue(mockToUse);
 
     //     const { result } = renderHook(() => useMeasureStore());
     //     await act(async () => { result.current.fetchMeasures() });
@@ -80,7 +81,7 @@ describe('measureStore', () => {
 
     // it('measureStore - fetch no measures', async () => {
     //     const mockToUse: Measure[] = [];
-    //     jest.spyOn(Measure, 'getMeasures').mockResolvedValue(mockToUse);
+    //     vi.spyOn(Measure, 'getMeasures').mockResolvedValue(mockToUse);
 
     //     const { result } = renderHook(() => useMeasureStore());
     //     await act(async () => { result.current.fetchMeasures() });

@@ -14,6 +14,7 @@ import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import Measure from "@/global/classes/Measure";
+// import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -52,6 +53,10 @@ export enum RegisteredActionsEnum {
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
     togglePreviousPagePaths = "togglePreviousPagePaths",
+
+    // Cursor Mode
+    cursorModeDefault = "cursorModeDefault",
+    cursorModeLine = "cursorModeLine",
 
     // Select
     selectAllMarchers = "selectAllMarchers",
@@ -288,12 +293,12 @@ export const RegisteredActionsObjects: {
     }),
     alignVertically: new RegisteredAction({
         desc: "Align vertically",
-        keyboardShortcut: new KeyboardShortcut({ key: "v" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "v", alt: true }),
         enumString: "alignVertically",
     }),
     alignHorizontally: new RegisteredAction({
         desc: "Align horizontally",
-        keyboardShortcut: new KeyboardShortcut({ key: "h" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "h", alt: true }),
         enumString: "alignHorizontally",
     }),
     evenlyDistributeVertically: new RegisteredAction({
@@ -323,6 +328,18 @@ export const RegisteredActionsObjects: {
         enumString: "toggleNextPagePaths",
     }),
 
+    // Cursor Mode
+    cursorModeDefault: new RegisteredAction({
+        desc: "Set cursor mode to default",
+        enumString: "cursorModeDefault",
+        keyboardShortcut: new KeyboardShortcut({ key: "v" }),
+    }),
+    cursorModeLine: new RegisteredAction({
+        desc: "Set cursor mode to line",
+        enumString: "cursorModeLine",
+        keyboardShortcut: new KeyboardShortcut({ key: "l" }),
+    }),
+
     // Select
     selectAllMarchers: new RegisteredAction({
         desc: "Select all marchers",
@@ -348,6 +365,7 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
+    // const { setCursorMode } = useCursorModeStore()!;
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -566,6 +584,14 @@ function RegisteredActionsHandler() {
                     });
                     break;
 
+                /****************** UI settings ******************/
+                // case RegisteredActionsEnum.cursorModeDefault:
+                //     setCursorMode("default");
+                //     break;
+                // case RegisteredActionsEnum.cursorModeLine:
+                //     setCursorMode("line");
+                //     break;
+
                 /****************** Select ******************/
                 case RegisteredActionsEnum.selectAllMarchers:
                     setSelectedMarchers(marchers);
@@ -629,8 +655,32 @@ function RegisteredActionsHandler() {
                     "input, textarea, select, [contenteditable]"
                 )
             ) {
+                // Check the key code and convert it to a key string
+                // This must happen rather than using e.key because e.key changes on MacOS with the option key
+                const code = e.code;
+                let key = e.key;
+                // These do not change with the option key
+                const ignoredKeys = [
+                    "Shift",
+                    "Control",
+                    "Alt",
+                    "Meta",
+                    "Space",
+                    "Enter",
+                ];
+                if (code.includes("Key")) {
+                    key = code.replace("Key", "");
+                } else if (code.includes("Digit")) {
+                    key = code.replace("Digit", "");
+                } else if (!ignoredKeys.includes(key)) {
+                    console.error(
+                        `RegisteredAction Warning: No keyCode handler found for ${code}.`,
+                        "This key may not work as expected if using as a registered action shortcut."
+                    );
+                    key = e.key;
+                }
                 const keyboardAction = new KeyboardShortcut({
-                    key: e.key,
+                    key,
                     control: e.ctrlKey || e.metaKey,
                     alt: e.altKey,
                     shift: e.shiftKey,

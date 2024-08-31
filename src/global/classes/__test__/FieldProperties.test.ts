@@ -1,4 +1,5 @@
 import { FieldProperties } from '../FieldProperties';
+import { describe, expect, it, beforeEach } from "vitest";
 
 describe('FieldProperties', () => {
     it('should throw an error for unsupported template', () => {

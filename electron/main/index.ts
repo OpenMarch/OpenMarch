@@ -148,6 +148,23 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
+app.on('open-file', (event, path) => {
+  event.preventDefault();
+  setActiveDb(path);
+});
+// Handle instances where the app is already running and a file is opened
+// const gotTheLock = app.requestSingleInstanceLock();
+// if (!gotTheLock) {
+//   app.quit();
+// } else {
+//   app.on('second-instance', (event, argv) => {
+//     // Handle the file path passed when a second instance is opened
+//     const filePath = argv.find(arg => !arg.startsWith('--') && path.extname(arg));
+//     if (mainWindow && filePath) {
+//       mainWindow.webContents.send('open-file', filePath);
+//     }
+//   });
+// }
 
 app.on('second-instance', () => {
   if (win) {

@@ -11,7 +11,7 @@ function Topbar({ className = "" }: { className?: string }) {
     const componentClassName = "";
     return (
         <div
-            className={` gap-2 flex bg-gray-700 w-full flex-wrap items-center p-4 m-0 overflow-scroll ${className}`}
+            className={` gap-2 flex bg-gray-700 w-full flex-wrap items-center p-4 m-0 overflow-y-auto ${className}`}
         >
             <FileControls className={componentClassName} />
             <PlaybackControls className={componentClassName} />
