@@ -17,9 +17,6 @@ export default function TimelineContainer({
 
     // Rerender the timeline when the measures or pages change
     React.useEffect(() => {
-        console.log("measures or pages changed");
-        console.log("measures", measures);
-        console.log("pages", pages);
         // do nothing, just re-render
     }, [measures, pages]);
 
