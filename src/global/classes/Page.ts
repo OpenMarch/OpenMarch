@@ -404,13 +404,18 @@ class Page {
                 outputPages[currentPageIndex]._measures.push(currentMeasure);
                 // Add the offset of the current measure beat
                 const offsetBigBeats = currentMeasure.getBigBeats() - currentMeasureBeat + 1;
-                if (remainingCounts - offsetBigBeats >= 0) {
-                    // there are enough remaining counts in the page to complete the measure
-                    outputPages[currentPageIndex]._duration += (offsetBigBeats / currentMeasure.getBigBeats()) * currentMeasure.duration;
-                    currentMeasureIndex++;
-                    currentMeasureBeat = 1;
-                } else {
-                    // there are not enough counts in the page to complete the measure. Add the remaining counts to the duration
+                if (remainingCounts - offsetBigBeats >= 0) { // there are enough remaining counts in the page to complete the measure
+                    if (currentMeasureIndex === measures.length - 1) { // last measure
+                        const durationPerBeat = currentMeasure.duration / currentMeasure.getBigBeats();
+                        outputPages[currentPageIndex]._duration += durationPerBeat * remainingCounts;
+                        break;
+
+                    } else { // not the last measure, fill the page with beats from the measures
+                        outputPages[currentPageIndex]._duration += (offsetBigBeats / currentMeasure.getBigBeats()) * currentMeasure.duration;
+                        currentMeasureIndex++;
+                        currentMeasureBeat = 1;
+                    }
+                } else { // there are not enough counts in the page to complete the measure. Add the remaining counts to the duration
                     outputPages[currentPageIndex]._duration += (remainingCounts / currentMeasure.getBigBeats()) * currentMeasure.duration;
                     currentMeasureBeat = remainingCounts + 1;
                     break;

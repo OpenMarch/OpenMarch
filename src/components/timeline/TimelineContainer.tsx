@@ -17,7 +17,10 @@ export default function TimelineContainer({
 
     // Rerender the timeline when the measures or pages change
     React.useEffect(() => {
-        // do nothing, just rerender
+        console.log("measures or pages changed");
+        console.log("measures", measures);
+        console.log("pages", pages);
+        // do nothing, just re-render
     }, [measures, pages]);
 
     return (
@@ -67,6 +70,7 @@ export default function TimelineContainer({
                     )}
                     <div className="row-span-2">
                         {pages.map((page, index) => {
+                            if (page.name === "8") console.log("page 8", page);
                             if (index === 0) return null;
                             const width = page.duration * pxPerSecond;
                             // console.log("page width", width)
