@@ -1,5 +1,5 @@
 import { FieldProperties } from "@/global/classes/FieldProperties";
-import { MarcherPage } from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { fabric } from "fabric";
 import { NoControls } from "./OpenMarchCanvas";
 

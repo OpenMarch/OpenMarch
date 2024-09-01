@@ -74,6 +74,11 @@ export default class CanvasMarcher extends fabric.Group {
 
         this.marcherPage = marcherPage;
         this.marcherObj = marcher;
+
+        // Set the initial coordinates to the appropriate offset
+        const newCoords = this.databaseCoordsToCanvasCoords(marcherPage, false);
+        this.left = newCoords.x;
+        this.top = newCoords.y;
     }
 
     /******* CANVAS ACCESSORS *******/
@@ -142,13 +147,18 @@ export default class CanvasMarcher extends fabric.Group {
      * Converts the coordinates from the database to the canvas coordinates of the dot/label fabric group.
      *
      * @param databaseCoords The coordinates from the database where the actual dot should be. I.e. a marcherPage object
+     * @param _adjustForGroup Whether to adjust the coordinates for when multiple marchers are selected. This should always be true, except when setting the initial coordinates in this class's constructor.
      * @returns {x: number, y: number}, The coordinates of the center of the dot/label fabric group on the canvas.
      */
-    private databaseCoordsToCanvasCoords(databaseCoords: {
-        x: number;
-        y: number;
-    }) {
-        const groupOffset = this.getGroupOffset();
+    private databaseCoordsToCanvasCoords(
+        databaseCoords: {
+            x: number;
+            y: number;
+        },
+        _adjustForGroup = true
+    ) {
+        let groupOffset = { x: 0, y: 0 };
+        if (_adjustForGroup) groupOffset = this.getGroupOffset();
         const dotOffset = this.getDotOffset();
 
         const newCanvasCoords = {

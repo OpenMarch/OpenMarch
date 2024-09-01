@@ -26,17 +26,14 @@ import { createRef } from "react";
 // const initialMockMarcherPages = createMarcherPages(mockMarchers, mockPages);
 
 describe("Canvas", () => {
-    const renderWithContext = (
-        canvas: OpenMarchCanvas,
-        canvasRef: React.RefObject<any>
-    ) => {
+    const renderWithContext = (canvas: OpenMarchCanvas) => {
         render(
             <IsPlayingProvider>
                 <SelectedPageProvider>
                     <SelectedMarchersProvider>
                         <SelectedAudioFileProvider>
                             <FieldPropertiesProvider>
-                                <Canvas testCanvas={canvas} ref={canvasRef} />
+                                <Canvas testCanvas={canvas} />
                             </FieldPropertiesProvider>
                         </SelectedAudioFileProvider>
                     </SelectedMarchersProvider>
@@ -87,13 +84,11 @@ describe("Canvas", () => {
         cleanup();
     });
 
-    it("selects a single marcher in the store when selected on the canvas", () => {
+    it("Canvas renders and contains marchers", () => {
         const NCAAFieldProperties = new FieldProperties(
             FieldProperties.Template.NCAA
         );
-        const canvasRef = createRef<OpenMarchCanvas>();
         const canvas = new OpenMarchCanvas(null, NCAAFieldProperties);
         renderWithContext(canvas);
-        console.log("canvas", canvas.getObjects());
     });
 });

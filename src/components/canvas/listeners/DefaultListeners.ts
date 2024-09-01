@@ -12,9 +12,19 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas = canvas;
     }
 
-    handleObjectModified = (e: any) => {
-        console.log("Handle object modified");
+    /**
+     * Set the selected marcher(s) when selected element changes
+     */
+    handleSelect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+        if (!fabricEvent.selected || fabricEvent.selected.length === 0) return;
 
+        const canvasMarchersToSelect: CanvasMarcher[] =
+            this.canvas.getActiveObjectsByType(CanvasMarcher);
+
+        this.canvas.setSelectedCanvasMarchers(canvasMarchersToSelect);
+    };
+
+    handleObjectModified = (fabricEvent: fabric.IEvent<MouseEvent>) => {
         const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
 
         /*
@@ -28,13 +38,13 @@ export default class DefaultListeners implements CanvasListeners {
             this.canvas.DRAG_TIMER_MILLISECONDS
         ) {
             const mouseDistance = Math.sqrt(
-                (e.e.clientX - this.canvas.selectDragStart.x) ** 2 +
-                    (e.e.clientY - this.canvas.selectDragStart.y) ** 2
+                (fabricEvent.e.clientX - this.canvas.selectDragStart.x) ** 2 +
+                    (fabricEvent.e.clientY - this.canvas.selectDragStart.y) ** 2
             );
             // Check if the mouse has moved more than the threshold
             if (mouseDistance < this.canvas.DISTANCE_THRESHOLD) {
                 // If the mouse was clicked and not dragged, return and don't update the marcher
-                this.canvas.renderMarchers();
+                this.canvas.refreshMarchers();
                 return;
             }
         }
@@ -57,22 +67,14 @@ export default class DefaultListeners implements CanvasListeners {
         MarcherPage.updateMarcherPages(modifiedMarcherPages);
     };
 
-    // /**
-    //  * Set the selected marcher(s) when selected element changes
-    //  */
-    // handleSelect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
-    //     if (fabricEvent.selected)
-    //         this.setSelectedCanvasMarchers(fabricEvent.selected);
-    // };
-
-    // // /**
-    // //  * Deselect the marcher when the selection is cleared
-    // //  */
-    // // handleDeselect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
-    // //     if (fabricEvent.deselected) {
-    // //         this.setSelectedCanvasMarchers([]);
-    // //     }
-    // // };
+    /**
+     * Set the selected marchers to none when the selection is cleared
+     */
+    handleDeselect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+        if (fabricEvent.deselected) {
+            this.canvas.setSelectedMarchers([]);
+        }
+    };
 
     // /**
     //  * Set the canvas to dragging mode on mousedown.
@@ -121,38 +123,63 @@ export default class DefaultListeners implements CanvasListeners {
     //     }
     // };
 
-    // /**
-    //  * Move the canvas on mousemove when in dragging mode
-    //  */
-    // handleMouseMove = (fabricEvent: fabric.IEvent<MouseEvent>) => {
-    //     // default cursor mode
-    //     if (this.canvas.isDragging) {
-    //         const evt = fabricEvent.e;
-    //         const vpt = this.canvas.viewportTransform;
-    //         if (vpt) {
-    //             vpt[4] += evt.clientX - this.canvas.panDragStartPos.x;
-    //             vpt[5] += evt.clientY - this.canvas.panDragStartPos.y;
-    //             this.canvas.requestRenderAll();
-    //             this.canvas.panDragStartPos = {
-    //                 x: evt.clientX,
-    //                 y: evt.clientY,
-    //             };
-    //         }
-    //     }
-    // };
+    /**
+     * Set the canvas to dragging mode on mousedown.
+     */
+    handleMouseDown = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+        const evt = fabricEvent.e;
+        // Don't move the canvas if the mouse is on a marcher
+        if (OpenMarchCanvas.selectionHasMarchers(fabricEvent)) {
+            this.canvas.selectDragStart = {
+                x: evt.clientX,
+                y: evt.clientY,
+                time: Date.now(),
+            };
+        } else if (!evt.shiftKey) {
+            // If no marcher is selected and the shift key is not pressed, move the canvas with the mouse
+            this.canvas.isDragging = true;
+            this.canvas.selection = false;
+            this.canvas.panDragStartPos = { x: evt.clientX, y: evt.clientY };
+        }
+    };
 
-    // /**
-    //  * Handler for the mouse up event
-    //  * Disables dragging and re-enables selection
-    //  *
-    //  * If the mouse was only clicked and not dragged, select the marcher and do not move it
-    //  */
-    // handleMouseUp = (fabricEvent: fabric.IEvent<MouseEvent>) => {
-    //     // on mouse up we want to recalculate new interaction
-    //     // for all objects, so we call setViewportTransform
-    //     if (this.canvas.viewportTransform)
-    //         this.canvas.setViewportTransform(this.canvas.viewportTransform);
-    //     this.canvas.isDragging = false;
-    //     this.canvas.selection = true;
-    // };
+    /**
+     * Move the canvas on mouse:move when in dragging mode
+     */
+    handleMouseMove = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+        if (this.canvas.isDragging) {
+            const e = fabricEvent.e;
+            const vpt = this.canvas.viewportTransform;
+            if (!vpt) {
+                console.error(
+                    "Viewport transform not set - handleMouseMove: Canvas.tsx"
+                );
+                return;
+            }
+            vpt[4] += e.clientX - this.canvas.panDragStartPos.x;
+            vpt[5] += e.clientY - this.canvas.panDragStartPos.y;
+            this.canvas.requestRenderAll();
+            this.canvas.panDragStartPos = { x: e.clientX, y: e.clientY };
+        }
+    };
+
+    /**
+     * Handler for the mouse up event
+     * Disables dragging and re-enables selection
+     *
+     * If the mouse was only clicked and not dragged, select the marcher and do not move it
+     */
+    handleMouseUp = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+        if (!this.canvas.viewportTransform) {
+            console.error(
+                "Viewport transform is not set. This will cause issues with panning around the canvas."
+            );
+            return;
+        }
+        // on mouse up we want to recalculate new interaction
+        // for all objects, so we call setViewportTransform
+        this.canvas.setViewportTransform(this.canvas.viewportTransform);
+        this.canvas.isDragging = false;
+        this.canvas.selection = true;
+    };
 }

@@ -1,7 +1,6 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { FieldProperties } from "@/global/classes/FieldProperties";
 
 /**
  * A separate mock file than global mocks since the canvas will likely be quite large and have many mocks.
@@ -133,7 +132,7 @@ export const mockMarcherPages: MarcherPage[] = [
         notes: undefined,
     },
     {
-        id: 1,
+        id: 7,
         id_for_html: "marcherPage_7",
         marcher_id: 1,
         page_id: 3,
@@ -142,7 +141,7 @@ export const mockMarcherPages: MarcherPage[] = [
         notes: "This is the first marcherPage",
     },
     {
-        id: 2,
+        id: 8,
         id_for_html: "marcherPage_8",
         marcher_id: 2,
         page_id: 3,
@@ -151,7 +150,7 @@ export const mockMarcherPages: MarcherPage[] = [
         notes: "This is the second marcherPage",
     },
     {
-        id: 3,
+        id: 9,
         id_for_html: "marcherPage_9",
         marcher_id: 3,
         page_id: 3,
@@ -159,11 +158,31 @@ export const mockMarcherPages: MarcherPage[] = [
         y: -500,
         notes: undefined,
     },
+    {
+        id: 10,
+        id_for_html: "marcherPage_10",
+        marcher_id: 4,
+        page_id: 1,
+        x: -200,
+        y: -500,
+        notes: undefined,
+    },
+    {
+        id: 11,
+        id_for_html: "marcherPage_11",
+        marcher_id: 4,
+        page_id: 2,
+        x: -200,
+        y: -500,
+        notes: undefined,
+    },
+    {
+        id: 12,
+        id_for_html: "marcherPage_12",
+        marcher_id: 4,
+        page_id: 3,
+        x: -200,
+        y: -500,
+        notes: undefined,
+    },
 ] as const;
-
-/**
- * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
- */
-export const mockNCAAFieldProperties: FieldProperties = new FieldProperties(
-    FieldProperties.Template.NCAA
-);

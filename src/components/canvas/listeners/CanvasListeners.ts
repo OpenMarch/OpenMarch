@@ -3,8 +3,8 @@
  */
 export default interface CanvasListeners {
     handleObjectModified: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
-    // handleSelect: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
-    // handleDeselect: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
+    handleSelect: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
+    handleDeselect: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
     handleMouseDown: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
     handleMouseMove: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
     handleMouseUp: (fabricEvent: fabric.IEvent<MouseEvent>) => void;

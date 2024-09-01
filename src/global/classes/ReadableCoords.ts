@@ -1,16 +1,16 @@
 import { Checkpoint, FieldProperties } from "./FieldProperties";
-import { MarcherPage } from "./MarcherPage";
+import MarcherPage from "./MarcherPage";
 
 export enum X_DESCRIPTION {
     INSIDE = "inside",
     OUTSIDE = "outside",
-    ON = "On"
+    ON = "On",
 }
 
 export enum Y_DESCRIPTION {
     ON = "On",
     IN_FRONT_OF = "in front of",
-    BEHIND = "behind"
+    BEHIND = "behind",
 }
 
 /**
@@ -61,8 +61,15 @@ export class ReadableCoords {
      * @param roundingDenominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
      *  Optional, nearest 1/100 step by default.
      */
-    constructor({ x, y, roundingDenominator = 100 }:
-        { x: number; y: number; roundingDenominator?: number; }) {
+    constructor({
+        x,
+        y,
+        roundingDenominator = 100,
+    }: {
+        x: number;
+        y: number;
+        roundingDenominator?: number;
+    }) {
         this.originalX = x;
         this.originalY = y;
         this.roundingDenominator = roundingDenominator;
@@ -84,8 +91,15 @@ export class ReadableCoords {
      *  Optional, nearest 1/100 step by default.
      * @returns A new ReadableCoords object created from a MarcherPage object.
      */
-    static fromMarcherPage(marcherPage: MarcherPage, roundingDenominator = 100) {
-        return new ReadableCoords({ x: marcherPage.x, y: marcherPage.y, roundingDenominator });
+    static fromMarcherPage(
+        marcherPage: MarcherPage,
+        roundingDenominator = 100
+    ) {
+        return new ReadableCoords({
+            x: marcherPage.x,
+            y: marcherPage.y,
+            roundingDenominator,
+        });
     }
 
     /**
@@ -115,9 +129,13 @@ export class ReadableCoords {
      */
     private parseCanvasCoords(x: number, y: number): ReadableCoords {
         if (!ReadableCoords._fieldProperties)
-            throw new Error("Field properties must be defined to create ReadableCoords");
+            throw new Error(
+                "Field properties must be defined to create ReadableCoords"
+            );
         if (!this.roundingDenominator)
-            throw new Error("roundingDenominator must be defined to create ReadableCoords");
+            throw new Error(
+                "roundingDenominator must be defined to create ReadableCoords"
+            );
         if (this.roundingDenominator <= 0)
             throw new Error("roundingDenominator must be greater than 0");
 
@@ -125,14 +143,20 @@ export class ReadableCoords {
         const output: { [key: string]: any } = {};
 
         const stepsFromCenterFront = {
-            x: (x - props.centerFrontPoint.xPixels) / FieldProperties.PIXELS_PER_STEP, // X trends positive towards side 2 (right on the canvas)
-            y: (y - props.centerFrontPoint.yPixels) / FieldProperties.PIXELS_PER_STEP // Y trends positive towards the front of the field (bottom on the canvas)
+            x:
+                (x - props.centerFrontPoint.xPixels) /
+                FieldProperties.PIXELS_PER_STEP, // X trends positive towards side 2 (right on the canvas)
+            y:
+                (y - props.centerFrontPoint.yPixels) /
+                FieldProperties.PIXELS_PER_STEP, // Y trends positive towards the front of the field (bottom on the canvas)
         };
         // Round to nearest 1/n step
         stepsFromCenterFront.x =
-            (Math.round(stepsFromCenterFront.x * this.roundingDenominator) / this.roundingDenominator);
+            Math.round(stepsFromCenterFront.x * this.roundingDenominator) /
+            this.roundingDenominator;
         stepsFromCenterFront.y =
-            (Math.round(stepsFromCenterFront.y * this.roundingDenominator) / this.roundingDenominator);
+            Math.round(stepsFromCenterFront.y * this.roundingDenominator) /
+            this.roundingDenominator;
 
         /* ----------- Calculate X descriptions ----------- */
         // Determine which side of the field the marcher is on
@@ -143,14 +167,20 @@ export class ReadableCoords {
 
         // Determine which yard line the marcher is on
         const xCheckpoints = props.xCheckpoints;
-        output.xCheckpoint = ReadableCoords.findClosestCheckpoint(xStepsFromCenter, xCheckpoints);
+        output.xCheckpoint = ReadableCoords.findClosestCheckpoint(
+            xStepsFromCenter,
+            xCheckpoints
+        );
 
         // Determine how many steps inside or outside the xCheckpoint (yard line) the marcher is
         // Absolute value is used to maintain symmetry from the center
-        const stepsFromXCheckpoint = Math.abs(output.xCheckpoint.stepsFromCenterFront) - Math.abs(xStepsFromCenter);
+        const stepsFromXCheckpoint =
+            Math.abs(output.xCheckpoint.stepsFromCenterFront) -
+            Math.abs(xStepsFromCenter);
         // Define the marcher's relation to the xCheckpoint
         if (stepsFromXCheckpoint === 0) output.xDescription = X_DESCRIPTION.ON;
-        else if (stepsFromXCheckpoint < 0) output.xDescription = X_DESCRIPTION.OUTSIDE;
+        else if (stepsFromXCheckpoint < 0)
+            output.xDescription = X_DESCRIPTION.OUTSIDE;
         else output.xDescription = X_DESCRIPTION.INSIDE;
 
         // Define the xSteps of the output and round to 2 decimal places
@@ -162,37 +192,55 @@ export class ReadableCoords {
 
         // Determine which yCheckpoint (hash/sideline) the marcher is guiding to
         const yCheckpoints = props.yCheckpoints;
-        output.yCheckpoint = ReadableCoords.findClosestCheckpoint(yStepsFromCenter, yCheckpoints);
+        output.yCheckpoint = ReadableCoords.findClosestCheckpoint(
+            yStepsFromCenter,
+            yCheckpoints
+        );
 
         // Determine how many steps in front or behind of the yCheckpoint that the marcher is
-        const stepsFromYCheckpoint = output.yCheckpoint.stepsFromCenterFront - yStepsFromCenter;
+        const stepsFromYCheckpoint =
+            output.yCheckpoint.stepsFromCenterFront - yStepsFromCenter;
 
         // Define the marcher's relation to the yCheckpoint
         if (stepsFromYCheckpoint === 0) output.yDescription = Y_DESCRIPTION.ON;
-        else if (stepsFromYCheckpoint < 0) output.yDescription = Y_DESCRIPTION.IN_FRONT_OF
+        else if (stepsFromYCheckpoint < 0)
+            output.yDescription = Y_DESCRIPTION.IN_FRONT_OF;
         else output.yDescription = Y_DESCRIPTION.BEHIND;
 
         // Define the ySteps of the output and round to 2 decimal places
         output.ySteps = Math.round(Math.abs(stepsFromYCheckpoint) * 100) / 100;
 
-        return output as ReadableCoords
+        return output as ReadableCoords;
     }
 
-    private static findClosestCheckpoint(stepsFromCenterFront: number, checkpoints: Checkpoint[]) {
+    private static findClosestCheckpoint(
+        stepsFromCenterFront: number,
+        checkpoints: Checkpoint[]
+    ) {
         // Find the closest checkpoint
         const output = checkpoints.reduce((closest, current) => {
             return (
                 // Make sure it is a reference checkpoint
-                current.useAsReference
-                    &&
+                current.useAsReference &&
                     // If the current checkpoint is closer to the marcher than the closest checkpoint
-                    (Math.abs(current.stepsFromCenterFront - stepsFromCenterFront) < Math.abs(closest.stepsFromCenterFront - stepsFromCenterFront)
+                    (Math.abs(
+                        current.stepsFromCenterFront - stepsFromCenterFront
+                    ) <
+                        Math.abs(
+                            closest.stepsFromCenterFront - stepsFromCenterFront
+                        ) ||
                         // Handle the case where the marcher is equidistant from two checkpoints (default to the one closer to the center/front)
-                        || (((Math.abs(current.stepsFromCenterFront - stepsFromCenterFront) === Math.abs(closest.stepsFromCenterFront - stepsFromCenterFront)))
-                            && (Math.abs(current.stepsFromCenterFront) < Math.abs(closest.stepsFromCenterFront))
-                        )
-                    )
-                    ? current : closest
+                        (Math.abs(
+                            current.stepsFromCenterFront - stepsFromCenterFront
+                        ) ===
+                            Math.abs(
+                                closest.stepsFromCenterFront -
+                                    stepsFromCenterFront
+                            ) &&
+                            Math.abs(current.stepsFromCenterFront) <
+                                Math.abs(closest.stepsFromCenterFront)))
+                    ? current
+                    : closest
             );
         });
         if (!output) throw new Error("No checkpoint found");
@@ -209,10 +257,18 @@ export class ReadableCoords {
      * 0 steps returns an empty string.
      * (E.g. "3.14 steps ", "2 steps ", "1 step " - "3.14 ", "2 ", "1 ")
      */
-    private static formatStepsString(steps: number, includeStepsString = false, includeTrailingSpace = true) {
+    private static formatStepsString(
+        steps: number,
+        includeStepsString = false,
+        includeTrailingSpace = true
+    ) {
         if (steps === 0) return "";
         const roundedSteps = Math.round(steps * 100) / 100;
-        const stepString = includeStepsString ? (steps === 1 ? " step" : " steps") : "";
+        const stepString = includeStepsString
+            ? steps === 1
+                ? " step"
+                : " steps"
+            : "";
         const trailingSpace = includeTrailingSpace ? " " : "";
         return roundedSteps + stepString + trailingSpace;
     }
@@ -253,12 +309,19 @@ export class ReadableCoords {
      * @returns A string description of the marcher's readable x coordinate.
      * (E.g. "3 steps inside 35 yard line side 1", "On 40 yard line side 2")
      */
-    toVerboseStringX({ includeStepsString = false }: { includeStepsString?: boolean; } = {}) {
+    toVerboseStringX({
+        includeStepsString = false,
+    }: { includeStepsString?: boolean } = {}) {
         // Handle case where the marcher is on the center x checkpoint
-        return (this.xCheckpoint.stepsFromCenterFront === 0 && this.xSteps === 0 ? "" : `S${this.side}: `) +
-            ReadableCoords.formatStepsString(this.xSteps, includeStepsString)
-            + this.xDescription + " "
-            + this.xCheckpoint.name;
+        return (
+            (this.xCheckpoint.stepsFromCenterFront === 0 && this.xSteps === 0
+                ? ""
+                : `S${this.side}: `) +
+            ReadableCoords.formatStepsString(this.xSteps, includeStepsString) +
+            this.xDescription +
+            " " +
+            this.xCheckpoint.name
+        );
     }
 
     /**
@@ -269,10 +332,15 @@ export class ReadableCoords {
      */
     toTerseStringX() {
         // Handle case where the marcher is on the center x checkpoint
-        return (this.xCheckpoint.stepsFromCenterFront === 0 && this.xSteps === 0 ? "" : `S${this.side}: `) +
-            ReadableCoords.formatStepsString(this.xSteps)
-            + ReadableCoords.getTerseXDescription(this.xDescription) + " "
-            + this.xCheckpoint.terseName;
+        return (
+            (this.xCheckpoint.stepsFromCenterFront === 0 && this.xSteps === 0
+                ? ""
+                : `S${this.side}: `) +
+            ReadableCoords.formatStepsString(this.xSteps) +
+            ReadableCoords.getTerseXDescription(this.xDescription) +
+            " " +
+            this.xCheckpoint.terseName
+        );
     }
     /**
      * Create a verbose description of a ReadableCoords' X properties.
@@ -282,12 +350,19 @@ export class ReadableCoords {
      * @returns A string description of the marcher's readable x coordinate.
      * ("5 steps behind front hash", "On front sideline")
      */
-    toVerboseStringY({ includeStepsString = false, includeFieldStandard = false }:
-        { includeStepsString?: boolean; includeFieldStandard?: boolean; } = {}) {
-        return ReadableCoords.formatStepsString(this.ySteps, includeStepsString)
-            + this.yDescription + " "
-            + this.yCheckpoint.name
-            + (includeFieldStandard && this.yCheckpoint.fieldStandard ? ` (${this.yCheckpoint.fieldStandard})` : "");
+    toVerboseStringY({
+        includeStepsString = false,
+        includeFieldStandard = false,
+    }: { includeStepsString?: boolean; includeFieldStandard?: boolean } = {}) {
+        return (
+            ReadableCoords.formatStepsString(this.ySteps, includeStepsString) +
+            this.yDescription +
+            " " +
+            this.yCheckpoint.name +
+            (includeFieldStandard && this.yCheckpoint.fieldStandard
+                ? ` (${this.yCheckpoint.fieldStandard})`
+                : "")
+        );
     }
 
     /**
@@ -297,10 +372,17 @@ export class ReadableCoords {
      * @returns A string description of the marcher's readable  coordinate.
      * ("9 fr. BH" -> 9 steps in front of the back hash , "12 be. FSL" -> 12 steps behind front sideline , "On FH")
      */
-    toTerseStringY({ includeFieldStandard = false }: { includeFieldStandard?: boolean; } = {}) {
-        return ReadableCoords.formatStepsString(this.ySteps)
-            + ReadableCoords.getTerseYDescription(this.yDescription) + " "
-            + this.yCheckpoint.terseName
-            + (includeFieldStandard && this.yCheckpoint.fieldStandard ? ` (${this.yCheckpoint.fieldStandard})` : "");
+    toTerseStringY({
+        includeFieldStandard = false,
+    }: { includeFieldStandard?: boolean } = {}) {
+        return (
+            ReadableCoords.formatStepsString(this.ySteps) +
+            ReadableCoords.getTerseYDescription(this.yDescription) +
+            " " +
+            this.yCheckpoint.terseName +
+            (includeFieldStandard && this.yCheckpoint.fieldStandard
+                ? ` (${this.yCheckpoint.fieldStandard})`
+                : "")
+        );
     }
 }

@@ -6,7 +6,7 @@ import { usePageStore } from "@/stores/page/usePageStore";
 import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
-import { MarcherPage } from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";

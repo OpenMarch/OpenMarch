@@ -5,7 +5,7 @@ import { DatabaseResponse } from "electron/database/database.services";
  * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
  * There should be a MarcherPage for every Marcher and Page combination (M * P).
  */
-export class MarcherPage {
+export default class MarcherPage {
     /** The id of the MarcherPage in the database */
     readonly id: number;
     /** The id of the page for use in the HTML. E.g. "marcherPage_2" for MarcherPage with ID of 2 */
@@ -120,8 +120,6 @@ export class MarcherPage {
         );
     }
 }
-
-export default MarcherPage;
 
 /**
  * Defines the editable fields of a MarcherPage.

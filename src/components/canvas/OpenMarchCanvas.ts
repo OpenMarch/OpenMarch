@@ -11,7 +11,6 @@ import Marcher from "@/global/classes/Marcher";
 import { IGroupOptions } from "fabric/fabric-impl";
 import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
-import Page from "@/global/classes/Page";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -22,6 +21,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The distance threshold is used to determine if the mouse was clicked or dragged */
     readonly DISTANCE_THRESHOLD = 20;
 
+    /**
+     * This lock prevents infinite loops when selecting marchers.
+     * Set it to true when changing selection, and check that this is false before handling selection.
+     * Set it to false after making selection
+     */
+    handleSelectLock = false;
     /** Denotes whether the Canvas itself is being dragged by the user to pan the view */
     isDragging = false;
     /** The point where the user's mouse was when they started dragging the canvas. This is used to adjust the viewport transform. */
@@ -32,25 +37,25 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: 0,
         time: 0,
     };
+    /** All of the marchers that are selected in the selectedMarcher Context  */
+    globalSelectedMarchers: Marcher[] = [];
     /** The timeout for when object caching should be re-enabled */
-    private zoomTimeout: NodeJS.Timeout | undefined;
-
+    private _zoomTimeout: NodeJS.Timeout | undefined;
     private _uiSettings: UiSettings;
 
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
     maxCacheSideLimit = 11000;
 
-    // STATE FUNCTIONS
-    // These must be set by a react component that uses this canvas
-    private _undefinedStateFunction = (name: string) => {
+    /**
+     * Intended to set the selected marchers in the useSelectedMarchers context.
+     * This must be set and updated in a React component in a useEffect hook
+     */
+    setSelectedMarchers: (marchers: Marcher[]) => void = (marchers: any) => {
         console.error(
-            `State function not set: ${name}. The canvas will not work as expected`
+            "setSelectedMarchers function not set. The canvas will not work as expected"
         );
     };
-    /** Renders all marchers on the canvas. Must be updated with current state */
-    // renderMarchers: () => void = () =>
-    //     this._undefinedStateFunction("renderMarchers");
 
     /**
      * The reference to the grid (the lines on the field) object to use for caching
@@ -116,13 +121,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         clearListeners && this.clearListeners();
 
         this.on("object:modified", listeners.handleObjectModified);
-        // this.on("selection:updated", listeners.handleSelect);
-        // this.on("selection:created", listeners.handleSelect);
-        // this.on("selection:cleared", listeners.handleDeselect);
+        this.on("selection:updated", listeners.handleSelect);
+        this.on("selection:created", listeners.handleSelect);
+        this.on("selection:cleared", listeners.handleDeselect);
 
-        // this.on("mouse:down", listeners.handleMouseDown);
-        // this.on("mouse:move", listeners.handleMouseMove);
-        // this.on("mouse:up", listeners.handleMouseUp);
+        this.on("mouse:down", listeners.handleMouseDown);
+        this.on("mouse:move", listeners.handleMouseMove);
+        this.on("mouse:up", listeners.handleMouseUp);
     }
 
     /**
@@ -130,72 +135,71 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      */
     clearListeners() {
         this.off("object:modified");
-        // this.off("selection:updated");
-        // this.off("selection:created");
-        // this.off("selection:cleared");
+        this.off("selection:updated");
+        this.off("selection:created");
+        this.off("selection:cleared");
 
-        // this.off("mouse:down");
-        // this.off("mouse:move");
-        // this.off("mouse:up");
+        this.off("mouse:down");
+        this.off("mouse:move");
+        this.off("mouse:up");
     }
 
     /**
      * Set the given CanvasMarchers as the selected marchers both in the app and on the Canvas
      *
-     * @param selectedObjects The CanvasMarchers to set as selected (can pass any fabric.Object, they are filtered)
+     * @param newSelectedCanvasMarchers The new selected CanvasMarchers
+     * @param globalSelectedMarchers The current selected marchers in the app
      */
-    setSelectedCanvasMarchers = ({
-        selectedObjects,
-        setSelectedMarchers,
-        uiSettings,
-        allMarchers,
-    }: {
-        selectedObjects: fabric.Object[];
-        setSelectedMarchers: (newSelectedMarchers: Marcher[]) => void;
-        uiSettings: UiSettings;
-        allMarchers: Marcher[];
-    }) => {
-        // console.log("selectLock", handleSelectLock.current);
-        // if (handleSelectLock.current) return;
-        // When multiple marchers are selected, mark as them as the active object
-        // This is how the view of the most current active marcher is maintained
-        // handleSelectLock.current = true;
-        console.log("CANVAS", this);
-        if (selectedObjects.length > 1) {
-            // The current active object needs to be discarded before creating a new active selection
-            // This is due to buggy behavior in Fabric.js
-            this.discardActiveObject();
-            const selectedCanvasMarchers =
-                this.getActiveObjectsByType(CanvasMarcher);
+    setSelectedCanvasMarchers = (
+        newSelectedCanvasMarchers: CanvasMarcher[]
+    ) => {
+        if (this.handleSelectLock) return;
+        this.handleSelectLock = true;
 
-            const activeSelection = new fabric.ActiveSelection(
-                selectedCanvasMarchers,
-                {
-                    canvas: this,
-                    ...ActiveObjectArgs,
-                }
+        // Check if all the marchers are already selected. If they are, return
+        // This is to prevent infinite loops with react state
+        const newMarcherObjs: Marcher[] = newSelectedCanvasMarchers.map(
+            (canvasMarcher) => canvasMarcher.marcherObj
+        );
+        if (
+            !this.marchersAreAllSelected({
+                marchersToLookFor: newMarcherObjs,
+            })
+        ) {
+            // Not all marchers are selected, so update the selected marchers
+
+            if (newSelectedCanvasMarchers.length > 1) {
+                // The current active object needs to be discarded before creating a new active selection
+                // This is due to buggy behavior in Fabric.js
+                this.discardActiveObject();
+
+                const activeSelection = new fabric.ActiveSelection(
+                    newSelectedCanvasMarchers,
+                    {
+                        canvas: this,
+                        ...ActiveObjectArgs,
+                    }
+                );
+
+                this.setActiveObject(activeSelection);
+                this.requestRenderAll();
+            }
+
+            const activeObject = this.getActiveObject();
+            if (activeObject) {
+                activeObject.lockMovementX = this.uiSettings.lockX;
+                activeObject.lockMovementY = this.uiSettings.lockY;
+            }
+
+            const newSelectedMarchers = newSelectedCanvasMarchers.map(
+                (newSelectedCanvasMarcher) =>
+                    newSelectedCanvasMarcher.marcherObj
             );
-
-            this.setActiveObject(activeSelection);
-            this.requestRenderAll();
+            this.setSelectedMarchers(newSelectedMarchers);
         }
 
-        const activeObject = this.getActiveObject();
-
-        // Apply the lock settings to the active object
-        if (activeObject) {
-            activeObject.lockMovementX = uiSettings.lockX;
-            activeObject.lockMovementY = uiSettings.lockY;
-        }
-
-        const activeMarcherIds = this.getActiveObjectsByType(CanvasMarcher).map(
-            (activeObject) => activeObject.marcherObj.id
-        );
-        console.log("ACTIVE MARCHER IDS", activeMarcherIds);
-        const newSelectedMarchers = allMarchers.filter((marcher) =>
-            activeMarcherIds.includes(marcher.id)
-        );
-        setSelectedMarchers(newSelectedMarchers);
+        // is this safe? Could there be a point when this is set to false before the handler has a chance to run?
+        this.handleSelectLock = false;
     };
 
     /******* Marcher Functions *******/
@@ -244,6 +248,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
 
         this.requestRenderAll();
+    };
+
+    /**
+     * Reset all marchers on the canvas to the positions defined in their MarcherPage objects
+     */
+    refreshMarchers = () => {
+        console.log("REFRESHING MARCHERS");
+        const canvasMarchers = this.getCanvasMarchers();
+        canvasMarchers.forEach((canvasMarcher) => {
+            canvasMarcher.setMarcherCoords(canvasMarcher.marcherPage);
+        });
     };
 
     /**
@@ -388,9 +403,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // set objectCaching to false after 100ms to improve performance after zooming
         // This is why the grid is blurry but fast while zooming, and sharp while not.
         // If it was always sharp (object caching on), it would be horrendously slow
-        clearTimeout(this.zoomTimeout);
-        this.zoomTimeout = setTimeout(() => {
-            if (this.staticGridRef.objectCaching) {
+        clearTimeout(this._zoomTimeout);
+        this._zoomTimeout = /** The */ setTimeout(() => {
+            if (/** The */ this.staticGridRef.objectCaching) {
                 this.staticGridRef.objectCaching = false;
                 this.renderAll();
             }
@@ -470,6 +485,71 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     public set uiSettings(uiSettings: UiSettings) {
         this._uiSettings = uiSettings;
     }
+
+    /*********************** SELECTION UTILITIES ***********************/
+    /**
+     * Checks if all of the given marchers are selected (or active) on the canvas and that
+     * they are also selected in the global state
+     *
+     * @param marchersToLookFor The Marchers to check if they are all selected
+     * @param globalSelectedMarchers The selected marchers in the app
+     * @returns true if all of the given marchers are selected, false otherwise
+     */
+    marchersAreAllSelected = ({
+        marchersToLookFor,
+    }: {
+        marchersToLookFor: Marcher[];
+    }) => {
+        const marcherIds = new Set<number>(
+            marchersToLookFor.map((marcher) => marcher.id)
+        );
+        const selectedMarcherIds = new Set<number>(
+            this.globalSelectedMarchers.map((marcher) => marcher.id)
+        );
+        const activeCanvasMarchers = this.getActiveObjectsByType(CanvasMarcher);
+        const activeCanvasMarcherIds: Set<number> = new Set(
+            activeCanvasMarchers.map(
+                (canvasMarcher) => canvasMarcher.marcherObj.id
+            )
+        );
+
+        // Check that the number of selected marchers is the same as the number of marchers to look for
+        if (
+            marcherIds.size !== activeCanvasMarcherIds.size &&
+            selectedMarcherIds.size !== activeCanvasMarcherIds.size
+        )
+            return false;
+        // Check that all of the marchers to look for are selected
+        for (const marcherId of marcherIds) {
+            if (
+                !activeCanvasMarcherIds.has(marcherId) ||
+                !selectedMarcherIds.has(marcherId)
+            )
+                return false;
+        }
+
+        return true;
+    };
+
+    /**
+     * Checks if the marchers are selected in the given fabric event (either a single one or a group)
+     *
+     * @param fabricEvent The fabric event to check if the marchers are selected
+     * @returns boolean
+     */
+    static selectionHasMarchers = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+        // fabricEvent.target checks if the mouse is on the canvas at all
+        return (
+            fabricEvent.target &&
+            (fabricEvent.target instanceof CanvasMarcher ||
+                // If the target is a group of marchers (currently only checked if any of the objects are marchers)
+                // Will not work when selecting multiple items that aren't marchers
+                // TODO - this is accessing a private property of fabric.Object. This is not ideal
+                (fabricEvent.target as any)._objects.some(
+                    (obj: any) => obj instanceof CanvasMarcher
+                ))
+        );
+    };
 
     /*********************** PRIVATE STATIC METHODS ***********************/
     /**

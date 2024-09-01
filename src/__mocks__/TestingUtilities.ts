@@ -1,5 +1,5 @@
 import { Marcher } from "@/global/classes/Marcher";
-import { MarcherPage } from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 
 /**
@@ -11,18 +11,23 @@ import Page from "@/global/classes/Page";
  * @param defaultY
  * @returns MarcherPage[]
  */
-export function createMarcherPages(marchers: Marcher[], pages: Page[], defaultX = 0, defaultY = 0): MarcherPage[] {
+export function createMarcherPages(
+    marchers: Marcher[],
+    pages: Page[],
+    defaultX = 0,
+    defaultY = 0
+): MarcherPage[] {
     const marcherPages: MarcherPage[] = [];
     let currentId = 1;
-    marchers.forEach(marcher => {
-        pages.forEach(page => {
+    marchers.forEach((marcher) => {
+        pages.forEach((page) => {
             marcherPages.push({
                 id: currentId,
                 id_for_html: "marcher_page_" + currentId,
                 marcher_id: marcher.id,
                 page_id: page.id,
                 x: defaultX,
-                y: defaultY
+                y: defaultY,
             });
             currentId++;
         });

@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef, useEffect, useCallback } from "react";
-import { fabric } from "fabric";
+import { useRef, useEffect, useState } from "react";
 import { useUiSettingsStore } from "../../stores/uiSettings/useUiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
@@ -9,14 +7,9 @@ import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { MarcherPage } from "@/global/classes/MarcherPage";
-import CanvasMarcher from "@/components/canvas/CanvasMarcher";
-import OpenMarchCanvas, {
-    ActiveObjectArgs,
-    CanvasColors,
-} from "./OpenMarchCanvas";
+import MarcherPage from "@/global/classes/MarcherPage";
+import OpenMarchCanvas, { CanvasColors } from "./OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
-import Marcher from "@/global/classes/Marcher";
 
 /**
  * The field/stage UI of OpenMarch
@@ -40,251 +33,56 @@ export default function Canvas({
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
-    const canvas = useRef<OpenMarchCanvas>();
+    const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
-    const dragStart = useRef<{ x: number; y: number; time: number }>({
-        x: 0,
-        y: 0,
-        time: Date.now(),
-    });
-    // Not a real lock, just a way to prevent infinite loops
-    const handleSelectLock = useRef<boolean>(false);
-
-    /* -------------------------- Marcher Functions-------------------------- */
-
-    const setSelectedCanvasMarchers = (
-        newSelectedCanvasMarchers: CanvasMarcher[],
-        setSelectedMarchers: (marchers: Marcher[]) => void
-    ) => {
-        if (!canvas.current) return;
-        if (newSelectedCanvasMarchers.length > 1) {
-            // The current active object needs to be discarded before creating a new active selection
-            // This is due to buggy behavior in Fabric.js
-            (canvas.current as fabric.Canvas).discardActiveObject();
-
-            const activeSelection = new fabric.ActiveSelection(
-                newSelectedCanvasMarchers,
-                {
-                    canvas: canvas.current,
-                    ...ActiveObjectArgs,
-                }
-            );
-
-            (canvas.current as fabric.Canvas).setActiveObject(activeSelection);
-            canvas.current.requestRenderAll();
-        }
-
-        const activeObject = canvas.current.getActiveObject();
-        if (activeObject) {
-            activeObject.lockMovementX = uiSettings.lockX;
-            activeObject.lockMovementY = uiSettings.lockY;
-        }
-
-        const newSelectedMarchers = newSelectedCanvasMarchers.map(
-            (canvasMarcher) => canvasMarcher.marcherObj
-        );
-        setSelectedMarchers(newSelectedMarchers);
-    };
-
-    /* -------------------------- Listener Functions -------------------------- */
-    /**
-     * Set the selected marcher(s) when selected element changes
-     */
-    const handleSelect = useCallback(
-        (e: { selected: any[] }) => {
-            // // Ensure that the handleSelect function is not called while the lockHandelSelect is true. Prevents infinite loop
-            // // This semaphore is resolved in a useEffect that sets the active object to the selected marchers
-            if (handleSelectLock.current) return;
-
-            // // When multiple marchers are selected, mark as them as the active object
-            // // This is how the view of the most current active marcher is maintained
-            handleSelectLock.current = true;
-            setSelectedCanvasMarchers(e.selected, setSelectedMarchers);
-            // if (e.selected.length > 1) {
-            //     // The current active object needs to be discarded before creating a new active selection
-            //     // This is due to buggy behavior in Fabric.js
-            //     (canvas.current as fabric.Canvas).discardActiveObject();
-            //     const selectedCanvasMarchers: CanvasMarcher[] =
-            //         e.selected.filter(
-            //             (canvasObject: CanvasMarcher) =>
-            //                 canvasObject instanceof CanvasMarcher
-            //         );
-
-            //     const activeSelection = new fabric.ActiveSelection(
-            //         selectedCanvasMarchers,
-            //         {
-            //             canvas: canvas.current,
-            //             ...ActiveObjectArgs,
-            //         }
-            //     );
-
-            //     (canvas.current as fabric.Canvas).setActiveObject(
-            //         activeSelection
-            //     );
-            //     canvas.current.requestRenderAll();
-            // }
-
-            // const activeObject = canvas.current.getActiveObject();
-            // if (activeObject) {
-            //     activeObject.lockMovementX = uiSettings.lockX;
-            //     activeObject.lockMovementY = uiSettings.lockY;
-            // }
-
-            // const activeObjectMarcherIds = canvas.current
-            //     .getActiveObjects()
-            //     .map((activeObject: any) =>
-            //         activeObject instanceof CanvasMarcher
-            //             ? activeObject.marcherObj.id
-            //             : null
-            //     );
-            // const newSelectedMarchers = marchers.filter((marcher) =>
-            //     activeObjectMarcherIds.includes(marcher.id)
-            // );
-            // setSelectedMarchers(newSelectedMarchers);
-        },
-        [setSelectedCanvasMarchers, setSelectedMarchers]
-    );
-
-    /**
-     * Deselect the marcher when the selection is cleared
-     */
-    const handleDeselect = useCallback(
-        (e: any) => {
-            if (e.deselected) {
-                setSelectedMarchers([]);
-            }
-        },
-        [setSelectedMarchers]
-    );
-
-    /**
-     * Set the canvas to dragging mode on mousedown.
-     */
-    const handleMouseDown = (opt: any) => {
-        if (!canvas.current) return;
-        const evt = opt.e;
-        // opt.target checks if the mouse is on the canvas at all
-        // Don't move the canvas if the mouse is on a marcher
-        const isMarcherSelection =
-            opt.target &&
-            (opt.target instanceof CanvasMarcher ||
-                // If the target is a group of marchers (currently only checked if any of the objects are marchers)
-                // Will not work when selecting multiple items that aren't marchers
-                opt.target._objects?.some(
-                    (obj: any) => obj instanceof CanvasMarcher
-                ));
-        if (isMarcherSelection) {
-            dragStart.current = {
-                x: evt.clientX,
-                y: evt.clientY,
-                time: Date.now(),
-            };
-        } else if (!evt.shiftKey) {
-            // If no marcher is selected and the shift key is not pressed, move the canvas with the mouse
-            canvas.current.isDragging = true;
-            canvas.current.selection = false;
-            canvas.current.panDragStartPos = { x: evt.clientX, y: evt.clientY };
-        }
-    };
-
-    /**
-     * Move the canvas on mousemove when in dragging mode
-     */
-    const handleMouseMove = (opt: any) => {
-        if (!canvas.current) return;
-        if (canvas.current.isDragging) {
-            const e = opt.e;
-            const vpt = canvas.current.viewportTransform;
-            if (!vpt) {
-                console.error(
-                    "Viewport transform not set - handleMouseMove: Canvas.tsx"
-                );
-                return;
-            }
-            vpt[4] += e.clientX - canvas.current.panDragStartPos.x;
-            vpt[5] += e.clientY - canvas.current.panDragStartPos.y;
-            canvas.current.requestRenderAll();
-            canvas.current.panDragStartPos = { x: e.clientX, y: e.clientY };
-        }
-    };
-
-    /**
-     * Handler for the mouse up event
-     * Disables dragging and re-enables selection
-     *
-     * If the mouse was only clicked and not dragged, select the marcher and do not move it
-     */
-    const handleMouseUp = (opt: any) => {
-        if (!canvas.current) return;
-        // on mouse up we want to recalculate new interaction
-        // for all objects, so we call setViewportTransform
-        canvas.current.setViewportTransform(canvas.current.viewportTransform);
-        canvas.current.isDragging = false;
-        canvas.current.selection = true;
-    };
-
-    const initiateListeners = useCallback(() => {
-        if (!canvas.current) return;
-        // canvas.current.on("object:modified", handleObjectModified);
-        canvas.current.setListeners(
-            new DefaultListeners({ canvas: canvas.current })
-        );
-        canvas.current.on("selection:updated", handleSelect);
-        canvas.current.on("selection:created", handleSelect);
-        canvas.current.on("selection:cleared", handleDeselect);
-
-        canvas.current.on("mouse:down", handleMouseDown);
-        canvas.current.on("mouse:move", handleMouseMove);
-        canvas.current.on("mouse:up", handleMouseUp);
-    }, [handleSelect, handleDeselect]);
-
-    const cleanupListeners = useCallback(() => {
-        if (!canvas.current) return;
-        // canvas.current.off("object:modified");
-        canvas.current.off("selection:updated");
-        canvas.current.off("selection:created");
-        canvas.current.off("selection:cleared");
-
-        canvas.current.off("mouse:down");
-        canvas.current.off("mouse:move");
-        canvas.current.off("mouse:up");
-    }, []);
 
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
     useEffect(() => {
-        if (canvas.current || !selectedPage || !fieldProperties) return; // If the canvas is already initialized, or the selected page is not set, return
+        if (canvas || !selectedPage || !fieldProperties) return; // If the canvas is already initialized, or the selected page is not set, return
 
         if (testCanvas) {
-            canvas.current = testCanvas;
+            setCanvas(testCanvas);
         } else {
-            canvas.current = new OpenMarchCanvas(
-                canvasRef.current,
-                fieldProperties,
-                uiSettings
+            setCanvas(
+                new OpenMarchCanvas(
+                    canvasRef.current,
+                    fieldProperties,
+                    uiSettings
+                )
             );
         }
-    }, [selectedPage, fieldProperties, testCanvas, uiSettings]);
+    }, [selectedPage, fieldProperties, testCanvas, uiSettings, canvas]);
 
     // Initiate listeners
     useEffect(() => {
-        if (canvas.current) {
+        if (canvas) {
             // Initiate listeners
-            initiateListeners();
+            canvas.setListeners(new DefaultListeners({ canvas: canvas }));
 
             // Cleanup
             return () => {
-                cleanupListeners();
+                canvas.clearListeners();
             };
         }
-    }, [initiateListeners, cleanupListeners]);
+    }, [canvas]);
+
+    // Set the canvas setSelectedMarchers function to the setSelectedMarchers function
+    useEffect(() => {
+        if (canvas) canvas.setSelectedMarchers = setSelectedMarchers;
+    }, [canvas, setSelectedMarchers]);
+
+    // Set the canvas globalSelectedMarchers to the selected marchers
+    useEffect(() => {
+        if (canvas) canvas.globalSelectedMarchers = selectedMarchers;
+    }, [canvas, selectedMarchers]);
 
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        if (canvas.current && selectedPage && marchers && marcherPages) {
-            canvas.current.renderMarchers({
+        if (canvas && selectedPage && marchers && marcherPages) {
+            canvas.renderMarchers({
                 selectedMarcherPages: MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.id
@@ -292,16 +90,16 @@ export default function Canvas({
                 allMarchers: marchers,
             });
         }
-    }, [marcherPages, marchers, selectedPage]);
+    }, [canvas, marcherPages, marchers, selectedPage]);
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
-        if (canvas.current && selectedPage) {
+        if (canvas && selectedPage) {
             const prevPage = selectedPage.getPreviousPage(pages);
             const nextPage = selectedPage.getNextPage(pages);
 
-            canvas.current.removePathways();
-            canvas.current.removeStaticCanvasMarchers();
+            canvas.removePathways();
+            canvas.removeStaticCanvasMarchers();
 
             // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
             let selectedPageMarcherPages: MarcherPage[] = [];
@@ -317,12 +115,12 @@ export default function Canvas({
                     prevPage.id
                 );
 
-                canvas.current.renderStaticMarchers({
+                canvas.renderStaticMarchers({
                     intendedMarcherPages: prevPageMarcherPages,
                     color: CanvasColors.previousPage,
                     allMarchers: marchers,
                 });
-                canvas.current.renderPathways({
+                canvas.renderPathways({
                     startPageMarcherPages: prevPageMarcherPages,
                     endPageMarcherPages: selectedPageMarcherPages,
                     color: CanvasColors.previousPage,
@@ -334,21 +132,22 @@ export default function Canvas({
                     nextPage.id
                 );
 
-                canvas.current.renderStaticMarchers({
+                canvas.renderStaticMarchers({
                     intendedMarcherPages: nextPageMarcherPages,
                     color: CanvasColors.nextPage,
                     allMarchers: marchers,
                 });
-                canvas.current.renderPathways({
+                canvas.renderPathways({
                     startPageMarcherPages: selectedPageMarcherPages,
                     endPageMarcherPages: nextPageMarcherPages,
                     color: CanvasColors.nextPage,
                 });
             }
 
-            canvas.current.sendCanvasMarchersToFront();
+            canvas.sendCanvasMarchersToFront();
         }
     }, [
+        canvas,
         marcherPages,
         marchers,
         pages,
@@ -359,34 +158,31 @@ export default function Canvas({
 
     // Set the active object to the selected marchers when they change outside of user-canvas-interaction
     useEffect(() => {
-        if (!(canvas.current && marchers) || selectedMarchers.length === 0)
-            return;
-        /**
-         * The handleSelectLock is used to prevent this effect from triggering when the user clicks on a marcher
-         *
-         * This Effect changes the active object to the selected marchers when they change outside of the canvas, so
-         * this "lock" is used to prevent an infinite loop of "select -> set active object -> select -> set active object"
-         */
-        if (handleSelectLock.current) {
-            handleSelectLock.current = false;
-            return;
-        }
+        if (!(canvas && marchers) || selectedMarchers.length === 0) return;
 
         const selectedMarcherIds = selectedMarchers.map(
             (marcher) => marcher.id
         );
-        const canvasMarchersToSelect = canvas.current
+        const canvasMarchersToSelect = canvas
             .getCanvasMarchers()
             .filter((canvasMarcher) =>
                 selectedMarcherIds.includes(canvasMarcher.marcherObj.id)
             );
-        handleSelect({ selected: canvasMarchersToSelect });
-    }, [marchers, selectedMarchers, marcherPages, selectedPage, handleSelect]);
+
+        canvas.setSelectedCanvasMarchers(canvasMarchersToSelect);
+    }, [
+        marchers,
+        selectedMarchers,
+        marcherPages,
+        selectedPage,
+        canvas,
+        setSelectedMarchers,
+    ]);
 
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {
-        if (canvas.current && selectedPage) {
+        if (canvas && selectedPage) {
             if (isPlaying) {
                 const nextPage = selectedPage.getNextPage(pages);
                 if (!nextPage) return;
@@ -394,7 +190,7 @@ export default function Canvas({
                 const nextPageMarcherPages = marcherPages.filter(
                     (marcherPage) => marcherPage.page_id === nextPage.id
                 );
-                canvas.current.getCanvasMarchers().forEach((canvasMarcher) => {
+                canvas.getCanvasMarchers().forEach((canvasMarcher) => {
                     const marcherPageToUse = nextPageMarcherPages.find(
                         (marcherPage) =>
                             marcherPage.marcher_id ===
@@ -416,7 +212,7 @@ export default function Canvas({
                     animationCallbacks.current.push(callback);
                 });
 
-                canvas.current.requestRenderAll();
+                canvas.requestRenderAll();
                 // Set the selected page after the animation is done and set isPlaying to false
                 timeoutID.current = setTimeout(() => {
                     const isLastPage = nextPage.getNextPage(pages) === null;
@@ -433,7 +229,7 @@ export default function Canvas({
                     clearTimeout(timeoutID.current);
                 }
 
-                canvas.current.renderMarchers({
+                canvas.renderMarchers({
                     selectedMarcherPages: MarcherPage.filterByPageId(
                         marcherPages,
                         selectedPage.id
@@ -443,6 +239,7 @@ export default function Canvas({
             }
         }
     }, [
+        canvas,
         isPlaying,
         marcherPages,
         marchers,
