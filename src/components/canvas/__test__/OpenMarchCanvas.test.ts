@@ -71,4 +71,100 @@ describe("OpenMarchCanvas", () => {
             () => {}
         );
     });
+
+    describe("uiSettings", () => {
+        // const expectObjectsTo
+
+        describe("lockX", () => {
+            it("has the correct initial settings - lockX", () => {
+                const NCAAFieldProperties = new FieldProperties(
+                    FieldProperties.Template.NCAA
+                );
+                const selectedPage = mockPages[0];
+                const canvas1 = new OpenMarchCanvas(null, NCAAFieldProperties, {
+                    ...falseyUiSettings,
+                    lockX: true,
+                });
+                canvas1.renderMarchers({
+                    allMarchers: mockMarchers,
+                    selectedMarcherPages: MarcherPage.filterByPageId(
+                        mockMarcherPages,
+                        selectedPage.id
+                    ),
+                });
+
+                expect(canvas1.uiSettings.lockX).toBe(true);
+
+                const canvas2 = new OpenMarchCanvas(null, NCAAFieldProperties, {
+                    ...falseyUiSettings,
+                    lockX: false,
+                });
+                canvas2.renderMarchers({
+                    allMarchers: mockMarchers,
+                    selectedMarcherPages: MarcherPage.filterByPageId(
+                        mockMarcherPages,
+                        selectedPage.id
+                    ),
+                });
+
+                expect(canvas2.uiSettings.lockX).toBe(false);
+            });
+
+            it("change setting", () => {
+                const NCAAFieldProperties = new FieldProperties(
+                    FieldProperties.Template.NCAA
+                );
+                const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
+                    ...falseyUiSettings,
+                    lockX: true,
+                });
+                const selectedPage = mockPages[0];
+                canvas.renderMarchers({
+                    allMarchers: mockMarchers,
+                    selectedMarcherPages: MarcherPage.filterByPageId(
+                        mockMarcherPages,
+                        selectedPage.id
+                    ),
+                });
+
+                expect(canvas.uiSettings.lockX).toBe(true);
+            });
+        });
+        it("lockY", () => {
+            const NCAAFieldProperties = new FieldProperties(
+                FieldProperties.Template.NCAA
+            );
+            const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
+                ...falseyUiSettings,
+                lockY: true,
+            });
+            const selectedPage = mockPages[0];
+            canvas.renderMarchers({
+                allMarchers: mockMarchers,
+                selectedMarcherPages: MarcherPage.filterByPageId(
+                    mockMarcherPages,
+                    selectedPage.id
+                ),
+            });
+            const canvasMarchers = canvas.getCanvasMarchers();
+            for (const marcher of mockMarchers) {
+                const canvasMarcher = canvasMarchers.find(
+                    (canvasMarcher) =>
+                        canvasMarcher.marcherObj.id === marcher.id
+                );
+                expect(canvasMarcher).toBeDefined();
+                if (!canvasMarcher) return;
+                const marcherPage = mockMarcherPages
+                    .filter(
+                        (marcherPage) => marcherPage.marcher_id === marcher.id
+                    )
+                    .sort((a, b) => a.page_id - b.page_id)[0];
+                expect(marcherPage).toBeDefined();
+                if (!marcherPage) return;
+                const canvasMarcherCoords = canvasMarcher.getMarcherCoords();
+                expect(canvasMarcherCoords.x).toBe(0);
+                expect(canvasMarcherCoords.y).toBe(marcherPage.y);
+            }
+        });
+    });
 });
