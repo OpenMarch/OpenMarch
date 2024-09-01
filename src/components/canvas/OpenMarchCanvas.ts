@@ -185,12 +185,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this.requestRenderAll();
             }
 
-            const activeObject = this.getActiveObject();
-            if (activeObject) {
-                activeObject.lockMovementX = this.uiSettings.lockX;
-                activeObject.lockMovementY = this.uiSettings.lockY;
-            }
-
             const newSelectedMarchers = newSelectedCanvasMarchers.map(
                 (newSelectedCanvasMarcher) =>
                     newSelectedCanvasMarcher.marcherObj
@@ -201,6 +195,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // is this safe? Could there be a point when this is set to false before the handler has a chance to run?
         this.handleSelectLock = false;
     };
+
+    /**
+     * Sets given object as the only active object on canvas
+     * This is an overload of the fabric.Canvas method to set the lockMovementX and lockMovementY properties
+     *
+     * @param object — Object to set as an active one
+     * @param e — Event (passed along when firing "object:selected")
+     * @return — thisArg
+     */
+    setActiveObject(object: fabric.Object, e?: Event): fabric.Canvas {
+        object.lockMovementX = this.uiSettings.lockX;
+        object.lockMovementY = this.uiSettings.lockY;
+        return super.setActiveObject(object, e);
+    }
 
     /******* Marcher Functions *******/
     /**
@@ -483,7 +491,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /*********************** SETTERS ***********************/
     /** Set the UI settings and make all of the changes in this canvas that correspond to it */
-    public set uiSettings(uiSettings: UiSettings) {
+    setUiSettings(uiSettings: UiSettings) {
         const activeObject = this.getActiveObject();
         this._uiSettings = uiSettings;
         if (activeObject) {

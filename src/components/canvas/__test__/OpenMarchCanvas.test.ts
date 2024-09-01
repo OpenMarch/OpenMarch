@@ -73,72 +73,16 @@ describe("OpenMarchCanvas", () => {
     });
 
     describe("uiSettings", () => {
-        // const expectObjectsTo
-
-        describe("lockX", () => {
-            it("has the correct initial settings - lockX", () => {
-                const NCAAFieldProperties = new FieldProperties(
-                    FieldProperties.Template.NCAA
-                );
-                const selectedPage = mockPages[0];
-                const canvas1 = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                    ...falseyUiSettings,
-                    lockX: true,
-                });
-                canvas1.renderMarchers({
-                    allMarchers: mockMarchers,
-                    selectedMarcherPages: MarcherPage.filterByPageId(
-                        mockMarcherPages,
-                        selectedPage.id
-                    ),
-                });
-
-                expect(canvas1.uiSettings.lockX).toBe(true);
-
-                const canvas2 = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                    ...falseyUiSettings,
-                    lockX: false,
-                });
-                canvas2.renderMarchers({
-                    allMarchers: mockMarchers,
-                    selectedMarcherPages: MarcherPage.filterByPageId(
-                        mockMarcherPages,
-                        selectedPage.id
-                    ),
-                });
-
-                expect(canvas2.uiSettings.lockX).toBe(false);
-            });
-
-            it("change setting", () => {
-                const NCAAFieldProperties = new FieldProperties(
-                    FieldProperties.Template.NCAA
-                );
-                const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                    ...falseyUiSettings,
-                    lockX: true,
-                });
-                const selectedPage = mockPages[0];
-                canvas.renderMarchers({
-                    allMarchers: mockMarchers,
-                    selectedMarcherPages: MarcherPage.filterByPageId(
-                        mockMarcherPages,
-                        selectedPage.id
-                    ),
-                });
-
-                expect(canvas.uiSettings.lockX).toBe(true);
-            });
-        });
-        it("lockY", () => {
+        it("has the correct initial settings", () => {
             const NCAAFieldProperties = new FieldProperties(
                 FieldProperties.Template.NCAA
             );
+            const selectedPage = mockPages[0];
             const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
                 ...falseyUiSettings,
-                lockY: true,
+                lockX: true,
+                lockY: false,
             });
-            const selectedPage = mockPages[0];
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
                 selectedMarcherPages: MarcherPage.filterByPageId(
@@ -146,25 +90,96 @@ describe("OpenMarchCanvas", () => {
                     selectedPage.id
                 ),
             });
+
+            expect(canvas.uiSettings.lockX).toBe(true);
+            expect(canvas.uiSettings.lockY).toBe(false);
+
+            // check that the correct UI settings are passed to the canvas
             const canvasMarchers = canvas.getCanvasMarchers();
-            for (const marcher of mockMarchers) {
-                const canvasMarcher = canvasMarchers.find(
-                    (canvasMarcher) =>
-                        canvasMarcher.marcherObj.id === marcher.id
-                );
-                expect(canvasMarcher).toBeDefined();
-                if (!canvasMarcher) return;
-                const marcherPage = mockMarcherPages
-                    .filter(
-                        (marcherPage) => marcherPage.marcher_id === marcher.id
-                    )
-                    .sort((a, b) => a.page_id - b.page_id)[0];
-                expect(marcherPage).toBeDefined();
-                if (!marcherPage) return;
-                const canvasMarcherCoords = canvasMarcher.getMarcherCoords();
-                expect(canvasMarcherCoords.x).toBe(0);
-                expect(canvasMarcherCoords.y).toBe(marcherPage.y);
-            }
+            canvas.setActiveObject(canvasMarchers[0]);
+            const activeObject = canvas.getActiveObject();
+            expect(activeObject).toBe(canvasMarchers[0]);
+            expect(activeObject?.lockMovementX).toBe(true);
+            expect(activeObject?.lockMovementY).toBe(false);
+        });
+
+        it("changing settings modifies the current active object", () => {
+            const NCAAFieldProperties = new FieldProperties(
+                FieldProperties.Template.NCAA
+            );
+            const selectedPage = mockPages[0];
+            const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
+                ...falseyUiSettings,
+                lockX: false,
+                lockY: true,
+            });
+            canvas.renderMarchers({
+                allMarchers: mockMarchers,
+                selectedMarcherPages: MarcherPage.filterByPageId(
+                    mockMarcherPages,
+                    selectedPage.id
+                ),
+            });
+
+            expect(canvas.uiSettings.lockX).toBe(false);
+            expect(canvas.uiSettings.lockY).toBe(true);
+
+            // check that the correct UI settings are passed to the canvas
+            const canvasMarchers = canvas.getCanvasMarchers();
+            canvas.setActiveObject(canvasMarchers[0]);
+            const activeObject = canvas.getActiveObject();
+            expect(activeObject?.lockMovementX).toBe(false);
+            expect(activeObject?.lockMovementY).toBe(true);
+
+            canvas.setUiSettings({
+                ...falseyUiSettings,
+                lockX: false,
+                lockY: false,
+            });
+            expect(activeObject?.lockMovementX).toBe(false);
+            expect(activeObject?.lockMovementY).toBe(false);
+
+            canvas.setUiSettings({
+                ...falseyUiSettings,
+                lockX: true,
+                lockY: true,
+            });
+            expect(activeObject?.lockMovementX).toBe(true);
+            expect(activeObject?.lockMovementY).toBe(true);
+        });
+
+        it("UI settings persist when setting a new active object", () => {
+            const NCAAFieldProperties = new FieldProperties(
+                FieldProperties.Template.NCAA
+            );
+            const selectedPage = mockPages[0];
+            const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
+                ...falseyUiSettings,
+                lockX: false,
+                lockY: true,
+            });
+            canvas.renderMarchers({
+                allMarchers: mockMarchers,
+                selectedMarcherPages: MarcherPage.filterByPageId(
+                    mockMarcherPages,
+                    selectedPage.id
+                ),
+            });
+
+            expect(canvas.uiSettings.lockX).toBe(false);
+            expect(canvas.uiSettings.lockY).toBe(true);
+
+            // check that the correct UI settings are passed to the canvas
+            const canvasMarchers = canvas.getCanvasMarchers();
+            canvas.setActiveObject(canvasMarchers[0]);
+            let activeObject = canvas.getActiveObject();
+            expect(activeObject?.lockMovementX).toBe(false);
+            expect(activeObject?.lockMovementY).toBe(true);
+
+            canvas.setActiveObject(canvasMarchers[1]);
+            activeObject = canvas.getActiveObject();
+            expect(activeObject?.lockMovementX).toBe(false);
+            expect(activeObject?.lockMovementY).toBe(true);
         });
     });
 });
