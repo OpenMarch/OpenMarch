@@ -69,6 +69,11 @@ export default function Canvas({
         }
     }, [canvas]);
 
+    // Set the canvas UI settings to the global UI settings
+    useEffect(() => {
+        if (canvas) canvas.uiSettings = uiSettings;
+    }, [canvas, uiSettings]);
+
     // Set the canvas setSelectedMarchers function to the setSelectedMarchers function
     useEffect(() => {
         if (canvas) canvas.setSelectedMarchers = setSelectedMarchers;

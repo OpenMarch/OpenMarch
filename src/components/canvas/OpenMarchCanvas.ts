@@ -414,6 +414,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /*********************** GETTERS ***********************/
 
+    /** The collection of UI settings for the canvas. This must be synced with global state from the UiSettingsStore */
     public get uiSettings() {
         return this._uiSettings;
     }
@@ -481,9 +482,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     /*********************** SETTERS ***********************/
-    /** set the UI settings and make all of the changes in this canvas that correspond to it */
+    /** Set the UI settings and make all of the changes in this canvas that correspond to it */
     public set uiSettings(uiSettings: UiSettings) {
+        const activeObject = this.getActiveObject();
         this._uiSettings = uiSettings;
+        if (activeObject) {
+            activeObject.lockMovementX = uiSettings.lockX;
+            activeObject.lockMovementY = uiSettings.lockY;
+        }
     }
 
     /*********************** SELECTION UTILITIES ***********************/
