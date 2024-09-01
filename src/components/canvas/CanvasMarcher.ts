@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
 import Marcher from "../../global/classes/Marcher";
 import MarcherPage from "../../global/classes/MarcherPage";
-import FieldProperties from "@/global/classes/FieldProperties";
-import { ActiveObjectArgs } from "@/global/Constants";
+import { FieldProperties } from "@/global/classes/FieldProperties";
+import { ActiveObjectArgs } from "./OpenMarchCanvas";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
@@ -26,27 +26,37 @@ export default class CanvasMarcher extends fabric.Group {
      * @param dotRadius The radius of the dot
      * @param color The color of the dot
      */
-    constructor({ marcher, marcherPage, dotRadius = CanvasMarcher.dotRadius, color = CanvasMarcher.color }:
-        { marcher: Marcher; marcherPage: MarcherPage; dotRadius?: number, color?: string }) {
-        super([
-            new fabric.Circle({
-                left: marcherPage.x,
-                top: marcherPage.y,
-                originX: "center",
-                originY: "center",
-                fill: color,
-                radius: dotRadius,
-            }),
-            new fabric.Text(marcher.drill_number, {
-                left: marcherPage.x,
-                top: marcherPage.y - CanvasMarcher.dotRadius * 2.2,
-                originX: "center",
-                originY: "center",
-                fontFamily: "courier new",
-                fontWeight: "bold",
-                fontSize: 14,
-            })
-        ],
+    constructor({
+        marcher,
+        marcherPage,
+        dotRadius = CanvasMarcher.dotRadius,
+        color = CanvasMarcher.color,
+    }: {
+        marcher: Marcher;
+        marcherPage: MarcherPage;
+        dotRadius?: number;
+        color?: string;
+    }) {
+        super(
+            [
+                new fabric.Circle({
+                    left: marcherPage.x,
+                    top: marcherPage.y,
+                    originX: "center",
+                    originY: "center",
+                    fill: color,
+                    radius: dotRadius,
+                }),
+                new fabric.Text(marcher.drill_number, {
+                    left: marcherPage.x,
+                    top: marcherPage.y - CanvasMarcher.dotRadius * 2.2,
+                    originX: "center",
+                    originY: "center",
+                    fontFamily: "courier new",
+                    fontWeight: "bold",
+                    fontSize: 14,
+                }),
+            ],
             {
                 type: CanvasMarcher.fabricType,
                 hasControls: false,
@@ -55,14 +65,20 @@ export default class CanvasMarcher extends fabric.Group {
                 originY: "center",
                 lockRotation: true,
                 hoverCursor: "pointer",
-                ...ActiveObjectArgs
-            });
+                ...ActiveObjectArgs,
+            }
+        );
 
         if (marcher.id !== marcherPage.marcher_id)
             console.error("MarcherPage and Marcher id's do not match");
 
         this.marcherPage = marcherPage;
         this.marcherObj = marcher;
+
+        // Set the initial coordinates to the appropriate offset
+        const newCoords = this.databaseCoordsToCanvasCoords(marcherPage, false);
+        this.left = newCoords.x;
+        this.top = newCoords.y;
     }
 
     /******* CANVAS ACCESSORS *******/
@@ -70,7 +86,9 @@ export default class CanvasMarcher extends fabric.Group {
     private getCanvas() {
         const canvas = this.canvas;
         if (!canvas)
-            throw new Error("Canvas does not exist - getCanvas: CanvasMarcher.ts");
+            throw new Error(
+                "Canvas does not exist - getCanvas: CanvasMarcher.ts"
+            );
         return canvas;
     }
 
@@ -78,17 +96,24 @@ export default class CanvasMarcher extends fabric.Group {
     /**
      * The offset that the center of the dot is from the fabric group coordinate.
      */
-    private getDotOffset(): { x: number, y: number } {
-        const dot = this._objects.find(obj => 'radius' in obj) as fabric.Circle;
+    private getDotOffset(): { x: number; y: number } {
+        const dot = this._objects.find(
+            (obj) => "radius" in obj
+        ) as fabric.Circle;
 
         if (dot.originX !== "center" || dot.originY !== "center")
-            throw new Error("Dot origin is not center, this will lead to incorrect coords - setCoords: CanvasMarcher.ts");
-        if (dot.left === undefined || dot.top === undefined) // 0 can lead to false negative, so need to check for undefined
-            throw new Error("Dot does not have left or top properties - setCoords: CanvasMarcher.ts");
+            throw new Error(
+                "Dot origin is not center, this will lead to incorrect coords - setCoords: CanvasMarcher.ts"
+            );
+        if (dot.left === undefined || dot.top === undefined)
+            // 0 can lead to false negative, so need to check for undefined
+            throw new Error(
+                "Dot does not have left or top properties - setCoords: CanvasMarcher.ts"
+            );
 
         return {
             x: dot.left,
-            y: dot.top
+            y: dot.top,
         };
     }
 
@@ -99,7 +124,7 @@ export default class CanvasMarcher extends fabric.Group {
      *
      * @returns {multipleSelected: boolean, thisIsSelected: boolean, groupOffset: {x: number, y: number}}
      */
-    private getGroupOffset(): { x: number, y: number } {
+    private getGroupOffset(): { x: number; y: number } {
         const canvas = this.getCanvas();
 
         // Check if multiple marchers are selected and if the current marcher is one of them
@@ -111,8 +136,8 @@ export default class CanvasMarcher extends fabric.Group {
 
             // Get the center of the group (when multiple objects are selected, the coordinates are relative to the group's center)
             groupOffset = {
-                x: (groupObject?.left || 0) + ((groupObject?.width || 0) / 2),
-                y: (groupObject?.top || 0) + ((groupObject?.height || 0) / 2)
+                x: (groupObject?.left || 0) + (groupObject?.width || 0) / 2,
+                y: (groupObject?.top || 0) + (groupObject?.height || 0) / 2,
             };
         }
         return groupOffset;
@@ -122,15 +147,31 @@ export default class CanvasMarcher extends fabric.Group {
      * Converts the coordinates from the database to the canvas coordinates of the dot/label fabric group.
      *
      * @param databaseCoords The coordinates from the database where the actual dot should be. I.e. a marcherPage object
+     * @param _adjustForGroup Whether to adjust the coordinates for when multiple marchers are selected. This should always be true, except when setting the initial coordinates in this class's constructor.
      * @returns {x: number, y: number}, The coordinates of the center of the dot/label fabric group on the canvas.
      */
-    private databaseCoordsToCanvasCoords(databaseCoords: { x: number, y: number }) {
-        const groupOffset = this.getGroupOffset();
+    private databaseCoordsToCanvasCoords(
+        databaseCoords: {
+            x: number;
+            y: number;
+        },
+        _adjustForGroup = true
+    ) {
+        let groupOffset = { x: 0, y: 0 };
+        if (_adjustForGroup) groupOffset = this.getGroupOffset();
         const dotOffset = this.getDotOffset();
 
         const newCanvasCoords = {
-            x: databaseCoords.x - groupOffset.x - dotOffset.x + CanvasMarcher.gridOffset,
-            y: databaseCoords.y - groupOffset.y - dotOffset.y + CanvasMarcher.gridOffset
+            x:
+                databaseCoords.x -
+                groupOffset.x -
+                dotOffset.x +
+                CanvasMarcher.gridOffset,
+            y:
+                databaseCoords.y -
+                groupOffset.y -
+                dotOffset.y +
+                CanvasMarcher.gridOffset,
         };
         return newCanvasCoords;
     }
@@ -142,13 +183,24 @@ export default class CanvasMarcher extends fabric.Group {
      * @param canvasCoords The coordinates of the dot/label fabric group on the canvas.
      * @returns {x: number, y: number}, coordinates of the center of the dot which, should be stored in the database.
      */
-    private canvasCoordsToDatabaseCoords(canvasCoords: { x: number, y: number }) {
+    private canvasCoordsToDatabaseCoords(canvasCoords: {
+        x: number;
+        y: number;
+    }) {
         const groupOffset = this.getGroupOffset();
         const dotOffset = this.getDotOffset();
 
         const databaseCoords = {
-            x: canvasCoords.x + groupOffset.x + dotOffset.x - CanvasMarcher.gridOffset,
-            y: canvasCoords.y + groupOffset.y + dotOffset.y - CanvasMarcher.gridOffset
+            x:
+                canvasCoords.x +
+                groupOffset.x +
+                dotOffset.x -
+                CanvasMarcher.gridOffset,
+            y:
+                canvasCoords.y +
+                groupOffset.y +
+                dotOffset.y -
+                CanvasMarcher.gridOffset,
         };
         return databaseCoords;
     }
@@ -168,7 +220,9 @@ export default class CanvasMarcher extends fabric.Group {
         const newCanvasCoords = this.databaseCoordsToCanvasCoords(marcherPage);
 
         if (this.left === undefined || this.top === undefined)
-            throw new Error("Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts");
+            throw new Error(
+                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts"
+            );
         this.marcherPage = marcherPage;
         this.left = newCanvasCoords.x;
         this.top = newCanvasCoords.y;
@@ -184,13 +238,15 @@ export default class CanvasMarcher extends fabric.Group {
      *
      * @returns {x: number, y: number}
      */
-    getMarcherCoords(): { x: number, y: number } {
+    getMarcherCoords(): { x: number; y: number } {
         if (this.left === undefined || this.top === undefined)
-            throw new Error("Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts");
+            throw new Error(
+                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts"
+            );
         const databaseCoords = this.canvasCoordsToDatabaseCoords({
             x: this.left,
-            y: this.top
-        })
+            y: this.top,
+        });
         return databaseCoords;
     }
 
@@ -198,27 +254,44 @@ export default class CanvasMarcher extends fabric.Group {
      * @param marcherPage MarcherPage object to set the next animation to
      * @param durationMilliseconds The duration of the animation in milliseconds
      */
-    setNextAnimation({ marcherPage, durationMilliseconds }: { marcherPage: MarcherPage; durationMilliseconds: number }) {
+    setNextAnimation({
+        marcherPage,
+        durationMilliseconds,
+    }: {
+        marcherPage: MarcherPage;
+        durationMilliseconds: number;
+    }) {
         const groupOffset = this.getGroupOffset();
         const dotOffset = this.getDotOffset();
 
         const newCanvasCoords = {
-            x: marcherPage.x - groupOffset.x - dotOffset.x + CanvasMarcher.gridOffset,
-            y: marcherPage.y - groupOffset.y - dotOffset.y + CanvasMarcher.gridOffset
+            x:
+                marcherPage.x -
+                groupOffset.x -
+                dotOffset.x +
+                CanvasMarcher.gridOffset,
+            y:
+                marcherPage.y -
+                groupOffset.y -
+                dotOffset.y +
+                CanvasMarcher.gridOffset,
         };
 
-        const callback = this.animate({
-            left: newCanvasCoords.x,
-            top: newCanvasCoords.y
-        }, {
-            duration: durationMilliseconds,
-            onChange: () => {
-                this.getCanvas().requestRenderAll();
-                // Set coords so that objects offscreen are still rendered
-                this.setCoords()
+        const callback = this.animate(
+            {
+                left: newCanvasCoords.x,
+                top: newCanvasCoords.y,
             },
-            easing: linearEasing
-        });
+            {
+                duration: durationMilliseconds,
+                onChange: () => {
+                    this.getCanvas().requestRenderAll();
+                    // Set coords so that objects offscreen are still rendered
+                    this.setCoords();
+                },
+                easing: linearEasing,
+            }
+        );
 
         this.setCoords();
 
@@ -233,9 +306,9 @@ export default class CanvasMarcher extends fabric.Group {
  * @returns The duration of a single beat in milliseconds
  */
 export function tempoToDuration(tempo: number) {
-    return 60 / tempo * 1000;
+    return (60 / tempo) * 1000;
 }
 
 const linearEasing = function (t: number, b: number, c: number, d: number) {
-    return c * t / d + b;
+    return (c * t) / d + b;
 };

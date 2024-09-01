@@ -1,11 +1,13 @@
 import { type StateCreator } from "zustand";
-import { MarcherPage } from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 export interface MarcherPageStoreInterface {
-    marcherPages: MarcherPage[],
+    marcherPages: MarcherPage[];
     fetchMarcherPages: () => Promise<void>;
 }
 
-export const marcherPageStoreCreator: StateCreator<MarcherPageStoreInterface> = (set) => ({
+export const marcherPageStoreCreator: StateCreator<
+    MarcherPageStoreInterface
+> = (set) => ({
     marcherPages: [],
     marcherPagesAreLoading: true,
 

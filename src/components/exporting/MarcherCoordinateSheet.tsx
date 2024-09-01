@@ -4,7 +4,7 @@ import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
-import { MarcherPage } from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@/global/classes/FieldProperties";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 // import "./MarcherCoordinateSheet.css";

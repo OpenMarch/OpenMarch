@@ -1,8 +1,8 @@
-import { NoControls } from "@/global/Constants";
 import Marcher from "../../global/classes/Marcher";
 import MarcherPage from "../../global/classes/MarcherPage";
 import { fabric } from "fabric";
-import FieldProperties from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@/global/classes/FieldProperties";
+import { NoControls } from "./OpenMarchCanvas";
 
 /**
  * A StaticCanvasMarcher is fabric circle that cannot be edited by the user.
@@ -16,19 +16,29 @@ export default class StaticCanvasMarcher extends fabric.Group {
      * @param dotRadius The radius of the dot
      * @param color The color of the dot (use rgba for transparency)
      */
-    constructor({ marcherPage, dotRadius = 3, color = "rgba(0, 0, 0, 1)" }:
-        { marcher: Marcher; marcherPage: MarcherPage; dotRadius?: number; color?: string; alpha?: number }) {
-
-        super([new fabric.Circle({
-            left: marcherPage.x + StaticCanvasMarcher.gridOffset,
-            top: marcherPage.y + StaticCanvasMarcher.gridOffset,
-            originX: "center",
-            originY: "center",
-            fill: color,
-            radius: dotRadius,
-            ...NoControls
-        }),
-        ], NoControls);
+    constructor({
+        marcherPage,
+        dotRadius = 3,
+        color = "rgba(0, 0, 0, 1)",
+    }: {
+        marcher: Marcher;
+        marcherPage: MarcherPage;
+        dotRadius?: number;
+        color?: string;
+    }) {
+        super(
+            [
+                new fabric.Circle({
+                    left: marcherPage.x + StaticCanvasMarcher.gridOffset,
+                    top: marcherPage.y + StaticCanvasMarcher.gridOffset,
+                    originX: "center",
+                    originY: "center",
+                    fill: color,
+                    radius: dotRadius,
+                    ...NoControls,
+                }),
+            ],
+            NoControls
+        );
     }
-
 }

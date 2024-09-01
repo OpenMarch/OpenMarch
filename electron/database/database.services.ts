@@ -8,7 +8,7 @@ import * as History from './database.history';
 import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/classes/Marcher';
 import Page, { ModifiedPageContainer, NewPageContainer } from '../../src/global/classes/Page';
 import MarcherPage, { ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
-import FieldProperties from '../../src/global/classes/FieldProperties';
+import { FieldProperties } from '../../src/global/classes/FieldProperties';
 import AudioFile, { ModifiedAudioFileArgs } from '@/global/classes/AudioFile';
 
 export class DatabaseResponse {

@@ -5,7 +5,7 @@ import { DatabaseResponse } from "electron/database/database.services";
  * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
  * There should be a MarcherPage for every Marcher and Page combination (M * P).
  */
-export class MarcherPage {
+export default class MarcherPage {
     /** The id of the MarcherPage in the database */
     readonly id: number;
     /** The id of the page for use in the HTML. E.g. "marcherPage_2" for MarcherPage with ID of 2 */
@@ -49,9 +49,14 @@ export class MarcherPage {
      * @param page_id - The id of the page. Optional
      * @returns A list of all the marcherPages or those for either a given marcher or page.
      */
-    static async getMarcherPages({ marcher_id, page_id }:
-        { marcher_id?: number; page_id?: number; } = {}): Promise<MarcherPage[]> {
-        const response = await window.electron.getMarcherPages({ marcher_id, page_id });
+    static async getMarcherPages({
+        marcher_id,
+        page_id,
+    }: { marcher_id?: number; page_id?: number } = {}): Promise<MarcherPage[]> {
+        const response = await window.electron.getMarcherPages({
+            marcher_id,
+            page_id,
+        });
         return response;
     }
 
@@ -61,8 +66,12 @@ export class MarcherPage {
      * @param modifiedMarcherPages - The objects to update the MarcherPages with.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async updateMarcherPages(modifiedMarcherPages: ModifiedMarcherPageArgs[]): Promise<DatabaseResponse> {
-        const response = await window.electron.updateMarcherPages(modifiedMarcherPages);
+    static async updateMarcherPages(
+        modifiedMarcherPages: ModifiedMarcherPageArgs[]
+    ): Promise<DatabaseResponse> {
+        const response = await window.electron.updateMarcherPages(
+            modifiedMarcherPages
+        );
         // fetch the MarcherPages to update the store
         this.checkForFetchMarcherPages();
         this.fetchMarcherPages();
@@ -74,11 +83,43 @@ export class MarcherPage {
      */
     static checkForFetchMarcherPages() {
         if (!this.fetchMarcherPages)
-            console.error("fetchMarcherPages is not defined. The UI will not update properly.");
+            console.error(
+                "fetchMarcherPages is not defined. The UI will not update properly."
+            );
+    }
+
+    /**
+     * A simple filter function to filter MarcherPages by page_id.
+     *
+     * @param marcherPages All MarcherPages to filter
+     * @param page_id The page_id to filter by
+     * @returns Array of MarcherPages that have the given page_id
+     */
+    static filterByPageId(
+        marcherPages: MarcherPage[],
+        page_id: number
+    ): MarcherPage[] {
+        return marcherPages.filter(
+            (marcherPage) => marcherPage.page_id === page_id
+        );
+    }
+
+    /**
+     * A simple filter function to filter MarcherPages by marcher_id.
+     *
+     * @param marcherPages All MarcherPages to filter
+     * @param marcher_id The marcher_id to filter by
+     * @returns Array of MarcherPages that have the given marcher_id
+     */
+    static filterByMarcherId(
+        marcherPages: MarcherPage[],
+        marcher_id: number
+    ): MarcherPage[] {
+        return marcherPages.filter(
+            (marcherPage) => marcherPage.marcher_id === marcher_id
+        );
     }
 }
-
-export default MarcherPage;
 
 /**
  * Defines the editable fields of a MarcherPage.
