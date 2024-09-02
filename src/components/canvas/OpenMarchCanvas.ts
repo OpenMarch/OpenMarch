@@ -51,9 +51,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Intended to set the selected marchers in the useSelectedMarchers context.
      * This must be set and updated in a React component in a useEffect hook
      */
-    setSelectedMarchers: (marchers: Marcher[]) => void = (marchers: any) => {
+    setGlobalsSelectedMarchers: (marchers: Marcher[]) => void = (
+        marchers: any
+    ) => {
         console.error(
-            "setSelectedMarchers function not set. The canvas will not work as expected"
+            "setGlobalsSelectedMarchers function not set. The canvas will not work as expected"
         );
     };
 
@@ -66,7 +68,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     constructor(
         canvasRef: HTMLCanvasElement | null,
         fieldProperties: FieldProperties,
-        uiSettings: UiSettings
+        uiSettings: UiSettings,
+        listeners?: CanvasListeners
     ) {
         super(canvasRef, {
             // TODO - why are these here from 4023b18
@@ -98,6 +101,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         // Set the UI settings
         this._uiSettings = uiSettings;
+
+        if (listeners) this.setListeners(listeners);
 
         this.renderAll();
     }
@@ -153,6 +158,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     setSelectedCanvasMarchers = (
         newSelectedCanvasMarchers: CanvasMarcher[]
     ) => {
+        console.log(
+            "SETTING SELECTED CANVAS MARCHERS",
+            newSelectedCanvasMarchers
+        );
         if (this.handleSelectLock) return;
         this.handleSelectLock = true;
 
@@ -189,7 +198,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 (newSelectedCanvasMarcher) =>
                     newSelectedCanvasMarcher.marcherObj
             );
-            this.setSelectedMarchers(newSelectedMarchers);
+            this.setGlobalsSelectedMarchers(newSelectedMarchers);
         }
 
         // is this safe? Could there be a point when this is set to false before the handler has a chance to run?

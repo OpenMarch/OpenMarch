@@ -2,18 +2,18 @@ import { cleanup } from "@testing-library/react";
 import { describe, expect, afterEach, it, vi } from "vitest";
 import OpenMarchCanvas from "../OpenMarchCanvas";
 import { FieldProperties } from "@/global/classes/FieldProperties";
-import { UiSettings } from "@/global/Interfaces";
-import { mockMarcherPages, mockMarchers, mockPages } from "./MocksForCanvas";
+import {
+    falsyUiSettings,
+    mockMarcherPages,
+    mockMarchers,
+    mockPages,
+} from "./MocksForCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
 
 describe("OpenMarchCanvas", () => {
-    const falseyUiSettings: UiSettings = {
-        isPlaying: false,
-        lockX: false,
-        lockY: false,
-        previousPaths: false,
-        nextPaths: false,
-    };
+    const NCAAFieldProperties = new FieldProperties(
+        FieldProperties.Template.NCAA
+    );
 
     afterEach(() => {
         vi.clearAllMocks();
@@ -22,13 +22,10 @@ describe("OpenMarchCanvas", () => {
 
     describe("renderMarchers", () => {
         it("Canvas renders and contains marchers in the correct position", () => {
-            const NCAAFieldProperties = new FieldProperties(
-                FieldProperties.Template.NCAA
-            );
             const canvas = new OpenMarchCanvas(
                 null,
                 NCAAFieldProperties,
-                falseyUiSettings
+                falsyUiSettings
             );
             const selectedPage = mockPages[0];
             canvas.renderMarchers({
@@ -74,12 +71,9 @@ describe("OpenMarchCanvas", () => {
 
     describe("uiSettings", () => {
         it("has the correct initial settings", () => {
-            const NCAAFieldProperties = new FieldProperties(
-                FieldProperties.Template.NCAA
-            );
             const selectedPage = mockPages[0];
             const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                ...falseyUiSettings,
+                ...falsyUiSettings,
                 lockX: true,
                 lockY: false,
             });
@@ -104,12 +98,9 @@ describe("OpenMarchCanvas", () => {
         });
 
         it("changing settings modifies the current active object", () => {
-            const NCAAFieldProperties = new FieldProperties(
-                FieldProperties.Template.NCAA
-            );
             const selectedPage = mockPages[0];
             const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                ...falseyUiSettings,
+                ...falsyUiSettings,
                 lockX: false,
                 lockY: true,
             });
@@ -132,7 +123,7 @@ describe("OpenMarchCanvas", () => {
             expect(activeObject?.lockMovementY).toBe(true);
 
             canvas.setUiSettings({
-                ...falseyUiSettings,
+                ...falsyUiSettings,
                 lockX: false,
                 lockY: false,
             });
@@ -140,7 +131,7 @@ describe("OpenMarchCanvas", () => {
             expect(activeObject?.lockMovementY).toBe(false);
 
             canvas.setUiSettings({
-                ...falseyUiSettings,
+                ...falsyUiSettings,
                 lockX: true,
                 lockY: true,
             });
@@ -149,12 +140,9 @@ describe("OpenMarchCanvas", () => {
         });
 
         it("UI settings persist when setting a new active object", () => {
-            const NCAAFieldProperties = new FieldProperties(
-                FieldProperties.Template.NCAA
-            );
             const selectedPage = mockPages[0];
             const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                ...falseyUiSettings,
+                ...falsyUiSettings,
                 lockX: false,
                 lockY: true,
             });

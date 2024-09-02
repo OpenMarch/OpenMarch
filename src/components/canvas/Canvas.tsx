@@ -10,6 +10,8 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import MarcherPage from "@/global/classes/MarcherPage";
 import OpenMarchCanvas, { CanvasColors } from "./OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
+import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
+import LineListeners from "./listeners/LineListeners";
 
 /**
  * The field/stage UI of OpenMarch
@@ -33,6 +35,7 @@ export default function Canvas({
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
+    const { cursorMode } = useCursorModeStore()!;
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationCallbacks = useRef<any>([]);
@@ -60,6 +63,14 @@ export default function Canvas({
     useEffect(() => {
         if (canvas) {
             // Initiate listeners
+            switch (cursorMode) {
+                case "line":
+                    canvas.setListeners(new LineListeners({ canvas: canvas }));
+                    break;
+                default:
+                    canvas.clearListeners();
+                    break;
+            }
             canvas.setListeners(new DefaultListeners({ canvas: canvas }));
 
             // Cleanup
@@ -67,7 +78,7 @@ export default function Canvas({
                 canvas.clearListeners();
             };
         }
-    }, [canvas]);
+    }, [canvas, cursorMode]);
 
     // Set the canvas UI settings to the global UI settings
     useEffect(() => {
@@ -76,7 +87,7 @@ export default function Canvas({
 
     // Set the canvas setSelectedMarchers function to the setSelectedMarchers function
     useEffect(() => {
-        if (canvas) canvas.setSelectedMarchers = setSelectedMarchers;
+        if (canvas) canvas.setGlobalsSelectedMarchers = setSelectedMarchers;
     }, [canvas, setSelectedMarchers]);
 
     // Set the canvas globalSelectedMarchers to the selected marchers

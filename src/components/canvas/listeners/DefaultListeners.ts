@@ -13,7 +13,7 @@ export default class DefaultListeners implements CanvasListeners {
     }
 
     /**
-     * Set the selected marcher(s) when selected element changes
+     * Set the selected marcher(s) when selected element changes.
      */
     handleSelect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
         if (!fabricEvent.selected || fabricEvent.selected.length === 0) return;
@@ -22,6 +22,15 @@ export default class DefaultListeners implements CanvasListeners {
             this.canvas.getActiveObjectsByType(CanvasMarcher);
 
         this.canvas.setSelectedCanvasMarchers(canvasMarchersToSelect);
+    };
+
+    /**
+     * Set the selected marchers to none when the selection is cleared
+     */
+    handleDeselect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+        if (fabricEvent.deselected) {
+            this.canvas.setGlobalsSelectedMarchers([]);
+        }
     };
 
     handleObjectModified = (fabricEvent: fabric.IEvent<MouseEvent>) => {
@@ -65,15 +74,6 @@ export default class DefaultListeners implements CanvasListeners {
             });
 
         MarcherPage.updateMarcherPages(modifiedMarcherPages);
-    };
-
-    /**
-     * Set the selected marchers to none when the selection is cleared
-     */
-    handleDeselect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
-        if (fabricEvent.deselected) {
-            this.canvas.setSelectedMarchers([]);
-        }
     };
 
     // /**
