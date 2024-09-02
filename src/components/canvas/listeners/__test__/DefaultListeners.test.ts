@@ -186,9 +186,8 @@ describe("DefaultListeners", () => {
                 e: new MouseEvent("mousedown", { clientX: 123, clientY: 321 }),
                 target: activeSelection,
             };
-            const after = Date.now();
-
             listeners.handleMouseDown(fabricEvent);
+            const after = Date.now();
 
             expect(canvas.selectDragStart.time).toBeGreaterThanOrEqual(before);
             expect(canvas.selectDragStart.time).toBeLessThanOrEqual(after);
