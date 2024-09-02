@@ -14,7 +14,7 @@ import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import Measure from "@/global/classes/Measure";
-// import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
+import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -365,7 +365,7 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    // const { setCursorMode } = useCursorModeStore()!;
+    const { setCursorMode } = useCursorModeStore()!;
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -584,13 +584,13 @@ function RegisteredActionsHandler() {
                     });
                     break;
 
-                /****************** UI settings ******************/
-                // case RegisteredActionsEnum.cursorModeDefault:
-                //     setCursorMode("default");
-                //     break;
-                // case RegisteredActionsEnum.cursorModeLine:
-                //     setCursorMode("line");
-                //     break;
+                /****************** Cursor Mode ******************/
+                case RegisteredActionsEnum.cursorModeDefault:
+                    setCursorMode("default");
+                    break;
+                case RegisteredActionsEnum.cursorModeLine:
+                    setCursorMode("line");
+                    break;
 
                 /****************** Select ******************/
                 case RegisteredActionsEnum.selectAllMarchers:
@@ -613,6 +613,7 @@ function RegisteredActionsHandler() {
             pages,
             selectedMarchers,
             selectedPage,
+            setCursorMode,
             setIsPlaying,
             setSelectedAudioFile,
             setSelectedMarchers,
