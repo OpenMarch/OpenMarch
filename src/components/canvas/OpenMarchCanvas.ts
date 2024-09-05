@@ -8,9 +8,10 @@ import {
 } from "@/global/classes/FieldProperties";
 import CanvasListeners from "./listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
-import { IGroupOptions } from "fabric/fabric-impl";
 import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { ActiveObjectArgs } from "./CanvasConstants";
+import * as CoordinateActions from "@/utilities/CoordinateActions";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -47,6 +48,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     perfLimitSizeTotal = 225000000;
     maxCacheSideLimit = 11000;
 
+    fieldProperties: FieldProperties;
+
     /**
      * Intended to set the selected marchers in the useSelectedMarchers context.
      * This must be set and updated in a React component in a useEffect hook
@@ -78,6 +81,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             selectionColor: "rgba(0, 0, 255, 0.2)",
             selectionBorderColor: "rgba(0, 0, 255, 1)",
             selectionLineWidth: 2,
+            fireRightClick: true, // Allow right click events
+            stopContextMenu: true, // Prevent right click context menu
         });
 
         // Set canvas size
@@ -87,10 +92,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.refreshCanvasSize();
         });
 
+        this.fieldProperties = fieldProperties;
+
         // create the grid
-        this.staticGridRef = OpenMarchCanvas.createFieldGrid({
-            fieldProperties,
-        });
+        this.staticGridRef = this.createFieldGrid({});
         // Object caching is set to true to make the grid sharper
         this.staticGridRef.objectCaching = true;
         // add the grid to the canvas
@@ -116,6 +121,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.setHeight(window.innerHeight);
     }
 
+    /** Set this function when setting the listeners, then call it before switching to other listeners */
+    cleanupListener?: () => void;
+
     /**
      * Set the listeners on the canvas. This should be changed based on the cursor mode.
      *
@@ -125,6 +133,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     setListeners(listeners: CanvasListeners, clearListeners = true) {
         clearListeners && this.clearListeners();
 
+        this.cleanupListener = listeners.cleanupListener;
         this.on("object:modified", listeners.handleObjectModified);
         this.on("selection:updated", listeners.handleSelect);
         this.on("selection:created", listeners.handleSelect);
@@ -139,6 +148,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Clear all listeners on the canvas
      */
     clearListeners() {
+        this.cleanupListener && this.cleanupListener();
+        this.cleanupListener = undefined;
         this.off("object:modified");
         this.off("selection:updated");
         this.off("selection:created");
@@ -158,10 +169,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     setSelectedCanvasMarchers = (
         newSelectedCanvasMarchers: CanvasMarcher[]
     ) => {
-        console.log(
-            "SETTING SELECTED CANVAS MARCHERS",
-            newSelectedCanvasMarchers
-        );
         if (this.handleSelectLock) return;
         this.handleSelectLock = true;
 
@@ -218,6 +225,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         object.lockMovementY = this.uiSettings.lockY;
         return super.setActiveObject(object, e);
     }
+
+    resetCursorsToDefault = () => {
+        this.setCursor("default");
+        this.defaultCursor = "default";
+        this.moveCursor = "move";
+        this.notAllowedCursor = "not-allowed";
+        this.freeDrawingCursor = "crosshair";
+    };
 
     /******* Marcher Functions *******/
     /**
@@ -382,6 +397,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     };
 
+    /**
+     * Remove all of the pathways from the canvas
+     */
     removePathways = () => {
         const curPathways: Pathway[] = this.getPathways();
 
@@ -390,6 +408,43 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
 
         this.requestRenderAll();
+    };
+
+    /**
+     * Rounds an x and y coordinate to the nearest step multiple of the denominator
+     *
+     * @param x The x coordinate of the point
+     * @param y The y coordinate of the point
+     * @param denominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step. By default, 1 for nearest whole step
+     * @returns The rounded x and y coordinates
+     */
+    getRoundedCoordinate = ({
+        x,
+        y,
+        denominator = 1,
+    }: {
+        x: number;
+        y: number;
+        denominator?: number;
+    }) => {
+        const fakeMarcherPage: MarcherPage = {
+            marcher_id: -1,
+            x,
+            y,
+            id: -1,
+            page_id: -1,
+            id_for_html: "fake",
+        };
+
+        const response = CoordinateActions.getRoundCoordinates({
+            marcherPages: [fakeMarcherPage],
+            denominator,
+            fieldProperties: this.fieldProperties,
+            xAxis: true,
+            yAxis: true,
+        })[0];
+
+        return { x: response.x, y: response.y };
     };
 
     /*********************** PRIVATE INSTANCE METHODS ***********************/
@@ -427,6 +482,264 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this.renderAll();
             }
         }, 50);
+    };
+
+    /**
+     * Builds the grid for the field/stage based on the given field properties as a fabric.Group.
+     *
+     * @param gridLines Whether or not to include grid lines (every step)
+     * @param halfLines Whether or not to include half lines (every 4 steps)
+     * @returns
+     */
+    private createFieldGrid = ({
+        gridLines = true,
+        halfLines = true,
+    }: {
+        gridLines?: boolean;
+        halfLines?: boolean;
+    }): fabric.Group => {
+        const fieldArray: fabric.Object[] = [];
+        const fieldWidth = this.fieldProperties.width;
+        const fieldHeight = this.fieldProperties.height;
+        const pixelsPerStep = FieldProperties.PIXELS_PER_STEP;
+        const centerFrontPoint = this.fieldProperties.centerFrontPoint;
+
+        // white background
+        const background = new fabric.Rect({
+            left: 0,
+            top: 0,
+            width: fieldWidth,
+            height: fieldHeight,
+            fill: "white",
+            selectable: false,
+            hoverCursor: "default",
+        });
+        fieldArray.push(background);
+
+        // Grid lines
+        if (gridLines) {
+            const gridLineProps = {
+                stroke: "#DDDDDD",
+                strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
+                selectable: false,
+            };
+            // X
+            for (
+                let i = centerFrontPoint.xPixels + pixelsPerStep;
+                i < fieldWidth;
+                i += pixelsPerStep
+            )
+                fieldArray.push(
+                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps)
+                );
+            for (
+                let i = centerFrontPoint.xPixels - pixelsPerStep;
+                i > 0;
+                i -= pixelsPerStep
+            )
+                fieldArray.push(
+                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps)
+                );
+
+            // Y
+            for (
+                let i = centerFrontPoint.yPixels - pixelsPerStep;
+                i > 0;
+                i -= pixelsPerStep
+            )
+                fieldArray.push(
+                    new fabric.Line([0, i, fieldWidth, i], gridLineProps)
+                );
+        }
+
+        // Half lines
+        if (halfLines) {
+            const darkLineProps = {
+                stroke: "#AAAAAA",
+                strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
+                selectable: false,
+            };
+            // X
+            for (
+                let i = centerFrontPoint.xPixels + pixelsPerStep * 4;
+                i < fieldWidth;
+                i += pixelsPerStep * 8
+            )
+                fieldArray.push(
+                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
+                );
+            for (
+                let i = centerFrontPoint.xPixels - pixelsPerStep * 4;
+                i > 0;
+                i -= pixelsPerStep * 8
+            )
+                fieldArray.push(
+                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
+                );
+
+            // Y
+            for (
+                let i = centerFrontPoint.yPixels - pixelsPerStep * 4;
+                i > 0;
+                i -= pixelsPerStep * 4
+            )
+                fieldArray.push(
+                    new fabric.Line([0, i, fieldWidth, i], darkLineProps)
+                );
+        }
+
+        // Yard lines, field numbers, and hashes
+        const xCheckpointProps = {
+            stroke: "black",
+            strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
+            selectable: false,
+        };
+        const yCheckpointProps = {
+            stroke: "black",
+            strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 3,
+            selectable: false,
+        };
+        const ySecondaryCheckpointProps = {
+            stroke: "gray",
+            strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 2,
+            selectable: false,
+        };
+        const yardNumberCoordinates = getYardNumberCoordinates(
+            this.fieldProperties.template
+        );
+        const numberHeight =
+            (yardNumberCoordinates.homeStepsFromFrontToInside -
+                yardNumberCoordinates.homeStepsFromFrontToOutside) *
+            pixelsPerStep;
+        const numberProps = {
+            fontSize: numberHeight,
+            fill: "#888888",
+            selectable: false,
+            charSpacing: 160,
+        };
+        const yardNumberXOffset = 18;
+        this.fieldProperties.xCheckpoints.forEach((xCheckpoint) => {
+            // Yard line
+            const x =
+                centerFrontPoint.xPixels +
+                xCheckpoint.stepsFromCenterFront * pixelsPerStep;
+            fieldArray.push(
+                new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps)
+            );
+
+            // Yard line numbers
+            if (xCheckpoint.fieldLabel) {
+                // Home number
+                fieldArray.push(
+                    new fabric.Text(xCheckpoint.fieldLabel, {
+                        left: x - yardNumberXOffset,
+                        top:
+                            centerFrontPoint.yPixels -
+                            yardNumberCoordinates.homeStepsFromFrontToInside *
+                                pixelsPerStep,
+                        ...numberProps,
+                    })
+                );
+                // Away number
+                fieldArray.push(
+                    new fabric.Text(xCheckpoint.fieldLabel, {
+                        left: x - yardNumberXOffset,
+                        top:
+                            centerFrontPoint.yPixels -
+                            yardNumberCoordinates.awayStepsFromFrontToOutside *
+                                pixelsPerStep,
+                        flipY: true,
+                        flipX: true,
+                        ...numberProps,
+                    })
+                );
+            }
+
+            // Hashes
+            const hashWidth = 20;
+            this.fieldProperties.yCheckpoints.forEach((yCheckpoint) => {
+                if (yCheckpoint.visible !== false) {
+                    const y =
+                        centerFrontPoint.yPixels +
+                        yCheckpoint.stepsFromCenterFront * pixelsPerStep -
+                        1;
+                    let x1 = x - hashWidth / 2;
+                    x1 = x1 < 0 ? 0 : x1;
+                    let x2 = x + hashWidth / 2;
+                    x2 = x2 > fieldWidth ? fieldWidth : x2;
+                    fieldArray.push(
+                        new fabric.Line(
+                            [x1, y, x2 + 1, y],
+                            yCheckpoint.useAsReference
+                                ? yCheckpointProps
+                                : ySecondaryCheckpointProps
+                        )
+                    );
+                }
+            });
+        });
+
+        // Border
+        const borderWidth = FieldProperties.GRID_STROKE_WIDTH * 3;
+        const borderOffset = 1 - borderWidth; // Offset to prevent clipping. Border hangs off the edge of the canvas
+        const borderProps = {
+            stroke: "black",
+            strokeWidth: borderWidth,
+            selectable: false,
+        };
+        // Back line
+        fieldArray.push(
+            new fabric.Line(
+                [
+                    borderOffset,
+                    borderOffset,
+                    fieldWidth - borderOffset,
+                    borderOffset,
+                ],
+                borderProps
+            )
+        );
+        // Front line
+        fieldArray.push(
+            new fabric.Line(
+                [
+                    borderOffset,
+                    fieldHeight,
+                    fieldWidth - borderOffset + 1,
+                    fieldHeight,
+                ],
+                borderProps
+            )
+        );
+        // Left line
+        fieldArray.push(
+            new fabric.Line(
+                [
+                    borderOffset,
+                    borderOffset,
+                    borderOffset,
+                    fieldHeight - borderOffset,
+                ],
+                borderProps
+            )
+        );
+        // Right line
+        fieldArray.push(
+            new fabric.Line(
+                [
+                    fieldWidth,
+                    borderOffset,
+                    fieldWidth,
+                    fieldHeight - borderOffset,
+                ],
+                borderProps
+            )
+        );
+
+        return new fabric.Group(fieldArray, {
+            selectable: false,
+            hoverCursor: "default",
+        });
     };
 
     /*********************** GETTERS ***********************/
@@ -574,299 +887,5 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         );
     };
 
-    /*********************** PRIVATE STATIC METHODS ***********************/
-    /**
-     * Builds the grid for the field/stage based on the given field properties as a fabric.Group.
-     *
-     * @param fieldProperties Field properties to build the field from
-     * @param gridLines Whether or not to include grid lines (every step)
-     * @param halfLines Whether or not to include half lines (every 4 steps)
-     * @returns
-     */
-    private static createFieldGrid = ({
-        fieldProperties,
-        gridLines = true,
-        halfLines = true,
-    }: {
-        fieldProperties: FieldProperties;
-        gridLines?: boolean;
-        halfLines?: boolean;
-    }): fabric.Group => {
-        const fieldArray: fabric.Object[] = [];
-        const fieldWidth = fieldProperties.width;
-        const fieldHeight = fieldProperties.height;
-        const pixelsPerStep = FieldProperties.PIXELS_PER_STEP;
-        const centerFrontPoint = fieldProperties.centerFrontPoint;
-
-        // white background
-        const background = new fabric.Rect({
-            left: 0,
-            top: 0,
-            width: fieldWidth,
-            height: fieldHeight,
-            fill: "white",
-            selectable: false,
-            hoverCursor: "default",
-        });
-        fieldArray.push(background);
-
-        // Grid lines
-        if (gridLines) {
-            const gridLineProps = {
-                stroke: "#DDDDDD",
-                strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
-                selectable: false,
-            };
-            // X
-            for (
-                let i = centerFrontPoint.xPixels + pixelsPerStep;
-                i < fieldWidth;
-                i += pixelsPerStep
-            )
-                fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps)
-                );
-            for (
-                let i = centerFrontPoint.xPixels - pixelsPerStep;
-                i > 0;
-                i -= pixelsPerStep
-            )
-                fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps)
-                );
-
-            // Y
-            for (
-                let i = centerFrontPoint.yPixels - pixelsPerStep;
-                i > 0;
-                i -= pixelsPerStep
-            )
-                fieldArray.push(
-                    new fabric.Line([0, i, fieldWidth, i], gridLineProps)
-                );
-        }
-
-        // Half lines
-        if (halfLines) {
-            const darkLineProps = {
-                stroke: "#AAAAAA",
-                strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
-                selectable: false,
-            };
-            // X
-            for (
-                let i = centerFrontPoint.xPixels + pixelsPerStep * 4;
-                i < fieldWidth;
-                i += pixelsPerStep * 8
-            )
-                fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
-                );
-            for (
-                let i = centerFrontPoint.xPixels - pixelsPerStep * 4;
-                i > 0;
-                i -= pixelsPerStep * 8
-            )
-                fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
-                );
-
-            // Y
-            for (
-                let i = centerFrontPoint.yPixels - pixelsPerStep * 4;
-                i > 0;
-                i -= pixelsPerStep * 4
-            )
-                fieldArray.push(
-                    new fabric.Line([0, i, fieldWidth, i], darkLineProps)
-                );
-        }
-
-        // Yard lines, field numbers, and hashes
-        const xCheckpointProps = {
-            stroke: "black",
-            strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
-            selectable: false,
-        };
-        const yCheckpointProps = {
-            stroke: "black",
-            strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 3,
-            selectable: false,
-        };
-        const ySecondaryCheckpointProps = {
-            stroke: "gray",
-            strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 2,
-            selectable: false,
-        };
-        const yardNumberCoordinates = getYardNumberCoordinates(
-            fieldProperties.template
-        );
-        const numberHeight =
-            (yardNumberCoordinates.homeStepsFromFrontToInside -
-                yardNumberCoordinates.homeStepsFromFrontToOutside) *
-            pixelsPerStep;
-        const numberProps = {
-            fontSize: numberHeight,
-            fill: "#888888",
-            selectable: false,
-            charSpacing: 160,
-        };
-        const yardNumberXOffset = 18;
-        fieldProperties.xCheckpoints.forEach((xCheckpoint) => {
-            // Yard line
-            const x =
-                centerFrontPoint.xPixels +
-                xCheckpoint.stepsFromCenterFront * pixelsPerStep;
-            fieldArray.push(
-                new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps)
-            );
-
-            // Yard line numbers
-            if (xCheckpoint.fieldLabel) {
-                // Home number
-                fieldArray.push(
-                    new fabric.Text(xCheckpoint.fieldLabel, {
-                        left: x - yardNumberXOffset,
-                        top:
-                            centerFrontPoint.yPixels -
-                            yardNumberCoordinates.homeStepsFromFrontToInside *
-                                pixelsPerStep,
-                        ...numberProps,
-                    })
-                );
-                // Away number
-                fieldArray.push(
-                    new fabric.Text(xCheckpoint.fieldLabel, {
-                        left: x - yardNumberXOffset,
-                        top:
-                            centerFrontPoint.yPixels -
-                            yardNumberCoordinates.awayStepsFromFrontToOutside *
-                                pixelsPerStep,
-                        flipY: true,
-                        flipX: true,
-                        ...numberProps,
-                    })
-                );
-            }
-
-            // Hashes
-            const hashWidth = 20;
-            fieldProperties.yCheckpoints.forEach((yCheckpoint) => {
-                if (yCheckpoint.visible !== false) {
-                    const y =
-                        centerFrontPoint.yPixels +
-                        yCheckpoint.stepsFromCenterFront * pixelsPerStep -
-                        1;
-                    let x1 = x - hashWidth / 2;
-                    x1 = x1 < 0 ? 0 : x1;
-                    let x2 = x + hashWidth / 2;
-                    x2 = x2 > fieldWidth ? fieldWidth : x2;
-                    fieldArray.push(
-                        new fabric.Line(
-                            [x1, y, x2 + 1, y],
-                            yCheckpoint.useAsReference
-                                ? yCheckpointProps
-                                : ySecondaryCheckpointProps
-                        )
-                    );
-                }
-            });
-        });
-
-        // Border
-        const borderWidth = FieldProperties.GRID_STROKE_WIDTH * 3;
-        const borderOffset = 1 - borderWidth; // Offset to prevent clipping. Border hangs off the edge of the canvas
-        const borderProps = {
-            stroke: "black",
-            strokeWidth: borderWidth,
-            selectable: false,
-        };
-        // Back line
-        fieldArray.push(
-            new fabric.Line(
-                [
-                    borderOffset,
-                    borderOffset,
-                    fieldWidth - borderOffset,
-                    borderOffset,
-                ],
-                borderProps
-            )
-        );
-        // Front line
-        fieldArray.push(
-            new fabric.Line(
-                [
-                    borderOffset,
-                    fieldHeight,
-                    fieldWidth - borderOffset + 1,
-                    fieldHeight,
-                ],
-                borderProps
-            )
-        );
-        // Left line
-        fieldArray.push(
-            new fabric.Line(
-                [
-                    borderOffset,
-                    borderOffset,
-                    borderOffset,
-                    fieldHeight - borderOffset,
-                ],
-                borderProps
-            )
-        );
-        // Right line
-        fieldArray.push(
-            new fabric.Line(
-                [
-                    fieldWidth,
-                    borderOffset,
-                    fieldWidth,
-                    fieldHeight - borderOffset,
-                ],
-                borderProps
-            )
-        );
-
-        return new fabric.Group(fieldArray, {
-            selectable: false,
-            hoverCursor: "default",
-        });
-    };
+    /*********************** PRIVATE UTILITY METHODS ***********************/
 }
-
-/**
- * The colors for the canvas.
- */
-export const CanvasColors = {
-    previousPage: "rgba(0, 0, 0, 1)",
-    nextPage: "rgba(0, 175, 13, 1)",
-} as const;
-
-/**
- * Options for the background image on the canvas.
- */
-export const NoControls: IGroupOptions = {
-    hasControls: false,
-    hasBorders: false,
-    lockMovementX: true,
-    lockMovementY: true,
-    lockRotation: true,
-    selectable: false,
-    hoverCursor: "default",
-    evented: false,
-} as const;
-
-/**
- * Options for the active object on the canvas.
- * If this is changed here, it must also be changed in the handleSelect function in Canvas.tsx.
- */
-export const ActiveObjectArgs: IGroupOptions = {
-    hasControls: false,
-    hasBorders: true,
-    lockRotation: true,
-    borderColor: "#0d6efd",
-    borderScaleFactor: 2,
-} as const;

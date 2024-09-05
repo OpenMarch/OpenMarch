@@ -668,6 +668,7 @@ function RegisteredActionsHandler() {
                     "Meta",
                     " ", // Space
                     "Enter",
+                    "Escape",
                 ]);
                 if (code.includes("Key")) {
                     key = code.replace("Key", "");

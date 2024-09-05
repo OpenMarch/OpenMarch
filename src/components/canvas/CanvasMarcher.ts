@@ -2,7 +2,7 @@ import { fabric } from "fabric";
 import Marcher from "../../global/classes/Marcher";
 import MarcherPage from "../../global/classes/MarcherPage";
 import { FieldProperties } from "@/global/classes/FieldProperties";
-import { ActiveObjectArgs } from "./OpenMarchCanvas";
+import { ActiveObjectArgs } from "./CanvasConstants";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.

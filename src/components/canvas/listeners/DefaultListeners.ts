@@ -6,34 +6,40 @@ import MarcherPage, {
 } from "@/global/classes/MarcherPage";
 
 export default class DefaultListeners implements CanvasListeners {
-    canvas: OpenMarchCanvas;
+    protected canvas: OpenMarchCanvas;
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         this.canvas = canvas;
+        this.handleSelect = this.handleSelect.bind(this);
+        this.handleDeselect = this.handleDeselect.bind(this);
+        this.handleObjectModified = this.handleObjectModified.bind(this);
+        this.handleMouseDown = this.handleMouseDown.bind(this);
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseUp = this.handleMouseUp.bind(this);
     }
 
     /**
      * Set the selected marcher(s) when selected element changes.
      */
-    handleSelect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+    handleSelect(fabricEvent: fabric.IEvent<MouseEvent>) {
         if (!fabricEvent.selected || fabricEvent.selected.length === 0) return;
 
         const canvasMarchersToSelect: CanvasMarcher[] =
             this.canvas.getActiveObjectsByType(CanvasMarcher);
 
         this.canvas.setSelectedCanvasMarchers(canvasMarchersToSelect);
-    };
+    }
 
     /**
      * Set the selected marchers to none when the selection is cleared
      */
-    handleDeselect = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+    handleDeselect(fabricEvent: fabric.IEvent<MouseEvent>) {
         if (fabricEvent.deselected) {
             this.canvas.setGlobalsSelectedMarchers([]);
         }
-    };
+    }
 
-    handleObjectModified = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+    handleObjectModified(fabricEvent: fabric.IEvent<MouseEvent>) {
         const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
 
         /*
@@ -74,12 +80,12 @@ export default class DefaultListeners implements CanvasListeners {
             });
 
         MarcherPage.updateMarcherPages(modifiedMarcherPages);
-    };
+    }
 
     // /**
     //  * Set the canvas to dragging mode on mousedown.
     //  */
-    // handleMouseDown = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+    //andleMouseDown = (fabricEvent: fabric.IEvent<MouseEvent>) {
     //     // if (!isDrawing.current) {
     //     //     const pointer = this.canvas.getPointer(fabricEvent.e);
     //     //     const points = [pointer.x, pointer.y, pointer.x, pointer.y];
@@ -126,7 +132,7 @@ export default class DefaultListeners implements CanvasListeners {
     /**
      * Set the canvas to dragging mode on mousedown.
      */
-    handleMouseDown = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+    handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
         // Don't move the canvas if the mouse is on a marcher
         if (OpenMarchCanvas.selectionHasMarchers(fabricEvent)) {
@@ -141,12 +147,12 @@ export default class DefaultListeners implements CanvasListeners {
             this.canvas.selection = false;
             this.canvas.panDragStartPos = { x: evt.clientX, y: evt.clientY };
         }
-    };
+    }
 
     /**
      * Move the canvas on mouse:move when in dragging mode
      */
-    handleMouseMove = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+    handleMouseMove(fabricEvent: fabric.IEvent<MouseEvent>) {
         if (this.canvas.isDragging) {
             const e = fabricEvent.e;
             const vpt = this.canvas.viewportTransform;
@@ -161,7 +167,7 @@ export default class DefaultListeners implements CanvasListeners {
             this.canvas.requestRenderAll();
             this.canvas.panDragStartPos = { x: e.clientX, y: e.clientY };
         }
-    };
+    }
 
     /**
      * Handler for the mouse up event
@@ -169,7 +175,7 @@ export default class DefaultListeners implements CanvasListeners {
      *
      * If the mouse was only clicked and not dragged, select the marcher and do not move it
      */
-    handleMouseUp = (fabricEvent: fabric.IEvent<MouseEvent>) => {
+    handleMouseUp(fabricEvent: fabric.IEvent<MouseEvent>) {
         if (!this.canvas.viewportTransform) {
             console.error(
                 "Viewport transform is not set. This will cause issues with panning around the canvas."
@@ -181,5 +187,5 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.setViewportTransform(this.canvas.viewportTransform);
         this.canvas.isDragging = false;
         this.canvas.selection = true;
-    };
+    }
 }

@@ -8,10 +8,11 @@ import { usePageStore } from "@/stores/page/usePageStore";
 import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import MarcherPage from "@/global/classes/MarcherPage";
-import OpenMarchCanvas, { CanvasColors } from "./OpenMarchCanvas";
+import OpenMarchCanvas from "./OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
 import LineListeners from "./listeners/LineListeners";
+import { CanvasColors } from "./CanvasConstants";
 
 /**
  * The field/stage UI of OpenMarch
@@ -68,10 +69,11 @@ export default function Canvas({
                     canvas.setListeners(new LineListeners({ canvas: canvas }));
                     break;
                 default:
-                    canvas.clearListeners();
+                    canvas.setListeners(
+                        new DefaultListeners({ canvas: canvas })
+                    );
                     break;
             }
-            canvas.setListeners(new DefaultListeners({ canvas: canvas }));
 
             // Cleanup
             return () => {

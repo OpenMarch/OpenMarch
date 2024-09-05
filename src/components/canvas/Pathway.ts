@@ -1,7 +1,7 @@
 import { FieldProperties } from "@/global/classes/FieldProperties";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { fabric } from "fabric";
-import { NoControls } from "./OpenMarchCanvas";
+import { NoControls } from "./CanvasConstants";
 
 /**
  * A Pathway is the object used on the canvas to represent a pathway between two marchers.

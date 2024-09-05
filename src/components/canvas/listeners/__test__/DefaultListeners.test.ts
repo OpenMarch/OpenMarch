@@ -38,6 +38,7 @@ describe("DefaultListeners", () => {
     });
 
     afterEach(() => {
+        canvas.dispose();
         vi.clearAllMocks();
         cleanup();
     });

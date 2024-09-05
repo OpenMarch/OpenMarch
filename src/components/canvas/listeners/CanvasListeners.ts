@@ -8,4 +8,7 @@ export default interface CanvasListeners {
     handleMouseDown: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
     handleMouseMove: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
     handleMouseUp: (fabricEvent: fabric.IEvent<MouseEvent>) => void;
+
+    /** Use this function to perform any cleanup actions when switching the cursor mode */
+    cleanupListener?: () => void;
 }
