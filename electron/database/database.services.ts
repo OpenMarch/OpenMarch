@@ -77,7 +77,7 @@ export function initDatabase() {
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
-    createFieldPropertiesTable(db, FieldProperties.Template.NCAA);
+    createFieldPropertiesTable(db, FieldProperties.Template.HIGH_SCHOOL);
     createMeasureTable(db);
     createAudioFileTable(db);
     History.createHistoryTables(db);
