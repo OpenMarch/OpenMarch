@@ -2,10 +2,7 @@ import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 import StaticCanvasMarcher from "./StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
-import {
-    FieldProperties,
-    getYardNumberCoordinates,
-} from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@/global/classes/FieldProperties";
 import CanvasListeners from "./listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import { IGroupOptions } from "fabric/fabric-impl";
@@ -689,7 +686,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 2,
             selectable: false,
         };
-        const yardNumberCoordinates = getYardNumberCoordinates(
+        const yardNumberCoordinates = FieldProperties.getYardNumberCoordinates(
             fieldProperties.template
         );
         const numberHeight =
