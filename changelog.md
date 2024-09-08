@@ -2,7 +2,8 @@
 
 ## Features
 
-- None yet
+- High school field (in progress)
+- Draw and distribute marchers in a line (in progress)
 
 ## Quality of life
 
@@ -14,3 +15,7 @@
 ## Dev
 
 - Switched from Jest to Vitest
+- Refactored the Canvas.tsx component to have an accompanying `OpenMarchCanvas.ts` class
+  - This will allow for better code isolation, testing, and organization
+- Refactoring the database in electron to use class decorators (in progress)
+  - Rather than repeating functions in one large file, there will be a generic abstract class called `TableController` that will have common function
