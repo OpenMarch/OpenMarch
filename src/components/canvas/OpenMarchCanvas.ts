@@ -12,6 +12,7 @@ import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { ActiveObjectArgs } from "./CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
+import Page from "@/global/classes/Page";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -48,7 +49,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     perfLimitSizeTotal = 225000000;
     maxCacheSideLimit = 11000;
 
+    /** The FieldProperties this OpenMarchCanvas has been built on */
     fieldProperties: FieldProperties;
+    /** The current page this canvas is on */
+    currentPage: Page;
 
     /**
      * Intended to set the selected marchers in the useSelectedMarchers context.
@@ -68,12 +72,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      */
     staticGridRef: fabric.Group;
 
-    constructor(
-        canvasRef: HTMLCanvasElement | null,
-        fieldProperties: FieldProperties,
-        uiSettings: UiSettings,
-        listeners?: CanvasListeners
-    ) {
+    constructor({
+        canvasRef,
+        fieldProperties,
+        uiSettings,
+        currentPage,
+        listeners,
+    }: {
+        canvasRef: HTMLCanvasElement | null;
+        fieldProperties: FieldProperties;
+        uiSettings: UiSettings;
+        currentPage: Page;
+        listeners?: CanvasListeners;
+    }) {
         super(canvasRef, {
             // TODO - why are these here from 4023b18
             // selectionColor: "white",
@@ -84,6 +95,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             fireRightClick: true, // Allow right click events
             stopContextMenu: true, // Prevent right click context menu
         });
+
+        this.currentPage = currentPage;
 
         // Set canvas size
         this.refreshCanvasSize();

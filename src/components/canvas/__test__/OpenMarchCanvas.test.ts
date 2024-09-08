@@ -22,11 +22,11 @@ describe("OpenMarchCanvas", () => {
 
     describe("renderMarchers", () => {
         it("Canvas renders and contains marchers in the correct position", () => {
-            const canvas = new OpenMarchCanvas(
-                null,
-                NCAAFieldProperties,
-                falsyUiSettings
-            );
+            const canvas = new OpenMarchCanvas({
+                canvasRef: null,
+                fieldProperties: NCAAFieldProperties,
+                uiSettings: falsyUiSettings,
+            });
             const selectedPage = mockPages[0];
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
@@ -72,10 +72,14 @@ describe("OpenMarchCanvas", () => {
     describe("uiSettings", () => {
         it("has the correct initial settings", () => {
             const selectedPage = mockPages[0];
-            const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                ...falsyUiSettings,
-                lockX: true,
-                lockY: false,
+            const canvas = new OpenMarchCanvas({
+                canvasRef: null,
+                fieldProperties: NCAAFieldProperties,
+                uiSettings: {
+                    ...falsyUiSettings,
+                    lockX: true,
+                    lockY: false,
+                },
             });
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
@@ -99,10 +103,14 @@ describe("OpenMarchCanvas", () => {
 
         it("changing settings modifies the current active object", () => {
             const selectedPage = mockPages[0];
-            const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                ...falsyUiSettings,
-                lockX: false,
-                lockY: true,
+            const canvas = new OpenMarchCanvas({
+                canvasRef: null,
+                fieldProperties: NCAAFieldProperties,
+                uiSettings: {
+                    ...falsyUiSettings,
+                    lockX: false,
+                    lockY: true,
+                },
             });
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
@@ -141,10 +149,14 @@ describe("OpenMarchCanvas", () => {
 
         it("UI settings persist when setting a new active object", () => {
             const selectedPage = mockPages[0];
-            const canvas = new OpenMarchCanvas(null, NCAAFieldProperties, {
-                ...falsyUiSettings,
-                lockX: false,
-                lockY: true,
+            const canvas = new OpenMarchCanvas({
+                canvasRef: null,
+                fieldProperties: NCAAFieldProperties,
+                uiSettings: {
+                    ...falsyUiSettings,
+                    lockX: false,
+                    lockY: true,
+                },
             });
             canvas.renderMarchers({
                 allMarchers: mockMarchers,

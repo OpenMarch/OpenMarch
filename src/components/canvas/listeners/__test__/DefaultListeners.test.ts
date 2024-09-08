@@ -20,12 +20,12 @@ describe("DefaultListeners", () => {
     let listeners: DefaultListeners;
 
     beforeEach(() => {
-        canvas = new OpenMarchCanvas(
-            null,
-            NCAAFieldProperties,
-            falsyUiSettings,
-            listeners
-        );
+        canvas = new OpenMarchCanvas({
+            canvasRef: null,
+            fieldProperties: NCAAFieldProperties,
+            uiSettings: falsyUiSettings,
+            currentPage: listeners,
+        });
         const selectedPage = mockPages[0];
         canvas.renderMarchers({
             allMarchers: mockMarchers,

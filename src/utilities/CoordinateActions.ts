@@ -94,7 +94,6 @@ export function getRoundCoordinates({
             y: newY,
         });
     }
-
     return changes;
 }
 

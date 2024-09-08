@@ -51,11 +51,12 @@ export default function Canvas({
             setCanvas(testCanvas);
         } else {
             setCanvas(
-                new OpenMarchCanvas(
-                    canvasRef.current,
+                new OpenMarchCanvas({
+                    canvasRef: canvasRef.current,
                     fieldProperties,
-                    uiSettings
-                )
+                    uiSettings,
+                    currentPage: selectedPage,
+                })
             );
         }
     }, [selectedPage, fieldProperties, testCanvas, uiSettings, canvas]);
@@ -100,6 +101,7 @@ export default function Canvas({
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
         if (canvas && selectedPage && marchers && marcherPages) {
+            canvas.currentPage = selectedPage;
             canvas.renderMarchers({
                 selectedMarcherPages: MarcherPage.filterByPageId(
                     marcherPages,

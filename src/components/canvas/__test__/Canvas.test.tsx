@@ -1,13 +1,5 @@
 import { cleanup, render } from "@testing-library/react";
-import {
-    describe,
-    expect,
-    afterEach,
-    it,
-    beforeEach,
-    vi,
-    beforeAll,
-} from "vitest";
+import { describe, afterEach, it, beforeEach, vi } from "vitest";
 import Canvas from "../Canvas";
 import * as Mocks from "@/__mocks__/globalMocks";
 import OpenMarchCanvas from "../OpenMarchCanvas";
@@ -18,7 +10,7 @@ import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { ElectronApi } from "electron/preload";
-import { createRef } from "react";
+import { falsyUiSettings } from "./MocksForCanvas";
 
 // import { mockMarchers, mockPages } from "@/__mocks__/globalMocks";
 // import { createMarcherPages } from "@/utilities/TestingUtilities";
@@ -88,7 +80,12 @@ describe("Canvas", () => {
         const NCAAFieldProperties = new FieldProperties(
             FieldProperties.Template.NCAA
         );
-        const canvas = new OpenMarchCanvas(null, NCAAFieldProperties);
+        const canvas = new OpenMarchCanvas({
+            canvasRef: null,
+            fieldProperties: NCAAFieldProperties,
+            uiSettings: falsyUiSettings,
+            currentPage: Mocks.mockPages[0],
+        });
         renderWithContext(canvas);
     });
 });

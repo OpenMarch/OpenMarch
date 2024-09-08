@@ -39,9 +39,10 @@ export default class DefaultListeners implements CanvasListeners {
         }
     }
 
+    /**
+     * Update the marcher's position when it is moved
+     */
     handleObjectModified(fabricEvent: fabric.IEvent<MouseEvent>) {
-        const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
-
         /*
             ---- Determine if the mouse was clicked or dragged ----
             If the mouse was clicked, likely the user does not want to move the marcher
@@ -64,6 +65,7 @@ export default class DefaultListeners implements CanvasListeners {
             }
         }
 
+        const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
         this.canvas
             .getActiveObjectsByType(CanvasMarcher)
             .forEach((activeCanvasMarcher) => {
@@ -81,53 +83,6 @@ export default class DefaultListeners implements CanvasListeners {
 
         MarcherPage.updateMarcherPages(modifiedMarcherPages);
     }
-
-    // /**
-    //  * Set the canvas to dragging mode on mousedown.
-    //  */
-    //andleMouseDown = (fabricEvent: fabric.IEvent<MouseEvent>) {
-    //     // if (!isDrawing.current) {
-    //     //     const pointer = this.canvas.getPointer(fabricEvent.e);
-    //     //     const points = [pointer.x, pointer.y, pointer.x, pointer.y];
-
-    //     //     // Create the initial line
-    //     //     activeLine.current = new fabric.Line(points, {
-    //     //         strokeWidth: 2,
-    //     //         fill: "black",
-    //     //         stroke: "black",
-    //     //         originX: "center",
-    //     //         originY: "center",
-    //     //     });
-
-    //     //     this.canvas.add(activeLine);
-    //     //     isDrawing.current = true;
-    //     // } else {
-    //     //     // Finalize the line
-    //     //     activeLine.current = null;
-    //     // }
-    //     // default cursor mode
-    //     const evt = fabricEvent.e;
-
-    //     // fabricEvent.target checks if the mouse is on the canvas at all
-    //     // Don't move the canvas if the mouse is on a marcher or a group of marchers
-    //     const isMarcherSelection =
-    //         fabricEvent.target &&
-    //         (fabricEvent.target instanceof CanvasMarcher ||
-    //             // Checks if, when a group is selected, any of the objects in the group are CanvasMarchers
-    //             // Will not work when selecting multiple items that aren't marchers
-    //             (!!(fabricEvent.target as any)._objects &&
-    //                 (fabricEvent.target as any)._objects.some(
-    //                     (obj: any) => obj instanceof CanvasMarcher
-    //                 )));
-    //     if (!isMarcherSelection && !evt.shiftKey) {
-    //         this.canvas.isDragging = true;
-    //         this.canvas.selection = false;
-    //         this.canvas.panDragStartPos = {
-    //             x: evt.clientX,
-    //             y: evt.clientY,
-    //         };
-    //     }
-    // };
 
     /**
      * Set the canvas to dragging mode on mousedown.

@@ -1,5 +1,5 @@
 import OpenMarchCanvas from "../OpenMarchCanvas";
-import MarcherLine from "../shapes/MarcherLine";
+import MarcherLine from "../../../global/classes/MarcherLine";
 import CanvasListeners from "./CanvasListeners";
 import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
@@ -54,6 +54,8 @@ export default class LineListeners
                     y1: pointer.y,
                     x2: pointer.x,
                     y2: pointer.y,
+                    startPageId: this.canvas.currentPage.id,
+                    endPageId: this.canvas.currentPage.id,
                 });
 
                 this.canvas.add(this._activeLine);

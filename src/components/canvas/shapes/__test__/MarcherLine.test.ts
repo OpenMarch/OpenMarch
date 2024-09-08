@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import MarcherPage from "@/global/classes/MarcherPage";
-import MarcherLine from "../MarcherLine";
+import MarcherLine from "../../../../global/classes/MarcherLine";
 
 describe("MarcherLine", () => {
     describe("distributeMarchers", () => {
