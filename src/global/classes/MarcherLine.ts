@@ -314,11 +314,11 @@ export default class MarcherLine extends fabric.Line {
 }
 
 /**
- * An object representing a MarcherLine in the database.
+ * A type representing a MarcherLine in the database.
  *
  * This is the object that is stored in the database and is used to create a MarcherLine object.
  */
-export interface DatabaseLine {
+export type DatabaseLine = {
     id: number;
     notes: string;
     start_page_id: number;
@@ -330,4 +330,34 @@ export interface DatabaseLine {
     group_id: number;
     created_at: string;
     updated_at: string;
-}
+};
+
+/**
+ * A type representing the arguments needed to create a new MarcherLine in the database.
+ */
+export type NewLineArgs = {
+    notes: string;
+    start_page_id: number;
+    end_page_id: number;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    group_id: number;
+};
+
+/**
+ * A type representing the arguments needed to modify a MarcherLine in the database.
+ */
+export type ModifiedLineArgs = {
+    /** The ID is not editable, this is how the line is found */
+    id: number;
+    notes?: string;
+    start_page_id?: number;
+    end_page_id?: number;
+    x1?: number;
+    y1?: number;
+    x2?: number;
+    y2?: number;
+    group_id?: number;
+};

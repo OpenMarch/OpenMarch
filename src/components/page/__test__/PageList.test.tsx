@@ -15,7 +15,6 @@ import { mockPages } from "@/__mocks__/globalMocks";
 import { usePageStore } from "@/stores/page/usePageStore";
 import Page from "@/global/classes/Page";
 import {
-    beforeAll,
     beforeEach,
     describe,
     expect,

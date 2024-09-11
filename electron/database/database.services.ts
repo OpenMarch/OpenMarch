@@ -1,15 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ipcMain } from 'electron';
-import Database from 'better-sqlite3';
-import path from 'path';
-import Constants from '../../src/global/Constants';
-import * as fs from 'fs';
-import * as History from './database.history';
-import Marcher, { ModifiedMarcherArgs, NewMarcherArgs } from '../../src/global/classes/Marcher';
-import Page, { ModifiedPageContainer, NewPageContainer } from '../../src/global/classes/Page';
-import MarcherPage, { ModifiedMarcherPageArgs } from '@/global/classes/MarcherPage';
-import { FieldProperties } from '../../src/global/classes/FieldProperties';
-import AudioFile, { ModifiedAudioFileArgs } from '@/global/classes/AudioFile';
+import { ipcMain } from "electron";
+import Database from "better-sqlite3";
+import path from "path";
+import Constants from "../../src/global/Constants";
+import * as fs from "fs";
+import * as History from "./database.history";
+import Marcher, {
+    ModifiedMarcherArgs,
+    NewMarcherArgs,
+} from "../../src/global/classes/Marcher";
+import Page, {
+    ModifiedPageContainer,
+    NewPageContainer,
+} from "../../src/global/classes/Page";
+import MarcherPage, {
+    ModifiedMarcherPageArgs,
+} from "@/global/classes/MarcherPage";
+import { FieldProperties } from "../../src/global/classes/FieldProperties";
+import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -17,8 +24,13 @@ export class DatabaseResponse {
      * Resulting data from the database action. This isn't very well implemented
      * and likely will not be used.
      */
-    readonly result?: Marcher[] | Page[] | MarcherPage[] | FieldProperties | AudioFile[];
-    readonly error?: { message: string, stack?: string };
+    readonly result?:
+        | Marcher[]
+        | Page[]
+        | MarcherPage[]
+        | FieldProperties
+        | AudioFile[];
+    readonly error?: { message: string; stack?: string };
 
     constructor(success: boolean, result?: any, error?: Error) {
         this.success = success;
@@ -28,7 +40,7 @@ export class DatabaseResponse {
 }
 
 /* ============================ DATABASE ============================ */
-let DB_PATH = '';
+let DB_PATH = "";
 
 /**
  * Change the location of the database file the application and actively updates.
@@ -39,7 +51,7 @@ let DB_PATH = '';
 export function setDbPath(path: string, isNewFile = false) {
     if (!fs.existsSync(path) && !isNewFile) {
         console.error(`setDbPath: File does not exist at path: ${path}`);
-        DB_PATH = '';
+        DB_PATH = "";
         return -1;
     }
     DB_PATH = path;
@@ -60,7 +72,7 @@ export function databaseIsReady() {
 export function initDatabase() {
     const db = connect();
     console.log(db);
-    console.log('Creating database...');
+    console.log("Creating database...");
     if (!db) return;
     createMarcherTable(db);
     createPageTable(db);
@@ -69,16 +81,27 @@ export function initDatabase() {
     createMeasureTable(db);
     createAudioFileTable(db);
     History.createHistoryTables(db);
-    console.log('Database created.');
+    console.log("Database created.");
     db.close();
 }
 
 export function connect() {
     try {
-        const dbPath = DB_PATH.length > 0 ? DB_PATH : path.resolve(__dirname, '../../', 'electron/database/', 'database.db');
+        const dbPath =
+            DB_PATH.length > 0
+                ? DB_PATH
+                : path.resolve(
+                      __dirname,
+                      "../../",
+                      "electron/database/",
+                      "database.db"
+                  );
         return Database(dbPath, { verbose: console.log });
     } catch (error: any) {
-        throw new Error('Failed to connect to database:\nPLEASE RUN \'node_modules/.bin/electron-rebuild -f -w better-sqlite3\' to resolve this', error);
+        throw new Error(
+            "Failed to connect to database:\nPLEASE RUN 'node_modules/.bin/electron-rebuild -f -w better-sqlite3' to resolve this",
+            error
+        );
     }
 }
 
@@ -86,12 +109,12 @@ function createMarcherTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
-                "id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id"	        INTEGER PRIMARY KEY AUTOINCREMENT,
                 "id_for_html"	TEXT UNIQUE,
-                "name"	TEXT,
-                "section"	TEXT NOT NULL,
-                "year"	TEXT,
-                "notes"	TEXT,
+                "name"	        TEXT,
+                "section"	    TEXT NOT NULL,
+                "year"	        TEXT,
+                "notes"	        TEXT,
                 "drill_prefix"	TEXT NOT NULL,
                 "drill_order"	INTEGER NOT NULL,
                 "drill_number"	TEXT UNIQUE NOT NULL,
@@ -101,27 +124,27 @@ function createMarcherTable(db: Database.Database) {
             );
         `);
     } catch (error) {
-        console.error('Failed to create marcher table:', error);
+        console.error("Failed to create marcher table:", error);
     }
-    console.log('Marcher table created.');
+    console.log("Marcher table created.");
 }
 
 function createPageTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
-                "id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id"	        INTEGER PRIMARY KEY AUTOINCREMENT,
                 "id_for_html"	TEXT UNIQUE,
-                "name"	TEXT NOT NULL UNIQUE,
-                "notes"	TEXT,
-                "order"	INTEGER NOT NULL UNIQUE,
-                "counts"	INTEGER NOT NULL,
+                "name"	        TEXT NOT NULL UNIQUE,
+                "notes"	        TEXT,
+                "order"	        INTEGER NOT NULL UNIQUE,
+                "counts"	    INTEGER NOT NULL,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
             );
         `);
     } catch (error) {
-        console.error('Failed to create page table:', error);
+        console.error("Failed to create page table:", error);
     }
 }
 
@@ -129,25 +152,28 @@ function createMarcherPageTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "id_for_html" TEXT UNIQUE,
-                "marcher_id" INTEGER NOT NULL,
-                "page_id" INTEGER NOT NULL,
-                "x" REAL,
-                "y" REAL,
-                "created_at" TEXT NOT NULL,
-                "updated_at" TEXT NOT NULL,
-                "notes" TEXT
+                "id"            INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id_for_html"   TEXT UNIQUE,
+                "marcher_id"    INTEGER NOT NULL,
+                "page_id"       INTEGER NOT NULL,
+                "x"             REAL,
+                "y"             REAL,
+                "created_at"    TEXT NOT NULL,
+                "updated_at"    TEXT NOT NULL,
+                "notes"         TEXT
             );
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
         `);
     } catch (error) {
-        console.error('Failed to create marcher_page table:', error);
+        console.error("Failed to create marcher_page table:", error);
     }
 }
 
-function createFieldPropertiesTable(db: Database.Database, template: FieldProperties.Template) {
+function createFieldPropertiesTable(
+    db: Database.Database,
+    template: FieldProperties.Template
+) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.FieldPropertiesTableName}" (
@@ -156,7 +182,7 @@ function createFieldPropertiesTable(db: Database.Database, template: FieldProper
             );
         `);
     } catch (error) {
-        console.error('Failed to create field properties table:', error);
+        console.error("Failed to create field properties table:", error);
     }
     const fieldProperties: FieldProperties = new FieldProperties(template);
     const stmt = db.prepare(`
@@ -169,7 +195,7 @@ function createFieldPropertiesTable(db: Database.Database, template: FieldProper
         );
     `);
     stmt.run({ json_data: JSON.stringify(fieldProperties) });
-    console.log('Field properties table created.');
+    console.log("Field properties table created.");
 }
 
 /**
@@ -204,10 +230,14 @@ function createMeasureTable(db: Database.Database) {
             );
         `);
         const created_at = new Date().toISOString();
-        stmt.run({ abc_data: defaultMeasures, created_at, updated_at: created_at });
-        console.log('Measures table created.');
+        stmt.run({
+            abc_data: defaultMeasures,
+            created_at,
+            updated_at: created_at,
+        });
+        console.log("Measures table created.");
     } catch (error) {
-        console.error('Failed to create Measures table:', error);
+        console.error("Failed to create Measures table:", error);
     }
 }
 
@@ -232,9 +262,9 @@ function createAudioFileTable(db: Database.Database) {
             );
         `);
     } catch (error) {
-        console.error('Failed to create audio file table:', error);
+        console.error("Failed to create audio file table:", error);
     }
-    console.log('audio file table created.');
+    console.log("audio file table created.");
 }
 
 /* ============================ Handlers ============================ */
@@ -244,46 +274,68 @@ function createAudioFileTable(db: Database.Database) {
  */
 export function initHandlers() {
     // Field properties
-    ipcMain.handle('field_properties:get', async () => getFieldProperties());
+    ipcMain.handle("field_properties:get", async () => getFieldProperties());
 
     // File IO handlers located in electron/main/index.ts
 
     // Marcher
-    ipcMain.handle('marcher:getAll', async () => getMarchers());
-    ipcMain.handle('marcher:insert', async (_, args) => createMarcher(args));
-    ipcMain.handle('marcher:update', async (_, args) => updateMarchers(args));
-    ipcMain.handle('marcher:delete', async (_, marcher_id) => deleteMarcher(marcher_id));
+    ipcMain.handle("marcher:getAll", async () => getMarchers());
+    ipcMain.handle("marcher:insert", async (_, args) => createMarcher(args));
+    ipcMain.handle("marcher:update", async (_, args) => updateMarchers(args));
+    ipcMain.handle("marcher:delete", async (_, marcher_id) =>
+        deleteMarcher(marcher_id)
+    );
 
     // Page
-    ipcMain.handle('page:getAll', async () => getPages());
-    ipcMain.handle('page:insert', async (_, args) => createPages(args));
-    ipcMain.handle('page:update', async (
-        _, pages: ModifiedPageContainer[], addToHistoryQueue: boolean, updateInReverse: boolean
-    ) =>
-        updatePages(pages, addToHistoryQueue, updateInReverse));
-    ipcMain.handle('page:delete', async (_, page_id) => deletePage(page_id));
+    ipcMain.handle("page:getAll", async () => getPages());
+    ipcMain.handle("page:insert", async (_, args) => createPages(args));
+    ipcMain.handle(
+        "page:update",
+        async (
+            _,
+            pages: ModifiedPageContainer[],
+            addToHistoryQueue: boolean,
+            updateInReverse: boolean
+        ) => updatePages(pages, addToHistoryQueue, updateInReverse)
+    );
+    ipcMain.handle("page:delete", async (_, page_id) => deletePage(page_id));
 
     // MarcherPage
-    ipcMain.handle('marcher_page:getAll', async (_, args) => getMarcherPages(args));
-    ipcMain.handle('marcher_page:get', async (_, args) => getMarcherPage(args));
-    ipcMain.handle('marcher_page:update', async (_, args) => updateMarcherPages(args));
+    ipcMain.handle("marcher_page:getAll", async (_, args) =>
+        getMarcherPages(args)
+    );
+    ipcMain.handle("marcher_page:get", async (_, args) => getMarcherPage(args));
+    ipcMain.handle("marcher_page:update", async (_, args) =>
+        updateMarcherPages(args)
+    );
 
     // Measure
-    ipcMain.handle('measure:getAll', async () => getMeasures());
-    ipcMain.handle('measure:update', async (_, abcString: string) => updateMeasuresAbcString(abcString));
+    ipcMain.handle("measure:getAll", async () => getMeasures());
+    ipcMain.handle("measure:update", async (_, abcString: string) =>
+        updateMeasuresAbcString(abcString)
+    );
 
     // Audio Files
     // Insert audio file is defined in main index.ts
-    ipcMain.handle('audio:getAll', async () => getAudioFilesDetails());
-    ipcMain.handle('audio:getSelected', async () => getSelectedAudioFile());
-    ipcMain.handle('audio:select', async (_, audioFileId: number) => setSelectAudioFile(audioFileId));
-    ipcMain.handle('audio:update', async (_, args: ModifiedAudioFileArgs[]) => updateAudioFiles(args))
-    ipcMain.handle('audio:delete', async (_, audioFileId: number) => deleteAudioFile(audioFileId))
+    ipcMain.handle("audio:getAll", async () => getAudioFilesDetails());
+    ipcMain.handle("audio:getSelected", async () => getSelectedAudioFile());
+    ipcMain.handle("audio:select", async (_, audioFileId: number) =>
+        setSelectAudioFile(audioFileId)
+    );
+    ipcMain.handle("audio:update", async (_, args: ModifiedAudioFileArgs[]) =>
+        updateAudioFiles(args)
+    );
+    ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
+        deleteAudioFile(audioFileId)
+    );
 }
 
 /* ======================= Exported Functions ======================= */
 // From the history file
-export async function historyAction(type: 'undo' | 'redo', db?: Database.Database) {
+export async function historyAction(
+    type: "undo" | "redo",
+    db?: Database.Database
+) {
     return await History.historyAction(type, db);
 }
 
@@ -294,9 +346,13 @@ export async function historyAction(type: 'undo' | 'redo', db?: Database.Databas
  * @param db
  * @returns
  */
-export async function getFieldProperties(db?: Database.Database): Promise<FieldProperties> {
+export async function getFieldProperties(
+    db?: Database.Database
+): Promise<FieldProperties> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.FieldPropertiesTableName}`);
+    const stmt = dbToUse.prepare(
+        `SELECT * FROM ${Constants.FieldPropertiesTableName}`
+    );
     const result = await stmt.get({});
     const jsonData = (result as any).json_data;
     const fieldProperties = JSON.parse(jsonData) as FieldProperties;
@@ -304,23 +360,27 @@ export async function getFieldProperties(db?: Database.Database): Promise<FieldP
     return fieldProperties;
 }
 
-
 /* ============================ Marcher ============================ */
 /**
  * @param db The database connection, or undefined to create a new connection
- * @returns A sorted array of marchers, sorted by the Marcher.compareTo method
+ * @returns An array of all marchers in the database
  */
 async function getMarchers(db?: Database.Database): Promise<Marcher[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName}`);
-    const result = await stmt.all() as Marcher[];
+    const result = (await stmt.all()) as Marcher[];
     if (!db) dbToUse.close();
     return result;
 }
 
-async function getMarcher(marcherId: number, db?: Database.Database): Promise<Marcher> {
+async function getMarcher(
+    marcherId: number,
+    db?: Database.Database
+): Promise<Marcher> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`);
+    const stmt = dbToUse.prepare(
+        `SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`
+    );
     const result = await stmt.get({ marcherId });
     if (!db) dbToUse.close();
     return result as Marcher;
@@ -336,7 +396,9 @@ async function createMarcher(newMarcher: NewMarcherArgs) {
  * @param newMarcherArgs
  * @returns - {success: boolean, error?: string}
  */
-async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseResponse> {
+async function createMarchers(
+    newMarchers: NewMarcherArgs[]
+): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -346,11 +408,11 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
         for (const newMarcher of newMarchers) {
             const marcherToAdd: Marcher = new Marcher({
                 id: 0, // Not used, needed for interface
-                id_for_html: '', // Not used, needed for interface
-                name: newMarcher.name || '',
+                id_for_html: "", // Not used, needed for interface
+                name: newMarcher.name || "",
                 section: newMarcher.section,
                 drill_prefix: newMarcher.drill_prefix,
-                drill_order: newMarcher.drill_order
+                drill_order: newMarcher.drill_order,
             });
             const db = connect();
             const insertStmt = db.prepare(`
@@ -376,7 +438,7 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
             const insertResult = insertStmt.run({
                 ...marcherToAdd,
                 created_at,
-                updated_at: created_at
+                updated_at: created_at,
             });
 
             // Get the id of the inserted row
@@ -390,7 +452,7 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
             `);
             updateStmt.run({
                 id_for_html: Constants.MarcherPrefix + "_" + id,
-                id
+                id,
             });
 
             // Add the page to the history table
@@ -406,7 +468,12 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
 
             // For each page, create a new MarcherPage
             for (const page of pages) {
-                createMarcherPage(db, { marcher_id: id, page_id: page.id, x: 100, y: 100 });
+                createMarcherPage(db, {
+                    marcher_id: id,
+                    page_id: page.id,
+                    x: 100,
+                    y: 100,
+                });
 
                 // Add the marcherPage to the history table
                 // historyQueries.push({
@@ -418,7 +485,10 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
         }
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -432,26 +502,28 @@ async function createMarchers(newMarchers: NewMarcherArgs[]): Promise<DatabaseRe
  *                    marcher to update and the values to update it with
  * @returns - {success: boolean, error: string}
  */
-async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<DatabaseResponse> {
+async function updateMarchers(
+    modifiedMarchers: ModifiedMarcherArgs[]
+): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
     // List of queries executed in this function to be added to the history table
     const historyActions: History.UpdateHistoryEntry[] = [];
     // List of properties to exclude
-    const excludedProperties = ['id'];
+    const excludedProperties = ["id"];
 
     try {
         for (const modifiedMarcher of modifiedMarchers) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(modifiedMarcher)
-                .filter(key => !excludedProperties.includes(key))
-                .map(key => `${key} = @${key}`)
-                .join(', ');
+                .filter((key) => !excludedProperties.includes(key))
+                .map((key) => `${key} = @${key}`)
+                .join(", ");
 
             // Check if the SET clause is empty
             if (setClause.length === 0) {
-                throw new Error('No valid properties to update');
+                throw new Error("No valid properties to update");
             }
             // Record the original values of the marcher
             const originalMarcher = await getMarcher(modifiedMarcher.id, db);
@@ -462,7 +534,10 @@ async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<
                 WHERE id = @id
             `);
 
-            stmt.run({ ...modifiedMarcher, new_updated_at: new Date().toISOString() });
+            stmt.run({
+                ...modifiedMarcher,
+                new_updated_at: new Date().toISOString(),
+            });
 
             historyActions.push({
                 tableName: Constants.MarcherTableName,
@@ -471,14 +546,17 @@ async function updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]): Promise<
                 reverseAction: {
                     tableName: Constants.MarcherTableName,
                     setClause: setClause,
-                    previousState: await getMarcher(modifiedMarcher.id, db)
-                }
+                    previousState: await getMarcher(modifiedMarcher.id, db),
+                },
             });
         }
         History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -509,12 +587,13 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
             WHERE marcher_id = @marcher_id
         `);
         marcherPageStmt.run({ marcher_id });
-    }
-    catch (error: any) {
+    } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
-    }
-    finally {
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
+    } finally {
         db.close();
     }
     return output;
@@ -530,7 +609,7 @@ async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
 async function getPages(db?: Database.Database): Promise<Page[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName}`);
-    const result = await stmt.all() as Page[];
+    const result = (await stmt.all()) as Page[];
     if (!db) dbToUse.close();
     return result;
 }
@@ -544,7 +623,9 @@ async function getPages(db?: Database.Database): Promise<Page[]> {
  */
 async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @pageId`);
+    const stmt = dbToUse.prepare(
+        `SELECT * FROM ${Constants.PageTableName} WHERE id = @pageId`
+    );
     const result = await stmt.get({ pageId });
     if (!db) dbToUse.close();
     return result as Page;
@@ -556,7 +637,9 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
  * @param newPages The new pages to create.
  * @returns The response from the database.
  */
-async function createPages(newPages: NewPageContainer[]): Promise<DatabaseResponse> {
+async function createPages(
+    newPages: NewPageContainer[]
+): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
@@ -572,9 +655,9 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
             // Get the max order
             const pageToAdd: NewPageContainer = {
                 name: newPage.name,
-                notes: newPage.notes || '',
+                notes: newPage.notes || "",
                 order: newPage.order,
-                counts: newPage.counts
+                counts: newPage.counts,
             };
             const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.PageTableName} (
@@ -597,7 +680,7 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
             const insertResult = insertStmt.run({
                 ...pageToAdd,
                 created_at,
-                updated_at: created_at
+                updated_at: created_at,
             });
             // Get the id of the inserted row
             const id = insertResult.lastInsertRowid as number;
@@ -607,10 +690,10 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
                 SET id_for_html = @id_for_html
                 WHERE id = @id
             `);
-            const new_id_for_html = Constants.PagePrefix + '_' + id;
+            const new_id_for_html = Constants.PagePrefix + "_" + id;
             updateStmt.run({
                 id_for_html: new_id_for_html,
-                id
+                id,
             });
 
             // Add a marcherPage for this page for each marcher
@@ -618,21 +701,26 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
             const marchers = await getMarchers();
             // For each marcher, create a new MarcherPage
             for (const marcher of marchers) {
-                let previousMarcherPageCoords = await getCoordsOfPreviousPage(marcher.id, id);
+                let previousMarcherPageCoords = await getCoordsOfPreviousPage(
+                    marcher.id,
+                    id
+                );
                 if (!previousMarcherPageCoords)
                     previousMarcherPageCoords = { x: 100, y: 100 };
                 createMarcherPage(db, {
                     marcher_id: marcher.id,
                     page_id: id,
                     x: previousMarcherPageCoords.x,
-                    y: previousMarcherPageCoords.y
+                    y: previousMarcherPageCoords.y,
                 });
             }
         }
-
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -650,35 +738,39 @@ async function createPages(newPages: NewPageContainer[]): Promise<DatabaseRespon
  *                    This is used to satisfy the unique constraint on the order and name column when adding pages.
  * @returns - {success: boolean, error?: string}
  */
-async function updatePages(modifiedPages: ModifiedPageContainer[],
-    addToHistoryQueue: Boolean = true, updateInReverse = false
-):
-    Promise<DatabaseResponse> {
-
+async function updatePages(
+    modifiedPages: ModifiedPageContainer[],
+    addToHistoryQueue: Boolean = true,
+    updateInReverse = false
+): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
 
     // List of queries executed in this function to be added to the history table
     const historyActions: History.UpdateHistoryEntry[] = [];
     // List of properties to exclude
-    const excludedProperties = ['id'];
-    const sortedModifiedPages = modifiedPages.sort((a, b) => (a.order ? a.order : 0) - (b.order ? b.order : 0));
+    const excludedProperties = ["id"];
+    const sortedModifiedPages = modifiedPages.sort(
+        (a, b) => (a.order ? a.order : 0) - (b.order ? b.order : 0)
+    );
 
     try {
-        for (const pageUpdate of updateInReverse ? sortedModifiedPages.toReversed() : sortedModifiedPages) {
+        for (const pageUpdate of updateInReverse
+            ? sortedModifiedPages.toReversed()
+            : sortedModifiedPages) {
             if (pageUpdate.order === 0) {
                 // Ensure the first page has no counts
                 pageUpdate.counts = 0;
             }
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(pageUpdate)
-                .filter(key => !excludedProperties.includes(key))
-                .map(key => `"${key}" = @${key}`)
-                .join(', ');
+                .filter((key) => !excludedProperties.includes(key))
+                .map((key) => `"${key}" = @${key}`)
+                .join(", ");
 
             // Check if the SET clause is empty
             if (setClause.length === 0) {
-                console.error('No valid properties to update');
+                console.error("No valid properties to update");
                 continue;
             }
 
@@ -690,7 +782,10 @@ async function updatePages(modifiedPages: ModifiedPageContainer[],
                 SET ${setClause}, updated_at = @new_updated_at
                 WHERE id = @id
             `);
-            stmt.run({ ...pageUpdate, new_updated_at: new Date().toISOString() });
+            stmt.run({
+                ...pageUpdate,
+                new_updated_at: new Date().toISOString(),
+            });
 
             if (addToHistoryQueue) {
                 historyActions.push({
@@ -700,16 +795,18 @@ async function updatePages(modifiedPages: ModifiedPageContainer[],
                     reverseAction: {
                         tableName: Constants.PageTableName,
                         setClause: setClause,
-                        previousState: await getPage(pageUpdate.id, db)
-                    }
+                        previousState: await getPage(pageUpdate.id, db),
+                    },
                 });
             }
         }
-        if (addToHistoryQueue)
-            History.insertUpdateHistory(historyActions, db);
+        if (addToHistoryQueue) History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -740,12 +837,10 @@ async function deletePage(page_id: number): Promise<DatabaseResponse> {
             WHERE page_id = @page_id
         `);
         marcherPageStmt.run({ page_id });
-    }
-    catch (error: any) {
+    } catch (error: any) {
         console.error(error);
         output = { success: false, error: error };
-    }
-    finally {
+    } finally {
         db.close();
     }
     return output;
@@ -758,16 +853,25 @@ async function deletePage(page_id: number): Promise<DatabaseResponse> {
  * @param args { marcher_id?: number, page_id?: number}
  * @returns Array of marcherPages
  */
-async function getMarcherPages(args: { marcher_id?: number, page_id?: number }): Promise<MarcherPage[]> {
+async function getMarcherPages(args: {
+    marcher_id?: number;
+    page_id?: number;
+}): Promise<MarcherPage[]> {
     const db = connect();
     let stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName}`);
     if (args) {
         if (args.marcher_id && args.page_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`);
+            stmt = db.prepare(
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`
+            );
         else if (args.marcher_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`);
+            stmt = db.prepare(
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`
+            );
         else if (args.page_id)
-            stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`);
+            stmt = db.prepare(
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`
+            );
     }
     const result = await stmt.all();
     db.close();
@@ -781,7 +885,10 @@ async function getMarcherPages(args: { marcher_id?: number, page_id?: number }):
  * @param args { marcher_id: number, page_id: number}
  * @returns The marcherPage
  */
-async function getMarcherPage(args: { marcher_id: number, page_id: number }): Promise<MarcherPage> {
+async function getMarcherPage(args: {
+    marcher_id: number;
+    page_id: number;
+}): Promise<MarcherPage> {
     const marcherPages = await getMarcherPages(args);
     return marcherPages[0];
 }
@@ -796,17 +903,20 @@ async function getMarcherPage(args: { marcher_id: number, page_id: number }): Pr
  * @param newMarcherPage The marcherPage to add
  * @returns
  */
-async function createMarcherPage(db: Database.Database, newMarcherPage: ModifiedMarcherPageArgs) {
+async function createMarcherPage(
+    db: Database.Database,
+    newMarcherPage: ModifiedMarcherPageArgs
+) {
     if (!newMarcherPage.marcher_id || !newMarcherPage.page_id)
-        throw new Error('MarcherPage must have marcher_id and page_id');
+        throw new Error("MarcherPage must have marcher_id and page_id");
 
     const marcherPageToAdd: MarcherPage = {
         id: 0, // Not used, needed for interface
-        id_for_html: '', // Not used, needed for interface
+        id_for_html: "", // Not used, needed for interface
         marcher_id: newMarcherPage.marcher_id,
         page_id: newMarcherPage.page_id,
         x: newMarcherPage.x,
-        y: newMarcherPage.y
+        y: newMarcherPage.y,
     };
     const insertStmt = db.prepare(`
         INSERT INTO ${Constants.MarcherPageTableName} (
@@ -829,7 +939,7 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Modified
     const insertResult = insertStmt.run({
         ...marcherPageToAdd,
         created_at,
-        updated_at: created_at
+        updated_at: created_at,
     });
     // Get the id of the inserted row
     const id = insertResult.lastInsertRowid;
@@ -840,8 +950,8 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Modified
         WHERE id = @id
     `);
     const updateResult = updateStmt.run({
-        id_for_html: Constants.MarcherPagePrefix + '_' + id,
-        id
+        id_for_html: Constants.MarcherPagePrefix + "_" + id,
+        id,
     });
     return updateResult;
 }
@@ -853,7 +963,9 @@ async function createMarcherPage(db: Database.Database, newMarcherPage: Modified
  *                  marcherPage to update and the values to update it with
  * @returns - {success: boolean, result: Database.result | string}
  */
-async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[]): Promise<DatabaseResponse> {
+async function updateMarcherPages(
+    marcherPageUpdates: ModifiedMarcherPageArgs[]
+): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
     const historyActions: History.UpdateHistoryEntry[] = [];
@@ -861,18 +973,18 @@ async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[])
         for (const marcherPageUpdate of marcherPageUpdates) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(marcherPageUpdate)
-                .map(key => `${key} = @${key}`)
-                .join(', ');
+                .map((key) => `${key} = @${key}`)
+                .join(", ");
 
             // Check if the SET clause is empty
             if (setClause.length === 0) {
-                throw new Error('No valid properties to update');
+                throw new Error("No valid properties to update");
             }
 
             // Record the original values of the marcherPage for the history table
             const previousState = await getMarcherPage({
                 marcher_id: marcherPageUpdate.marcher_id,
-                page_id: marcherPageUpdate.page_id
+                page_id: marcherPageUpdate.page_id,
             });
 
             const stmt = db.prepare(`
@@ -881,7 +993,10 @@ async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[])
                 WHERE marcher_id = @marcher_id AND page_id = @page_id
             `);
 
-            await stmt.run({ ...marcherPageUpdate, new_updated_at: new Date().toISOString() });
+            await stmt.run({
+                ...marcherPageUpdate,
+                new_updated_at: new Date().toISOString(),
+            });
 
             const updateHistoryEntry = {
                 tableName: Constants.MarcherPageTableName,
@@ -892,10 +1007,10 @@ async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[])
                     setClause: setClause,
                     previousState: await getMarcherPage({
                         marcher_id: marcherPageUpdate.marcher_id,
-                        page_id: marcherPageUpdate.page_id
+                        page_id: marcherPageUpdate.page_id,
                     }),
-                }
-            }
+                },
+            };
 
             historyActions.push(updateHistoryEntry);
         }
@@ -904,7 +1019,10 @@ async function updateMarcherPages(marcherPageUpdates: ModifiedMarcherPageArgs[])
         output = { success: true };
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -922,18 +1040,23 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
     const db = connect();
 
     /* Get the previous marcherPage */
-    const currPageStmt = db.prepare(`SELECT * FROM ${Constants.PageTableName} WHERE id = @page_id`);
+    const currPageStmt = db.prepare(
+        `SELECT * FROM ${Constants.PageTableName} WHERE id = @page_id`
+    );
     const currPage = currPageStmt.get({ page_id }) as Page;
-    if (!currPage)
-        throw new Error(`Page with id ${page_id} does not exist`);
+    if (!currPage) throw new Error(`Page with id ${page_id} does not exist`);
     if (currPage.order === 1) {
-        console.log(`page_id ${page_id} is the first page, skipping setCoordsToPreviousPage`);
+        console.log(
+            `page_id ${page_id} is the first page, skipping setCoordsToPreviousPage`
+        );
         return;
     }
     const previousPage = await getPreviousPage(page_id, db);
-    if (!previousPage)
-        return null;
-    const previousMarcherPage = await getMarcherPage({ marcher_id, page_id: previousPage.id }) as MarcherPage;
+    if (!previousPage) return null;
+    const previousMarcherPage = (await getMarcherPage({
+        marcher_id,
+        page_id: previousPage.id,
+    })) as MarcherPage;
 
     if (!previousPage)
         throw new Error(`Previous page with page_id ${page_id} does not exist`);
@@ -941,8 +1064,8 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
     db.close();
     return {
         x: previousMarcherPage.x,
-        y: previousMarcherPage.y
-    }
+        y: previousMarcherPage.y,
+    };
 }
 
 /**
@@ -952,7 +1075,10 @@ async function getCoordsOfPreviousPage(marcher_id: number, page_id: number) {
  * @param db
  * @returns The page prior to the page with the given id. Null if the page is the first page.
  */
-async function getPreviousPage(pageId: number, db?: Database.Database): Promise<Page> {
+async function getPreviousPage(
+    pageId: number,
+    db?: Database.Database
+): Promise<Page> {
     const dbToUse = db || connect();
     const currentOrder = (await getPage(pageId, dbToUse)).order;
 
@@ -964,10 +1090,9 @@ async function getPreviousPage(pageId: number, db?: Database.Database): Promise<
         LIMIT 1
     `);
 
-    const result = await stmt.get({ currentOrder }) as Page;
+    const result = (await stmt.get({ currentOrder })) as Page;
     if (!db) dbToUse.close();
-    return result as Page || null;
-
+    return (result as Page) || null;
 }
 
 /* ============================ Measures ============================ */
@@ -977,7 +1102,7 @@ M:4/4
 V:1 baritone
 V:1
 z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
-`
+`;
 /***** NOTE - Measures are currently not part of the history table *****/
 
 /**
@@ -988,8 +1113,14 @@ z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
  */
 async function getMeasures(db?: Database.Database): Promise<string> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`);
-    const response = stmt.all() as { abc_data: string, created_at: string, updated_at: string }[];
+    const stmt = dbToUse.prepare(
+        `SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`
+    );
+    const response = stmt.all() as {
+        abc_data: string;
+        created_at: string;
+        updated_at: string;
+    }[];
     if (response.length === 0 || response[0].abc_data.length < 20) {
         response[0].abc_data = defaultMeasures;
         updateMeasuresAbcString(defaultMeasures);
@@ -1004,20 +1135,28 @@ async function getMeasures(db?: Database.Database): Promise<string> {
  * @param abcString The new ABC string to put into the database
  * @returns DatabaseResponse
  */
-async function updateMeasuresAbcString(abcString: string): Promise<DatabaseResponse> {
+async function updateMeasuresAbcString(
+    abcString: string
+): Promise<DatabaseResponse> {
     const db = connect();
-    let output: DatabaseResponse = { success: false }
+    let output: DatabaseResponse = { success: false };
     try {
         const stmt = db.prepare(`
                 UPDATE ${Constants.MeasureTableName}
                 SET abc_data = @abc_data, updated_at = @new_updated_at
                 WHERE id = 1
             `);
-        await stmt.run({ abc_data: abcString, new_updated_at: new Date().toISOString() });
+        await stmt.run({
+            abc_data: abcString,
+            new_updated_at: new Date().toISOString(),
+        });
         output = { success: true };
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -1032,9 +1171,13 @@ async function updateMeasuresAbcString(abcString: string): Promise<DatabaseRespo
  * @param db The database connection
  * @returns Array of measures
  */
-async function getAudioFilesDetails(db?: Database.Database): Promise<AudioFile[]> {
+async function getAudioFilesDetails(
+    db?: Database.Database
+): Promise<AudioFile[]> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`);
+    const stmt = dbToUse.prepare(
+        `SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`
+    );
     const response = stmt.all() as AudioFile[];
     if (!db) dbToUse.close();
     return response;
@@ -1047,15 +1190,21 @@ async function getAudioFilesDetails(db?: Database.Database): Promise<AudioFile[]
  *
  * @returns The currently selected audio file in the database. Includes audio data.
  */
-export async function getSelectedAudioFile(db?: Database.Database): Promise<AudioFile | null> {
+export async function getSelectedAudioFile(
+    db?: Database.Database
+): Promise<AudioFile | null> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`);
+    const stmt = dbToUse.prepare(
+        `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`
+    );
     const result = await stmt.get();
     if (!result) {
-        const firstAudioFileStmt = dbToUse.prepare(`SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`);
-        const firstAudioFile = await firstAudioFileStmt.get() as AudioFile;
+        const firstAudioFileStmt = dbToUse.prepare(
+            `SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`
+        );
+        const firstAudioFile = (await firstAudioFileStmt.get()) as AudioFile;
         if (!firstAudioFile) {
-            console.error('No audio files in the database');
+            console.error("No audio files in the database");
             return null;
         }
         await setSelectAudioFile(firstAudioFile.id);
@@ -1072,17 +1221,22 @@ export async function getSelectedAudioFile(db?: Database.Database): Promise<Audi
  * @param audioFileId The ID of the audio file to get
  * @returns The newly selected AudioFile object including the audio data
  */
-async function setSelectAudioFile(audioFileId: number): Promise<AudioFile | null> {
+async function setSelectAudioFile(
+    audioFileId: number
+): Promise<AudioFile | null> {
     const db = connect();
-    const stmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 0`);
+    const stmt = db.prepare(
+        `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`
+    );
     stmt.run();
-    const selectStmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 1 WHERE id = @audioFileId`);
+    const selectStmt = db.prepare(
+        `UPDATE ${Constants.AudioFilesTableName} SET selected = 1 WHERE id = @audioFileId`
+    );
     await selectStmt.run({ audioFileId });
     const result = await getSelectedAudioFile(db);
     db.close();
     return result as AudioFile;
 }
-
 
 /**
  * Creates new measures in the database, completely replacing the old ABC string.
@@ -1092,11 +1246,15 @@ async function setSelectAudioFile(audioFileId: number): Promise<AudioFile | null
  * @param new_ABC_data The new ABC string to put into the database
  * @returns DatabaseResponse
  */
-export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseResponse> {
+export async function insertAudioFile(
+    audioFile: AudioFile
+): Promise<DatabaseResponse> {
     const db = connect();
-    const stmt = db.prepare(`UPDATE ${Constants.AudioFilesTableName} SET selected = 0`);
+    const stmt = db.prepare(
+        `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`
+    );
     stmt.run();
-    let output: DatabaseResponse = { success: false }
+    let output: DatabaseResponse = { success: false };
     try {
         const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.AudioFilesTableName} (
@@ -1117,20 +1275,24 @@ export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseRes
                 )
             `);
         const created_at = new Date().toISOString();
-        const insertResult = insertStmt.run(
-            {
-                ...audioFile,
-                selected: 1,
-                created_at,
-                updated_at: created_at
-            }
-        );
+        const insertResult = insertStmt.run({
+            ...audioFile,
+            selected: 1,
+            created_at,
+            updated_at: created_at,
+        });
         const id = insertResult.lastInsertRowid;
 
-        output = { success: true, result: [{ ...audioFile, id: id as number }] }
+        output = {
+            success: true,
+            result: [{ ...audioFile, id: id as number }],
+        };
     } catch (error: any) {
         console.error("Insert audio file error:", error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -1143,25 +1305,31 @@ export async function insertAudioFile(audioFile: AudioFile): Promise<DatabaseRes
  * @param audioFileUpdates: Array of ModifiedAudioFileArgs objects to update the objects with
  * @returns - DatabaseResponse{success: boolean, result: Database.result | string}
  */
-async function updateAudioFiles(audioFileUpdates: ModifiedAudioFileArgs[]): Promise<DatabaseResponse> {
+async function updateAudioFiles(
+    audioFileUpdates: ModifiedAudioFileArgs[]
+): Promise<DatabaseResponse> {
     const db = connect();
     let output: DatabaseResponse = { success: true };
     try {
         for (const audioFileUpdate of audioFileUpdates) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(audioFileUpdate)
-                .map(key => `${key} = @${key}`)
-                .join(', ');
+                .map((key) => `${key} = @${key}`)
+                .join(", ");
 
             // Check if the SET clause is empty
             if (setClause.length === 0) {
-                throw new Error('No valid properties to update');
+                throw new Error("No valid properties to update");
             }
 
             let existingAudioFiles = await getAudioFilesDetails();
-            const previousState = existingAudioFiles.find((audioFile) => audioFile.id === audioFileUpdate.id)
+            const previousState = existingAudioFiles.find(
+                (audioFile) => audioFile.id === audioFileUpdate.id
+            );
             if (!previousState) {
-                console.error(`No audio file found with ID ${audioFileUpdate.id}`)
+                console.error(
+                    `No audio file found with ID ${audioFileUpdate.id}`
+                );
                 continue;
             }
             const stmt = db.prepare(`
@@ -1170,20 +1338,30 @@ async function updateAudioFiles(audioFileUpdates: ModifiedAudioFileArgs[]): Prom
                 WHERE id = @id
             `);
 
-            await stmt.run({ ...audioFileUpdate, new_updated_at: new Date().toISOString() });
+            await stmt.run({
+                ...audioFileUpdate,
+                new_updated_at: new Date().toISOString(),
+            });
 
             // Get the new audio file
             existingAudioFiles = await getAudioFilesDetails();
-            const newAudioFile = existingAudioFiles.find((audioFile) => audioFile.id === audioFileUpdate.id)
+            const newAudioFile = existingAudioFiles.find(
+                (audioFile) => audioFile.id === audioFileUpdate.id
+            );
             if (!newAudioFile) {
-                console.error(`No audio file found with ID ${audioFileUpdate.id}`)
+                console.error(
+                    `No audio file found with ID ${audioFileUpdate.id}`
+                );
                 continue;
             }
         }
         output = { success: true };
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: { message: error.message, stack: error.stack } };
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
     } finally {
         db.close();
     }
@@ -1205,14 +1383,11 @@ async function deleteAudioFile(audioFileId: number): Promise<DatabaseResponse> {
             WHERE id = @audioFileId
         `);
         pageStmt.run({ audioFileId });
-    }
-    catch (error: any) {
+    } catch (error: any) {
         console.error(error);
         output = { success: false, error: error };
-    }
-    finally {
+    } finally {
         db.close();
     }
     return output;
 }
-

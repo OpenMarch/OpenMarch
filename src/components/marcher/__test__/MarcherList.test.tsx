@@ -8,12 +8,14 @@ import {
     ByRoleMatcher,
     ByRoleOptions,
     act,
+    cleanup,
 } from "@testing-library/react";
 import MarcherList from "../MarcherList";
 import { mockMarchers } from "@/__mocks__/globalMocks";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 import {
+    afterEach,
     beforeAll,
     beforeEach,
     describe,
@@ -22,13 +24,12 @@ import {
     MockInstance,
     vi,
 } from "vitest";
-import { fail } from "assert";
 
 describe("MarcherList", () => {
-    function validateMarcherRows(
+    const validateMarcherRows = (
         marcherRows: HTMLElement[],
         expectedMarchers: Marcher[]
-    ) {
+    ) => {
         marcherRows.forEach((marcherRow) => {
             const marcherInRow = {
                 drill_number: within(marcherRow).getByTitle(
@@ -39,11 +40,13 @@ describe("MarcherList", () => {
                         .textContent,
                 name: within(marcherRow).getByTitle("Marcher name").textContent,
             };
+            console.log(marcherInRow);
+            console.log(expectedMarchers);
             expect(expectedMarchers).toContainEqual(
                 expect.objectContaining(marcherInRow)
             );
         });
-    }
+    };
 
     let updateMarchersSpy: MockInstance;
     beforeAll(async () => {
@@ -60,11 +63,33 @@ describe("MarcherList", () => {
     });
 
     beforeEach(async () => {
-        vi.clearAllMocks();
+        vi.mock("@/global/classes/Marcher");
+        vi.mock("@/stores/marcher/useMarcherStore", () => {
+            return {
+                useMarcherStore: () => ({
+                    marchers: mockMarchers,
+                    fetchMarchers: vi.fn(),
+                }),
+            };
+        });
+
+        // Mock the getMarchers function to return the mockMarchers array
+        vi.spyOn(Marcher, "getMarchers").mockResolvedValue(mockMarchers);
+
+        // Mock the updateMarchers function to return a resolved promise
+        updateMarchersSpy = vi
+            .spyOn(Marcher, "updateMarchers")
+            .mockResolvedValue({ success: true });
+
         const { result } = renderHook(() => useMarcherStore());
         await act(async () => {
             result.current.fetchMarchers();
         });
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+        cleanup();
     });
 
     it("renders without errors", () => {
@@ -121,7 +146,7 @@ describe("MarcherList", () => {
                 const marcherRow = getByTitle(
                     `${change.oldMarcher.drill_number} marcher row`
                 );
-                if (!marcherRow) fail("No row found for marcher");
+                expect(marcherRow).toBeDefined();
 
                 if (change.newName) {
                     // validate that the marcher's old name is not the same as the new name (for testing purposes only, this is not a real requirement of the app)
@@ -170,8 +195,13 @@ describe("MarcherList", () => {
                         (change) => change.marcherId === updateMarcherResult.id
                     );
                     expect(correspondingChange).toBeDefined();
-                    if (!correspondingChange)
-                        fail("No corresponding change found for marcher id");
+
+                    if (!correspondingChange) {
+                        console.error(
+                            "No corresponding change found for marcher id"
+                        );
+                        return;
+                    }
                     expect(updateMarcherResult.id).toBe(
                         correspondingChange?.marcherId
                     );
