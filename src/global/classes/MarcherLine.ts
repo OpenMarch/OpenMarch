@@ -206,14 +206,14 @@ export default class MarcherLine extends fabric.Line {
         this.setCoordinates(newCoords);
     };
 
-    /******************** DATABASE METHODS ********************/
+    /******************** DATABASE CRUD METHODS ********************/
     /**
      * Converts a single DatabaseLine object to a MarcherLine
      *
      * @param line The DatabaseLine object to convert to a MarcherLine
      * @returns The new MarcherLine object
      */
-    static fromDatabaseLine = (line: DatabaseLine): MarcherLine => {
+    private static fromDatabaseLine = (line: DatabaseLine): MarcherLine => {
         return new MarcherLine({
             x1: line.x1,
             y1: line.y1,
@@ -231,9 +231,71 @@ export default class MarcherLine extends fabric.Line {
      * @param lines The array of DatabaseLines to convert to MarcherLines
      * @returns The array of new MarcherLines
      */
-    static fromDatabaseLines = (lines: DatabaseLine[]): MarcherLine[] => {
+    private static fromDatabaseLines = (
+        lines: DatabaseLine[]
+    ): MarcherLine[] => {
         return lines.map((line) => MarcherLine.fromDatabaseLine(line));
     };
+
+    static async create(
+        newItems: NewLineArgs[]
+    ): Promise<MarcherLine[] | undefined> {
+        const response = await window.electron.marcherLine.create(newItems);
+        let output: MarcherLine[] | undefined;
+        if (response.success && response.data) {
+            output = MarcherLine.fromDatabaseLines(response.data);
+        } else {
+            console.error(response.error);
+        }
+        return output;
+    }
+
+    static async readAll(): Promise<MarcherLine[] | undefined> {
+        const response = await window.electron.marcherLine.readAll();
+        let output: MarcherLine[] | undefined;
+        if (response.success && response.data) {
+            output = MarcherLine.fromDatabaseLines(response.data);
+        } else {
+            console.error(response.error);
+        }
+        return output;
+    }
+
+    static async read(id: number): Promise<MarcherLine | undefined> {
+        const response = await window.electron.marcherLine.read(id);
+        let output: MarcherLine | undefined;
+        if (response.success && response.data) {
+            output = MarcherLine.fromDatabaseLine(response.data);
+        } else {
+            console.error(response.error);
+        }
+        return output;
+    }
+    static async update(
+        modifiedItems: ModifiedLineArgs[]
+    ): Promise<MarcherLine[] | undefined> {
+        const response = await window.electron.marcherLine.update(
+            modifiedItems
+        );
+        let output: MarcherLine[] | undefined;
+        if (response.success && response.data) {
+            output = MarcherLine.fromDatabaseLines(response.data);
+        } else {
+            console.error(response.error);
+        }
+        return output;
+    }
+
+    static async delete(id: number): Promise<MarcherLine | undefined> {
+        const response = await window.electron.marcherLine.delete(id);
+        let output: MarcherLine | undefined;
+        if (response.success && response.data) {
+            output = MarcherLine.fromDatabaseLine(response.data);
+        } else {
+            console.error(response.error);
+        }
+        return output;
+    }
 
     /******************** COORDINATE GETTER AND SETTER OVERLOADS ********************/
     /**

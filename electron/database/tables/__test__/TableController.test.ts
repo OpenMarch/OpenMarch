@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
-import TableController from "../_TableController";
+import TableController from "../AbstractTableController";
 import Database from "better-sqlite3";
 
 // Mock ipcMain and ipcRenderer
@@ -14,7 +14,7 @@ vi.mock("electron", () => ({
     },
 }));
 
-// Mock the DatabaseItemType, NewItemArgs, and ModifiedItemArgs types
+// Mock the DatabaseItemType, NewItemArgs, and UpdatedItemArgs types
 type DatabaseItemType = {
     id: number;
     name: string;
@@ -23,21 +23,21 @@ type DatabaseItemType = {
     updated_at: string;
 };
 type NewItemArgs = { name: string; age?: number };
-type ModifiedItemArgs = { id: number; name?: string; age?: number };
+type UpdatedItemArgs = { id: number; name?: string; age?: number };
 
 // Mock the TableController class
 class MockTableController extends TableController<
     DatabaseItemType,
     NewItemArgs,
-    ModifiedItemArgs
+    UpdatedItemArgs
 > {
     tableName = "mockTable";
     constructor(connect: () => Database.Database) {
         super(connect);
-        this.createTable();
+        this.createTable(connect());
     }
-    createTable(): void {
-        this.connect().exec(`
+    createTable(db: Database.Database): void {
+        db.exec(`
             CREATE TABLE "${this.tableName}" (
                 "id" INTEGER PRIMARY KEY AUTOINCREMENT,
                 "name"          TEXT NOT NULL,
@@ -145,12 +145,12 @@ describe("TableController", () => {
 
     describe("insert", () => {
         it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.insert, {
+            expectToConnectAndDisconnect(tableController.create, {
                 items: [{ name: "jeff" }],
             });
         });
         it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.insert, {
+            expectNotToConnectAndDisconnect(tableController.create, {
                 items: [{ name: "jeff" }],
             });
         });
@@ -158,7 +158,7 @@ describe("TableController", () => {
         it("should insert a single item into the table", () => {
             const item = { name: "jeff" };
             const before = Date.now();
-            const result = tableController.insert({ items: [item], db });
+            const result = tableController.create({ items: [item], db });
             const after = Date.now();
 
             expect(result.success).toBe(true);
@@ -181,7 +181,7 @@ describe("TableController", () => {
         it("should insert many items into the table", () => {
             const items = [{ name: "jeff" }, { name: "bob" }, { name: "carl" }];
             const before = Date.now();
-            const result = tableController.insert({ items });
+            const result = tableController.create({ items });
             const after = Date.now();
 
             expect(result.success).toBe(true);
@@ -213,7 +213,7 @@ describe("TableController", () => {
                 { name: "stacy" },
             ];
             const before = Date.now();
-            const result = tableController.insert({ items, db });
+            const result = tableController.create({ items, db });
             const after = Date.now();
 
             expect(result.success).toBe(true);
@@ -244,7 +244,7 @@ describe("TableController", () => {
                 { name: "jeff", id: 56 },
                 { name: "john", age: 12, id: 12 },
             ];
-            const result = tableController.insert({ items, db });
+            const result = tableController.create({ items, db });
 
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
@@ -260,10 +260,10 @@ describe("TableController", () => {
     });
     describe("getAll", () => {
         it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.getAll);
+            expectToConnectAndDisconnect(tableController.readAll);
         });
         it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.getAll);
+            expectNotToConnectAndDisconnect(tableController.readAll);
         });
 
         it("should return all items in the table", () => {
@@ -271,9 +271,9 @@ describe("TableController", () => {
                 { id: 1, name: "jeff" },
                 { id: 2, name: "bob" },
             ];
-            tableController.insert({ items, db });
+            tableController.create({ items, db });
 
-            const result = tableController.getAll({ db });
+            const result = tableController.readAll({ db });
 
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
@@ -285,10 +285,10 @@ describe("TableController", () => {
     });
     describe("get", () => {
         it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.get, { id: 1 });
+            expectToConnectAndDisconnect(tableController.read, { id: 1 });
         });
         it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.get, { id: 1 });
+            expectNotToConnectAndDisconnect(tableController.read, { id: 1 });
         });
 
         it("should return a single item from the table", () => {
@@ -296,9 +296,9 @@ describe("TableController", () => {
                 { name: "jeff", id: 23 },
                 { name: "bob", age: 23, id: 1 },
             ];
-            tableController.insert({ items, db });
+            tableController.create({ items, db });
 
-            let result = tableController.get({ id: 1, db });
+            let result = tableController.read({ id: 1, db });
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
             if (result.data === undefined)
@@ -311,7 +311,7 @@ describe("TableController", () => {
                 id: 1,
             });
 
-            result = tableController.get({ id: 2 });
+            result = tableController.read({ id: 2 });
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
             if (result.data === undefined)
@@ -322,7 +322,7 @@ describe("TableController", () => {
         });
 
         it("should return an error if the item does not exist", () => {
-            const result = tableController.get({ id: 1, db });
+            const result = tableController.read({ id: 1, db });
 
             expect(result.success).toBe(false);
             expect(result.error?.message).toBe(
@@ -334,20 +334,20 @@ describe("TableController", () => {
 
     describe("update", () => {
         it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.insert, {
+            expectToConnectAndDisconnect(tableController.create, {
                 items: [{ id: 1, name: "jeff" }],
             });
         });
         it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.insert, {
+            expectNotToConnectAndDisconnect(tableController.create, {
                 items: [{ id: 1, name: "jeff" }],
             });
         });
 
         it("should update a single item in the table", async () => {
             const item = { name: "jeff" };
-            const insertResult = tableController.insert({ items: [item], db });
-            const updatedItem: ModifiedItemArgs = { id: 1, name: "bob" };
+            const insertResult = tableController.create({ items: [item], db });
+            const updatedItem: UpdatedItemArgs = { id: 1, name: "bob" };
             const before = Date.now();
             // wait for 1ms to ensure the updated_at field is different
             await new Promise((resolve) => setTimeout(resolve, 1));
@@ -380,7 +380,7 @@ describe("TableController", () => {
             });
 
             // ensure get returns the updated item
-            const getResult = tableController.get({ id: 1, db });
+            const getResult = tableController.read({ id: 1, db });
             expect(getResult.success).toBe(true);
             expect(getResult.error).toBeUndefined();
             if (getResult.data === undefined)
@@ -402,11 +402,11 @@ describe("TableController", () => {
                 { name: "stacy" },
                 { name: "jim", age: 22 },
             ];
-            const insertResult = tableController.insert({
+            const insertResult = tableController.create({
                 items: newItems,
                 db,
             });
-            const expectedItems: ModifiedItemArgs[] = [
+            const expectedItems: UpdatedItemArgs[] = [
                 { id: 1, name: "john", age: 23 },
                 { id: 2, name: "jane" },
                 { id: 5, age: undefined },
@@ -425,35 +425,35 @@ describe("TableController", () => {
             expect(updateResult.data.length).toBe(3);
 
             // Manual tests to ensure the items were updated correctly and that items that were not updated were not changed
-            const item1 = tableController.get({ id: 1, db }).data;
+            const item1 = tableController.read({ id: 1, db }).data;
             if (item1 === undefined) throw new Error("Item 1 is undefined");
             expect(removeMetadata({ item: item1, removeId: false })).toEqual({
                 id: 1,
                 name: "john",
                 age: 23,
             });
-            const item2 = tableController.get({ id: 2, db }).data;
+            const item2 = tableController.read({ id: 2, db }).data;
             if (item2 === undefined) throw new Error("Item 2 is undefined");
             expect(removeMetadata({ item: item2, removeId: false })).toEqual({
                 id: 2,
                 name: "jane",
                 age: 15,
             });
-            const item3 = tableController.get({ id: 3, db }).data;
+            const item3 = tableController.read({ id: 3, db }).data;
             if (item3 === undefined) throw new Error("Item 3 is undefined");
             expect(removeMetadata({ item: item3, removeId: false })).toEqual({
                 id: 3,
                 name: "carl",
                 age: 43,
             });
-            const item4 = tableController.get({ id: 4, db }).data;
+            const item4 = tableController.read({ id: 4, db }).data;
             if (item4 === undefined) throw new Error("Item 4 is undefined");
             expect(removeMetadata({ item: item4, removeId: false })).toEqual({
                 id: 4,
                 name: "stacy",
                 age: null,
             });
-            const item5 = tableController.get({ id: 5, db }).data;
+            const item5 = tableController.read({ id: 5, db }).data;
             if (item5 === undefined) throw new Error("Item 5 is undefined");
             expect(removeMetadata({ item: item5, removeId: false })).toEqual({
                 id: 5,
@@ -514,7 +514,7 @@ describe("TableController", () => {
                 { name: "jeff", id: 23 },
                 { name: "bob", age: 23, id: 1 },
             ];
-            tableController.insert({ items, db });
+            tableController.create({ items, db });
 
             const removeResult = tableController.delete({ id: 1, db });
             expect(removeResult.success).toBe(true);
@@ -529,7 +529,7 @@ describe("TableController", () => {
                 id: 1,
             });
 
-            const result = tableController.getAll({ db });
+            const result = tableController.readAll({ db });
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
             expect(

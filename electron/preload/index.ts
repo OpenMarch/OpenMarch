@@ -14,7 +14,7 @@ import Page, {
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import { DatabaseResponse } from "electron/database/database.services";
-import AllTables from "electron/database/tables/_AllTables";
+import AllTables from "electron/database/tables/AllTables";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"]
@@ -235,7 +235,7 @@ const APP_API = {
     deleteAudioFile: (audioFileId: number) =>
         ipcRenderer.invoke("audio:delete", audioFileId) as Promise<AudioFile[]>,
 
-    marcherLine: AllTables.marcherLine.invokers(),
+    marcherLine: AllTables.marcherLine.ipcCrudInvokers(),
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

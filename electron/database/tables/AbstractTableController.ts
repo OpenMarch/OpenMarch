@@ -6,7 +6,7 @@ import { ipcMain, ipcRenderer } from "electron";
  *
  * @type DatabaseItemType The type of the data in the database. Must have an "id", "updated_at", and "created_at" property
  * @type NewItemArgs The type used to create a new item in the database. Must not have an "id", "updated_at", or "created_at" property
- * @type ModifiedItemArgs The type used to modify an existing item in the database. Must have an "id" property, but not an "updated_at" or "created_at" property
+ * @type UpdatedItemArgs The type used to modify an existing item in the database. Must have an "id" property, but not an "updated_at" or "created_at" property
  */
 export default abstract class TableController<
     DatabaseItemType extends {
@@ -15,13 +15,13 @@ export default abstract class TableController<
         created_at: string;
     },
     NewItemArgs extends Object,
-    ModifiedItemArgs extends { id: number }
+    UpdatedItemArgs extends { id: number }
 > {
     /** Method to connect to the database */
     readonly connect: () => Database.Database;
 
     /** Method to create the SQL table */
-    abstract createTable(): void;
+    abstract createTable(db: Database.Database): void;
     /** The name of this table */
     abstract readonly tableName: string;
 
@@ -32,50 +32,56 @@ export default abstract class TableController<
         this.connect = connect;
     }
 
-    /** Initiate the ipc communication that the database will use */
-    initHandlers = (): void => {
-        ipcMain.handle(`${this.tableName}:getAll`, () => this.getAll());
-        ipcMain.handle(`${this.tableName}:get`, (_, id: number) =>
-            this.get({ id })
-        );
+    /**
+     * Initiate the ipc communication that the database will use.
+     * Call this in electron's main process (or database.services) to set up the CRUD handlers for this table.
+     */
+    ipcCrudHandlers = (): void => {
         ipcMain.handle(
             `${this.tableName}:insert`,
-            (_, newItems: NewItemArgs[]) => this.insert({ items: newItems })
+            (_, newItems: NewItemArgs[]) => this.create({ items: newItems })
+        );
+        ipcMain.handle(`${this.tableName}:getAll`, () => this.readAll());
+        ipcMain.handle(`${this.tableName}:get`, (_, id: number) =>
+            this.read({ id })
         );
         ipcMain.handle(
             `${this.tableName}:update`,
-            (_, items: ModifiedItemArgs[]) => this.update({ items })
+            (_, items: UpdatedItemArgs[]) => this.update({ items })
         );
         ipcMain.handle(`${this.tableName}:delete`, (_, id: number) =>
             this.delete({ id })
         );
     };
     // TODO remove these promises??
-    /** Initiate the inter-process-communication invokers for this table */
-    invokers = (): Invokers<
+    /**
+     * Initiate the inter-process-communication CRUD invokers for this table.
+     * Call this in electron's preload script's `APP_API` to get the invokers for the renderer process and expose them to the window.
+     */
+    ipcCrudInvokers = (): CrudInvokers<
         DatabaseItemType,
         NewItemArgs,
-        ModifiedItemArgs
+        UpdatedItemArgs
     > => {
         return {
-            get: (id: number) =>
-                ipcRenderer.invoke(`${this.tableName}:get`, id) as Promise<
-                    DatabaseResponse<DatabaseItemType>
-                >,
-            getAll: () =>
-                ipcRenderer.invoke(`${this.tableName}:getAll`) as Promise<
-                    DatabaseResponse<DatabaseItemType[]>
-                >,
             create: (newItems: NewItemArgs[]) =>
                 ipcRenderer.invoke(
                     `${this.tableName}:insert`,
                     newItems
-                ) as Promise<DatabaseResponse<DatabaseItemType>>,
-            update: (modifiedItems: ModifiedItemArgs[]) =>
+                ) as Promise<DatabaseResponse<DatabaseItemType[]>>,
+            read: (id: number) =>
+                ipcRenderer.invoke(`${this.tableName}:get`, id) as Promise<
+                    DatabaseResponse<DatabaseItemType>
+                >,
+            readAll: () =>
+                ipcRenderer.invoke(`${this.tableName}:getAll`) as Promise<
+                    DatabaseResponse<DatabaseItemType[]>
+                >,
+            update: (modifiedItems: UpdatedItemArgs[]) =>
                 ipcRenderer.invoke(
                     `${this.tableName}:update`,
                     modifiedItems
-                ) as Promise<DatabaseResponse<DatabaseItemType>>,
+                ) as Promise<DatabaseResponse<DatabaseItemType[]>>,
             delete: (id: number) =>
                 ipcRenderer.invoke(`${this.tableName}:delete`, id),
         };
@@ -100,7 +106,7 @@ export default abstract class TableController<
      * @param items The items to insert
      * @returns The id of the inserted item
      */
-    insert = ({
+    create = ({
         items,
         db,
     }: {
@@ -141,7 +147,7 @@ export default abstract class TableController<
             }
             const newItems: DatabaseItemType[] = [];
             for (const id of newItemIds) {
-                const newItem = this.get({ id, db: dbToUse }).data;
+                const newItem = this.read({ id, db: dbToUse }).data;
                 if (!newItem) {
                     throw new Error(
                         `No item with id ${id} in table "${this.tableName}"`
@@ -177,7 +183,7 @@ export default abstract class TableController<
      * @param db The database connection, or undefined to create a new connection
      * @returns A DatabaseResponse with all items in the table
      */
-    getAll = ({
+    readAll = ({
         db,
     }: {
         db?: Database.Database;
@@ -215,7 +221,7 @@ export default abstract class TableController<
      * @param id The id of the item to get
      * @returns A DatabaseResponse with the item
      */
-    get = ({
+    read = ({
         id,
         db,
     }: {
@@ -268,7 +274,7 @@ export default abstract class TableController<
         items,
         db,
     }: {
-        items: ModifiedItemArgs[];
+        items: UpdatedItemArgs[];
         db?: Database.Database;
     }): DatabaseResponse<DatabaseItemType[]> => {
         // TODO, check that all of the item exist BEFORE updating
@@ -278,7 +284,7 @@ export default abstract class TableController<
         const notFoundIds: number[] = [];
         const ids = new Set<number>(items.map((item) => item.id));
         ids.forEach((id) => {
-            if (this.get({ id, db: dbToUse }).data === undefined) {
+            if (this.read({ id, db: dbToUse }).data === undefined) {
                 notFoundIds.push(id);
             }
         });
@@ -326,7 +332,7 @@ export default abstract class TableController<
             }
             const updatedItems: DatabaseItemType[] = [];
             for (const id of updateIds) {
-                const updatedItem = this.get({ id, db: dbToUse }).data;
+                const updatedItem = this.read({ id, db: dbToUse }).data;
                 if (!updatedItem) {
                     console.error(
                         `No item with id ${id} in table "${this.tableName}"`
@@ -369,7 +375,7 @@ export default abstract class TableController<
         db?: Database.Database;
     }): DatabaseResponse<DatabaseItemType | undefined> => {
         const dbToUse = db || this.connect();
-        const item = this.get({ id, db: dbToUse });
+        const item = this.read({ id, db: dbToUse });
         let output: DatabaseResponse<DatabaseItemType | undefined>;
         try {
             if (!item || !item.data) {
@@ -410,7 +416,7 @@ export default abstract class TableController<
 /**
  * Response from the database
  */
-interface DatabaseResponse<DatabaseItemType> {
+export interface DatabaseResponse<DatabaseItemType> {
     /** Whether the operation was a success */
     readonly success: boolean;
     /** Error message if the operation failed */
@@ -422,20 +428,7 @@ interface DatabaseResponse<DatabaseItemType> {
 /**
  * Invokers for the database for CRUD Inter-Process Communication
  */
-interface Invokers<DatabaseItemType, NewItemArgs, ModifiedItemArgs> {
-    /**
-     * Gets the item with the given id
-     *
-     * @param id The id of the item to get
-     * @returns A DatabaseResponse with the item
-     */
-    get: (id: number) => Promise<DatabaseResponse<DatabaseItemType>>;
-    /**
-     * Gets all of the items in the table
-     *
-     * @returns A DatabaseResponse with all items in the table
-     */
-    getAll: () => Promise<DatabaseResponse<DatabaseItemType[]>>;
+interface CrudInvokers<DatabaseItemType, NewItemArgs, UpdatedItemArgs> {
     /**
      * Creates new items in the table
      *
@@ -444,7 +437,20 @@ interface Invokers<DatabaseItemType, NewItemArgs, ModifiedItemArgs> {
      */
     create: (
         newItem: NewItemArgs[]
-    ) => Promise<DatabaseResponse<DatabaseItemType>>;
+    ) => Promise<DatabaseResponse<DatabaseItemType[]>>;
+    /**
+     * Gets the item with the given id
+     *
+     * @param id The id of the item to get
+     * @returns A DatabaseResponse with the item
+     */
+    read: (id: number) => Promise<DatabaseResponse<DatabaseItemType>>;
+    /**
+     * Gets all of the items in the table
+     *
+     * @returns A DatabaseResponse with all items in the table
+     */
+    readAll: () => Promise<DatabaseResponse<DatabaseItemType[]>>;
     /**
      * Updates existing items in the table
      *
@@ -452,8 +458,8 @@ interface Invokers<DatabaseItemType, NewItemArgs, ModifiedItemArgs> {
      * @returns A DatabaseResponse with the updated item
      */
     update: (
-        modifiedItems: ModifiedItemArgs[]
-    ) => Promise<DatabaseResponse<DatabaseItemType>>;
+        modifiedItems: UpdatedItemArgs[]
+    ) => Promise<DatabaseResponse<DatabaseItemType[]>>;
     /**
      * Deletes an item from the table
      *

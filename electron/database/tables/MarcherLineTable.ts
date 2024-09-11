@@ -1,5 +1,6 @@
+import Database from "better-sqlite3";
 import Constants from "../../../src/global/Constants";
-import TableController from "./_TableController";
+import TableController from "./AbstractTableController";
 import * as MarcherLine from "@/global/classes/MarcherLine";
 
 export default class MarcherLineTable extends TableController<
@@ -9,9 +10,8 @@ export default class MarcherLineTable extends TableController<
 > {
     tableName = Constants.MarcherLineTableName;
 
-    createTable() {
+    createTable(db: Database.Database) {
         try {
-            const db = this.connect();
             db.exec(`
                 CREATE TABLE IF NOT EXISTS "${this.tableName}" (
                     "id"	            INTEGER PRIMARY KEY AUTOINCREMENT,
