@@ -1,4 +1,4 @@
-import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";
+import { useRegisteredActionsStore } from "@/stores/useRegisteredActionsStore";
 import {
     RegisteredAction,
     RegisteredActionsEnum,

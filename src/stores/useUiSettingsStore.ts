@@ -1,18 +1,20 @@
-import { type StateCreator } from "zustand";
-import * as Interfaces from "../../global/Interfaces";
+import { create } from "zustand";
+import * as Interfaces from "../global/Interfaces";
 
 interface UiSettingsStoreState {
-    uiSettings: Interfaces.UiSettings
+    uiSettings: Interfaces.UiSettings;
 }
 interface UiSettingsStoreActions {
-    setUiSettings: (uiSettings: Interfaces.UiSettings, type?: keyof Interfaces.UiSettings) => void;
+    setUiSettings: (
+        uiSettings: Interfaces.UiSettings,
+        type?: keyof Interfaces.UiSettings
+    ) => void;
 }
-export interface UiSettingsStoreInterface extends UiSettingsStoreState, UiSettingsStoreActions { }
+interface UiSettingsStoreInterface
+    extends UiSettingsStoreState,
+        UiSettingsStoreActions {}
 
-/**
- * The UI settings store is where all editable UI settings are stored.
- */
-export const uiSettingsStoreCreator: StateCreator<UiSettingsStoreState & UiSettingsStoreActions> = (set) => ({
+export const useUiSettingsStore = create<UiSettingsStoreInterface>((set) => ({
     uiSettings: {
         isPlaying: false,
         lockX: false,
@@ -45,5 +47,5 @@ export const uiSettingsStoreCreator: StateCreator<UiSettingsStoreState & UiSetti
         window.electron.sendLockY(uiSettings.lockY);
 
         set({ uiSettings: uiSettings });
-    }
-});
+    },
+}));

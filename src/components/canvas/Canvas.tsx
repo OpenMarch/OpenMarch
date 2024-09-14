@@ -1,19 +1,19 @@
 import { useRef, useEffect, useState } from "react";
-import { useUiSettingsStore } from "../../stores/uiSettings/useUiSettingsStore";
+import { useUiSettingsStore } from "../../stores/useUiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
-import { usePageStore } from "@/stores/page/usePageStore";
-import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
+import { useMarcherStore } from "@/stores/useMarcherStore";
+import { usePageStore } from "@/stores/usePageStore";
+import { useMarcherPageStore } from "@/stores/useMarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import MarcherPage from "@/global/classes/MarcherPage";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
-import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
+import { useCursorModeStore } from "@/stores/useCursorModeStore";
 import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
-import { useMarcherLineStore } from "@/stores/marcherLine/useMarcherLineStore";
+import { useMarcherLineStore } from "@/stores/useMarcherLineStore";
 import MarcherLine from "@/global/classes/MarcherLine";
 
 /**

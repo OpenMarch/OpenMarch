@@ -1,7 +1,7 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import React, { useEffect, useState } from "react";
-import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
-import { usePageStore } from "@/stores/page/usePageStore";
+import { useMarcherPageStore } from "@/stores/useMarcherPageStore";
+import { usePageStore } from "@/stores/usePageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";

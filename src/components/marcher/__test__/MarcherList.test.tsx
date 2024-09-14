@@ -12,7 +12,7 @@ import {
 } from "@testing-library/react";
 import MarcherList from "../MarcherList";
 import { mockMarchers } from "@/__mocks__/globalMocks";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { useMarcherStore } from "@/stores/useMarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 import {
     afterEach,

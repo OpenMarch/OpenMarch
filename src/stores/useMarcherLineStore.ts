@@ -1,14 +1,12 @@
-import { type StateCreator } from "zustand";
 import MarcherLine from "@/global/classes/MarcherLine";
+import { create } from "zustand";
 
-export interface MarcherLineStoreInterface {
+interface MarcherLineStoreInterface {
     marcherLines: MarcherLine[];
     fetchMarcherLines: () => Promise<void>;
 }
 
-export const marcherLineStoreCreator: StateCreator<
-    MarcherLineStoreInterface
-> = (set) => ({
+export const useMarcherLineStore = create<MarcherLineStoreInterface>((set) => ({
     marcherLines: [],
 
     /**
@@ -24,4 +22,4 @@ export const marcherLineStoreCreator: StateCreator<
         }
         set({ marcherLines: receivedMarcherLines });
     },
-});
+}));

@@ -12,7 +12,7 @@ import {
 } from "@testing-library/react";
 import PageList from "../PageList";
 import { mockPages } from "@/__mocks__/globalMocks";
-import { usePageStore } from "@/stores/page/usePageStore";
+import { usePageStore } from "@/stores/usePageStore";
 import Page from "@/global/classes/Page";
 import {
     beforeEach,

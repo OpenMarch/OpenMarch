@@ -1,12 +1,12 @@
-import { type StateCreator } from "zustand";
 import Measure from "@/global/classes/Measure";
+import { create } from "zustand";
 
-export interface MeasureStoreInterface {
+interface MeasureStoreInterface {
     measures: Measure[];
     fetchMeasures: () => Promise<void>;
 }
 
-export const measureStoreCreator: StateCreator<MeasureStoreInterface> = (set) => ({
+export const useMeasureStore = create<MeasureStoreInterface>((set) => ({
     measures: [],
 
     /**
@@ -18,6 +18,4 @@ export const measureStoreCreator: StateCreator<MeasureStoreInterface> = (set) =>
         const measures = await Measure.getMeasures();
         set({ measures });
     },
-});
-
-export default measureStoreCreator;
+}));

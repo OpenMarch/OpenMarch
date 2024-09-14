@@ -2,10 +2,10 @@ import { useCallback, useEffect } from "react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
-import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
-import { usePageStore } from "@/stores/page/usePageStore";
-import { useMeasureStore } from "../../stores/measure/useMeasureStore";
+import { useMarcherStore } from "@/stores/useMarcherStore";
+import { useMarcherPageStore } from "@/stores/useMarcherPageStore";
+import { usePageStore } from "@/stores/usePageStore";
+import { useMeasureStore } from "../../stores/useMeasureStore";
 import Marcher from "../../global/classes/Marcher";
 import Page from "../../global/classes/Page";
 import MarcherPage from "../../global/classes/MarcherPage";
@@ -13,7 +13,7 @@ import Measure from "../../global/classes/Measure";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import MarcherLine from "@/global/classes/MarcherLine";
-import { useMarcherLineStore } from "@/stores/marcherLine/useMarcherLineStore";
+import { useMarcherLineStore } from "@/stores/useMarcherLineStore";
 
 /**
  * A component that initializes the state of the application.

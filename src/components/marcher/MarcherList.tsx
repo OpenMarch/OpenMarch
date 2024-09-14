@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { useMarcherStore } from "@/stores/useMarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
 import { SECTIONS } from "@/global/classes/Sections";
 
@@ -10,13 +10,21 @@ function MarcherList({
     hasHeader = false,
     isEditingStateProp = undefined,
     submitActivatorStateProp = undefined,
-    cancelActivatorStateProp = undefined
+    cancelActivatorStateProp = undefined,
 }: ListFormProps) {
-
     const [isEditingLocal, setIsEditingLocal] = useState(false);
-    const [isEditing, setIsEditing] = isEditingStateProp || [isEditingLocal, setIsEditingLocal];
-    const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [false, undefined];
-    const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [false, undefined];
+    const [isEditing, setIsEditing] = isEditingStateProp || [
+        isEditingLocal,
+        setIsEditingLocal,
+    ];
+    const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [
+        false,
+        undefined,
+    ];
+    const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [
+        false,
+        undefined,
+    ];
     const { marchers } = useMarcherStore();
 
     // localMarchers are the marchers that are displayed in the table
@@ -34,13 +42,20 @@ function MarcherList({
             modifiedMarchers.push({ id: Number(pageId), ...changes });
 
         if (deletionsRef.current.length > 0) {
-            let windowConfirmStr = `-- WARNING --`
-            windowConfirmStr += `\n\nYou are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} marchers` : "a marcher"}, `;
+            let windowConfirmStr = `-- WARNING --`;
+            windowConfirmStr += `\n\nYou are about to delete ${
+                deletionsRef.current.length > 1
+                    ? `${deletionsRef.current.length} marchers`
+                    : "a marcher"
+            }, `;
             windowConfirmStr += `which will also delete ALL of their coordinates for every page.`;
             windowConfirmStr += `\n\nTHIS CANNOT BE UNDONE.`;
             windowConfirmStr += `\n\nMarchers that will be deleted:`;
             for (const marcherId of deletionsRef.current)
-                windowConfirmStr += `\n- ${marchers?.find((marcher) => marcher.id === marcherId)?.drill_number}`;
+                windowConfirmStr += `\n- ${
+                    marchers?.find((marcher) => marcher.id === marcherId)
+                        ?.drill_number
+                }`;
             if (window.confirm(windowConfirmStr))
                 for (const marcherId of deletionsRef.current)
                     await Marcher.deleteMarcher(marcherId);
@@ -54,7 +69,9 @@ function MarcherList({
 
     function handleDeleteMarcher(marcherId: number) {
         deletionsRef.current.push(marcherId);
-        setLocalMarchers(localMarchers?.filter((marcher) => marcher.id !== marcherId));
+        setLocalMarchers(
+            localMarchers?.filter((marcher) => marcher.id !== marcherId)
+        );
     }
 
     function handleCancel() {
@@ -64,15 +81,17 @@ function MarcherList({
         changesRef.current = {};
     }
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-        attribute: string, marcherId: number
+    const handleChange = (
+        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+        attribute: string,
+        marcherId: number
     ) => {
         // create an entry for the marcher if it doesn't exist
         if (!changesRef.current[marcherId]) changesRef.current[marcherId] = {};
 
         // record the change
         changesRef.current[marcherId][attribute] = event.target.value;
-    }
+    };
 
     // Update local marchers when marchers are fetched
     useEffect(() => {
@@ -98,22 +117,26 @@ function MarcherList({
     }, [cancelActivator, setCancelActivator]);
 
     return (
-        <form id={"marcherListForm"} onSubmit={(event) => {
-            event.preventDefault();
-            handleSubmit();
-        }}
+        <form
+            id={"marcherListForm"}
+            onSubmit={(event) => {
+                event.preventDefault();
+                handleSubmit();
+            }}
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
                 {(hasHeader && <h4>Marcher List</h4>) || <div />}
                 {/* Do not show this button if the form is being controlled by a parent component.
                   Form buttons exist on both the bottom and top of the form */}
-                {!isEditingStateProp &&
+                {!isEditingStateProp && (
                     <FormButtons
-                        handleCancel={handleCancel} editButton={"Edit Marchers"}
-                        isEditingProp={isEditing} setIsEditingProp={setIsEditing}
+                        handleCancel={handleCancel}
+                        editButton={"Edit Marchers"}
+                        isEditingProp={isEditing}
+                        setIsEditingProp={setIsEditing}
                         handleSubmit={handleSubmit}
                     />
-                }
+                )}
             </div>
             <table
                 className="w-full table-fixed table h-full"
@@ -122,80 +145,130 @@ function MarcherList({
             >
                 <thead className="thead-dark text-left">
                     <tr>
-                        <th className="w-1/6" scope="col">#</th>
-                        <th className="w-1/3" scope="col">Section</th>
-                        <th className="w-auto" scope="col">Name</th>
+                        <th className="w-1/6" scope="col">
+                            #
+                        </th>
+                        <th className="w-1/3" scope="col">
+                            Section
+                        </th>
+                        <th className="w-auto" scope="col">
+                            Name
+                        </th>
                     </tr>
                 </thead>
-                {(localMarchers && marchers) &&
+                {localMarchers && marchers && (
                     <tbody>
                         {localMarchers.map((marcher) => (
-                            <tr key={marcher.id_for_html}
-                                data-testid={'marcher row'}
+                            <tr
+                                key={marcher.id_for_html}
+                                data-testid={"marcher row"}
                                 title={`${marcher.drill_number} marcher row`}
                                 aria-label={`${marcher.drill_number} marcher row`}
                             >
-                                <th scope="row" title="Marcher drill number" className="text-left">
+                                <th
+                                    scope="row"
+                                    title="Marcher drill number"
+                                    className="text-left"
+                                >
                                     {marcher.drill_prefix + marcher.drill_order}
                                 </th>
-                                <td title="Marcher section" aria-label="Marcher section">
-                                    {isEditing ?
-                                        <select className="form-select"
+                                <td
+                                    title="Marcher section"
+                                    aria-label="Marcher section"
+                                >
+                                    {isEditing ? (
+                                        <select
+                                            className="form-select"
                                             defaultValue={marcher.section}
                                             aria-label="Marcher section input"
                                             title="Marcher section input"
                                             disabled={!isEditing}
-                                            onChange={(event) => handleChange(event, "section", marcher.id)}
+                                            onChange={(event) =>
+                                                handleChange(
+                                                    event,
+                                                    "section",
+                                                    marcher.id
+                                                )
+                                            }
                                         >
                                             <option value=""></option>
-                                            {Object.values(SECTIONS).map((section) => {
-                                                return <option key={section.name}>{section.name}</option>
-                                            })}
+                                            {Object.values(SECTIONS).map(
+                                                (section) => {
+                                                    return (
+                                                        <option
+                                                            key={section.name}
+                                                        >
+                                                            {section.name}
+                                                        </option>
+                                                    );
+                                                }
+                                            )}
                                         </select>
-                                        :
+                                    ) : (
                                         marcher.section
-                                    }
+                                    )}
                                 </td>
-                                <td title="Marcher name" aria-label="Marcher name">
-                                    {isEditing ?
-                                        <input type="text" className="form-control"
-                                            aria-label="Marcher name input" title="Marcher name input" defaultValue={marcher.name} disabled={!isEditing}
+                                <td
+                                    title="Marcher name"
+                                    aria-label="Marcher name"
+                                >
+                                    {isEditing ? (
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            aria-label="Marcher name input"
+                                            title="Marcher name input"
+                                            defaultValue={marcher.name}
+                                            disabled={!isEditing}
                                             key={marcher.id_for_html}
-                                            onChange={(event) => handleChange(event, "name", marcher.id)}
+                                            onChange={(event) =>
+                                                handleChange(
+                                                    event,
+                                                    "name",
+                                                    marcher.id
+                                                )
+                                            }
                                         />
-                                        :
+                                    ) : (
                                         marcher.name
-                                    }
+                                    )}
                                 </td>
-                                {isEditing &&
-                                    <td >
-                                        <button className="btn-danger float-right" onClick={() => handleDeleteMarcher(marcher.id)}>
+                                {isEditing && (
+                                    <td>
+                                        <button
+                                            className="btn-danger float-right"
+                                            onClick={() =>
+                                                handleDeleteMarcher(marcher.id)
+                                            }
+                                        >
                                             <FaTrashAlt />
                                         </button>
                                     </td>
-                                }
+                                )}
                             </tr>
                         ))}
-                    </tbody>}
+                    </tbody>
+                )}
             </table>
-            <div className='flex justify-between'>
+            <div className="flex justify-between">
                 <div />
                 {/* Do not show this button if the form is being controlled by a parent component.
                   Form buttons exist on both the bottom and top of the form */}
-                {(!isEditingStateProp) ?
+                {!isEditingStateProp ? (
                     <FormButtons
-                        handleCancel={handleCancel} editButton={"Edit Marchers"}
-                        isEditingProp={isEditing} setIsEditingProp={setIsEditing}
+                        handleCancel={handleCancel}
+                        editButton={"Edit Marchers"}
+                        isEditingProp={isEditing}
+                        setIsEditingProp={setIsEditing}
                         handleSubmit={handleSubmit}
                     />
-                    :
+                ) : (
                     // exists to ensure default submit behavior
                     <button type="submit" hidden={true} />
-                }
+                )}
             </div>
         </form>
     );
 }
-
 
 export default MarcherList;

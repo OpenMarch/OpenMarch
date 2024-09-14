@@ -7,9 +7,9 @@ import MarcherCoordinateSheet, {
 } from "./MarcherCoordinateSheet";
 import ReactDOMServer from "react-dom/server";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
-import { usePageStore } from "@/stores/page/usePageStore";
-import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
+import { useMarcherStore } from "@/stores/useMarcherStore";
+import { usePageStore } from "@/stores/usePageStore";
+import { useMarcherPageStore } from "@/stores/useMarcherPageStore";
 
 function ExportModalContents() {
     const [isTerse, setIsTerse] = useState(false);

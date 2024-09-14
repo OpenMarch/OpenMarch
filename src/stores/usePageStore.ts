@@ -1,11 +1,11 @@
-import { type StateCreator } from "zustand";
 import Page from "@/global/classes/Page";
+import { create } from "zustand";
 
-export interface PageStoreInterface {
+interface PageStoreInterface {
     /**
      * List of all pages sorted by order in the drill
      */
-    pages: Page[],
+    pages: Page[];
     /**
      * Fetch the pages from the API and set them in the store
      * @returns A promise that resolves when the pages have been fetched
@@ -18,7 +18,7 @@ export interface PageStoreInterface {
     setPages: (pages: Page[]) => void;
 }
 
-export const pageStoreCreator: StateCreator<PageStoreInterface> = (set) => ({
+export const usePageStore = create<PageStoreInterface>((set) => ({
     pages: [],
 
     /**
@@ -30,7 +30,7 @@ export const pageStoreCreator: StateCreator<PageStoreInterface> = (set) => ({
         const newPages = await Page.getPages();
 
         // Create new Page objects from the API response. This is necessary to ensure the instance methods work.
-        let pagesToUse = newPages.map(page => new Page(page));
+        let pagesToUse = newPages.map((page) => new Page(page));
         pagesToUse = Page.sortPagesByOrder(pagesToUse);
 
         set({
@@ -47,4 +47,4 @@ export const pageStoreCreator: StateCreator<PageStoreInterface> = (set) => ({
             pages: pages,
         });
     },
-});
+}));

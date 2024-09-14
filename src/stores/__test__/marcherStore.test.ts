@@ -1,8 +1,8 @@
 import { renderHook, act, cleanup } from "@testing-library/react";
-import { useMarcherStore } from "../useMarcherStore";
 import { mockMarchers } from "@/__mocks__/globalMocks";
 import { Marcher } from "@/global/classes/Marcher";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useMarcherStore } from "../useMarcherStore";
 
 describe("marcherStore", () => {
     beforeEach(async () => {

@@ -1,12 +1,12 @@
-import { type StateCreator } from "zustand";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
+import { create } from "zustand";
 
-export interface MarcherStoreInterface {
-    marchers: Marcher[]
+interface MarcherStoreInterface {
+    marchers: Marcher[];
     fetchMarchers: () => Promise<void>;
 }
 
-export const marcherStoreCreator: StateCreator<MarcherStoreInterface> = (set) => ({
+export const useMarcherStore = create<MarcherStoreInterface>((set) => ({
     marchers: [],
 
     /**
@@ -16,8 +16,12 @@ export const marcherStoreCreator: StateCreator<MarcherStoreInterface> = (set) =>
      */
     fetchMarchers: async () => {
         const receivedMarchers = await Marcher.getMarchers();
-        const sortedMarchers = receivedMarchers.sort((a, b) => Marcher.compare(a, b));
-        const marcherObjects = sortedMarchers.map(marcher => new Marcher(marcher));
+        const sortedMarchers = receivedMarchers.sort((a, b) =>
+            Marcher.compare(a, b)
+        );
+        const marcherObjects = sortedMarchers.map(
+            (marcher) => new Marcher(marcher)
+        );
         set({ marchers: marcherObjects });
     },
-});
+}));

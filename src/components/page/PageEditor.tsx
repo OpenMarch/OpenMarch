@@ -1,6 +1,6 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
-import { usePageStore } from "@/stores/page/usePageStore";
+import { usePageStore } from "@/stores/usePageStore";
 import Page from "@/global/classes/Page";
 
 function PageEditor() {
@@ -21,7 +21,9 @@ function PageEditor() {
         }
 
         // Remove focus from the input field
-        const inputField = document.getElementById(countsInputId) as HTMLInputElement;
+        const inputField = document.getElementById(
+            countsInputId
+        ) as HTMLInputElement;
         if (inputField) {
             inputField.blur();
             inputField.defaultValue = counts;
@@ -35,13 +37,13 @@ function PageEditor() {
 
         // Check which key was pressed
         switch (event.key) {
-            case 'ArrowUp':
-            case 'ArrowRight':
+            case "ArrowUp":
+            case "ArrowRight":
                 // Increase the value by 1
                 currentValue++;
                 break;
-            case 'ArrowDown':
-            case 'ArrowLeft':
+            case "ArrowDown":
+            case "ArrowLeft":
                 // Decrease the value by 1
                 currentValue--;
                 break;
@@ -84,54 +86,81 @@ function PageEditor() {
     }, [pages, selectedPage]);
 
     return (
-        <>{selectedPage && <div className="m-0 p-0  top-0 page-editor editor mb-4">
-            <div className="flex gap-2 pl-2 py-2 text-xl font-bold border-0 border-solid border-b-2 border-b-gray-500 bg-gray-700 mt-0">
-                <div>Page</div>
-                {/* {!isFirstPage && <>
+        <>
+            {selectedPage && (
+                <div className="m-0 p-0  top-0 page-editor editor mb-4">
+                    <div className="flex gap-2 pl-2 py-2 text-xl font-bold border-0 border-solid border-b-2 border-b-gray-500 bg-gray-700 mt-0">
+                        <div>Page</div>
+                        {/* {!isFirstPage && <>
                     <div>{selectedPage.getPreviousPage(pages)?.name} </div>
                     <div className="text-lg"><FaArrowRight /></div>
                 </>}  */}
-                {selectedPage.name}
-            </div>
-            <form className="edit-group ml-2 mt-2" id={formId} onSubmit={handleSubmit}>
-                {/* <div className="input-group">
+                        {selectedPage.name}
+                    </div>
+                    <form
+                        className="edit-group ml-2 mt-2"
+                        id={formId}
+                        onSubmit={handleSubmit}
+                    >
+                        {/* <div className="input-group">
                     <label htmlFor="page-name">Name</label>
                     <input type="text" value={selectedPage.name} onChange={undefined} id="page-name" />
                 </div> */}
-                <div>
-                    <label htmlFor={countsInputId}>Counts</label>
-                    <input
-                        className="bg-transparent text-inherit ml-3 border-none"
-                        type="number"
-                        disabled={isFirstPage}
-                        defaultValue={isFirstPage ? 0 : selectedPage.counts}
-                        id={countsInputId}
-                        onKeyDown={handleKeyDown}
-                        onBlur={handleBlur}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="page-order">Order</label>
-                    <input className="bg-transparent text-inherit ml-3 border-none" type="string" value={(pages.indexOf(selectedPage) + 1) + "/" + pages.length} id="page-order" disabled={true} />
-                </div>
-                <div>
-                    <label>Measures</label>
-                    {selectedPage.measures.map((measure, index) => {
-                        return <span key={index}>{" "}{measure.number}{index !== selectedPage.measures.length - 1 && ","}</span>;
-
-                    })}
-                </div>
-                {/* <div>
+                        <div>
+                            <label htmlFor={countsInputId}>Counts</label>
+                            <input
+                                className="bg-transparent text-inherit ml-3 border-none"
+                                type="number"
+                                disabled={isFirstPage}
+                                defaultValue={
+                                    isFirstPage ? 0 : selectedPage.counts
+                                }
+                                id={countsInputId}
+                                onKeyDown={handleKeyDown}
+                                onBlur={handleBlur}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="page-order">Order</label>
+                            <input
+                                className="bg-transparent text-inherit ml-3 border-none"
+                                type="string"
+                                value={
+                                    pages.indexOf(selectedPage) +
+                                    1 +
+                                    "/" +
+                                    pages.length
+                                }
+                                id="page-order"
+                                disabled={true}
+                            />
+                        </div>
+                        <div>
+                            <label>Measures</label>
+                            {selectedPage.measures.map((measure, index) => {
+                                return (
+                                    <span key={index}>
+                                        {" "}
+                                        {measure.number}
+                                        {index !==
+                                            selectedPage.measures.length - 1 &&
+                                            ","}
+                                    </span>
+                                );
+                            })}
+                        </div>
+                        {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
                     Not yet implemented
                 </div> */}
-                {/* This is here so the form submits when enter is pressed */}
-                <button type="submit" style={{ display: 'none' }}>
-                    Submit
-                </button>
-            </form>
-        </div>
-        }</>
+                        {/* This is here so the form submits when enter is pressed */}
+                        <button type="submit" style={{ display: "none" }}>
+                            Submit
+                        </button>
+                    </form>
+                </div>
+            )}
+        </>
     );
 }
 
