@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { useMarcherPageStore } from "../useMarcherPageStore";
+import { useMarcherPageStore } from "../MarcherPageStore";
 import { mockMarcherPages } from "@/__mocks__/globalMocks";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { describe, expect, it, vi, afterEach } from "vitest";

@@ -1,4 +1,4 @@
-import { useUiSettingsStore } from "@/stores/useUiSettingsStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as Interfaces from "../../global/Interfaces";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";

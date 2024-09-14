@@ -1,20 +1,20 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useMarcherPageStore } from "@/stores/useMarcherPageStore";
-import { usePageStore } from "@/stores/usePageStore";
-import { useUiSettingsStore } from "@/stores/useUiSettingsStore";
+import { useMarcherPageStore } from "@/stores/MarcherPageStore";
+import { usePageStore } from "@/stores/PageStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
 import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useRegisteredActionsStore } from "@/stores/useRegisteredActionsStore";
-import { useMarcherStore } from "@/stores/useMarcherStore";
+import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import Measure from "@/global/classes/Measure";
-import { useCursorModeStore } from "@/stores/useCursorModeStore";
+import { useCursorModeStore } from "@/stores/CursorModeStore";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**

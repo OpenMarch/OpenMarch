@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
-import { usePageStore } from "@/stores/usePageStore";
+import { usePageStore } from "@/stores/PageStore";
 import Page, { ModifiedPageArgs } from "@/global/classes/Page";
 
 function PageList({

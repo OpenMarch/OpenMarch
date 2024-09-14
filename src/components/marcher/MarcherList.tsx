@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
-import { useMarcherStore } from "@/stores/useMarcherStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
 import { SECTIONS } from "@/global/classes/Sections";
 

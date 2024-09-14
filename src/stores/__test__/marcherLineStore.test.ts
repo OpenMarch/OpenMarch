@@ -1,5 +1,5 @@
 import { renderHook, act, cleanup } from "@testing-library/react";
-import { useMarcherLineStore } from "../useMarcherLineStore";
+import { useMarcherLineStore } from "../MarcherLineStore";
 import { mockMarcherLines } from "@/__mocks__/globalMocks";
 import MarcherLine from "@/global/classes/MarcherLine";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

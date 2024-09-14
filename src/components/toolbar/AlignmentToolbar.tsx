@@ -1,4 +1,4 @@
-import { useUiSettingsStore } from "@/stores/useUiSettingsStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { TbAxisX, TbAxisY, TbKeyframeAlignCenterFilled } from "react-icons/tb";
 import { MdAlignHorizontalCenter, MdAlignVerticalCenter } from "react-icons/md";
 import * as Interfaces from "../../global/Interfaces";

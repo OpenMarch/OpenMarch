@@ -1,6 +1,6 @@
-import { renderHook, act } from '@testing-library/react';
-import { useUiSettingsStore } from '../useUiSettingsStore';
-import { ElectronApi } from 'electron/preload';
+import { renderHook, act } from "@testing-library/react";
+import { useUiSettingsStore } from "../UiSettingsStore";
+import { ElectronApi } from "electron/preload";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 window.electron = {
@@ -8,7 +8,7 @@ window.electron = {
     sendLockY: vi.fn(),
 } as Partial<ElectronApi> as ElectronApi;
 
-describe('uiSettings Store', () => {
+describe("uiSettings Store", () => {
     const initialSettings = {
         isPlaying: false,
         lockX: false,
@@ -24,13 +24,13 @@ describe('uiSettings Store', () => {
         vi.clearAllMocks();
     });
 
-    it('uiSettingsStore - initial settings', async () => {
+    it("uiSettingsStore - initial settings", async () => {
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useUiSettingsStore());
         expect(result.current.uiSettings).toEqual(initialSettings);
     });
 
-    it('uiSettingsStore - set is playing', async () => {
+    it("uiSettingsStore - set is playing", async () => {
         const { result } = renderHook(() => useUiSettingsStore());
 
         const expectedSettings = {
@@ -48,7 +48,7 @@ describe('uiSettings Store', () => {
         expect(result.current.uiSettings).toEqual(expectedSettings);
     });
 
-    it('uiSettingsStore - set lockX and lockY', async () => {
+    it("uiSettingsStore - set lockX and lockY", async () => {
         const { result } = renderHook(() => useUiSettingsStore());
 
         const expectedSettings = {
@@ -94,27 +94,35 @@ describe('uiSettings Store', () => {
 
         // Expect that changing lockY to true will also change lockX to false
         expectedSettings.lockY = true;
-        act(() => result.current.setUiSettings({ ...expectedSettings }, "lockY"));
+        act(() =>
+            result.current.setUiSettings({ ...expectedSettings }, "lockY")
+        );
         expectedSettings.lockX = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
 
         // Expect that changing lockX to true will also change lockY to false
         expectedSettings.lockX = true;
-        act(() => result.current.setUiSettings({ ...expectedSettings }, "lockX"));
+        act(() =>
+            result.current.setUiSettings({ ...expectedSettings }, "lockX")
+        );
         expectedSettings.lockY = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
 
         // Expect that lockY will be false
         expectedSettings.lockX = true;
         expectedSettings.lockY = true;
-        act(() => result.current.setUiSettings({ ...expectedSettings }, "lockX"));
+        act(() =>
+            result.current.setUiSettings({ ...expectedSettings }, "lockX")
+        );
         expectedSettings.lockY = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
 
         // Expect that lockX will be false
         expectedSettings.lockX = true;
         expectedSettings.lockY = true;
-        act(() => result.current.setUiSettings({ ...expectedSettings }, "lockY"));
+        act(() =>
+            result.current.setUiSettings({ ...expectedSettings }, "lockY")
+        );
         expectedSettings.lockX = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
     });

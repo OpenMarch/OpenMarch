@@ -4,7 +4,7 @@ import FormButtons from "../FormButtons";
 import PageList from "./PageList";
 import NewPageForm from "./NewPageForm";
 import { topBarComponentProps } from "@/global/Interfaces";
-import { usePageStore } from "@/stores/usePageStore";
+import { usePageStore } from "@/stores/PageStore";
 
 export default function MarcherListModal({ className }: topBarComponentProps) {
     const [listIsEditing, setListIsEditing] = useState(false);

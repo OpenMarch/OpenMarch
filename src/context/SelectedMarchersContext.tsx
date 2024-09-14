@@ -5,7 +5,7 @@ import {
     useEffect,
     useState,
 } from "react";
-import { useMarcherStore } from "@/stores/useMarcherStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 
 // Define the type for the context value

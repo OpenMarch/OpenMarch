@@ -1,6 +1,6 @@
 import * as Form from "@/components/templates/Form";
 import { useEffect, useRef, useState } from "react";
-import { usePageStore } from "@/stores/usePageStore";
+import { usePageStore } from "@/stores/PageStore";
 import Page, { NewPageArgs } from "@/global/classes/Page";
 import {
     FaArrowDown,

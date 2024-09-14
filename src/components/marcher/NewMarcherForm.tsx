@@ -1,6 +1,6 @@
 import * as Form from "@/components/templates/Form";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useMarcherStore } from "@/stores/useMarcherStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
 

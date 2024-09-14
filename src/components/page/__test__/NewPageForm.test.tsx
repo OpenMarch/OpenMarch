@@ -11,7 +11,7 @@ import NewPageForm from "../NewPageForm";
 import Page, { NewPageArgs } from "@/global/classes/Page";
 import { ElectronApi } from "electron/preload";
 import { mockPages } from "@/__mocks__/globalMocks";
-import { usePageStore } from "@/stores/usePageStore";
+import { usePageStore } from "@/stores/PageStore";
 import {
     afterEach,
     beforeAll,

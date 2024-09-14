@@ -1,6 +1,6 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
-import { usePageStore } from "@/stores/usePageStore";
+import { usePageStore } from "@/stores/PageStore";
 import Page from "@/global/classes/Page";
 
 function PageEditor() {

@@ -1,5 +1,5 @@
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useMarcherStore } from "@/stores/useMarcherStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 
 /**
  * This component should be used for testing purposes only.

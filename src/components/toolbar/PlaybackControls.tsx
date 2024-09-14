@@ -10,7 +10,7 @@ import {
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useIsPlaying } from "../../context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
-import { usePageStore } from "@/stores/usePageStore";
+import { usePageStore } from "@/stores/PageStore";
 import Page from "../../global/classes/Page";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";

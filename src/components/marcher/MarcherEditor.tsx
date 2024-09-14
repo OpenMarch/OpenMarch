@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherPageStore } from "@/stores/useMarcherPageStore";
+import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
     ReadableCoords,
     X_DESCRIPTION,
