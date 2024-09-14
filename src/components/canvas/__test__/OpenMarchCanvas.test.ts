@@ -30,7 +30,7 @@ describe("OpenMarchCanvas", () => {
             const selectedPage = mockPages[0];
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                selectedMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
                     selectedPage.id
                 ),
@@ -83,7 +83,7 @@ describe("OpenMarchCanvas", () => {
             });
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                selectedMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
                     selectedPage.id
                 ),
@@ -114,7 +114,7 @@ describe("OpenMarchCanvas", () => {
             });
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                selectedMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
                     selectedPage.id
                 ),
@@ -160,7 +160,7 @@ describe("OpenMarchCanvas", () => {
             });
             canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                selectedMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
                     selectedPage.id
                 ),

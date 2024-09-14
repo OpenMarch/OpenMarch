@@ -40,8 +40,6 @@ describe("MarcherList", () => {
                         .textContent,
                 name: within(marcherRow).getByTitle("Marcher name").textContent,
             };
-            console.log(marcherInRow);
-            console.log(expectedMarchers);
             expect(expectedMarchers).toContainEqual(
                 expect.objectContaining(marcherInRow)
             );

@@ -22,6 +22,17 @@ export const NoControls: IGroupOptions = {
     evented: false,
 } as const;
 
+export const HasControls: IGroupOptions = {
+    hasControls: true,
+    hasBorders: true,
+    lockMovementX: false,
+    lockMovementY: false,
+    lockRotation: false,
+    selectable: true,
+    hoverCursor: "pointer",
+    evented: true,
+} as const;
+
 /**
  * Options for the active object on the canvas.
  * If this is changed here, it must also be changed in the handleSelect function in Canvas.tsx.

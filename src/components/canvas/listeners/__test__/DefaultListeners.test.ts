@@ -24,12 +24,13 @@ describe("DefaultListeners", () => {
             canvasRef: null,
             fieldProperties: NCAAFieldProperties,
             uiSettings: falsyUiSettings,
-            currentPage: listeners,
+            listeners: listeners,
+            currentPage: mockPages[0],
         });
         const selectedPage = mockPages[0];
         canvas.renderMarchers({
             allMarchers: mockMarchers,
-            selectedMarcherPages: MarcherPage.filterByPageId(
+            currentMarcherPages: MarcherPage.filterByPageId(
                 mockMarcherPages,
                 selectedPage.id
             ),

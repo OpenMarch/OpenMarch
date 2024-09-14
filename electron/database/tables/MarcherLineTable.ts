@@ -1,9 +1,9 @@
 import Database from "better-sqlite3";
 import Constants from "../../../src/global/Constants";
-import TableController from "./AbstractTableController";
 import * as MarcherLine from "@/global/classes/MarcherLine";
+import AbstractTableController from "./AbstractTableController";
 
-export default class MarcherLineTable extends TableController<
+export default class MarcherLineTable extends AbstractTableController<
     MarcherLine.DatabaseLine,
     MarcherLine.NewLineArgs,
     MarcherLine.ModifiedLineArgs
@@ -21,14 +21,14 @@ export default class MarcherLineTable extends TableController<
                     "x1"                REAL NOT NULL,
                     "y1"                REAL NOT NULL,
                     "x2"                REAL NOT NULL,
-                    "x2"                REAL NOT NULL,
+                    "y2"                REAL NOT NULL,
                     "group_id"	        INTEGER,
                     "created_at"	    TEXT NOT NULL,
                     "updated_at"	    TEXT NOT NULL
                 );
             `);
         } catch (error) {
-            console.error("Failed to create page table:", error);
+            console.error(`Failed to create ${this.tableName} table: ${error}`);
         }
     }
 }

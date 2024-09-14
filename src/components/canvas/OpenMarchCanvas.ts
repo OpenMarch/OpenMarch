@@ -13,6 +13,7 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import { ActiveObjectArgs } from "./CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
+import MarcherLine from "@/global/classes/MarcherLine";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -82,7 +83,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         canvasRef: HTMLCanvasElement | null;
         fieldProperties: FieldProperties;
         uiSettings: UiSettings;
-        currentPage: Page;
+        currentPage?: Page;
         listeners?: CanvasListeners;
     }) {
         super(canvasRef, {
@@ -96,7 +97,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             stopContextMenu: true, // Prevent right click context menu
         });
 
-        this.currentPage = currentPage;
+        if (currentPage) this.currentPage = currentPage;
+        // If no page is provided, create a default page
+        else
+            this.currentPage = new Page({
+                id: -1,
+                id_for_html: "page_-1",
+                name: "Default",
+                order: -1,
+                counts: 16,
+            });
 
         // Set canvas size
         this.refreshCanvasSize();
@@ -249,22 +259,22 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /******* Marcher Functions *******/
     /**
-     * Render the marchers for the current page
+     * Render the given marcherPages on the canvas
      *
-     * @param selectedMarcherPages The marcher pages to render (must be filtered by the selected page)
+     * @param currentMarcherPages All of the marcher pages (must be filtered by the intended page)
      * @param allMarchers All marchers in the drill
      */
     renderMarchers = ({
-        selectedMarcherPages,
+        currentMarcherPages,
         allMarchers,
     }: {
-        selectedMarcherPages: MarcherPage[];
+        currentMarcherPages: MarcherPage[];
         allMarchers: Marcher[];
     }) => {
         // Get the canvas marchers on the canvas
         const curCanvasMarchers: CanvasMarcher[] = this.getCanvasMarchers();
 
-        selectedMarcherPages.forEach((marcherPage) => {
+        currentMarcherPages.forEach((marcherPage) => {
             const curCanvasMarcher = curCanvasMarchers.find(
                 (canvasMarcher) =>
                     canvasMarcher.marcherObj.id === marcherPage.marcher_id
@@ -299,7 +309,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Reset all marchers on the canvas to the positions defined in their MarcherPage objects
      */
     refreshMarchers = () => {
-        console.log("REFRESHING MARCHERS");
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
             canvasMarcher.setMarcherCoords(canvasMarcher.marcherPage);
@@ -370,6 +379,22 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
+     * Renders all of the provided marcher lines on the canvas. Removes all other marcher lines first
+     *
+     * @param marcherLines All of the marcher lines in the drill (must be filtered by the given page, i.e. "MarcherLine.getMarcherLinesForPage()")
+     */
+    renderMarcherLines = ({
+        marcherLines,
+    }: {
+        marcherLines: MarcherLine[];
+    }) => {
+        this.removeAllObjectsByType(MarcherLine);
+        for (const marcherLine of marcherLines) {
+            this.add(marcherLine);
+        }
+    };
+
+    /**
      * Render the pathways from the selected page to the given one
      *
      * @param startPageMarcherPages the marcher pages to render the pathway from
@@ -414,13 +439,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Remove all of the pathways from the canvas
      */
     removePathways = () => {
-        const curPathways: Pathway[] = this.getPathways();
-
-        curPathways.forEach((pathway) => {
-            this.remove(pathway);
-        });
-
-        this.requestRenderAll();
+        this.removeAllObjectsByType(Pathway);
     };
 
     /**
@@ -754,6 +773,22 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             hoverCursor: "default",
         });
     };
+
+    /*********************** GENERAL UTILITIES ***********************/
+    /**
+     * Remove all objects of a specified type from the canvas
+     *
+     * @param type The type of object to remove (must be a subclass of fabric.Object)
+     */
+    removeAllObjectsByType<T extends fabric.Object>(
+        type: new (...args: any[]) => T
+    ) {
+        const objects = this.getObjectsByType(type);
+
+        objects.forEach((obj) => this.remove(obj));
+
+        this.requestRenderAll();
+    }
 
     /*********************** GETTERS ***********************/
 

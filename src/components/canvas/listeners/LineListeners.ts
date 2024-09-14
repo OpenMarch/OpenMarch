@@ -59,6 +59,7 @@ export default class LineListeners
                 });
 
                 this.canvas.add(this._activeLine);
+                this._activeLine.editable = false;
                 // Disable group selection while drawing
                 this.canvas.selection = false;
                 this._activeLine.setToNearestStep({
@@ -68,6 +69,10 @@ export default class LineListeners
             } else {
                 // Finalize the line
                 console.log("Finalizing line", this._activeLine);
+                if (this._activeLine) {
+                    MarcherLine.create([this._activeLine]);
+                    this._activeLine.editable = true;
+                }
                 this._activeLine = null;
                 this._isDrawing = false;
                 this.canvas.selection = true;

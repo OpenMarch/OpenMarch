@@ -13,8 +13,10 @@ import Page, {
 } from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
-import { DatabaseResponse } from "electron/database/database.services";
-import AllTables from "electron/database/tables/AllTables";
+import * as DbServices from "electron/database/database.services";
+import { DatabaseResponse } from "electron/database/tables/AbstractTableController";
+import * as MarcherLine from "@/global/classes/MarcherLine";
+import CrudInvokers from "electron/database/CrudInvokers";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"]
@@ -114,6 +116,39 @@ setTimeout(removeLoading, 4999);
 
 // ----------------------------------------------------------------------
 
+/**
+ * IPC invokers for the MarcherLineTable
+ */
+const marcherLine: CrudInvokers<
+    MarcherLine.DatabaseLine,
+    MarcherLine.NewLineArgs,
+    MarcherLine.ModifiedLineArgs
+> = {
+    create: (newItems: MarcherLine.NewLineArgs[]) =>
+        ipcRenderer.invoke(`marcher_lines:insert`, newItems) as Promise<
+            DatabaseResponse<MarcherLine.DatabaseLine[]>
+        >,
+    read: (id: number) =>
+        ipcRenderer.invoke("marcher_lines:get", id) as Promise<
+            DatabaseResponse<MarcherLine.DatabaseLine>
+        >,
+    readAll: () =>
+        ipcRenderer.invoke("marcher_lines:getAll") as Promise<
+            DatabaseResponse<MarcherLine.DatabaseLine[]>
+        >,
+    update: (modifiedItems: MarcherLine.ModifiedLineArgs[]) =>
+        ipcRenderer.invoke("marcher_lines:update", modifiedItems) as Promise<
+            DatabaseResponse<MarcherLine.DatabaseLine[]>
+        >,
+    delete: (id: number) => ipcRenderer.invoke("marcher_lines:delete", id),
+} as const;
+
+/**
+ *  The APP_API is how the renderer process (react) communicates with Electron.
+ *  Everything implemented here must be done hard-coded and cannot be dynamically imported (I tried)
+ *
+ *  I.e. you must type `marchers:readAll` rather than `${table_name}:readAll` for the channel
+ */
 const APP_API = {
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
@@ -164,12 +199,12 @@ const APP_API = {
         ipcRenderer.invoke(
             "marcher:insert",
             newMarcher
-        ) as Promise<DatabaseResponse>,
+        ) as Promise<DbServices.DatabaseResponse>,
     updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
         ipcRenderer.invoke(
             "marcher:update",
             modifiedMarchers
-        ) as Promise<DatabaseResponse>,
+        ) as Promise<DbServices.DatabaseResponse>,
     deleteMarcher: (id: number) => ipcRenderer.invoke("marcher:delete", id),
 
     // Page
@@ -179,7 +214,10 @@ const APP_API = {
      */
     getPages: () => ipcRenderer.invoke("page:getAll") as Promise<Page[]>,
     createPages: (pages: NewPageContainer[]) =>
-        ipcRenderer.invoke("page:insert", pages) as Promise<DatabaseResponse>,
+        ipcRenderer.invoke(
+            "page:insert",
+            pages
+        ) as Promise<DbServices.DatabaseResponse>,
     updatePages: (
         modifiedPages: ModifiedPageContainer[],
         addToHistoryQueue?: boolean,
@@ -190,9 +228,12 @@ const APP_API = {
             modifiedPages,
             addToHistoryQueue,
             updateInReverse
-        ) as Promise<DatabaseResponse>,
+        ) as Promise<DbServices.DatabaseResponse>,
     deletePage: (id: number) =>
-        ipcRenderer.invoke("page:delete", id) as Promise<DatabaseResponse>,
+        ipcRenderer.invoke(
+            "page:delete",
+            id
+        ) as Promise<DbServices.DatabaseResponse>,
 
     // MarcherPage
     getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
@@ -215,13 +256,15 @@ const APP_API = {
         ipcRenderer.invoke(
             "measure:update",
             abcString
-        ) as Promise<DatabaseResponse>,
+        ) as Promise<DbServices.DatabaseResponse>,
     launchImportMusicXmlFileDialogue: () =>
         ipcRenderer.invoke("measure:insert") as Promise<string | undefined>,
 
     // Audio File
     launchInsertAudioFileDialogue: () =>
-        ipcRenderer.invoke("audio:insert") as Promise<DatabaseResponse>,
+        ipcRenderer.invoke(
+            "audio:insert"
+        ) as Promise<DbServices.DatabaseResponse>,
     getAudioFilesDetails: () =>
         ipcRenderer.invoke("audio:getAll") as Promise<AudioFile[]>,
     getSelectedAudioFile: () =>
@@ -235,7 +278,7 @@ const APP_API = {
     deleteAudioFile: (audioFileId: number) =>
         ipcRenderer.invoke("audio:delete", audioFileId) as Promise<AudioFile[]>,
 
-    marcherLine: AllTables.marcherLine.ipcCrudInvokers(),
+    marcherLine,
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

@@ -12,6 +12,8 @@ import MarcherPage from "../../global/classes/MarcherPage";
 import Measure from "../../global/classes/Measure";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
+import MarcherLine from "@/global/classes/MarcherLine";
+import { useMarcherLineStore } from "@/stores/marcherLine/useMarcherLineStore";
 
 /**
  * A component that initializes the state of the application.
@@ -26,6 +28,7 @@ function StateInitializer() {
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
+    const { fetchMarcherLines } = useMarcherLineStore()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -39,23 +42,28 @@ function StateInitializer() {
      */
     useEffect(() => {
         Marcher.fetchMarchers = fetchMarchers;
-        fetchMarchers();
+        Marcher.fetchMarchers();
     }, [fetchMarchers]);
 
     useEffect(() => {
         Page.fetchPages = fetchPages;
-        fetchPages();
+        Page.fetchPages();
     }, [fetchPages]);
 
     useEffect(() => {
         MarcherPage.fetchMarcherPages = fetchMarcherPages;
-        fetchMarcherPages();
+        MarcherPage.fetchMarcherPages();
     }, [fetchMarcherPages, pages, marchers]);
 
     useEffect(() => {
         Measure.fetchMeasures = fetchMeasures;
-        fetchMeasures();
+        Measure.fetchMeasures();
     }, [fetchMeasures]);
+
+    useEffect(() => {
+        MarcherLine.refresh = fetchMarcherLines;
+        MarcherLine.refresh();
+    }, [fetchMarcherLines]);
 
     /*******************************************************************/
 

@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcMain } from "electron";
 
 /**
  * Base class for all tables in the database.
@@ -52,39 +52,6 @@ export default abstract class TableController<
         ipcMain.handle(`${this.tableName}:delete`, (_, id: number) =>
             this.delete({ id })
         );
-    };
-    // TODO remove these promises??
-    /**
-     * Initiate the inter-process-communication CRUD invokers for this table.
-     * Call this in electron's preload script's `APP_API` to get the invokers for the renderer process and expose them to the window.
-     */
-    ipcCrudInvokers = (): CrudInvokers<
-        DatabaseItemType,
-        NewItemArgs,
-        UpdatedItemArgs
-    > => {
-        return {
-            create: (newItems: NewItemArgs[]) =>
-                ipcRenderer.invoke(
-                    `${this.tableName}:insert`,
-                    newItems
-                ) as Promise<DatabaseResponse<DatabaseItemType[]>>,
-            read: (id: number) =>
-                ipcRenderer.invoke(`${this.tableName}:get`, id) as Promise<
-                    DatabaseResponse<DatabaseItemType>
-                >,
-            readAll: () =>
-                ipcRenderer.invoke(`${this.tableName}:getAll`) as Promise<
-                    DatabaseResponse<DatabaseItemType[]>
-                >,
-            update: (modifiedItems: UpdatedItemArgs[]) =>
-                ipcRenderer.invoke(
-                    `${this.tableName}:update`,
-                    modifiedItems
-                ) as Promise<DatabaseResponse<DatabaseItemType[]>>,
-            delete: (id: number) =>
-                ipcRenderer.invoke(`${this.tableName}:delete`, id),
-        };
     };
 
     /**
@@ -423,48 +390,4 @@ export interface DatabaseResponse<DatabaseItemType> {
     readonly error?: { message: string; stack?: string };
     /** The data that was affected or returned by the operation */
     readonly data: DatabaseItemType;
-}
-
-/**
- * Invokers for the database for CRUD Inter-Process Communication
- */
-interface CrudInvokers<DatabaseItemType, NewItemArgs, UpdatedItemArgs> {
-    /**
-     * Creates new items in the table
-     *
-     * @param newItems The items to create
-     * @returns A DatabaseResponse with the created item
-     */
-    create: (
-        newItem: NewItemArgs[]
-    ) => Promise<DatabaseResponse<DatabaseItemType[]>>;
-    /**
-     * Gets the item with the given id
-     *
-     * @param id The id of the item to get
-     * @returns A DatabaseResponse with the item
-     */
-    read: (id: number) => Promise<DatabaseResponse<DatabaseItemType>>;
-    /**
-     * Gets all of the items in the table
-     *
-     * @returns A DatabaseResponse with all items in the table
-     */
-    readAll: () => Promise<DatabaseResponse<DatabaseItemType[]>>;
-    /**
-     * Updates existing items in the table
-     *
-     * @param modifiedItems The items to update
-     * @returns A DatabaseResponse with the updated item
-     */
-    update: (
-        modifiedItems: UpdatedItemArgs[]
-    ) => Promise<DatabaseResponse<DatabaseItemType[]>>;
-    /**
-     * Deletes an item from the table
-     *
-     * @param id The id of the item to delete
-     * @returns A DatabaseResponse with the deleted item
-     */
-    delete: (id: number) => Promise<DatabaseResponse<DatabaseItemType>>;
 }

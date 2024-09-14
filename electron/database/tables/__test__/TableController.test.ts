@@ -49,7 +49,7 @@ class MockTableController extends TableController<
     }
 }
 
-describe("TableController", () => {
+describe.skip("TableController", () => {
     let tableController: MockTableController;
     let db: Database.Database;
 

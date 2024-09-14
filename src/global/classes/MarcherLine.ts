@@ -3,6 +3,7 @@ import * as CanvasConstants from "../../components/canvas/CanvasConstants";
 import MarcherPage from "@/global/classes/MarcherPage";
 import OpenMarchCanvas from "../../components/canvas/OpenMarchCanvas";
 import { FieldProperties } from "./FieldProperties";
+import Page from "./Page";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.
@@ -15,11 +16,22 @@ export default class MarcherLine extends fabric.Line {
     startPageId: number;
     /** The ID of the end page (inclusive) */
     endPageId: number;
+    /** The ID of the MarcherLine in the database. If the ID is -1, that means the line is not in the database */
+    id: number;
+    /** The notes for the MarcherLine */
+    notes: string = "";
+    /** The refresh method is used to update the store with the new items from the database. */
+    static refresh: () => void = () => {
+        console.error(
+            "MarcherLine refresh method not set. The store will not update properly."
+        );
+    };
 
     protected gridOffset: number;
     protected coordsAreOffset = false;
 
     constructor({
+        id = -1,
         x1,
         y1,
         x2,
@@ -27,7 +39,9 @@ export default class MarcherLine extends fabric.Line {
         groupId,
         startPageId,
         endPageId,
+        notes = "",
     }: {
+        id?: number;
         x1: number;
         y1: number;
         x2: number;
@@ -35,9 +49,10 @@ export default class MarcherLine extends fabric.Line {
         groupId?: number;
         startPageId: number;
         endPageId: number;
+        notes?: string;
     }) {
         super([x1, y1, x2, y2], {
-            ...CanvasConstants.NoControls,
+            ...CanvasConstants.HasControls,
             strokeWidth: 2,
             fill: "red",
             stroke: "red",
@@ -45,11 +60,13 @@ export default class MarcherLine extends fabric.Line {
             originY: "center",
             hoverCursor: "default",
         });
+        this.id = id;
         this.groupId = groupId;
         this.startPageId = startPageId;
         this.endPageId = endPageId;
         this.gridOffset =
             Math.abs(FieldProperties.GRID_STROKE_WIDTH - this.strokeWidth!) / 2;
+        this.notes = notes;
     }
 
     /**
@@ -114,8 +131,6 @@ export default class MarcherLine extends fabric.Line {
         if (x2) newCoords.x2 = x2 + this.gridOffset;
         if (y2) newCoords.y2 = y2 + this.gridOffset;
         this.set(newCoords as Partial<this>);
-        console.log("getCoords", this.getCoordinates());
-        console.log("real coords", this.x1, this.y1, this.x2, this.y2);
         return this;
     };
 
@@ -126,14 +141,26 @@ export default class MarcherLine extends fabric.Line {
      * @returns The marcherPages distributed along the line from start to finish
      */
     distributeMarchers = (marcherPages: MarcherPage[]): MarcherPage[] => {
-        if (!this.x1 || !this.x2 || !this.y1 || !this.y2) {
+        console.log("this", this);
+        console.log("x1", this.x1, this.x1 === undefined);
+        console.log("y1", this.y1, this.y1 === undefined);
+        console.log("x2", this.x2, this.x2 === undefined);
+        console.log("y2", this.y2, this.y2 === undefined);
+        if (
+            this.x1 === undefined ||
+            this.y1 === undefined ||
+            this.x2 === undefined ||
+            this.y2 === undefined
+        ) {
             console.error(
                 "Line coordinates not set. Cannot distribute marchers"
             );
             return marcherPages;
         }
-        const xDistance = (this.x2 - this.x1) / (marcherPages.length + 1);
-        const yDistance = (this.y2 - this.y1) / (marcherPages.length + 1);
+        const xDistance = (this.x2 - this.x1) / (marcherPages.length - 1);
+        const yDistance = (this.y2 - this.y1) / (marcherPages.length - 1);
+
+        console.log("Distributing marchers", xDistance, yDistance);
 
         const x1 = this.x1;
         const y1 = this.y1;
@@ -206,7 +233,70 @@ export default class MarcherLine extends fabric.Line {
         this.setCoordinates(newCoords);
     };
 
-    /******************** DATABASE CRUD METHODS ********************/
+    /**
+     * Sets whether the line is editable or not.
+     */
+    set editable(value: boolean) {
+        if (value) this.set(CanvasConstants.HasControls as Partial<this>);
+        else this.set(CanvasConstants.NoControls as Partial<this>);
+    }
+
+    /**
+     * Gets all of the MarcherLines that fall on a given page
+     *
+     * @param marcherLines The marcherLines to filter from
+     * @param page The page to get the marcherLines for
+     * @param allPages All of the pages in the show (needed to find the order of the pages)
+     * @returns Array of MarcherLines that are on the given page
+     */
+    static getMarcherLinesForPage = ({
+        marcherLines,
+        page,
+        allPages,
+    }: {
+        marcherLines: MarcherLine[];
+        page: Page;
+        allPages: Page[];
+    }): MarcherLine[] => {
+        const pageMap = new Map<number, Page>();
+        allPages.forEach((page) => {
+            pageMap.set(page.id, page);
+        });
+        const filteredMarcherLines = marcherLines.filter((marcherLine) => {
+            const startPage = pageMap.get(marcherLine.startPageId);
+            if (!startPage) {
+                console.error(
+                    "Start page not found - renderMarcherLines: Canvas.tsx",
+                    marcherLine
+                );
+                return false;
+            }
+            // The intended page is before the line's start page, so return false
+            if (page.order < startPage.order) return false;
+
+            const endPage = pageMap.get(marcherLine.endPageId);
+            if (!endPage) {
+                console.error(
+                    "End page not found - renderMarcherLines: Canvas.tsx",
+                    marcherLine
+                );
+                return false;
+            }
+            if (startPage.order > endPage.order) {
+                console.error(
+                    "Start page is after end page - renderMarcherLines: Canvas.tsx",
+                    marcherLine
+                );
+                return false;
+            }
+
+            // return whether the intended page is or is before the line's end page
+            return page.order <= endPage.order;
+        });
+        return filteredMarcherLines;
+    };
+
+    /******************************* DATABASE CRUD METHODS *******************************/
     /**
      * Converts a single DatabaseLine object to a MarcherLine
      *
@@ -237,19 +327,55 @@ export default class MarcherLine extends fabric.Line {
         return lines.map((line) => MarcherLine.fromDatabaseLine(line));
     };
 
+    /**
+     * @param newItems The new MarcherLines to create in the database
+     * @returns An array of the new MarcherLines or undefined if there was an error
+     */
     static async create(
-        newItems: NewLineArgs[]
+        newItems: (NewLineArgs | MarcherLine)[]
     ): Promise<MarcherLine[] | undefined> {
-        const response = await window.electron.marcherLine.create(newItems);
+        let itemToSend: NewLineArgs[] = [];
+        for (const item of newItems) {
+            if (item instanceof MarcherLine) {
+                if (
+                    item.x1 === undefined ||
+                    item.y1 === undefined ||
+                    item.x2 === undefined ||
+                    item.y2 === undefined
+                ) {
+                    console.error(
+                        "Line coordinates not set. Cannot create line"
+                    );
+                    continue;
+                }
+                itemToSend.push({
+                    notes: item.notes,
+                    start_page_id: item.startPageId,
+                    end_page_id: item.endPageId,
+                    x1: item.x1,
+                    y1: item.y1,
+                    x2: item.x2,
+                    y2: item.y2,
+                    group_id: item.groupId || -1,
+                });
+            } else {
+                itemToSend.push(item);
+            }
+        }
+        const response = await window.electron.marcherLine.create(itemToSend);
         let output: MarcherLine[] | undefined;
         if (response.success && response.data) {
             output = MarcherLine.fromDatabaseLines(response.data);
         } else {
             console.error(response.error);
         }
+        MarcherLine.refresh();
         return output;
     }
 
+    /**
+     * @returns All of the MarcherLines in the database or undefined if there was an error
+     */
     static async readAll(): Promise<MarcherLine[] | undefined> {
         const response = await window.electron.marcherLine.readAll();
         let output: MarcherLine[] | undefined;
@@ -261,6 +387,10 @@ export default class MarcherLine extends fabric.Line {
         return output;
     }
 
+    /**
+     * @param id The ID of the MarcherLine to get
+     * @returns The MarcherLine with the given ID or undefined if there was an error
+     */
     static async read(id: number): Promise<MarcherLine | undefined> {
         const response = await window.electron.marcherLine.read(id);
         let output: MarcherLine | undefined;
@@ -271,6 +401,11 @@ export default class MarcherLine extends fabric.Line {
         }
         return output;
     }
+
+    /**
+     * @param modifiedItems The items to update in the database
+     * @returns A list of the updated MarcherLines or undefined if there was an error
+     */
     static async update(
         modifiedItems: ModifiedLineArgs[]
     ): Promise<MarcherLine[] | undefined> {
@@ -283,9 +418,14 @@ export default class MarcherLine extends fabric.Line {
         } else {
             console.error(response.error);
         }
+        MarcherLine.refresh();
         return output;
     }
 
+    /**
+     * @param id The ID of the MarcherLine to delete
+     * @returns The deleted MarcherLine or undefined if there was an error
+     */
     static async delete(id: number): Promise<MarcherLine | undefined> {
         const response = await window.electron.marcherLine.delete(id);
         let output: MarcherLine | undefined;
@@ -294,6 +434,7 @@ export default class MarcherLine extends fabric.Line {
         } else {
             console.error(response.error);
         }
+        MarcherLine.refresh();
         return output;
     }
 
@@ -398,7 +539,7 @@ export type DatabaseLine = {
  * A type representing the arguments needed to create a new MarcherLine in the database.
  */
 export type NewLineArgs = {
-    notes: string;
+    notes?: string;
     start_page_id: number;
     end_page_id: number;
     x1: number;

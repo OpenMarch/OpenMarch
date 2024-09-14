@@ -17,7 +17,7 @@ import MarcherPage, {
 } from "@/global/classes/MarcherPage";
 import { FieldProperties } from "../../src/global/classes/FieldProperties";
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import AllTables from "./tables/AllTables";
+import ALL_TABLES from "./tables/AllTables";
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -82,7 +82,8 @@ export function initDatabase() {
     createMeasureTable(db);
     createAudioFileTable(db);
     History.createHistoryTables(db);
-    for (const table of Object.values(AllTables)) {
+    for (const table of Object.values(ALL_TABLES)) {
+        console.log("TABLE", table.tableName);
         table.createTable(db);
     }
     console.log("Database created.");
@@ -332,6 +333,10 @@ export function initHandlers() {
     ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
         deleteAudioFile(audioFileId)
     );
+
+    for (const tableController of Object.values(ALL_TABLES)) {
+        tableController.ipcCrudHandlers();
+    }
 }
 
 /* ======================= Exported Functions ======================= */

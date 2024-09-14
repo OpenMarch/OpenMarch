@@ -13,6 +13,8 @@ import DefaultListeners from "./listeners/DefaultListeners";
 import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
 import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
+import { useMarcherLineStore } from "@/stores/marcherLine/useMarcherLineStore";
+import MarcherLine from "@/global/classes/MarcherLine";
 
 /**
  * The field/stage UI of OpenMarch
@@ -37,6 +39,7 @@ export default function Canvas({
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
     const { cursorMode } = useCursorModeStore()!;
+    const { marcherLines } = useMarcherLineStore()!;
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationCallbacks = useRef<any>([]);
@@ -103,7 +106,7 @@ export default function Canvas({
         if (canvas && selectedPage && marchers && marcherPages) {
             canvas.currentPage = selectedPage;
             canvas.renderMarchers({
-                selectedMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.id
                 ),
@@ -199,6 +202,17 @@ export default function Canvas({
         setSelectedMarchers,
     ]);
 
+    useEffect(() => {
+        if (!canvas || !selectedPage) return;
+
+        const currentPageMarcherLines = MarcherLine.getMarcherLinesForPage({
+            marcherLines,
+            page: selectedPage,
+            allPages: pages,
+        });
+        canvas.renderMarcherLines({ marcherLines: currentPageMarcherLines });
+    }, [canvas, marcherLines, pages, selectedPage]);
+
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {
@@ -250,7 +264,7 @@ export default function Canvas({
                 }
 
                 canvas.renderMarchers({
-                    selectedMarcherPages: MarcherPage.filterByPageId(
+                    currentMarcherPages: MarcherPage.filterByPageId(
                         marcherPages,
                         selectedPage.id
                     ),

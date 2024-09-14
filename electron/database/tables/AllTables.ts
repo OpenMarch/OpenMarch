@@ -7,8 +7,8 @@ import { connect } from "../database.services";
  * Whenever a new table is created, it should be added here and its invokers should be
  * added to the `APP_API` object in `electron/preload/index.ts`.
  */
-const AllTables = {
+const ALL_TABLES = {
     marcherLine: new MarcherLineTable(connect),
 } as const;
 
-export default AllTables;
+export default ALL_TABLES;
