@@ -1,9 +1,9 @@
 import { fabric } from "fabric";
-import * as CanvasConstants from "../../components/canvas/CanvasConstants";
-import MarcherPage from "@/global/classes/MarcherPage";
-import OpenMarchCanvas from "../../components/canvas/OpenMarchCanvas";
-import { FieldProperties } from "./FieldProperties";
-import Page from "./Page";
+import * as CanvasConstants from "@/components/canvas/CanvasConstants";
+import { FieldProperties } from "../FieldProperties";
+import MarcherPage from "../MarcherPage";
+import OpenMarchCanvas from "./OpenMarchCanvas";
+import Page from "../Page";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.

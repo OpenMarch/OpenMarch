@@ -12,8 +12,8 @@ import MarcherPage from "../../global/classes/MarcherPage";
 import Measure from "../../global/classes/Measure";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
-import MarcherLine from "@/global/classes/MarcherLine";
 import { useMarcherLineStore } from "@/stores/MarcherLineStore";
+import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
 /**
  * A component that initializes the state of the application.

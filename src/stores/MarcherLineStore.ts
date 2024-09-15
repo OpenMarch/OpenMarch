@@ -1,4 +1,4 @@
-import MarcherLine from "@/global/classes/MarcherLine";
+import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import { create } from "zustand";
 
 interface MarcherLineStoreInterface {

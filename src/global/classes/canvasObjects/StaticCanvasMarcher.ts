@@ -1,8 +1,8 @@
-import Marcher from "../../global/classes/Marcher";
-import MarcherPage from "../../global/classes/MarcherPage";
+import Marcher from "../Marcher";
+import MarcherPage from "../MarcherPage";
 import { fabric } from "fabric";
 import { FieldProperties } from "@/global/classes/FieldProperties";
-import { NoControls } from "./CanvasConstants";
+import { NoControls } from "../../../components/canvas/CanvasConstants";
 
 /**
  * A StaticCanvasMarcher is fabric circle that cannot be edited by the user.

@@ -1,6 +1,6 @@
 import CanvasListeners from "./CanvasListeners";
-import OpenMarchCanvas from "../OpenMarchCanvas";
-import CanvasMarcher from "../CanvasMarcher";
+import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
+import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";

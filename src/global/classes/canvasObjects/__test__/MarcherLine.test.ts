@@ -1,11 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import MarcherPage from "@/global/classes/MarcherPage";
-import MarcherLine, {
-    NewLineArgs,
-} from "../../../../global/classes/MarcherLine";
 import { ElectronApi } from "electron/preload";
 import { mockMarcherLines } from "@/__mocks__/globalMocks";
 import Page from "@/global/classes/Page";
+import MarcherLine, { NewLineArgs } from "../MarcherLine";
 
 describe("MarcherLine", () => {
     describe("distributeMarchers", () => {

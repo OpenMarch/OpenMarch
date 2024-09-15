@@ -1,8 +1,8 @@
-import OpenMarchCanvas from "../OpenMarchCanvas";
-import MarcherLine from "../../../global/classes/MarcherLine";
+import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import CanvasListeners from "./CanvasListeners";
 import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
+import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 
 /**
  * LineListeners is an extension of DefaultListeners that handles the creation of lines on the canvas

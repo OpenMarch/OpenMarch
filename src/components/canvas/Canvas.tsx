@@ -8,13 +8,13 @@ import { usePageStore } from "@/stores/PageStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import MarcherPage from "@/global/classes/MarcherPage";
-import OpenMarchCanvas from "./OpenMarchCanvas";
+import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useCursorModeStore } from "@/stores/CursorModeStore";
 import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
 import { useMarcherLineStore } from "@/stores/MarcherLineStore";
-import MarcherLine from "@/global/classes/MarcherLine";
+import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
 /**
  * The field/stage UI of OpenMarch

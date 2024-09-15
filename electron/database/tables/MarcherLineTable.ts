@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import Constants from "../../../src/global/Constants";
-import * as MarcherLine from "@/global/classes/MarcherLine";
 import AbstractTableController from "./AbstractTableController";
+import * as MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
 export default class MarcherLineTable extends AbstractTableController<
     MarcherLine.DatabaseLine,

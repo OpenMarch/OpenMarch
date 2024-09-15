@@ -3,15 +3,10 @@ import { create } from "zustand";
 export const CursorModes = ["default", "line"] as const;
 export type CursorMode = (typeof CursorModes)[number];
 
-interface CursorModeStoreState {
+interface CursorModeStoreInterface {
     cursorMode: CursorMode;
-}
-interface CursorModeStoreActions {
     setCursorMode: (cursorMode: CursorMode) => void;
 }
-interface CursorModeStoreInterface
-    extends CursorModeStoreState,
-        CursorModeStoreActions {}
 
 export const useCursorModeStore = create<CursorModeStoreInterface>((set) => ({
     cursorMode: "default",

@@ -1,5 +1,5 @@
 import DefaultListeners from "../DefaultListeners";
-import OpenMarchCanvas from "../../OpenMarchCanvas";
+import OpenMarchCanvas from "../../../../global/classes/canvasObjects/OpenMarchCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import { FieldProperties } from "@/global/classes/FieldProperties";

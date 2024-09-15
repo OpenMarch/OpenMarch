@@ -2,7 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { describe, afterEach, it, beforeEach, vi } from "vitest";
 import Canvas from "../Canvas";
 import * as Mocks from "@/__mocks__/globalMocks";
-import OpenMarchCanvas from "../OpenMarchCanvas";
+import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import { FieldProperties } from "@/global/classes/FieldProperties";
 import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";

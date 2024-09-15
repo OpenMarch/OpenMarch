@@ -7,7 +7,7 @@ import {
     mockMarcherPages,
     mockMarchers,
     mockPages,
-} from "./MocksForCanvas";
+} from "@/components/canvas/__test__/MocksForCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
 
 describe("OpenMarchCanvas", () => {

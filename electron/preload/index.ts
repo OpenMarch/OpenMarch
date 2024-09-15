@@ -15,7 +15,7 @@ import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/tables/AbstractTableController";
-import * as MarcherLine from "@/global/classes/MarcherLine";
+import * as MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import CrudInvokers from "electron/database/CrudInvokers";
 
 function domReady(

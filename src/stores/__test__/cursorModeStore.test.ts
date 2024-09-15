@@ -2,14 +2,14 @@ import { renderHook, act } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CursorMode, useCursorModeStore } from "../CursorModeStore";
 
-describe("uiSettings Store", () => {
-    it("uiSettingsStore - initial settings", async () => {
+describe("CursorMode Store", () => {
+    it("CursorModeStore - initial settings", async () => {
         // Expect the initial state to be an empty array
         const { result } = renderHook(() => useCursorModeStore());
         expect(result.current.cursorMode).toEqual("default");
     });
 
-    it("uiSettingsStore - set to line", async () => {
+    it("CursorModeStore - set to line", async () => {
         const { result } = renderHook(() => useCursorModeStore());
 
         const expectedMode = "line";
@@ -18,7 +18,7 @@ describe("uiSettings Store", () => {
         expect(result.current.cursorMode).toEqual(expectedMode);
     });
 
-    it("uiSettingsStore - set to line, then back to default", async () => {
+    it("CursorModeStore - set to line, then back to default", async () => {
         const { result } = renderHook(() => useCursorModeStore());
 
         let expectedMode = "line" as CursorMode;

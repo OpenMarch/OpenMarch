@@ -6,14 +6,14 @@ import {
     FieldProperties,
     getYardNumberCoordinates,
 } from "@/global/classes/FieldProperties";
-import CanvasListeners from "./listeners/CanvasListeners";
+import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { ActiveObjectArgs } from "./CanvasConstants";
+import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
-import MarcherLine from "@/global/classes/MarcherLine";
+import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.

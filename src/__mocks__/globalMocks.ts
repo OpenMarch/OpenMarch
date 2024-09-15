@@ -2,7 +2,7 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@/global/classes/FieldProperties";
-import MarcherLine from "@/global/classes/MarcherLine";
+import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({

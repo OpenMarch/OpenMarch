@@ -1,8 +1,8 @@
 import { renderHook, act, cleanup } from "@testing-library/react";
 import { useMarcherLineStore } from "../MarcherLineStore";
 import { mockMarcherLines } from "@/__mocks__/globalMocks";
-import MarcherLine from "@/global/classes/MarcherLine";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
 describe("marcherLineStore", () => {
     beforeEach(async () => {
