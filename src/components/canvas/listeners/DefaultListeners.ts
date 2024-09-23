@@ -8,35 +8,28 @@ import MarcherPage, {
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas;
 
+    initiateListeners = () => {
+        this.canvas.on("object:modified", this.handleObjectModified);
+        this.canvas.on("mouse:down", this.handleMouseDown);
+        this.canvas.on("mouse:move", this.handleMouseMove);
+        this.canvas.on("mouse:up", this.handleMouseUp);
+    };
+
+    cleanupListeners = () => {
+        // These any casts are here because the types are not lining up with the fabric types
+        // It wants fabric.IEvent<Event> but the event is actually a fabric.IEvent<MouseEvent>
+        this.canvas.off("object:modified", this.handleObjectModified as any);
+        this.canvas.off("mouse:down", this.handleMouseDown as any);
+        this.canvas.off("mouse:move", this.handleMouseMove as any);
+        this.canvas.off("mouse:up", this.handleMouseUp as any);
+    };
+
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         this.canvas = canvas;
-        this.handleSelect = this.handleSelect.bind(this);
-        this.handleDeselect = this.handleDeselect.bind(this);
         this.handleObjectModified = this.handleObjectModified.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
-    }
-
-    /**
-     * Set the selected marcher(s) when selected element changes.
-     */
-    handleSelect(fabricEvent: fabric.IEvent<MouseEvent>) {
-        if (!fabricEvent.selected || fabricEvent.selected.length === 0) return;
-
-        const canvasMarchersToSelect: CanvasMarcher[] =
-            this.canvas.getActiveObjectsByType(CanvasMarcher);
-
-        this.canvas.setSelectedCanvasMarchers(canvasMarchersToSelect);
-    }
-
-    /**
-     * Set the selected marchers to none when the selection is cleared
-     */
-    handleDeselect(fabricEvent: fabric.IEvent<MouseEvent>) {
-        if (fabricEvent.deselected) {
-            this.canvas.setGlobalsSelectedMarchers([]);
-        }
     }
 
     /**
@@ -90,7 +83,7 @@ export default class DefaultListeners implements CanvasListeners {
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
         // Don't move the canvas if the mouse is on a marcher
-        if (OpenMarchCanvas.selectionHasMarchers(fabricEvent)) {
+        if (OpenMarchCanvas.selectionHasObjects(fabricEvent)) {
             this.canvas.selectDragStart = {
                 x: evt.clientX,
                 y: evt.clientY,

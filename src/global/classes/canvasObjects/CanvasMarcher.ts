@@ -2,19 +2,27 @@ import { fabric } from "fabric";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
 import { FieldProperties } from "@/global/classes/FieldProperties";
-import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
+import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
+import * as Selectable from "./interfaces/Selectable";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
  * It includes things such as the fabric objects and other canvas-specific properties.
  */
-export default class CanvasMarcher extends fabric.Group {
+export default class CanvasMarcher
+    extends fabric.Group
+    implements Selectable.ISelectable
+{
     // Styles
     private static readonly dotRadius = 5;
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
     private static readonly color = "red";
-    static readonly fabricType = "CanvasMarcher";
+    readonly classString = Selectable.SelectableClasses.MARCHER;
 
+    readonly objectToGloballySelect: Marcher;
+
+    /** The id of the marcher in the database */
+    id: number;
     /** The Marcher object the CanvasMarcher is representing */
     marcherObj: Marcher;
     /** The MarcherPage object that this canvasMarcher is associated with */
@@ -58,7 +66,6 @@ export default class CanvasMarcher extends fabric.Group {
                 }),
             ],
             {
-                type: CanvasMarcher.fabricType,
                 hasControls: false,
                 hasBorders: true,
                 originX: "center",
@@ -71,6 +78,8 @@ export default class CanvasMarcher extends fabric.Group {
 
         if (marcher.id !== marcherPage.marcher_id)
             console.error("MarcherPage and Marcher id's do not match");
+        this.id = marcher.id;
+        this.objectToGloballySelect = marcher;
 
         this.marcherPage = marcherPage;
         this.marcherObj = marcher;

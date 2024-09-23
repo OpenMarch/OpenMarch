@@ -23,6 +23,20 @@ export default class LineListeners
         window.addEventListener("keydown", this.handleKeyDown);
     }
 
+    initiateListeners = () => {
+        this.canvas.on("mouse:down", this.handleMouseDown);
+        this.canvas.on("mouse:move", this.handleMouseMove);
+    };
+
+    cleanupListeners = () => {
+        this.clearLine();
+        this.canvas.selection = true;
+        this.canvas.resetCursorsToDefault();
+
+        this.canvas.off("mouse:down", this.handleMouseDown as any);
+        this.canvas.off("mouse:move", this.handleMouseMove as any);
+    };
+
     /** Discards the current active line */
     clearLine = () => {
         if (this._isDrawing && this._activeLine) {
@@ -30,12 +44,6 @@ export default class LineListeners
             this._activeLine = null;
             this._isDrawing = false;
         }
-    };
-
-    cleanupListener = () => {
-        this.clearLine();
-        this.canvas.selection = true;
-        this.canvas.resetCursorsToDefault();
     };
 
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {

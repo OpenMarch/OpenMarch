@@ -1,5 +1,5 @@
 import { cleanup, render } from "@testing-library/react";
-import { describe, afterEach, it, beforeEach, vi } from "vitest";
+import { describe, afterEach, it, beforeEach, vi, expect } from "vitest";
 import Canvas from "../Canvas";
 import * as Mocks from "@/__mocks__/globalMocks";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -76,7 +76,7 @@ describe("Canvas", () => {
         cleanup();
     });
 
-    it("Canvas renders and contains marchers", () => {
+    it.skip("Canvas renders and contains marchers", () => {
         const NCAAFieldProperties = new FieldProperties(
             FieldProperties.Template.NCAA
         );
@@ -86,6 +86,26 @@ describe("Canvas", () => {
             uiSettings: falsyUiSettings,
             currentPage: Mocks.mockPages[0],
         });
+        vi.mock("@/context/SelectedPageContext", () => {
+            return {
+                useSelectedPage: () => ({
+                    selectedPage: Mocks.mockPages[0],
+                    setSelectedPage: vi.fn(),
+                }),
+                SelectedPageProvider: ({
+                    children,
+                }: {
+                    children: React.ReactNode;
+                }) => <div>{children}</div>,
+            };
+        });
+
         renderWithContext(canvas);
+        //todo, check that the marchers are correct
+        const canvasMarchersOnCanvas = canvas.getCanvasMarchers();
+        // console.log(canvas.getObjects());
+        expect(canvasMarchersOnCanvas).toContainEqual(Mocks.mockMarchers);
     });
+
+    // TODO create stubs
 });

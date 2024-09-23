@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useUiSettingsStore } from "../../stores/UiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
@@ -15,6 +15,9 @@ import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
 import { useMarcherLineStore } from "@/stores/MarcherLineStore";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
+import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
+import { useSelectedMarcherLinesStore } from "@/stores/selection/SelectedMarcherLineStore";
+import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 
 /**
  * The field/stage UI of OpenMarch
@@ -40,10 +43,260 @@ export default function Canvas({
     const { uiSettings } = useUiSettingsStore()!;
     const { cursorMode } = useCursorModeStore()!;
     const { marcherLines } = useMarcherLineStore()!;
+    const { selectedMarcherLines, setSelectedMarcherLines } =
+        useSelectedMarcherLinesStore()!;
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
+
+    /* -------------------------- Selection Functions -------------------------- */
+    const unimplementedError = (
+        selectableClass: Selectable.SelectableClasses
+    ) => {
+        throw new Error(
+            `Invalid selectable class "${selectableClass}". Have you implemented all of the cases in Canvas.tsx for each selectable item on the canvas?`
+        );
+    };
+
+    /**
+     * Gets the classIds of all the global selected objects on the canvas defined in the classes "Selectable.SelectableClasses"
+     *
+     * NOTE - every time you add a new SelectableClass, it's handler for classIds must be added in the switch statement
+     */
+    const getGLobalSelectedObjectClassIds = useCallback(() => {
+        if (!canvas) return;
+
+        const globalSelectedClassIds: Set<string> = new Set<string>();
+
+        // Get all the classIds of the possible selectable classes
+        const addClassIdsToSet = (
+            selectedClass: Selectable.SelectableClasses
+        ) => {
+            switch (selectedClass) {
+                case Selectable.SelectableClasses.MARCHER: {
+                    // a bit of a hack because marchers and canvasMarchers are different
+                    const canvasMarchers: Map<number, CanvasMarcher> = new Map(
+                        canvas
+                            .getCanvasMarchers()
+                            .map((canvasMarcher) => [
+                                canvasMarcher.marcherObj.id,
+                                canvasMarcher,
+                            ])
+                    );
+                    for (const selectedMarcher of selectedMarchers) {
+                        const canvasMarcher = canvasMarchers.get(
+                            selectedMarcher.id
+                        );
+                        if (!canvasMarcher) {
+                            console.error(
+                                "SelectedMarcher not found on Canvas",
+                                selectedMarcher
+                            );
+                            continue;
+                        }
+                        globalSelectedClassIds.add(
+                            Selectable.getClassId(canvasMarcher)
+                        );
+                    }
+                    break;
+                }
+                case Selectable.SelectableClasses.MARCHER_LINE: {
+                    for (const selectedMarcherLine of selectedMarcherLines) {
+                        globalSelectedClassIds.add(
+                            Selectable.getClassId(selectedMarcherLine)
+                        );
+                    }
+                    break;
+                }
+                default: {
+                    unimplementedError(selectedClass);
+                }
+            }
+        };
+
+        // Loop through all enum values to ensure that every selectable class is checked
+        for (const value of Object.values(Selectable.SelectableClasses)) {
+            addClassIdsToSet(value as Selectable.SelectableClasses);
+        }
+
+        return globalSelectedClassIds;
+    }, [canvas, selectedMarcherLines, selectedMarchers]);
+
+    /**
+     * Checks if the selectable active objects on the canvas are the same as the globally selected objects in the
+     * classes Selectable.SelectableClasses
+     */
+    const activeObjectsAreGloballySelected = useCallback(() => {
+        if (!canvas) return false;
+        const selectableObjects: Selectable.ISelectable[] = [];
+        for (const activeObject of canvas.getActiveObjects()) {
+            if (Selectable.isSelectable(activeObject))
+                selectableObjects.push(activeObject);
+        }
+
+        const activeObjectClassIds: Set<string> = new Set<string>(
+            selectableObjects.map((selectableObject) =>
+                Selectable.getClassId(selectableObject)
+            )
+        );
+
+        const globalSelectedClassIds = getGLobalSelectedObjectClassIds();
+        if (!globalSelectedClassIds) return false;
+
+        // Check if both sets are equal
+        let activeObjectsAreGloballySelected =
+            activeObjectClassIds.size === globalSelectedClassIds.size;
+        if (activeObjectsAreGloballySelected) {
+            for (const classId of activeObjectClassIds) {
+                if (!globalSelectedClassIds.has(classId)) {
+                    activeObjectsAreGloballySelected = false;
+                    break;
+                }
+            }
+        }
+        return activeObjectsAreGloballySelected;
+    }, [canvas, getGLobalSelectedObjectClassIds]);
+
+    /**
+     * Handler for updating what is selected in global state on the canvas.
+     *
+     * Rather than using a fabric event, this just sets all of the selectable active objects on the canvas to the
+     * corresponding global selected objects
+     */
+    const handleSelect = useCallback(() => {
+        if (!canvas || activeObjectsAreGloballySelected()) return;
+        const newSelectedObjects: {
+            [key in Selectable.SelectableClasses]: any[];
+        } = {
+            [Selectable.SelectableClasses.MARCHER]: [],
+            [Selectable.SelectableClasses.MARCHER_LINE]: [],
+        };
+
+        const allObjectsToSelect: Selectable.ISelectable[] = [];
+        for (const selectableActiveObject of canvas.getActiveSelectableObjects()) {
+            newSelectedObjects[selectableActiveObject.classString].push(
+                selectableActiveObject.objectToGloballySelect
+            );
+            allObjectsToSelect.push(selectableActiveObject);
+        }
+
+        canvas.setActiveObjects(allObjectsToSelect);
+
+        const selectObjectsGlobally = (
+            selectableClass: Selectable.SelectableClasses
+        ) => {
+            switch (selectableClass) {
+                case Selectable.SelectableClasses.MARCHER: {
+                    // Marcher
+                    setSelectedMarchers(
+                        newSelectedObjects[Selectable.SelectableClasses.MARCHER]
+                    );
+                    break;
+                }
+                case Selectable.SelectableClasses.MARCHER_LINE: {
+                    // MarcherLine
+                    setSelectedMarcherLines(
+                        newSelectedObjects[
+                            Selectable.SelectableClasses.MARCHER_LINE
+                        ]
+                    );
+                    break;
+                }
+                default: {
+                    unimplementedError(selectableClass);
+                }
+            }
+        };
+
+        // Loop through all enum values to ensure that every selectable class is checked
+        for (const value of Object.values(Selectable.SelectableClasses)) {
+            selectObjectsGlobally(value as Selectable.SelectableClasses);
+        }
+    }, [
+        activeObjectsAreGloballySelected,
+        canvas,
+        setSelectedMarcherLines,
+        setSelectedMarchers,
+    ]);
+
+    /**
+     * Handler for clearing global selected objects in the store
+     */
+    const handleDeselect = useCallback(() => {
+        const deselectObjects = (
+            selectableClass: Selectable.SelectableClasses
+        ) => {
+            switch (selectableClass) {
+                case Selectable.SelectableClasses.MARCHER: {
+                    setSelectedMarchers([]);
+                    break;
+                }
+                case Selectable.SelectableClasses.MARCHER_LINE: {
+                    setSelectedMarcherLines([]);
+                    break;
+                }
+                default: {
+                    unimplementedError(selectableClass);
+                }
+            }
+        };
+
+        for (const selectableClass of Object.values(
+            Selectable.SelectableClasses
+        )) {
+            deselectObjects(selectableClass);
+        }
+    }, [setSelectedMarcherLines, setSelectedMarchers]);
+
+    useEffect(() => {
+        if (!canvas) return;
+        canvas.on("selection:created", handleSelect);
+        canvas.on("selection:updated", handleSelect);
+        canvas.on("selection:cleared", handleDeselect);
+
+        return () => {
+            canvas.off("selection:created", handleSelect);
+            canvas.off("selection:updated", handleSelect);
+            canvas.off("selection:cleared", handleDeselect);
+        };
+    }, [canvas, handleDeselect, handleSelect]);
+
+    // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
+    useEffect(() => {
+        if (!canvas || activeObjectsAreGloballySelected()) return;
+
+        const selectableObjects: Map<string, Selectable.ISelectable> = new Map(
+            canvas
+                .getAllSelectableObjects()
+                .map((selectableObject) => [
+                    Selectable.getClassId(selectableObject),
+                    selectableObject,
+                ])
+        );
+
+        const globalSelectedClassIds = getGLobalSelectedObjectClassIds();
+        if (!globalSelectedClassIds) return;
+
+        const objectsToSelect: Selectable.ISelectable[] = [];
+        for (const classId of globalSelectedClassIds) {
+            const selectableObject = selectableObjects.get(classId);
+            if (selectableObject) objectsToSelect.push(selectableObject);
+            else
+                console.error("Selectable object not found on canvas", classId);
+        }
+
+        canvas.setActiveObjects(objectsToSelect);
+    }, [
+        marchers,
+        selectedMarchers,
+        marcherPages,
+        selectedPage,
+        canvas,
+        setSelectedMarchers,
+        getGLobalSelectedObjectClassIds,
+        activeObjectsAreGloballySelected,
+    ]);
 
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
@@ -67,6 +320,7 @@ export default function Canvas({
     // Initiate listeners
     useEffect(() => {
         if (canvas) {
+            canvas.clearListeners();
             // Initiate listeners
             switch (cursorMode) {
                 case "line":
@@ -90,16 +344,6 @@ export default function Canvas({
     useEffect(() => {
         if (canvas) canvas.setUiSettings(uiSettings);
     }, [canvas, uiSettings]);
-
-    // Set the canvas setSelectedMarchers function to the setSelectedMarchers function
-    useEffect(() => {
-        if (canvas) canvas.setGlobalsSelectedMarchers = setSelectedMarchers;
-    }, [canvas, setSelectedMarchers]);
-
-    // Set the canvas globalSelectedMarchers to the selected marchers
-    useEffect(() => {
-        if (canvas) canvas.globalSelectedMarchers = selectedMarchers;
-    }, [canvas, selectedMarchers]);
 
     // Update/render the marchers when the selected page or the marcher pages change
     useEffect(() => {
@@ -179,29 +423,7 @@ export default function Canvas({
         uiSettings.previousPaths,
     ]);
 
-    // Set the active object to the selected marchers when they change outside of user-canvas-interaction
-    useEffect(() => {
-        if (!(canvas && marchers) || selectedMarchers.length === 0) return;
-
-        const selectedMarcherIds = selectedMarchers.map(
-            (marcher) => marcher.id
-        );
-        const canvasMarchersToSelect = canvas
-            .getCanvasMarchers()
-            .filter((canvasMarcher) =>
-                selectedMarcherIds.includes(canvasMarcher.marcherObj.id)
-            );
-
-        canvas.setSelectedCanvasMarchers(canvasMarchersToSelect);
-    }, [
-        marchers,
-        selectedMarchers,
-        marcherPages,
-        selectedPage,
-        canvas,
-        setSelectedMarchers,
-    ]);
-
+    // Render the marcher lines when the selected page or marcher lines change
     useEffect(() => {
         if (!canvas || !selectedPage) return;
 
