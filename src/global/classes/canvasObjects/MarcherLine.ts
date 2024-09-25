@@ -60,9 +60,9 @@ export default class MarcherLine
     }) {
         super([x1, y1, x2, y2], {
             ...CanvasConstants.HasControls,
-            strokeWidth: 2,
-            fill: "red",
-            stroke: "red",
+            strokeWidth: 3,
+            fill: CanvasConstants.CanvasColors.shape,
+            stroke: CanvasConstants.CanvasColors.shape,
             originX: "center",
             originY: "center",
             hoverCursor: "default",
@@ -71,8 +71,7 @@ export default class MarcherLine
         this.groupId = groupId;
         this.startPageId = startPageId;
         this.endPageId = endPageId;
-        this.gridOffset =
-            Math.abs(FieldProperties.GRID_STROKE_WIDTH - this.strokeWidth!) / 2;
+        this.gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2;
         this.notes = notes;
     }
 
@@ -148,11 +147,6 @@ export default class MarcherLine
      * @returns The marcherPages distributed along the line from start to finish
      */
     distributeMarchers = (marcherPages: MarcherPage[]): MarcherPage[] => {
-        console.log("this", this);
-        console.log("x1", this.x1, this.x1 === undefined);
-        console.log("y1", this.y1, this.y1 === undefined);
-        console.log("x2", this.x2, this.x2 === undefined);
-        console.log("y2", this.y2, this.y2 === undefined);
         if (
             this.x1 === undefined ||
             this.y1 === undefined ||
@@ -166,8 +160,6 @@ export default class MarcherLine
         }
         const xDistance = (this.x2 - this.x1) / (marcherPages.length - 1);
         const yDistance = (this.y2 - this.y1) / (marcherPages.length - 1);
-
-        console.log("Distributing marchers", xDistance, yDistance);
 
         const x1 = this.x1;
         const y1 = this.y1;

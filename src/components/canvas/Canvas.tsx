@@ -41,7 +41,7 @@ export default function Canvas({
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
-    const { cursorMode } = useCursorModeStore()!;
+    const { cursorMode, cursorModeMarchers } = useCursorModeStore()!;
     const { marcherLines } = useMarcherLineStore()!;
     const { selectedMarcherLines, setSelectedMarcherLines } =
         useSelectedMarcherLinesStore()!;
@@ -332,13 +332,17 @@ export default function Canvas({
                     );
                     break;
             }
+            canvas.eventMarchers = canvas.getCanvasMarchersByIds(
+                cursorModeMarchers.map((marcher) => marcher.id)
+            );
 
             // Cleanup
             return () => {
                 canvas.clearListeners();
+                canvas.eventMarchers = [];
             };
         }
-    }, [canvas, cursorMode]);
+    }, [canvas, cursorMode, cursorModeMarchers]);
 
     // Set the canvas UI settings to the global UI settings
     useEffect(() => {

@@ -1,5 +1,4 @@
 import { FieldProperties } from "@/global/classes/FieldProperties";
-import MarcherPage from "@/global/classes/MarcherPage";
 import { fabric } from "fabric";
 import { NoControls } from "../../../components/canvas/CanvasConstants";
 
@@ -7,6 +6,8 @@ import { NoControls } from "../../../components/canvas/CanvasConstants";
  * A Pathway is the object used on the canvas to represent a pathway between two marchers.
  */
 export class Pathway extends fabric.Line {
+    /** The marcher this pathway is for */
+    marcherId: number;
     /**
      * @param start The starting MarcherPage
      * @param end The ending MarcherPage
@@ -18,11 +19,15 @@ export class Pathway extends fabric.Line {
         end,
         color,
         strokeWidth = 2,
+        dashed = false,
+        marcherId,
     }: {
-        start: MarcherPage;
-        end: MarcherPage;
+        start: { x: number; y: number };
+        end: { x: number; y: number };
         color: string;
         strokeWidth?: number;
+        dashed?: boolean;
+        marcherId: number;
     }) {
         const gridOffset =
             (FieldProperties.GRID_STROKE_WIDTH - strokeWidth) / 2;
@@ -36,8 +41,10 @@ export class Pathway extends fabric.Line {
             {
                 stroke: color,
                 strokeWidth,
+                strokeDashArray: dashed ? [5, 3] : [],
                 ...NoControls,
             }
         );
+        this.marcherId = marcherId;
     }
 }

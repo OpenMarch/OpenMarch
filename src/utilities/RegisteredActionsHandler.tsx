@@ -335,7 +335,7 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "v" }),
     }),
     cursorModeLine: new RegisteredAction({
-        desc: "Set cursor mode to line",
+        desc: "Create a line out of the selected marchers",
         enumString: "cursorModeLine",
         keyboardShortcut: new KeyboardShortcut({ key: "l" }),
     }),
@@ -585,12 +585,15 @@ function RegisteredActionsHandler() {
                     break;
 
                 /****************** Cursor Mode ******************/
-                case RegisteredActionsEnum.cursorModeDefault:
+                case RegisteredActionsEnum.cursorModeDefault: {
                     setCursorMode("default");
                     break;
-                case RegisteredActionsEnum.cursorModeLine:
-                    setCursorMode("line");
+                }
+                case RegisteredActionsEnum.cursorModeLine: {
+                    setCursorMode("line", selectedMarchers);
+                    setSelectedMarchers([]);
                     break;
+                }
 
                 /****************** Select ******************/
                 case RegisteredActionsEnum.selectAllMarchers:

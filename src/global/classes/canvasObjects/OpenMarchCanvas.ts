@@ -25,6 +25,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The distance threshold is used to determine if the mouse was clicked or dragged */
     readonly DISTANCE_THRESHOLD = 20;
 
+    /** The FieldProperties this OpenMarchCanvas has been built on */
+    fieldProperties: FieldProperties;
+    /** The current page this canvas is on */
+    currentPage: Page;
     /**
      * This lock prevents infinite loops when selecting marchers.
      * Set it to true when changing selection, and check that this is false before handling selection.
@@ -41,6 +45,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: 0,
         time: 0,
     };
+    /**
+     * The reference to the grid (the lines on the field) object to use for caching
+     * This is needed to disable object caching while zooming, which greatly improves responsiveness.
+     */
+    staticGridRef: fabric.Group;
+    /** The marchers associated with a given event on the canvas. E.g. making a line or a box */
+    eventMarchers: CanvasMarcher[] = [];
+
     /** The timeout for when object caching should be re-enabled */
     private _zoomTimeout: NodeJS.Timeout | undefined;
     private _uiSettings: UiSettings;
@@ -48,17 +60,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
     maxCacheSideLimit = 11000;
-
-    /** The FieldProperties this OpenMarchCanvas has been built on */
-    fieldProperties: FieldProperties;
-    /** The current page this canvas is on */
-    currentPage: Page;
-
-    /**
-     * The reference to the grid (the lines on the field) object to use for caching
-     * This is needed to disable object caching while zooming, which greatly improves responsiveness.
-     */
-    staticGridRef: fabric.Group;
 
     constructor({
         canvasRef,
@@ -324,11 +325,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         startPageMarcherPages,
         endPageMarcherPages,
         color,
+        strokeWidth,
+        dashed = false,
     }: {
         startPageMarcherPages: MarcherPage[];
         endPageMarcherPages: MarcherPage[];
         color: string;
+        strokeWidth?: number;
+        dashed?: boolean;
     }) => {
+        const createdPathways: Pathway[] = [];
         endPageMarcherPages.forEach((previousMarcherPage) => {
             const selectedMarcherPage = startPageMarcherPages.find(
                 (marcherPage) =>
@@ -347,11 +353,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 start: previousMarcherPage,
                 end: selectedMarcherPage,
                 color,
+                strokeWidth,
+                dashed,
+                marcherId: previousMarcherPage.marcher_id,
             });
-
+            createdPathways.push(pathway);
             this.add(pathway);
         });
         this.requestRenderAll();
+        return createdPathways;
     };
 
     /**
@@ -754,6 +764,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return active
             ? this.getActiveObjectsByType(CanvasMarcher)
             : this.getObjectsByType(CanvasMarcher);
+    }
+
+    /**
+     * Gets the CanvasMarcher objects with the given marcher ids
+     *
+     * @param marcherIds The ids of the marchers to get
+     * @returns An array of CanvasMarcher objects with the given marcher ids
+     */
+    getCanvasMarchersByIds(marcherIds: number[]): CanvasMarcher[] {
+        const marcherIdsSet = new Set(marcherIds);
+        return this.getCanvasMarchers().filter((marcher) =>
+            marcherIdsSet.has(marcher.marcherObj.id)
+        );
     }
 
     /**

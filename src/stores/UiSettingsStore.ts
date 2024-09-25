@@ -20,9 +20,9 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>((set) => ({
         lockX: false,
         lockY: false,
         /** Boolean to view previous page's paths/dots */
-        previousPaths: true,
+        previousPaths: false,
         /** Boolean to view next page's paths/dots */
-        nextPaths: true,
+        nextPaths: false,
     },
 
     /**

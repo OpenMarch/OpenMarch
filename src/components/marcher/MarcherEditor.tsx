@@ -8,6 +8,8 @@ import {
     X_DESCRIPTION,
     Y_DESCRIPTION,
 } from "@/global/classes/ReadableCoords";
+import RegisteredActionButton from "../RegisteredActionButton";
+import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -86,7 +88,7 @@ function MarcherEditor() {
                 <div>
                     {selectedMarchers.length > 1 ? (
                         // Multiple marchers selected
-                        <>
+                        <div>
                             <h3 className="pl-4 py-2 text-xl border-0 border-solid border-y-2 border-y-gray-500 bg-gray-700 mt-0">
                                 Marchers {`(${selectedMarchers.length})`}
                             </h3>
@@ -97,11 +99,21 @@ function MarcherEditor() {
                                         .map((marcher) => marcher.drill_number)
                                         .join(", ")}
                                 </p>
+                                {selectedMarchers.length >= 3 && (
+                                    <RegisteredActionButton
+                                        className="btn-secondary"
+                                        registeredAction={
+                                            RegisteredActionsObjects.cursorModeLine
+                                        }
+                                    >
+                                        Create Line
+                                    </RegisteredActionButton>
+                                )}
                             </div>
-                        </>
+                        </div>
                     ) : (
                         // One marcher selected
-                        <>
+                        <div>
                             <h3 className="pl-4 py-2 text-xl border-0 border-solid border-y-2 border-y-gray-500 bg-gray-700 mt-0">
                                 Marcher {selectedMarchers[0].drill_number}
                             </h3>
@@ -298,7 +310,7 @@ function MarcherEditor() {
                                     </button>
                                 </form>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             )}
