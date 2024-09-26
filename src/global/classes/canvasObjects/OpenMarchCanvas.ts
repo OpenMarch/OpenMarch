@@ -273,6 +273,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
      * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
      * @param allMarchers All marchers in the drill
+     * @returns The StaticCanvasMarcher objects created
      */
     renderStaticMarchers = ({
         color,
@@ -283,6 +284,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         intendedMarcherPages: MarcherPage[];
         allMarchers: Marcher[];
     }) => {
+        const createdStaticMarchers: StaticCanvasMarcher[] = [];
         intendedMarcherPages.forEach((marcherPage) => {
             const curMarcher = allMarchers.find(
                 (marcher) => marcher.id === marcherPage.marcher_id
@@ -296,14 +298,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
 
             const staticMarcher = new StaticCanvasMarcher({
-                marcher: curMarcher,
                 marcherPage,
                 color,
             });
 
             this.add(staticMarcher);
+            createdStaticMarchers.push(staticMarcher);
         });
         this.requestRenderAll();
+
+        return createdStaticMarchers;
     };
 
     /**

@@ -17,7 +17,8 @@ export default class LineListeners
     private _isDrawing = false;
     private _activeLine: MarcherLine | null = null;
     /** All of the pathways for the active line keyed by the marcherId */
-    private pathways = new Map<number, fabric.Line>();
+    private _pathways = new Map<number, fabric.Object>();
+    private _staticMarchers = new Map<number, fabric.Object>();
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         super({ canvas });
@@ -36,7 +37,7 @@ export default class LineListeners
 
     cleanupListeners = () => {
         this.clearLine();
-        this.clearPathways();
+        this.clearPathwaysAndStaticMarchers();
         this.canvas.selection = true;
         this.canvas.resetCursorsToDefault();
 
@@ -56,13 +57,17 @@ export default class LineListeners
     };
 
     /**
-     * Clears the pathways from the marchers to the active line
+     * Clears the static marchers and pathways from the marchers to the active line
      */
-    clearPathways = () => {
-        this.pathways.forEach((pathway) => {
+    clearPathwaysAndStaticMarchers = () => {
+        this._pathways.forEach((pathway) => {
             this.canvas.remove(pathway);
         });
-        this.pathways.clear();
+        this._pathways.clear();
+        this._staticMarchers.forEach((staticMarcher) => {
+            this.canvas.remove(staticMarcher);
+        });
+        this._staticMarchers.clear();
     };
 
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
@@ -127,7 +132,7 @@ export default class LineListeners
             );
             return;
         }
-        this.clearPathways();
+        this.clearPathwaysAndStaticMarchers();
         const oldDots = this.canvas.eventMarchers.map((canvasMarcher) => {
             return {
                 ...canvasMarcher.marcherPage,
@@ -193,19 +198,25 @@ export default class LineListeners
             strokeWidth: 2,
             dashed: true,
         });
-        this.pathways = new Map<number, Pathway>(
+        this._pathways = new Map<number, Pathway>(
             createdPathways.map((pathway) => [pathway.marcherId, pathway])
         );
 
-        this.canvas.renderStaticMarchers({
+        const createdStaticMarchers = this.canvas.renderStaticMarchers({
             color: CanvasColors.TEMP_PATH,
             intendedMarcherPages: offsetNewDots,
             allMarchers: this.canvas.eventMarchers.map(
                 (canvasMarcher) => canvasMarcher.marcherObj
             ),
         });
-        this.canvas.sendCanvasMarchersToFront();
+        this._staticMarchers = new Map<number, fabric.Object>(
+            createdStaticMarchers.map((staticMarcher) => [
+                staticMarcher.marcherId || -1,
+                staticMarcher,
+            ])
+        );
 
+        this.canvas.sendCanvasMarchersToFront();
         this.canvas.setGlobalNewMarcherPages(newDots);
     }
 

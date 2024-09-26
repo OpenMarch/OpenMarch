@@ -1,4 +1,3 @@
-import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
 import { fabric } from "fabric";
 import { FieldProperties } from "@/global/classes/FieldProperties";
@@ -10,6 +9,8 @@ import { NoControls } from "../../../components/canvas/CanvasConstants";
  */
 export default class StaticCanvasMarcher extends fabric.Group {
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
+    /** The id of the marcher associated with this static marcher */
+    marcherId?: number;
 
     /**
      * @param marcherPage The MarcherPage object to set the initial coordinates from
@@ -21,7 +22,6 @@ export default class StaticCanvasMarcher extends fabric.Group {
         dotRadius = 3,
         color = "rgba(0, 0, 0, 1)",
     }: {
-        marcher: Marcher;
         marcherPage: MarcherPage;
         dotRadius?: number;
         color?: string;
@@ -40,5 +40,6 @@ export default class StaticCanvasMarcher extends fabric.Group {
             ],
             NoControls
         );
+        this.marcherId = marcherPage.marcher_id;
     }
 }

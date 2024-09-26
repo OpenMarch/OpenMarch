@@ -56,6 +56,7 @@ export enum RegisteredActionsEnum {
 
     // Cursor Mode
     applyUpdates = "applyUpdates",
+    cancelUpdates = "cancelUpdates",
     cursorModeDefault = "cursorModeDefault",
     cursorModeLine = "cursorModeLine",
 
@@ -335,6 +336,11 @@ export const RegisteredActionsObjects: {
         enumString: "applyUpdates",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
     }),
+    cancelUpdates: new RegisteredAction({
+        desc: "Cancel updates to marchers",
+        enumString: "cancelUpdates",
+        keyboardShortcut: new KeyboardShortcut({ key: "Escape" }),
+    }),
     cursorModeDefault: new RegisteredAction({
         desc: "Set cursor mode to default",
         enumString: "cursorModeDefault",
@@ -596,6 +602,10 @@ function RegisteredActionsHandler() {
                     break;
 
                 /****************** Cursor Mode ******************/
+                case RegisteredActionsEnum.cancelUpdates: {
+                    resetCursorMode();
+                    break;
+                }
                 case RegisteredActionsEnum.applyUpdates: {
                     MarcherPage.updateMarcherPages(cursorModeNewMarcherPages);
                     resetCursorMode();
