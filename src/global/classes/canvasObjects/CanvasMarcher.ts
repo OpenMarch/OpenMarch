@@ -18,6 +18,7 @@ export default class CanvasMarcher
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
     private static readonly color = "red";
     readonly classString = Selectable.SelectableClasses.MARCHER;
+    backgroundRectangle: fabric.Rect;
 
     readonly objectToGloballySelect: Marcher;
 
@@ -75,6 +76,17 @@ export default class CanvasMarcher
                 ...ActiveObjectArgs,
             }
         );
+        // add a rectangle for stroke and fill
+        this.backgroundRectangle = new fabric.Rect({
+            left: this.left,
+            top: this.top,
+            originX: this.originX,
+            originY: this.originY,
+            fill: "transparent",
+            width: this.width,
+            height: this.height,
+        });
+        this.addWithUpdate(this.backgroundRectangle);
 
         if (marcher.id !== marcherPage.marcher_id)
             console.error("MarcherPage and Marcher id's do not match");

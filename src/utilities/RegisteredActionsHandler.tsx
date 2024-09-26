@@ -55,6 +55,7 @@ export enum RegisteredActionsEnum {
     togglePreviousPagePaths = "togglePreviousPagePaths",
 
     // Cursor Mode
+    applyUpdates = "applyUpdates",
     cursorModeDefault = "cursorModeDefault",
     cursorModeLine = "cursorModeLine",
 
@@ -329,6 +330,11 @@ export const RegisteredActionsObjects: {
     }),
 
     // Cursor Mode
+    applyUpdates: new RegisteredAction({
+        desc: "Apply updates to marchers",
+        enumString: "applyUpdates",
+        keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
+    }),
     cursorModeDefault: new RegisteredAction({
         desc: "Set cursor mode to default",
         enumString: "cursorModeDefault",
@@ -365,7 +371,12 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    const { setCursorMode } = useCursorModeStore()!;
+    const {
+        resetCursorMode,
+        setCursorMode,
+        setCursorModeMarchers,
+        cursorModeNewMarcherPages,
+    } = useCursorModeStore()!;
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -585,12 +596,24 @@ function RegisteredActionsHandler() {
                     break;
 
                 /****************** Cursor Mode ******************/
+                case RegisteredActionsEnum.applyUpdates: {
+                    MarcherPage.updateMarcherPages(cursorModeNewMarcherPages);
+                    resetCursorMode();
+                    break;
+                }
                 case RegisteredActionsEnum.cursorModeDefault: {
-                    setCursorMode("default");
+                    resetCursorMode();
                     break;
                 }
                 case RegisteredActionsEnum.cursorModeLine: {
-                    setCursorMode("line", selectedMarchers);
+                    if (selectedMarchers.length < 2) {
+                        console.error(
+                            "Not enough marchers selected to create a line. Need at least 2 marchers selected."
+                        );
+                        break;
+                    }
+                    setCursorMode("line");
+                    setCursorModeMarchers(selectedMarchers);
                     setSelectedMarchers([]);
                     break;
                 }
@@ -608,15 +631,18 @@ function RegisteredActionsHandler() {
             }
         },
         [
+            cursorModeNewMarcherPages,
             fieldProperties,
             getSelectedMarcherPages,
             isPlaying,
             marcherPages,
             marchers,
             pages,
+            resetCursorMode,
             selectedMarchers,
             selectedPage,
             setCursorMode,
+            setCursorModeMarchers,
             setIsPlaying,
             setSelectedAudioFile,
             setSelectedMarchers,

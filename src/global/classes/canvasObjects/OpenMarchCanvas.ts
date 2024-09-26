@@ -10,7 +10,10 @@ import CanvasListeners from "../../../components/canvas/listeners/CanvasListener
 import Marcher from "@/global/classes/Marcher";
 import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
+import {
+    ActiveObjectArgs,
+    CanvasColors,
+} from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
@@ -50,11 +53,28 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
      */
     staticGridRef: fabric.Group;
+
+    // ---- CursorMode changes ----
+    /**
+     * Updates the event marchers in global state. Must be set in a React component
+     * Note - this must be called manually and isn't called in the eventMarchers setter (infinite loop)
+     */
+    setGlobalEventMarchers: (marchers: Marcher[]) => void = () => {
+        console.error("setGlobalEventMarchers not set");
+    };
+    /**
+     * Updates the new marcher pages in global state. Must be set in a React component
+     */
+    setGlobalNewMarcherPages: (marcherPages: MarcherPage[]) => void = () => {
+        console.error("setGlobalNewMarcherPages not set");
+    };
     /** The marchers associated with a given event on the canvas. E.g. making a line or a box */
-    eventMarchers: CanvasMarcher[] = [];
+    private _eventMarchers: CanvasMarcher[] = [];
+    // ----------------------------
 
     /** The timeout for when object caching should be re-enabled */
     private _zoomTimeout: NodeJS.Timeout | undefined;
+    /** The UI settings for the canvas */
     private _uiSettings: UiSettings;
 
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
@@ -133,7 +153,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     /** Set this function when setting the listeners, then call it before switching to other listeners */
-    protected cleanupListeners?: () => void;
+    protected _cleanupListeners?: () => void;
 
     /**
      * Set the listeners on the canvas. This should be changed based on the cursor mode.
@@ -141,18 +161,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param newListeners The listeners to set on the canvas
      */
     setListeners(newListeners: CanvasListeners) {
-        this.clearListeners();
+        this.cleanupListeners();
 
-        this.cleanupListeners = newListeners.cleanupListeners;
+        this._cleanupListeners = newListeners.cleanupListeners;
         newListeners.initiateListeners();
     }
 
     /**
      * Clear all listeners on the canvas
      */
-    clearListeners() {
-        this.cleanupListeners && this.cleanupListeners();
-        this.cleanupListeners = undefined;
+    cleanupListeners() {
+        this._cleanupListeners && this._cleanupListeners();
+        this._cleanupListeners = undefined;
     }
 
     /**
@@ -362,13 +382,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
         this.requestRenderAll();
         return createdPathways;
-    };
-
-    /**
-     * Remove all of the pathways from the canvas
-     */
-    removePathways = () => {
-        this.removeAllObjectsByType(Pathway);
     };
 
     /**
@@ -721,6 +734,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /*********************** GETTERS ***********************/
 
+    public get eventMarchers() {
+        return this._eventMarchers;
+    }
+
     /** The collection of UI settings for the canvas. This must be synced with global state from the UiSettingsStore */
     public get uiSettings() {
         return this._uiSettings;
@@ -824,6 +841,25 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             activeObject.lockMovementX = uiSettings.lockX;
             activeObject.lockMovementY = uiSettings.lockY;
         }
+    }
+
+    set eventMarchers(marchers: CanvasMarcher[]) {
+        // remove the border from the previous event marchers
+        this._eventMarchers.forEach((marcher) =>
+            marcher.backgroundRectangle.set({
+                strokeWidth: 0,
+            })
+        );
+        this._eventMarchers = marchers;
+        // Change the marcher outline of the marchers in the event
+        marchers.forEach((marcher) =>
+            marcher.backgroundRectangle.set({
+                strokeWidth: 2,
+                stroke: CanvasColors.SHAPE,
+                strokeDashArray: [3, 5],
+            })
+        );
+        this.requestRenderAll();
     }
 
     /*********************** SELECTION UTILITIES ***********************/

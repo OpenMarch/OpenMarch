@@ -41,7 +41,12 @@ export default function Canvas({
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
-    const { cursorMode, cursorModeMarchers } = useCursorModeStore()!;
+    const {
+        cursorMode,
+        cursorModeMarchers,
+        setCursorModeMarchers,
+        setCursorModeNewMarcherPages,
+    } = useCursorModeStore()!;
     const { marcherLines } = useMarcherLineStore()!;
     const { selectedMarcherLines, setSelectedMarcherLines } =
         useSelectedMarcherLinesStore()!;
@@ -49,6 +54,7 @@ export default function Canvas({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
+    const pagePathways = useRef<fabric.Object[]>([]);
 
     /* -------------------------- Selection Functions -------------------------- */
     const unimplementedError = (
@@ -320,7 +326,6 @@ export default function Canvas({
     // Initiate listeners
     useEffect(() => {
         if (canvas) {
-            canvas.clearListeners();
             // Initiate listeners
             switch (cursorMode) {
                 case "line":
@@ -338,11 +343,24 @@ export default function Canvas({
 
             // Cleanup
             return () => {
-                canvas.clearListeners();
+                canvas.cleanupListeners();
                 canvas.eventMarchers = [];
             };
         }
     }, [canvas, cursorMode, cursorModeMarchers]);
+
+    // Setters for cursorMode state
+    useEffect(() => {
+        if (canvas) {
+            canvas.setGlobalEventMarchers = setCursorModeMarchers;
+            canvas.setGlobalNewMarcherPages = setCursorModeNewMarcherPages;
+        }
+    }, [
+        canvas,
+        cursorMode,
+        setCursorModeMarchers,
+        setCursorModeNewMarcherPages,
+    ]);
 
     // Set the canvas UI settings to the global UI settings
     useEffect(() => {
@@ -369,7 +387,10 @@ export default function Canvas({
             const prevPage = selectedPage.getPreviousPage(pages);
             const nextPage = selectedPage.getNextPage(pages);
 
-            canvas.removePathways();
+            for (const pathway of pagePathways.current) {
+                canvas.remove(pathway);
+            }
+            pagePathways.current = [];
             canvas.removeStaticCanvasMarchers();
 
             // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
@@ -388,14 +409,15 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: prevPageMarcherPages,
-                    color: CanvasColors.previousPage,
+                    color: CanvasColors.PREVIOUS_PAGE,
                     allMarchers: marchers,
                 });
-                canvas.renderPathways({
+                const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: prevPageMarcherPages,
                     endPageMarcherPages: selectedPageMarcherPages,
-                    color: CanvasColors.previousPage,
+                    color: CanvasColors.PREVIOUS_PAGE,
                 });
+                pagePathways.current.push(...renderedPathways);
             }
             if (uiSettings.nextPaths && nextPage) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
@@ -405,14 +427,15 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: nextPageMarcherPages,
-                    color: CanvasColors.nextPage,
+                    color: CanvasColors.NEXT_PAGE,
                     allMarchers: marchers,
                 });
-                canvas.renderPathways({
+                const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: selectedPageMarcherPages,
                     endPageMarcherPages: nextPageMarcherPages,
-                    color: CanvasColors.nextPage,
+                    color: CanvasColors.NEXT_PAGE,
                 });
+                pagePathways.current.push(...renderedPathways);
             }
 
             canvas.sendCanvasMarchersToFront();

@@ -31,32 +31,49 @@ export default class LineListeners
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("object:modified", this.handleObjectModified);
+        this.canvas.on("mouse:up", this.handleMouseUp);
     };
 
     cleanupListeners = () => {
         this.clearLine();
+        this.clearPathways();
         this.canvas.selection = true;
         this.canvas.resetCursorsToDefault();
 
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
         this.canvas.off("object:modified", this.handleObjectModified);
+        this.canvas.off("mouse:up", this.handleMouseUp as any);
     };
 
     /** Discards the current active line */
     clearLine = () => {
-        if (this._isDrawing && this._activeLine) {
+        if (this._activeLine) {
             this.canvas.remove(this._activeLine);
             this._activeLine = null;
             this._isDrawing = false;
         }
     };
 
+    /**
+     * Clears the pathways from the marchers to the active line
+     */
+    clearPathways = () => {
+        this.pathways.forEach((pathway) => {
+            this.canvas.remove(pathway);
+        });
+        this.pathways.clear();
+    };
+
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         // Left click
         if (fabricEvent.e.button === 0) {
             // Performing normal mouse down if ctrl or meta key is pressed
-            if (fabricEvent.e.ctrlKey || fabricEvent.e.metaKey) {
+            if (
+                fabricEvent.e.ctrlKey ||
+                fabricEvent.e.metaKey ||
+                (!this._isDrawing && this._activeLine)
+            ) {
                 super.handleMouseDown(fabricEvent);
                 return;
             }
@@ -96,16 +113,6 @@ export default class LineListeners
         else if (fabricEvent.e.button === 2) {
             this.clearLine();
         }
-    }
-
-    /**
-     * Clears the pathways from the marchers to the active line
-     */
-    clearPathways() {
-        this.pathways.forEach((pathway) => {
-            this.canvas.remove(pathway);
-        });
-        this.pathways.clear();
     }
 
     /**
@@ -175,10 +182,14 @@ export default class LineListeners
                 break;
         }
         const newDots = this._activeLine.distributeMarchers(oldDots);
+        const gridOffset = this._activeLine.gridOffset;
+        const offsetNewDots = newDots.map((dot) => {
+            return { ...dot, x: dot.x - gridOffset, y: dot.y - gridOffset };
+        });
         const createdPathways = this.canvas.renderPathways({
             startPageMarcherPages: oldDots,
-            endPageMarcherPages: newDots,
-            color: CanvasColors.tempPath,
+            endPageMarcherPages: offsetNewDots,
+            color: CanvasColors.TEMP_PATH,
             strokeWidth: 2,
             dashed: true,
         });
@@ -187,13 +198,15 @@ export default class LineListeners
         );
 
         this.canvas.renderStaticMarchers({
-            color: CanvasColors.tempPath,
-            intendedMarcherPages: newDots,
+            color: CanvasColors.TEMP_PATH,
+            intendedMarcherPages: offsetNewDots,
             allMarchers: this.canvas.eventMarchers.map(
                 (canvasMarcher) => canvasMarcher.marcherObj
             ),
         });
         this.canvas.sendCanvasMarchersToFront();
+
+        this.canvas.setGlobalNewMarcherPages(newDots);
     }
 
     handleMouseMove(fabricEvent: fabric.IEvent<MouseEvent>) {
@@ -217,4 +230,8 @@ export default class LineListeners
     handleKeyDown = (keyboardEvent: KeyboardEvent) => {
         if (keyboardEvent.key === "Escape") this.clearLine();
     };
+
+    handleMouseUp(fabricEvent: fabric.IEvent<MouseEvent>): void {
+        super.handleMouseUp(fabricEvent);
+    }
 }

@@ -34,7 +34,7 @@ export default class MarcherLine
     readonly classString = Selectable.SelectableClasses.MARCHER_LINE;
     readonly objectToGloballySelect = this;
 
-    protected gridOffset: number;
+    readonly gridOffset: number;
     protected coordsAreOffset = false;
 
     constructor({
@@ -61,8 +61,8 @@ export default class MarcherLine
         super([x1, y1, x2, y2], {
             ...CanvasConstants.HasControls,
             strokeWidth: 3,
-            fill: CanvasConstants.CanvasColors.shape,
-            stroke: CanvasConstants.CanvasColors.shape,
+            fill: CanvasConstants.CanvasColors.SHAPE,
+            stroke: CanvasConstants.CanvasColors.SHAPE,
             originX: "center",
             originY: "center",
             hoverCursor: "default",

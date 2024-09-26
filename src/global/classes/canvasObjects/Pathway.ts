@@ -29,14 +29,13 @@ export class Pathway extends fabric.Line {
         dashed?: boolean;
         marcherId: number;
     }) {
-        const gridOffset =
-            (FieldProperties.GRID_STROKE_WIDTH - strokeWidth) / 2;
+        const gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2;
         super(
             [
-                start.x + gridOffset,
-                start.y + gridOffset,
-                end.x + gridOffset,
-                end.y + gridOffset,
+                start.x - gridOffset,
+                start.y - gridOffset,
+                end.x - gridOffset,
+                end.y - gridOffset,
             ],
             {
                 stroke: color,

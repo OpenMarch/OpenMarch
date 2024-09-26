@@ -4,10 +4,10 @@ import { IGroupOptions } from "fabric/fabric-impl";
  * The colors for the canvas.
  */
 export const CanvasColors = {
-    previousPage: "rgba(0, 0, 0, 1)",
-    nextPage: "rgba(0, 175, 13, 1)",
-    shape: "rgba(126, 34, 206, 1)",
-    tempPath: "rgba(192,132,252, 1)",
+    PREVIOUS_PAGE: "rgba(0, 0, 0, 1)",
+    NEXT_PAGE: "rgba(0, 175, 13, 1)",
+    SHAPE: "rgba(126, 34, 206, 1)",
+    TEMP_PATH: "rgba(192,132,252, 1)",
 } as const;
 
 /**
