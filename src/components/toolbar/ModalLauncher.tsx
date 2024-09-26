@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { FaX } from "react-icons/fa6";
+import ToolbarSection from "./ToolbarSection";
 
 interface ModalLauncherProps {
     components: React.ReactNode[];
@@ -65,25 +66,27 @@ const ModalLauncher: React.FC<ModalLauncherProps> = ({
     return (
         <>
             {launchButton && (
-                <button onClick={openModal} className={buttonClassName}>
-                    {launchButton}
-                </button>
+                <ToolbarSection>
+                    <button onClick={openModal} className={buttonClassName}>
+                        {launchButton}
+                    </button>
+                </ToolbarSection>
             )}
             {modalIsOpen ? (
                 <>
                     <div
-                        className={`justify-center items-center flex fixed inset-0 z-50 outline-none focus:outline-none my-16 ${modalClassName}`}
+                        className={`fixed inset-0 z-50 my-16 flex items-center justify-center outline-none focus:outline-none ${modalClassName}`}
                     >
-                        <div className="relative w-auto my-6 mx-auto max-w-3xl h-full">
+                        <div className="relative mx-auto my-6 h-full w-auto max-w-3xl">
                             {/*content*/}
-                            <div className="max-h-full border-1 rounded shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
+                            <div className="border-1 rounded relative flex max-h-full w-full flex-col bg-white shadow-lg outline-none focus:outline-none">
                                 {/*header*/}
-                                <div className="bg-gray-200 flex items-center px-5 border-0 border-b-2 border-solid border-b-gray-400  rounded-t">
-                                    <h3 className="text-3xl font-sans text-gray-700 flex-grow">
+                                <div className="bg-gray-200 px-5 border-b-gray-400 rounded-t flex items-center border-0 border-b-2 border-solid">
+                                    <h3 className="text-3xl text-gray-700 flex-grow font-sans">
                                         {header}
                                     </h3>
                                     <button
-                                        className="transition-all duration-150 hover:cursor-pointer px-1 bg-transparent border-0 text-gray-600 hover:text-gray-800 opacity-80 text-xl"
+                                        className="px-1 text-gray-600 hover:text-gray-800 text-xl border-0 bg-transparent opacity-80 transition-all duration-150 hover:cursor-pointer"
                                         onClick={() => setModalIsOpen(false)}
                                     >
                                         <FaX />
@@ -93,7 +96,7 @@ const ModalLauncher: React.FC<ModalLauncherProps> = ({
                                 <div
                                     id="modal-body"
                                     className={
-                                        "relative py-2 px-6 overflow-scroll flex-auto " +
+                                        "relative flex-auto overflow-scroll px-6 py-2 " +
                                         bodyClassName
                                     }
                                 >
@@ -104,7 +107,7 @@ const ModalLauncher: React.FC<ModalLauncherProps> = ({
                                     ))}
                                 </div>
                                 {/*footer*/}
-                                <div className="flex bg-gray-200 items-center p-3 border-0 border-t-2 border-t-gray-400 border-solid rounded-b">
+                                <div className="bg-gray-200 p-3 border-t-gray-400 rounded-b flex items-center border-0 border-t-2 border-solid">
                                     <div className="flex-grow">
                                         {bottomButton || <div />}
                                     </div>
@@ -118,7 +121,7 @@ const ModalLauncher: React.FC<ModalLauncherProps> = ({
                             </div>
                         </div>
                     </div>
-                    <div className="opacity-25 fixed inset-0 z-40 bg-black"></div>
+                    <div className="fixed inset-0 z-40 bg-black opacity-25"></div>
                 </>
             ) : null}
         </>

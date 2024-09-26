@@ -1,57 +1,48 @@
-import { FaFile, FaFolderOpen, FaRedo, FaSave, FaUndo } from "react-icons/fa";
+import {
+    File,
+    FolderOpen,
+    ArrowUUpLeft,
+    ArrowUUpRight,
+    FloppyDisk,
+} from "@phosphor-icons/react";
 import * as api from "../../api/api";
-import { topBarComponentProps } from "@/global/Interfaces";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
+import ToolbarSection from "./ToolbarSection";
 
-function FileControls({ className }: topBarComponentProps) {
-    const ICON_SIZE = 16;
-
+function FileControls() {
     return (
         <>
-            <div aria-label="File controls">
+            <ToolbarSection aria-label="File controls">
                 {/* <ButtonGroup aria-label="File controls" className={className}> */}
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.launchSaveFileDialogue
                     }
-                    className="btn-secondary rounded-none rounded-l"
                 >
-                    <FaSave size={ICON_SIZE} />
+                    <FloppyDisk size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.launchLoadFileDialogue
                     }
-                    className="btn-secondary rounded-none"
                 >
-                    <FaFolderOpen size={ICON_SIZE} />
+                    <FolderOpen size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.launchNewFileDialogue
                     }
-                    className="btn-secondary rounded-none rounded-r"
                 >
-                    <FaFile size={ICON_SIZE} />
+                    <File size={24} />
                 </RegisteredActionButton>
-            </div>
-            <div className="history-controls">
-                {/* <buttonGroup aria-label="History controls" className={className}> */}
-                <button
-                    onClick={api.performUndo}
-                    className="btn-secondary rounded-none rounded-l"
-                >
-                    <FaUndo size={ICON_SIZE} />
+                <button onClick={api.performUndo}>
+                    <ArrowUUpLeft size={24} />
                 </button>
-                <button
-                    onClick={api.performRedo}
-                    className="btn-secondary rounded-none rounded-r"
-                >
-                    <FaRedo size={ICON_SIZE} />
+                <button onClick={api.performRedo}>
+                    <ArrowUUpRight size={24} />
                 </button>
-                {/* </ButtonGroup > */}
-            </div>
+            </ToolbarSection>
         </>
     );
 }

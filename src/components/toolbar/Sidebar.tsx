@@ -1,9 +1,9 @@
 import MarcherEditor from "../marcher/MarcherEditor";
 import PageEditor from "../page/PageEditor";
 
-function Sidebar({ className = "" }: { className?: string }) {
+function Sidebar() {
     return (
-        <div className={`bg-gray-800 text-white w-full h-full ${className}`}>
+        <div className="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-16">
             <PageEditor />
             <MarcherEditor />
         </div>

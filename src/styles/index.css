@@ -2,32 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-    .btn-primary {
-        @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
-      text-white bg-purple-600 enabled:hover:bg-purple-700
-      disabled:cursor-default disabled:bg-purple-900 disabled:text-opacity-75;
+/* Each color style in RGB, gradient stop, and its dark mode variant */
+@layer base {
+    :root {
+        /* light mode */
+        --bg-1: 235, 237, 240;
+        --fg-1-stop-1: 0, 0, 0, 0.03;
+        --fg-1-stop-2: 0, 0, 0, 0.05;
+        --fg-2-stop-1: 255, 255, 255, 0.17;
+        --fg-2-stop-2: 255, 255, 255, 0.23;
+        --stroke: 0, 0, 0, 0.1;
+        --text: 32, 32, 32;
+        --text-invert: 255, 255, 255;
+        --accent: 0, 110, 200;
+        --red: 176, 51, 51;
+        --yellow: 200, 170, 0;
+        --green: 72, 158, 51;
     }
-    /* A primary button that looks disabled but isn't actually */
-    .btn-primary-appear-disabled {
-        @apply transition-all border-0 cursor-pointer px-4 py-2 enabled:hover:bg-purple-800
-      text-white bg-purple-900 text-opacity-75;
-    }
-
-    .btn-secondary {
-        @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
-      bg-gray-500 text-white enabled:hover:text-white
-      enabled:hover:bg-gray-600 disabled:cursor-default
-      disabled:bg-gray-800 disabled:text-opacity-75;
-    }
-    .btn-danger {
-        @apply transition-all border-0 cursor-pointer px-4 py-2 rounded
-      text-white bg-red-700 enabled:hover:bg-red-800
-      disabled:cursor-default disabled:bg-red-900 disabled:text-opacity-75;
-    }
-
-    .key {
-        @apply rounded text-sm border-solid py-[1px] px-1;
+    [class="dark"] {
+        /* dark mode */
+        --bg-1: 13, 16, 20;
+        --fg-1-stop-1: 255, 255, 255, 0.02;
+        --fg-1-stop-1: 255, 255, 255, 0.04;
+        --fg-2-stop-1: 255, 255, 255, 0.03;
+        --fg-2-stop-2: 255, 255, 255, 0.05;
+        --stroke: 255, 255, 255, 0.06;
+        --text: 208, 208, 208;
+        --text-invert: 0, 0, 0;
+        --accent: 66, 170, 255;
+        --red: 227, 74, 74;
+        --yellow: 236, 211, 71;
+        --green: 113, 222, 86;
     }
 }
 

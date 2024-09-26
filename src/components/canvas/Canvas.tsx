@@ -50,8 +50,8 @@ export default function Canvas({
                 new OpenMarchCanvas(
                     canvasRef.current,
                     fieldProperties,
-                    uiSettings
-                )
+                    uiSettings,
+                ),
             );
         }
     }, [selectedPage, fieldProperties, testCanvas, uiSettings, canvas]);
@@ -90,7 +90,7 @@ export default function Canvas({
             canvas.renderMarchers({
                 selectedMarcherPages: MarcherPage.filterByPageId(
                     marcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 ),
                 allMarchers: marchers,
             });
@@ -111,13 +111,13 @@ export default function Canvas({
             if (uiSettings.previousPaths || uiSettings.nextPaths)
                 selectedPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 );
 
             if (uiSettings.previousPaths && prevPage) {
                 const prevPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    prevPage.id
+                    prevPage.id,
                 );
 
                 canvas.renderStaticMarchers({
@@ -134,7 +134,7 @@ export default function Canvas({
             if (uiSettings.nextPaths && nextPage) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    nextPage.id
+                    nextPage.id,
                 );
 
                 canvas.renderStaticMarchers({
@@ -166,12 +166,12 @@ export default function Canvas({
         if (!(canvas && marchers) || selectedMarchers.length === 0) return;
 
         const selectedMarcherIds = selectedMarchers.map(
-            (marcher) => marcher.id
+            (marcher) => marcher.id,
         );
         const canvasMarchersToSelect = canvas
             .getCanvasMarchers()
             .filter((canvasMarcher) =>
-                selectedMarcherIds.includes(canvasMarcher.marcherObj.id)
+                selectedMarcherIds.includes(canvasMarcher.marcherObj.id),
             );
 
         canvas.setSelectedCanvasMarchers(canvasMarchersToSelect);
@@ -193,19 +193,19 @@ export default function Canvas({
                 if (!nextPage) return;
 
                 const nextPageMarcherPages = marcherPages.filter(
-                    (marcherPage) => marcherPage.page_id === nextPage.id
+                    (marcherPage) => marcherPage.page_id === nextPage.id,
                 );
                 canvas.getCanvasMarchers().forEach((canvasMarcher) => {
                     const marcherPageToUse = nextPageMarcherPages.find(
                         (marcherPage) =>
                             marcherPage.marcher_id ===
                                 canvasMarcher.marcherObj.id &&
-                            marcherPage.page_id === nextPage.id
+                            marcherPage.page_id === nextPage.id,
                     );
                     if (!marcherPageToUse) {
                         console.error(
                             "Marcher page not found - startAnimation: Canvas.tsx",
-                            canvasMarcher
+                            canvasMarcher,
                         );
                         return;
                     }
@@ -237,7 +237,7 @@ export default function Canvas({
                 canvas.renderMarchers({
                     selectedMarcherPages: MarcherPage.filterByPageId(
                         marcherPages,
-                        selectedPage.id
+                        selectedPage.id,
                     ),
                     allMarchers: marchers,
                 });
@@ -255,12 +255,12 @@ export default function Canvas({
     ]);
 
     return (
-        <div className={`overflow-hidden ${className}`}>
+        <div className={`overflow-hidden rounded-6 ${className}`}>
             {marchers.length > 0 && pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
                 // If there are no marchers or pages, display a message
-                <div className="flex bg-gray-900 text-white h-full w-full align-middle flex-col justify-center text-center">
+                <div className="bg-gray-900 flex h-full w-full flex-col justify-center text-center align-middle text-white">
                     <h3>To start the show, create Marchers and Pages</h3>
                     <p>Then {"`Window -> Refresh` (or `Ctrl+R`)"}</p>
                     <h5>

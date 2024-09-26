@@ -23,7 +23,7 @@ function App() {
     }, []);
     return (
         // Context for the selected page. Will change when more specialized
-        <main className="font-sans dark bg-gray-900 fixed h-full w-full z-20 top-0 start-0">
+        <main className="dark:outline-dark h-screen w-screen overflow-hidden bg-bg-1 font-sans text-text outline-white">
             {!databaseIsReady ? (
                 <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
             ) : (
@@ -35,17 +35,13 @@ function App() {
                                     <StateInitializer />
                                     <AudioPlayer />
                                     <RegisteredActionsHandler />
-                                    <div
-                                        className="h-full grid justify-stretch"
-                                        style={{
-                                            gridTemplateRows: "120px 1fr 100px",
-                                            gridTemplateColumns: "250px 1fr",
-                                        }}
-                                    >
-                                        <Topbar className="col-span-full box-border border-gray-500 border-0 border-b-2 border-solid" />
-                                        <Sidebar className="row-span-2 box-border border-gray-500 border-0 border-r-2 border-solid" />
-                                        <Canvas />
-                                        <TimelineContainer className="box-border bg-gray-800 border-gray-500 border-0 border-t-2 border-solid" />
+                                    <div className="flex h-full w-full gap-8 p-8">
+                                        <Sidebar />
+                                        <div className="flex h-full w-full flex-col gap-8">
+                                            <Topbar />
+                                            <Canvas />
+                                            <TimelineContainer />
+                                        </div>
                                     </div>
                                 </FieldPropertiesProvider>
                             </SelectedAudioFileProvider>

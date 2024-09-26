@@ -8,21 +8,18 @@ import AlignmentToolbar from "./AlignmentToolbar";
 import MusicModal from "../music/MusicModal";
 import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
 
-function Topbar({ className = "" }: { className?: string }) {
+function Topbar() {
     const { cursorMode } = useCursorModeStore();
-    const componentClassName = "";
     return (
-        <div
-            className={` gap-2 flex bg-gray-700 w-full flex-wrap items-center p-4 m-0 overflow-y-auto ${className}`}
-        >
-            <FileControls className={componentClassName} />
-            <PlaybackControls className={componentClassName} />
-            <MarcherListModal className={componentClassName} />
-            <PageListModal className={componentClassName} />
-            <MusicModal className={componentClassName} />
-            <UiSettingsToolbar className={`${componentClassName}`} />
-            <AlignmentToolbar className={componentClassName} />
-            <ExportCoordinatesModal className={componentClassName} />
+        <div className="flex w-full flex-wrap gap-8">
+            <FileControls />
+            <PlaybackControls />
+            <MarcherListModal />
+            <PageListModal />
+            <MusicModal />
+            <UiSettingsToolbar />
+            <AlignmentToolbar />
+            <ExportCoordinatesModal />
             <div>Cursor mode: {cursorMode}</div>
         </div>
     );

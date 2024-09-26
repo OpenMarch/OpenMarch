@@ -4,11 +4,7 @@ import { useMeasureStore } from "@/stores/measure/useMeasureStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import React from "react";
 
-export default function TimelineContainer({
-    className = "",
-}: {
-    className?: string;
-}) {
+export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
     const { measures } = useMeasureStore()!;
     const { pages } = usePageStore()!;
@@ -21,7 +17,7 @@ export default function TimelineContainer({
     }, [measures, pages]);
 
     return (
-        <div className={`p-0 overflow-x-auto overflow-y-hidden ${className}`}>
+        <div className="p-0 overflow-x-auto overflow-y-hidden box-border">
             <div className="w-max h-full">
                 {/* <div className='bg-gray-300 p w-32 mr-10 h-full' /> */}
                 <div
@@ -54,9 +50,9 @@ export default function TimelineContainer({
                                         : "bg-purple-600 hover:bg-purple-800"
                                 }`
                                 : // if the page is not selected
-                                isPlaying
-                                ? "bg-purple-400"
-                                : "bg-purple-300 hover:bg-purple-400"
+                                  isPlaying
+                                  ? "bg-purple-400"
+                                  : "bg-purple-300 hover:bg-purple-400"
                         }`}
                             onClick={() => setSelectedPage(pages[0])}
                             title="first page"
@@ -96,9 +92,9 @@ export default function TimelineContainer({
                                                                 : "bg-purple-600 hover:bg-purple-800"
                                                         }`
                                                         : // if the page is not selected
-                                                        isPlaying
-                                                        ? "bg-purple-400"
-                                                        : "bg-purple-300 hover:bg-purple-400"
+                                                          isPlaying
+                                                          ? "bg-purple-400"
+                                                          : "bg-purple-300 hover:bg-purple-400"
                                                 }`}
                                             onClick={() => {
                                                 if (!isPlaying)
@@ -136,7 +132,7 @@ export default function TimelineContainer({
                                         className="grid grid-rows-3"
                                         style={{
                                             gridTemplateColumns: "1fr ".repeat(
-                                                countsToUse
+                                                countsToUse,
                                             ),
                                         }}
                                     >
@@ -150,7 +146,7 @@ export default function TimelineContainer({
                                                 >
                                                     &nbsp;
                                                 </div>
-                                            )
+                                            ),
                                         )}
                                         <div
                                             className={`text-xl text-gray-300 font-bold select-none border-solid
