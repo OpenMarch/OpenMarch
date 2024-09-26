@@ -12,8 +12,6 @@ import MarcherPage from "../../global/classes/MarcherPage";
 import Measure from "../../global/classes/Measure";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
-import { useMarcherLineStore } from "@/stores/MarcherLineStore";
-import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
 /**
  * A component that initializes the state of the application.
@@ -28,7 +26,6 @@ function StateInitializer() {
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
-    const { fetchMarcherLines } = useMarcherLineStore()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -59,11 +56,6 @@ function StateInitializer() {
         Measure.fetchMeasures = fetchMeasures;
         Measure.fetchMeasures();
     }, [fetchMeasures]);
-
-    useEffect(() => {
-        MarcherLine.refresh = fetchMarcherLines;
-        MarcherLine.refresh();
-    }, [fetchMarcherLines]);
 
     /*******************************************************************/
 

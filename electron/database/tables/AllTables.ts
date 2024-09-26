@@ -1,6 +1,3 @@
-import MarcherLineTable from "./MarcherLineTable";
-import { connect } from "../database.services";
-
 /**
  * All tables in the database.
  *
@@ -8,7 +5,7 @@ import { connect } from "../database.services";
  * added to the `APP_API` object in `electron/preload/index.ts`.
  */
 const ALL_TABLES = {
-    marcherLine: new MarcherLineTable(connect),
+    // marcherLine: new MarcherLineTable(connect),
 } as const;
 
 export default ALL_TABLES;

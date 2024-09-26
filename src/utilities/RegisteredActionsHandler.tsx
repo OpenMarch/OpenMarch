@@ -382,6 +382,7 @@ function RegisteredActionsHandler() {
         setCursorMode,
         setCursorModeMarchers,
         cursorModeNewMarcherPages,
+        cursorModeMarchers,
     } = useCursorModeStore()!;
 
     const keyboardShortcutDictionary = useRef<{
@@ -603,6 +604,7 @@ function RegisteredActionsHandler() {
 
                 /****************** Cursor Mode ******************/
                 case RegisteredActionsEnum.cancelUpdates: {
+                    setSelectedMarchers(cursorModeMarchers);
                     resetCursorMode();
                     break;
                 }
@@ -641,6 +643,7 @@ function RegisteredActionsHandler() {
             }
         },
         [
+            cursorModeMarchers,
             cursorModeNewMarcherPages,
             fieldProperties,
             getSelectedMarcherPages,

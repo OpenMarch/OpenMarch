@@ -3,6 +3,9 @@ import Constants from "../../../src/global/Constants";
 import AbstractTableController from "./AbstractTableController";
 import * as MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 
+/**
+ * THIS TABLE IS NOT CURRENTLY IN USE
+ */
 export default class MarcherLineTable extends AbstractTableController<
     MarcherLine.DatabaseLine,
     MarcherLine.NewLineArgs,
@@ -32,3 +35,31 @@ export default class MarcherLineTable extends AbstractTableController<
         }
     }
 }
+
+// If this should be used, the following invokers should be added to the `APP_API` object in `electron/preload/index.ts`:
+// /**
+//  * IPC invokers for the MarcherLineTable
+//  */
+// const marcherLine: CrudInvokers<
+//     MarcherLine.DatabaseLine,
+//     MarcherLine.NewLineArgs,
+//     MarcherLine.ModifiedLineArgs
+// > = {
+//     create: (newItems: MarcherLine.NewLineArgs[]) =>
+//         ipcRenderer.invoke(`marcher_lines:insert`, newItems) as Promise<
+//             DatabaseResponse<MarcherLine.DatabaseLine[]>
+//         >,
+//     read: (id: number) =>
+//         ipcRenderer.invoke("marcher_lines:get", id) as Promise<
+//             DatabaseResponse<MarcherLine.DatabaseLine>
+//         >,
+//     readAll: () =>
+//         ipcRenderer.invoke("marcher_lines:getAll") as Promise<
+//             DatabaseResponse<MarcherLine.DatabaseLine[]>
+//         >,
+//     update: (modifiedItems: MarcherLine.ModifiedLineArgs[]) =>
+//         ipcRenderer.invoke("marcher_lines:update", modifiedItems) as Promise<
+//             DatabaseResponse<MarcherLine.DatabaseLine[]>
+//         >,
+//     delete: (id: number) => ipcRenderer.invoke("marcher_lines:delete", id),
+// } as const;

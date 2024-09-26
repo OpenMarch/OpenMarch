@@ -13,8 +13,6 @@ import DefaultListeners from "./listeners/DefaultListeners";
 import { useCursorModeStore } from "@/stores/CursorModeStore";
 import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
-import { useMarcherLineStore } from "@/stores/MarcherLineStore";
-import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import { useSelectedMarcherLinesStore } from "@/stores/selection/SelectedMarcherLineStore";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
@@ -47,7 +45,6 @@ export default function Canvas({
         setCursorModeMarchers,
         setCursorModeNewMarcherPages,
     } = useCursorModeStore()!;
-    const { marcherLines } = useMarcherLineStore()!;
     const { selectedMarcherLines, setSelectedMarcherLines } =
         useSelectedMarcherLinesStore()!;
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
@@ -449,18 +446,6 @@ export default function Canvas({
         uiSettings.nextPaths,
         uiSettings.previousPaths,
     ]);
-
-    // Render the marcher lines when the selected page or marcher lines change
-    useEffect(() => {
-        if (!canvas || !selectedPage) return;
-
-        const currentPageMarcherLines = MarcherLine.getMarcherLinesForPage({
-            marcherLines,
-            page: selectedPage,
-            allPages: pages,
-        });
-        canvas.renderMarcherLines({ marcherLines: currentPageMarcherLines });
-    }, [canvas, marcherLines, pages, selectedPage]);
 
     /* --------------------------Animation Functions-------------------------- */
 
