@@ -39,11 +39,11 @@ export default function RegisteredActionButton({
         const enumString = registeredAction.enumString;
         if (
             !Object.values(RegisteredActionsEnum).includes(
-                enumString as RegisteredActionsEnum
+                enumString as RegisteredActionsEnum,
             )
         )
             console.error(
-                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`
+                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`,
             );
         const registeredActionEnum =
             RegisteredActionsEnum[
@@ -67,17 +67,11 @@ export default function RegisteredActionButton({
             aria-label={registeredAction.instructionalString}
             {...rest}
             ref={buttonRef}
-            className={`${rest?.className ? rest.className : ""} group`}
+            className={`${rest?.className ? rest.className : ""} group disabled:opacity-50`}
         >
             {children}
             {showTooltip && (
-                <span
-                    className="absolute w-auto p-2 m-2 min-w-max
-            bottom-0 left-0 right-[90%]
-            rounded-md shadow-md
-            text-white bg-gray-900
-            text-xs font-bold transition-opacity duration-200 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100"
-                >
+                <span className="rounded-md bg-gray-900 text-xs absolute bottom-0 left-0 right-[90%] m-2 w-auto min-w-max scale-0 p-2 font-bold text-white opacity-0 shadow-md transition-opacity duration-200 group-hover:scale-100 group-hover:opacity-100">
                     {instructionalString
                         ? instructionalString
                         : registeredAction.instructionalString}

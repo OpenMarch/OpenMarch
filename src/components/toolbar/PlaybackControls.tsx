@@ -37,7 +37,6 @@ function PlaybackControls({ className }: topBarComponentProps) {
         <ToolbarSection aria-label="Playback Controls">
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
-                className="btn-secondary rounded-none rounded-l group"
                 disabled={!previousPage || isPlaying}
             >
                 <Rewind size={24} />
@@ -45,7 +44,6 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.previousPage}
-                className="btn-secondary rounded-none"
                 disabled={!previousPage || isPlaying}
             >
                 <SkipBack size={24} />
@@ -53,7 +51,6 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                className="btn-secondary rounded-none"
                 disabled={!nextPage}
             >
                 {isPlaying ? <Pause size={24} /> : <Play size={24} />}
@@ -61,7 +58,6 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.nextPage}
-                className="btn-secondary rounded-none"
                 disabled={!nextPage || isPlaying}
             >
                 <SkipForward size={24} />
@@ -69,7 +65,6 @@ function PlaybackControls({ className }: topBarComponentProps) {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.lastPage}
-                className="btn-secondary rounded-none rounded-r"
                 disabled={!nextPage || isPlaying}
             >
                 <FastForward size={24} />

@@ -10,7 +10,7 @@ export default function UiSettingsToolbar() {
     const { uiSettings } = useUiSettingsStore();
 
     return (
-        <ToolbarSection aria-label="Alignment Toolbar" c>
+        <ToolbarSection aria-label="Alignment Toolbar">
             <div>
                 <RegisteredActionButton
                     className={`rounded-none rounded-l ${uiSettings.lockX ? "btn-primary-appear-disabled" : "btn-primary"}`}

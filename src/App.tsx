@@ -23,7 +23,7 @@ function App() {
     }, []);
     return (
         // Context for the selected page. Will change when more specialized
-        <main className="dark:outline-dark h-screen w-screen overflow-hidden bg-bg-1 font-sans text-text outline-white">
+        <>
             {!databaseIsReady ? (
                 <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
             ) : (
@@ -35,9 +35,15 @@ function App() {
                                     <StateInitializer />
                                     <AudioPlayer />
                                     <RegisteredActionsHandler />
-                                    <div className="flex h-full w-full gap-8 p-8">
+                                    <div
+                                        id="app"
+                                        className="flex h-full min-h-0 w-full min-w-0 gap-8 p-8 pt-0"
+                                    >
                                         <Sidebar />
-                                        <div className="flex h-full w-full flex-col gap-8">
+                                        <div
+                                            id="workspace"
+                                            className="flex h-full w-full flex-col gap-8"
+                                        >
                                             <Topbar />
                                             <Canvas />
                                             <TimelineContainer />
@@ -49,7 +55,7 @@ function App() {
                     </SelectedPageProvider>
                 </IsPlayingProvider>
             )}
-        </main>
+        </>
     );
 }
 

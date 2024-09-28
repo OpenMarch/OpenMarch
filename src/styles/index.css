@@ -23,7 +23,7 @@
         /* dark mode */
         --bg-1: 13, 16, 20;
         --fg-1-stop-1: 255, 255, 255, 0.02;
-        --fg-1-stop-1: 255, 255, 255, 0.04;
+        --fg-1-stop-2: 255, 255, 255, 0.04;
         --fg-2-stop-1: 255, 255, 255, 0.03;
         --fg-2-stop-2: 255, 255, 255, 0.05;
         --stroke: 255, 255, 255, 0.06;
@@ -45,4 +45,12 @@
 .example {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
+}
+
+/* Titlebar */
+.main-app-titlebar {
+    -webkit-app-region: drag;
+}
+.main-app-titlebar .window-control-btn {
+    -webkit-app-region: no-drag;
 }
