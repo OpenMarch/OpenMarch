@@ -1,7 +1,6 @@
 // import ModalLauncher from "../toolbar/ModalLauncher";
 import { topBarComponentProps } from "@/global/Interfaces";
 import ModalLauncher from "../toolbar/ModalLauncher";
-import { MusicNotes } from "@phosphor-icons/react";
 import AudioSelector from "./AudioSelector";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
@@ -50,7 +49,7 @@ export default function MusicModal({ className }: topBarComponentProps) {
     return (
         <ModalLauncher
             components={[MeasureModalContents()]}
-            launchButton={<MusicNotes size={24} />}
+            launchButton="Music"
             header="Music Editor"
             modalClassName="modal-xl"
             buttonClassName={`btn-primary rounded-md ${className}`}

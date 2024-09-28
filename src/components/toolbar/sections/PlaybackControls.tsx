@@ -7,14 +7,14 @@ import {
     SkipForward,
     FastForward,
 } from "@phosphor-icons/react";
-import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useIsPlaying } from "../../context/IsPlayingContext";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useIsPlaying } from "@/context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
 import { usePageStore } from "@/stores/page/usePageStore";
-import Page from "../../global/classes/Page";
+import Page from "@/global/classes/Page";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "../RegisteredActionButton";
-import ToolbarSection from "./ToolbarSection";
+import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage } = useSelectedPage()!;

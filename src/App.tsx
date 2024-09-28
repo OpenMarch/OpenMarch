@@ -42,7 +42,7 @@ function App() {
                                         <Sidebar />
                                         <div
                                             id="workspace"
-                                            className="flex h-full w-full flex-col gap-8"
+                                            className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                         >
                                             <Topbar />
                                             <Canvas />

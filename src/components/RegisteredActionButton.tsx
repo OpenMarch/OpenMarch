@@ -67,11 +67,11 @@ export default function RegisteredActionButton({
             aria-label={registeredAction.instructionalString}
             {...rest}
             ref={buttonRef}
-            className={`${rest?.className ? rest.className : ""} group disabled:opacity-50`}
+            className={`${rest?.className ? rest.className : ""} group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`}
         >
             {children}
             {showTooltip && (
-                <span className="rounded-md bg-gray-900 text-xs absolute bottom-0 left-0 right-[90%] m-2 w-auto min-w-max scale-0 p-2 font-bold text-white opacity-0 shadow-md transition-opacity duration-200 group-hover:scale-100 group-hover:opacity-100">
+                <span className="absolute bottom-0 left-0 right-[90%] m-8 mb-36 w-auto min-w-max scale-0 rounded-6 border border-stroke bg-fg-1 p-6 text-body text-text opacity-0 drop-shadow-sm backdrop-blur-3xl transition-opacity duration-200 group-hover:scale-100 group-hover:opacity-100">
                     {instructionalString
                         ? instructionalString
                         : registeredAction.instructionalString}

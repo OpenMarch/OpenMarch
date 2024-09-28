@@ -1,7 +1,7 @@
 import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "../RegisteredActionButton";
-import ToolbarSection from "./ToolbarSection";
+import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
 export default function UiSettingsToolbar() {
     const { uiSettings } = useUiSettingsStore();

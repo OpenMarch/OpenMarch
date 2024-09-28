@@ -23,6 +23,8 @@ export default {
             "text-invert": "rgba(var(--text-invert))",
             accent: "rgba(var(--accent))",
             red: "rgba(var(--red))",
+            yellow: "rgba(var(--yellow))",
+            green: "rgba(var(--green))",
         },
         fontFamily: {
             sans: ["'DM Sans'", ...defaultTheme.fontFamily.sans],

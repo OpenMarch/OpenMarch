@@ -1,14 +1,19 @@
-import { Minus, Square, X } from "@phosphor-icons/react";
+import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
 
-export default function TitleBar() {
+export default function StatusBar() {
+    const { cursorMode } = useCursorModeStore();
     return (
-        <div className="main-app-titlebar flex h-fit w-full items-center justify-between px-24 py-0 text-text">
+        <div className="flex h-fit w-full items-center justify-between px-24 py-8 pb-14 text-text">
             <div className="flex items-center gap-12">
-                <p className="text-body leading-none">Status Bar</p>
+                <p className="text-sub leading-none">
+                    Cursor mode: {cursorMode}
+                </p>
             </div>
             <div className="flex items-center gap-12">
-                <p className="text-body leading-none">OpenMarch</p>
+                <p className="text-sub leading-none">OpenMarch</p>
             </div>
         </div>
     );
 }
+
+// to do: add theme switcher in status bar

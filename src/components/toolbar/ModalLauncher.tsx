@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { FaX } from "react-icons/fa6";
-import ToolbarSection from "./ToolbarSection";
 
 interface ModalLauncherProps {
     components: React.ReactNode[];
@@ -66,11 +65,12 @@ const ModalLauncher: React.FC<ModalLauncherProps> = ({
     return (
         <>
             {launchButton && (
-                <ToolbarSection>
-                    <button onClick={openModal} className={buttonClassName}>
-                        {launchButton}
-                    </button>
-                </ToolbarSection>
+                <button
+                    onClick={openModal}
+                    className="duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+                >
+                    {launchButton}
+                </button>
             )}
             {modalIsOpen ? (
                 <>
