@@ -14,7 +14,7 @@ import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import Measure from "@/global/classes/Measure";
-import { useCursorModeStore } from "@/stores/CursorModeStore";
+import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -55,10 +55,10 @@ export enum RegisteredActionsEnum {
     togglePreviousPagePaths = "togglePreviousPagePaths",
 
     // Cursor Mode
-    applyUpdates = "applyUpdates",
-    cancelUpdates = "cancelUpdates",
-    cursorModeDefault = "cursorModeDefault",
-    cursorModeLine = "cursorModeLine",
+    applyAlignmentUpdates = "applyAlignmentUpdates",
+    cancelAlignmentUpdates = "cancelAlignmentUpdates",
+    alignmentEventDefault = "alignmentEventDefault",
+    alignmentEventLine = "alignmentEventLine",
 
     // Select
     selectAllMarchers = "selectAllMarchers",
@@ -331,24 +331,24 @@ export const RegisteredActionsObjects: {
     }),
 
     // Cursor Mode
-    applyUpdates: new RegisteredAction({
+    applyAlignmentUpdates: new RegisteredAction({
         desc: "Apply updates to marchers",
-        enumString: "applyUpdates",
+        enumString: "applyAlignmentUpdates",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
     }),
-    cancelUpdates: new RegisteredAction({
+    cancelAlignmentUpdates: new RegisteredAction({
         desc: "Cancel updates to marchers",
-        enumString: "cancelUpdates",
+        enumString: "cancelAlignmentUpdates",
         keyboardShortcut: new KeyboardShortcut({ key: "Escape" }),
     }),
-    cursorModeDefault: new RegisteredAction({
+    alignmentEventDefault: new RegisteredAction({
         desc: "Set cursor mode to default",
-        enumString: "cursorModeDefault",
+        enumString: "alignmentEventDefault",
         keyboardShortcut: new KeyboardShortcut({ key: "v" }),
     }),
-    cursorModeLine: new RegisteredAction({
+    alignmentEventLine: new RegisteredAction({
         desc: "Create a line out of the selected marchers",
-        enumString: "cursorModeLine",
+        enumString: "alignmentEventLine",
         keyboardShortcut: new KeyboardShortcut({ key: "l" }),
     }),
 
@@ -378,12 +378,12 @@ function RegisteredActionsHandler() {
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const {
-        resetCursorMode,
-        setCursorMode,
-        setCursorModeMarchers,
-        cursorModeNewMarcherPages,
-        cursorModeMarchers,
-    } = useCursorModeStore()!;
+        resetAlignmentEvent,
+        setAlignmentEvent,
+        setAlignmentEventMarchers,
+        alignmentEventNewMarcherPages,
+        alignmentEventMarchers,
+    } = useAlignmentEventStore()!;
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -603,29 +603,31 @@ function RegisteredActionsHandler() {
                     break;
 
                 /****************** Cursor Mode ******************/
-                case RegisteredActionsEnum.cancelUpdates: {
-                    setSelectedMarchers(cursorModeMarchers);
-                    resetCursorMode();
+                case RegisteredActionsEnum.cancelAlignmentUpdates: {
+                    setSelectedMarchers(alignmentEventMarchers);
+                    resetAlignmentEvent();
                     break;
                 }
-                case RegisteredActionsEnum.applyUpdates: {
-                    MarcherPage.updateMarcherPages(cursorModeNewMarcherPages);
-                    resetCursorMode();
+                case RegisteredActionsEnum.applyAlignmentUpdates: {
+                    MarcherPage.updateMarcherPages(
+                        alignmentEventNewMarcherPages
+                    );
+                    resetAlignmentEvent();
                     break;
                 }
-                case RegisteredActionsEnum.cursorModeDefault: {
-                    resetCursorMode();
+                case RegisteredActionsEnum.alignmentEventDefault: {
+                    resetAlignmentEvent();
                     break;
                 }
-                case RegisteredActionsEnum.cursorModeLine: {
+                case RegisteredActionsEnum.alignmentEventLine: {
                     if (selectedMarchers.length < 2) {
                         console.error(
                             "Not enough marchers selected to create a line. Need at least 2 marchers selected."
                         );
                         break;
                     }
-                    setCursorMode("line");
-                    setCursorModeMarchers(selectedMarchers);
+                    setAlignmentEvent("line");
+                    setAlignmentEventMarchers(selectedMarchers);
                     setSelectedMarchers([]);
                     break;
                 }
@@ -643,19 +645,19 @@ function RegisteredActionsHandler() {
             }
         },
         [
-            cursorModeMarchers,
-            cursorModeNewMarcherPages,
+            alignmentEventMarchers,
+            alignmentEventNewMarcherPages,
             fieldProperties,
             getSelectedMarcherPages,
             isPlaying,
             marcherPages,
             marchers,
             pages,
-            resetCursorMode,
+            resetAlignmentEvent,
             selectedMarchers,
             selectedPage,
-            setCursorMode,
-            setCursorModeMarchers,
+            setAlignmentEvent,
+            setAlignmentEventMarchers,
             setIsPlaying,
             setSelectedAudioFile,
             setSelectedMarchers,
@@ -757,9 +759,9 @@ function RegisteredActionsHandler() {
     useEffect(() => {
         registeredButtonActions.forEach((buttonAction) => {
             if (!buttonAction.buttonRef.current) {
-                console.error(
-                    `No button ref for ${buttonAction.registeredAction}`
-                );
+                // console.error(
+                //     `No button ref for ${buttonAction.registeredAction}`
+                // );
                 return;
             }
             buttonAction.buttonRef.current.onclick = () =>

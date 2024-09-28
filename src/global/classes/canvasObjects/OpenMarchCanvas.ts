@@ -53,8 +53,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
      */
     staticGridRef: fabric.Group;
+    private _listeners?: CanvasListeners;
 
-    // ---- CursorMode changes ----
+    // ---- AlignmentEvent changes ----
     /**
      * Updates the event marchers in global state. Must be set in a React component
      * Note - this must be called manually and isn't called in the eventMarchers setter (infinite loop)
@@ -140,7 +141,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         if (listeners) this.setListeners(listeners);
 
-        this.renderAll();
+        this.requestRenderAll();
     }
 
     /******************* INSTANCE METHODS ******************/
@@ -152,27 +153,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.setHeight(window.innerHeight);
     }
 
-    /** Set this function when setting the listeners, then call it before switching to other listeners */
-    protected _cleanupListeners?: () => void;
-
     /**
      * Set the listeners on the canvas. This should be changed based on the cursor mode.
      *
      * @param newListeners The listeners to set on the canvas
      */
     setListeners(newListeners: CanvasListeners) {
-        this.cleanupListeners();
+        this._listeners?.cleanupListeners();
 
-        this._cleanupListeners = newListeners.cleanupListeners;
-        newListeners.initiateListeners();
-    }
-
-    /**
-     * Clear all listeners on the canvas
-     */
-    cleanupListeners() {
-        this._cleanupListeners && this._cleanupListeners();
-        this._cleanupListeners = undefined;
+        this._listeners = newListeners;
+        this._listeners.initiateListeners();
     }
 
     /**
@@ -242,6 +232,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         });
 
+        if (this._listeners && this._listeners.refreshMarchers)
+            this._listeners?.refreshMarchers();
         this.requestRenderAll();
     };
 
@@ -253,6 +245,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         canvasMarchers.forEach((canvasMarcher) => {
             canvasMarcher.setMarcherCoords(canvasMarcher.marcherPage);
         });
+
+        if (this._listeners && this._listeners.refreshMarchers)
+            this._listeners?.refreshMarchers();
+        this.requestRenderAll();
     };
 
     /**
@@ -457,7 +453,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this._zoomTimeout = /** The */ setTimeout(() => {
             if (/** The */ this.staticGridRef.objectCaching) {
                 this.staticGridRef.objectCaching = false;
-                this.renderAll();
+                this.requestRenderAll();
             }
         }, 50);
     };

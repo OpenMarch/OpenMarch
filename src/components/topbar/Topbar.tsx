@@ -6,10 +6,8 @@ import UiSettingsToolbar from "./UiSettingsToolbar";
 import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
 import AlignmentToolbar from "./AlignmentToolbar";
 import MusicModal from "../music/MusicModal";
-import { useCursorModeStore } from "@/stores/CursorModeStore";
 
 function Topbar({ className = "" }: { className?: string }) {
-    const { cursorMode } = useCursorModeStore();
     const componentClassName = "";
     return (
         <div
@@ -23,7 +21,6 @@ function Topbar({ className = "" }: { className?: string }) {
             <UiSettingsToolbar className={`${componentClassName}`} />
             <AlignmentToolbar className={componentClassName} />
             <ExportCoordinatesModal className={componentClassName} />
-            <div>Cursor mode: {cursorMode}</div>
         </div>
     );
 }

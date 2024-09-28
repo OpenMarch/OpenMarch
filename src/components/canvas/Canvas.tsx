@@ -10,7 +10,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import MarcherPage from "@/global/classes/MarcherPage";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
-import { useCursorModeStore } from "@/stores/CursorModeStore";
+import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
@@ -40,11 +40,11 @@ export default function Canvas({
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
     const {
-        cursorMode,
-        cursorModeMarchers,
-        setCursorModeMarchers,
-        setCursorModeNewMarcherPages,
-    } = useCursorModeStore()!;
+        alignmentEvent,
+        alignmentEventMarchers,
+        setAlignmentEventMarchers,
+        setAlignmentEventNewMarcherPages,
+    } = useAlignmentEventStore()!;
     const { selectedMarcherLines, setSelectedMarcherLines } =
         useSelectedMarcherLinesStore()!;
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
@@ -324,7 +324,7 @@ export default function Canvas({
     useEffect(() => {
         if (canvas) {
             // Initiate listeners
-            switch (cursorMode) {
+            switch (alignmentEvent) {
                 case "line":
                     canvas.setListeners(new LineListeners({ canvas: canvas }));
                     break;
@@ -335,29 +335,23 @@ export default function Canvas({
                     break;
             }
             canvas.eventMarchers = canvas.getCanvasMarchersByIds(
-                cursorModeMarchers.map((marcher) => marcher.id)
+                alignmentEventMarchers.map((marcher) => marcher.id)
             );
 
             // Cleanup
             return () => {
-                canvas.cleanupListeners();
                 canvas.eventMarchers = [];
             };
         }
-    }, [canvas, cursorMode, cursorModeMarchers]);
+    }, [canvas, alignmentEvent, alignmentEventMarchers]);
 
-    // Setters for cursorMode state
+    // Setters for alignmentEvent state
     useEffect(() => {
         if (canvas) {
-            canvas.setGlobalEventMarchers = setCursorModeMarchers;
-            canvas.setGlobalNewMarcherPages = setCursorModeNewMarcherPages;
+            canvas.setGlobalEventMarchers = setAlignmentEventMarchers;
+            canvas.setGlobalNewMarcherPages = setAlignmentEventNewMarcherPages;
         }
-    }, [
-        canvas,
-        cursorMode,
-        setCursorModeMarchers,
-        setCursorModeNewMarcherPages,
-    ]);
+    }, [canvas, setAlignmentEventMarchers, setAlignmentEventNewMarcherPages]);
 
     // Set the canvas UI settings to the global UI settings
     useEffect(() => {

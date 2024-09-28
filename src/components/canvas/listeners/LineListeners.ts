@@ -23,7 +23,12 @@ export default class LineListeners
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         super({ canvas });
         this.canvas.setCursor("crosshair");
-        this.canvas.defaultCursor = "crosshair";
+        this.canvas.staticGridRef.hoverCursor = "crosshair";
+
+        // Make all of the canvas marchers unselectable
+        this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+            canvasMarcher.makeUnselectable();
+        });
 
         window.addEventListener("keydown", this.handleKeyDown);
     }
@@ -43,7 +48,7 @@ export default class LineListeners
 
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
-        this.canvas.off("object:modified", this.handleObjectModified);
+        this.canvas.off("object:modified", this.handleObjectModified as any);
         this.canvas.off("mouse:up", this.handleMouseUp as any);
     };
 
@@ -54,6 +59,10 @@ export default class LineListeners
             this._activeLine = null;
             this._isDrawing = false;
         }
+    };
+
+    refreshMarchers = () => {
+        this.drawNewMarcherPaths();
     };
 
     /**
@@ -105,12 +114,15 @@ export default class LineListeners
             } else {
                 // Finalize the line
                 this.drawNewMarcherPaths();
-                if (this._activeLine) {
-                    // MarcherLine.create([this._activeLine]);
-                    // this._activeLine.editable = true;
-                }
-                // this._activeLine = null;
+
                 this._isDrawing = false;
+
+                // Make canvasMarchers selectable again
+                this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+                    canvasMarcher.makeSelectable();
+                });
+                this.canvas.staticGridRef.hoverCursor = "default";
+
                 this.canvas.selection = true;
             }
         }
@@ -234,7 +246,8 @@ export default class LineListeners
         }
     }
 
-    handleObjectModified(): void {
+    handleObjectModified(fabricEvent: fabric.IEvent<MouseEvent>): void {
+        super.handleObjectModified(fabricEvent);
         this.drawNewMarcherPaths();
     }
 

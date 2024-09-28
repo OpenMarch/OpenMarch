@@ -318,6 +318,28 @@ export default class CanvasMarcher
 
         return callback;
     }
+
+    /**
+     * Sets the marcher to be selectable and have controls.
+     */
+    makeSelectable() {
+        this.set({
+            selectable: true,
+            hoverCursor: "pointer",
+            evented: true,
+        } as Partial<this>);
+    }
+
+    /**
+     * Sets the marcher to be unselectable and not have controls.
+     */
+    makeUnselectable() {
+        this.set({
+            selectable: false,
+            hoverCursor: "default",
+            evented: false,
+        } as Partial<this>);
+    }
 }
 
 /**
