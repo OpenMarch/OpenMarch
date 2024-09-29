@@ -107,9 +107,18 @@ export default class LineListeners
                 this._activeLine.editable = false;
                 // Disable group selection while drawing
                 this.canvas.selection = false;
-                this._activeLine.setToNearestStep({
-                    pointOne: { x: pointer.x, y: pointer.y },
-                });
+
+                // Snap to the nearest step, unless the shift key is being held down
+                if (fabricEvent.e.shiftKey) {
+                    this._activeLine.set({
+                        x1: pointer.x,
+                        y1: pointer.y,
+                    });
+                } else {
+                    this._activeLine.setToNearestStep({
+                        pointOne: { x: pointer.x, y: pointer.y },
+                    });
+                }
                 this._isDrawing = true;
             } else {
                 // Finalize the line
@@ -236,12 +245,22 @@ export default class LineListeners
         if (this.canvas.isDragging) super.handleMouseMove(fabricEvent);
         else if (this._isDrawing && this._activeLine) {
             const pointer = this.canvas.getPointer(fabricEvent.e);
-            this._activeLine.setToNearestStep({
-                pointTwo: {
-                    x: pointer.x,
-                    y: pointer.y,
-                },
-            });
+
+            // Snap to the nearest step, unless the shift key is being held down
+            if (fabricEvent.e.shiftKey) {
+                this._activeLine.set({
+                    x2: pointer.x,
+                    y2: pointer.y,
+                });
+            } else {
+                this._activeLine.setToNearestStep({
+                    pointTwo: {
+                        x: pointer.x,
+                        y: pointer.y,
+                    },
+                });
+            }
+
             this.canvas.requestRenderAll();
         }
     }
