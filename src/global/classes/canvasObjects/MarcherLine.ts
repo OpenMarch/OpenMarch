@@ -4,15 +4,11 @@ import { FieldProperties } from "../FieldProperties";
 import MarcherPage from "../MarcherPage";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import Page from "../Page";
-import * as Selectable from "./interfaces/Selectable";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.
  */
-export default class MarcherLine
-    extends fabric.Line
-    implements Selectable.ISelectable
-{
+export default class MarcherLine extends fabric.Line {
     canvas?: OpenMarchCanvas;
     /** The ID of the group that this MarcherLine belongs to */
     groupId?: number;
@@ -31,7 +27,6 @@ export default class MarcherLine
         );
     };
 
-    readonly classString = Selectable.SelectableClasses.MARCHER_LINE;
     readonly objectToGloballySelect = this;
 
     readonly gridOffset: number;

@@ -14,7 +14,6 @@ import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
-import { useSelectedMarcherLinesStore } from "@/stores/selection/SelectedMarcherLineStore";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 
 /**
@@ -45,8 +44,6 @@ export default function Canvas({
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
-    const { selectedMarcherLines, setSelectedMarcherLines } =
-        useSelectedMarcherLinesStore()!;
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationCallbacks = useRef<any>([]);
@@ -104,14 +101,6 @@ export default function Canvas({
                     }
                     break;
                 }
-                case Selectable.SelectableClasses.MARCHER_LINE: {
-                    for (const selectedMarcherLine of selectedMarcherLines) {
-                        globalSelectedClassIds.add(
-                            Selectable.getClassId(selectedMarcherLine)
-                        );
-                    }
-                    break;
-                }
                 default: {
                     unimplementedError(selectedClass);
                 }
@@ -124,7 +113,7 @@ export default function Canvas({
         }
 
         return globalSelectedClassIds;
-    }, [canvas, selectedMarcherLines, selectedMarchers]);
+    }, [canvas, selectedMarchers]);
 
     /**
      * Checks if the selectable active objects on the canvas are the same as the globally selected objects in the
@@ -173,7 +162,6 @@ export default function Canvas({
             [key in Selectable.SelectableClasses]: any[];
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
-            [Selectable.SelectableClasses.MARCHER_LINE]: [],
         };
 
         const allObjectsToSelect: Selectable.ISelectable[] = [];
@@ -197,15 +185,6 @@ export default function Canvas({
                     );
                     break;
                 }
-                case Selectable.SelectableClasses.MARCHER_LINE: {
-                    // MarcherLine
-                    setSelectedMarcherLines(
-                        newSelectedObjects[
-                            Selectable.SelectableClasses.MARCHER_LINE
-                        ]
-                    );
-                    break;
-                }
                 default: {
                     unimplementedError(selectableClass);
                 }
@@ -216,12 +195,7 @@ export default function Canvas({
         for (const value of Object.values(Selectable.SelectableClasses)) {
             selectObjectsGlobally(value as Selectable.SelectableClasses);
         }
-    }, [
-        activeObjectsAreGloballySelected,
-        canvas,
-        setSelectedMarcherLines,
-        setSelectedMarchers,
-    ]);
+    }, [activeObjectsAreGloballySelected, canvas, setSelectedMarchers]);
 
     /**
      * Handler for clearing global selected objects in the store
@@ -235,10 +209,6 @@ export default function Canvas({
                     setSelectedMarchers([]);
                     break;
                 }
-                case Selectable.SelectableClasses.MARCHER_LINE: {
-                    setSelectedMarcherLines([]);
-                    break;
-                }
                 default: {
                     unimplementedError(selectableClass);
                 }
@@ -250,7 +220,7 @@ export default function Canvas({
         )) {
             deselectObjects(selectableClass);
         }
-    }, [setSelectedMarcherLines, setSelectedMarchers]);
+    }, [setSelectedMarchers]);
 
     useEffect(() => {
         if (!canvas) return;
