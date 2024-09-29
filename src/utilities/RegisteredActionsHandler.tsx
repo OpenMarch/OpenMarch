@@ -1,20 +1,20 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
-import { usePageStore } from "@/stores/page/usePageStore";
-import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
+import { useMarcherPageStore } from "@/stores/MarcherPageStore";
+import { usePageStore } from "@/stores/PageStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
 import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useRegisteredActionsStore } from "@/stores/registeredAction/useRegisteredActionsStore";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import Measure from "@/global/classes/Measure";
-// import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
+import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -55,8 +55,10 @@ export enum RegisteredActionsEnum {
     togglePreviousPagePaths = "togglePreviousPagePaths",
 
     // Cursor Mode
-    cursorModeDefault = "cursorModeDefault",
-    cursorModeLine = "cursorModeLine",
+    applyAlignmentUpdates = "applyAlignmentUpdates",
+    cancelAlignmentUpdates = "cancelAlignmentUpdates",
+    alignmentEventDefault = "alignmentEventDefault",
+    alignmentEventLine = "alignmentEventLine",
 
     // Select
     selectAllMarchers = "selectAllMarchers",
@@ -329,14 +331,24 @@ export const RegisteredActionsObjects: {
     }),
 
     // Cursor Mode
-    cursorModeDefault: new RegisteredAction({
+    applyAlignmentUpdates: new RegisteredAction({
+        desc: "Apply updates to marchers",
+        enumString: "applyAlignmentUpdates",
+        keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
+    }),
+    cancelAlignmentUpdates: new RegisteredAction({
+        desc: "Cancel updates to marchers",
+        enumString: "cancelAlignmentUpdates",
+        keyboardShortcut: new KeyboardShortcut({ key: "Escape" }),
+    }),
+    alignmentEventDefault: new RegisteredAction({
         desc: "Set cursor mode to default",
-        enumString: "cursorModeDefault",
+        enumString: "alignmentEventDefault",
         keyboardShortcut: new KeyboardShortcut({ key: "v" }),
     }),
-    cursorModeLine: new RegisteredAction({
-        desc: "Set cursor mode to line",
-        enumString: "cursorModeLine",
+    alignmentEventLine: new RegisteredAction({
+        desc: "Create a line out of the selected marchers",
+        enumString: "alignmentEventLine",
         keyboardShortcut: new KeyboardShortcut({ key: "l" }),
     }),
 
@@ -365,7 +377,13 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    // const { setCursorMode } = useCursorModeStore()!;
+    const {
+        resetAlignmentEvent,
+        setAlignmentEvent,
+        setAlignmentEventMarchers,
+        alignmentEventNewMarcherPages,
+        alignmentEventMarchers,
+    } = useAlignmentEventStore()!;
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -584,13 +602,35 @@ function RegisteredActionsHandler() {
                     });
                     break;
 
-                /****************** UI settings ******************/
-                // case RegisteredActionsEnum.cursorModeDefault:
-                //     setCursorMode("default");
-                //     break;
-                // case RegisteredActionsEnum.cursorModeLine:
-                //     setCursorMode("line");
-                //     break;
+                /****************** Cursor Mode ******************/
+                case RegisteredActionsEnum.cancelAlignmentUpdates: {
+                    setSelectedMarchers(alignmentEventMarchers);
+                    resetAlignmentEvent();
+                    break;
+                }
+                case RegisteredActionsEnum.applyAlignmentUpdates: {
+                    MarcherPage.updateMarcherPages(
+                        alignmentEventNewMarcherPages
+                    );
+                    resetAlignmentEvent();
+                    break;
+                }
+                case RegisteredActionsEnum.alignmentEventDefault: {
+                    resetAlignmentEvent();
+                    break;
+                }
+                case RegisteredActionsEnum.alignmentEventLine: {
+                    if (selectedMarchers.length < 2) {
+                        console.error(
+                            "Not enough marchers selected to create a line. Need at least 2 marchers selected."
+                        );
+                        break;
+                    }
+                    setAlignmentEvent("line");
+                    setAlignmentEventMarchers(selectedMarchers);
+                    setSelectedMarchers([]);
+                    break;
+                }
 
                 /****************** Select ******************/
                 case RegisteredActionsEnum.selectAllMarchers:
@@ -605,14 +645,19 @@ function RegisteredActionsHandler() {
             }
         },
         [
+            alignmentEventMarchers,
+            alignmentEventNewMarcherPages,
             fieldProperties,
             getSelectedMarcherPages,
             isPlaying,
             marcherPages,
             marchers,
             pages,
+            resetAlignmentEvent,
             selectedMarchers,
             selectedPage,
+            setAlignmentEvent,
+            setAlignmentEventMarchers,
             setIsPlaying,
             setSelectedAudioFile,
             setSelectedMarchers,
@@ -667,6 +712,7 @@ function RegisteredActionsHandler() {
                     "Meta",
                     " ", // Space
                     "Enter",
+                    "Escape",
                 ]);
                 if (code.includes("Key")) {
                     key = code.replace("Key", "");
@@ -713,9 +759,9 @@ function RegisteredActionsHandler() {
     useEffect(() => {
         registeredButtonActions.forEach((buttonAction) => {
             if (!buttonAction.buttonRef.current) {
-                console.error(
-                    `No button ref for ${buttonAction.registeredAction}`
-                );
+                // console.error(
+                //     `No button ref for ${buttonAction.registeredAction}`
+                // );
                 return;
             }
             buttonAction.buttonRef.current.onclick = () =>

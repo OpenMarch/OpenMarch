@@ -1,7 +1,7 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useMeasureStore } from "@/stores/measure/useMeasureStore";
-import { usePageStore } from "@/stores/page/usePageStore";
+import { useMeasureStore } from "@/stores/MeasureStore";
+import { usePageStore } from "@/stores/PageStore";
 import React from "react";
 
 export default function TimelineContainer({

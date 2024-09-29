@@ -1,10 +1,19 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { UiSettings } from "@/global/Interfaces";
 
 /**
  * A separate mock file than global mocks since the canvas will likely be quite large and have many mocks.
  */
+
+export const falsyUiSettings: UiSettings = {
+    isPlaying: false,
+    lockX: false,
+    lockY: false,
+    previousPaths: false,
+    nextPaths: false,
+};
 
 export const mockMarchers: Marcher[] = [
     new Marcher({

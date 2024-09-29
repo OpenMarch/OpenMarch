@@ -14,14 +14,16 @@
     },
     "scripts": {
         "dev": "eslint . && vite",
-        "build-mac": "tsc && vite build && electron-builder --mac ",
-        "build-win": "tsc && vite build && electron-builder --win",
+        "app:prepare": "node_modules/.bin/electron-rebuild -f -w better-sqlite3",
+        "build:mac": "tsc && vite build && electron-builder --mac ",
+        "build:win": "tsc && vite build && electron-builder --win",
         "preview": "vite preview",
         "pree2e": "vite build --mode=test",
         "e2e": "playwright test",
         "postinstall": "electron-rebuild && npm rebuild canvas --update-binary",
         "lint": "eslint .",
         "test": "eslint . && vitest",
+        "test:prepare": "npm rebuild better-sqlite3 && vitest",
         "test:watch": "eslint . && vitest --watch",
         "test:coverage": "eslint . && vitest --coverage",
         "test:clearCache": "vitest --clearCache"

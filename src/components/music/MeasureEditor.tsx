@@ -1,7 +1,7 @@
 import BeatUnit from "@/global/classes/BeatUnit";
 import Measure from "@/global/classes/Measure";
 import TimeSignature from "@/global/classes/TimeSignature";
-import { useMeasureStore } from "@/stores/measure/useMeasureStore";
+import { useMeasureStore } from "@/stores/MeasureStore";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function MeasureEditor() {

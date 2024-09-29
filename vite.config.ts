@@ -23,6 +23,7 @@ export default defineConfig(({ command }) => {
         },
         test: {
             setupFiles: ["./vitest.setup.ts"],
+            include: ["**/__test__/**.test.ts?(x)"],
             environment: "jsdom",
             deps: {
                 // vitest < 0.34

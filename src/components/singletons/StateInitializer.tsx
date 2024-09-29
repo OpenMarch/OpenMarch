@@ -2,10 +2,10 @@ import { useCallback, useEffect } from "react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
-import { useMarcherPageStore } from "@/stores/marcherPage/useMarcherPageStore";
-import { usePageStore } from "@/stores/page/usePageStore";
-import { useMeasureStore } from "../../stores/measure/useMeasureStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
+import { useMarcherPageStore } from "@/stores/MarcherPageStore";
+import { usePageStore } from "@/stores/PageStore";
+import { useMeasureStore } from "../../stores/MeasureStore";
 import Marcher from "../../global/classes/Marcher";
 import Page from "../../global/classes/Page";
 import MarcherPage from "../../global/classes/MarcherPage";
@@ -39,22 +39,22 @@ function StateInitializer() {
      */
     useEffect(() => {
         Marcher.fetchMarchers = fetchMarchers;
-        fetchMarchers();
+        Marcher.fetchMarchers();
     }, [fetchMarchers]);
 
     useEffect(() => {
         Page.fetchPages = fetchPages;
-        fetchPages();
+        Page.fetchPages();
     }, [fetchPages]);
 
     useEffect(() => {
         MarcherPage.fetchMarcherPages = fetchMarcherPages;
-        fetchMarcherPages();
+        MarcherPage.fetchMarcherPages();
     }, [fetchMarcherPages, pages, marchers]);
 
     useEffect(() => {
         Measure.fetchMeasures = fetchMeasures;
-        fetchMeasures();
+        Measure.fetchMeasures();
     }, [fetchMeasures]);
 
     /*******************************************************************/

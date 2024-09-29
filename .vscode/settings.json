@@ -17,7 +17,14 @@
     "editor.formatOnSaveMode": "file", // required to format on save
     // "files.autoSave": "onFocusChange", // optional but recommended
     "vs-code-prettier-eslint.prettierLast": false,
-    "cSpell.words": ["Classname", "Dumouchelle", "openmarch", "zustand"],
+    "cSpell.words": [
+        "Classname",
+        "Dumouchelle",
+        "openmarch",
+        "Rowid",
+        "Topbar",
+        "zustand"
+    ],
     "[typescriptreact]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },

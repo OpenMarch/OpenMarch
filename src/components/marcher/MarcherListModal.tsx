@@ -1,10 +1,10 @@
-import ModalLauncher from "../toolbar/ModalLauncher";
+import ModalLauncher from "../topbar/ModalLauncher";
 import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
 import { useEffect, useState } from "react";
 import FormButtons from "../FormButtons";
 import { topBarComponentProps } from "@/global/Interfaces";
-import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 
 export default function MarcherListModal({ className }: topBarComponentProps) {
     const [listIsEditing, setListIsEditing] = useState(false);
@@ -24,12 +24,22 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
                 <div className="h-[100%] w-3/5 overflow-scroll">
                     <MarcherList
                         isEditingStateProp={[listIsEditing, setListIsEditing]}
-                        submitActivatorStateProp={[submitActivator, setSubmitActivator]}
-                        cancelActivatorStateProp={[cancelActivator, setCancelActivator]} />
+                        submitActivatorStateProp={[
+                            submitActivator,
+                            setSubmitActivator,
+                        ]}
+                        cancelActivatorStateProp={[
+                            cancelActivator,
+                            setCancelActivator,
+                        ]}
+                    />
                     {/* <MarcherList /> */}
                 </div>
                 <div className="w-2/5 px-4  overflow-scroll">
-                    <NewMarcherForm hasHeader={true} disabledProp={listIsEditing} />
+                    <NewMarcherForm
+                        hasHeader={true}
+                        disabledProp={listIsEditing}
+                    />
                 </div>
             </div>
         );
@@ -37,17 +47,26 @@ export default function MarcherListModal({ className }: topBarComponentProps) {
 
     function editFormButtons() {
         return (
-            <FormButtons handleCancel={() => setCancelActivator(true)} isEditingProp={listIsEditing}
-                setIsEditingProp={setListIsEditing} editButton={"Edit Marchers"}
-                handleSubmit={() => setSubmitActivator(true)} />
+            <FormButtons
+                handleCancel={() => setCancelActivator(true)}
+                isEditingProp={listIsEditing}
+                setIsEditingProp={setListIsEditing}
+                editButton={"Edit Marchers"}
+                handleSubmit={() => setSubmitActivator(true)}
+            />
         );
     }
 
     return (
         <ModalLauncher
-            components={[MarcherModalContents()]} launchButton="Marchers" header="Marchers" modalClassName=""
-            bottomButton={marchers.length > 0 && editFormButtons()} buttonClassName={`btn-primary rounded-md ${className}`}
-            setModelIsOpenProp={setModalIsOpen} bodyClassName="h-[75vh]"
+            components={[MarcherModalContents()]}
+            launchButton="Marchers"
+            header="Marchers"
+            modalClassName=""
+            bottomButton={marchers.length > 0 && editFormButtons()}
+            buttonClassName={`btn-primary rounded-md ${className}`}
+            setModelIsOpenProp={setModalIsOpen}
+            bodyClassName="h-[75vh]"
         />
     );
 }
