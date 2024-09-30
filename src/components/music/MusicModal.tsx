@@ -20,7 +20,6 @@ export default function MusicModal({ className }: topBarComponentProps) {
                             registeredAction={
                                 RegisteredActionsObjects.launchImportMusicXmlFileDialogue
                             }
-                            className="btn-primary w-full"
                             showTooltip={false}
                         >
                             Import MusicXML file

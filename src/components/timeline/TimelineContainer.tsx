@@ -3,6 +3,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMeasureStore } from "@/stores/measure/useMeasureStore";
 import { usePageStore } from "@/stores/page/usePageStore";
 import React from "react";
+import { Plus, Minus } from "@phosphor-icons/react";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
@@ -17,88 +18,109 @@ export default function TimelineContainer() {
     }, [measures, pages]);
 
     return (
-        <div className="box-border overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1">
-            {/* <div className='bg-gray-300 p w-32 mr-10 h-full' /> */}
+        <div className="relative flex h-[10rem] min-h-0 min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8">
             <div
-                className="grid h-full grid-cols-1 grid-rows-6"
-                style={{ gridTemplateColumns: "40px 1fr" }}
+                className="fixed bottom-32 right-0 flex gap-6 p-2 pr-16 drop-shadow-md"
+                id="zoomIcons"
             >
-                <div className="fixed right-0">
-                    <button onClick={() => setPxPerSecond(pxPerSecond * 1.2)}>
-                        +
-                    </button>
-                    <button onClick={() => setPxPerSecond(pxPerSecond * 0.8)}>
-                        -
-                    </button>
+                <button
+                    className="m-4 text-text duration-150 ease-out hover:text-accent"
+                    onClick={() => setPxPerSecond(pxPerSecond * 0.8)}
+                >
+                    <Minus size={16} />
+                </button>
+                <button
+                    className="m-4 text-text duration-150 ease-out hover:text-accent"
+                    onClick={() => setPxPerSecond(pxPerSecond * 1.2)}
+                >
+                    <Plus size={16} />
+                </button>
+            </div>
+            <div id="legend" className="grid grid-rows-3 gap-6">
+                <div className="flex h-full items-center">
+                    <p className="text-sub leading-none">Pages</p>
                 </div>
-                {pages.length > 0 && (
-                    <div
-                        className={`text-2xl col-span-1 row-span-full flex cursor-pointer select-none items-center justify-center border-solid font-bold ${
-                            pages[0].id === selectedPage?.id
-                                ? // if the page is selected
-                                  `text-gray-200 border-black ${
-                                      isPlaying
-                                          ? "bg-purple-600 text-opacity-75"
-                                          : "bg-purple-600 hover:bg-purple-800"
-                                  }`
-                                : // if the page is not selected
-                                  isPlaying
-                                  ? "bg-purple-400"
-                                  : "bg-purple-300 hover:bg-purple-400"
-                        }`}
-                        onClick={() => setSelectedPage(pages[0])}
-                        title="first page"
-                        aria-label="first page"
-                    >
-                        <div>1</div>
-                    </div>
-                )}
-                <div className="row-span-2">
+                <div className="flex h-full items-center">
+                    <p className="text-sub leading-none">Measures</p>
+                </div>
+                <div className="flex h-full items-center">
+                    <p className="text-sub leading-none">Counts</p>
+                </div>
+            </div>
+            <div id="timeline" className="grid grid-rows-3 gap-6">
+                <div className="flex gap-0" id="pages">
+                    {/* ------ FIRST PAGE ------ */}
+                    {pages.length > 0 && (
+                        <div
+                            className={`flex h-full w-[25px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
+                                !isPlaying && "cursor-pointer"
+                            } ${
+                                pages[0].id === selectedPage?.id
+                                    ? // if the page is selected
+                                      `border-accent ${
+                                          isPlaying
+                                              ? "pointer-events-none opacity-70"
+                                              : "opacity-100"
+                                      }`
+                                    : `border-stroke ${
+                                          isPlaying
+                                              ? "pointer-events-none opacity-70"
+                                              : "opacity-100"
+                                      }`
+                            }`}
+                            onClick={() => setSelectedPage(pages[0])}
+                            title="First page"
+                            aria-label="First page"
+                        >
+                            <div>1</div>
+                        </div>
+                    )}
                     {pages.map((page, index) => {
                         if (page.name === "8") console.log("page 8", page);
                         if (index === 0) return null;
                         const width = page.duration * pxPerSecond;
-                        // console.log("page width", width)
                         return (
                             <div
                                 key={index}
                                 className="inline-block"
                                 style={{ width: `${width}px` }}
-                                title={`page ${page.name}`}
-                                aria-label={`page ${page.name}`}
+                                title={`Page ${page.name}`}
+                                aria-label={`Page ${page.name}`}
                             >
-                                <div>
-                                    <div
-                                        className={`text-xl h-10 select-none border-solid px-2 text-right font-bold transition-all duration-100 ${
-                                            !isPlaying && "cursor-pointer"
-                                        } ${
-                                            page.id === selectedPage?.id
-                                                ? // if the page is selected
-                                                  `text-gray-200 border-black ${
-                                                      isPlaying
-                                                          ? "bg-purple-600 text-opacity-75"
-                                                          : "bg-purple-600 hover:bg-purple-800"
-                                                  }`
-                                                : // if the page is not selected
+                                {/* ------ PAGES ------ */}
+                                <div
+                                    className={`ml-6 flex h-full items-center justify-end rounded-6 border bg-fg-2 px-10 py-4 text-body text-text ${
+                                        !isPlaying && "cursor-pointer"
+                                    } ${
+                                        page.id === selectedPage?.id
+                                            ? // if the page is selected
+                                              `border-accent ${
                                                   isPlaying
-                                                  ? "bg-purple-400"
-                                                  : "bg-purple-300 hover:bg-purple-400"
-                                        }`}
-                                        onClick={() => {
-                                            if (!isPlaying)
-                                                setSelectedPage(page);
-                                        }}
-                                    >
-                                        <div className="rig static">
-                                            {page.name}
-                                        </div>
+                                                      ? "pointer-events-none opacity-70"
+                                                      : "opacity-100"
+                                              }`
+                                            : `border-stroke ${
+                                                  isPlaying
+                                                      ? "pointer-events-none opacity-70"
+                                                      : "opacity-100"
+                                              }`
+                                    }`}
+                                    onClick={() => {
+                                        if (!isPlaying) setSelectedPage(page);
+                                    }}
+                                >
+                                    <div className="rig static">
+                                        {page.name}
                                     </div>
                                 </div>
                             </div>
                         );
                     })}
                 </div>
-                <div className="row-span-3">
+                <div
+                    className="row-span-2 h-full min-h-0 pl-[31px]"
+                    id="counts measures"
+                >
                     {measures.map((measure, index) => {
                         const countsToUse = measure.getBigBeats();
                         const width = measure.duration * pxPerSecond;
@@ -111,36 +133,34 @@ export default function TimelineContainer() {
                         return (
                             <div
                                 key={index}
-                                className="inline-block h-fit"
+                                className="inline-block h-full pr-6"
                                 style={{ width: `${width}px` }}
                                 title={metadata}
                                 aria-label={metadata}
                             >
                                 <div
-                                    className="grid grid-rows-3"
+                                    className="grid h-full grid-rows-2 gap-6"
                                     style={{
                                         gridTemplateColumns: "1fr ".repeat(
                                             countsToUse,
                                         ),
                                     }}
                                 >
+                                    <div
+                                        className={`col-span-full flex h-full items-center justify-start rounded-6 border border-stroke bg-fg-2 px-10 py-4 text-body leading-none`}
+                                    >
+                                        {measure.number}
+                                    </div>
                                     {Array.from(
                                         { length: countsToUse },
                                         (_, i) => (
                                             <div
                                                 key={i}
-                                                className="bg-gray-300 col-span-1 row-span-1 h-full w-full select-none border-2 border-solid"
+                                                className="col-span-1 h-full w-full select-none rounded-full border-[1.5px] border-text/25"
                                                 // style={{ width: `${width / page.counts}` }}
-                                            >
-                                                &nbsp;
-                                            </div>
+                                            />
                                         ),
                                     )}
-                                    <div
-                                        className={`text-xl text-gray-300 h-9 bg-purple-900 px-1 col-span-full row-span-2 select-none border-solid border-black font-bold`}
-                                    >
-                                        {measure.number}
-                                    </div>
                                 </div>
                             </div>
                         );

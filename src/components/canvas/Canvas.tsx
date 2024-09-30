@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
-import { useUiSettingsStore } from "../../stores/uiSettings/useUiSettingsStore";
-import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
+import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { usePageStore } from "@/stores/page/usePageStore";
