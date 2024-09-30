@@ -4,6 +4,7 @@ import {
     RegisteredActionsEnum,
 } from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
+import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -60,23 +61,40 @@ export default function RegisteredActionButton({
         registeredAction.instructionalString,
         removeRegisteredAction,
     ]);
-
-    return (
-        <button
-            title={registeredAction.instructionalString}
-            aria-label={registeredAction.instructionalString}
-            {...rest}
-            ref={buttonRef}
-            className={`${rest?.className ? rest.className : ""} group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`}
-        >
-            {children}
-            {showTooltip && (
-                <span className="absolute bottom-0 left-0 right-[90%] m-8 mb-36 w-auto min-w-max scale-0 rounded-6 border border-stroke bg-fg-1 p-6 text-body text-text opacity-0 drop-shadow-sm backdrop-blur-3xl transition-opacity duration-200 group-hover:scale-100 group-hover:opacity-100">
-                    {instructionalString
-                        ? instructionalString
-                        : registeredAction.instructionalString}
-                </span>
-            )}
-        </button>
-    );
+    // idea
+    // add "keyboardShortcut" prop with special mono font and outline
+    if (showTooltip)
+        return (
+            <RadixTooltip.Root>
+                <RadixTooltip.Trigger className="flex items-center">
+                    <button
+                        {...rest}
+                        ref={buttonRef}
+                        className={`${rest?.className ? rest.className : ""} group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`}
+                    >
+                        {children}
+                    </button>
+                </RadixTooltip.Trigger>
+                <RadixTooltip.Portal>
+                    <RadixTooltip.Content
+                        side="bottom"
+                        className="z-[99] m-8 rounded-6 border border-stroke bg-fg-2 p-4 text-text backdrop-blur-2xl"
+                    >
+                        {instructionalString
+                            ? instructionalString
+                            : registeredAction.instructionalString}
+                    </RadixTooltip.Content>
+                </RadixTooltip.Portal>
+            </RadixTooltip.Root>
+        );
+    else
+        return (
+            <button
+                {...rest}
+                ref={buttonRef}
+                className={`${rest?.className ? rest.className : ""} group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`}
+            >
+                {children}
+            </button>
+        );
 }

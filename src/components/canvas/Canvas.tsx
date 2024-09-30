@@ -255,18 +255,20 @@ export default function Canvas({
     ]);
 
     return (
-        <div className={`overflow-hidden rounded-6 ${className}`}>
+        <div className={`h-full overflow-hidden rounded-6 ${className}`}>
             {marchers.length > 0 && pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
                 // If there are no marchers or pages, display a message
-                <div className="bg-gray-900 flex h-full w-full flex-col justify-center text-center align-middle text-white">
-                    <h3>To start the show, create Marchers and Pages</h3>
-                    <p>Then {"`Window -> Refresh` (or `Ctrl+R`)"}</p>
-                    <h5>
+                <div className="flex h-full w-full flex-col justify-center gap-8 text-center align-middle text-text">
+                    <h4 className="text-h4">
+                        To start the show, create Marchers and Pages
+                    </h4>
+                    <p>Then refresh the window. (Ctrl/Cmd+R)</p>
+                    <p>
                         If anything in OpenMarch ever seems broken, a refresh
                         will often fix it.
-                    </h5>
+                    </p>
                 </div>
             )}
         </div>

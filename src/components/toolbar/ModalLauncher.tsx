@@ -79,14 +79,14 @@ const ModalLauncher: React.FC<ModalLauncherProps> = ({
                     >
                         <div className="relative mx-auto my-6 h-full w-auto max-w-3xl">
                             {/*content*/}
-                            <div className="border-1 rounded relative flex max-h-full w-full flex-col bg-white shadow-lg outline-none focus:outline-none">
+                            <div className="border-1 rounded bg-light relative flex max-h-full w-full flex-col text-text shadow-lg outline-none focus:outline-none dark:bg-black">
                                 {/*header*/}
                                 <div className="bg-gray-200 px-5 border-b-gray-400 rounded-t flex items-center border-0 border-b-2 border-solid">
-                                    <h3 className="text-3xl text-gray-700 flex-grow font-sans">
+                                    <h3 className="text-3xl flex-grow font-sans">
                                         {header}
                                     </h3>
                                     <button
-                                        className="px-1 text-gray-600 hover:text-gray-800 text-xl border-0 bg-transparent opacity-80 transition-all duration-150 hover:cursor-pointer"
+                                        className="px-1 text-xl border-0 bg-transparent opacity-80 transition-all duration-150 hover:cursor-pointer"
                                         onClick={() => setModalIsOpen(false)}
                                     >
                                         <FaX />

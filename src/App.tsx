@@ -1,17 +1,18 @@
-import Canvas from "./components/canvas/Canvas";
-import Topbar from "./components/toolbar/Topbar";
-import Sidebar from "./components/toolbar/Sidebar";
-import { SelectedPageProvider } from "./context/SelectedPageContext";
-import { SelectedMarchersProvider } from "./context/SelectedMarchersContext";
-import { IsPlayingProvider } from "./context/IsPlayingContext";
-import StateInitializer from "./components/singletons/StateInitializer";
-import LaunchPage from "./components/LaunchPage";
+import Canvas from "@/components/canvas/Canvas";
+import Toolbar from "@/components/toolbar/Toolbar";
+import Sidebar from "@/components/sidebar/Sidebar";
+import { SelectedPageProvider } from "@/context/SelectedPageContext";
+import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
+import { IsPlayingProvider } from "@/context/IsPlayingContext";
+import StateInitializer from "@/components/singletons/StateInitializer";
+import LaunchPage from "@/components/LaunchPage";
 import { useEffect, useState } from "react";
-import { FieldPropertiesProvider } from "./context/fieldPropertiesContext";
-import RegisteredActionsHandler from "./utilities/RegisteredActionsHandler";
-import TimelineContainer from "./components/timeline/TimelineContainer";
-import AudioPlayer from "./components/singletons/AudioPlayer";
-import { SelectedAudioFileProvider } from "./context/SelectedAudioFileContext";
+import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
+import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
+import TimelineContainer from "@/components/timeline/TimelineContainer";
+import AudioPlayer from "@/components/singletons/AudioPlayer";
+import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
+import * as RadixTooltip from "@radix-ui/react-tooltip";
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -21,12 +22,13 @@ function App() {
             setDatabaseIsReady(result);
         });
     }, []);
-    return (
-        // Context for the selected page. Will change when more specialized
-        <>
-            {!databaseIsReady ? (
-                <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
-            ) : (
+
+    if (!databaseIsReady)
+        return <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />;
+    else
+        return (
+            // Context for the selected page. Will change when more specialized
+            <RadixTooltip.Provider delayDuration={500} skipDelayDuration={50}>
                 <IsPlayingProvider>
                     <SelectedPageProvider>
                         <SelectedMarchersProvider>
@@ -37,14 +39,14 @@ function App() {
                                     <RegisteredActionsHandler />
                                     <div
                                         id="app"
-                                        className="flex h-full min-h-0 w-full min-w-0 gap-8 p-8 pt-0"
+                                        className="flex h-full min-h-0 w-full min-w-0 gap-8 px-8"
                                     >
                                         <Sidebar />
                                         <div
                                             id="workspace"
                                             className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                         >
-                                            <Topbar />
+                                            <Toolbar />
                                             <Canvas />
                                             <TimelineContainer />
                                         </div>
@@ -54,9 +56,8 @@ function App() {
                         </SelectedMarchersProvider>
                     </SelectedPageProvider>
                 </IsPlayingProvider>
-            )}
-        </>
-    );
+            </RadixTooltip.Provider>
+        );
 }
 
 export default App;
