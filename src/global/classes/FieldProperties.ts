@@ -1,3 +1,11 @@
+interface FieldPropertyArgs {
+    name: string;
+    centerFrontPoint: { xPixels: number; yPixels: number };
+    xCheckpoints: Checkpoint[];
+    yCheckpoints: Checkpoint[];
+    yardNumberCoordinates?: YardNumberCoordinates;
+}
+
 /**
  * FieldProperties define everything about the performance area the marchers are on.
  *
@@ -6,7 +14,7 @@
  *
  * All numbers (that aren't defined as pixels) are in 8 to 5 steps, which are 22.5 inches.
  */
-export class FieldProperties {
+export default class FieldProperties {
     /*********** Constants ***********/
     static readonly PIXELS_PER_STEP: number = 10;
     static readonly GRID_STROKE_WIDTH = 1;
@@ -30,35 +38,25 @@ export class FieldProperties {
      */
     readonly yCheckpoints: Checkpoint[];
 
+    /** The name of the FieldProperties. E.g. "High School Football Field" or "Custom Gym Floor" */
+    readonly name: string;
     /** In pixels. The width of the field on the x axis. E.g end zone to end zone */
     readonly width: number;
     /** In pixels. The height of the field on the y axis. E.g side line to side line */
     readonly height: number;
-    /** The template this FieldProperties object is based on */
-    readonly template: FieldProperties.Template;
+    /** Optional. In steps, the location of the top and bottom of the yard line numbers on the field */
+    readonly yardNumberCoordinates?: YardNumberCoordinates;
 
-    constructor(template: FieldProperties.Template) {
-        switch (template) {
-            case FieldProperties.Template.NCAA:
-                this.centerFrontPoint = { xPixels: 800, yPixels: 853.3 };
-                this.xCheckpoints =
-                    FieldProperties.createFootballFieldXCheckpoints();
-                this.yCheckpoints = FieldProperties.createNcaaYCheckpoints();
-                this.template = template;
-                break;
-            case FieldProperties.Template.HIGH_SCHOOL:
-                this.centerFrontPoint = { xPixels: 800, yPixels: 853.3 };
-                this.xCheckpoints =
-                    FieldProperties.createFootballFieldXCheckpoints();
-                this.yCheckpoints =
-                    FieldProperties.createHighSchoolYCheckpoints();
-                this.template = template;
-                break;
-            default:
-                throw new Error(
-                    `FieldProperties ${template} template not supported`
-                );
-        }
+    constructor({
+        name,
+        xCheckpoints,
+        yCheckpoints,
+        yardNumberCoordinates,
+    }: FieldPropertyArgs) {
+        this.name = name;
+        this.xCheckpoints = xCheckpoints;
+        this.yCheckpoints = yCheckpoints;
+        this.yardNumberCoordinates = yardNumberCoordinates;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>
@@ -82,6 +80,11 @@ export class FieldProperties {
         );
         this.width = (maxX - minX) * FieldProperties.PIXELS_PER_STEP;
         this.height = (maxY - minY) * FieldProperties.PIXELS_PER_STEP;
+
+        this.centerFrontPoint = {
+            xPixels: this.width / 2,
+            yPixels: this.height,
+        };
     }
 
     static getPixelsPerStep(): number {
@@ -90,200 +93,6 @@ export class FieldProperties {
 
     static getStepsPerPixel(): number {
         return 1 / FieldProperties.PIXELS_PER_STEP;
-    }
-
-    /**
-     * @returns The x checkpoints for a football field (the yard lines).
-     * 0 is the center of the field. To negative is side 1, to positive is side 2.
-     */
-    private static createFootballFieldXCheckpoints(): Checkpoint[] {
-        const xCheckpoints: Checkpoint[] = [];
-
-        for (let yards = 0; yards <= 100; yards = yards += 5) {
-            const curYardLine = yards < 50 ? yards : 100 - yards;
-            const stepsFromCenterFront = ((yards - 50) / 5) * 8;
-            // If the yard line is a multiple of 10 and not 0, label it
-            const label =
-                curYardLine !== 0 && curYardLine % 10 === 0
-                    ? curYardLine.toString()
-                    : undefined;
-
-            xCheckpoints.push({
-                name: `${curYardLine} yard line`,
-                axis: "x",
-                terseName: curYardLine.toString(),
-                stepsFromCenterFront: stepsFromCenterFront,
-                useAsReference: true,
-                fieldLabel: label,
-            });
-        }
-        return xCheckpoints;
-    }
-
-    /**
-     * @returns The y checkpoints for an NCAA football field.
-     * 0 is the front sideline. To negative is the back sideline.
-     */
-    private static createNcaaYCheckpoints(): Checkpoint[] {
-        const fieldStandard = this.Template.NCAA;
-        const frontSideline: Checkpoint = {
-            name: "front sideline",
-            axis: "y",
-            stepsFromCenterFront: 0,
-            useAsReference: true,
-            terseName: "FSL",
-            visible: false,
-        };
-        const frontHash: Checkpoint = {
-            name: "front hash",
-            axis: "y",
-            stepsFromCenterFront: -32,
-            useAsReference: true,
-            terseName: "FH",
-            fieldStandard: fieldStandard,
-        };
-        const gridBackHash: Checkpoint = {
-            name: "grid back hash",
-            axis: "y",
-            stepsFromCenterFront: -52,
-            useAsReference: true,
-            terseName: "grid:BH",
-            fieldStandard: fieldStandard,
-        };
-        const realBackHash: Checkpoint = {
-            name: "real back hash",
-            axis: "y",
-            stepsFromCenterFront: -53.33,
-            useAsReference: false,
-            terseName: "real:BH",
-            fieldStandard: fieldStandard,
-        };
-        const gridBackSideline: Checkpoint = {
-            name: "grid back sideline",
-            axis: "y",
-            stepsFromCenterFront: -85,
-            useAsReference: true,
-            terseName: "grid:BSL",
-            fieldStandard: fieldStandard,
-            visible: false,
-        };
-        const realBackSideline: Checkpoint = {
-            name: "real back sideline",
-            axis: "y",
-            stepsFromCenterFront: -85.33,
-            useAsReference: false,
-            terseName: "real:BSL",
-            fieldStandard: fieldStandard,
-            visible: false,
-        };
-        return [
-            frontSideline,
-            frontHash,
-            gridBackHash,
-            realBackHash,
-            gridBackSideline,
-            realBackSideline,
-        ];
-    }
-
-    /**
-     * @returns The y checkpoints for a high school football field.
-     * 0 is the front sideline. To negative is the back sideline.
-     */
-    private static createHighSchoolYCheckpoints(): Checkpoint[] {
-        const fieldStandard = this.Template.HIGH_SCHOOL;
-        const frontSideline: Checkpoint = {
-            name: "front sideline",
-            axis: "y",
-            stepsFromCenterFront: 0,
-            useAsReference: true,
-            terseName: "FSL",
-            visible: false,
-        };
-        const frontHash: Checkpoint = {
-            name: "front hash",
-            axis: "y",
-            // NOTE - the actual amount of steps from the front sideline to the front hash is 28.44
-            // It's fairly standard to just call it 28 steps
-            stepsFromCenterFront: -28,
-            useAsReference: true,
-            terseName: "FH",
-            fieldStandard: fieldStandard,
-        };
-        const backHash: Checkpoint = {
-            name: "back hash",
-            axis: "y",
-            // NOTE - the actual amount of steps from the front sideline to the back hash is 56.88
-            stepsFromCenterFront: -56,
-            useAsReference: true,
-            terseName: "BH",
-            fieldStandard: fieldStandard,
-        };
-        const gridBackSideline: Checkpoint = {
-            name: "grid back sideline",
-            axis: "y",
-            stepsFromCenterFront: -85,
-            useAsReference: true,
-            terseName: "grid:BSL",
-            fieldStandard: fieldStandard,
-            visible: false,
-        };
-        const realBackSideline: Checkpoint = {
-            name: "real back sideline",
-            axis: "y",
-            stepsFromCenterFront: -85.33,
-            useAsReference: false,
-            terseName: "real:BSL",
-            fieldStandard: fieldStandard,
-            visible: false,
-        };
-        return [
-            frontSideline,
-            frontHash,
-            backHash,
-            gridBackSideline,
-            realBackSideline,
-        ];
-    }
-
-    /**
-     * Get the coordinates for the yard numbers on a field.
-     *
-     * @param template The template of the field to get the coordinates for
-     * @returns The coordinates for the yard numbers
-     */
-    static getYardNumberCoordinates(
-        template: FieldProperties.Template
-    ): YardNumberCoordinates {
-        switch (template) {
-            case FieldProperties.Template.HIGH_SCHOOL:
-            case FieldProperties.Template.NCAA: {
-                let coordinates: YardNumberCoordinates = {
-                    homeStepsFromFrontToOutside: 11.2,
-                    homeStepsFromFrontToInside: 14.4,
-                    awayStepsFromFrontToInside: 70.9333,
-                    awayStepsFromFrontToOutside: 74.1333,
-                };
-                return coordinates;
-            }
-            default:
-                throw new Error(
-                    `FieldProperties ${template} template not supported`
-                );
-        }
-    }
-
-    // TODO High school, NFL, checkpoints. With high school, you need to consider how the step sizes change
-}
-
-export namespace FieldProperties {
-    /**
-     * The templates for the field properties. E.g. NCAA, NFL, High School
-     * Only NCAA is supported right now.
-     */
-    export enum Template {
-        NCAA = "NCAA",
-        HIGH_SCHOOL = "High School",
     }
 }
 
@@ -302,10 +111,6 @@ export interface Checkpoint {
      * E.g. back sideline -> bsl; 35 yard line -> 35
      * */
     terseName: string;
-    /**
-     * The standard this checkpoint relates to if applicable (NCAA, High school, etc.)
-     */
-    fieldStandard?: string;
     /**
      * How many steps from the center front the checkpoint is on its respective axis.
      * X axis - toward side 1 is negative, towards side 2 is positive
@@ -328,7 +133,8 @@ export interface Checkpoint {
     visible?: boolean;
 }
 
-interface YardNumberCoordinates {
+/** The location of the top/bottom of the yard line numbers */
+export interface YardNumberCoordinates {
     /**
      * Number of steps from the front sideline to the outside of the home number
      * (closer to the front sideline)

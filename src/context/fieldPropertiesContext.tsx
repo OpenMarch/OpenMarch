@@ -1,13 +1,21 @@
-import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { FieldProperties } from '@/global/classes/FieldProperties';
-import { ReadableCoords } from '@/global/classes/ReadableCoords';
+import {
+    ReactNode,
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
+import FieldProperties from "@/global/classes/FieldProperties";
+import { ReadableCoords } from "@/global/classes/ReadableCoords";
 
 // Define the type for the context value
 type FieldPropertiesContextProps = {
     fieldProperties: FieldProperties | undefined;
 };
 
-const FieldPropertiesContext = createContext<FieldPropertiesContextProps | undefined>(undefined);
+const FieldPropertiesContext = createContext<
+    FieldPropertiesContextProps | undefined
+>(undefined);
 
 export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
     const [fieldProperties, setFieldProperties] = useState<FieldProperties>();

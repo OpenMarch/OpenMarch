@@ -3,7 +3,7 @@
  * I.e. "Snap to grid", "Evenly distribute horizontally", "Align vertically", etc.
  */
 
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";

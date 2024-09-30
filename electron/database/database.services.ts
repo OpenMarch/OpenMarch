@@ -15,8 +15,9 @@ import Page, {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
-import { FieldProperties } from "../../src/global/classes/FieldProperties";
+import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
+import FieldPropertiesTemplates from "../../src/global/classes/FieldProperties.templates";
 
 export class DatabaseResponse {
     readonly success: boolean;
@@ -77,7 +78,10 @@ export function initDatabase() {
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
-    createFieldPropertiesTable(db, FieldProperties.Template.HIGH_SCHOOL);
+    createFieldPropertiesTable(
+        db,
+        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD
+    );
     createMeasureTable(db);
     createAudioFileTable(db);
     History.createHistoryTables(db);
@@ -176,7 +180,7 @@ function createMarcherPageTable(db: Database.Database) {
 
 function createFieldPropertiesTable(
     db: Database.Database,
-    template: FieldProperties.Template
+    fieldProperties: FieldProperties
 ) {
     try {
         db.exec(`
@@ -188,7 +192,6 @@ function createFieldPropertiesTable(
     } catch (error) {
         console.error("Failed to create field properties table:", error);
     }
-    const fieldProperties: FieldProperties = new FieldProperties(template);
     const stmt = db.prepare(`
         INSERT INTO ${Constants.FieldPropertiesTableName} (
             id,

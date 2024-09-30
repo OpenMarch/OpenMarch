@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
 

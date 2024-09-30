@@ -1,5 +1,5 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import Marcher, {
     ModifiedMarcherArgs,
     NewMarcherArgs,
