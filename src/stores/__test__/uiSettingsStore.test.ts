@@ -15,6 +15,8 @@ describe("uiSettings Store", () => {
         lockY: false,
         previousPaths: true,
         nextPaths: true,
+        gridLines: true,
+        halfLines: true,
     };
 
     beforeEach(() => {

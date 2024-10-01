@@ -423,7 +423,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         { gridLines = true, halfLines = true } = {
             gridLines: true,
             halfLines: true,
-        }
+        } as { gridLines?: boolean; halfLines?: boolean }
     ) => {
         if (this.staticGridRef) this.remove(this.staticGridRef);
         this.staticGridRef = this.createFieldGrid({
@@ -865,10 +865,21 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** Set the UI settings and make all of the changes in this canvas that correspond to it */
     setUiSettings(uiSettings: UiSettings) {
         const activeObject = this.getActiveObject();
+        const oldUiSettings = this._uiSettings;
         this._uiSettings = uiSettings;
         if (activeObject) {
             activeObject.lockMovementX = uiSettings.lockX;
             activeObject.lockMovementY = uiSettings.lockY;
+        }
+
+        if (
+            oldUiSettings.gridLines !== uiSettings.gridLines ||
+            oldUiSettings.halfLines !== uiSettings.halfLines
+        ) {
+            this.renderFieldGrid({
+                gridLines: uiSettings.gridLines,
+                halfLines: uiSettings.halfLines,
+            });
         }
     }
 

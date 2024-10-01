@@ -1,6 +1,7 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldProperties from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 
 export default function FieldPropertiesSettings() {
@@ -8,8 +9,9 @@ export default function FieldPropertiesSettings() {
     const [currentTemplate, setCurrentTemplate] = useState<
         FieldProperties | undefined
     >(fieldProperties);
+    const { uiSettings, setUiSettings } = useUiSettingsStore();
 
-    const handleChange = useCallback(
+    const handleFieldTypeChange = useCallback(
         (event: ChangeEvent<HTMLSelectElement>) => {
             const template = Object.values(FieldPropertiesTemplates).find(
                 (FieldPropertiesTemplate) =>
@@ -33,12 +35,38 @@ export default function FieldPropertiesSettings() {
 
     return (
         <div>
-            <h3 className="text-4xl">Field Properties</h3>
+            <h3 className="text-2xl">Field Properties</h3>
             <div className="grid grid-cols-2 gap-4">
-                <div>Field Type</div>
+                <div className="flex gap-2">
+                    <div>Show grid lines</div>
+                    <input
+                        type="checkbox"
+                        checked={uiSettings.gridLines}
+                        onChange={() =>
+                            setUiSettings({
+                                ...uiSettings,
+                                gridLines: !uiSettings.gridLines,
+                            })
+                        }
+                    />
+                </div>
+                <div className="flex gap-2">
+                    <div>Show half lines</div>
+                    <input
+                        type="checkbox"
+                        checked={uiSettings.halfLines}
+                        onChange={() =>
+                            setUiSettings({
+                                ...uiSettings,
+                                halfLines: !uiSettings.halfLines,
+                            })
+                        }
+                    />
+                </div>
+                <div>Field type</div>
                 <select
                     className="p-1 rounded"
-                    onChange={handleChange}
+                    onChange={handleFieldTypeChange}
                     defaultValue={fieldProperties?.name}
                 >
                     {Object.entries(FieldPropertiesTemplates).map(

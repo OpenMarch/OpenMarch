@@ -7,11 +7,14 @@ export interface UiSettings {
     lockY: boolean;
     isPlaying: boolean;
     /** Boolean to view previous page's paths/dots */
-    previousPaths: boolean,
+    previousPaths: boolean;
     /** Boolean to view next page's paths/dots */
-    nextPaths: boolean
+    nextPaths: boolean;
+    /** Boolean to view lines for every step on the field */
+    gridLines: boolean;
+    /** Boolean to view lines for every four steps on the field */
+    halfLines: boolean;
 }
-
 
 /*********************** Other ***********************/
 /**
@@ -25,15 +28,24 @@ export interface ListFormProps {
     /**
      * React state to control the editing state of the form and replace its internal state.
      */
-    isEditingStateProp?: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+    isEditingStateProp?: [
+        boolean,
+        React.Dispatch<React.SetStateAction<boolean>>
+    ];
     /**
      * React state to trigger a submit of the list form from a parent component.
      */
-    submitActivatorStateProp?: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+    submitActivatorStateProp?: [
+        boolean,
+        React.Dispatch<React.SetStateAction<boolean>>
+    ];
     /**
      * React state to trigger a cancel of the editing in a list form from a parent component.
      */
-    cancelActivatorStateProp?: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+    cancelActivatorStateProp?: [
+        boolean,
+        React.Dispatch<React.SetStateAction<boolean>>
+    ];
 }
 
 export interface topBarComponentProps {
