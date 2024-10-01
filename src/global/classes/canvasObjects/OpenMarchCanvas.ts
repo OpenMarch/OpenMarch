@@ -552,7 +552,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             for (
                 let i = centerFrontPoint.xPixels + pixelsPerStep * 4;
                 i < fieldWidth;
-                i += pixelsPerStep * 8
+                i += pixelsPerStep * 4
             )
                 fieldArray.push(
                     new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
@@ -560,7 +560,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             for (
                 let i = centerFrontPoint.xPixels - pixelsPerStep * 4;
                 i > 0;
-                i -= pixelsPerStep * 8
+                i -= pixelsPerStep * 4
             )
                 fieldArray.push(
                     new fabric.Line([i, 0, i, fieldHeight], darkLineProps)

@@ -1,6 +1,5 @@
 interface FieldPropertyArgs {
     name: string;
-    centerFrontPoint: { xPixels: number; yPixels: number };
     xCheckpoints: Checkpoint[];
     yCheckpoints: Checkpoint[];
     yardNumberCoordinates?: YardNumberCoordinates;

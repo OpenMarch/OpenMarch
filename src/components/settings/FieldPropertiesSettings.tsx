@@ -75,6 +75,26 @@ export default function FieldPropertiesSettings() {
                         )
                     )}
                 </select>
+                <div
+                    className="col-span-2 text-sm text-red-500"
+                    hidden={
+                        fieldProperties?.name === currentTemplate?.name ||
+                        (fieldProperties?.width === currentTemplate?.width &&
+                            fieldProperties?.height ===
+                                currentTemplate?.height &&
+                            fieldProperties?.centerFrontPoint.xPixels ===
+                                currentTemplate?.centerFrontPoint.xPixels &&
+                            fieldProperties?.centerFrontPoint.yPixels ===
+                                currentTemplate?.centerFrontPoint.yPixels)
+                    }
+                >
+                    <strong className="text-md">Warning</strong> - changing to
+                    this field type of a different size will lead to different
+                    marcher coordinates on the new field type. Coordinates on
+                    your original field type will be unaffected if you switch
+                    back before making any changes. We will try to fix this in a
+                    future update.
+                </div>
                 <button
                     className="btn-primary col-span-2"
                     onClick={applyChanges}
