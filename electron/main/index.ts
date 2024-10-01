@@ -270,7 +270,10 @@ export async function saveFile() {
         .then((path) => {
             if (path.canceled || !path.filePath) return -1;
 
-            fs.writeFileSync(path.filePath, db.serialize());
+            const serializedDb = db.serialize();
+            const uint8Array = Uint8Array.from(serializedDb);
+
+            fs.writeFileSync(path.filePath, uint8Array);
 
             setActiveDb(path.filePath);
             return 200;
