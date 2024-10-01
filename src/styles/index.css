@@ -11,6 +11,10 @@
         --fg-1-stop-2: 0, 0, 0, 0.05;
         --fg-2-stop-1: 255, 255, 255, 0.17;
         --fg-2-stop-2: 255, 255, 255, 0.23;
+        --modal-stop-1: 235, 237, 240, 0.51;
+        --modal-stop-2: 235, 237, 240, 0.55;
+        --modal-shadow: 0, 0, 0, 0.15;
+        --modal-overlay: 255, 255, 255, 0.25;
         --stroke: 0, 0, 0, 0.1;
         --text: 32, 32, 32;
         --text-invert: 255, 255, 255;
@@ -26,6 +30,10 @@
         --fg-1-stop-2: 255, 255, 255, 0.04;
         --fg-2-stop-1: 255, 255, 255, 0.03;
         --fg-2-stop-2: 255, 255, 255, 0.05;
+        --modal-stop-1: 13, 16, 20, 0.99;
+        --modal-stop-2: 13, 16, 20, 0.995;
+        --modal-shadow: 0, 0, 0, 0.5;
+        --modal-overlay: 0, 0, 0, 0.15;
         --stroke: 255, 255, 255, 0.06;
         --text: 208, 208, 208;
         --text-invert: 0, 0, 0;
@@ -54,24 +62,21 @@
 .main-app-titlebar .window-control-btn {
     -webkit-app-region: no-drag;
 }
-/* width */
+
 ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
 }
 
-/* Track */
 ::-webkit-scrollbar-track {
     border-radius: 10px;
 }
 
-/* Handle */
 ::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
 }
 
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.1);
 }

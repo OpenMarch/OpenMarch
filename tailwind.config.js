@@ -12,6 +12,7 @@ export default {
         backgroundImage: {
             "fg-1": "linear-gradient(to bottom, rgba(var(--fg-1-stop-1)), rgba(var(--fg-1-stop-2)))",
             "fg-2": "linear-gradient(to bottom, rgba(var(--fg-2-stop-1)), rgba(var(--fg-2-stop-2)))",
+            modal: "linear-gradient(to bottom, rgba(var(--modal-stop-1)), rgba(var(--modal-stop-2)))",
         },
         colors: {
             transparent: "transparent",
@@ -67,6 +68,14 @@ export default {
             0: "0px",
         },
         extend: {
+            boxShadow: {
+                skeuo: "0px 4px 17.4px 0px rgba(255, 255, 255, 0.05) inset, 0px -4px 11.5px -3px rgba(0, 0, 0, 0.22) inset",
+                "fg-1": "0px 4px 26.6px -1px rgba(0, 0, 0, 0.06)",
+                modal: "0px 10px 64px 0px var(--modal-shadow)",
+            },
+            backdropBlur: {
+                32: "32px",
+            },
             keyframes: {
                 "scale-in": {
                     from: { opacity: "0", transform: "scale(0.95)" },

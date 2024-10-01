@@ -18,7 +18,10 @@ export default function TimelineContainer() {
     }, [measures, pages]);
 
     return (
-        <div className="relative flex h-[10rem] min-h-0 min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8">
+        <div
+            id="timeline"
+            className="relative flex h-[10rem] min-h-0 min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
+        >
             <div
                 className="fixed bottom-32 right-0 flex gap-6 p-2 pr-16 drop-shadow-md"
                 id="zoomIcons"
@@ -59,13 +62,13 @@ export default function TimelineContainer() {
                                     ? // if the page is selected
                                       `border-accent ${
                                           isPlaying
-                                              ? "pointer-events-none opacity-70"
-                                              : "opacity-100"
+                                              ? "pointer-events-none text-text/75"
+                                              : ""
                                       }`
                                     : `border-stroke ${
                                           isPlaying
-                                              ? "pointer-events-none opacity-70"
-                                              : "opacity-100"
+                                              ? "pointer-events-none text-text/75"
+                                              : ""
                                       }`
                             }`}
                             onClick={() => setSelectedPage(pages[0])}
@@ -96,13 +99,13 @@ export default function TimelineContainer() {
                                             ? // if the page is selected
                                               `border-accent ${
                                                   isPlaying
-                                                      ? "pointer-events-none opacity-70"
-                                                      : "opacity-100"
+                                                      ? "pointer-events-none text-text/75"
+                                                      : ""
                                               }`
                                             : `border-stroke ${
                                                   isPlaying
-                                                      ? "pointer-events-none opacity-70"
-                                                      : "opacity-100"
+                                                      ? "pointer-events-none text-text/75"
+                                                      : ""
                                               }`
                                     }`}
                                     onClick={() => {
@@ -146,9 +149,7 @@ export default function TimelineContainer() {
                                         ),
                                     }}
                                 >
-                                    <div
-                                        className={`col-span-full flex h-full items-center justify-start rounded-6 border border-stroke bg-fg-2 px-10 py-4 text-body leading-none`}
-                                    >
+                                    <div className="col-span-full flex h-full items-center justify-start rounded-6 border border-stroke bg-fg-2 px-10 py-4 text-body leading-none">
                                         {measure.number}
                                     </div>
                                     {Array.from(
@@ -156,7 +157,7 @@ export default function TimelineContainer() {
                                         (_, i) => (
                                             <div
                                                 key={i}
-                                                className="col-span-1 h-full w-full select-none rounded-full border-[1.5px] border-text/25"
+                                                className="col-span-1 h-full w-full select-none self-center rounded-full border-[1.5px] border-text/25"
                                                 // style={{ width: `${width / page.counts}` }}
                                             />
                                         ),

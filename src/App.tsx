@@ -1,6 +1,7 @@
 import Canvas from "@/components/canvas/Canvas";
 import Toolbar from "@/components/toolbar/Toolbar";
 import Sidebar from "@/components/sidebar/Sidebar";
+import SidebarModal from "@/components/sidebar/SidebarModal";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
@@ -12,7 +13,7 @@ import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import AudioPlayer from "@/components/singletons/AudioPlayer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
-import * as RadixTooltip from "@radix-ui/react-tooltip";
+import { Provider as TooltipProvider } from "@radix-ui/react-tooltip";
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -28,7 +29,7 @@ function App() {
     else
         return (
             // Context for the selected page. Will change when more specialized
-            <RadixTooltip.Provider delayDuration={500} skipDelayDuration={50}>
+            <TooltipProvider delayDuration={500} skipDelayDuration={50}>
                 <IsPlayingProvider>
                     <SelectedPageProvider>
                         <SelectedMarchersProvider>
@@ -39,7 +40,7 @@ function App() {
                                     <RegisteredActionsHandler />
                                     <div
                                         id="app"
-                                        className="flex h-full min-h-0 w-full min-w-0 gap-8 px-8"
+                                        className="flex h-full min-h-0 w-full gap-8 px-8"
                                     >
                                         <Sidebar />
                                         <div
@@ -47,7 +48,10 @@ function App() {
                                             className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                         >
                                             <Toolbar />
-                                            <Canvas />
+                                            <div className="relative h-full min-h-0">
+                                                <SidebarModal />
+                                                <Canvas />
+                                            </div>
                                             <TimelineContainer />
                                         </div>
                                     </div>
@@ -56,7 +60,7 @@ function App() {
                         </SelectedMarchersProvider>
                     </SelectedPageProvider>
                 </IsPlayingProvider>
-            </RadixTooltip.Provider>
+            </TooltipProvider>
         );
 }
 
