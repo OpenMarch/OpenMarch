@@ -411,6 +411,13 @@ export default function Canvas({
         uiSettings.previousPaths,
     ]);
 
+    // Update the canvas when the field properties change
+    useEffect(() => {
+        if (canvas && fieldProperties) {
+            canvas.fieldProperties = fieldProperties;
+        }
+    }, [canvas, fieldProperties]);
+
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {

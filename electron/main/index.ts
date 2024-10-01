@@ -1,12 +1,13 @@
-import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from 'electron'
-import Store from 'electron-store'
-import * as fs from 'fs';
-import { release } from 'node:os'
-import { join } from 'node:path'
-import * as DatabaseServices from '../database/database.services'
-import { applicationMenu } from './application-menu'
-import { generatePDF } from './export-coordinates'
-import { update } from './update';
+import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from "electron";
+import Store from "electron-store";
+import * as fs from "fs";
+import { release } from "node:os";
+import { join } from "node:path";
+import * as DatabaseServices from "../database/database.services";
+import { applicationMenu } from "./application-menu";
+import { generatePDF } from "./export-coordinates";
+import { update } from "./update";
+import AudioFile from "@/global/classes/AudioFile";
 // const xml2abc = require('../xml2abc-js/xml2abc.js')
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');
@@ -24,21 +25,21 @@ import { update } from './update';
 
 const store = new Store();
 
-process.env.DIST_ELECTRON = join(__dirname, '../')
-process.env.DIST = join(process.env.DIST_ELECTRON, '../dist')
+process.env.DIST_ELECTRON = join(__dirname, "../");
+process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
 process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
-  ? join(process.env.DIST_ELECTRON, '../public')
-  : process.env.DIST
+    ? join(process.env.DIST_ELECTRON, "../public")
+    : process.env.DIST;
 
 // Disable GPU Acceleration for Windows 7
-if (release().startsWith('6.1')) app.disableHardwareAcceleration()
+if (release().startsWith("6.1")) app.disableHardwareAcceleration();
 
 // Set application name for Windows 10+ notifications
-if (process.platform === 'win32') app.setAppUserModelId(app.getName())
+if (process.platform === "win32") app.setAppUserModelId(app.getName());
 
 if (!app.requestSingleInstanceLock()) {
-  app.quit()
-  process.exit(0)
+    app.quit();
+    process.exit(0);
 }
 
 // Remove electron security warnings
@@ -46,111 +47,122 @@ if (!app.requestSingleInstanceLock()) {
 // Read more on https://www.electronjs.org/docs/latest/tutorial/security
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
-let win: BrowserWindow | null = null
+let win: BrowserWindow | null = null;
 // Here, you can also use other preload
-const preload = join(__dirname, '../preload/index.js')
-const url = process.env.VITE_DEV_SERVER_URL
-const indexHtml = join(process.env.DIST, 'index.html')
+const preload = join(__dirname, "../preload/index.js");
+const url = process.env.VITE_DEV_SERVER_URL;
+const indexHtml = join(process.env.DIST, "index.html");
 
 async function createWindow(title?: string) {
-  win = new BrowserWindow({
-    title: title || 'OpenMarch',
-    icon: join(process.env.VITE_PUBLIC, 'favicon.ico'),
-    webPreferences: {
-      preload,
-      // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
-      // Consider using contextBridge.exposeInMainWorld
-      // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
-      nodeIntegration: false, // is default value after Electron v5
-      contextIsolation: true, // protect against prototype pollution
-    },
-  })
-
-  if (url) { // electron-vite-vue#298
-    win.loadURL(url)
-    win.on("ready-to-show", () => {
-      if (win)
-        win.webContents.openDevTools();
+    win = new BrowserWindow({
+        title: title || "OpenMarch",
+        icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
+        webPreferences: {
+            preload,
+            // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
+            // Consider using contextBridge.exposeInMainWorld
+            // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
+            nodeIntegration: false, // is default value after Electron v5
+            contextIsolation: true, // protect against prototype pollution
+        },
     });
-  } else {
-    win.loadFile(indexHtml);
-  }
 
-  // Test actively push message to the Electron-Renderer
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', new Date().toLocaleString())
-  })
+    if (url) {
+        // electron-vite-vue#298
+        win.loadURL(url);
+        win.on("ready-to-show", () => {
+            if (win) win.webContents.openDevTools();
+        });
+    } else {
+        win.loadFile(indexHtml);
+    }
 
-  // Make all links open with the browser, not with the application
-  win.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https:')) shell.openExternal(url)
-    return { action: 'deny' }
-  })
+    // Test actively push message to the Electron-Renderer
+    win.webContents.on("did-finish-load", () => {
+        win?.webContents.send(
+            "main-process-message",
+            new Date().toLocaleString()
+        );
+    });
 
-  // Apply electron-updater
-  update(win)
+    // Make all links open with the browser, not with the application
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        if (url.startsWith("https:")) shell.openExternal(url);
+        return { action: "deny" };
+    });
+
+    // Apply electron-updater
+    update(win);
 }
 
 app.whenReady().then(async () => {
-  app.setName('OpenMarch');
-  console.log('NODE:', process.versions.node);
-  Menu.setApplicationMenu(applicationMenu);
-  const previousPath = store.get('databasePath') as string;
-  if (previousPath && previousPath.length > 0)
-    setActiveDb(previousPath);
-  DatabaseServices.initHandlers();
+    app.setName("OpenMarch");
+    console.log("NODE:", process.versions.node);
+    Menu.setApplicationMenu(applicationMenu);
+    const previousPath = store.get("databasePath") as string;
+    if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
+    DatabaseServices.initHandlers();
 
-  // Database handlers
-  console.log("db_path: " + DatabaseServices.getDbPath());
+    // Database handlers
+    console.log("db_path: " + DatabaseServices.getDbPath());
 
-  // File IO handlers
-  ipcMain.handle('database:isReady', DatabaseServices.databaseIsReady);
-  ipcMain.handle('database:save', async () => saveFile());
-  ipcMain.handle('database:load', async () => loadDatabaseFile());
-  ipcMain.handle('database:create', async () => newFile());
-  ipcMain.handle('history:undo', async () => executeHistoryAction("undo"));
-  ipcMain.handle('history:redo', async () => executeHistoryAction("redo"));
+    // File IO handlers
+    ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
+    ipcMain.handle("database:save", async () => saveFile());
+    ipcMain.handle("database:load", async () => loadDatabaseFile());
+    ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
+    ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
 
-  ipcMain.handle('audio:insert', async () => insertAudioFile());
-  ipcMain.handle('measure:insert', async () => launchImportMusicXmlFileDialogue());
+    ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle("measure:insert", async () =>
+        launchImportMusicXmlFileDialogue()
+    );
 
-  // Getters
-  initGetters();
+    // Getters
+    initGetters();
 
-  await createWindow('OpenMarch - ' + store.get('databasePath'));
-})
+    await createWindow("OpenMarch - " + store.get("databasePath"));
+});
 
 function initGetters() {
-  // Store selected page and marchers
-  ipcMain.on('send:selectedPage', async (_, selectedPageId: number) => {
-    store.set('selectedPageId', selectedPageId);
-  });
-  ipcMain.on('send:selectedMarchers', async (_, selectedMarchersId: number[]) => {
-    store.set('selectedMarchersId', selectedMarchersId);
-  });
+    // Store selected page and marchers
+    ipcMain.on("send:selectedPage", async (_, selectedPageId: number) => {
+        store.set("selectedPageId", selectedPageId);
+    });
+    ipcMain.on(
+        "send:selectedMarchers",
+        async (_, selectedMarchersId: number[]) => {
+            store.set("selectedMarchersId", selectedMarchersId);
+        }
+    );
 
-  // Store locked x or y axis
-  store.set('lockX', false);
-  store.set('lockY', false);
-  ipcMain.on('send:lockX', async (_, lockX: boolean) => {
-    store.set('lockX', lockX as boolean);
-  });
-  ipcMain.on('send:lockY', async (_, lockY: boolean) => {
-    store.set('lockY', lockY as boolean);
-  });
+    // Store locked x or y axis
+    store.set("lockX", false);
+    store.set("lockY", false);
+    ipcMain.on("send:lockX", async (_, lockX: boolean) => {
+        store.set("lockX", lockX as boolean);
+    });
+    ipcMain.on("send:lockY", async (_, lockY: boolean) => {
+        store.set("lockY", lockY as boolean);
+    });
 
-  // Export Individual Coordinate Sheets
-  ipcMain.on('send:exportIndividual', async (_, coordinateSheets: string[]) => await generatePDF(coordinateSheets));
+    // Export Individual Coordinate Sheets
+    ipcMain.on(
+        "send:exportIndividual",
+        async (_, coordinateSheets: string[]) =>
+            await generatePDF(coordinateSheets)
+    );
 }
 
-app.on('window-all-closed', () => {
-  win = null
-  if (process.platform !== 'darwin') app.quit()
-})
+app.on("window-all-closed", () => {
+    win = null;
+    if (process.platform !== "darwin") app.quit();
+});
 
-app.on('open-file', (event, path) => {
-  event.preventDefault();
-  setActiveDb(path);
+app.on("open-file", (event, path) => {
+    event.preventDefault();
+    setActiveDb(path);
 });
 // Handle instances where the app is already running and a file is opened
 // const gotTheLock = app.requestSingleInstanceLock();
@@ -166,39 +178,39 @@ app.on('open-file', (event, path) => {
 //   });
 // }
 
-app.on('second-instance', () => {
-  if (win) {
-    // Focus on the main window if the user tried to open another
-    if (win.isMinimized()) win.restore()
-    win.focus()
-  }
-})
+app.on("second-instance", () => {
+    if (win) {
+        // Focus on the main window if the user tried to open another
+        if (win.isMinimized()) win.restore();
+        win.focus();
+    }
+});
 
-app.on('activate', () => {
-  const allWindows = BrowserWindow.getAllWindows()
-  if (allWindows.length) {
-    allWindows[0].focus()
-  } else {
-    createWindow()
-  }
-})
+app.on("activate", () => {
+    const allWindows = BrowserWindow.getAllWindows();
+    if (allWindows.length) {
+        allWindows[0].focus();
+    } else {
+        createWindow();
+    }
+});
 
 // New window example arg: new windows url
-ipcMain.handle('open-win', (_, arg) => {
-  const childWindow = new BrowserWindow({
-    webPreferences: {
-      preload,
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-  })
+ipcMain.handle("open-win", (_, arg) => {
+    const childWindow = new BrowserWindow({
+        webPreferences: {
+            preload,
+            nodeIntegration: true,
+            contextIsolation: false,
+        },
+    });
 
-  if (process.env.VITE_DEV_SERVER_URL) {
-    childWindow.loadURL(`${url}#${arg}`)
-  } else {
-    childWindow.loadFile(indexHtml, { hash: arg })
-  }
-})
+    if (process.env.VITE_DEV_SERVER_URL) {
+        childWindow.loadURL(`${url}#${arg}`);
+    } else {
+        childWindow.loadFile(indexHtml, { hash: arg });
+    }
+});
 
 /************************************** FILE SYSTEM INTERACTIONS **************************************/
 /**
@@ -207,27 +219,29 @@ ipcMain.handle('open-win', (_, arg) => {
  * @returns 200 for success, -1 for failure
  */
 export async function newFile() {
-  console.log('newFile');
+    console.log("newFile");
 
-  if (!win) return -1;
+    if (!win) return -1;
 
-  // Get path to new file
-  dialog.showSaveDialog(win, {
-    buttonLabel: 'Create New',
-    filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
-  }).then((path) => {
-    if (path.canceled || !path.filePath) return;
+    // Get path to new file
+    dialog
+        .showSaveDialog(win, {
+            buttonLabel: "Create New",
+            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+        })
+        .then((path) => {
+            if (path.canceled || !path.filePath) return;
 
-    setActiveDb(path.filePath, true);
-    DatabaseServices.initDatabase();
-    win?.webContents.reload();
+            setActiveDb(path.filePath, true);
+            DatabaseServices.initDatabase();
+            win?.webContents.reload();
 
-    return 200;
-  }).catch((err) => {
-    console.log(err);
-    return -1;
-  });
-
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
 }
 
 /**
@@ -238,30 +252,33 @@ export async function newFile() {
  * @returns 200 for success, -1 for failure
  */
 export async function saveFile() {
-  console.log('saveFile');
+    console.log("saveFile");
 
-  if (!win) return -1;
+    if (!win) return -1;
 
-  const db = DatabaseServices.connect();
+    const db = DatabaseServices.connect();
 
-  // Save database file
-  store.set('database', db.serialize());
+    // Save database file
+    store.set("database", db.serialize());
 
-  // Save
-  dialog.showSaveDialog(win, {
-    buttonLabel: 'Save Copy',
-    filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
-  }).then((path) => {
-    if (path.canceled || !path.filePath) return -1;
+    // Save
+    dialog
+        .showSaveDialog(win, {
+            buttonLabel: "Save Copy",
+            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+        })
+        .then((path) => {
+            if (path.canceled || !path.filePath) return -1;
 
-    fs.writeFileSync(path.filePath, db.serialize());
+            fs.writeFileSync(path.filePath, db.serialize());
 
-    setActiveDb(path.filePath);
-    return 200;
-  }).catch((err) => {
-    console.log(err);
-    return -1;
-  });
+            setActiveDb(path.filePath);
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
 }
 
 /**
@@ -270,27 +287,29 @@ export async function saveFile() {
  * @returns 200 for success, -1 for failure
  */
 export async function loadDatabaseFile() {
-  console.log('loadDatabaseFile');
+    console.log("loadDatabaseFile");
 
-  if (!win) return -1;
+    if (!win) return -1;
 
-  // If there is no previous path, open a dialog
-  dialog.showOpenDialog(win, {
-    filters: [{ name: 'OpenMarch File', extensions: ['dots'] }]
-  }).then((path) => {
-    DatabaseServices.setDbPath(path.filePaths[0]);
-    store.set('databasePath', path.filePaths[0]); // Save the path for next time
+    // If there is no previous path, open a dialog
+    dialog
+        .showOpenDialog(win, {
+            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+        })
+        .then((path) => {
+            DatabaseServices.setDbPath(path.filePaths[0]);
+            store.set("databasePath", path.filePaths[0]); // Save the path for next time
 
-    // If the user cancels the dialog, and there is no previous path, return -1
-    if (path.canceled || !path.filePaths[0])
-      return -1;
+            // If the user cancels the dialog, and there is no previous path, return -1
+            if (path.canceled || !path.filePaths[0]) return -1;
 
-    setActiveDb(path.filePaths[0]);
-    return 200;
-  }).catch((err) => {
-    console.log(err);
-    return -1;
-  });
+            setActiveDb(path.filePaths[0]);
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
 }
 
 /**
@@ -298,40 +317,68 @@ export async function loadDatabaseFile() {
  *
  * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
  */
-export async function insertAudioFile(): Promise<DatabaseServices.DatabaseResponse> {
-  console.log('insertAudioFile');
+export async function insertAudioFile(): Promise<
+    DatabaseServices.DatabaseResponse<AudioFile[]>
+> {
+    console.log("insertAudioFile");
 
-  if (!win) return { success: false, error: { message: "insertAudioFile: window not loaded" } };
+    if (!win)
+        return {
+            success: false,
+            error: { message: "insertAudioFile: window not loaded" },
+        };
 
-  let databaseResponse: DatabaseServices.DatabaseResponse;
-  // If there is no previous path, open a dialog
-  databaseResponse = await dialog.showOpenDialog(win, {
-    filters: [{ name: 'Audio File', extensions: ['mp3', 'wav', 'ogg'] }]
-  }).then((path) => {
-    console.log("loading audio file into buffer:", path.filePaths[0]);
-    fs.readFile(path.filePaths[0], (err, data) => {
-      if (err) {
-        console.error('Error reading audio file:', err);
-        return -1;
-      }
+    let databaseResponse: DatabaseServices.DatabaseResponse<AudioFile[]>;
+    // If there is no previous path, open a dialog
+    databaseResponse = await dialog
+        .showOpenDialog(win, {
+            filters: [
+                { name: "Audio File", extensions: ["mp3", "wav", "ogg"] },
+            ],
+        })
+        .then((path) => {
+            console.log("loading audio file into buffer:", path.filePaths[0]);
+            fs.readFile(path.filePaths[0], (err, data) => {
+                if (err) {
+                    console.error("Error reading audio file:", err);
+                    return -1;
+                }
 
-      // 'data' is a buffer containing the file contents
-      // Id is -1 to conform with interface
-      DatabaseServices.insertAudioFile({ id: -1, data, path: path.filePaths[0], nickname: path.filePaths[0], selected: true }).then((response) => {
-        databaseResponse = response;
-      })
-    });
-    if (path.canceled || !path.filePaths[0])
-      return { success: false, error: { message: "insertAudioFile: Operation was cancelled or no audio file was provided" } };
+                // 'data' is a buffer containing the file contents
+                // Id is -1 to conform with interface
+                DatabaseServices.insertAudioFile({
+                    id: -1,
+                    data,
+                    path: path.filePaths[0],
+                    nickname: path.filePaths[0],
+                    selected: true,
+                }).then((response) => {
+                    databaseResponse = response;
+                });
+            });
+            if (path.canceled || !path.filePaths[0])
+                return {
+                    success: false,
+                    error: {
+                        message:
+                            "insertAudioFile: Operation was cancelled or no audio file was provided",
+                    },
+                };
 
-    // setActiveDb(path.filePaths[0]);
-    return databaseResponse;
-  }).catch((err) => {
-    // TODO how to print/return stack here?
-    console.log(err);
-    return { success: false, error: { message: err } };
-  });
-  return databaseResponse || { success: false, error: { message: "Error inserting audio file" } }
+            // setActiveDb(path.filePaths[0]);
+            return databaseResponse;
+        })
+        .catch((err) => {
+            // TODO how to print/return stack here?
+            console.log(err);
+            return { success: false, error: { message: err } };
+        });
+    return (
+        databaseResponse || {
+            success: false,
+            error: { message: "Error inserting audio file" },
+        }
+    );
 }
 
 /**
@@ -342,35 +389,41 @@ export async function insertAudioFile(): Promise<DatabaseServices.DatabaseRespon
  *
  * @returns Promise<string | undefined> - The string xml data of the musicxml file, or undefined if the operation was cancelled/failed.
  */
-export async function launchImportMusicXmlFileDialogue(): Promise<string | undefined> {
-  console.log('readMusicXmlFile');
+export async function launchImportMusicXmlFileDialogue(): Promise<
+    string | undefined
+> {
+    console.log("readMusicXmlFile");
 
-  if (!win) {
-    console.error("window not loaded");
-    return;
-  }
+    if (!win) {
+        console.error("window not loaded");
+        return;
+    }
 
-  // If there is no previous path, open a dialog
-  const dialogueResponse = await dialog.showOpenDialog(win, {
-    filters: [{ name: 'MusicXML File (compressed or uncompressed)', extensions: [/**'mxl',**/ 'musicxml', 'xml'] }]
-  });
+    // If there is no previous path, open a dialog
+    const dialogueResponse = await dialog.showOpenDialog(win, {
+        filters: [
+            {
+                name: "MusicXML File (compressed or uncompressed)",
+                extensions: [/**'mxl',**/ "musicxml", "xml"],
+            },
+        ],
+    });
 
+    if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
+        console.error("Operation was cancelled or no audio file was provided");
+        return;
+    }
 
-  if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
-    console.error("Operation was cancelled or no audio file was provided");
-    return;
-  }
+    console.log("loading musicxml file:", dialogueResponse.filePaths[0]);
+    const filePath = dialogueResponse.filePaths[0];
 
-  console.log("loading musicxml file:", dialogueResponse.filePaths[0]);
-  const filePath = dialogueResponse.filePaths[0];
-
-  let xmlString;
-  if (filePath.endsWith('.mxl')) {
-    console.error("compressed MusicXML not supported yet")
-  } else {
-    xmlString = fs.readFileSync(filePath, 'utf8');
-  }
-  return xmlString;
+    let xmlString;
+    if (filePath.endsWith(".mxl")) {
+        console.error("compressed MusicXML not supported yet");
+    } else {
+        xmlString = fs.readFileSync(filePath, "utf8");
+    }
+    return xmlString;
 }
 
 /**
@@ -379,18 +432,18 @@ export async function launchImportMusicXmlFileDialogue(): Promise<string | undef
  * @param type 'undo' or 'redo'
  * @returns 200 for success, -1 for failure
  */
-export async function executeHistoryAction(type: 'undo' | 'redo') {
-  const response = await DatabaseServices.historyAction(type);
+export async function executeHistoryAction(type: "undo" | "redo") {
+    const response = await DatabaseServices.historyAction(type);
 
-  if (!response?.success) {
-    console.log(`Error ${type}ing`);
-    return -1;
-  }
+    if (!response?.success) {
+        console.log(`Error ${type}ing`);
+        return -1;
+    }
 
-  // send a message to the renderer to fetch the updated data
-  win?.webContents.send('history:action', response.history_data);
+    // send a message to the renderer to fetch the updated data
+    win?.webContents.send("history:action", response.history_data);
 
-  return 200;
+    return 200;
 }
 
 /**
@@ -398,8 +451,8 @@ export async function executeHistoryAction(type: 'undo' | 'redo') {
  *
  * @param type 'marcher' | 'page' | 'marcher_page'
  */
-export async function triggerFetch(type: 'marcher' | 'page' | 'marcher_page') {
-  win?.webContents.send('fetch:all', type);
+export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
+    win?.webContents.send("fetch:all", type);
 }
 
 /**
@@ -409,8 +462,8 @@ export async function triggerFetch(type: 'marcher' | 'page' | 'marcher_page') {
  * @param isNewFile True if this is a new file, false if it is an existing file
  */
 function setActiveDb(path: string, isNewFile = false) {
-  DatabaseServices.setDbPath(path, isNewFile);
-  win?.setTitle('OpenMarch - ' + path);
-  !isNewFile && win?.webContents.reload();
-  store.set('databasePath', path); // Save current db path
+    DatabaseServices.setDbPath(path, isNewFile);
+    win?.setTitle("OpenMarch - " + path);
+    !isNewFile && win?.webContents.reload();
+    store.set("databasePath", path); // Save current db path
 }

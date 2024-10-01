@@ -157,6 +157,12 @@ const APP_API = {
     /** Get the FieldProperties associated with this file */
     getFieldProperties: () =>
         ipcRenderer.invoke("field_properties:get") as Promise<FieldProperties>,
+    /** Update the FieldProperties associated with this file */
+    updateFieldProperties: (newFieldProperties: FieldProperties) =>
+        ipcRenderer.invoke(
+            "field_properties:update",
+            newFieldProperties
+        ) as Promise<DbServices.DatabaseResponse<FieldProperties>>,
 
     // Marcher
     /**
@@ -166,15 +172,13 @@ const APP_API = {
     getMarchers: () =>
         ipcRenderer.invoke("marcher:getAll") as Promise<Marcher[]>,
     createMarcher: (newMarcher: NewMarcherArgs) =>
-        ipcRenderer.invoke(
-            "marcher:insert",
-            newMarcher
-        ) as Promise<DbServices.DatabaseResponse>,
+        ipcRenderer.invoke("marcher:insert", newMarcher) as Promise<
+            DbServices.DatabaseResponse<Marcher[]>
+        >,
     updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
-        ipcRenderer.invoke(
-            "marcher:update",
-            modifiedMarchers
-        ) as Promise<DbServices.DatabaseResponse>,
+        ipcRenderer.invoke("marcher:update", modifiedMarchers) as Promise<
+            DbServices.DatabaseResponse<Marcher[]>
+        >,
     deleteMarcher: (id: number) => ipcRenderer.invoke("marcher:delete", id),
 
     // Page
@@ -184,10 +188,9 @@ const APP_API = {
      */
     getPages: () => ipcRenderer.invoke("page:getAll") as Promise<Page[]>,
     createPages: (pages: NewPageContainer[]) =>
-        ipcRenderer.invoke(
-            "page:insert",
-            pages
-        ) as Promise<DbServices.DatabaseResponse>,
+        ipcRenderer.invoke("page:insert", pages) as Promise<
+            DbServices.DatabaseResponse<Page[]>
+        >,
     updatePages: (
         modifiedPages: ModifiedPageContainer[],
         addToHistoryQueue?: boolean,
@@ -198,12 +201,11 @@ const APP_API = {
             modifiedPages,
             addToHistoryQueue,
             updateInReverse
-        ) as Promise<DbServices.DatabaseResponse>,
+        ) as Promise<DbServices.DatabaseResponse<Page[]>>,
     deletePage: (id: number) =>
-        ipcRenderer.invoke(
-            "page:delete",
-            id
-        ) as Promise<DbServices.DatabaseResponse>,
+        ipcRenderer.invoke("page:delete", id) as Promise<
+            DbServices.DatabaseResponse<Page>
+        >,
 
     // MarcherPage
     getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
@@ -223,18 +225,17 @@ const APP_API = {
     getMeasuresAbcString: () =>
         ipcRenderer.invoke("measure:getAll") as Promise<string>,
     updateMeasureAbcString: (abcString: string) =>
-        ipcRenderer.invoke(
-            "measure:update",
-            abcString
-        ) as Promise<DbServices.DatabaseResponse>,
+        ipcRenderer.invoke("measure:update", abcString) as Promise<
+            DbServices.DatabaseResponse<string>
+        >,
     launchImportMusicXmlFileDialogue: () =>
         ipcRenderer.invoke("measure:insert") as Promise<string | undefined>,
 
     // Audio File
     launchInsertAudioFileDialogue: () =>
-        ipcRenderer.invoke(
-            "audio:insert"
-        ) as Promise<DbServices.DatabaseResponse>,
+        ipcRenderer.invoke("audio:insert") as Promise<
+            DbServices.DatabaseResponse<AudioFile[]>
+        >,
     getAudioFilesDetails: () =>
         ipcRenderer.invoke("audio:getAll") as Promise<AudioFile[]>,
     getSelectedAudioFile: () =>

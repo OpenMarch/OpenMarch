@@ -26,7 +26,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     readonly DISTANCE_THRESHOLD = 20;
 
     /** The FieldProperties this OpenMarchCanvas has been built on */
-    fieldProperties: FieldProperties;
+    private _fieldProperties: FieldProperties;
     /** The current page this canvas is on */
     currentPage: Page;
     /**
@@ -49,7 +49,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * The reference to the grid (the lines on the field) object to use for caching
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
      */
-    staticGridRef: fabric.Group;
+    staticGridRef: fabric.Group = new fabric.Group([]);
     private _listeners?: CanvasListeners;
 
     // ---- AlignmentEvent changes ----
@@ -121,14 +121,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.refreshCanvasSize();
         });
 
-        this.fieldProperties = fieldProperties;
+        this._fieldProperties = fieldProperties;
 
-        // create the grid
-        this.staticGridRef = this.createFieldGrid({});
-        // Object caching is set to true to make the grid sharper
-        this.staticGridRef.objectCaching = true;
-        // add the grid to the canvas
-        this.add(this.staticGridRef);
+        this.fieldProperties = fieldProperties;
 
         // The mouse wheel event should never be changed
         this.on("mouse:wheel", this.handleMouseWheel);
@@ -416,6 +411,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         })[0];
 
         return { x: response.x, y: response.y };
+    };
+
+    /**
+     * Builds and renders the grid for the field/stage based on the instance's field properties.
+     *
+     * @param gridLines Whether or not to include grid lines (every step)
+     * @param halfLines Whether or not to include half lines (every 4 steps)
+     */
+    renderFieldGrid = (
+        { gridLines = true, halfLines = true } = {
+            gridLines: true,
+            halfLines: true,
+        }
+    ) => {
+        if (this.staticGridRef) this.remove(this.staticGridRef);
+        this.staticGridRef = this.createFieldGrid({
+            gridLines,
+            halfLines,
+        });
+        this.staticGridRef.objectCaching = false;
+        this.add(this.staticGridRef);
+        this.sendToBack(this.staticGridRef);
+        this.requestRenderAll();
     };
 
     /*********************** PRIVATE INSTANCE METHODS ***********************/
@@ -749,6 +767,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return this._uiSettings;
     }
 
+    /** The FieldProperties this OpenMarchCanvas has been built on */
+    public get fieldProperties() {
+        return this._fieldProperties;
+    }
+
     /**
      * Gets all objects of a specified type in the canvas.
      * Mostly used as a utility function, but can be called on its own.
@@ -866,6 +889,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             })
         );
         this.requestRenderAll();
+    }
+
+    set fieldProperties(fieldProperties: FieldProperties) {
+        this._fieldProperties = fieldProperties;
+        this.renderFieldGrid();
     }
 
     /*********************** SELECTION UTILITIES ***********************/

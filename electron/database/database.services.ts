@@ -19,18 +19,13 @@ import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import FieldPropertiesTemplates from "../../src/global/classes/FieldProperties.templates";
 
-export class DatabaseResponse {
+export class DatabaseResponse<T> {
     readonly success: boolean;
     /**
      * Resulting data from the database action. This isn't very well implemented
      * and likely will not be used.
      */
-    readonly result?:
-        | Marcher[]
-        | Page[]
-        | MarcherPage[]
-        | FieldProperties
-        | AudioFile[];
+    readonly result?: T;
     readonly error?: { message: string; stack?: string };
 
     constructor(success: boolean, result?: any, error?: Error) {
@@ -282,6 +277,9 @@ function createAudioFileTable(db: Database.Database) {
 export function initHandlers() {
     // Field properties
     ipcMain.handle("field_properties:get", async () => getFieldProperties());
+    ipcMain.handle("field_properties:update", async (_, field_properties) =>
+        updateFieldProperties(field_properties)
+    );
 
     // File IO handlers located in electron/main/index.ts
 
@@ -371,6 +369,39 @@ export async function getFieldProperties(
     return fieldProperties;
 }
 
+/**
+ * Updates the field properties in the database.
+ *
+ * @param fieldProperties The new field properties
+ * @returns {success: boolean, result?: FieldProperties, error?: string}
+ */
+export async function updateFieldProperties(
+    fieldProperties: FieldProperties
+): Promise<DatabaseResponse<FieldProperties>> {
+    const db = connect();
+    let output: DatabaseResponse<FieldProperties> = { success: true };
+
+    try {
+        const stmt = db.prepare(`
+            UPDATE ${Constants.FieldPropertiesTableName}
+            SET json_data = @json_data
+            WHERE id = 1
+        `);
+        stmt.run({ json_data: JSON.stringify(fieldProperties) });
+        const newFieldProperties = await getFieldProperties(db);
+        output = { success: true, result: newFieldProperties };
+    } catch (error: any) {
+        console.error(error);
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
+    } finally {
+        db.close();
+    }
+    return output;
+}
+
 /* ============================ Marcher ============================ */
 /**
  * @param db The database connection, or undefined to create a new connection
@@ -409,9 +440,9 @@ async function createMarcher(newMarcher: NewMarcherArgs) {
  */
 async function createMarchers(
     newMarchers: NewMarcherArgs[]
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<Marcher[]>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<Marcher[]> = { success: true };
 
     // List of queries executed in this function to be added to the history table
     // const historyQueries: History.historyQuery[] = [];
@@ -515,9 +546,9 @@ async function createMarchers(
  */
 async function updateMarchers(
     modifiedMarchers: ModifiedMarcherArgs[]
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<Marcher[]>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<Marcher[]> = { success: true };
 
     // List of queries executed in this function to be added to the history table
     const historyActions: History.UpdateHistoryEntry[] = [];
@@ -583,9 +614,11 @@ async function updateMarchers(
  * @param marcher_id
  * @returns {success: boolean, error?: string}
  */
-async function deleteMarcher(marcher_id: number): Promise<DatabaseResponse> {
+async function deleteMarcher(
+    marcher_id: number
+): Promise<DatabaseResponse<Marcher>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<Marcher> = { success: true };
     try {
         const marcherStmt = db.prepare(`
             DELETE FROM ${Constants.MarcherTableName}
@@ -650,9 +683,9 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
  */
 async function createPages(
     newPages: NewPageContainer[]
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<Page[]>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<Page[]> = { success: true };
 
     // List of queries executed in this function to be added to the history table
     // const historyQueries: History.InsertHistoryEntry[] = [];
@@ -753,9 +786,9 @@ async function updatePages(
     modifiedPages: ModifiedPageContainer[],
     addToHistoryQueue: Boolean = true,
     updateInReverse = false
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<Page[]>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<Page[]> = { success: true };
 
     // List of queries executed in this function to be added to the history table
     const historyActions: History.UpdateHistoryEntry[] = [];
@@ -833,9 +866,9 @@ async function updatePages(
  * @param page_id
  * @returns {success: boolean, error?: string}
  */
-async function deletePage(page_id: number): Promise<DatabaseResponse> {
+async function deletePage(page_id: number): Promise<DatabaseResponse<Page>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<Page> = { success: true };
     try {
         const pageStmt = db.prepare(`
             DELETE FROM ${Constants.PageTableName}
@@ -976,9 +1009,9 @@ async function createMarcherPage(
  */
 async function updateMarcherPages(
     marcherPageUpdates: ModifiedMarcherPageArgs[]
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<MarcherPage[]>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<MarcherPage[]> = { success: true };
     const historyActions: History.UpdateHistoryEntry[] = [];
     try {
         for (const marcherPageUpdate of marcherPageUpdates) {
@@ -1148,9 +1181,9 @@ async function getMeasures(db?: Database.Database): Promise<string> {
  */
 async function updateMeasuresAbcString(
     abcString: string
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<string>> {
     const db = connect();
-    let output: DatabaseResponse = { success: false };
+    let output: DatabaseResponse<string> = { success: false };
     try {
         const stmt = db.prepare(`
                 UPDATE ${Constants.MeasureTableName}
@@ -1259,13 +1292,13 @@ async function setSelectAudioFile(
  */
 export async function insertAudioFile(
     audioFile: AudioFile
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<AudioFile[]>> {
     const db = connect();
     const stmt = db.prepare(
         `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`
     );
     stmt.run();
-    let output: DatabaseResponse = { success: false };
+    let output: DatabaseResponse<AudioFile[]> = { success: false };
     try {
         const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.AudioFilesTableName} (
@@ -1318,9 +1351,9 @@ export async function insertAudioFile(
  */
 async function updateAudioFiles(
     audioFileUpdates: ModifiedAudioFileArgs[]
-): Promise<DatabaseResponse> {
+): Promise<DatabaseResponse<AudioFile[]>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<AudioFile[]> = { success: true };
     try {
         for (const audioFileUpdate of audioFileUpdates) {
             // Generate the SET clause of the SQL query
@@ -1385,9 +1418,11 @@ async function updateAudioFiles(
  * @param audioFileId
  * @returns {success: boolean, error?: string}
  */
-async function deleteAudioFile(audioFileId: number): Promise<DatabaseResponse> {
+async function deleteAudioFile(
+    audioFileId: number
+): Promise<DatabaseResponse<AudioFile>> {
     const db = connect();
-    let output: DatabaseResponse = { success: true };
+    let output: DatabaseResponse<AudioFile> = { success: true };
     try {
         const pageStmt = db.prepare(`
             DELETE FROM ${Constants.AudioFilesTableName}
