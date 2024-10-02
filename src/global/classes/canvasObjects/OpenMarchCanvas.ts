@@ -2,10 +2,7 @@ import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 import StaticCanvasMarcher from "./StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
-import {
-    FieldProperties,
-    getYardNumberCoordinates,
-} from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import { UiSettings } from "@/global/Interfaces";
@@ -29,7 +26,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     readonly DISTANCE_THRESHOLD = 20;
 
     /** The FieldProperties this OpenMarchCanvas has been built on */
-    fieldProperties: FieldProperties;
+    private _fieldProperties: FieldProperties;
     /** The current page this canvas is on */
     currentPage: Page;
     /**
@@ -52,7 +49,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * The reference to the grid (the lines on the field) object to use for caching
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
      */
-    staticGridRef: fabric.Group;
+    staticGridRef: fabric.Group = new fabric.Group([]);
     private _listeners?: CanvasListeners;
 
     // ---- AlignmentEvent changes ----
@@ -124,14 +121,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.refreshCanvasSize();
         });
 
-        this.fieldProperties = fieldProperties;
+        this._fieldProperties = fieldProperties;
 
-        // create the grid
-        this.staticGridRef = this.createFieldGrid({});
-        // Object caching is set to true to make the grid sharper
-        this.staticGridRef.objectCaching = true;
-        // add the grid to the canvas
-        this.add(this.staticGridRef);
+        this.fieldProperties = fieldProperties;
 
         // The mouse wheel event should never be changed
         this.on("mouse:wheel", this.handleMouseWheel);
@@ -421,6 +413,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return { x: response.x, y: response.y };
     };
 
+    /**
+     * Builds and renders the grid for the field/stage based on the instance's field properties.
+     *
+     * @param gridLines Whether or not to include grid lines (every step)
+     * @param halfLines Whether or not to include half lines (every 4 steps)
+     */
+    renderFieldGrid = (
+        { gridLines = true, halfLines = true } = {
+            gridLines: true,
+            halfLines: true,
+        } as { gridLines?: boolean; halfLines?: boolean }
+    ) => {
+        if (this.staticGridRef) this.remove(this.staticGridRef);
+        this.staticGridRef = this.createFieldGrid({
+            gridLines,
+            halfLines,
+        });
+        this.staticGridRef.objectCaching = false;
+        this.add(this.staticGridRef);
+        this.sendToBack(this.staticGridRef);
+        this.requestRenderAll();
+    };
+
     /*********************** PRIVATE INSTANCE METHODS ***********************/
     /**
      * Zoom in and out with the mouse wheel
@@ -537,7 +552,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             for (
                 let i = centerFrontPoint.xPixels + pixelsPerStep * 4;
                 i < fieldWidth;
-                i += pixelsPerStep * 8
+                i += pixelsPerStep * 4
             )
                 fieldArray.push(
                     new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
@@ -545,7 +560,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             for (
                 let i = centerFrontPoint.xPixels - pixelsPerStep * 4;
                 i > 0;
-                i -= pixelsPerStep * 8
+                i -= pixelsPerStep * 4
             )
                 fieldArray.push(
                     new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
@@ -578,21 +593,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 2,
             selectable: false,
         };
-        const yardNumberCoordinates = getYardNumberCoordinates(
-            this.fieldProperties.template
-        );
-        const numberHeight =
-            (yardNumberCoordinates.homeStepsFromFrontToInside -
-                yardNumberCoordinates.homeStepsFromFrontToOutside) *
-            pixelsPerStep;
-        const numberProps = {
-            fontSize: numberHeight,
-            fill: "#888888",
-            selectable: false,
-            charSpacing: 160,
-        };
-        const yardNumberXOffset = 18;
-        this.fieldProperties.xCheckpoints.forEach((xCheckpoint) => {
+
+        for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
             // Yard line
             const x =
                 centerFrontPoint.xPixels +
@@ -601,37 +603,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps)
             );
 
-            // Yard line numbers
-            if (xCheckpoint.fieldLabel) {
-                // Home number
-                fieldArray.push(
-                    new fabric.Text(xCheckpoint.fieldLabel, {
-                        left: x - yardNumberXOffset,
-                        top:
-                            centerFrontPoint.yPixels -
-                            yardNumberCoordinates.homeStepsFromFrontToInside *
-                                pixelsPerStep,
-                        ...numberProps,
-                    })
-                );
-                // Away number
-                fieldArray.push(
-                    new fabric.Text(xCheckpoint.fieldLabel, {
-                        left: x - yardNumberXOffset,
-                        top:
-                            centerFrontPoint.yPixels -
-                            yardNumberCoordinates.awayStepsFromFrontToOutside *
-                                pixelsPerStep,
-                        flipY: true,
-                        flipX: true,
-                        ...numberProps,
-                    })
-                );
-            }
-
             // Hashes
             const hashWidth = 20;
-            this.fieldProperties.yCheckpoints.forEach((yCheckpoint) => {
+            for (const yCheckpoint of this.fieldProperties.yCheckpoints) {
                 if (yCheckpoint.visible !== false) {
                     const y =
                         centerFrontPoint.yPixels +
@@ -650,8 +624,58 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         )
                     );
                 }
-            });
-        });
+            }
+        }
+
+        // Print yard line numbers if they exist
+        const yardNumberCoordinates =
+            this.fieldProperties.yardNumberCoordinates;
+        if (yardNumberCoordinates) {
+            const numberHeight =
+                (yardNumberCoordinates.homeStepsFromFrontToInside -
+                    yardNumberCoordinates.homeStepsFromFrontToOutside) *
+                pixelsPerStep;
+            const numberProps = {
+                fontSize: numberHeight,
+                fill: "#888888",
+                selectable: false,
+                charSpacing: 160,
+            };
+            const yardNumberXOffset = 18;
+            for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
+                // Yard line numbers
+                const x =
+                    centerFrontPoint.xPixels +
+                    xCheckpoint.stepsFromCenterFront * pixelsPerStep;
+
+                if (xCheckpoint.fieldLabel) {
+                    // Home number
+                    fieldArray.push(
+                        new fabric.Text(xCheckpoint.fieldLabel, {
+                            left: x - yardNumberXOffset,
+                            top:
+                                centerFrontPoint.yPixels -
+                                yardNumberCoordinates.homeStepsFromFrontToInside *
+                                    pixelsPerStep,
+                            ...numberProps,
+                        })
+                    );
+                    // Away number
+                    fieldArray.push(
+                        new fabric.Text(xCheckpoint.fieldLabel, {
+                            left: x - yardNumberXOffset,
+                            top:
+                                centerFrontPoint.yPixels -
+                                yardNumberCoordinates.awayStepsFromFrontToOutside *
+                                    pixelsPerStep,
+                            flipY: true,
+                            flipX: true,
+                            ...numberProps,
+                        })
+                    );
+                }
+            }
+        }
 
         // Border
         const borderWidth = FieldProperties.GRID_STROKE_WIDTH * 3;
@@ -741,6 +765,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The collection of UI settings for the canvas. This must be synced with global state from the UiSettingsStore */
     public get uiSettings() {
         return this._uiSettings;
+    }
+
+    /** The FieldProperties this OpenMarchCanvas has been built on */
+    public get fieldProperties() {
+        return this._fieldProperties;
     }
 
     /**
@@ -836,10 +865,21 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** Set the UI settings and make all of the changes in this canvas that correspond to it */
     setUiSettings(uiSettings: UiSettings) {
         const activeObject = this.getActiveObject();
+        const oldUiSettings = this._uiSettings;
         this._uiSettings = uiSettings;
         if (activeObject) {
             activeObject.lockMovementX = uiSettings.lockX;
             activeObject.lockMovementY = uiSettings.lockY;
+        }
+
+        if (
+            oldUiSettings.gridLines !== uiSettings.gridLines ||
+            oldUiSettings.halfLines !== uiSettings.halfLines
+        ) {
+            this.renderFieldGrid({
+                gridLines: uiSettings.gridLines,
+                halfLines: uiSettings.halfLines,
+            });
         }
     }
 
@@ -860,6 +900,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             })
         );
         this.requestRenderAll();
+    }
+
+    set fieldProperties(fieldProperties: FieldProperties) {
+        this._fieldProperties = fieldProperties;
+        this.renderFieldGrid();
     }
 
     /*********************** SELECTION UTILITIES ***********************/

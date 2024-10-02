@@ -7,7 +7,7 @@ import {
     evenlyDistributeVertically,
     getRoundCoordinates,
 } from "../CoordinateActions";
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import { describe, expect, it, vi } from "vitest";
 
 describe("CoordinateActions", () => {

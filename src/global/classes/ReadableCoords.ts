@@ -1,4 +1,4 @@
-import { Checkpoint, FieldProperties } from "./FieldProperties";
+import FieldProperties, { Checkpoint } from "./FieldProperties";
 import MarcherPage from "./MarcherPage";
 
 export enum X_DESCRIPTION {
@@ -346,43 +346,32 @@ export class ReadableCoords {
      * Create a verbose description of a ReadableCoords' X properties.
      *
      * @param includeStepsString Whether or not to include the word "step(s)" in the string. False by default.
-     * @param includeFieldStandard Whether or not to include the field standard in the string. False by default. (e.g. (NCAA, NFL, Grid hash etc.))
      * @returns A string description of the marcher's readable x coordinate.
      * ("5 steps behind front hash", "On front sideline")
      */
     toVerboseStringY({
         includeStepsString = false,
-        includeFieldStandard = false,
-    }: { includeStepsString?: boolean; includeFieldStandard?: boolean } = {}) {
+    }: { includeStepsString?: boolean } = {}) {
         return (
             ReadableCoords.formatStepsString(this.ySteps, includeStepsString) +
             this.yDescription +
             " " +
-            this.yCheckpoint.name +
-            (includeFieldStandard && this.yCheckpoint.fieldStandard
-                ? ` (${this.yCheckpoint.fieldStandard})`
-                : "")
+            this.yCheckpoint.name
         );
     }
 
     /**
      * Create a terse description of a ReadableCoords' Y properties.
      *
-     * @param includeFieldStandard Whether or not to include the field standard in the string. False by default. (e.g. (NCAA, NFL, Grid hash etc.))
      * @returns A string description of the marcher's readable  coordinate.
      * ("9 fr. BH" -> 9 steps in front of the back hash , "12 be. FSL" -> 12 steps behind front sideline , "On FH")
      */
-    toTerseStringY({
-        includeFieldStandard = false,
-    }: { includeFieldStandard?: boolean } = {}) {
+    toTerseStringY() {
         return (
             ReadableCoords.formatStepsString(this.ySteps) +
             ReadableCoords.getTerseYDescription(this.yDescription) +
             " " +
-            this.yCheckpoint.terseName +
-            (includeFieldStandard && this.yCheckpoint.fieldStandard
-                ? ` (${this.yCheckpoint.fieldStandard})`
-                : "")
+            this.yCheckpoint.terseName
         );
     }
 }

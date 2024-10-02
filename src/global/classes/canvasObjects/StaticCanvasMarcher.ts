@@ -1,6 +1,6 @@
 import MarcherPage from "../MarcherPage";
 import { fabric } from "fabric";
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import { NoControls } from "../../../components/canvas/CanvasConstants";
 
 /**

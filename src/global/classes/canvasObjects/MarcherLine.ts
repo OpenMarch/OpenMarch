@@ -1,6 +1,6 @@
 import { fabric } from "fabric";
 import * as CanvasConstants from "@/components/canvas/CanvasConstants";
-import { FieldProperties } from "../FieldProperties";
+import FieldProperties from "../FieldProperties";
 import MarcherPage from "../MarcherPage";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import Page from "../Page";

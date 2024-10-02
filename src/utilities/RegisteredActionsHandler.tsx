@@ -418,17 +418,10 @@ function RegisteredActionsHandler() {
      */
     const triggerAction = useCallback(
         (action: RegisteredActionsEnum) => {
-            if (!selectedPage) {
-                console.error("No selected page");
-                return;
-            }
-            if (!fieldProperties) {
-                console.error("No field properties");
-                return;
-            }
-            const registeredActionObject = RegisteredActionsObjects[action];
+            let isElectronAction = true;
+
+            // Check if this is an electron action
             switch (action) {
-                /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.launchLoadFileDialogue:
                     window.electron.databaseLoad();
                     break;
@@ -448,6 +441,38 @@ function RegisteredActionsHandler() {
                             setSelectedAudioFile(selectedAudioFileWithoutAudio);
                         });
                     });
+                    break;
+                case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
+                    window.electron
+                        .launchImportMusicXmlFileDialogue()
+                        .then((xmlString) => {
+                            if (xmlString) {
+                                // Convert the xmlString to an abcString
+                                Measure.updateWithXml(xmlString);
+                            }
+                        });
+                    break;
+                default:
+                    isElectronAction = false;
+                    break;
+            }
+
+            if (isElectronAction) return;
+            if (!selectedPage) {
+                console.error("No selected page");
+                return;
+            }
+            if (!fieldProperties) {
+                console.error("No field properties");
+                return;
+            }
+            const registeredActionObject = RegisteredActionsObjects[action];
+            switch (action) {
+                /****************** Navigation and playback ******************/
+                case RegisteredActionsEnum.launchLoadFileDialogue:
+                case RegisteredActionsEnum.launchSaveFileDialogue:
+                case RegisteredActionsEnum.launchNewFileDialogue:
+                case RegisteredActionsEnum.launchInsertAudioFileDialogue:
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     window.electron

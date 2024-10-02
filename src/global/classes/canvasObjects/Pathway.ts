@@ -1,4 +1,4 @@
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import { fabric } from "fabric";
 import { NoControls } from "../../../components/canvas/CanvasConstants";
 

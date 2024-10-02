@@ -1,8 +1,9 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { FieldProperties } from "@/global/classes/FieldProperties";
+import FieldProperties from "@/global/classes/FieldProperties";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
+import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({
@@ -193,6 +194,5 @@ export const mockMarcherLines: MarcherLine[] = [
 /**
  * A list of properties for a college football field. Each property is in steps. For pixels, multiply by pixelsPerStep.
  */
-export const mockNCAAFieldProperties: FieldProperties = new FieldProperties(
-    FieldProperties.Template.NCAA
-);
+export const mockNCAAFieldProperties: FieldProperties =
+    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;

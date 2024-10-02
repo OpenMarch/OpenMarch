@@ -23,6 +23,10 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>((set) => ({
         previousPaths: false,
         /** Boolean to view next page's paths/dots */
         nextPaths: false,
+        /** Boolean to view lines for every step on the field */
+        gridLines: true,
+        /** Boolean to view lines for every four steps on the field */
+        halfLines: true,
     },
 
     /**

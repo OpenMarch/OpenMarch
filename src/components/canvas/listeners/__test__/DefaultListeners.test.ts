@@ -2,7 +2,6 @@ import DefaultListeners from "../DefaultListeners";
 import OpenMarchCanvas from "../../../../global/classes/canvasObjects/OpenMarchCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
-import { FieldProperties } from "@/global/classes/FieldProperties";
 import {
     falsyUiSettings,
     mockMarcherPages,
@@ -11,11 +10,11 @@ import {
 } from "../../__test__/MocksForCanvas";
 import { cleanup } from "@testing-library/react";
 import { fabric } from "fabric";
+import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 describe("DefaultListeners", () => {
-    const NCAAFieldProperties = new FieldProperties(
-        FieldProperties.Template.NCAA
-    );
+    const NCAAFieldProperties =
+        FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
     let canvas: OpenMarchCanvas;
     let listeners: DefaultListeners;
 
@@ -172,11 +171,11 @@ describe("DefaultListeners", () => {
             };
             // sleep for 2 milliseconds
             await new Promise((r) => setTimeout(r, 2));
-            const after = Date.now();
 
             listeners.handleMouseDown(fabricEvent);
 
             expect(canvas.selectDragStart.time).toBeGreaterThanOrEqual(before);
+            const after = Date.now();
             expect(canvas.selectDragStart.time).toBeLessThanOrEqual(after);
             expect(canvas.selectDragStart.x).toBe(123);
             expect(canvas.selectDragStart.y).toBe(321);

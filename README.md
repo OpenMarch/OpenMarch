@@ -73,7 +73,7 @@ Supporting packages
 ## OpenMarch for developers
 
 Currently only one person is working on this. (notice I said "we" a lot above? makes me feel official).
-If you would like to help out or learn more, just shoot me an [email](mailto:alex.dumouchelle484@gmail.com)!
+If you would like to help out or learn more, just shoot me an [email](mailto:contact@openmarch.com)!
 
 This project is still in its infancy with significant and essential features missing (saving and undo lol). The team
 that will bring this to life still need to make significant and path-altering decisions about what OpenMarch will be.

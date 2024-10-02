@@ -3,7 +3,6 @@ import { describe, afterEach, it, beforeEach, vi, expect } from "vitest";
 import Canvas from "../Canvas";
 import * as Mocks from "@/__mocks__/globalMocks";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
-import { FieldProperties } from "@/global/classes/FieldProperties";
 import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
@@ -11,6 +10,7 @@ import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { ElectronApi } from "electron/preload";
 import { falsyUiSettings } from "./MocksForCanvas";
+import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 // import { mockMarchers, mockPages } from "@/__mocks__/globalMocks";
 // import { createMarcherPages } from "@/utilities/TestingUtilities";
@@ -77,9 +77,8 @@ describe("Canvas", () => {
     });
 
     it.skip("Canvas renders and contains marchers", () => {
-        const NCAAFieldProperties = new FieldProperties(
-            FieldProperties.Template.NCAA
-        );
+        const NCAAFieldProperties =
+            FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
         const canvas = new OpenMarchCanvas({
             canvasRef: null,
             fieldProperties: NCAAFieldProperties,

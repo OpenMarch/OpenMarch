@@ -1,7 +1,6 @@
 import { cleanup } from "@testing-library/react";
 import { describe, expect, afterEach, it, vi } from "vitest";
 import OpenMarchCanvas from "../OpenMarchCanvas";
-import { FieldProperties } from "@/global/classes/FieldProperties";
 import {
     falsyUiSettings,
     mockMarcherPages,
@@ -9,12 +8,11 @@ import {
     mockPages,
 } from "@/components/canvas/__test__/MocksForCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
+import FieldPropertiesTemplates from "../../FieldProperties.templates";
 
 describe("OpenMarchCanvas", () => {
-    const NCAAFieldProperties = new FieldProperties(
-        FieldProperties.Template.NCAA
-    );
-
+    const NCAAFieldProperties =
+        FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
     afterEach(() => {
         vi.clearAllMocks();
         cleanup();

@@ -6,6 +6,7 @@ import UiSettingsToolbar from "./UiSettingsToolbar";
 import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
 import AlignmentToolbar from "./AlignmentToolbar";
 import MusicModal from "../music/MusicModal";
+import SettingsModal from "../settings/SettingsModal";
 
 function Topbar({ className = "" }: { className?: string }) {
     const componentClassName = "";
@@ -21,6 +22,7 @@ function Topbar({ className = "" }: { className?: string }) {
             <UiSettingsToolbar className={`${componentClassName}`} />
             <AlignmentToolbar className={componentClassName} />
             <ExportCoordinatesModal className={componentClassName} />
+            <SettingsModal className={componentClassName} />
         </div>
     );
 }

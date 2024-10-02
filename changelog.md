@@ -10,7 +10,9 @@
     1. Adjust the order the Marchers will be on the line by dragging them around
     1. Press `Apply` in the alignment editor or `Enter` to apply the changes
   - This is the start of a new feature called an "Alignment Event." This will be how other shapes are created as well
-- **High school field (in progress)**
+- **Different field types**
+  - Clicking the gear icon in the topbar, the field type can be changed (currently only high school and college)
+  - Users can also turn the grid lines on and off to have a more clean view
 
 ## Quality of life
 
@@ -38,5 +40,5 @@
 - **Refactored the Canvas.tsx component to have an accompanying `OpenMarchCanvas.ts` class**
   - This will allow for better code isolation, testing, and organization
 - **Made a way to switch the listeners on the canvas based on the `AlignmentEvent`**
-  - `CanvasListeners` are a way to change the default behavior of the canvas. 
+  - `CanvasListeners` are a way to change the default behavior of the canvas.
   - All `CanvasListeners` should extend the `DefaultListeners` so that default functionality can easily be implemented with `super`
