@@ -60,7 +60,6 @@ async function createWindow(title?: string) {
         minHeight: 800,
         autoHideMenuBar: true,
         frame: false,
-        transparent: true,
         webPreferences: {
             preload,
             // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production

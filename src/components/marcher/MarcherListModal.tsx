@@ -1,72 +1,58 @@
 import ModalLauncher from "../toolbar/ModalLauncher";
-import MarcherList from "./MarcherList";
+import MarcherListContents from "./MarcherListContents";
 import NewMarcherForm from "./NewMarcherForm";
 import { useEffect, useState } from "react";
 import FormButtons from "../FormButtons";
-import { topBarComponentProps } from "@/global/Interfaces";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
+import { useSidebarModalStore } from "@/stores/ui/sidebarModalStore";
+import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
+import { PencilSimple } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/Button";
 
-export default function MarcherListModal({ className }: topBarComponentProps) {
-    const [listIsEditing, setListIsEditing] = useState(false);
-    const [submitActivator, setSubmitActivator] = useState(false);
-    const [cancelActivator, setCancelActivator] = useState(false);
-    const [modalIsOpen, setModalIsOpen] = useState(false);
+export default function MarcherListModal() {
     const { marchers } = useMarcherStore()!;
-
-    // Turn off editing when the modal is closed/opened
-    useEffect(() => {
-        setListIsEditing(false);
-    }, [modalIsOpen]);
+    const { setContent, toggleOpen } = useSidebarModalStore();
 
     function MarcherModalContents() {
         return (
-            <div className="flex h-full flex-grow flex-row">
-                <div className="h-[100%] w-3/5 overflow-scroll">
-                    <MarcherList
-                        isEditingStateProp={[listIsEditing, setListIsEditing]}
-                        submitActivatorStateProp={[
-                            submitActivator,
-                            setSubmitActivator,
-                        ]}
-                        cancelActivatorStateProp={[
-                            cancelActivator,
-                            setCancelActivator,
-                        ]}
-                    />
-                    {/* <MarcherList /> */}
-                </div>
-                <div className="w-2/5 overflow-scroll px-4">
-                    <NewMarcherForm
-                        hasHeader={true}
-                        disabledProp={listIsEditing}
-                    />
-                </div>
+            <div className="flex w-[21rem] flex-col gap-16 text-text">
+                <header className="flex items-center justify-between">
+                    <h4 className="text-h4 leading-none">Marchers</h4>
+                    <Button variant="primary" size="compact">
+                        Add
+                    </Button>
+                </header>
+                <MarcherListContents />
+            </div>
+        );
+    }
+    function MarcherModalNew() {
+        return (
+            <div className="flex flex-col gap-16">
+                <header className="flex justify-between">
+                    <h4 className="text-h4 leading-none">Add Marchers</h4>
+                    <div className="flex gap-8"></div>
+                </header>
             </div>
         );
     }
 
-    function editFormButtons() {
-        return (
-            <FormButtons
-                handleCancel={() => setCancelActivator(true)}
-                isEditingProp={listIsEditing}
-                setIsEditingProp={setListIsEditing}
-                editButton={"Edit Marchers"}
-                handleSubmit={() => setSubmitActivator(true)}
-            />
-        );
-    }
+    // Add modal content & turn off editing when the modal is closed/opened
+    useEffect(() => {
+        setContent(MarcherModalContents());
+    }, [setContent]);
 
-    return (
+    /*return (
         <ModalLauncher
             components={[MarcherModalContents()]}
             launchButton="Marchers"
             header="Marchers"
             modalClassName=""
             bottomButton={marchers.length > 0 && editFormButtons()}
-            buttonClassName={`btn-primary rounded-md ${className}`}
+            buttonClassName={`btn-primary rounded-md`}
             setModelIsOpenProp={setModalIsOpen}
             bodyClassName="h-[75vh]"
         />
-    );
+    ); */
+    return <SidebarModalLauncher buttonLabel="Marchers" />;
 }

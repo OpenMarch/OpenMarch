@@ -4,6 +4,8 @@ import App from "./App";
 import TitleBar from "./components/TitleBar";
 import StatusBar from "./components/StatusBar";
 import "./styles/index.css";
+import "@fontsource/dm-mono";
+import "@fontsource/dm-sans";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>

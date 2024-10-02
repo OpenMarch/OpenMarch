@@ -78,7 +78,7 @@ export default function RegisteredActionButton({
                 <RadixTooltip.Portal>
                     <RadixTooltip.Content
                         side="bottom"
-                        className="z-[99] m-8 rounded-6 border border-stroke bg-fg-2 p-4 text-text backdrop-blur-2xl"
+                        className="z-[99] m-8 rounded-6 border border-stroke bg-modal p-4 text-text shadow-modal backdrop-blur-32"
                     >
                         {instructionalString
                             ? instructionalString

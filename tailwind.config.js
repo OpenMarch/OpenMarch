@@ -29,6 +29,7 @@ export default {
         },
         fontFamily: {
             sans: ["'DM Sans'", ...defaultTheme.fontFamily.sans],
+            mono: ["'DM Mono'", ...defaultTheme.fontFamily.mono],
         },
         fontSize: {
             h1: "3rem",
@@ -78,12 +79,12 @@ export default {
             },
             keyframes: {
                 "scale-in": {
-                    from: { opacity: "0", transform: "scale(0.95)" },
+                    from: { opacity: "0", transform: "scale(0.98)" },
                     to: { opacity: "1", transform: "scale(1)" },
                 },
                 "scale-out": {
                     from: { opacity: "1", transform: "scale(1)" },
-                    to: { opacity: "0", transform: "scale(0.95)" },
+                    to: { opacity: "0", transform: "scale(0.98)" },
                 },
                 "fade-in": {
                     from: { opacity: "0" },

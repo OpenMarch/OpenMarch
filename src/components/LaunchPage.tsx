@@ -14,24 +14,37 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     }
 
     return (
-        <div className="flex bg-gray-700 text-white h-full w-full justify-center flex-col items-center text-center">
-            <h1 className="text-5xl font-normal mb-1">Welcome to OpenMarch!</h1>
-            <h4 className="font-normal text-xl mt-1">The open source drill writing software project</h4>
+        <div className="bg-gray-700 flex h-full w-full flex-col items-center justify-center text-center text-white">
+            <h1 className="mb-1 text-h1 font-normal">Welcome to OpenMarch!</h1>
+            <h4 className="text-xl mt-1 font-normal">
+                The open source drill writing software project
+            </h4>
             <div className="my-8">
-                <button className="btn-primary rounded mx-6 whitespace-nowrap text-lg" onClick={handleCreateNew}>
+                <button
+                    className="btn-primary rounded text-lg mx-6 whitespace-nowrap"
+                    onClick={handleCreateNew}
+                >
                     Create New
                 </button>
-                <button className="btn-primary rounded mx-6 whitespace-nowrap text-lg" onClick={handleOpenExisting}>
+                <button
+                    className="btn-primary rounded text-lg mx-6 whitespace-nowrap"
+                    onClick={handleOpenExisting}
+                >
                     Open Existing
                 </button>
             </div>
             <br />
-            <div className="lg:w-2/5 mx-8">
-                <p><strong>
-                    WARNING - This software is currently not released for production.
-                </strong></p>
+            <div className="mx-8 lg:w-2/5">
                 <p>
-                    By using OpenMarch, you accept there may be glitches and quirks that come with using software that is still in development.
+                    <strong>
+                        WARNING - This software is currently not released for
+                        production.
+                    </strong>
+                </p>
+                <p>
+                    By using OpenMarch, you accept there may be glitches and
+                    quirks that come with using software that is still in
+                    development.
                 </p>
             </div>
         </div>

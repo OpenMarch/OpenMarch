@@ -1,15 +1,26 @@
-import React from "react";
-import { useSidebarMenuStore } from "@/stores/ui/sidebarModalStore";
+import { useSidebarModalStore } from "@/stores/ui/sidebarModalStore";
 
-export default function TextFormattingMenu() {
-    const { isSidebarModalOpen } = useSidebarMenuStore();
+export default function SidebarModal() {
+    const { isSidebarModalOpen, content } = useSidebarModalStore();
     return (
         <div
-            className={`shadow-fg-1 backdrop-blur-32 bg-modal absolute left-0 top-0 z-40 h-full min-h-0 rounded-6 border border-stroke p-32 ${
-                isSidebarModalOpen ? "block" : "hidden"
+            className={`absolute left-0 top-0 z-40 h-full min-h-0 max-w-[35rem] rounded-6 border border-stroke bg-modal p-12 shadow-fg-1 backdrop-blur-32 ${
+                isSidebarModalOpen ? "flex animate-scale-in" : "hidden"
             }`}
         >
-            <h2 className="text-h2">Text</h2>
+            {content}
         </div>
+    );
+}
+
+export function SidebarModalLauncher({ buttonLabel }: { buttonLabel: string }) {
+    const { toggleOpen } = useSidebarModalStore();
+    return (
+        <button
+            onClick={toggleOpen}
+            className="duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+        >
+            {buttonLabel}
+        </button>
     );
 }

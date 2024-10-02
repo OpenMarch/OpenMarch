@@ -3,7 +3,7 @@ import { cva, VariantProps } from "class-variance-authority";
 
 const variants = cva(
     [
-        "text-body px-24 py-10 h-[2.5rem] w-fit flex justify-center flex-center rounded-full border border-stroke outline-white",
+        "text-body w-fit flex justify-center flex-center rounded-full border border-stroke outline-white",
         "enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out",
         "disabled:cursor-not-allowed disabled:opacity-50",
     ],
@@ -14,9 +14,41 @@ const variants = cva(
                 secondary: ["bg-fg-2 text-text"],
                 red: ["bg-red text-text-invert "],
             },
+            size: {
+                default: [""],
+                compact: [""],
+            },
+            content: {
+                text: [""],
+                icon: [""],
+            },
         },
+        compoundVariants: [
+            {
+                size: "default",
+                content: "text",
+                className: ["px-24 py-[11px]"],
+            },
+            {
+                size: "compact",
+                content: "text",
+                className: ["px-12 py-6"],
+            },
+            {
+                size: "default",
+                content: "icon",
+                className: ["p-8"],
+            },
+            {
+                size: "compact",
+                content: "icon",
+                className: ["p-6"],
+            },
+        ],
         defaultVariants: {
             variant: "primary",
+            size: "default",
+            content: "text",
         },
     },
 );
@@ -27,10 +59,18 @@ export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof variants> {
     variant?: "primary" | "secondary" | "red";
+    size?: "default" | "compact";
+    content?: "text" | "icon";
 }
-export function Button({ children, variant, ...props }: ButtonProps) {
+export function Button({
+    children,
+    variant,
+    size,
+    content,
+    ...props
+}: ButtonProps) {
     return (
-        <button className={variants({ variant })} {...props}>
+        <button className={variants({ variant, size, content })} {...props}>
             {children}
         </button>
     );

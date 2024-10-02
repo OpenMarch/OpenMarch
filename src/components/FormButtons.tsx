@@ -1,4 +1,6 @@
-interface FormButtonsProps {
+import { Button, ButtonProps } from "@/components/ui/Button";
+
+interface FormButtonsProps extends ButtonProps {
     isEditingProp?: boolean;
     setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
     editButton?: string | React.ReactNode;
@@ -19,42 +21,41 @@ interface FormButtonsProps {
  * @param editButton - The text to display on the edit button
  * @param handleCancel - A function to call when the cancel button is clicked
  * @param handleSubmit - A function to call when the submit button is clicked. If not provided, the button will submit the form with the type="submit"
+ * @param ButtonProps - also accepts components/ui/Button props, for styling it.
  * @returns
  */
-export default function FormButtons({ handleCancel,
-    handleSubmit = undefined, isEditingProp = true, setIsEditingProp = undefined,
-    editButton = "Edit" }: FormButtonsProps) {
+export default function FormButtons({
+    handleCancel,
+    handleSubmit = undefined,
+    isEditingProp = true,
+    setIsEditingProp = undefined,
+    editButton = "Edit",
+    ...rest
+}: FormButtonsProps) {
     return (
-        <div style={{ display: 'flex' }}>
-            {!isEditingProp ?
-                <button
-                    className="btn-primary rounded"
-                    title="edit-form-button"
-                    type="button"
+        <>
+            {!isEditingProp ? (
+                <Button
+                    {...rest}
                     onClick={setIsEditingProp && (() => setIsEditingProp(true))}
                 >
                     {editButton}
-                </button>
-                :
+                </Button>
+            ) : (
                 <>
                     {/* handle if handleSubmit is a function */}
-                    {handleSubmit ?
-                        <button className="btn-primary rounded" title="Submit form button" type="button" onClick={handleSubmit}>
+                    {handleSubmit ? (
+                        <Button {...rest} onClick={handleSubmit}>
                             Save Changes
-                        </button> :
-                        <button className="btn-primary rounded" title="Submit form button" type="submit">
-                            Save Changes
-                        </button>
-                    }
-                    <button className="btn-secondary rounded mx-1"
-                        title="Cancel form button"
-                        type="button"
-                        onClick={handleCancel}
-                    >
+                        </Button>
+                    ) : (
+                        <Button {...rest}>Save Changes</Button>
+                    )}
+                    <Button {...rest} onClick={handleCancel}>
                         Cancel
-                    </button>
+                    </Button>
                 </>
-            }
-        </div>
+            )}
+        </>
     );
 }

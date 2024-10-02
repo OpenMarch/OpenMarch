@@ -3,17 +3,23 @@ import PlaybackControls from "./sections/PlaybackControls";
 import UiSettingsToolbar from "./sections/UiSettingsToolbar";
 import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
 import AlignmentToolbar from "./sections/AlignmentToolbar";
-import PerformersLaunchers from "./sections/PerformersLaunchers";
-import ToolbarSection from "./ToolbarSection";
-import { useSidebarMenuStore } from "@/stores/ui/sidebarModalStore";
+import PageListModal from "@/components/page/PageListModal";
+import MusicModal from "@/components/music/MusicModal";
+import MarcherListModal from "@/components/marcher/MarcherListModal";
+import ToolbarSection from "@/components/toolbar/ToolbarSection";
+import { useSidebarModalStore } from "@/stores/ui/sidebarModalStore";
 
 function Topbar() {
-    const { toggleOpen } = useSidebarMenuStore();
+    const { toggleOpen } = useSidebarModalStore();
     return (
         <div className="flex w-full flex-wrap gap-8">
-            <FileControls />
+            {/* <FileControls /> */}
             <PlaybackControls />
-            <PerformersLaunchers />
+            <ToolbarSection>
+                <MarcherListModal />
+                <PageListModal />
+                <MusicModal />
+            </ToolbarSection>
             <UiSettingsToolbar />
             <AlignmentToolbar />
             <ToolbarSection>
