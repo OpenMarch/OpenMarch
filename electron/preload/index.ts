@@ -116,6 +116,7 @@ const APP_API = {
     minimizeWindow: () => ipcRenderer.send("window:minimize"),
     maximizeWindow: () => ipcRenderer.send("window:maximize"),
     closeWindow: () => ipcRenderer.send("window:close"),
+    fullscreenWindow: () => ipcRenderer.send("window:fullscreen"),
 
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),

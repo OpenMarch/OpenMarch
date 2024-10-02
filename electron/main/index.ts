@@ -200,6 +200,14 @@ ipcMain.on("window:close", () => {
     win?.close();
 });
 
+ipcMain.on("window:fullscreen", () => {
+    if (win?.isFullScreen()) {
+        win.setFullScreen(false);
+    } else {
+        win?.setFullScreen(true);
+    }
+});
+
 app.on("second-instance", () => {
     if (win) {
         // Focus on the main window if the user tried to open another
