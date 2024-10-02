@@ -75,7 +75,7 @@ export function initDatabase() {
     createMarcherPageTable(db);
     createFieldPropertiesTable(
         db,
-        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD
+        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES
     );
     createMeasureTable(db);
     createAudioFileTable(db);

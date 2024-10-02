@@ -78,7 +78,7 @@ describe("Canvas", () => {
 
     it.skip("Canvas renders and contains marchers", () => {
         const NCAAFieldProperties =
-            FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD;
+            FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
         const canvas = new OpenMarchCanvas({
             canvasRef: null,
             fieldProperties: NCAAFieldProperties,

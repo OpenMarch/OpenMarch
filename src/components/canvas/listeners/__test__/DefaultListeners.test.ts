@@ -13,7 +13,8 @@ import { fabric } from "fabric";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 describe("DefaultListeners", () => {
-    const NCAAFieldProperties = FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD;
+    const NCAAFieldProperties =
+        FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
     let canvas: OpenMarchCanvas;
     let listeners: DefaultListeners;
 
@@ -170,11 +171,11 @@ describe("DefaultListeners", () => {
             };
             // sleep for 2 milliseconds
             await new Promise((r) => setTimeout(r, 2));
-            const after = Date.now();
 
             listeners.handleMouseDown(fabricEvent);
 
             expect(canvas.selectDragStart.time).toBeGreaterThanOrEqual(before);
+            const after = Date.now();
             expect(canvas.selectDragStart.time).toBeLessThanOrEqual(after);
             expect(canvas.selectDragStart.x).toBe(123);
             expect(canvas.selectDragStart.y).toBe(321);

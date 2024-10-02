@@ -83,7 +83,6 @@ function createFootballFieldXCheckpointsWithEndZones(): Checkpoint[] {
             stepsFromCenterFront: -96,
             useAsReference: true,
             terseName: "EZ",
-            visible: false,
         },
         {
             name: "end zone",
@@ -91,7 +90,6 @@ function createFootballFieldXCheckpointsWithEndZones(): Checkpoint[] {
             stepsFromCenterFront: 96,
             useAsReference: true,
             terseName: "EZ",
-            visible: false,
         }
     );
 

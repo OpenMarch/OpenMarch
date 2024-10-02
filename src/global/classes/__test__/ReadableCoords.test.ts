@@ -29,7 +29,7 @@ describe("ReadableCoords", () => {
         describe("Macro tests", () => {
             beforeAll(() => {
                 ReadableCoords.setFieldProperties(
-                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES
                 );
             });
             describe("On the 50 yard line, on the front sideline (center front)", () => {
@@ -229,7 +229,7 @@ describe("ReadableCoords", () => {
         describe("Micro tests and edge cases", () => {
             beforeAll(() => {
                 ReadableCoords.setFieldProperties(
-                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES
                 );
             });
             it("should format number string with two decimal places", () => {

@@ -7,7 +7,7 @@ describe("FieldProperties.templates", () => {
         let collegeFieldProperties: FieldProperties;
         beforeEach(() => {
             collegeFieldProperties =
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD;
+                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
         });
         it("should create a valid FieldProperties object for college template", () => {
             // expect(collegeFieldProperties).toBeInstanceOf(collegeFieldProperties);
@@ -21,7 +21,7 @@ describe("FieldProperties.templates", () => {
             expect(collegeFieldProperties.height).toBe(853.3);
         });
 
-        it("should create the x checkpoints for an college football field", () => {
+        it("should create the x checkpoints for a college football field without end zones", () => {
             const xCheckpoints = collegeFieldProperties.xCheckpoints;
             expect(xCheckpoints).toHaveLength(21);
             const test50YardLine = xCheckpoints.find(
@@ -126,6 +126,121 @@ describe("FieldProperties.templates", () => {
             }
         });
 
+        it("should create the x checkpoints for a college football field without end zones", () => {
+            const hsWithEndZones =
+                FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES;
+            const xCheckpoints = hsWithEndZones.xCheckpoints;
+            expect(xCheckpoints).toHaveLength(23);
+            const test50YardLine = xCheckpoints.find(
+                (checkpoint) => checkpoint.name === "50 yard line"
+            );
+            expect(test50YardLine).toBeDefined();
+            expect(test50YardLine).toEqual({
+                name: "50 yard line",
+                terseName: "50",
+                axis: "x",
+                stepsFromCenterFront: 0,
+                useAsReference: true,
+                fieldLabel: "50",
+            });
+            const test40YardLineS1 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === -16
+            );
+            expect(test40YardLineS1).toBeDefined();
+            expect(test40YardLineS1).toEqual({
+                name: "40 yard line",
+                terseName: "40",
+                axis: "x",
+                stepsFromCenterFront: -16,
+                useAsReference: true,
+                fieldLabel: "40",
+            });
+            const test40YardLineS2 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === 16
+            );
+            expect(test40YardLineS2).toBeDefined();
+            expect(test40YardLineS2).toEqual({
+                name: "40 yard line",
+                terseName: "40",
+                axis: "x",
+                stepsFromCenterFront: 16,
+                useAsReference: true,
+                fieldLabel: "40",
+            });
+            const test5YardLineS1 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === -72
+            );
+            expect(test5YardLineS1).toBeDefined();
+            expect(test5YardLineS1).toEqual({
+                name: "5 yard line",
+                terseName: "5",
+                axis: "x",
+                stepsFromCenterFront: -72,
+                useAsReference: true,
+                fieldLabel: undefined,
+            });
+            const test5YardLineS2 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === 72
+            );
+            expect(test5YardLineS2).toBeDefined();
+            expect(test5YardLineS2).toEqual({
+                name: "5 yard line",
+                terseName: "5",
+                axis: "x",
+                stepsFromCenterFront: 72,
+                useAsReference: true,
+                fieldLabel: undefined,
+            });
+            const test0YardLineS1 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === -80
+            );
+            expect(test0YardLineS1).toBeDefined();
+            expect(test0YardLineS1).toEqual({
+                name: "0 yard line",
+                terseName: "0",
+                axis: "x",
+                stepsFromCenterFront: -80,
+                useAsReference: true,
+                fieldLabel: undefined,
+            });
+            const test0YardLineS2 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === 80
+            );
+            expect(test0YardLineS2).toBeDefined();
+            expect(test0YardLineS2).toEqual({
+                name: "0 yard line",
+                terseName: "0",
+                axis: "x",
+                stepsFromCenterFront: 80,
+                useAsReference: true,
+                fieldLabel: undefined,
+            });
+            const endZoneS1 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === -96
+            );
+            expect(endZoneS1).toBeDefined();
+            expect(endZoneS1).toEqual({
+                name: "end zone",
+                terseName: "EZ",
+                axis: "x",
+                stepsFromCenterFront: -96,
+                useAsReference: true,
+                fieldLabel: undefined,
+            });
+            const endZoneS2 = xCheckpoints.find(
+                (checkpoint) => checkpoint.stepsFromCenterFront === 96
+            );
+            expect(endZoneS2).toBeDefined();
+            expect(endZoneS2).toEqual({
+                name: "end zone",
+                terseName: "EZ",
+                axis: "x",
+                stepsFromCenterFront: 96,
+                useAsReference: true,
+                fieldLabel: undefined,
+            });
+        });
+
         it("should create the y checkpoints for an college football field", () => {
             const yCheckpoints = collegeFieldProperties.yCheckpoints;
             expect(yCheckpoints).toHaveLength(6);
@@ -214,7 +329,7 @@ describe("FieldProperties.templates", () => {
         let highSchoolFieldProperties: FieldProperties;
         beforeEach(() => {
             highSchoolFieldProperties =
-                FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD;
+                FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
         });
         it("should create a valid FieldProperties object for high school template", () => {
             // expect(highSchoolFieldProperties).toBeInstanceOf(highSchoolFieldProperties);

@@ -11,7 +11,8 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
 
 describe("OpenMarchCanvas", () => {
-    const NCAAFieldProperties = FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD;
+    const NCAAFieldProperties =
+        FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
     afterEach(() => {
         vi.clearAllMocks();
         cleanup();
