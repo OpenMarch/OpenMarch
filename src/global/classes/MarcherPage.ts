@@ -68,7 +68,7 @@ export default class MarcherPage {
      */
     static async updateMarcherPages(
         modifiedMarcherPages: ModifiedMarcherPageArgs[]
-    ): Promise<DatabaseResponse> {
+    ): Promise<DatabaseResponse<MarcherPage>> {
         const response = await window.electron.updateMarcherPages(
             modifiedMarcherPages
         );

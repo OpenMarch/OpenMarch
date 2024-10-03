@@ -13,6 +13,8 @@ export const falsyUiSettings: UiSettings = {
     lockY: false,
     previousPaths: false,
     nextPaths: false,
+    gridLines: false,
+    halfLines: false,
 };
 
 export const mockMarchers: Marcher[] = [

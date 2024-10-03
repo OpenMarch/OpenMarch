@@ -1,7 +1,7 @@
 {
     "name": "openmarch",
     "productName": "OpenMarch",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "main": "dist-electron/main/index.js",
     "description": "Electron Vite React boilerplate.",
     "author": "Alex Dumouchelle",

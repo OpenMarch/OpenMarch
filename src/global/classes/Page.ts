@@ -48,17 +48,27 @@ class Page {
      */
     static fetchPages: () => Promise<void>;
 
-    constructor({ id, id_for_html, name, counts, order, notes }: {
-        id: number, id_for_html: string, name: string, counts: number, order: number, notes?: string
+    constructor({
+        id,
+        id_for_html,
+        name,
+        counts,
+        order,
+        notes,
+    }: {
+        id: number;
+        id_for_html: string;
+        name: string;
+        counts: number;
+        order: number;
+        notes?: string;
     }) {
         this.id = id;
         this.id_for_html = id_for_html;
         this.name = name;
 
-        if (counts < 0)
-            this.counts = 1;
-        else
-            this.counts = counts;
+        if (counts < 0) this.counts = 1;
+        else this.counts = counts;
 
         this.order = order;
 
@@ -115,14 +125,17 @@ class Page {
      * @param newPagesArg - The new pages to be created in order of how they should be created.
      * @returns DatabaseResponse: { success: boolean; error?: Error; newPages?: NewPageContainer[];}
      */
-    static async createPages(newPagesArgs: NewPageArgs[]):
-        Promise<{ success: boolean; error?: { message: string, stack?: string }; newPages?: NewPageContainer[]; }> {
-
+    static async createPages(newPagesArgs: NewPageArgs[]): Promise<{
+        success: boolean;
+        error?: { message: string; stack?: string };
+        newPages?: NewPageContainer[];
+    }> {
         // Get the existing pages and create them as objects. (Electron only returns serialized data)
-        const existingPages = Page.sortPagesByOrder(
-            await Page.getPages()).map((page) => {
-                return new Page(page)
-            });
+        const existingPages = Page.sortPagesByOrder(await Page.getPages()).map(
+            (page) => {
+                return new Page(page);
+            }
+        );
         // What all the new pages will look like
         const futurePages: ModifiedPageArgs[] = existingPages.map((page) => {
             const isSubset = page.splitPageName().subset !== null;
@@ -130,7 +143,7 @@ class Page {
                 id: page.id,
                 counts: page.counts,
                 notes: page.notes,
-                isSubset: isSubset
+                isSubset: isSubset,
             };
         });
 
@@ -138,23 +151,32 @@ class Page {
         const newPageTempId = -1;
         newPagesArgs.forEach((newPageArg) => {
             // If there is no previous page, add the new page to the end of the show
-            const previousPageIdx =
-                newPageArg.previousPage ?
-                    futurePages.findIndex((page) => page.id === newPageArg.previousPage!.id)
-                    : futurePages.length - 1;
+            const previousPageIdx = newPageArg.previousPage
+                ? futurePages.findIndex(
+                      (page) => page.id === newPageArg.previousPage!.id
+                  )
+                : futurePages.length - 1;
 
             // find the next page that is not a new page
             let newPageIdx = previousPageIdx + 1;
             if (futurePages.length > 0) {
-                while (futurePages[newPageIdx] && (futurePages[newPageIdx].id === newPageTempId))
+                while (
+                    futurePages[newPageIdx] &&
+                    futurePages[newPageIdx].id === newPageTempId
+                )
                     newPageIdx++;
             }
 
-            futurePages.splice(newPageIdx, 0, { ...newPageArg, id: newPageTempId });
-        })
+            futurePages.splice(newPageIdx, 0, {
+                ...newPageArg,
+                id: newPageTempId,
+            });
+        });
 
         // Generate the page names for all the pages (if one was appended in the middle, all the following will change)
-        const futurePageNames = this.generatePageNames(futurePages.map((page) => page.isSubset || false));
+        const futurePageNames = this.generatePageNames(
+            futurePages.map((page) => page.isSubset || false)
+        );
         let currentOrder = 0;
         // If we are adding a new page, we need to modify the following existing pages
         let modifyExistingPages = false;
@@ -170,8 +192,7 @@ class Page {
                     counts: futurePage.counts!,
                     order: currentOrder,
                 };
-                if (futurePage.notes)
-                    newPageContainer.notes = futurePage.notes;
+                if (futurePage.notes) newPageContainer.notes = futurePage.notes;
 
                 newPageContainers.push(newPageContainer);
                 // Since we are adding a new page, we need to modify the following existing pages
@@ -181,7 +202,7 @@ class Page {
                 modifiedPageContainers.push({
                     id: futurePage.id,
                     name: futurePageNames[i],
-                    order: currentOrder
+                    order: currentOrder,
                 });
             }
             currentOrder++;
@@ -189,7 +210,11 @@ class Page {
 
         try {
             // Update the existing pages names and orders
-            let response = await window.electron.updatePages(modifiedPageContainers, false, true);
+            let response = await window.electron.updatePages(
+                modifiedPageContainers,
+                false,
+                true
+            );
             if (!response.success) {
                 throw response.error;
             }
@@ -200,11 +225,16 @@ class Page {
             if (!response.success) {
                 // Revert the changes to the existing pages
                 modifiedPageContainers.forEach((page) => {
-                    const existingPage = existingPages.find((existingPage) => existingPage.id === page.id)!;
+                    const existingPage = existingPages.find(
+                        (existingPage) => existingPage.id === page.id
+                    )!;
                     page.name = existingPage.name;
                     page.order = existingPage.order;
                 });
-                await window.electron.updatePages(modifiedPageContainers, false);
+                await window.electron.updatePages(
+                    modifiedPageContainers,
+                    false
+                );
                 throw response.error;
             }
 
@@ -215,7 +245,10 @@ class Page {
             return { ...response, newPages: newPageContainers };
         } catch (error: any) {
             console.error("Error creating pages: ", error);
-            return { success: false, error: error || new Error("Error creating pages") };
+            return {
+                success: false,
+                error: error || new Error("Error creating pages"),
+            };
         }
     }
 
@@ -227,15 +260,14 @@ class Page {
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updatePages(modifiedPagesArg: ModifiedPageArgs[]) {
-        const modifiedPagesToSend: ModifiedPageContainer[] = modifiedPagesArg.map((page) => {
-            const modifiedPage: ModifiedPageContainer = { id: page.id };
-            if (page.counts)
-                modifiedPage.counts = page.counts;
-            if (page.notes)
-                modifiedPage.notes = page.notes;
+        const modifiedPagesToSend: ModifiedPageContainer[] =
+            modifiedPagesArg.map((page) => {
+                const modifiedPage: ModifiedPageContainer = { id: page.id };
+                if (page.counts) modifiedPage.counts = page.counts;
+                if (page.notes) modifiedPage.notes = page.notes;
 
-            return modifiedPage;
-        });
+                return modifiedPage;
+            });
         const response = await window.electron.updatePages(modifiedPagesToSend);
         // fetch the pages to update the store
         this.checkForFetchPages();
@@ -253,15 +285,21 @@ class Page {
      */
     static async deletePage(page_id: number) {
         // Get the existing pages and create them as objects. (Electron only returns serialized data)
-        const existingPages = Page.sortPagesByOrder(
-            await Page.getPages()).map((page) => {
-                return new Page(page)
-            });
+        const existingPages = Page.sortPagesByOrder(await Page.getPages()).map(
+            (page) => {
+                return new Page(page);
+            }
+        );
         const deletedPage = existingPages.find((page) => page.id === page_id);
 
         if (!deletedPage) {
             console.error("Error deleting page: Page not found");
-            return { success: false, error: new Error(`Error deleting page: Page with id: ${page_id} not found`) };
+            return {
+                success: false,
+                error: new Error(
+                    `Error deleting page: Page with id: ${page_id} not found`
+                ),
+            };
         }
 
         const futurePages: ModifiedPageArgs[] = [];
@@ -273,12 +311,14 @@ class Page {
                     id: page.id,
                     counts: page.counts,
                     notes: page.notes,
-                    isSubset: isSubset
+                    isSubset: isSubset,
                 });
             }
         });
 
-        const futurePageNames = this.generatePageNames(futurePages.map((page) => page.isSubset || false));
+        const futurePageNames = this.generatePageNames(
+            futurePages.map((page) => page.isSubset || false)
+        );
         let currentOrder = 0;
         const modifiedPageContainers: ModifiedPageContainer[] = [];
         futurePages.forEach((futurePage, i) => {
@@ -286,7 +326,7 @@ class Page {
                 modifiedPageContainers.push({
                     id: futurePage.id,
                     name: futurePageNames[i],
-                    order: currentOrder
+                    order: currentOrder,
                 });
             }
             currentOrder++;
@@ -294,20 +334,26 @@ class Page {
 
         try {
             this.checkForFetchPages();
-            let response = await window.electron.deletePage(page_id);
-            if (!response.success) {
-                throw response.error;
+            const deleteResponse = await window.electron.deletePage(page_id);
+            if (!deleteResponse.success) {
+                throw deleteResponse.error;
             }
-            response = await window.electron.updatePages(modifiedPageContainers, false);
-            if (!response.success) {
-                throw response.error;
+            const updateResponse = await window.electron.updatePages(
+                modifiedPageContainers,
+                false
+            );
+            if (!updateResponse.success) {
+                throw updateResponse.error;
             }
             // fetch the pages to update the store
             this.fetchPages();
-            return response;
+            return updateResponse;
         } catch (error: any) {
             console.error("Error deleting page: ", error);
-            return { success: false, error: error || new Error("Error deleting page") };
+            return {
+                success: false,
+                error: error || new Error("Error deleting page"),
+            };
         }
     }
 
@@ -316,7 +362,9 @@ class Page {
      */
     static checkForFetchPages() {
         if (!this.fetchPages)
-            console.error("fetchPages is not defined. The UI will not update properly.");
+            console.error(
+                "fetchPages is not defined. The UI will not update properly."
+            );
     }
 
     /**
@@ -335,11 +383,13 @@ class Page {
      * @returns The first Page or null if there are no Pages.
      */
     static getFirstPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0)
-            return null;
+        if (!allPages || allPages.length === 0) return null;
 
         const firstPage = allPages.reduce((nearestFirstPage, current) => {
-            if (nearestFirstPage === null || current.order < nearestFirstPage.order) {
+            if (
+                nearestFirstPage === null ||
+                current.order < nearestFirstPage.order
+            ) {
                 return current;
             }
             return nearestFirstPage;
@@ -355,11 +405,13 @@ class Page {
      * @returns The last Page or null if there are no Pages.
      */
     static getLastPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0)
-            return null;
+        if (!allPages || allPages.length === 0) return null;
 
         const lastPage = allPages.reduce((nearestLastPage, current) => {
-            if (nearestLastPage === null || current.order > nearestLastPage.order) {
+            if (
+                nearestLastPage === null ||
+                current.order > nearestLastPage.order
+            ) {
                 return current;
             }
             return nearestLastPage;
@@ -381,7 +433,11 @@ class Page {
         let currentMeasureBeat = 1;
         let currentTimestamp = 0;
 
-        for (let currentPageIndex = 0; currentPageIndex < outputPages.length; currentPageIndex++) {
+        for (
+            let currentPageIndex = 0;
+            currentPageIndex < outputPages.length;
+            currentPageIndex++
+        ) {
             if (currentMeasureIndex >= measures.length) {
                 console.log("Not enough measures to align with pages.");
                 break;
@@ -391,7 +447,8 @@ class Page {
             outputPages[currentPageIndex]._hasBeenAligned = true;
             outputPages[currentPageIndex]._measures = [];
             outputPages[currentPageIndex]._duration = 0;
-            outputPages[currentPageIndex]._measureBeatToStartOn = currentMeasureBeat;
+            outputPages[currentPageIndex]._measureBeatToStartOn =
+                currentMeasureBeat;
 
             // Loop through the measures until the page is filled, or there are no more measures
             while (remainingCounts > 0) {
@@ -403,20 +460,31 @@ class Page {
 
                 outputPages[currentPageIndex]._measures.push(currentMeasure);
                 // Add the offset of the current measure beat
-                const offsetBigBeats = currentMeasure.getBigBeats() - currentMeasureBeat + 1;
-                if (remainingCounts - offsetBigBeats >= 0) { // there are enough remaining counts in the page to complete the measure
-                    if (currentMeasureIndex === measures.length - 1) { // last measure
-                        const durationPerBeat = currentMeasure.duration / currentMeasure.getBigBeats();
-                        outputPages[currentPageIndex]._duration += durationPerBeat * remainingCounts;
+                const offsetBigBeats =
+                    currentMeasure.getBigBeats() - currentMeasureBeat + 1;
+                if (remainingCounts - offsetBigBeats >= 0) {
+                    // there are enough remaining counts in the page to complete the measure
+                    if (currentMeasureIndex === measures.length - 1) {
+                        // last measure
+                        const durationPerBeat =
+                            currentMeasure.duration /
+                            currentMeasure.getBigBeats();
+                        outputPages[currentPageIndex]._duration +=
+                            durationPerBeat * remainingCounts;
                         break;
-
-                    } else { // not the last measure, fill the page with beats from the measures
-                        outputPages[currentPageIndex]._duration += (offsetBigBeats / currentMeasure.getBigBeats()) * currentMeasure.duration;
+                    } else {
+                        // not the last measure, fill the page with beats from the measures
+                        outputPages[currentPageIndex]._duration +=
+                            (offsetBigBeats / currentMeasure.getBigBeats()) *
+                            currentMeasure.duration;
                         currentMeasureIndex++;
                         currentMeasureBeat = 1;
                     }
-                } else { // there are not enough counts in the page to complete the measure. Add the remaining counts to the duration
-                    outputPages[currentPageIndex]._duration += (remainingCounts / currentMeasure.getBigBeats()) * currentMeasure.duration;
+                } else {
+                    // there are not enough counts in the page to complete the measure. Add the remaining counts to the duration
+                    outputPages[currentPageIndex]._duration +=
+                        (remainingCounts / currentMeasure.getBigBeats()) *
+                        currentMeasure.duration;
                     currentMeasureBeat = remainingCounts + 1;
                     break;
                 }
@@ -442,21 +510,27 @@ class Page {
      * @throws If the current Page is not found in the list of all Pages.
      */
     getNextPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0)
-            return null;
+        if (!allPages || allPages.length === 0) return null;
 
-        const higherOrderPages = allPages.filter((page) => page.order > this.order);
-        if (higherOrderPages.length === 0)
-            return null; // the current page is the last page
+        const higherOrderPages = allPages.filter(
+            (page) => page.order > this.order
+        );
+        if (higherOrderPages.length === 0) return null; // the current page is the last page
 
         // find the nearest page with an order greater than the current page
         const sortedHigherOrderPages = Page.sortPagesByOrder(higherOrderPages);
-        const nextPage = sortedHigherOrderPages.reduce((nearestNextPage, current) => {
-            if (current.order > this.order && (nearestNextPage === null || current.order < nearestNextPage.order)) {
-                return current;
+        const nextPage = sortedHigherOrderPages.reduce(
+            (nearestNextPage, current) => {
+                if (
+                    current.order > this.order &&
+                    (nearestNextPage === null ||
+                        current.order < nearestNextPage.order)
+                ) {
+                    return current;
+                }
+                return nearestNextPage;
             }
-            return nearestNextPage;
-        });
+        );
 
         return nextPage !== this ? nextPage : null;
     }
@@ -470,21 +544,28 @@ class Page {
      * @throws If the current Page is not found in the list of all Pages.
      */
     getPreviousPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0)
-            return null;
+        if (!allPages || allPages.length === 0) return null;
 
-        const lowerOrderPages = allPages.filter((page) => page.order < this.order);
-        if (lowerOrderPages.length === 0)
-            return null; // the current page is the first page
+        const lowerOrderPages = allPages.filter(
+            (page) => page.order < this.order
+        );
+        if (lowerOrderPages.length === 0) return null; // the current page is the first page
 
         // find the nearest page with an order greater than the current page
-        const sortedLowerOrderPages = Page.sortPagesByOrder(lowerOrderPages).reverse();
-        const previousPage = sortedLowerOrderPages.reduce((nearestPreviousPage, current) => {
-            if (current.order < this.order && (nearestPreviousPage === null || current.order > nearestPreviousPage.order)) {
-                return current;
+        const sortedLowerOrderPages =
+            Page.sortPagesByOrder(lowerOrderPages).reverse();
+        const previousPage = sortedLowerOrderPages.reduce(
+            (nearestPreviousPage, current) => {
+                if (
+                    current.order < this.order &&
+                    (nearestPreviousPage === null ||
+                        current.order > nearestPreviousPage.order)
+                ) {
+                    return current;
+                }
+                return nearestPreviousPage;
             }
-            return nearestPreviousPage;
-        });
+        );
 
         return previousPage !== this ? previousPage : null;
     }
@@ -502,25 +583,22 @@ class Page {
      * @returns A list of page names in the order that the list of booleans was provided.
      */
     private static generatePageNames(isSubsetArr: boolean[]) {
-        const pageNames: string[] = ['1'];
+        const pageNames: string[] = ["1"];
         let curPageNumber = 1;
         let curSubsetLetter = "";
 
         // Loop through the pages and create the page names
         // 1, 2, 2A, 3, 3A, 3B, 4, etc.
         for (let i = 1; i < isSubsetArr.length; i++) {
-            const pageName = Page.getNextPageName(
-                {
-                    pageNumber: curPageNumber,
-                    subsetString: isSubsetArr[i] ? curSubsetLetter : null,
-                    incrementSubset: isSubsetArr[i]
-                }
-            );
+            const pageName = Page.getNextPageName({
+                pageNumber: curPageNumber,
+                subsetString: isSubsetArr[i] ? curSubsetLetter : null,
+                incrementSubset: isSubsetArr[i],
+            });
             pageNames.push(pageName);
             if (isSubsetArr[i]) {
                 curSubsetLetter = incrementLetters(curSubsetLetter);
-            }
-            else {
+            } else {
                 curPageNumber++;
                 curSubsetLetter = "";
             }
@@ -537,22 +615,26 @@ class Page {
      *      Default is false, which increments the number. If true, increments the subset letter and not the number.
      * @returns
      */
-    private static getNextPageName({ pageNumber, subsetString, incrementSubset = false }:
-        { pageNumber: number, subsetString: string | null, incrementSubset?: boolean; }) {
-
+    private static getNextPageName({
+        pageNumber,
+        subsetString,
+        incrementSubset = false,
+    }: {
+        pageNumber: number;
+        subsetString: string | null;
+        incrementSubset?: boolean;
+    }) {
         let newPageNumber = pageNumber;
         let newSubsetString = subsetString || "";
 
         if (incrementSubset) {
             // If there is no subset, start with "A"
-            if (!subsetString || subsetString === "")
-                newSubsetString = "A";
+            if (!subsetString || subsetString === "") newSubsetString = "A";
             // Otherwise, increment the subset letter
-            else
-                newSubsetString = incrementLetters(subsetString);
+            else newSubsetString = incrementLetters(subsetString);
         } else {
             newPageNumber = pageNumber + 1;
-            newSubsetString = ""
+            newSubsetString = "";
         }
 
         return newPageNumber + newSubsetString;
@@ -566,13 +648,12 @@ class Page {
      * @param pageName The name of the current page to split.
      * @returns - { number: number, subset: string | null}
      */
-    private splitPageName(): { number: number, subset: string | null } {
+    private splitPageName(): { number: number; subset: string | null } {
         const match = this.name.match(/^(\d+)([A-Za-z]*)$/);
         if (match) {
             const subsetLetter = match[2].length > 0 ? match[2] : null;
             return { number: parseInt(match[1], 10), subset: subsetLetter };
-        } else
-            throw new Error("Invalid page name: " + this.name);
+        } else throw new Error("Invalid page name: " + this.name);
     }
 }
 
@@ -621,7 +702,6 @@ export interface NewPageContainer {
     notes?: string;
 }
 
-
 /**
  * This SHOULD NOT be used outside of the Page class or database functions.
  * The object that is sent to the database to modify a page.
@@ -651,8 +731,8 @@ function incrementLetters(letters: string) {
     for (let i = capitalizedLetters.length - 1; i >= 0; i--) {
         let char = capitalizedLetters[i];
         if (carry) {
-            if (char === 'Z') {
-                result.push('A');
+            if (char === "Z") {
+                result.push("A");
             } else {
                 result.push(String.fromCharCode(char.charCodeAt(0) + 1));
                 carry = false; // No carry needed if we haven't wrapped from 'Z' to 'A'
@@ -664,9 +744,9 @@ function incrementLetters(letters: string) {
 
     // If the string was all 'Z's, we will have carry left over after processing all characters
     if (carry) {
-        result.push('A'); // Append 'A' to handle cases like 'ZZ' -> 'AAA'
+        result.push("A"); // Append 'A' to handle cases like 'ZZ' -> 'AAA'
     }
 
     // Since we've constructed the result in reverse order, reverse it back and join into a string
-    return result.reverse().join('');
+    return result.reverse().join("");
 }
