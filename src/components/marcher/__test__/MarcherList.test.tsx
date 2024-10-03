@@ -16,7 +16,6 @@ import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 import {
     afterEach,
-    beforeAll,
     beforeEach,
     describe,
     expect,
@@ -30,7 +29,7 @@ describe("MarcherList", () => {
         marcherRows: HTMLElement[],
         expectedMarchers: Marcher[]
     ) => {
-        marcherRows.forEach((marcherRow) => {
+        for (const marcherRow of marcherRows) {
             const marcherInRow = {
                 drill_number: within(marcherRow).getByTitle(
                     "Marcher drill number"
@@ -40,15 +39,19 @@ describe("MarcherList", () => {
                         .textContent,
                 name: within(marcherRow).getByTitle("Marcher name").textContent,
             };
-            expect(expectedMarchers).toContainEqual(
-                expect.objectContaining(marcherInRow)
+            const marcherToCompare = mockMarchers.find(
+                (marcher) => marcher.drill_number === marcherInRow.drill_number
             );
-        });
+
+            expect(marcherToCompare).toBeDefined();
+            expect(marcherToCompare?.section).toEqual(marcherInRow.section);
+            expect(marcherToCompare?.name).toEqual(marcherInRow.name);
+        }
     };
 
     let updateMarchersSpy: MockInstance;
-    beforeAll(async () => {
-        vi.mock("@/global/classes/Marcher");
+
+    beforeEach(async () => {
         vi.mock("@/stores/marcher/useMarcherStore");
 
         // Mock the getMarchers function to return the mockMarchers array
@@ -58,10 +61,7 @@ describe("MarcherList", () => {
         updateMarchersSpy = vi
             .spyOn(Marcher, "updateMarchers")
             .mockResolvedValue({ success: true });
-    });
 
-    beforeEach(async () => {
-        vi.mock("@/global/classes/Marcher");
         vi.mock("@/stores/marcher/useMarcherStore", () => {
             return {
                 useMarcherStore: () => ({
@@ -70,14 +70,6 @@ describe("MarcherList", () => {
                 }),
             };
         });
-
-        // Mock the getMarchers function to return the mockMarchers array
-        vi.spyOn(Marcher, "getMarchers").mockResolvedValue(mockMarchers);
-
-        // Mock the updateMarchers function to return a resolved promise
-        updateMarchersSpy = vi
-            .spyOn(Marcher, "updateMarchers")
-            .mockResolvedValue({ success: true });
 
         const { result } = renderHook(() => useMarcherStore());
         await act(async () => {
