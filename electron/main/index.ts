@@ -428,7 +428,7 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
         filters: [
             {
                 name: "MusicXML File (compressed or uncompressed)",
-                extensions: ["mxl", "musicxml", "xml"],
+                extensions: [/*"mxl",*/ "musicxml", "xml"],
             },
         ],
     });

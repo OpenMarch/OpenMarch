@@ -1,8 +1,5 @@
 import { useUiSettingsStore } from "@/stores/uiSettings/useUiSettingsStore";
-import { TbAxisX, TbAxisY, TbKeyframeAlignCenterFilled } from "react-icons/tb";
-import { MdAlignHorizontalCenter, MdAlignVerticalCenter } from "react-icons/md";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import { FaEllipsisH, FaEllipsisV } from "react-icons/fa";
 import {
     ArrowsHorizontal,
     ArrowsVertical,
@@ -11,6 +8,8 @@ import {
     AlignCenterVerticalSimple,
     AlignCenterVertical,
     AlignCenterHorizontal,
+    DotsThreeOutline,
+    DotsThreeOutlineVertical,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
@@ -72,14 +71,14 @@ export default function UiSettingsToolbar() {
                         RegisteredActionsObjects.evenlyDistributeVertically
                     }
                 >
-                    <AlignCenterVertical size={24} />
+                    <DotsThreeOutlineVertical size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.evenlyDistributeHorizontally
                     }
                 >
-                    <AlignCenterHorizontal size={24} />
+                    <DotsThreeOutline size={24} />
                 </RegisteredActionButton>
             </ToolbarSection>
             <ToolbarSection aria-label="Set marcher positions">

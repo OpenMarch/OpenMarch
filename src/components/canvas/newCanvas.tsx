@@ -49,7 +49,7 @@ export default function Canvas({ className = "" }: { className?: string }) {
             return;
 
         const curMarcherPages = marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === selectedPage.id
+            (marcherPage) => marcherPage.page_id === selectedPage.id,
         );
 
         // Get the canvas marchers on the canvas
@@ -60,22 +60,22 @@ export default function Canvas({ className = "" }: { className?: string }) {
             // Marcher does not exist on the Canvas, create a new one
             const curCanvasMarcher = curCanvasMarchers.find(
                 (canvasMarcher) =>
-                    canvasMarcher.marcherObj.id === marcherPage.marcher_id
+                    canvasMarcher.marcherObj.id === marcherPage.marcher_id,
             );
             if (!curCanvasMarcher) {
                 const curMarcher = marchers.find(
-                    (marcher) => marcher.id === marcherPage.marcher_id
+                    (marcher) => marcher.id === marcherPage.marcher_id,
                 );
                 if (!curMarcher) {
                     console.error(
-                        "Marcher not found - renderMarchers: Canvas.tsx"
+                        "Marcher not found - renderMarchers: Canvas.tsx",
                     );
                     return;
                 }
 
                 canvas.current &&
                     canvas.current.add(
-                        new CanvasMarcher({ marcher: curMarcher, marcherPage })
+                        new CanvasMarcher({ marcher: curMarcher, marcherPage }),
                     );
             }
             // Marcher exists on the Canvas, move it to the new location if it has changed
@@ -126,16 +126,16 @@ export default function Canvas({ className = "" }: { className?: string }) {
             if (!(canvas.current && marchers && marcherPages)) return;
 
             const theseMarcherPages = marcherPages.filter(
-                (marcherPage) => page.id === marcherPage.page_id
+                (marcherPage) => page.id === marcherPage.page_id,
             );
 
             theseMarcherPages.forEach((marcherPage) => {
                 const curMarcher = marchers.find(
-                    (marcher) => marcher.id === marcherPage.marcher_id
+                    (marcher) => marcher.id === marcherPage.marcher_id,
                 );
                 if (!curMarcher) {
                     console.error(
-                        "Marcher not found - renderStaticMarchers: Canvas.tsx"
+                        "Marcher not found - renderStaticMarchers: Canvas.tsx",
                     );
                     return;
                 }
@@ -150,7 +150,7 @@ export default function Canvas({ className = "" }: { className?: string }) {
             });
             canvas.current.requestRenderAll();
         },
-        [marchers, marcherPages]
+        [marchers, marcherPages],
     );
 
     const removePathways = useCallback(() => {
@@ -175,19 +175,19 @@ export default function Canvas({ className = "" }: { className?: string }) {
             if (!(canvas.current && selectedPage && marcherPages)) return;
 
             const selectedPageMarcherPages = marcherPages.filter(
-                (marcherPage) => marcherPage.page_id === selectedPage.id
+                (marcherPage) => marcherPage.page_id === selectedPage.id,
             );
 
             if (!page) return; // If there is no previous page, return
 
             const previousPageMarcherPages = marcherPages.filter(
-                (marcherPage) => marcherPage.page_id === page.id
+                (marcherPage) => marcherPage.page_id === page.id,
             );
             previousPageMarcherPages.forEach((previousMarcherPage) => {
                 const selectedMarcherPage = selectedPageMarcherPages.find(
                     (marcherPage) =>
                         marcherPage.marcher_id ===
-                        previousMarcherPage.marcher_id
+                        previousMarcherPage.marcher_id,
                 );
                 if (!selectedMarcherPage) return; // If the marcher does not exist on the selected page, return
 
@@ -200,7 +200,7 @@ export default function Canvas({ className = "" }: { className?: string }) {
                 canvas.current && canvas.current.add(pathway);
             });
         },
-        [selectedPage, marcherPages]
+        [selectedPage, marcherPages],
     );
 
     /**
@@ -232,7 +232,7 @@ export default function Canvas({ className = "" }: { className?: string }) {
                     {
                         canvas: canvas.current,
                         ...ActiveObjectArgs,
-                    }
+                    },
                 );
 
                 canvas.current.setActiveObject(activeSelection);
@@ -252,11 +252,11 @@ export default function Canvas({ className = "" }: { className?: string }) {
                 .map((activeObject) => activeObject.marcherObj.id);
             console.log("ACTIVE MARCHER IDS", activeMarcherIds);
             const newSelectedMarchers = marchers.filter((marcher) =>
-                activeMarcherIds.includes(marcher.id)
+                activeMarcherIds.includes(marcher.id),
             );
             setSelectedMarchers(newSelectedMarchers);
         },
-        [marchers, setSelectedMarchers, uiSettings.lockX, uiSettings.lockY]
+        [marchers, setSelectedMarchers, uiSettings.lockX, uiSettings.lockY],
     );
 
     // /* -------------------------- Listener Functions -------------------------- */
@@ -484,19 +484,25 @@ export default function Canvas({ className = "" }: { className?: string }) {
     useEffect(() => {
         // Don't create a new canvas if one already exists
         // Wait until the field properties and the canvasRef are defined
-        if (!canvas.current && !!canvasRef.current && !!fieldProperties) {
+        if (
+            !canvas.current &&
+            !!canvasRef.current &&
+            !!fieldProperties &&
+            !!uiSettings
+        ) {
             canvas.current = new OpenMarchCanvas(
                 canvasRef.current,
-                fieldProperties
+                fieldProperties,
+                uiSettings,
             );
             // set the initial listeners
             canvas.current.setListeners(
                 new DefaultListeners({
                     canvas: canvas.current,
-                })
+                }),
             );
         }
-    }, [fieldProperties]);
+    }, [fieldProperties, uiSettings]);
 
     // Update the renderMarcher function on state changes
     useEffect(() => {
@@ -516,7 +522,7 @@ export default function Canvas({ className = "" }: { className?: string }) {
                     canvas.current.setListeners(
                         new DefaultListeners({
                             canvas: canvas.current,
-                        })
+                        }),
                     );
                     break;
             }
@@ -585,13 +591,13 @@ export default function Canvas({ className = "" }: { className?: string }) {
         }
 
         const selectedMarcherIds = selectedMarchers.map(
-            (marcher) => marcher.id
+            (marcher) => marcher.id,
         );
         const allCanvasMarchers: CanvasMarcher[] =
             canvas.current.getCanvasMarchers();
         const canvasMarchersToSelect = allCanvasMarchers.filter(
             (canvasMarcher) =>
-                selectedMarcherIds.includes(canvasMarcher.marcherObj.id)
+                selectedMarcherIds.includes(canvasMarcher.marcherObj.id),
         );
         // TODO make a function to set the selected CanvasMarchers
         setSelectedCanvasMarchers(canvasMarchersToSelect);
@@ -614,7 +620,7 @@ export default function Canvas({ className = "" }: { className?: string }) {
                 if (!nextPage) return;
 
                 const nextPageMarcherPages = marcherPages.filter(
-                    (marcherPage) => marcherPage.page_id === nextPage.id
+                    (marcherPage) => marcherPage.page_id === nextPage.id,
                 );
                 const canvasMarchers = canvas.current.getCanvasMarchers();
                 canvasMarchers.forEach((canvasMarcher) => {
@@ -625,12 +631,12 @@ export default function Canvas({ className = "" }: { className?: string }) {
                         (marcherPage) =>
                             marcherPage.marcher_id ===
                                 canvasMarcher.marcherObj.id &&
-                            marcherPage.page_id === nextPage.id
+                            marcherPage.page_id === nextPage.id,
                     );
                     if (!marcherPageToUse) {
                         console.error(
                             "Marcher page not found - startAnimation: Canvas.tsx",
-                            canvasMarcher
+                            canvasMarcher,
                         );
                         return;
                     }
@@ -677,7 +683,7 @@ export default function Canvas({ className = "" }: { className?: string }) {
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
                 // If there are no marchers or pages, display a message
-                <div className="flex bg-gray-900 text-white h-full w-full align-middle flex-col justify-center text-center">
+                <div className="bg-gray-900 flex h-full w-full flex-col justify-center text-center align-middle text-white">
                     <h3>To start the show, create Marchers and Pages</h3>
                     <p>Then {"`Window -> Refresh` (or `Ctrl+R`)"}</p>
                     <h5>

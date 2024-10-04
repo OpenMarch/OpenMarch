@@ -1,4 +1,5 @@
 import { useSidebarModalStore } from "@/stores/ui/sidebarModalStore";
+import { ReactNode } from "react";
 
 export default function SidebarModal() {
     const { isSidebarModalOpen, content } = useSidebarModalStore();
@@ -13,11 +14,20 @@ export default function SidebarModal() {
     );
 }
 
-export function SidebarModalLauncher({ buttonLabel }: { buttonLabel: string }) {
-    const { toggleOpen } = useSidebarModalStore();
+export function SidebarModalLauncher({
+    buttonLabel,
+    contents,
+}: {
+    buttonLabel: string;
+    contents: ReactNode;
+}) {
+    const { toggleOpen, setContent } = useSidebarModalStore();
     return (
         <button
-            onClick={toggleOpen}
+            onClick={() => {
+                setContent(contents);
+                toggleOpen();
+            }}
             className="duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50"
         >
             {buttonLabel}

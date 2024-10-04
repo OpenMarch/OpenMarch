@@ -1,7 +1,7 @@
 import { Minus, Square, X } from "@phosphor-icons/react";
 
 export default function TitleBar() {
-    const isMacOS = window.electron.isMacOS || false;
+    const isMacOS = false;
 
     console.log("is macOS: " + isMacOS);
 

@@ -32,7 +32,7 @@ const variants = cva(
             {
                 size: "compact",
                 content: "text",
-                className: ["px-12 py-6"],
+                className: ["px-10 py-4"],
             },
             {
                 size: "default",
@@ -42,7 +42,7 @@ const variants = cva(
             {
                 size: "compact",
                 content: "icon",
-                className: ["p-6"],
+                className: ["p-4"],
             },
         ],
         defaultVariants: {

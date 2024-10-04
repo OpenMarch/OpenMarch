@@ -3,54 +3,79 @@ import * as RadixSelect from "@radix-ui/react-select";
 import {
     SelectItemProps as RadixSelectItemProps,
     SelectProps as RadixSelectProps,
+    SelectContentProps as RadixSelectContentProps,
+    SelectTriggerProps as RadixSelectTriggerProps,
 } from "@radix-ui/react-select";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CaretUp, CaretDown, Check } from "@phosphor-icons/react";
 
-export type SelectProps = RadixSelectProps & {
-    label: string;
-    className?: string;
+export type SelectProps = RadixSelectProps;
+export const Select = ({ children, ...props }: SelectProps) => {
+    return <RadixSelect.Root {...props}>{children}</RadixSelect.Root>;
 };
-export const Select = ({
+
+export const SelectTriggerButton = ({
     label,
-    children,
     className,
-    ...props
-}: SelectProps) => {
+}: RadixSelectTriggerProps & { label: string }) => {
     return (
-        <RadixSelect.Root {...props}>
-            <RadixSelect.Trigger
-                className={twMerge(
-                    clsx(
-                        "flex h-[2.5rem] items-center justify-between gap-12 rounded-6 border border-stroke bg-fg-2 px-22 text-text outline-1 duration-150 ease-out enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
-                        className,
-                    ),
-                )}
-                aria-label={label}
+        <RadixSelect.Trigger
+            className={twMerge(
+                clsx(
+                    "flex h-[2.5rem] items-center justify-between gap-12 rounded-6 border border-stroke bg-fg-2 px-22 text-body text-text outline-1 duration-150 ease-out enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    className,
+                ),
+            )}
+            aria-label={label}
+        >
+            <RadixSelect.Value placeholder={label} />
+            <RadixSelect.Icon>
+                <CaretDown size={24} />
+            </RadixSelect.Icon>
+        </RadixSelect.Trigger>
+    );
+};
+export const SelectTriggerText = ({
+    label,
+    className,
+}: RadixSelectTriggerProps & { label: string }) => {
+    return (
+        <RadixSelect.Trigger
+            className={twMerge(
+                clsx(
+                    "flex h-fit w-fit items-center gap-4 p-0 text-body leading-none text-text outline-1 duration-150 ease-out enabled:hover:text-accent data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    className,
+                ),
+            )}
+            aria-label={label}
+        >
+            <RadixSelect.Value placeholder={label} />
+            <RadixSelect.Icon>
+                <CaretDown size={18} />
+            </RadixSelect.Icon>
+        </RadixSelect.Trigger>
+    );
+};
+
+export const SelectContent = ({ children }: RadixSelectContentProps) => {
+    return (
+        <RadixSelect.Portal>
+            <RadixSelect.Content
+                position="popper"
+                className="relative z-50 mt-4 max-h-[512px] w-full overflow-hidden rounded-6 border border-stroke bg-fg-2 px-22 font-sans backdrop-blur-3xl data-[state='open']:animate-scale-in"
             >
-                <RadixSelect.Value placeholder={label} />
-                <RadixSelect.Icon>
-                    <CaretDown size={24} />
-                </RadixSelect.Icon>
-            </RadixSelect.Trigger>
-            <RadixSelect.Portal>
-                <RadixSelect.Content
-                    position="popper"
-                    className="data-[state='open']:animate-scale-in relative z-50 mt-4 max-h-[512px] w-full overflow-hidden rounded-6 border border-stroke bg-fg-2 px-22 font-sans backdrop-blur-3xl"
-                >
-                    <RadixSelect.ScrollUpButton className="flex h-fit cursor-default items-center justify-center border-b border-stroke py-2 text-text">
-                        <CaretUp size={18} />
-                    </RadixSelect.ScrollUpButton>
-                    <RadixSelect.Viewport className="flex w-full flex-col gap-12 py-16">
-                        {children}
-                    </RadixSelect.Viewport>
-                    <RadixSelect.ScrollDownButton className="flex h-fit cursor-default items-center justify-center border-t border-stroke py-2 text-text">
-                        <CaretDown size={18} />
-                    </RadixSelect.ScrollDownButton>
-                </RadixSelect.Content>
-            </RadixSelect.Portal>
-        </RadixSelect.Root>
+                <RadixSelect.ScrollUpButton className="flex h-fit cursor-default items-center justify-center border-b border-stroke py-2 text-text">
+                    <CaretUp size={18} />
+                </RadixSelect.ScrollUpButton>
+                <RadixSelect.Viewport className="flex w-full flex-col gap-12 py-16">
+                    {children}
+                </RadixSelect.Viewport>
+                <RadixSelect.ScrollDownButton className="flex h-fit cursor-default items-center justify-center border-t border-stroke py-2 text-text">
+                    <CaretDown size={18} />
+                </RadixSelect.ScrollDownButton>
+            </RadixSelect.Content>
+        </RadixSelect.Portal>
     );
 };
 

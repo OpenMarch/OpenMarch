@@ -104,8 +104,14 @@ function PageEditor() {
                     <Input type="text" value={selectedPage.name} onChange={undefined} id="page-name" />
                 </div> */}
                     <div className="flex w-full items-center justify-between">
-                        <label htmlFor={countsInputId}>Counts</label>
+                        <label
+                            className="w-full text-body text-text/80"
+                            htmlFor={countsInputId}
+                        >
+                            Counts
+                        </label>
                         <Input
+                            compact
                             type="number"
                             className="w-fit min-w-0"
                             disabled={isFirstPage}
@@ -116,32 +122,50 @@ function PageEditor() {
                         />
                     </div>
                     <div className="flex w-full items-center justify-between">
-                        <label htmlFor="page-order">Order</label>
-                        <Input
-                            className="w-fit min-w-0"
-                            type="string"
-                            value={
-                                pages.indexOf(selectedPage) +
+                        <label
+                            htmlFor="page-order"
+                            className="text-body text-text/80"
+                        >
+                            Order
+                        </label>
+                        {/*
+                            <Input
+                                className="w-fit min-w-0"
+                                type="string"
+                                value={
+                                    pages.indexOf(selectedPage) +
+                                    1 +
+                                    "/" +
+                                    pages.length
+                                }
+                                id="page-order"
+                                disabled={true}
+                            />
+                            */}
+                        <p className="text-body leading-none text-text">
+                            {pages.indexOf(selectedPage) +
                                 1 +
                                 "/" +
-                                pages.length
-                            }
-                            id="page-order"
-                            disabled={true}
-                        />
+                                pages.length}
+                        </p>
                     </div>
-                    <div>
-                        <label>Measures</label>
-                        {selectedPage.measures.map((measure, index) => {
-                            return (
-                                <span key={index}>
-                                    {" "}
-                                    {measure.number}
-                                    {index !==
-                                        selectedPage.measures.length - 1 && ","}
-                                </span>
-                            );
-                        })}
+                    <div className="flex w-full items-center justify-between">
+                        <label className="text-body text-text/80">
+                            Measures
+                        </label>
+                        <p className="text-body leading-none text-text">
+                            {selectedPage.measures.map((measure, index) => {
+                                return (
+                                    <span key={index}>
+                                        {" "}
+                                        {measure.number}
+                                        {index !==
+                                            selectedPage.measures.length - 1 &&
+                                            ","}
+                                    </span>
+                                );
+                            })}
+                        </p>
                     </div>
                     {/* <div>
                     <label htmlFor="page-sets">Tempo</label>

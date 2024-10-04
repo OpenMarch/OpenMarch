@@ -45,7 +45,11 @@ export default function FormButtons({
                 <>
                     {/* handle if handleSubmit is a function */}
                     {handleSubmit ? (
-                        <Button {...rest} onClick={handleSubmit}>
+                        <Button
+                            {...rest}
+                            onClick={handleSubmit}
+                            variant="primary"
+                        >
                             Save Changes
                         </Button>
                     ) : (

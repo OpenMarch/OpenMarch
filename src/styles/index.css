@@ -80,3 +80,12 @@
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(var(--text), 0.15);
 }
+
+/* Number input arrows */
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    background: transparent;
+    color: var(--text);
+    margin: 0;
+}
