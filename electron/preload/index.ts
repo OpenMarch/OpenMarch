@@ -14,6 +14,7 @@ import Page, {
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import { DatabaseResponse } from "electron/database/database.services";
+import { isMacOS } from "./detectPlatform";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -116,7 +117,10 @@ const APP_API = {
     minimizeWindow: () => ipcRenderer.send("window:minimize"),
     maximizeWindow: () => ipcRenderer.send("window:maximize"),
     closeWindow: () => ipcRenderer.send("window:close"),
-    fullscreenWindow: () => ipcRenderer.send("window:fullscreen"),
+    isMacOS: async () => {
+        const platformInfo = await ipcRenderer.invoke("get-is-macos");
+        return platformInfo.isMacOS;
+    },
 
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),

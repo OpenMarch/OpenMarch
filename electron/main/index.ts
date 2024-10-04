@@ -59,7 +59,9 @@ async function createWindow(title?: string) {
         minWidth: 1400,
         minHeight: 800,
         autoHideMenuBar: true,
-        frame: false,
+        // frame: false,
+        trafficLightPosition: { x: 24, y: 7 },
+        titleBarStyle: "hidden",
         webPreferences: {
             preload,
             // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
@@ -200,13 +202,7 @@ ipcMain.on("window:close", () => {
     win?.close();
 });
 
-ipcMain.on("window:fullscreen", () => {
-    if (win?.isFullScreen()) {
-        win.setFullScreen(false);
-    } else {
-        win?.setFullScreen(true);
-    }
-});
+//
 
 app.on("second-instance", () => {
     if (win) {
