@@ -9,8 +9,8 @@ import "@fontsource/dm-sans";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 font-sans text-text outline-accent">
-            <TitleBar />
+        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 pt-8 font-sans text-text outline-accent">
+            {/* <TitleBar /> */}
             <App />
             <StatusBar />
         </main>

@@ -3,8 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useMarcherStore } from "@/stores/marcher/useMarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
-import { useSidebarModalStore } from "@/stores/ui/sidebarModalStore";
-import { X } from "@phosphor-icons/react";
 
 interface MarcherNewFormProps {
     disabledProp?: boolean;
@@ -31,7 +29,6 @@ const MarcherNewForm: React.FC<MarcherNewFormProps> = ({
     const { marchers } = useMarcherStore!();
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
     const formRef = useRef<HTMLFormElement>(null);
-    const { toggleOpen } = useSidebarModalStore();
 
     const resetForm = () => {
         setSection(defaultSection);

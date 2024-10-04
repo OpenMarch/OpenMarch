@@ -5,7 +5,7 @@ import UiSettingsToolbar from "./sections/UiSettingsToolbar";
 import AlignmentToolbar from "./sections/AlignmentToolbar";
 import PageListModal from "@/components/page/PageListModal";
 import MusicModal from "@/components/music/MusicModal";
-import MarcherListModal from "@/components/marcher/MarcherListModal";
+import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
 function Topbar() {
@@ -14,7 +14,7 @@ function Topbar() {
             <FileControls />
             <PlaybackControls />
             <ToolbarSection>
-                <MarcherListModal />
+                <MarchersModal />
                 <PageListModal />
                 <MusicModal />
             </ToolbarSection>

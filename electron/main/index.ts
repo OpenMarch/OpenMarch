@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from "electron";
 import Store from "electron-store";
 import * as fs from "fs";
-import { release } from "node:os";
+import os, { release } from "node:os";
 import { join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
@@ -58,10 +58,10 @@ async function createWindow(title?: string) {
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
         minWidth: 1400,
         minHeight: 800,
-        autoHideMenuBar: true,
+        // autoHideMenuBar: true,
         // frame: false,
-        trafficLightPosition: { x: 24, y: 7 },
-        titleBarStyle: "hidden",
+        // trafficLightPosition: { x: 24, y: 7 },
+        // titleBarStyle: "hidden",
         webPreferences: {
             preload,
             // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production

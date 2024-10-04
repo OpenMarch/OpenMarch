@@ -14,7 +14,6 @@ import {
     SelectItem,
     SelectTriggerText,
 } from "../ui/Select";
-import { MarcherNewFormContents } from "./MarcherListModal";
 
 export default function MarcherList({
     hasHeader = false,
@@ -22,7 +21,7 @@ export default function MarcherList({
     submitActivatorStateProp = undefined,
     cancelActivatorStateProp = undefined,
 }: ListFormProps) {
-    const { isSidebarModalOpen, setContent } = useSidebarModalStore();
+    const { isSidebarModalOpen } = useSidebarModalStore();
     const [isEditingLocal, setIsEditingLocal] = useState(false);
     const [isEditing, setIsEditing] = isEditingStateProp || [
         isEditingLocal,

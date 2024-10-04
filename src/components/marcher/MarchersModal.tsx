@@ -5,10 +5,10 @@ import MarcherNewForm from "./MarcherNewForm";
 import { X, CaretLeft } from "@phosphor-icons/react";
 import { Button } from "../ui/Button";
 
-export default function MarcherListModal() {
+export default function MarchersModal() {
     return (
         <SidebarModalLauncher
-            contents={MarcherListContents()}
+            contents={<MarcherListContents />}
             buttonLabel="Marchers"
         />
     );
@@ -48,8 +48,8 @@ export function MarcherNewFormContents() {
 
     return (
         <div className="flex w-fit flex-col gap-16 text-text">
-            <header className="flex items-center justify-between">
-                <div className="flex gap-8">
+            <header className="flex justify-between">
+                <div className="flex items-center gap-8">
                     <button
                         onClick={() => {
                             setContent(<MarcherListContents />);
