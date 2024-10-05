@@ -30,8 +30,10 @@
         "@fontsource/dm-mono": "^5.1.0",
         "@fontsource/dm-sans": "^5.1.0",
         "@phosphor-icons/react": "^2.1.7",
+        "@radix-ui/react-alert-dialog": "^1.1.2",
         "@radix-ui/react-checkbox": "^1.1.1",
         "@radix-ui/react-collapsible": "^1.1.0",
+        "@radix-ui/react-form": "^0.1.0",
         "@radix-ui/react-radio-group": "^1.2.0",
         "@radix-ui/react-select": "^2.1.1",
         "@radix-ui/react-tooltip": "^1.1.2",
@@ -51,6 +53,7 @@
         "react-dom": "^18.2.0",
         "react-icons": "^4.12.0",
         "sass": "^1.70.0",
+        "sonner": "^1.5.0",
         "tailwind-merge": "^2.5.2",
         "xml2abc": "file:external-packages/xml2abc.tgz",
         "zustand": "^4.4.7"

@@ -14,6 +14,7 @@ import {
     SelectItem,
     SelectTriggerText,
 } from "../ui/Select";
+import { AlertDialogAction, AlertDialogCancel } from "../ui/AlertDialog";
 
 export default function MarcherList({
     hasHeader = false,
@@ -52,16 +53,8 @@ export default function MarcherList({
             modifiedMarchers.push({ id: Number(pageId), ...changes });
 
         if (deletionsRef.current.length > 0) {
-            let windowConfirmStr = `-- WARNING --`;
-            windowConfirmStr += `\n\nYou are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} marchers` : "a marcher"}, `;
-            windowConfirmStr += `which will also delete ALL of their coordinates for every page.`;
-            windowConfirmStr += `\n\nTHIS CANNOT BE UNDONE.`;
-            windowConfirmStr += `\n\nMarchers that will be deleted:`;
             for (const marcherId of deletionsRef.current)
-                windowConfirmStr += `\n- ${marchers?.find((marcher) => marcher.id === marcherId)?.drill_number}`;
-            if (window.confirm(windowConfirmStr))
-                for (const marcherId of deletionsRef.current)
-                    await Marcher.deleteMarcher(marcherId);
+                await Marcher.deleteMarcher(marcherId);
         }
 
         const result = Marcher.updateMarchers(modifiedMarchers);
@@ -84,7 +77,11 @@ export default function MarcherList({
         changesRef.current = {};
     }
 
-    const handleChange = (value: any, attribute: string, marcherId: number) => {
+    const handleChange = (
+        value: string,
+        attribute: string,
+        marcherId: number,
+    ) => {
         // create an entry for the marcher if it doesn't exist
         if (!changesRef.current[marcherId]) changesRef.current[marcherId] = {};
 
@@ -128,8 +125,68 @@ export default function MarcherList({
                     event.preventDefault();
                     handleSubmit();
                 }}
-                className="flex flex-col gap-16 text-text"
+                className="flex flex-col gap-16 text-body text-text"
             >
+                <div className="flex w-full items-center justify-between">
+                    <p className="text-body text-text">List</p>
+                    <div className="flex gap-8">
+                        {!isEditingStateProp &&
+                        localMarchers &&
+                        marchers.length > 0 ? (
+                            <>
+                                {deletionsRef.current.length > 0 ? (
+                                    <FormButtons
+                                        variant="primary"
+                                        size="compact"
+                                        handleCancel={handleCancel}
+                                        editButton={"Edit Marchers"}
+                                        isEditingProp={isEditing}
+                                        setIsEditingProp={setIsEditing}
+                                        handleSubmit={handleSubmit}
+                                        isDangerButton={true}
+                                        alertDialogTitle="Warning"
+                                        alertDialogDescription={`You are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} marchers` : "a marcher"}, which will delete all their coordinates on all pages. This can not be undone, are you sure?`}
+                                        alertDialogActions={
+                                            <>
+                                                <AlertDialogAction>
+                                                    <Button
+                                                        variant="red"
+                                                        size="compact"
+                                                        onClick={handleSubmit}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </AlertDialogAction>
+                                                <AlertDialogCancel>
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="compact"
+                                                        onClick={handleCancel}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                </AlertDialogCancel>
+                                            </>
+                                        }
+                                    />
+                                ) : (
+                                    <FormButtons
+                                        variant="secondary"
+                                        size="compact"
+                                        handleCancel={handleCancel}
+                                        editButton={"Edit Marchers"}
+                                        isEditingProp={isEditing}
+                                        setIsEditingProp={setIsEditing}
+                                        handleSubmit={handleSubmit}
+                                    />
+                                )}
+                            </>
+                        ) : (
+                            // exists to ensure default submit behavior
+                            <button type="submit" hidden={true} />
+                        )}
+                    </div>
+                </div>
                 <div
                     id="table"
                     className="flex h-fit w-[27rem] min-w-0 flex-col gap-10"
@@ -137,7 +194,7 @@ export default function MarcherList({
                     {localMarchers && marchers.length > 0 && (
                         <>
                             <div id="key" className="flex items-center gap-4">
-                                <div className="w-[10%]">
+                                <div className="w-[13%]">
                                     <p className="font-mono text-sub text-text/90">
                                         #
                                     </p>
@@ -159,8 +216,8 @@ export default function MarcherList({
                                     key={marcher.id_for_html}
                                     className="flex items-center gap-4"
                                 >
-                                    <div className="w-[10%]">
-                                        <p className="text-body text-text">
+                                    <div className="w-[13%]">
+                                        <p className="font-mono text-body text-text">
                                             {marcher.drill_prefix +
                                                 marcher.drill_order}
                                         </p>
@@ -171,7 +228,9 @@ export default function MarcherList({
                                                 defaultValue={marcher.section}
                                                 aria-label="Marcher section input"
                                                 disabled={!isEditing}
-                                                onValueChange={(value) =>
+                                                onValueChange={(
+                                                    value: string,
+                                                ) =>
                                                     handleChange(
                                                         value,
                                                         "section",
@@ -223,7 +282,7 @@ export default function MarcherList({
                                                 key={marcher.id_for_html}
                                                 onChange={(event) =>
                                                     handleChange(
-                                                        event,
+                                                        event.target.value,
                                                         "name",
                                                         marcher.id,
                                                     )
@@ -252,24 +311,6 @@ export default function MarcherList({
                                 </div>
                             ))}
                         </>
-                    )}
-                </div>
-                <div className="flex w-full justify-start gap-8">
-                    {!isEditingStateProp &&
-                    localMarchers &&
-                    marchers.length > 0 ? (
-                        <FormButtons
-                            variant="secondary"
-                            size="compact"
-                            handleCancel={handleCancel}
-                            editButton={"Edit Marchers"}
-                            isEditingProp={isEditing}
-                            setIsEditingProp={setIsEditing}
-                            handleSubmit={handleSubmit}
-                        />
-                    ) : (
-                        // exists to ensure default submit behavior
-                        <button type="submit" hidden={true} />
                     )}
                 </div>
             </form>

@@ -5,7 +5,7 @@ export default function SidebarModal() {
     const { isSidebarModalOpen, content } = useSidebarModalStore();
     return (
         <div
-            className={`absolute left-0 top-0 z-40 h-full min-h-0 max-w-[35rem] rounded-6 border border-stroke bg-modal p-12 shadow-fg-1 backdrop-blur-32 ${
+            className={`absolute left-0 top-0 z-40 h-full min-h-0 max-w-[35rem] overflow-scroll rounded-6 border border-stroke bg-modal p-12 shadow-fg-1 backdrop-blur-32 ${
                 isSidebarModalOpen ? "flex animate-scale-in" : "hidden"
             }`}
         >

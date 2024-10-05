@@ -1,5 +1,7 @@
 import React from "react";
 import { cva, VariantProps } from "class-variance-authority";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 const variants = cva(
     [
@@ -67,10 +69,16 @@ export function Button({
     variant,
     size,
     content,
+    className,
     ...props
 }: ButtonProps) {
     return (
-        <button className={variants({ variant, size, content })} {...props}>
+        <button
+            className={twMerge(
+                clsx(variants({ variant, size, content }), className),
+            )}
+            {...props}
+        >
             {children}
         </button>
     );
