@@ -14,7 +14,6 @@ import Page, {
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import { DatabaseResponse } from "electron/database/database.services";
-import { isMacOS } from "../main/detectPlatform";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],

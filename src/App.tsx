@@ -29,7 +29,7 @@ function App() {
     else
         return (
             // Context for the selected page. Will change when more specialized
-            <TooltipProvider delayDuration={500} skipDelayDuration={50}>
+            <TooltipProvider delayDuration={500} skipDelayDuration={500}>
                 <IsPlayingProvider>
                     <SelectedPageProvider>
                         <SelectedMarchersProvider>

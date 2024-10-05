@@ -5,6 +5,8 @@ import {
 } from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -70,7 +72,12 @@ export default function RegisteredActionButton({
                     <button
                         {...rest}
                         ref={buttonRef}
-                        className={`${rest?.className ? rest.className : ""} group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`}
+                        className={twMerge(
+                            clsx(
+                                `group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`,
+                                rest.className,
+                            ),
+                        )}
                     >
                         {children}
                     </button>

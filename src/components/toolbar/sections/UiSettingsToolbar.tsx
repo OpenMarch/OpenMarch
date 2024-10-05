@@ -19,7 +19,9 @@ export default function UiSettingsToolbar() {
                         : RegisteredActionsObjects.togglePreviousPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`${uiSettings.previousPaths ? "btn-primary" : "btn-primary-appear-disabled"} rounded-none rounded-l`}
+                className={
+                    uiSettings.previousPaths ? "text-accent" : "text-text"
+                }
             >
                 Prev Paths
             </RegisteredActionButton>
@@ -32,7 +34,7 @@ export default function UiSettingsToolbar() {
                         : RegisteredActionsObjects.toggleNextPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`${uiSettings.nextPaths ? "btn-primary" : "btn-primary-appear-disabled"} rounded-none rounded-r`}
+                className={uiSettings.nextPaths ? "text-accent" : "text-text"}
             >
                 Next Paths
             </RegisteredActionButton>

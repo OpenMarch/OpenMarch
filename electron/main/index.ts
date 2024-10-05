@@ -1,7 +1,7 @@
 import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from "electron";
 import Store from "electron-store";
 import * as fs from "fs";
-import os, { release } from "node:os";
+import { release } from "node:os";
 import { join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";

@@ -6,8 +6,6 @@ import {
     ArrowsInCardinal,
     AlignCenterHorizontalSimple,
     AlignCenterVerticalSimple,
-    AlignCenterVertical,
-    AlignCenterHorizontal,
     DotsThreeOutline,
     DotsThreeOutlineVertical,
 } from "@phosphor-icons/react";
@@ -29,6 +27,7 @@ export default function UiSettingsToolbar() {
                                   .instructionalStringToggleOn
                     }
                     registeredAction={RegisteredActionsObjects.lockX}
+                    className={uiSettings.lockX ? "text-accent" : "text-text"}
                 >
                     <ArrowsVertical size={24} />
                 </RegisteredActionButton>
@@ -41,6 +40,9 @@ export default function UiSettingsToolbar() {
                                   .instructionalStringToggleOn
                     }
                     registeredAction={RegisteredActionsObjects.lockY}
+                    className={`rounded-none rounded-r ${
+                        uiSettings.lockY ? "text-accent" : "text-text"
+                    }`}
                 >
                     <ArrowsHorizontal size={24} />
                 </RegisteredActionButton>
