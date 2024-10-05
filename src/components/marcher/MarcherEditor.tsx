@@ -104,7 +104,7 @@ function MarcherEditor() {
                         <SidebarCollapsible
                             defaultOpen
                             title={`Marcher ${selectedMarchers[0].drill_number}`}
-                            className="mt-12"
+                            className="mt-12 flex flex-col gap-24"
                         >
                             {!rCoords ? (
                                 <p className="text-body text-red">
@@ -112,131 +112,169 @@ function MarcherEditor() {
                                 </p>
                             ) : (
                                 <form
-                                    className="coords-editor edit-group flex flex-col gap-12"
+                                    className="coords-editor edit-group flex flex-col gap-24"
                                     ref={coordsFormRef}
                                     onSubmit={handleCoordsSubmit}
                                 >
-                                    <label
-                                        htmlFor="xInput"
-                                        className="text-body leading-none opacity-75"
-                                    >
-                                        X
-                                    </label>
-                                    <div className="input-group">
-                                        {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
-                                        <input
-                                            className="bg-transparent text-body leading-none"
-                                            disabled={true}
-                                            type="number"
-                                            defaultValue={rCoords?.xSteps}
-                                            ref={xInputRef}
-                                        />
-                                        <select
-                                            className="bg-transparent text-body leading-none disabled:opacity-100"
-                                            disabled={true}
-                                            value={rCoords.xDescription}
-                                            ref={xDescriptionRef}
+                                    <div className="flex justify-between px-6">
+                                        <label
+                                            htmlFor="xInput"
+                                            className="w-full text-body leading-none opacity-80"
                                         >
-                                            {Object.values(X_DESCRIPTION).map(
-                                                (xDescription) => (
-                                                    <option
-                                                        value={xDescription}
-                                                        key={xDescription}
-                                                    >
-                                                        {xDescription}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </select>
-                                        <select
-                                            className="bg-transparent text-body leading-none disabled:opacity-100"
-                                            disabled={true}
-                                            ref={xCheckpointRef}
-                                            defaultValue={
-                                                rCoords.xCheckpoint.terseName ||
-                                                rCoords.xCheckpoint.name
-                                            }
-                                        >
-                                            {fieldProperties!.xCheckpoints.map(
-                                                (xCheckpoint) => (
-                                                    <option
-                                                        value={
-                                                            xCheckpoint.terseName
-                                                        }
-                                                        key={
-                                                            xCheckpoint.stepsFromCenterFront
-                                                        }
-                                                    >
-                                                        {xCheckpoint.terseName}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </select>
-                                        <select
-                                            disabled={true}
-                                            className="bg-transparent text-body leading-none disabled:opacity-100"
-                                            ref={fieldSideRef}
-                                            defaultValue={rCoords.side}
-                                        >
-                                            <option value="1">S1</option>
-                                            <option value="2">S2</option>
-                                        </select>
+                                            X
+                                        </label>
+                                        <div className="flex w-full gap-4">
+                                            {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
+                                            <p className="bg-transparent text-body leading-none">
+                                                {rCoords?.xSteps}
+                                            </p>
+                                            <p className="bg-transparent text-body leading-none">
+                                                {rCoords?.xDescription}
+                                            </p>
+                                            <p className="bg-transparent text-body leading-none">
+                                                {rCoords.xCheckpoint
+                                                    .terseName ||
+                                                    rCoords.xCheckpoint.name}
+                                            </p>
+                                            <p className="bg-transparent text-body leading-none">
+                                                S{rCoords.side}
+                                            </p>
+                                            {/*
+                                                <input
+                                                    className="bg-transparent text-body leading-none"
+                                                    disabled={true}
+                                                    type="number"
+                                                    defaultValue={rCoords?.xSteps}
+                                                    ref={xInputRef}
+                                                />
+                                                <select
+                                                    className="bg-transparent text-body leading-none disabled:opacity-100"
+                                                    disabled={true}
+                                                    value={rCoords.xDescription}
+                                                    ref={xDescriptionRef}
+                                                >
+                                                    {Object.values(
+                                                        X_DESCRIPTION,
+                                                    ).map((xDescription) => (
+                                                        <option
+                                                            value={xDescription}
+                                                            key={xDescription}
+                                                        >
+                                                            {xDescription}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    className="bg-transparent text-body leading-none disabled:opacity-100"
+                                                    disabled={true}
+                                                    ref={xCheckpointRef}
+                                                    defaultValue={
+                                                        rCoords.xCheckpoint
+                                                            .terseName ||
+                                                        rCoords.xCheckpoint.name
+                                                    }
+                                                >
+                                                    {fieldProperties!.xCheckpoints.map(
+                                                        (xCheckpoint) => (
+                                                            <option
+                                                                value={
+                                                                    xCheckpoint.terseName
+                                                                }
+                                                                key={
+                                                                    xCheckpoint.stepsFromCenterFront
+                                                                }
+                                                            >
+                                                                {
+                                                                    xCheckpoint.terseName
+                                                                }
+                                                            </option>
+                                                        ),
+                                                    )}
+                                                </select>
+                                                <select
+                                                    disabled={true}
+                                                    className="bg-transparent text-body leading-none disabled:opacity-100"
+                                                    ref={fieldSideRef}
+                                                    defaultValue={rCoords.side}
+                                                >
+                                                    <option value="1">S1</option>
+                                                    <option value="2">S2</option>
+                                                </select>
+                                                */}
+                                        </div>
                                     </div>
-                                    <label
-                                        htmlFor="yInput"
-                                        className="text-body leading-none opacity-75"
-                                    >
-                                        Y
-                                    </label>
-                                    <div className="input-group">
-                                        <input
-                                            className="bg-transparent text-body leading-none disabled:opacity-100"
-                                            disabled={true}
-                                            type="number"
-                                            value={rCoords?.ySteps}
-                                            ref={yInputRef}
-                                        />
-                                        <select
-                                            className="bg-transparent text-body leading-none disabled:opacity-100"
-                                            disabled={true}
-                                            value={rCoords.yDescription}
-                                            ref={yDescriptionRef}
+                                    <div className="flex justify-between px-6">
+                                        <label
+                                            htmlFor="yInput"
+                                            className="text-body leading-none opacity-80"
                                         >
-                                            {Object.values(Y_DESCRIPTION).map(
-                                                (yDescription) => (
-                                                    <option
-                                                        value={yDescription}
-                                                        key={yDescription}
-                                                    >
-                                                        {yDescription}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </select>
-                                        <select
-                                            className="bg-transparent text-body leading-none disabled:opacity-100"
-                                            disabled={true}
-                                            ref={yCheckpointRef}
-                                            defaultValue={
-                                                rCoords.yCheckpoint.terseName ||
-                                                rCoords.yCheckpoint.name
-                                            }
-                                        >
-                                            {fieldProperties?.yCheckpoints.map(
-                                                (yCheckpoint) => (
-                                                    <option
-                                                        value={
-                                                            yCheckpoint.terseName
-                                                        }
-                                                        key={
-                                                            yCheckpoint.stepsFromCenterFront
-                                                        }
-                                                    >
-                                                        {yCheckpoint.terseName}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </select>
+                                            Y
+                                        </label>
+                                        <div className="flex gap-4">
+                                            <p className="bg-transparent text-body leading-none">
+                                                {rCoords?.ySteps}
+                                            </p>
+                                            <p className="bg-transparent text-body leading-none">
+                                                {rCoords?.yDescription}
+                                            </p>
+                                            <p className="bg-transparent text-body leading-none">
+                                                {rCoords.yCheckpoint
+                                                    .terseName ||
+                                                    rCoords.yCheckpoint.name}
+                                            </p>
+                                            {/*
+                                                <input
+                                                    className="bg-transparent text-body leading-none disabled:opacity-100"
+                                                    disabled={true}
+                                                    type="number"
+                                                    value={rCoords?.ySteps}
+                                                    ref={yInputRef}
+                                                />
+                                                <select
+                                                    className="bg-transparent text-body leading-none disabled:opacity-100"
+                                                    disabled={true}
+                                                    value={rCoords.yDescription}
+                                                    ref={yDescriptionRef}
+                                                >
+                                                    {Object.values(
+                                                        Y_DESCRIPTION,
+                                                    ).map((yDescription) => (
+                                                        <option
+                                                            value={yDescription}
+                                                            key={yDescription}
+                                                        >
+                                                            {yDescription}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <select
+                                                    className="bg-transparent text-body leading-none disabled:opacity-100"
+                                                    disabled={true}
+                                                    ref={yCheckpointRef}
+                                                    defaultValue={
+                                                        rCoords.yCheckpoint
+                                                            .terseName ||
+                                                        rCoords.yCheckpoint.name
+                                                    }
+                                                >
+                                                    {fieldProperties?.yCheckpoints.map(
+                                                        (yCheckpoint) => (
+                                                            <option
+                                                                value={
+                                                                    yCheckpoint.terseName
+                                                                }
+                                                                key={
+                                                                    yCheckpoint.stepsFromCenterFront
+                                                                }
+                                                            >
+                                                                {
+                                                                    yCheckpoint.terseName
+                                                                }
+                                                            </option>
+                                                        ),
+                                                    )}
+                                                </select> */}
+                                        </div>
                                     </div>
                                     {/* This is here so the form submits when enter is pressed */}
                                     <button
@@ -248,59 +286,74 @@ function MarcherEditor() {
                                 </form>
                             )}
                             <form
-                                className="marcher-details-editor edit-group flex flex-col gap-12"
+                                className="marcher-details-editor flex flex-col gap-24"
                                 ref={detailsFormRef}
                             >
-                                <div className="input-group">
+                                <div className="flex justify-between px-6">
                                     <label
                                         htmlFor="name-input"
-                                        className="text-body leading-none opacity-75"
+                                        className="text-body leading-none opacity-80"
                                     >
                                         Name
                                     </label>
-                                    <input
-                                        className="text-inherit border-none bg-transparent text-right"
-                                        type="text"
-                                        value={
-                                            selectedMarchers[0].name.length <
-                                                1 ||
-                                            selectedMarchers[0].name === " "
-                                                ? "-"
-                                                : selectedMarchers[0].name
-                                        }
-                                        disabled={true}
-                                        id="name-input"
-                                    />
+
+                                    <p className="bg-transparent text-body leading-none">
+                                        {selectedMarchers[0].name.length < 1 ||
+                                        selectedMarchers[0].name === " "
+                                            ? "-"
+                                            : selectedMarchers[0].name}
+                                    </p>
+                                    {/*
+                                        <input
+                                            className="text-inherit border-none bg-transparent text-right"
+                                            type="text"
+                                            value={
+                                                selectedMarchers[0].name.length <
+                                                    1 ||
+                                                selectedMarchers[0].name === " "
+                                                    ? "-"
+                                                    : selectedMarchers[0].name
+                                            }
+                                            disabled={true}
+                                            id="name-input"
+                                        />
+                                        */}
                                 </div>
-                                <div className="input-group">
+                                <div className="flex justify-between px-6">
                                     <label
                                         htmlFor="section-input"
-                                        className="text-body leading-none opacity-75"
+                                        className="text-body leading-none opacity-80"
                                     >
                                         Section
                                     </label>
-                                    <input
+                                    <p className="bg-transparent text-body leading-none">
+                                        {selectedMarchers[0].section}
+                                    </p>
+                                    {/*<input
                                         className="text-inherit border-none bg-transparent text-right"
                                         type="text"
                                         value={selectedMarchers[0].section}
                                         disabled={true}
                                         id="section-input"
-                                    />
+                                    /> */}
                                 </div>
-                                <div className="input-group">
+                                <div className="flex justify-between px-6">
                                     <label
                                         htmlFor="drill-number-input"
-                                        className="text-body leading-none opacity-75"
+                                        className="text-body leading-none opacity-80"
                                     >
                                         Drill Number
                                     </label>
-                                    <input
+                                    <p className="bg-transparent text-body leading-none">
+                                        {selectedMarchers[0].drill_number}
+                                    </p>
+                                    {/*<input
                                         className="text-inherit border-none bg-transparent text-right"
                                         type="text"
                                         value={selectedMarchers[0].drill_number}
                                         disabled={true}
                                         id="drill-number-input"
-                                    />
+                                    /> */}
                                 </div>
                                 {/* This is here so the form submits when enter is pressed */}
                                 <button

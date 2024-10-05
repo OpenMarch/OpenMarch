@@ -58,10 +58,10 @@ async function createWindow(title?: string) {
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
         minWidth: 1400,
         minHeight: 800,
-        // autoHideMenuBar: true,
-        // frame: false,
-        // trafficLightPosition: { x: 24, y: 7 },
-        // titleBarStyle: "hidden",
+        autoHideMenuBar: true,
+        frame: false,
+        trafficLightPosition: { x: 24, y: 7 },
+        titleBarStyle: "hidden",
         webPreferences: {
             preload,
             // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
@@ -291,7 +291,10 @@ export async function saveFile() {
     dialog
         .showSaveDialog(win, {
             buttonLabel: "Save Copy",
-            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+            filters: [
+                { name: "OpenMarch File", extensions: ["dots"] },
+                { name: "All Files", extensions: ["*"] },
+            ],
         })
         .then((path) => {
             if (path.canceled || !path.filePath) return -1;
@@ -320,7 +323,10 @@ export async function loadDatabaseFile() {
     // If there is no previous path, open a dialog
     dialog
         .showOpenDialog(win, {
-            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+            filters: [
+                { name: "OpenMarch File", extensions: ["dots"] },
+                { name: "All Files", extensions: ["*"] },
+            ],
         })
         .then((path) => {
             DatabaseServices.setDbPath(path.filePaths[0]);
@@ -358,6 +364,7 @@ export async function insertAudioFile(): Promise<DatabaseServices.DatabaseRespon
         .showOpenDialog(win, {
             filters: [
                 { name: "Audio File", extensions: ["mp3", "wav", "ogg"] },
+                { name: "All Files", extensions: ["*"] },
             ],
         })
         .then((path) => {
@@ -427,14 +434,17 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
     const dialogueResponse = await dialog.showOpenDialog(win, {
         filters: [
             {
-                name: "MusicXML File (compressed or uncompressed)",
+                name: "MusicXML File (uncompressed)",
                 extensions: [/*"mxl",*/ "musicxml", "xml"],
             },
+            { name: "All Files", extensions: ["*"] },
         ],
     });
 
     if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
-        console.error("Operation was cancelled or no audio file was provided");
+        console.error(
+            "Operation was cancelled or no MusicXML file was provided",
+        );
         return;
     }
 

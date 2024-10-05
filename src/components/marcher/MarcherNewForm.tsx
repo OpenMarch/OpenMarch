@@ -233,6 +233,7 @@ const MarcherNewForm: React.FC<MarcherNewFormProps> = ({
                             onChange={handleQuantityChange}
                             step={1}
                             min={1}
+                            max={100}
                         />
                     </Form.Control>
                     <Form.Message

@@ -3,7 +3,6 @@ import { Minus, Square, X } from "@phosphor-icons/react";
 export default function TitleBar() {
     const isMacOS = window.electron.isMacOS;
     console.log(isMacOS);
-
     function WindowsControls() {
         return (
             <div id="windows-icons" className="flex">
@@ -37,12 +36,12 @@ export default function TitleBar() {
     return (
         <div className="main-app-titlebar flex h-fit w-full items-center justify-between text-text">
             <div
-                className={`flex items-center gap-12 px-24 py-8 ${isMacOS ? "ml-64" : ""}`}
+                className={`flex items-center gap-12 px-24 py-8 ${isMacOS && "ml-64"}`}
             >
                 <p className="text-body leading-none">OpenMarch</p>
                 <p className="text-body leading-none opacity-50">0.0.2</p>
             </div>
-            {!isMacOS ? <WindowsControls /> : ""}
+            {!isMacOS && <WindowsControls />}
         </div>
     );
 }

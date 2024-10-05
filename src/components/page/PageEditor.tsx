@@ -95,7 +95,7 @@ function PageEditor() {
                 className="mt-12"
             >
                 <form
-                    className="edit-group flex w-full flex-col gap-12"
+                    className="edit-group flex w-full flex-col gap-16 px-6"
                     id={formId}
                     onSubmit={handleSubmit}
                 >
