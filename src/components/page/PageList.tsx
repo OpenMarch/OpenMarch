@@ -4,19 +4,30 @@ import { ListFormProps } from "../../global/Interfaces";
 import { FaTrashAlt } from "react-icons/fa";
 import { usePageStore } from "@/stores/page/usePageStore";
 import Page, { ModifiedPageArgs } from "@/global/classes/Page";
-
+import { Trash } from "@phosphor-icons/react";
+import { Input } from "../ui/Input";
+import { Button } from "../ui/Button";
+import { AlertDialogAction, AlertDialogCancel } from "../ui/AlertDialog";
 
 function PageList({
     hasHeader = false,
     isEditingStateProp = undefined,
     submitActivatorStateProp = undefined,
-    cancelActivatorStateProp = undefined
+    cancelActivatorStateProp = undefined,
 }: ListFormProps) {
-
     const [isEditingLocal, setIsEditingLocal] = useState(false);
-    const [isEditing, setIsEditing] = isEditingStateProp || [isEditingLocal, setIsEditingLocal];
-    const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [false, undefined];
-    const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [false, undefined];
+    const [isEditing, setIsEditing] = isEditingStateProp || [
+        isEditingLocal,
+        setIsEditingLocal,
+    ];
+    const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [
+        false,
+        undefined,
+    ];
+    const [cancelActivator, setCancelActivator] = cancelActivatorStateProp || [
+        false,
+        undefined,
+    ];
     const { pages } = usePageStore();
 
     // localPages are the Pages that are displayed in the table
@@ -31,16 +42,8 @@ function PageList({
         const modifiedPages: ModifiedPageArgs[] = [];
 
         if (deletionsRef.current.length > 0) {
-            let windowConfirmStr = `-- WARNING --`
-            windowConfirmStr += `\n\nYou are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} pages` : "a page"}, `;
-            windowConfirmStr += `which will also delete the coordinates for ALL marchers on them.`;
-            windowConfirmStr += `\n\nTHIS CANNOT BE UNDONE.`;
-            windowConfirmStr += `\n\nPages that will be deleted:`;
             for (const pageId of deletionsRef.current)
-                windowConfirmStr += `\nPg. ${pages?.find((page) => page.id === pageId)?.name}`;
-            if (window.confirm(windowConfirmStr))
-                for (const pageId of deletionsRef.current)
-                    await Page.deletePage(pageId);
+                await Page.deletePage(pageId);
         }
 
         for (const [pageId, changes] of Object.entries(changesRef.current))
@@ -64,15 +67,17 @@ function PageList({
         setLocalPagesModified(localPages?.filter((page) => page.id !== pageId));
     }
 
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-        attribute: string, pageId: number
+    const handleChange = (
+        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+        attribute: string,
+        pageId: number,
     ) => {
         // create an entry for the page if it doesn't exist
         if (!changesRef.current[pageId]) changesRef.current[pageId] = {};
 
         // record the change
         changesRef.current[pageId][attribute] = event.target.value;
-    }
+    };
 
     // Set local pages to the pages prop
     const setLocalPagesModified = useCallback((pages: Page[] | undefined) => {
@@ -105,77 +110,150 @@ function PageList({
         // eslint-disable-next-line
     }, [cancelActivator, setCancelActivator]);
 
-
     return (
-        <form id={"pageListForm"} onSubmit={(event) => {
-            event.preventDefault();
-            handleSubmit();
-        }}
+        <form
+            id={"pageListForm"}
+            onSubmit={(event) => {
+                event.preventDefault();
+                handleSubmit();
+            }}
+            className="flex flex-col gap-16 text-body text-text"
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                {(hasHeader && <h4>Page List</h4>) || <div />}
-                {!isEditingStateProp &&
-                    <FormButtons
-                        handleCancel={handleCancel} editButton={"Edit Pages"}
-                        isEditingProp={isEditing} setIsEditingProp={setIsEditing}
-                        handleSubmit={handleSubmit}
-                    />
-                }
+            <div className="flex w-full items-center justify-between">
+                <p className="text-body text-text">List</p>
+                <div className="flex gap-8">
+                    {!isEditingStateProp ? (
+                        <>
+                            {deletionsRef.current.length > 0 ? (
+                                <FormButtons
+                                    variant="primary"
+                                    size="compact"
+                                    handleCancel={handleCancel}
+                                    editButton={"Edit Pages"}
+                                    isEditingProp={isEditing}
+                                    setIsEditingProp={setIsEditing}
+                                    handleSubmit={handleSubmit}
+                                    isDangerButton={true}
+                                    alertDialogTitle="Warning"
+                                    alertDialogDescription={`You are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} pages` : "a page"}, which will delete the coordinates for ALL marchers on them. This can not be undone, are you sure?`}
+                                    alertDialogActions={
+                                        <>
+                                            <AlertDialogAction>
+                                                <Button
+                                                    variant="red"
+                                                    size="compact"
+                                                    onClick={handleSubmit}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </AlertDialogAction>
+                                            <AlertDialogCancel>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="compact"
+                                                    onClick={handleCancel}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </AlertDialogCancel>
+                                        </>
+                                    }
+                                />
+                            ) : (
+                                <FormButtons
+                                    variant="secondary"
+                                    size="compact"
+                                    handleCancel={handleCancel}
+                                    editButton={"Edit Marchers"}
+                                    isEditingProp={isEditing}
+                                    setIsEditingProp={setIsEditing}
+                                    handleSubmit={handleSubmit}
+                                />
+                            )}
+                        </>
+                    ) : (
+                        // exists to ensure default submit behavior
+                        <button type="submit" hidden={true} />
+                    )}
+                </div>
             </div>
-            <table className="w-full table-fixed table h-full" style={{ cursor: "default" }}>
-                <thead className="thead-dark text-left">
-                    <tr>
-                        <th className="w-1/6" scope="col">Page #</th>
-                        <th className="w-auto" scope="col">Counts</th>
-                    </tr>
-                </thead>
-                {(pages && localPages) &&
-                    <tbody>
+            <div
+                id="table"
+                className="flex h-fit w-[27rem] min-w-0 flex-col gap-10"
+            >
+                {localPages && pages && (
+                    <>
+                        <div id="key" className="flex items-center gap-4">
+                            <div className="w-1/3">
+                                <p className="font-mono text-sub text-text/90">
+                                    Page #
+                                </p>
+                            </div>
+                            <div className="w-2/3">
+                                <p className="text-sub text-text/90">Counts</p>
+                            </div>
+                        </div>
                         {localPages.map((page) => (
-                            <tr key={page.id} aria-label="Page row" title="Page row" data-id={page.id}>
-                                <th title="Page name" aria-label="Page name" scope="row" className="text-left">
-                                    {page.name}
-                                </th>
-                                <td title="Page counts" aria-label="Page counts" className="text-left">
-                                    {isEditing ?
-                                        <input type="number"
+                            <div
+                                id="Page row"
+                                key={page.id}
+                                className="flex items-center gap-4"
+                            >
+                                <div className="w-1/3">
+                                    <p className="font-mono text-body text-text">
+                                        {page.name}
+                                    </p>
+                                </div>
+                                <div className="flex w-2/3 items-center gap-6">
+                                    {isEditing ? (
+                                        <Input
+                                            compact
+                                            type="number"
                                             className="form-control"
                                             aria-label="Page counts input"
                                             title="Page counts input"
                                             defaultValue={page.counts}
-                                            disabled={!isEditing || (page.id === pages[0].id)}
+                                            disabled={
+                                                !isEditing ||
+                                                page.id === pages[0].id
+                                            }
                                             key={page.id_for_html}
                                             min={0}
                                             step={1}
-                                            onChange={(event) => handleChange(event, "counts", page.id)}
+                                            onChange={(event) =>
+                                                handleChange(
+                                                    event,
+                                                    "counts",
+                                                    page.id,
+                                                )
+                                            }
                                         />
-                                        :
-                                        page.counts
-                                    }
-                                </td>
-                                {isEditing &&
-                                    <td >
-                                        <button className="btn-danger danger float-right" onClick={() => handleDeletePage(page.id)}>
-                                            <FaTrashAlt />
-                                        </button>
-                                    </td>
-                                }
-                            </tr>
+                                    ) : (
+                                        <p className="text-body text-text">
+                                            {page.counts}
+                                        </p>
+                                    )}
+                                    {isEditing && (
+                                        <Button
+                                            variant="red"
+                                            size="compact"
+                                            content="icon"
+                                            disabled={
+                                                !isEditing ||
+                                                page.id === pages[0].id
+                                            }
+                                            onClick={() =>
+                                                handleDeletePage(page.id)
+                                            }
+                                        >
+                                            <Trash size={18} />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         ))}
-                    </tbody>}
-            </table>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div />
-                {(!isEditingStateProp) ?
-                    <FormButtons
-                        handleCancel={handleCancel} editButton={"Edit Pages"}
-                        isEditingProp={isEditing} setIsEditingProp={setIsEditing}
-                        handleSubmit={handleSubmit}
-                    />
-                    :
-                    // exists to ensure default submit behavior
-                    <button type="submit" hidden={true} />
-                }
+                    </>
+                )}
             </div>
         </form>
     );

@@ -3,7 +3,7 @@ import PlaybackControls from "./sections/PlaybackControls";
 import UiSettingsToolbar from "./sections/UiSettingsToolbar";
 // import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
 import AlignmentToolbar from "./sections/AlignmentToolbar";
-import PageListModal from "@/components/page/PageListModal";
+import PagesModal from "@/components/page/PagesModal";
 import MusicModal from "@/components/music/MusicModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
@@ -15,7 +15,7 @@ function Topbar() {
             <PlaybackControls />
             <ToolbarSection>
                 <MarchersModal />
-                <PageListModal />
+                <PagesModal />
                 <MusicModal />
             </ToolbarSection>
             <UiSettingsToolbar />

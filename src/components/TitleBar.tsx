@@ -2,7 +2,7 @@ import { Minus, Square, X } from "@phosphor-icons/react";
 
 export default function TitleBar() {
     const isMacOS = window.electron.isMacOS;
-    console.log(isMacOS);
+
     function WindowsControls() {
         return (
             <div id="windows-icons" className="flex">
