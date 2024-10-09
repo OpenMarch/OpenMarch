@@ -49,7 +49,7 @@ class MockTableController extends TableController<
     }
 }
 
-describe.skip("TableController", () => {
+describe("TableController", () => {
     let tableController: MockTableController;
     let db: Database.Database;
 
@@ -470,6 +470,8 @@ describe.skip("TableController", () => {
                 expect(updatedItem.created_at).toEqual(
                     originalItem?.created_at
                 );
+                // Sleep for 2ms to ensure the updated_at field is different
+                await new Promise((resolve) => setTimeout(resolve, 2));
                 expect(updatedItem.updated_at).not.toEqual(
                     originalItem?.updated_at
                 );
