@@ -1,10 +1,7 @@
 import { useCursorModeStore } from "@/stores/cursorMode/useCursorModeStore";
-import React from "react";
+import { useState, useEffect } from "react";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
-import Store from "electron-store";
 import { Sun, Moon } from "@phosphor-icons/react";
-
-const store = new Store();
 
 export default function StatusBar() {
     const { cursorMode } = useCursorModeStore();
@@ -26,11 +23,28 @@ export default function StatusBar() {
 // -------- theme switcher ---------
 
 function ThemeSwitcher() {
-    const [theme, setTheme] = React.useState(() => {
-        return store.get("theme", getInitialTheme()) as string;
-    });
+    const [theme, setTheme] = useState<string>("light");
+
+    useEffect(() => {
+        window.electron.getTheme().then((storedTheme: string | null) => {
+            if (storedTheme) {
+                applyTheme(storedTheme);
+            } else {
+                const preferredTheme = getSystemTheme();
+                applyTheme(preferredTheme);
+            }
+        });
+    }, []);
+
+    function getSystemTheme() {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+    }
 
     function applyTheme(theme: string) {
+        setTheme(theme);
+        window.electron.setTheme(theme);
         if (theme === "dark") {
             document.documentElement.classList.add("dark");
         } else {
@@ -38,23 +52,12 @@ function ThemeSwitcher() {
         }
     }
 
-    function getInitialTheme() {
-        return window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
-    }
-
-    React.useEffect(() => {
-        applyTheme(theme);
-        store.set("theme", theme);
-    }, [theme]);
-
     return (
         <ToggleGroup.Root
             type="single"
             value={theme}
             onValueChange={(theme) => {
-                if (theme) setTheme(theme);
+                if (theme) applyTheme(theme);
             }}
             className="flex h-fit w-fit gap-6"
         >

@@ -118,6 +118,11 @@ const APP_API = {
     closeWindow: () => ipcRenderer.send("window:close"),
     isMacOS: process.platform === "darwin",
 
+    // Themes
+
+    getTheme: () => ipcRenderer.invoke("get-theme"),
+    setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
+
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseSave: () => ipcRenderer.invoke("database:save"),

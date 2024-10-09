@@ -202,6 +202,16 @@ ipcMain.on("window:close", () => {
     win?.close();
 });
 
+// Theme stores
+
+ipcMain.handle('get-theme', () => {
+    return store.get('theme', 'light');
+  });
+
+  ipcMain.handle('set-theme', (event, theme) => {
+    store.set('theme', theme);
+  });
+
 //
 
 app.on("second-instance", () => {
