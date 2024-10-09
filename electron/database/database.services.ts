@@ -35,6 +35,19 @@ export class DatabaseResponse<T> {
     }
 }
 
+/**
+ * History response customized for the OpenMarch database.
+ */
+export interface HistoryResponse extends History.HistoryResponse {
+    /** The ids of the marchers that were modified from this history action */
+    marcherIds: number[];
+    /**
+     * The id of the page that was modified from this history action.
+     * If multiple, it chooses the page with the highest id
+     */
+    pageId?: number;
+}
+
 /* ============================ DATABASE ============================ */
 let DB_PATH = "";
 
@@ -70,6 +83,7 @@ export function initDatabase() {
     console.log(db);
     console.log("Creating database...");
     if (!db) return;
+    History.createHistoryTables(db);
     createMarcherTable(db);
     createPageTable(db);
     createMarcherPageTable(db);
@@ -79,7 +93,6 @@ export function initDatabase() {
     );
     createMeasureTable(db);
     createAudioFileTable(db);
-    History.createHistoryTables(db);
     // for (const table of Object.values(ALL_TABLES)) {
     //     console.log("TABLE", table.tableName);
     //     table.createTable(db);
@@ -112,7 +125,7 @@ function createMarcherTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
-                "id"	        INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id"	        INTEGER PRIMARY KEY,
                 "id_for_html"	TEXT UNIQUE,
                 "name"	        TEXT,
                 "section"	    TEXT NOT NULL,
@@ -126,6 +139,7 @@ function createMarcherTable(db: Database.Database) {
                 UNIQUE ("drill_prefix", "drill_order")
             );
         `);
+        History.createUndoTriggers(db, Constants.MarcherTableName);
     } catch (error) {
         console.error("Failed to create marcher table:", error);
     }
@@ -136,7 +150,7 @@ function createPageTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
-                "id"	        INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id"	        INTEGER PRIMARY KEY,
                 "id_for_html"	TEXT UNIQUE,
                 "name"	        TEXT NOT NULL UNIQUE,
                 "notes"	        TEXT,
@@ -146,6 +160,7 @@ function createPageTable(db: Database.Database) {
                 "updated_at"	TEXT NOT NULL
             );
         `);
+        History.createUndoTriggers(db, Constants.PageTableName);
     } catch (error) {
         console.error("Failed to create page table:", error);
     }
@@ -155,7 +170,7 @@ function createMarcherPageTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
-                "id"            INTEGER PRIMARY KEY AUTOINCREMENT,
+                "id"            INTEGER PRIMARY KEY,
                 "id_for_html"   TEXT UNIQUE,
                 "marcher_id"    INTEGER NOT NULL,
                 "page_id"       INTEGER NOT NULL,
@@ -168,6 +183,7 @@ function createMarcherPageTable(db: Database.Database) {
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
         `);
+        History.createUndoTriggers(db, Constants.MarcherPageTableName);
     } catch (error) {
         console.error("Failed to create marcher_page table:", error);
     }
@@ -198,6 +214,7 @@ function createFieldPropertiesTable(
     `);
     stmt.run({ json_data: JSON.stringify(fieldProperties) });
     console.log("Field properties table created.");
+    History.createUndoTriggers(db, Constants.FieldPropertiesTableName);
 }
 
 /**
@@ -237,6 +254,7 @@ function createMeasureTable(db: Database.Database) {
             created_at,
             updated_at: created_at,
         });
+        History.createUndoTriggers(db, Constants.MeasureTableName);
         console.log("Measures table created.");
     } catch (error) {
         console.error("Failed to create Measures table:", error);
@@ -263,6 +281,7 @@ function createAudioFileTable(db: Database.Database) {
                 "updated_at"	TEXT NOT NULL
             );
         `);
+        History.createUndoTriggers(db, Constants.AudioFilesTableName);
     } catch (error) {
         console.error("Failed to create audio file table:", error);
     }
@@ -339,13 +358,103 @@ export function initHandlers() {
     // }
 }
 
-/* ======================= Exported Functions ======================= */
-// From the history file
-export async function historyAction(
+/* ======================= History Functions ======================= */
+/**
+ * Retrieves the table name from an SQL statement.
+ * Assumes the table name is surrounded by double quotes. E.g.`UPDATE "table_name"`
+ *
+ * @param sql The SQL statement to get the table name from
+ * @returns The table name from the SQL statement
+ */
+const tableNameFromSql = (sql: string): string => {
+    return sql.match(/"(.*?)"/)?.[0].replaceAll('"', "") || "";
+};
+
+/**
+ * Get the action from an SQL statement used in the history table.
+ * Only "UPDATE", "DELETE", or "INSERT" - "ERROR" if invalid
+ *
+ * @param sql The SQL statement to get the action from
+ * @returns The action from the SQL statement.
+ */
+const sqlActionFromSql = (
+    sql: string
+): "UPDATE" | "DELETE" | "INSERT" | "ERROR" => {
+    const action = sql.split(" ")[0].toUpperCase();
+    if (action === "UPDATE" || action === "DELETE" || action === "INSERT")
+        return action;
+    return "ERROR";
+};
+
+const rowIdFromSql = (sql: string): number => {
+    return parseInt(sql.match(/WHERE rowid=(\d+)/)?.[0] || "-1");
+};
+
+/**
+ *
+ * @param type The type of history action to perform, either "undo" or "redo"
+ * @param db The database connection to use, or undefined to create a new connection
+ * @returns Response from the history action
+ */
+export function performHistoryAction(
     type: "undo" | "redo",
     db?: Database.Database
-) {
-    return await History.historyAction(type, db);
+): HistoryResponse {
+    const dbToUse = db || connect();
+    let response: History.HistoryResponse;
+
+    let marcherIds: number[] = [];
+    let pageId: number | undefined;
+
+    try {
+        if (type === "undo") response = History.performUndo(dbToUse);
+        else response = History.performRedo(dbToUse);
+
+        // Get the marcher ids and page id from the SQL statements
+        for (const sqlStatement of response.sqlStatements) {
+            // Do not record the pageId or marcherIds if it is a DELETE statement
+            if (sqlActionFromSql(sqlStatement) !== "DELETE") {
+                const tableName = tableNameFromSql(sqlStatement);
+                if (tableName === Constants.MarcherTableName) {
+                    const marcherId = rowIdFromSql(sqlStatement);
+                    marcherIds.push(marcherId);
+                } else if (tableName === Constants.PageTableName) {
+                    const newPageId = rowIdFromSql(sqlStatement);
+                    if (newPageId > (pageId || -1)) pageId = newPageId;
+                } else if (tableName === Constants.MarcherPageTableName) {
+                    // If it's a marcher page, get the marcher id and page id of that marcher page
+                    const marcherPageId = rowIdFromSql(sqlStatement);
+                    const marcherPage = dbToUse
+                        .prepare(
+                            `SELECT marcher_id, page_id FROM ${Constants.MarcherPageTableName} WHERE rowid = (?)`
+                        )
+                        .get(marcherPageId) as
+                        | { marcher_id: number; page_id: number }
+                        | undefined;
+                    if (marcherPage) {
+                        marcherIds.push(marcherPage.marcher_id);
+                        if (marcherPage.page_id > (pageId || -1))
+                            pageId = marcherPage.page_id;
+                    }
+                }
+            }
+        }
+    } catch (error: any) {
+        response = {
+            success: false,
+            error: {
+                message: error?.message || "Could not get error message",
+                stack: error?.stack || "Could not get stack",
+            },
+            tableNames: new Set(),
+            sqlStatements: [],
+        };
+        console.error(error);
+    } finally {
+        if (!db) dbToUse.close();
+    }
+
+    return { ...response, marcherIds, pageId };
 }
 
 /* ======================== Field Properties ======================== */
@@ -397,6 +506,7 @@ export async function updateFieldProperties(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -413,19 +523,6 @@ async function getMarchers(db?: Database.Database): Promise<Marcher[]> {
     const result = (await stmt.all()) as Marcher[];
     if (!db) dbToUse.close();
     return result;
-}
-
-async function getMarcher(
-    marcherId: number,
-    db?: Database.Database
-): Promise<Marcher> {
-    const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.MarcherTableName} WHERE id = @marcherId`
-    );
-    const result = await stmt.get({ marcherId });
-    if (!db) dbToUse.close();
-    return result as Marcher;
 }
 
 async function createMarcher(newMarcher: NewMarcherArgs) {
@@ -447,6 +544,7 @@ async function createMarchers(
     // List of queries executed in this function to be added to the history table
     // const historyQueries: History.historyQuery[] = [];
     try {
+        History.incrementUndoGroup(db);
         for (const newMarcher of newMarchers) {
             const marcherToAdd: Marcher = new Marcher({
                 id: 0, // Not used, needed for interface
@@ -497,13 +595,6 @@ async function createMarchers(
                 id,
             });
 
-            // Add the page to the history table
-            // historyQueries.push({
-            //     action: 'DELETE',
-            //     tableName: Constants.MarcherTableName,
-            //     obj: { id }
-            // });
-
             /* Add a marcherPage for this marcher for each page */
             // Get all existing pages
             const pages = await getPages(db);
@@ -516,13 +607,6 @@ async function createMarchers(
                     x: 100,
                     y: 100,
                 });
-
-                // Add the marcherPage to the history table
-                // historyQueries.push({
-                //     action: 'DELETE',
-                //     tableName: Constants.MarcherPageTableName,
-                //     obj: { marcher_id: id, page_id: page.id }
-                // });
             }
         }
     } catch (error: any) {
@@ -532,6 +616,7 @@ async function createMarchers(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -550,13 +635,12 @@ async function updateMarchers(
     const db = connect();
     let output: DatabaseResponse<Marcher[]> = { success: true };
 
-    // List of queries executed in this function to be added to the history table
-    const historyActions: History.UpdateHistoryEntry[] = [];
     // List of properties to exclude
     const excludedProperties = ["id"];
 
     try {
         for (const modifiedMarcher of modifiedMarchers) {
+            History.incrementUndoGroup(db);
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(modifiedMarcher)
                 .filter((key) => !excludedProperties.includes(key))
@@ -567,9 +651,6 @@ async function updateMarchers(
             if (setClause.length === 0) {
                 throw new Error("No valid properties to update");
             }
-            // Record the original values of the marcher
-            const originalMarcher = await getMarcher(modifiedMarcher.id, db);
-
             const stmt = db.prepare(`
                 UPDATE ${Constants.MarcherTableName}
                 SET ${setClause}, updated_at = @new_updated_at
@@ -580,19 +661,7 @@ async function updateMarchers(
                 ...modifiedMarcher,
                 new_updated_at: new Date().toISOString(),
             });
-
-            historyActions.push({
-                tableName: Constants.MarcherTableName,
-                setClause: setClause,
-                previousState: originalMarcher,
-                reverseAction: {
-                    tableName: Constants.MarcherTableName,
-                    setClause: setClause,
-                    previousState: await getMarcher(modifiedMarcher.id, db),
-                },
-            });
         }
-        History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
         output = {
@@ -600,6 +669,7 @@ async function updateMarchers(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -620,6 +690,7 @@ async function deleteMarcher(
     const db = connect();
     let output: DatabaseResponse<Marcher> = { success: true };
     try {
+        History.incrementUndoGroup(db);
         const marcherStmt = db.prepare(`
             DELETE FROM ${Constants.MarcherTableName}
             WHERE id = @marcher_id
@@ -638,6 +709,7 @@ async function deleteMarcher(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -691,6 +763,7 @@ async function createPages(
     // const historyQueries: History.InsertHistoryEntry[] = [];
 
     try {
+        History.incrementUndoGroup(db);
         for (const newPage of newPages) {
             if (newPage.order === 0) {
                 // Ensure the first page has no counts
@@ -766,6 +839,7 @@ async function createPages(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -778,20 +852,20 @@ async function createPages(
  *                    page to update and the values to update it with
  * @param addToHistoryQueue - whether to add the changes to the history queue. Default is true.
  *                    Only set to false when updating as the response to adding a new page.
- * @param updateInReverse - whether to update the pages in reverse order. Default is false.
- *                    This is used to satisfy the unique constraint on the order and name column when adding pages.
  * @returns - {success: boolean, error?: string}
  */
 async function updatePages(
     modifiedPages: ModifiedPageContainer[],
-    addToHistoryQueue: Boolean = true,
+    addToHistoryQueue = true,
     updateInReverse = false
 ): Promise<DatabaseResponse<Page[]>> {
     const db = connect();
     let output: DatabaseResponse<Page[]> = { success: true };
 
-    // List of queries executed in this function to be added to the history table
-    const historyActions: History.UpdateHistoryEntry[] = [];
+    if (!addToHistoryQueue)
+        // Stop tracking undo/redo for this table
+        History.dropUndoTriggers(db, Constants.PageTableName);
+
     // List of properties to exclude
     const excludedProperties = ["id"];
     const sortedModifiedPages = modifiedPages.sort(
@@ -799,6 +873,7 @@ async function updatePages(
     );
 
     try {
+        History.incrementUndoGroup(db);
         for (const pageUpdate of updateInReverse
             ? sortedModifiedPages.toReversed()
             : sortedModifiedPages) {
@@ -818,8 +893,6 @@ async function updatePages(
                 continue;
             }
 
-            // Record the original values of the page
-            const originalPage = await getPage(pageUpdate.id, db);
             // Update the page
             const stmt = db.prepare(`
                 UPDATE ${Constants.PageTableName}
@@ -830,21 +903,7 @@ async function updatePages(
                 ...pageUpdate,
                 new_updated_at: new Date().toISOString(),
             });
-
-            if (addToHistoryQueue) {
-                historyActions.push({
-                    tableName: Constants.PageTableName,
-                    setClause: setClause,
-                    previousState: originalPage,
-                    reverseAction: {
-                        tableName: Constants.PageTableName,
-                        setClause: setClause,
-                        previousState: await getPage(pageUpdate.id, db),
-                    },
-                });
-            }
         }
-        if (addToHistoryQueue) History.insertUpdateHistory(historyActions, db);
     } catch (error: any) {
         console.error(error);
         output = {
@@ -852,6 +911,10 @@ async function updatePages(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        if (!addToHistoryQueue)
+            // Being tracking tracking again of undo/redo for this table
+            History.createUndoTriggers(db, Constants.PageTableName);
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -870,6 +933,7 @@ async function deletePage(page_id: number): Promise<DatabaseResponse<Page>> {
     const db = connect();
     let output: DatabaseResponse<Page> = { success: true };
     try {
+        History.incrementUndoGroup(db);
         const pageStmt = db.prepare(`
             DELETE FROM ${Constants.PageTableName}
             WHERE id = @page_id
@@ -885,6 +949,7 @@ async function deletePage(page_id: number): Promise<DatabaseResponse<Page>> {
         console.error(error);
         output = { success: false, error: error };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -1012,8 +1077,8 @@ async function updateMarcherPages(
 ): Promise<DatabaseResponse<MarcherPage[]>> {
     const db = connect();
     let output: DatabaseResponse<MarcherPage[]> = { success: true };
-    const historyActions: History.UpdateHistoryEntry[] = [];
     try {
+        History.incrementUndoGroup(db);
         for (const marcherPageUpdate of marcherPageUpdates) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(marcherPageUpdate)
@@ -1025,12 +1090,6 @@ async function updateMarcherPages(
                 throw new Error("No valid properties to update");
             }
 
-            // Record the original values of the marcherPage for the history table
-            const previousState = await getMarcherPage({
-                marcher_id: marcherPageUpdate.marcher_id,
-                page_id: marcherPageUpdate.page_id,
-            });
-
             const stmt = db.prepare(`
                 UPDATE ${Constants.MarcherPageTableName}
                 SET x = @x, y = @y, updated_at = @new_updated_at
@@ -1041,24 +1100,7 @@ async function updateMarcherPages(
                 ...marcherPageUpdate,
                 new_updated_at: new Date().toISOString(),
             });
-
-            const updateHistoryEntry = {
-                tableName: Constants.MarcherPageTableName,
-                setClause: setClause,
-                previousState: previousState,
-                reverseAction: {
-                    tableName: Constants.MarcherPageTableName,
-                    setClause: setClause,
-                    previousState: await getMarcherPage({
-                        marcher_id: marcherPageUpdate.marcher_id,
-                        page_id: marcherPageUpdate.page_id,
-                    }),
-                },
-            };
-
-            historyActions.push(updateHistoryEntry);
         }
-        History.insertUpdateHistory(historyActions, db);
 
         output = { success: true };
     } catch (error: any) {
@@ -1068,6 +1110,7 @@ async function updateMarcherPages(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -1185,6 +1228,7 @@ async function updateMeasuresAbcString(
     const db = connect();
     let output: DatabaseResponse<string> = { success: false };
     try {
+        History.incrementUndoGroup(db);
         const stmt = db.prepare(`
                 UPDATE ${Constants.MeasureTableName}
                 SET abc_data = @abc_data, updated_at = @new_updated_at
@@ -1202,6 +1246,7 @@ async function updateMeasuresAbcString(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -1269,6 +1314,7 @@ async function setSelectAudioFile(
     audioFileId: number
 ): Promise<AudioFile | null> {
     const db = connect();
+    History.incrementUndoGroup(db);
     const stmt = db.prepare(
         `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`
     );
@@ -1278,6 +1324,7 @@ async function setSelectAudioFile(
     );
     await selectStmt.run({ audioFileId });
     const result = await getSelectedAudioFile(db);
+    History.incrementUndoGroup(db);
     db.close();
     return result as AudioFile;
 }
@@ -1300,6 +1347,7 @@ export async function insertAudioFile(
     stmt.run();
     let output: DatabaseResponse<AudioFile[]> = { success: false };
     try {
+        History.incrementUndoGroup(db);
         const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.AudioFilesTableName} (
                     data,
@@ -1338,6 +1386,7 @@ export async function insertAudioFile(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -1355,6 +1404,7 @@ async function updateAudioFiles(
     const db = connect();
     let output: DatabaseResponse<AudioFile[]> = { success: true };
     try {
+        History.incrementUndoGroup(db);
         for (const audioFileUpdate of audioFileUpdates) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(audioFileUpdate)
@@ -1407,6 +1457,7 @@ async function updateAudioFiles(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -1424,6 +1475,7 @@ async function deleteAudioFile(
     const db = connect();
     let output: DatabaseResponse<AudioFile> = { success: true };
     try {
+        History.incrementUndoGroup(db);
         const pageStmt = db.prepare(`
             DELETE FROM ${Constants.AudioFilesTableName}
             WHERE id = @audioFileId
@@ -1433,6 +1485,7 @@ async function deleteAudioFile(
         console.error(error);
         output = { success: false, error: error };
     } finally {
+        History.incrementUndoGroup(db);
         db.close();
     }
     return output;

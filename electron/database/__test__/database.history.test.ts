@@ -205,7 +205,18 @@ describe("History Tables and Triggers", () => {
                     ]);
 
                     // Execute the undo action
-                    performUndo(db);
+                    let response = performUndo(db);
+                    expect(response.success).toBe(true);
+                    expect(response.sqlStatements).toEqual([
+                        'DELETE FROM "test_table" WHERE rowid=6',
+                        'DELETE FROM "test_table" WHERE rowid=5',
+                        'DELETE FROM "test_table" WHERE rowid=4',
+                    ]);
+                    expect(response.tableNames).toEqual(
+                        new Set(["test_table"])
+                    );
+                    expect(response.error).toBeUndefined();
+
                     expect(allObjects()).toEqual([
                         ...groupOneObjects,
                         ...groupTwoObjects,
@@ -368,7 +379,17 @@ describe("History Tables and Triggers", () => {
                     expect(allRows()).toEqual(expectedValues);
 
                     // Execute the undo action
-                    performUndo(db);
+                    let response = performUndo(db);
+                    expect(response.success).toBe(true);
+                    expect(response.sqlStatements).toEqual([
+                        'UPDATE "test_table" SET "id"=2,"test_value"=\'g1-1 - updated value\' WHERE rowid=2',
+                        'UPDATE "test_table" SET "id"=1,"test_value"=\'g1-0 - updated value\' WHERE rowid=1',
+                    ]);
+                    expect(response.tableNames).toEqual(
+                        new Set(["test_table"])
+                    );
+                    expect(response.error).toBeUndefined();
+
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - updated value" },
                         { id: 2, test_value: "g1-1 - updated value" },
@@ -524,7 +545,18 @@ describe("History Tables and Triggers", () => {
                     expect(allRows()).toEqual([]);
 
                     // Execute the undo action
-                    performUndo(db);
+                    let response = performUndo(db);
+                    expect(response.success).toBe(true);
+                    expect(response.sqlStatements).toEqual([
+                        'INSERT INTO "test_table" ("id","test_value") VALUES (6,\'g3-2\')',
+                        'INSERT INTO "test_table" ("id","test_value") VALUES (5,\'g3-1\')',
+                        'INSERT INTO "test_table" ("id","test_value") VALUES (4,\'g3-0\')',
+                    ]);
+                    expect(response.tableNames).toEqual(
+                        new Set(["test_table"])
+                    );
+                    expect(response.error).toBeUndefined();
+
                     let expectedValues = [
                         { id: 4, test_value: "g3-0" },
                         { id: 5, test_value: "g3-1" },
@@ -1771,6 +1803,191 @@ describe("History Tables and Triggers", () => {
             expect(undoGroups().length).toBe(50);
             expectedGroups = Array.from(Array(50).keys()).map((i) => i + 201);
             expect(undoGroups()).toEqual(expectedGroups);
+        });
+    });
+
+    describe("Advanced Undo/Redo Stress Tests with Reserved Words, Special Characters, and DELETE Operations", () => {
+        function setupComplexTablesWithReservedWords() {
+            db.exec(`
+            CREATE TABLE reserved_words_test (
+                "order" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "group" TEXT,
+                "select" TEXT,
+                "from" TEXT
+            );
+            CREATE TABLE special_characters_test (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT
+            );
+        `);
+
+            createUndoTriggers(db, "reserved_words_test");
+            createUndoTriggers(db, "special_characters_test");
+        }
+
+        it("Undo/Redo with reserved words, special characters, and DELETE operations", () => {
+            setupComplexTablesWithReservedWords();
+
+            // Insert into reserved_words_test
+            db.prepare(
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+            ).run("Group1", "Select1", "From1");
+            db.prepare(
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+            ).run("Group2", "Select2", "From2");
+            incrementUndoGroup(db);
+
+            // Insert into special_characters_test
+            db.prepare(
+                "INSERT INTO special_characters_test (description) VALUES (?)"
+            ).run(
+                "\"Double quote\", 'Single quote', (Parentheses), [Brackets]"
+            );
+            db.prepare(
+                "INSERT INTO special_characters_test (description) VALUES (?)"
+            ).run("Escape \\ backslash");
+            incrementUndoGroup(db);
+
+            // Perform DELETE operations
+            db.prepare(
+                'DELETE FROM reserved_words_test WHERE "order" = 2'
+            ).run();
+            db.prepare(
+                "DELETE FROM special_characters_test WHERE id = 2"
+            ).run();
+            incrementUndoGroup(db);
+
+            // Undo DELETE operations
+            performUndo(db); // Undo the DELETE from special_characters_test
+            let specialResult = db
+                .prepare("SELECT * FROM special_characters_test")
+                .all();
+            expect(specialResult.length).toBe(2); // Both rows should be back
+
+            performUndo(db); // Undo the DELETE from reserved_words_test
+            let reservedResult = db
+                .prepare("SELECT * FROM reserved_words_test")
+                .all();
+            expect(reservedResult.length).toBe(2); // Both rows should be back
+
+            // Redo DELETE operations
+            performUndo(db);
+            performRedo(db); // Redo the DELETE from reserved_words_test
+            reservedResult = db
+                .prepare("SELECT * FROM reserved_words_test")
+                .all();
+            expect(reservedResult.length).toBe(2); // One row should be deleted
+        });
+
+        it("Undo/Redo with random intervals, updates, deletes, and WHERE clauses", () => {
+            setupComplexTablesWithReservedWords();
+
+            // Insert into both tables
+            db.prepare(
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+            ).run("Group1", "Select1", "From1");
+            db.prepare(
+                "INSERT INTO special_characters_test (description) VALUES (?)"
+            ).run(
+                '"Complex value (with) {all} kinds [of] special characters!"'
+            );
+            incrementUndoGroup(db);
+
+            // Perform updates and DELETEs
+            db.prepare(
+                'UPDATE reserved_words_test SET "group" = ? WHERE "order" = 1'
+            ).run("UpdatedGroup");
+            db.prepare(
+                "DELETE FROM special_characters_test WHERE id = 1"
+            ).run();
+            incrementUndoGroup(db);
+
+            // Perform undo/redo in random order
+            let response = performUndo(db); // Undo DELETE and update
+            expect(response.success).toBe(true);
+            expect(response.error).toBeUndefined();
+            expect(response.tableNames).toEqual(
+                new Set(["reserved_words_test", "special_characters_test"])
+            );
+            let reservedResult = db
+                .prepare(
+                    'SELECT "group" FROM reserved_words_test WHERE "order" = 1'
+                )
+                .get() as any;
+            let specialResult = db
+                .prepare(
+                    "SELECT description FROM special_characters_test WHERE id = 1"
+                )
+                .get() as any;
+            expect(reservedResult.group).toBe("Group1");
+            expect(specialResult.description).toBe(
+                '"Complex value (with) {all} kinds [of] special characters!"'
+            );
+
+            performRedo(db); // Redo DELETE and update
+            reservedResult = db
+                .prepare(
+                    'SELECT "group" FROM reserved_words_test WHERE "order" = 1'
+                )
+                .get();
+            specialResult = db
+                .prepare("SELECT * FROM special_characters_test")
+                .all();
+            expect(reservedResult.group).toBe("UpdatedGroup");
+            expect(specialResult.length).toBe(0); // The row should be deleted
+        });
+
+        it("Stress test with multiple DELETEs, special characters, and reserved words", () => {
+            setupComplexTablesWithReservedWords();
+
+            // Insert several rows into both tables
+            db.prepare(
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+            ).run("GroupA", "SelectA", "FromA");
+            db.prepare(
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+            ).run("GroupB", "SelectB", "FromB");
+            db.prepare(
+                "INSERT INTO special_characters_test (description) VALUES (?)"
+            ).run('Some "special" (value)');
+            db.prepare(
+                "INSERT INTO special_characters_test (description) VALUES (?)"
+            ).run('Another "complex" [test] (entry)');
+            incrementUndoGroup(db);
+
+            // Perform random DELETEs
+            db.prepare(
+                'DELETE FROM reserved_words_test WHERE "order" = 1'
+            ).run();
+            db.prepare(
+                "DELETE FROM special_characters_test WHERE id = 2"
+            ).run();
+            incrementUndoGroup(db);
+
+            // Undo all DELETEs
+            performUndo(db);
+
+            let reservedResult = db
+                .prepare("SELECT * FROM reserved_words_test")
+                .all();
+            let specialResult = db
+                .prepare("SELECT * FROM special_characters_test")
+                .all();
+            expect(reservedResult.length).toBe(2); // Both rows should be restored
+            expect(specialResult.length).toBe(2); // Both rows should be restored
+
+            // Redo all DELETEs
+            performRedo(db);
+            performRedo(db);
+
+            reservedResult = db
+                .prepare("SELECT * FROM reserved_words_test")
+                .all();
+            specialResult = db
+                .prepare("SELECT * FROM special_characters_test")
+                .all();
+            expect(reservedResult.length).toBe(1); // One row should be deleted
+            expect(specialResult.length).toBe(1); // One row should be deleted
         });
     });
 });

@@ -155,10 +155,12 @@ describe("TableController", () => {
             });
         });
 
-        it("should insert a single item into the table", () => {
+        it("should insert a single item into the table", async () => {
             const item = { name: "jeff" };
             const before = Date.now();
             const result = tableController.create({ items: [item], db });
+            // sleep for 5ms to ensure the created_at field is different
+            await new Promise((resolve) => setTimeout(resolve, 5));
             const after = Date.now();
 
             expect(result.success).toBe(true);
@@ -349,8 +351,8 @@ describe("TableController", () => {
             const insertResult = tableController.create({ items: [item], db });
             const updatedItem: UpdatedItemArgs = { id: 1, name: "bob" };
             const before = Date.now();
-            // wait for 1ms to ensure the updated_at field is different
-            await new Promise((resolve) => setTimeout(resolve, 1));
+            // wait for 5ms to ensure the updated_at field is different
+            await new Promise((resolve) => setTimeout(resolve, 5));
             const updateResult = tableController.update({
                 items: [updatedItem],
                 db,
