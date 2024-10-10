@@ -186,6 +186,9 @@ app.on("open-file", (event, path) => {
 
 // Custom title bar buttons
 
+const isMacOS = process.platform === "darwin";
+const menu = new Menu();
+
 ipcMain.on("window:minimize", () => {
     win?.minimize();
 });
@@ -202,15 +205,23 @@ ipcMain.on("window:close", () => {
     win?.close();
 });
 
+ipcMain.on(`menu:open`, () => {
+    if (!isMacOS && win) {
+        menu.popup({
+            window: win,
+        });
+    }
+});
+
 // Theme stores
 
-ipcMain.handle('get-theme', () => {
-    return store.get('theme', 'light');
-  });
+ipcMain.handle("get-theme", () => {
+    return store.get("theme", "light");
+});
 
-  ipcMain.handle('set-theme', (event, theme) => {
-    store.set('theme', theme);
-  });
+ipcMain.handle("set-theme", (event, theme) => {
+    store.set("theme", theme);
+});
 
 //
 

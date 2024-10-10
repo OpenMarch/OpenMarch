@@ -29,38 +29,36 @@ function App() {
     else
         return (
             // Context for the selected page. Will change when more specialized
-            <TooltipProvider delayDuration={500} skipDelayDuration={500}>
-                <IsPlayingProvider>
-                    <SelectedPageProvider>
-                        <SelectedMarchersProvider>
-                            <SelectedAudioFileProvider>
-                                <FieldPropertiesProvider>
-                                    <StateInitializer />
-                                    <AudioPlayer />
-                                    <RegisteredActionsHandler />
+            <IsPlayingProvider>
+                <SelectedPageProvider>
+                    <SelectedMarchersProvider>
+                        <SelectedAudioFileProvider>
+                            <FieldPropertiesProvider>
+                                <StateInitializer />
+                                <AudioPlayer />
+                                <RegisteredActionsHandler />
+                                <div
+                                    id="app"
+                                    className="flex h-full min-h-0 w-full gap-8 px-8"
+                                >
+                                    <Sidebar />
                                     <div
-                                        id="app"
-                                        className="flex h-full min-h-0 w-full gap-8 px-8"
+                                        id="workspace"
+                                        className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                     >
-                                        <Sidebar />
-                                        <div
-                                            id="workspace"
-                                            className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
-                                        >
-                                            <Toolbar />
-                                            <div className="relative h-full min-h-0">
-                                                <SidebarModal />
-                                                <Canvas />
-                                            </div>
-                                            <TimelineContainer />
+                                        <Toolbar />
+                                        <div className="relative h-full min-h-0">
+                                            <SidebarModal />
+                                            <Canvas />
                                         </div>
+                                        <TimelineContainer />
                                     </div>
-                                </FieldPropertiesProvider>
-                            </SelectedAudioFileProvider>
-                        </SelectedMarchersProvider>
-                    </SelectedPageProvider>
-                </IsPlayingProvider>
-            </TooltipProvider>
+                                </div>
+                            </FieldPropertiesProvider>
+                        </SelectedAudioFileProvider>
+                    </SelectedMarchersProvider>
+                </SelectedPageProvider>
+            </IsPlayingProvider>
         );
 }
 

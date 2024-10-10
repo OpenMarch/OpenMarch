@@ -116,10 +116,10 @@ const APP_API = {
     minimizeWindow: () => ipcRenderer.send("window:minimize"),
     maximizeWindow: () => ipcRenderer.send("window:maximize"),
     closeWindow: () => ipcRenderer.send("window:close"),
+    openMenu: () => ipcRenderer.send("menu:open"),
     isMacOS: process.platform === "darwin",
 
     // Themes
-
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 

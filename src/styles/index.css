@@ -59,7 +59,7 @@
 .main-app-titlebar {
     -webkit-app-region: drag;
 }
-.main-app-titlebar .window-control-btn {
+.main-app-titlebar .titlebar-button {
     -webkit-app-region: no-drag;
 }
 

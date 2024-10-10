@@ -23,7 +23,7 @@ export default function TimelineContainer() {
             className="relative flex h-[10rem] min-h-0 min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
         >
             <div
-                className="fixed bottom-32 right-0 flex gap-6 p-2 pr-16 drop-shadow-md"
+                className="fixed bottom-0 right-0 m-16 flex gap-6 drop-shadow-md"
                 id="zoomIcons"
             >
                 <button

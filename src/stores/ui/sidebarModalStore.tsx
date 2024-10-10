@@ -13,7 +13,9 @@ type SidebarModalStore = {
 export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
     isSidebarModalOpen: false,
     content: (
-        <h4 className="text-h4 text-red">Sidebar modal failed to render</h4>
+        <h4 className="text-h4 text-red">
+            Sidebar modal content failed to render
+        </h4>
     ), // default
     toggleOpen: () =>
         set((state) => ({

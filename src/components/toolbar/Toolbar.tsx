@@ -1,4 +1,3 @@
-import FileControls from "./sections/FileControls";
 import PlaybackControls from "./sections/PlaybackControls";
 import UiSettingsToolbar from "./sections/UiSettingsToolbar";
 // import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
@@ -11,7 +10,6 @@ import ToolbarSection from "@/components/toolbar/ToolbarSection";
 function Topbar() {
     return (
         <div className="flex w-full flex-wrap gap-8">
-            <FileControls />
             <PlaybackControls />
             <ToolbarSection>
                 <MarchersModal />
