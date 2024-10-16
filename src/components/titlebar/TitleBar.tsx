@@ -26,7 +26,7 @@ export default function TitleBar() {
                 <ThemeSwitcher />
             </div>
             {!isMacOS && (
-                <div id="titlebar-button" className="flex">
+                <div className="titlebar-button flex">
                     <button
                         className="cursor-pointer px-16 py-8 duration-150 ease-out hover:text-accent"
                         onClick={() => {

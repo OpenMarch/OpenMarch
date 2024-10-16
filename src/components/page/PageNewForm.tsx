@@ -1,13 +1,26 @@
-import * as Form from "@/components/templates/Form";
+import * as Form from "@radix-ui/react-form";
+import {
+    SelectItem,
+    Select,
+    SelectContent,
+    SelectTriggerButton,
+} from "../ui/Select";
 import { useEffect, useRef, useState } from "react";
 import { usePageStore } from "@/stores/page/usePageStore";
 import Page, { NewPageArgs } from "@/global/classes/Page";
 import {
-    FaArrowDown,
-    FaArrowLeft,
-    FaArrowRight,
-    FaArrowUp,
-} from "react-icons/fa";
+    ArrowUp,
+    ArrowDown,
+    ArrowLeft,
+    ArrowRight,
+    Info,
+} from "@phosphor-icons/react";
+import { Input } from "../ui/Input";
+import { Checkbox } from "../ui/Checkbox";
+import { Button } from "../ui/Button";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { toast } from "sonner";
+import { TooltipContents } from "../ui/Tooltip";
 
 interface PageNewFormProps {
     hasHeader?: boolean;
@@ -34,10 +47,8 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
         counts.toString() || "8",
     ); // used to reset the form when counts changes
     const [quantity, setQuantity] = useState<number>(1);
-    const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
-    const [showShortcuts, setShowShortcuts] = useState<boolean>(false);
     const { pages } = usePageStore!();
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -90,7 +101,6 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (counts && quantity) {
-            const newAlertMessages = [...alertMessages];
             const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPageArg: NewPageArgs = {
@@ -104,27 +114,27 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
             const response = await Page.createPages(newPageArgs);
 
             if (response.success && response.newPages) {
-                const newPageNames = response.newPages.map((page) => page.name);
-                newAlertMessages.unshift(
-                    `Page ${newPageNames.toString()} created successfully`,
-                );
+                response.newPages
+                    .map((page) => page.name)
+                    .forEach((page) => {
+                        toast.success(
+                            `Page ${page.toString()} created successfully`,
+                        );
+                    });
             } else {
                 console.error(
                     `Error creating pages:`,
                     response.error?.message || "",
                 );
-                newAlertMessages.unshift(`Error creating pages`);
+                toast.error(`Error creating pages`);
             }
 
-            setAlertMessages(newAlertMessages);
             resetForm();
         }
     };
 
-    const handlePreviousPageChange = (
-        event: React.ChangeEvent<HTMLSelectElement>,
-    ) => {
-        const selectedPageId = parseInt(event.target.value);
+    const handlePreviousPageChange = (value: string) => {
+        const selectedPageId = parseInt(value);
         if (selectedPageId === -1) setPreviousPage(undefined);
         else
             setPreviousPage(
@@ -149,10 +159,8 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
         else setQuantity(parseInt(event.target.value));
     };
 
-    const handleIsSubsetChange = (
-        event: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        setIsSubset(event.target.checked);
+    const handleIsSubsetChange = (checked: boolean) => {
+        setIsSubset(checked);
     };
 
     function makeButtonString(quantity: number) {
@@ -172,138 +180,184 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
     }, [counts, formCounts]);
 
     return (
-        <form
+        <Form.Root
             onSubmit={handleSubmit}
             id="newPageForm"
             ref={formRef}
-            aria-label="New Page Form"
+            className="flex h-full flex-col justify-between"
         >
-            {hasHeader && <h4>Create new pages</h4>}
-            <div className="grid grid-cols-2">
-                <Form.Group aria-label="new page previous page">
-                    <Form.Label>Prev. Pg.</Form.Label>
-                    <Form.Select
-                        aria-label="Select the previous page"
-                        onChange={handlePreviousPageChange}
+            <div className="flex flex-col gap-16 px-12">
+                <Form.Field
+                    aria-label="new page previous page"
+                    name="Previous Page"
+                    className="flex items-center justify-between gap-32"
+                >
+                    <Form.Label className="w-full text-body text-text/80">
+                        Previous Page
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Select
+                            aria-label="Select the previous page"
+                            onValueChange={handlePreviousPageChange}
+                            defaultValue="-1"
+                        >
+                            <SelectTriggerButton
+                                label={previousPage?.toString() || "Prev."}
+                            />
+                            <SelectContent>
+                                <SelectItem value="-1">Last</SelectItem>
+                                {pages.map((page, index) => (
+                                    <SelectItem
+                                        key={index}
+                                        value={`${page.id}`}
+                                    >
+                                        {page.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
                     >
-                        <option value={-1}>Last</option>
-                        {pages.map((page, index) => (
-                            <option key={index} value={page.id}>
-                                {page.name}
-                            </option>
-                        ))}
-                    </Form.Select>
-                </Form.Group>
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
 
-                <Form.Group>
-                    <Form.Label htmlFor="countsForm">Counts</Form.Label>
-                    <Form.Input
-                        type="number"
-                        placeholder="-"
-                        aria-label="new page counts"
-                        id="countsForm"
-                        onFocus={() => setTyping(true)}
-                        onBlur={() => {
-                            setTyping(false);
-                            if (counts === 0) {
-                                setCounts(1);
-                                setFormCounts("1");
-                            } else setFormCounts(counts.toString());
-                        }}
-                        value={formCounts}
-                        onChange={handleCountsChange}
-                        required
-                        min={1}
-                        step={1}
-                    />
-                </Form.Group>
-            </div>
-            <div className="grid grid-cols-2">
-                <Form.Group aria-label="new page quantity">
-                    <Form.Label htmlFor="quantityForm">Quantity</Form.Label>
-                    <Form.Input
-                        type="number"
-                        defaultValue={1}
-                        id="quantityForm"
-                        onFocus={() => setTyping(true)}
-                        onBlur={() => setTyping(false)}
-                        onChange={handleQuantityChange}
-                        step={1}
-                        min={1}
-                    />
-                </Form.Group>
-                <Form.Group aria-label="new page is subset checkbox">
-                    <Form.Label htmlFor="subsetForm">Subset</Form.Label>
-                    <Form.Input
-                        type="checkbox"
+                <Form.Field
+                    name="Counts"
+                    className="flex items-center justify-between gap-32"
+                >
+                    <div className="flex gap-8">
+                        <Form.Label
+                            className="w-full text-body text-text/80"
+                            htmlFor="countsForm"
+                        >
+                            Counts
+                        </Form.Label>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger>
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div className="flex gap-8">
+                                    <ArrowLeft size={18} />
+                                    <ArrowRight size={18} />
+                                    to increment by 4.
+                                </div>
+                                <div className="flex gap-8">
+                                    <ArrowUp size={18} />
+                                    <ArrowDown size={18} />
+                                    to increment by 1.
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </div>
+                    <Form.Control asChild>
+                        <Input
+                            type="number"
+                            placeholder="-"
+                            aria-label="new page counts"
+                            id="countsForm"
+                            onFocus={() => setTyping(true)}
+                            onBlur={() => {
+                                setTyping(false);
+                                if (counts === 0) {
+                                    setCounts(1);
+                                    setFormCounts("1");
+                                } else setFormCounts(counts.toString());
+                            }}
+                            value={formCounts}
+                            onChange={handleCountsChange}
+                            required
+                            min={1}
+                            step={1}
+                        />
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
+                <Form.Field
+                    name="Quantity"
+                    aria-label="new page quantity"
+                    className="flex items-center justify-between gap-32"
+                >
+                    <Form.Label
+                        className="w-full text-body text-text/80"
+                        htmlFor="quantityForm"
+                    >
+                        Quantity
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Input
+                            type="number"
+                            defaultValue={1}
+                            id="quantityForm"
+                            onFocus={() => setTyping(true)}
+                            onBlur={() => setTyping(false)}
+                            onChange={handleQuantityChange}
+                            step={1}
+                            min={1}
+                        />
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
+                <Form.Field
+                    name="Subset"
+                    aria-label="new page is subset checkbox"
+                    className="flex items-center justify-between gap-32"
+                >
+                    <div className="flex gap-8">
+                        <Form.Label
+                            htmlFor="subsetForm"
+                            className="w-full text-body text-text/80"
+                        >
+                            Subset
+                        </Form.Label>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger>
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <code className="text-text3 rounded-6 border border-stroke p-4 font-mono">
+                                    S
+                                </code>{" "}
+                                to toggle subset.
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </div>
+                    <Checkbox
                         id="subsetForm"
-                        className="w-fit"
                         checked={isSubset}
-                        onChange={handleIsSubsetChange}
+                        onCheckedChange={handleIsSubsetChange}
                     />
-                </Form.Group>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
             </div>
-
-            <div
-                className="bg-gray-500 py-1 rounded text-gray-100 hover:bg-gray-600 text-sm float-right w-fit px-2 transition-all duration-150 hover:cursor-pointer"
-                onClick={() => setShowShortcuts(!showShortcuts)}
-                aria-label="new page form tips"
+            <Button
+                type="submit"
+                aria-label="create page button"
+                className="w-full"
+                disabled={disabledProp}
             >
-                {showShortcuts ? "Hide Shortcuts" : "Shortcuts"}
-            </div>
-            {showShortcuts && (
-                <div className="" id="new page form tooltips">
-                    <ul className="text-gray-500 bg-gray-200 rounded border-1 border-gray-400 list-inside border-solid p-2">
-                        <li>
-                            <FaArrowLeft /> <FaArrowRight /> to increment counts
-                            by 4.
-                        </li>
-                        <li>
-                            <FaArrowUp /> <FaArrowDown /> to increment count by
-                            1.
-                        </li>
-                        <li className="">
-                            <span className="key bg-gray-500 text-gray-50 border-gray-600">
-                                S
-                            </span>{" "}
-                            to toggle subset.
-                        </li>
-                        <li>
-                            <span className="key bg-gray-500 text-gray-50 border-gray-600">
-                                Enter
-                            </span>{" "}
-                            to submit.
-                        </li>
-                    </ul>
-                </div>
-            )}
-            <div className="py-2">
-                <button
-                    className="btn-primary"
-                    type="submit"
-                    aria-label="create page button"
-                    disabled={disabledProp}
-                >
-                    {makeButtonString(quantity)}
-                </button>
-            </div>
-            {alertMessages.map((message, index) => (
-                <Form.Alert
-                    key={index}
-                    type={message.startsWith("Error") ? "error" : "success"}
-                    className="mt-3"
-                    onClose={() =>
-                        setAlertMessages(
-                            alertMessages.filter((_, i) => i !== index),
-                        )
-                    }
-                    dismissible
-                    aria-label="create page response"
-                >
-                    {message}
-                </Form.Alert>
-            ))}
-        </form>
+                {makeButtonString(quantity)}
+            </Button>
+        </Form.Root>
     );
 };
 

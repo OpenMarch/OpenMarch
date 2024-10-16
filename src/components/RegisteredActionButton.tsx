@@ -5,6 +5,7 @@ import {
 } from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
+import { TooltipContents } from "./ui/Tooltip";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -82,16 +83,11 @@ export default function RegisteredActionButton({
                         {children}
                     </button>
                 </RadixTooltip.Trigger>
-                <RadixTooltip.Portal>
-                    <RadixTooltip.Content
-                        side="bottom"
-                        className="z-[99] m-8 rounded-6 border border-stroke bg-modal p-4 text-text shadow-modal backdrop-blur-32"
-                    >
-                        {instructionalString
-                            ? instructionalString
-                            : registeredAction.instructionalString}
-                    </RadixTooltip.Content>
-                </RadixTooltip.Portal>
+                <TooltipContents side="bottom">
+                    {instructionalString
+                        ? instructionalString
+                        : registeredAction.instructionalString}
+                </TooltipContents>
             </RadixTooltip.Root>
         );
     else
