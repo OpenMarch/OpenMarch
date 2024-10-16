@@ -32,7 +32,7 @@ export const AlertDialogTitle = ({
         <RadixAlertDialog.Cancel asChild>
             <X
                 size={24}
-                className="text-text duration-150 ease-out hover:text-red"
+                className="cursor-pointer text-text duration-150 ease-out hover:text-red"
             />
         </RadixAlertDialog.Cancel>
     </div>

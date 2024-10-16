@@ -223,7 +223,7 @@ const MarcherNewForm: React.FC<MarcherNewFormProps> = ({
                     name="Quantity"
                     className="flex items-center justify-between"
                 >
-                    <Form.Label className="text-body text-text/80">
+                    <Form.Label className="w-full text-body text-text/80">
                         Quantity
                     </Form.Label>
                     <Form.Control asChild>

@@ -23,7 +23,7 @@ export const SelectTriggerButton = ({
         <RadixSelect.Trigger
             className={twMerge(
                 clsx(
-                    "flex h-[2.5rem] items-center justify-between gap-12 rounded-6 border border-stroke bg-fg-2 px-22 text-body text-text outline-1 duration-150 ease-out enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "flex h-[2.5rem] w-fit items-center justify-between gap-12 overflow-clip rounded-6 border border-stroke bg-fg-2 px-22 text-body text-text outline-1 duration-150 ease-out enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -63,7 +63,7 @@ export const SelectContent = ({ children }: RadixSelectContentProps) => {
         <RadixSelect.Portal>
             <RadixSelect.Content
                 position="popper"
-                className="relative z-50 mt-4 max-h-[512px] w-full overflow-hidden rounded-6 border border-stroke bg-modal px-22 font-sans backdrop-blur-3xl data-[state='open']:animate-scale-in"
+                className="relative z-50 mt-4 max-h-[512px] w-full max-w-[384px] overflow-hidden rounded-6 border border-stroke bg-modal px-22 font-sans backdrop-blur-3xl data-[state='open']:animate-scale-in"
             >
                 <RadixSelect.ScrollUpButton className="flex h-fit cursor-default items-center justify-center border-b border-stroke py-2 text-text">
                     <CaretUp size={18} />
@@ -90,7 +90,7 @@ export const SelectItem = React.forwardRef<
             {...props}
             ref={forwardedRef}
         >
-            <RadixSelect.ItemText className="text-body leading-none text-text">
+            <RadixSelect.ItemText className="w-full truncate whitespace-nowrap text-body leading-none text-text">
                 {children}
             </RadixSelect.ItemText>
             <RadixSelect.ItemIndicator>

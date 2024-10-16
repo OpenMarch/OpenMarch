@@ -36,6 +36,7 @@ export default {
             h2: "2.25rem",
             h3: "1.75rem",
             h4: "1.25rem",
+            h5: "1.125rem",
             body: "0.875rem",
             sub: "0.6875rem",
         },
