@@ -27,13 +27,13 @@ export default function TimelineContainer() {
                 id="zoomIcons"
             >
                 <button
-                    className="m-4 text-text duration-150 ease-out hover:text-accent"
+                    className="m-4 text-text outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4"
                     onClick={() => setPxPerSecond(pxPerSecond * 0.8)}
                 >
                     <Minus size={16} />
                 </button>
                 <button
-                    className="m-4 text-text duration-150 ease-out hover:text-accent"
+                    className="m-4 text-text outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4"
                     onClick={() => setPxPerSecond(pxPerSecond * 1.2)}
                 >
                     <Plus size={16} />

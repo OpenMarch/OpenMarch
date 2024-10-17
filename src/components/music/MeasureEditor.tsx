@@ -124,7 +124,7 @@ export default function MeasureEditor() {
                                     RegisteredActionsObjects.launchImportMusicXmlFileDialogue
                                 }
                                 showTooltip={false}
-                                className="hover:text-text"
+                                className="hover:text-text focus-visible:outline-none"
                             >
                                 Import MusicXML
                             </RegisteredActionButton>

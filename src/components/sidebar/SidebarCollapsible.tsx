@@ -19,7 +19,7 @@ export const SidebarCollapsible = ({
             onOpenChange={setOpen}
             defaultOpen={defaultOpen}
         >
-            <RadixCollapsible.Trigger className="flex h-fit w-full justify-between">
+            <RadixCollapsible.Trigger className="flex h-fit w-full justify-between outline-none duration-150 ease-out focus-visible:text-accent">
                 <h4 className="text-h4">{title}</h4>
                 {open ? <CaretUp size={24} /> : <CaretDown size={24} />}
             </RadixCollapsible.Trigger>

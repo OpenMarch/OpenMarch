@@ -69,13 +69,13 @@ export default function RegisteredActionButton({
     if (showTooltip)
         return (
             <RadixTooltip.Root>
-                <RadixTooltip.Trigger className="flex items-center">
+                <RadixTooltip.Trigger className="flex items-center" asChild>
                     <button
                         {...rest}
                         ref={buttonRef}
                         className={twMerge(
                             clsx(
-                                `group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`,
+                                `group outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`,
                                 rest.className,
                             ),
                         )}
@@ -95,7 +95,10 @@ export default function RegisteredActionButton({
             <button
                 {...rest}
                 ref={buttonRef}
-                className={`${rest?.className ? rest.className : ""} group duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50`}
+                className={clsx(
+                    "group outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
+                    rest.className,
+                )}
             >
                 {children}
             </button>

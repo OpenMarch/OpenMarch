@@ -43,13 +43,13 @@ export default function ThemeSwitcher() {
         >
             <ToggleGroup.Item
                 value="light"
-                className="text-text data-[state=on]:text-accent"
+                className="text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 data-[state=on]:text-accent"
             >
                 <Sun size={18} />
             </ToggleGroup.Item>
             <ToggleGroup.Item
                 value="dark"
-                className="text-text data-[state=on]:text-accent"
+                className="text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 data-[state=on]:text-accent"
             >
                 <Moon size={18} />
             </ToggleGroup.Item>

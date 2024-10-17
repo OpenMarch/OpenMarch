@@ -35,13 +35,13 @@ function FileControls() {
             </RegisteredActionButton>
             <button
                 onClick={api.performUndo}
-                className="duration-150 ease-out hover:text-accent disabled:opacity-50"
+                className="outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:opacity-50"
             >
                 <ArrowUUpLeft size={18} />
             </button>
             <button
                 onClick={api.performRedo}
-                className="duration-150 ease-out hover:text-accent disabled:opacity-50"
+                className="outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:opacity-50"
             >
                 <ArrowUUpRight size={18} />
             </button>

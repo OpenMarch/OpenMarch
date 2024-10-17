@@ -23,7 +23,7 @@ export const SelectTriggerButton = ({
         <RadixSelect.Trigger
             className={twMerge(
                 clsx(
-                    "flex h-[2.5rem] w-fit items-center justify-between gap-12 overflow-clip rounded-6 border border-stroke bg-fg-2 px-22 text-body text-text outline-1 duration-150 ease-out enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "flex h-[2.5rem] w-fit items-center justify-between gap-12 overflow-clip rounded-6 border border-stroke bg-fg-2 px-22 text-body text-text duration-150 ease-out focus-visible:border-accent focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}

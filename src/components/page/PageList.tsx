@@ -164,7 +164,7 @@ function PageList({
                                     variant="secondary"
                                     size="compact"
                                     handleCancel={handleCancel}
-                                    editButton={"Edit Marchers"}
+                                    editButton={"Edit Pages"}
                                     isEditingProp={isEditing}
                                     setIsEditingProp={setIsEditing}
                                     handleSubmit={handleSubmit}

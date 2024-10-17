@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
     Select,
     SelectItem,
-    SelectGroup,
     SelectContent,
     SelectSeparator,
     SelectTriggerButton,

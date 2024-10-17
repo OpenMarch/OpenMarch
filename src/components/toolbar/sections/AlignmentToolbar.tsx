@@ -16,7 +16,7 @@ export default function UiSettingsToolbar() {
     const { uiSettings } = useUiSettingsStore();
 
     return (
-        <div className="flex gap-8">
+        <>
             <ToolbarSection aria-label="Cursor movement and marcher snap">
                 <RegisteredActionButton
                     instructionalString={
@@ -99,6 +99,6 @@ export default function UiSettingsToolbar() {
                     Set selected to prev
                 </RegisteredActionButton>
             </ToolbarSection>
-        </div>
+        </>
     );
 }

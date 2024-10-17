@@ -21,14 +21,19 @@ export function SidebarModalLauncher({
     buttonLabel: string;
     contents: ReactNode;
 }) {
-    const { toggleOpen, setContent } = useSidebarModalStore();
+    const { toggleOpen, setContent, isSidebarModalOpen } =
+        useSidebarModalStore();
     return (
         <button
             onClick={() => {
-                setContent(contents);
-                toggleOpen();
+                if (!isSidebarModalOpen) {
+                    setContent(contents);
+                    toggleOpen();
+                } else {
+                    setContent(contents);
+                }
             }}
-            className="duration-150 ease-out hover:text-accent disabled:pointer-events-none disabled:opacity-50"
+            className="outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
         >
             {buttonLabel}
         </button>

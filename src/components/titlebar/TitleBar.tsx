@@ -12,7 +12,7 @@ export default function TitleBar() {
             >
                 {!isMacOS && (
                     <button
-                        className="titlebar-button cursor-pointer duration-150 ease-out hover:text-accent"
+                        className="titlebar-button cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4"
                         onClick={() => {
                             window.electron.openMenu();
                         }}
@@ -20,15 +20,17 @@ export default function TitleBar() {
                         <List size={18} />
                     </button>
                 )}
-                <p className="text-body leading-none">OpenMarch</p>
-                <p className="text-body leading-none opacity-50">0.0.2</p>
+                <div className="flex gap-12">
+                    <p className="text-body leading-none">OpenMarch</p>
+                    <p className="text-body leading-none opacity-50">0.0.2</p>
+                </div>
                 <FileControls />
                 <ThemeSwitcher />
             </div>
             {!isMacOS && (
                 <div className="titlebar-button flex">
                     <button
-                        className="cursor-pointer px-16 py-8 duration-150 ease-out hover:text-accent"
+                        className="cursor-pointer px-16 py-8 outline-none duration-150 ease-out hover:text-accent focus-visible:text-accent"
                         onClick={() => {
                             window.electron.minimizeWindow();
                         }}
@@ -36,7 +38,7 @@ export default function TitleBar() {
                         <Minus size={20} />
                     </button>
                     <button
-                        className="cursor-pointer px-16 py-8 duration-150 ease-out hover:text-accent"
+                        className="cursor-pointer px-16 py-8 outline-none duration-150 ease-out hover:text-accent focus-visible:text-accent"
                         onClick={() => {
                             window.electron.maximizeWindow();
                         }}
@@ -44,7 +46,7 @@ export default function TitleBar() {
                         <Square size={20} />
                     </button>
                     <button
-                        className="cursor-pointer px-16 py-8 pr-24 duration-150 ease-out hover:text-red"
+                        className="cursor-pointer px-16 py-8 pr-24 outline-none duration-150 ease-out hover:text-red focus-visible:text-red"
                         onClick={() => {
                             window.electron.closeWindow();
                         }}
