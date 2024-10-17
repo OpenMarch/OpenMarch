@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
-import TableController from "../AbstractTableController";
 import Database from "better-sqlite3";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as Templates from "../DatabaseActions";
+import {
+    createHistoryTables,
+    createUndoTriggers,
+} from "../../database.history";
 
 // Mock ipcMain and ipcRenderer
 vi.mock("electron", () => ({
@@ -14,43 +18,16 @@ vi.mock("electron", () => ({
     },
 }));
 
-// Mock the DatabaseItemType, NewItemArgs, and UpdatedItemArgs types
-type DatabaseItemType = {
-    id: number;
-    name: string;
-    age?: number;
-    created_at: string;
-    updated_at: string;
-};
-type NewItemArgs = { name: string; age?: number };
-type UpdatedItemArgs = { id: number; name?: string; age?: number };
-
-// Mock the TableController class
-class MockTableController extends TableController<
-    DatabaseItemType,
-    NewItemArgs,
-    UpdatedItemArgs
-> {
-    tableName = "mockTable";
-    constructor(connect: () => Database.Database) {
-        super(connect);
-        this.createTable(connect());
-    }
-    createTable(db: Database.Database): void {
-        db.exec(`
-            CREATE TABLE "${this.tableName}" (
-                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "name"          TEXT NOT NULL,
-                "age"           INTEGER,
-                "created_at"    TEXT NOT NULL,
-                "updated_at"    TEXT NOT NULL
-            );
-        `);
-    }
-}
-
-describe("TableController", () => {
-    let tableController: MockTableController;
+describe("Database Actions", () => {
+    type Row = {
+        name: string;
+        age?: number | null;
+        created_at: string;
+        updated_at: string;
+        id: number;
+    };
+    type NewRow = { name: string; age?: number | null; id?: number };
+    type UpdateRowArgs = { id: number; name?: string; age?: number | null };
     let db: Database.Database;
 
     const createDatabase = () => {
@@ -58,6 +35,7 @@ describe("TableController", () => {
     };
 
     const deleteDatabase = (db: Database.Database) => {
+        db.prepare(`DROP TABLE IF EXISTS ${mockTableName}`).run();
         db.close();
     };
 
@@ -74,7 +52,7 @@ describe("TableController", () => {
         removeTimestamps = true,
         removeId = true,
     }: {
-        item: DatabaseItemType;
+        item: Object;
         removeTimestamps?: boolean;
         removeId?: boolean;
     }) => {
@@ -90,75 +68,36 @@ describe("TableController", () => {
         return newItem as Object;
     };
 
-    /**
-     * Tests that the function connects to the database, prepares the statement, and closes the database
-     *
-     * @param fn The function to test
-     * @param args The arguments to pass to the function
-     */
-    const expectToConnectAndDisconnect = (
-        fn: (args: any) => any,
-        args: any = {}
-    ) => {
-        const connectSpy = vi.spyOn(tableController, "connect");
-        const prepareSpy = vi.spyOn(db, "prepare");
-        const closeSpy = vi.spyOn(db, "close");
-
-        fn({ ...args });
-
-        expect(connectSpy).toHaveBeenCalled();
-        expect(prepareSpy).toHaveBeenCalled();
-        expect(closeSpy).toHaveBeenCalled();
-    };
-
-    /**
-     * Tests that the function prepares the statement but does not connect or close the database
-     *
-     * @param fn The function to test
-     * @param args The arguments to pass to the function
-     */
-    const expectNotToConnectAndDisconnect = (
-        fn: (args: any) => any,
-        args: any = {}
-    ) => {
-        const connectSpy = vi.spyOn(tableController, "connect");
-        const prepareSpy = vi.spyOn(db, "prepare");
-        const closeSpy = vi.spyOn(db, "close");
-
-        fn({ ...args, db });
-
-        expect(connectSpy).not.toHaveBeenCalled();
-        expect(prepareSpy).toHaveBeenCalled();
-        expect(closeSpy).not.toHaveBeenCalled();
-    };
-
+    const mockTableName = "mockTable";
     beforeEach(() => {
         db = createDatabase();
-        tableController = new MockTableController(() => db);
+        db.prepare(
+            `CREATE TABLE ${mockTableName} (
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            age INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );`
+        ).run();
+        createHistoryTables(db);
+        createUndoTriggers(db, mockTableName);
     });
 
     afterEach(() => {
-        tableController = undefined as any;
         deleteDatabase(db);
         vi.clearAllMocks();
     });
 
     describe("insert", () => {
-        it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.create, {
-                items: [{ name: "jeff" }],
-            });
-        });
-        it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.create, {
-                items: [{ name: "jeff" }],
-            });
-        });
-
         it("should insert a single item into the table", async () => {
             const item = { name: "jeff" };
             const before = Date.now();
-            const result = tableController.create({ items: [item], db });
+            const result = Templates.createItems<Row, NewRow>({
+                tableName: mockTableName,
+                items: [item],
+                db,
+            });
             // sleep for 5ms to ensure the created_at field is different
             await new Promise((resolve) => setTimeout(resolve, 5));
             const after = Date.now();
@@ -171,7 +110,9 @@ describe("TableController", () => {
             expect(result.data[0].created_at).toEqual(
                 result.data[0].updated_at
             );
-            const createdAtMs = new Date(result.data[0].created_at).getTime();
+            const createdAtMs = new Date(
+                result.data[0].created_at as string
+            ).getTime();
             expect(createdAtMs).toBeGreaterThanOrEqual(before);
             expect(createdAtMs).toBeLessThanOrEqual(after);
 
@@ -183,7 +124,11 @@ describe("TableController", () => {
         it("should insert many items into the table", () => {
             const items = [{ name: "jeff" }, { name: "bob" }, { name: "carl" }];
             const before = Date.now();
-            const result = tableController.create({ items });
+            const result = Templates.createItems<Row, NewRow>({
+                db,
+                tableName: mockTableName,
+                items,
+            });
             const after = Date.now();
 
             expect(result.success).toBe(true);
@@ -196,7 +141,7 @@ describe("TableController", () => {
                     result.data[i].updated_at
                 );
                 const createdAtMs = new Date(
-                    result.data[i].created_at
+                    result.data[i].created_at as string
                 ).getTime();
                 expect(createdAtMs).toBeGreaterThanOrEqual(before);
                 expect(createdAtMs).toBeLessThanOrEqual(after);
@@ -215,7 +160,11 @@ describe("TableController", () => {
                 { name: "stacy" },
             ];
             const before = Date.now();
-            const result = tableController.create({ items, db });
+            const result = Templates.createItems<Row, NewRow>({
+                tableName: mockTableName,
+                items,
+                db,
+            });
             const after = Date.now();
 
             expect(result.success).toBe(true);
@@ -228,7 +177,7 @@ describe("TableController", () => {
                     result.data[i].updated_at
                 );
                 const createdAtMs = new Date(
-                    result.data[i].created_at
+                    result.data[i].created_at as string
                 ).getTime();
                 expect(createdAtMs).toBeGreaterThanOrEqual(before);
                 expect(createdAtMs).toBeLessThanOrEqual(after);
@@ -242,11 +191,15 @@ describe("TableController", () => {
             }
         });
         it("should ignore provided id", () => {
-            const items = [
+            const items: NewRow[] = [
                 { name: "jeff", id: 56 },
                 { name: "john", age: 12, id: 12 },
             ];
-            const result = tableController.create({ items, db });
+            const result = Templates.createItems<Row, NewRow>({
+                tableName: mockTableName,
+                items,
+                db,
+            });
 
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
@@ -260,47 +213,44 @@ describe("TableController", () => {
             expect(result.data[1].age).toBe(12);
         });
     });
-    describe("getAll", () => {
-        it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.readAll);
-        });
-        it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.readAll);
-        });
 
+    describe("getAll", () => {
         it("should return all items in the table", () => {
             const items = [
                 { id: 1, name: "jeff" },
                 { id: 2, name: "bob" },
             ];
-            tableController.create({ items, db });
+            Templates.createItems({ items, db, tableName: mockTableName });
 
-            const result = tableController.readAll({ db });
+            const result = Templates.getAllItems({
+                db,
+                tableName: mockTableName,
+            });
 
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
+            if (result.data === undefined)
+                throw new Error("result.data is undefined");
             expect(
                 result.data.map(({ created_at, updated_at, ...rest }) => rest)
             ).toEqual(items.map((item) => ({ ...item, age: null })));
             // TODO make it so this test doesn't use the age field
         });
     });
-    describe("get", () => {
-        it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.read, { id: 1 });
-        });
-        it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.read, { id: 1 });
-        });
 
+    describe("get", () => {
         it("should return a single item from the table", () => {
             const items = [
                 { name: "jeff", id: 23 },
                 { name: "bob", age: 23, id: 1 },
             ];
-            tableController.create({ items, db });
+            Templates.createItems({ items, db, tableName: mockTableName });
 
-            let result = tableController.read({ id: 1, db });
+            let result = Templates.getItem<Row>({
+                id: 1,
+                db,
+                tableName: mockTableName,
+            });
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
             if (result.data === undefined)
@@ -313,7 +263,11 @@ describe("TableController", () => {
                 id: 1,
             });
 
-            result = tableController.read({ id: 2 });
+            result = Templates.getItem<Row>({
+                id: 2,
+                db,
+                tableName: mockTableName,
+            });
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
             if (result.data === undefined)
@@ -324,38 +278,36 @@ describe("TableController", () => {
         });
 
         it("should return an error if the item does not exist", () => {
-            const result = tableController.read({ id: 1, db });
+            const result = Templates.getItem<Row>({
+                id: 1,
+                db,
+                tableName: mockTableName,
+            });
 
             expect(result.success).toBe(false);
             expect(result.error?.message).toBe(
-                'No item with id 1 in table "mockTable"'
+                'No item with "id"=1 in table "mockTable"'
             );
             expect(result.data).toBeUndefined();
         });
     });
 
     describe("update", () => {
-        it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.create, {
-                items: [{ id: 1, name: "jeff" }],
-            });
-        });
-        it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.create, {
-                items: [{ id: 1, name: "jeff" }],
-            });
-        });
-
         it("should update a single item in the table", async () => {
             const item = { name: "jeff" };
-            const insertResult = tableController.create({ items: [item], db });
-            const updatedItem: UpdatedItemArgs = { id: 1, name: "bob" };
+            const insertResult = Templates.createItems<Row, NewRow>({
+                tableName: mockTableName,
+                items: [item],
+                db,
+            });
+            const updatedItem: UpdateRowArgs = { id: 1, name: "bob" };
             const before = Date.now();
             // wait for 5ms to ensure the updated_at field is different
             await new Promise((resolve) => setTimeout(resolve, 5));
-            const updateResult = tableController.update({
+            const updateResult = Templates.updateItems<Row, UpdateRowArgs>({
                 items: [updatedItem],
                 db,
+                tableName: mockTableName,
             });
             const after = Date.now();
 
@@ -382,7 +334,11 @@ describe("TableController", () => {
             });
 
             // ensure get returns the updated item
-            const getResult = tableController.read({ id: 1, db });
+            const getResult = Templates.getItem<Row>({
+                id: 1,
+                db,
+                tableName: mockTableName,
+            });
             expect(getResult.success).toBe(true);
             expect(getResult.error).toBeUndefined();
             if (getResult.data === undefined)
@@ -397,18 +353,19 @@ describe("TableController", () => {
         });
 
         it("should update many items in the table", async () => {
-            const newItems: NewItemArgs[] = [
+            const newItems = [
                 { name: "jeff" },
                 { name: "bob", age: 15 },
                 { name: "carl", age: 43 },
                 { name: "stacy" },
                 { name: "jim", age: 22 },
             ];
-            const insertResult = tableController.create({
+            const insertResult = Templates.createItems({
+                tableName: mockTableName,
                 items: newItems,
                 db,
             });
-            const expectedItems: UpdatedItemArgs[] = [
+            const expectedItems = [
                 { id: 1, name: "john", age: 23 },
                 { id: 2, name: "jane" },
                 { id: 5, age: undefined },
@@ -416,9 +373,10 @@ describe("TableController", () => {
             const before = Date.now();
             // wait for 1ms to ensure the updated_at field is different
             await new Promise((resolve) => setTimeout(resolve, 1));
-            const updateResult = tableController.update({
+            const updateResult = Templates.updateItems<Row, UpdateRowArgs>({
                 items: expectedItems,
                 db,
+                tableName: mockTableName,
             });
             const after = Date.now();
 
@@ -427,35 +385,55 @@ describe("TableController", () => {
             expect(updateResult.data.length).toBe(3);
 
             // Manual tests to ensure the items were updated correctly and that items that were not updated were not changed
-            const item1 = tableController.read({ id: 1, db }).data;
+            const item1 = Templates.getItem<Row>({
+                tableName: mockTableName,
+                id: 1,
+                db,
+            }).data;
             if (item1 === undefined) throw new Error("Item 1 is undefined");
             expect(removeMetadata({ item: item1, removeId: false })).toEqual({
                 id: 1,
                 name: "john",
                 age: 23,
             });
-            const item2 = tableController.read({ id: 2, db }).data;
+            const item2 = Templates.getItem<Row>({
+                tableName: mockTableName,
+                id: 2,
+                db,
+            }).data;
             if (item2 === undefined) throw new Error("Item 2 is undefined");
             expect(removeMetadata({ item: item2, removeId: false })).toEqual({
                 id: 2,
                 name: "jane",
                 age: 15,
             });
-            const item3 = tableController.read({ id: 3, db }).data;
+            const item3 = Templates.getItem<Row>({
+                tableName: mockTableName,
+                id: 3,
+                db,
+            }).data;
             if (item3 === undefined) throw new Error("Item 3 is undefined");
             expect(removeMetadata({ item: item3, removeId: false })).toEqual({
                 id: 3,
                 name: "carl",
                 age: 43,
             });
-            const item4 = tableController.read({ id: 4, db }).data;
+            const item4 = Templates.getItem<Row>({
+                tableName: mockTableName,
+                id: 4,
+                db,
+            }).data;
             if (item4 === undefined) throw new Error("Item 4 is undefined");
             expect(removeMetadata({ item: item4, removeId: false })).toEqual({
                 id: 4,
                 name: "stacy",
                 age: null,
             });
-            const item5 = tableController.read({ id: 5, db }).data;
+            const item5 = Templates.getItem<Row>({
+                tableName: mockTableName,
+                id: 5,
+                db,
+            }).data;
             if (item5 === undefined) throw new Error("Item 5 is undefined");
             expect(removeMetadata({ item: item5, removeId: false })).toEqual({
                 id: 5,
@@ -484,13 +462,14 @@ describe("TableController", () => {
         });
 
         it("should return an error if the id does not exist", () => {
-            const result = tableController.update({
+            const result = Templates.updateItems<Row, UpdateRowArgs>({
                 items: [
                     { id: 1, name: "jeff" },
                     { id: 1, name: "john" },
                     { id: 2, name: "qwerty" },
                 ],
                 db,
+                tableName: mockTableName,
             });
 
             expect(result.success).toBe(false);
@@ -502,53 +481,119 @@ describe("TableController", () => {
     });
 
     describe("delete", () => {
-        it("should connect and disconnect from the db when not provided", () => {
-            expectToConnectAndDisconnect(tableController.delete, {
-                id: 1,
-            });
-        });
-        it("should not connect and disconnect from the db when db is provided", () => {
-            expectNotToConnectAndDisconnect(tableController.delete, {
-                id: 1,
-            });
-        });
-
         it("should delete a single item from the table", () => {
             const items = [
                 { name: "jeff", id: 23 },
                 { name: "bob", age: 23, id: 1 },
             ];
-            tableController.create({ items, db });
+            Templates.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
 
-            const removeResult = tableController.delete({ id: 1, db });
+            const removeResult = Templates.deleteItems({
+                ids: new Set([1]),
+                db,
+                tableName: mockTableName,
+            });
             expect(removeResult.success).toBe(true);
             expect(removeResult.error).toBeUndefined();
             if (removeResult.data === undefined)
                 throw new Error("removeResult.data is undefined");
-            expect(
-                removeMetadata({ item: removeResult.data, removeId: false })
-            ).toEqual({
-                ...items[0],
-                age: null,
-                id: 1,
-            });
+            const trimmedData = removeResult.data.map((item) =>
+                removeMetadata({ item, removeId: false })
+            );
+            expect(trimmedData).toEqual([
+                {
+                    name: "jeff",
+                    age: null,
+                    id: 1,
+                },
+            ]);
 
-            const result = tableController.readAll({ db });
+            const result = Templates.getAllItems({
+                db,
+                tableName: mockTableName,
+            });
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
             expect(
-                result.data.map(({ created_at, updated_at, ...rest }) => rest)
+                result.data!.map(({ created_at, updated_at, ...rest }) => rest)
             ).toEqual([{ ...items[1], id: 2 }]);
         });
 
-        it("should return an error if the item does not exist", () => {
-            const result = tableController.delete({ id: 23 });
+        it("should delete a group of marchers", () => {
+            const items = [
+                { name: "jeff", age: null, id: 1 },
+                { name: "bob", age: null, id: 2 },
+                { name: "sam", age: 4, id: 3 },
+                { name: "jenna", age: 45, id: 4 },
+            ];
+            Templates.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
 
-            expect(result.success).toBe(false);
-            expect(result.error?.message).toBe(
-                'No item with id 23 in table "mockTable"'
+            const removeResult = Templates.deleteItems({
+                ids: new Set([1, 3]),
+                db,
+                tableName: mockTableName,
+            });
+            expect(removeResult.success).toBe(true);
+            expect(removeResult.error).toBeUndefined();
+            if (removeResult.data === undefined)
+                throw new Error("removeResult.data is undefined");
+            let trimmedData = removeResult.data.map((item) =>
+                removeMetadata({ item, removeId: false })
             );
-            expect(result.data).toBeUndefined();
+            expect(trimmedData).toEqual([items[0], items[2]]);
+
+            const dbContents = Templates.getAllItems({
+                db,
+                tableName: mockTableName,
+            });
+            if (dbContents.data === undefined)
+                throw new Error("dbContents.data is undefined");
+            trimmedData = dbContents.data.map((item) =>
+                removeMetadata({ item, removeId: false })
+            );
+            expect(trimmedData).toEqual([items[1], items[3]]);
+        });
+
+        it("should not delete anything when any of the provided ids are not defined", () => {
+            const items = [
+                { name: "jeff", age: null, id: 1 },
+                { name: "bob", age: 23, id: 2 },
+                { name: "sam", age: null, id: 3 },
+                { name: "jenna", age: 45, id: 4 },
+            ];
+            Templates.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
+
+            const removeResult = Templates.deleteItems({
+                ids: new Set([1, 2, 3, 5]),
+                db,
+                tableName: mockTableName,
+            });
+            expect(removeResult.success).toBe(false);
+            expect(removeResult.error).toBeDefined();
+            expect(removeResult.data).toEqual([]);
+
+            const dbContents = Templates.getAllItems({
+                db,
+                tableName: mockTableName,
+            });
+            if (dbContents.data === undefined)
+                throw new Error("dbContents.data is undefined");
+            const trimmedData = dbContents.data.map((item) =>
+                removeMetadata({ item, removeId: false })
+            );
+            expect(trimmedData).toEqual(items);
         });
     });
 });

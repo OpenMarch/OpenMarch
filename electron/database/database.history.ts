@@ -352,11 +352,21 @@ function createTriggers(
 const switchTriggerMode = (
     db: Database.Database,
     mode: HistoryType,
-    deleteRedoRows: boolean
+    deleteRedoRows: boolean,
+    tableNames?: Set<string>
 ) => {
-    const triggers = db
-        .prepare(`SELECT * FROM sqlite_master WHERE type='trigger';`)
-        .all() as { name: string; tbl_name: string }[];
+    let sql = `SELECT * FROM sqlite_master WHERE type='trigger'`;
+    if (tableNames) {
+        sql += ` AND tbl_name IN (${Array.from(tableNames)
+            .map((t) => `'${t}'`)
+            .join(",")})`;
+    }
+    sql += ";";
+    // TODO TEST THIS
+    const triggers = db.prepare(sql).all() as {
+        name: string;
+        tbl_name: string;
+    }[];
     const tables = new Set(triggers.map((t) => t.tbl_name));
     for (const trigger of triggers) {
         db.prepare(`DROP TRIGGER IF EXISTS ${trigger.name};`).run();
@@ -424,13 +434,21 @@ function executeHistoryAction(
             };
         }
 
+        const tableNames = new Set<string>();
+        for (const sql of sqlStatements) {
+            const tableName = sql.match(/"(.*?)"/)?.[0].replaceAll('"', "");
+            if (tableName) {
+                tableNames.add(tableName);
+            }
+        }
+
         if (type === "undo") {
             // Switch the triggers to redo mode so that the redo history is updated
             incrementGroup(db, "redo");
-            switchTriggerMode(db, "redo", false);
+            switchTriggerMode(db, "redo", false, tableNames);
         } else {
             // Switch the triggers so that the redo table does not have its rows deleted
-            switchTriggerMode(db, "undo", false);
+            switchTriggerMode(db, "undo", false, tableNames);
         }
 
         // Execute all of the SQL statements in reverse order
@@ -447,15 +465,7 @@ function executeHistoryAction(
         refreshCurrentGroups(db);
 
         // Switch the triggers back to undo mode and delete the redo rows when inputting new undo rows
-        switchTriggerMode(db, "undo", true);
-
-        const tableNames = new Set<string>();
-        for (const sql of sqlStatements) {
-            const tableName = sql.match(/"(.*?)"/)?.[0].replaceAll('"', "");
-            if (tableName) {
-                tableNames.add(tableName);
-            }
-        }
+        switchTriggerMode(db, "undo", true, tableNames);
         response = {
             success: true,
             tableNames,
