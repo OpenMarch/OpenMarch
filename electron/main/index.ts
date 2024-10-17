@@ -187,7 +187,6 @@ app.on("open-file", (event, path) => {
 // Custom title bar buttons
 
 const isMacOS = process.platform === "darwin";
-const menu = new Menu();
 
 ipcMain.on("window:minimize", () => {
     win?.minimize();
@@ -206,10 +205,8 @@ ipcMain.on("window:close", () => {
 });
 
 ipcMain.on(`menu:open`, () => {
-    if (!isMacOS && win) {
-        menu.popup({
-            window: win,
-        });
+    if (!isMacOS) {
+        applicationMenu.popup();
     }
 });
 

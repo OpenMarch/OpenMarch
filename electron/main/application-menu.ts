@@ -1,12 +1,12 @@
 import * as mainProcess from "./index";
 import { MenuItem } from "electron";
-import { app, dialog, Menu } from "electron";
+import { app, dialog, Menu, shell } from "electron";
 
-const isMac = process.platform === "darwin";
+const isMacOS = process.platform === "darwin";
 
 const template: MenuItem[] = [];
 
-if (isMac) {
+if (isMacOS) {
     template.push(
         new MenuItem({
             label: app.name,
@@ -105,7 +105,7 @@ template.push(
             ],
         }),
         // { role: 'windowMenu' }
-        isMac
+        isMacOS
             ? new MenuItem({
                   label: "Window",
                   submenu: [
@@ -131,8 +131,7 @@ template.push(
                 {
                     label: "Learn More",
                     click: async () => {
-                        const { shell } = require("electron");
-                        await shell.openExternal("https://electronjs.org");
+                        await shell.openExternal("https://openmarch.com");
                     },
                 },
             ],
