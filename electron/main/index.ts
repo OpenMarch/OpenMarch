@@ -321,7 +321,7 @@ export async function loadDatabaseFile() {
  * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
  */
 export async function insertAudioFile(): Promise<
-    DatabaseServices.DatabaseResponse<AudioFile[]>
+    DatabaseServices.LegacyDatabaseResponse<AudioFile[]>
 > {
     console.log("insertAudioFile");
 
@@ -331,7 +331,7 @@ export async function insertAudioFile(): Promise<
             error: { message: "insertAudioFile: window not loaded" },
         };
 
-    let databaseResponse: DatabaseServices.DatabaseResponse<AudioFile[]>;
+    let databaseResponse: DatabaseServices.LegacyDatabaseResponse<AudioFile[]>;
     // If there is no previous path, open a dialog
     databaseResponse = await dialog
         .showOpenDialog(win, {

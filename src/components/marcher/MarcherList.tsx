@@ -42,23 +42,25 @@ function MarcherList({
             modifiedMarchers.push({ id: Number(pageId), ...changes });
 
         if (deletionsRef.current.length > 0) {
-            let windowConfirmStr = `-- WARNING --`;
+            let windowConfirmStr = `Deleting Marchers`;
             windowConfirmStr += `\n\nYou are about to delete ${
                 deletionsRef.current.length > 1
                     ? `${deletionsRef.current.length} marchers`
-                    : "a marcher"
+                    : "a marcher."
             }, `;
-            windowConfirmStr += `which will also delete ALL of their coordinates for every page.`;
-            windowConfirmStr += `\n\nTHIS CANNOT BE UNDONE.`;
+            windowConfirmStr += `\n\nThis can be undone at any time with [Ctrl + Z].`;
             windowConfirmStr += `\n\nMarchers that will be deleted:`;
             for (const marcherId of deletionsRef.current)
                 windowConfirmStr += `\n- ${
                     marchers?.find((marcher) => marcher.id === marcherId)
                         ?.drill_number
                 }`;
-            if (window.confirm(windowConfirmStr))
-                for (const marcherId of deletionsRef.current)
-                    await Marcher.deleteMarcher(marcherId);
+            if (window.confirm(windowConfirmStr)) {
+                const marcherIdsSet = new Set(
+                    deletionsRef.current.map((id) => id)
+                );
+                await Marcher.deleteMarchers(marcherIdsSet);
+            }
         }
 
         const result = Marcher.updateMarchers(modifiedMarchers);

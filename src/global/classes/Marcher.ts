@@ -32,8 +32,25 @@ export class Marcher {
      */
     static fetchMarchers: () => Promise<void>;
 
-    constructor({ id, id_for_html, name, section, drill_prefix, drill_order, notes, year }:
-        { id: number, id_for_html: string, name: string, section: string, drill_prefix: string, drill_order: number, notes?: string, year?: string }) {
+    constructor({
+        id,
+        id_for_html,
+        name,
+        section,
+        drill_prefix,
+        drill_order,
+        notes,
+        year,
+    }: {
+        id: number;
+        id_for_html: string;
+        name: string;
+        section: string;
+        drill_prefix: string;
+        drill_order: number;
+        notes?: string;
+        year?: string;
+    }) {
         this.id = id;
         this.id_for_html = id_for_html;
         this.name = name;
@@ -86,14 +103,13 @@ export class Marcher {
 
     /**
      * Deletes a marcher from the database.
-     * CAUTION - this will delete all of the marcherPages associated with the marcher.
-     * THIS CANNOT BE UNDONE.
+     * This will also delete the marcher pages associated with the marcher.
      *
      * @param marcher_id - The id of the marcher. Do not use id_for_html.
      * @returns Response data from the server.
      */
-    static async deleteMarcher(marcher_id: number) {
-        const response = await window.electron.deleteMarcher(marcher_id);
+    static async deleteMarchers(marcherIds: Set<number>) {
+        const response = await window.electron.deleteMarchers(marcherIds);
         // fetch the marchers to update the store
         this.checkForFetchMarchers();
         this.fetchMarchers();
@@ -105,7 +121,9 @@ export class Marcher {
      */
     static checkForFetchMarchers() {
         if (!this.fetchMarchers)
-            console.error("fetchMarchers is not defined. The UI will not update properly.");
+            console.error(
+                "fetchMarchers is not defined. The UI will not update properly."
+            );
     }
 
     /**
@@ -125,9 +143,8 @@ export class Marcher {
         if (sectionComparison !== 0)
             // If the sections are different, return the section comparison, ignoring the drill order
             return sectionComparison;
-        else
-            // If the sections are the same, return the drill order comparison
-            return a.drill_order - b.drill_order;
+        // If the sections are the same, return the drill order comparison
+        else return a.drill_order - b.drill_order;
     }
 }
 

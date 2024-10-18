@@ -1,6 +1,8 @@
 import Database from "better-sqlite3";
 import * as History from "../database.history";
-import Constants from "@/global/Constants";
+
+const UNDO_HISTORY_TABLE_NAME = "history_undo";
+const REDO_HISTORY_TABLE_NAME = "history_redo";
 
 /**
  * Response from the database
@@ -14,11 +16,11 @@ export interface DatabaseResponse<DatabaseItemType> {
     readonly data: DatabaseItemType;
 }
 
-export interface DefaultDatabaseItem {
-    id: number;
-    updated_at?: string;
-    created_at?: string;
-}
+// export interface DefaultDatabaseItem {
+//     id: number;
+//     updated_at?: string;
+//     created_at?: string;
+// }
 
 /**
  * Decrement all of the undo actions in the most recent group down by one.
@@ -32,7 +34,7 @@ function decrementLastUndoGroup(db: Database.Database) {
     const maxGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}`
+                `SELECT MAX(history_group) as max_undo_group FROM ${UNDO_HISTORY_TABLE_NAME}`
             )
             .get() as { max_undo_group: number }
     ).max_undo_group;
@@ -40,13 +42,13 @@ function decrementLastUndoGroup(db: Database.Database) {
     const previousGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ?`
+                `SELECT MAX(history_group) as previous_group FROM ${UNDO_HISTORY_TABLE_NAME} WHERE history_group < ?`
             )
             .get(maxGroup) as { previous_group: number }
     ).previous_group;
 
     db.prepare(
-        `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group = ?`
+        `UPDATE ${UNDO_HISTORY_TABLE_NAME} SET history_group = ? WHERE history_group = ?`
     ).run(previousGroup, maxGroup);
 }
 
@@ -62,12 +64,12 @@ function clearMostRecentRedo(db: Database.Database) {
     const maxGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}`
+                `SELECT MAX(history_group) as max_redo_group FROM ${REDO_HISTORY_TABLE_NAME}`
             )
             .get() as { max_redo_group: number }
     ).max_redo_group;
     db.prepare(
-        `DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ?`
+        `DELETE FROM ${REDO_HISTORY_TABLE_NAME} WHERE history_group = ?`
     ).run(maxGroup);
 }
 
@@ -80,7 +82,7 @@ function clearMostRecentRedo(db: Database.Database) {
  * @param closeDbOnError Whether to close the database connection if an error occurs, default is true
  * @returns A DatabaseResponse with the item
  */
-export function getItem<DatabaseItemType extends DefaultDatabaseItem>({
+export function getItem<DatabaseItemType>({
     id,
     db,
     tableName,
@@ -148,24 +150,24 @@ function getColumns(db: Database.Database, tableName: string): Set<string> {
  * @param db The database connection, or undefined to create a new connection
  * @param id The id of the item to get
  * @param tableName The name of the table to get the item from
- * @param incrementUndoGroup Whether to increment the undo group, default is true
+ * @param useNextUndoGroup Whether to increment the undo group, default is true
  * @param closeDbOnError Whether to close the database connection if an error occurs, default is true
  * @returns A DatabaseResponse with the item
  */
-export function getAllItems<DatabaseItemType extends DefaultDatabaseItem>({
+export function getAllItems<DatabaseItemType>({
     db,
     tableName,
-    incrementUndoGroup = true,
+    useNextUndoGroup = true,
     closeDbOnError = true,
 }: {
     db: Database.Database;
     tableName: string;
-    incrementUndoGroup?: boolean;
+    useNextUndoGroup?: boolean;
     closeDbOnError?: boolean;
 }): DatabaseResponse<DatabaseItemType[] | undefined> {
     let output: DatabaseResponse<DatabaseItemType[] | undefined>;
     try {
-        if (incrementUndoGroup) History.incrementUndoGroup(db);
+        if (useNextUndoGroup) History.incrementUndoGroup(db);
         const stmt = db.prepare(`SELECT * FROM ${tableName}`);
         const result = stmt.all() as DatabaseItemType[];
         if (!result) {
@@ -194,7 +196,7 @@ export function getAllItems<DatabaseItemType extends DefaultDatabaseItem>({
         };
         console.error(`Failed to get item from ${tableName}:`, error);
     } finally {
-        if (incrementUndoGroup) History.incrementUndoGroup(db);
+        if (useNextUndoGroup) History.incrementUndoGroup(db);
         // if (closeDbOnError) db.close();
     }
     return output;
@@ -218,22 +220,19 @@ function insertClause<NewItemArgs extends Object>(args: NewItemArgs) {
  * @param db The database connection, or undefined to create a new connection
  * @param items The items to insert
  * @param tableName The name of the table to get the item from
- * @param incrementUndoGroup Whether to increment the undo group, default is true
+ * @param useNextUndoGroup Whether to increment the undo group, default is true
  * @returns The id of the inserted item
  */
-export function createItems<
-    DatabaseItemType extends DefaultDatabaseItem,
-    NewItemArgs extends Object
->({
+export function createItems<DatabaseItemType, NewItemArgs extends Object>({
     db,
     items,
     tableName,
-    incrementUndoGroup = true,
+    useNextUndoGroup = true,
 }: {
     db: Database.Database;
     items: NewItemArgs[];
     tableName: string;
-    incrementUndoGroup?: boolean;
+    useNextUndoGroup?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
     let output: DatabaseResponse<DatabaseItemType[]> = {
         success: false,
@@ -287,7 +286,7 @@ export function createItems<
         };
 
         // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!incrementUndoGroup) decrementLastUndoGroup(db);
+        if (!useNextUndoGroup) decrementLastUndoGroup(db);
     } catch (error: any) {
         output = {
             success: false,
@@ -303,7 +302,7 @@ export function createItems<
         History.performUndo(db);
         clearMostRecentRedo(db);
     } finally {
-        if (incrementUndoGroup) History.incrementUndoGroup(db);
+        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }
@@ -314,18 +313,18 @@ export function createItems<
  * @returns A DatabaseResponse with the updated items
  */
 export function updateItems<
-    DatabaseItemType extends DefaultDatabaseItem,
+    DatabaseItemType,
     UpdatedItemArgs extends { id: number }
 >({
     db,
     items,
     tableName,
-    incrementUndoGroup = true,
+    useNextUndoGroup = true,
 }: {
     items: UpdatedItemArgs[];
     db: Database.Database;
     tableName: string;
-    incrementUndoGroup?: boolean;
+    useNextUndoGroup?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
     // Check if all of the items exist
     const notFoundIds: number[] = [];
@@ -367,7 +366,7 @@ export function updateItems<
         for (const oldItem of items) {
             const item = { ...oldItem }; // Copy the old item as to not modify the original reference
             const updatedAt = new Date().toISOString();
-            let updatedItem: DefaultDatabaseItem = item;
+            let updatedItem: any = item;
             if (columns.has("updated_at")) updatedItem.updated_at = updatedAt;
 
             // remove the id from the updated item
@@ -401,8 +400,7 @@ export function updateItems<
             }
         }
         // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!incrementUndoGroup && actionWasPerformed)
-            decrementLastUndoGroup(db);
+        if (!useNextUndoGroup && actionWasPerformed) decrementLastUndoGroup(db);
 
         output = {
             success: true,
@@ -427,7 +425,7 @@ export function updateItems<
             clearMostRecentRedo(db);
         }
     } finally {
-        if (incrementUndoGroup) History.incrementUndoGroup(db);
+        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }
@@ -438,23 +436,24 @@ export function updateItems<
  * @param tableName The name of the table to get the item from
  * @param idColumn The column to check with WHERE to delete the row. By default "rowid"
  * @param closeDbOnError Whether to close the database connection if an error occurs, default is true
+ * @param useNextUndoGroup Whether to increment the undo group after the action is performed, default is true
  * @returns A DatabaseResponse with the deleted item
  */
-export function deleteItems<DatabaseItemType extends DefaultDatabaseItem>({
+export function deleteItems<DatabaseItemType>({
     ids,
     db,
     tableName,
-    incrementUndoGroup,
+    useNextUndoGroup,
     idColumn = "rowid",
 }: {
     ids: Set<number>;
     db: Database.Database;
     tableName: string;
-    incrementUndoGroup?: boolean;
+    useNextUndoGroup?: boolean;
     idColumn?: string;
-}): DatabaseResponse<DatabaseItemType[] | undefined> {
+}): DatabaseResponse<DatabaseItemType[]> {
     const deletedObjects: DatabaseItemType[] = [];
-    let output: DatabaseResponse<DatabaseItemType[] | undefined>;
+    let output: DatabaseResponse<DatabaseItemType[]>;
     let currentId: number | undefined;
     const notFoundIds: number[] = [];
     let actionWasPerformed = false;
@@ -504,8 +503,7 @@ export function deleteItems<DatabaseItemType extends DefaultDatabaseItem>({
         }
 
         // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!incrementUndoGroup && actionWasPerformed)
-            decrementLastUndoGroup(db);
+        if (!useNextUndoGroup && actionWasPerformed) decrementLastUndoGroup(db);
 
         output = {
             success: true,
@@ -514,7 +512,7 @@ export function deleteItems<DatabaseItemType extends DefaultDatabaseItem>({
     } catch (error: any) {
         output = {
             success: false,
-            data: undefined,
+            data: [],
             error: {
                 message:
                     error.message ||
@@ -533,7 +531,7 @@ export function deleteItems<DatabaseItemType extends DefaultDatabaseItem>({
             clearMostRecentRedo(db);
         }
     } finally {
-        if (incrementUndoGroup) History.incrementUndoGroup(db);
+        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }

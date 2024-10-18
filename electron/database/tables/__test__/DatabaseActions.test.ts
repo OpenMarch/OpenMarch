@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as Templates from "../DatabaseActions";
+import * as DbActions from "../DatabaseActions";
 import {
     createHistoryTables,
     createUndoTriggers,
@@ -93,7 +93,7 @@ describe("Database Actions", () => {
         it("should insert a single item into the table", async () => {
             const item = { name: "jeff" };
             const before = Date.now();
-            const result = Templates.createItems<Row, NewRow>({
+            const result = DbActions.createItems<Row, NewRow>({
                 tableName: mockTableName,
                 items: [item],
                 db,
@@ -124,7 +124,7 @@ describe("Database Actions", () => {
         it("should insert many items into the table", () => {
             const items = [{ name: "jeff" }, { name: "bob" }, { name: "carl" }];
             const before = Date.now();
-            const result = Templates.createItems<Row, NewRow>({
+            const result = DbActions.createItems<Row, NewRow>({
                 db,
                 tableName: mockTableName,
                 items,
@@ -160,7 +160,7 @@ describe("Database Actions", () => {
                 { name: "stacy" },
             ];
             const before = Date.now();
-            const result = Templates.createItems<Row, NewRow>({
+            const result = DbActions.createItems<Row, NewRow>({
                 tableName: mockTableName,
                 items,
                 db,
@@ -195,7 +195,7 @@ describe("Database Actions", () => {
                 { name: "jeff", id: 56 },
                 { name: "john", age: 12, id: 12 },
             ];
-            const result = Templates.createItems<Row, NewRow>({
+            const result = DbActions.createItems<Row, NewRow>({
                 tableName: mockTableName,
                 items,
                 db,
@@ -220,9 +220,9 @@ describe("Database Actions", () => {
                 { id: 1, name: "jeff" },
                 { id: 2, name: "bob" },
             ];
-            Templates.createItems({ items, db, tableName: mockTableName });
+            DbActions.createItems({ items, db, tableName: mockTableName });
 
-            const result = Templates.getAllItems({
+            const result = DbActions.getAllItems({
                 db,
                 tableName: mockTableName,
             });
@@ -244,9 +244,9 @@ describe("Database Actions", () => {
                 { name: "jeff", id: 23 },
                 { name: "bob", age: 23, id: 1 },
             ];
-            Templates.createItems({ items, db, tableName: mockTableName });
+            DbActions.createItems({ items, db, tableName: mockTableName });
 
-            let result = Templates.getItem<Row>({
+            let result = DbActions.getItem<Row>({
                 id: 1,
                 db,
                 tableName: mockTableName,
@@ -263,7 +263,7 @@ describe("Database Actions", () => {
                 id: 1,
             });
 
-            result = Templates.getItem<Row>({
+            result = DbActions.getItem<Row>({
                 id: 2,
                 db,
                 tableName: mockTableName,
@@ -278,7 +278,7 @@ describe("Database Actions", () => {
         });
 
         it("should return an error if the item does not exist", () => {
-            const result = Templates.getItem<Row>({
+            const result = DbActions.getItem<Row>({
                 id: 1,
                 db,
                 tableName: mockTableName,
@@ -295,7 +295,7 @@ describe("Database Actions", () => {
     describe("update", () => {
         it("should update a single item in the table", async () => {
             const item = { name: "jeff" };
-            const insertResult = Templates.createItems<Row, NewRow>({
+            const insertResult = DbActions.createItems<Row, NewRow>({
                 tableName: mockTableName,
                 items: [item],
                 db,
@@ -304,7 +304,7 @@ describe("Database Actions", () => {
             const before = Date.now();
             // wait for 5ms to ensure the updated_at field is different
             await new Promise((resolve) => setTimeout(resolve, 5));
-            const updateResult = Templates.updateItems<Row, UpdateRowArgs>({
+            const updateResult = DbActions.updateItems<Row, UpdateRowArgs>({
                 items: [updatedItem],
                 db,
                 tableName: mockTableName,
@@ -334,7 +334,7 @@ describe("Database Actions", () => {
             });
 
             // ensure get returns the updated item
-            const getResult = Templates.getItem<Row>({
+            const getResult = DbActions.getItem<Row>({
                 id: 1,
                 db,
                 tableName: mockTableName,
@@ -360,7 +360,7 @@ describe("Database Actions", () => {
                 { name: "stacy" },
                 { name: "jim", age: 22 },
             ];
-            const insertResult = Templates.createItems({
+            const insertResult = DbActions.createItems({
                 tableName: mockTableName,
                 items: newItems,
                 db,
@@ -373,7 +373,7 @@ describe("Database Actions", () => {
             const before = Date.now();
             // wait for 1ms to ensure the updated_at field is different
             await new Promise((resolve) => setTimeout(resolve, 1));
-            const updateResult = Templates.updateItems<Row, UpdateRowArgs>({
+            const updateResult = DbActions.updateItems<Row, UpdateRowArgs>({
                 items: expectedItems,
                 db,
                 tableName: mockTableName,
@@ -385,7 +385,7 @@ describe("Database Actions", () => {
             expect(updateResult.data.length).toBe(3);
 
             // Manual tests to ensure the items were updated correctly and that items that were not updated were not changed
-            const item1 = Templates.getItem<Row>({
+            const item1 = DbActions.getItem<Row>({
                 tableName: mockTableName,
                 id: 1,
                 db,
@@ -396,7 +396,7 @@ describe("Database Actions", () => {
                 name: "john",
                 age: 23,
             });
-            const item2 = Templates.getItem<Row>({
+            const item2 = DbActions.getItem<Row>({
                 tableName: mockTableName,
                 id: 2,
                 db,
@@ -407,7 +407,7 @@ describe("Database Actions", () => {
                 name: "jane",
                 age: 15,
             });
-            const item3 = Templates.getItem<Row>({
+            const item3 = DbActions.getItem<Row>({
                 tableName: mockTableName,
                 id: 3,
                 db,
@@ -418,7 +418,7 @@ describe("Database Actions", () => {
                 name: "carl",
                 age: 43,
             });
-            const item4 = Templates.getItem<Row>({
+            const item4 = DbActions.getItem<Row>({
                 tableName: mockTableName,
                 id: 4,
                 db,
@@ -429,7 +429,7 @@ describe("Database Actions", () => {
                 name: "stacy",
                 age: null,
             });
-            const item5 = Templates.getItem<Row>({
+            const item5 = DbActions.getItem<Row>({
                 tableName: mockTableName,
                 id: 5,
                 db,
@@ -462,7 +462,7 @@ describe("Database Actions", () => {
         });
 
         it("should return an error if the id does not exist", () => {
-            const result = Templates.updateItems<Row, UpdateRowArgs>({
+            const result = DbActions.updateItems<Row, UpdateRowArgs>({
                 items: [
                     { id: 1, name: "jeff" },
                     { id: 1, name: "john" },
@@ -486,13 +486,13 @@ describe("Database Actions", () => {
                 { name: "jeff", id: 23 },
                 { name: "bob", age: 23, id: 1 },
             ];
-            Templates.createItems<Row, NewRow>({
+            DbActions.createItems<Row, NewRow>({
                 items,
                 db,
                 tableName: mockTableName,
             });
 
-            const removeResult = Templates.deleteItems({
+            const removeResult = DbActions.deleteItems({
                 ids: new Set([1]),
                 db,
                 tableName: mockTableName,
@@ -512,7 +512,7 @@ describe("Database Actions", () => {
                 },
             ]);
 
-            const result = Templates.getAllItems({
+            const result = DbActions.getAllItems({
                 db,
                 tableName: mockTableName,
             });
@@ -530,13 +530,13 @@ describe("Database Actions", () => {
                 { name: "sam", age: 4, id: 3 },
                 { name: "jenna", age: 45, id: 4 },
             ];
-            Templates.createItems<Row, NewRow>({
+            DbActions.createItems<Row, NewRow>({
                 items,
                 db,
                 tableName: mockTableName,
             });
 
-            const removeResult = Templates.deleteItems({
+            const removeResult = DbActions.deleteItems({
                 ids: new Set([1, 3]),
                 db,
                 tableName: mockTableName,
@@ -550,7 +550,7 @@ describe("Database Actions", () => {
             );
             expect(trimmedData).toEqual([items[0], items[2]]);
 
-            const dbContents = Templates.getAllItems({
+            const dbContents = DbActions.getAllItems({
                 db,
                 tableName: mockTableName,
             });
@@ -569,13 +569,13 @@ describe("Database Actions", () => {
                 { name: "sam", age: null, id: 3 },
                 { name: "jenna", age: 45, id: 4 },
             ];
-            Templates.createItems<Row, NewRow>({
+            DbActions.createItems<Row, NewRow>({
                 items,
                 db,
                 tableName: mockTableName,
             });
 
-            const removeResult = Templates.deleteItems({
+            const removeResult = DbActions.deleteItems({
                 ids: new Set([1, 2, 3, 5]),
                 db,
                 tableName: mockTableName,
@@ -584,7 +584,7 @@ describe("Database Actions", () => {
             expect(removeResult.error).toBeDefined();
             expect(removeResult.data).toEqual([]);
 
-            const dbContents = Templates.getAllItems({
+            const dbContents = DbActions.getAllItems({
                 db,
                 tableName: mockTableName,
             });

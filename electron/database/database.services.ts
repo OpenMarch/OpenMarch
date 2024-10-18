@@ -18,8 +18,9 @@ import MarcherPage, {
 import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import FieldPropertiesTemplates from "../../src/global/classes/FieldProperties.templates";
+import * as DbActions from "./tables/DatabaseActions";
 
-export class DatabaseResponse<T> {
+export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
     /**
      * Resulting data from the database action. This isn't very well implemented
@@ -306,8 +307,8 @@ export function initHandlers() {
     ipcMain.handle("marcher:getAll", async () => getMarchers());
     ipcMain.handle("marcher:insert", async (_, args) => createMarcher(args));
     ipcMain.handle("marcher:update", async (_, args) => updateMarchers(args));
-    ipcMain.handle("marcher:delete", async (_, marcher_id) =>
-        deleteMarcher(marcher_id)
+    ipcMain.handle("marcher:delete", async (_, marcherIds) =>
+        deleteMarchers(marcherIds)
     );
 
     // Page
@@ -486,9 +487,9 @@ export async function getFieldProperties(
  */
 export async function updateFieldProperties(
     fieldProperties: FieldProperties
-): Promise<DatabaseResponse<FieldProperties>> {
+): Promise<LegacyDatabaseResponse<FieldProperties>> {
     const db = connect();
-    let output: DatabaseResponse<FieldProperties> = { success: true };
+    let output: LegacyDatabaseResponse<FieldProperties> = { success: true };
 
     try {
         const stmt = db.prepare(`
@@ -537,9 +538,9 @@ async function createMarcher(newMarcher: NewMarcherArgs) {
  */
 async function createMarchers(
     newMarchers: NewMarcherArgs[]
-): Promise<DatabaseResponse<Marcher[]>> {
+): Promise<LegacyDatabaseResponse<Marcher[]>> {
     const db = connect();
-    let output: DatabaseResponse<Marcher[]> = { success: true };
+    let output: LegacyDatabaseResponse<Marcher[]> = { success: true };
 
     // List of queries executed in this function to be added to the history table
     // const historyQueries: History.historyQuery[] = [];
@@ -631,9 +632,9 @@ async function createMarchers(
  */
 async function updateMarchers(
     modifiedMarchers: ModifiedMarcherArgs[]
-): Promise<DatabaseResponse<Marcher[]>> {
+): Promise<LegacyDatabaseResponse<Marcher[]>> {
     const db = connect();
-    let output: DatabaseResponse<Marcher[]> = { success: true };
+    let output: LegacyDatabaseResponse<Marcher[]> = { success: true };
 
     // List of properties to exclude
     const excludedProperties = ["id"];
@@ -676,43 +677,60 @@ async function updateMarchers(
 }
 
 /**
- * CAUTION - this will delete all of the marcherPages associated with the marcher.
- * THIS CANNOT BE UNDONE.
- *
  * Deletes the marcher with the given id and all of their marcherPages.
+ * CAUTION - This will also delete all of the marcherPages associated with the marcher.
  *
- * @param marcher_id
+ * @param marcherIds
  * @returns {success: boolean, error?: string}
  */
-async function deleteMarcher(
-    marcher_id: number
-): Promise<DatabaseResponse<Marcher>> {
+async function deleteMarchers(
+    marcherIds: Set<number>
+): Promise<DbActions.DatabaseResponse<Marcher[]>> {
     const db = connect();
-    let output: DatabaseResponse<Marcher> = { success: true };
-    try {
-        History.incrementUndoGroup(db);
-        const marcherStmt = db.prepare(`
-            DELETE FROM ${Constants.MarcherTableName}
-            WHERE id = @marcher_id
-        `);
-        marcherStmt.run({ marcher_id });
+    console.log("DELETE MARCHERS", marcherIds);
+    const marcherDeleteResponse = DbActions.deleteItems<Marcher>({
+        ids: marcherIds,
+        tableName: Constants.MarcherTableName,
+        db,
+        useNextUndoGroup: true,
+    });
+    console.log("DELETING MARCHER PAGES");
 
-        const marcherPageStmt = db.prepare(`
-            DELETE FROM ${Constants.MarcherPageTableName}
-            WHERE marcher_id = @marcher_id
-        `);
-        marcherPageStmt.run({ marcher_id });
-    } catch (error: any) {
-        console.error(error);
-        output = {
-            success: false,
-            error: { message: error.message, stack: error.stack },
-        };
-    } finally {
-        History.incrementUndoGroup(db);
+    if (!marcherDeleteResponse.success) {
+        console.error(
+            "Failed to delete marchers:",
+            marcherDeleteResponse.error
+        );
         db.close();
+        return marcherDeleteResponse;
     }
-    return output;
+
+    const marcherPageDeleteResponse = DbActions.deleteItems({
+        ids: marcherIds,
+        tableName: Constants.MarcherPageTableName,
+        db,
+        useNextUndoGroup: false,
+        idColumn: "marcher_id",
+    });
+    console.log("DELETED MARCHER PAGES");
+
+    if (!marcherPageDeleteResponse.success) {
+        console.error(
+            "Failed to delete marcher pages:",
+            marcherPageDeleteResponse.error
+        );
+        History.performUndo(db);
+        db.close();
+        return {
+            success: false,
+            error: marcherPageDeleteResponse.error,
+            data: [],
+        };
+    }
+
+    db.close();
+
+    return marcherDeleteResponse;
 }
 
 /* ============================ Page ============================ */
@@ -755,9 +773,9 @@ async function getPage(pageId: number, db?: Database.Database): Promise<Page> {
  */
 async function createPages(
     newPages: NewPageContainer[]
-): Promise<DatabaseResponse<Page[]>> {
+): Promise<LegacyDatabaseResponse<Page[]>> {
     const db = connect();
-    let output: DatabaseResponse<Page[]> = { success: true };
+    let output: LegacyDatabaseResponse<Page[]> = { success: true };
 
     // List of queries executed in this function to be added to the history table
     // const historyQueries: History.InsertHistoryEntry[] = [];
@@ -858,9 +876,9 @@ async function updatePages(
     modifiedPages: ModifiedPageContainer[],
     addToHistoryQueue = true,
     updateInReverse = false
-): Promise<DatabaseResponse<Page[]>> {
+): Promise<LegacyDatabaseResponse<Page[]>> {
     const db = connect();
-    let output: DatabaseResponse<Page[]> = { success: true };
+    let output: LegacyDatabaseResponse<Page[]> = { success: true };
 
     if (!addToHistoryQueue)
         // Stop tracking undo/redo for this table
@@ -929,9 +947,11 @@ async function updatePages(
  * @param page_id
  * @returns {success: boolean, error?: string}
  */
-async function deletePage(page_id: number): Promise<DatabaseResponse<Page>> {
+async function deletePage(
+    page_id: number
+): Promise<LegacyDatabaseResponse<Page>> {
     const db = connect();
-    let output: DatabaseResponse<Page> = { success: true };
+    let output: LegacyDatabaseResponse<Page> = { success: true };
     try {
         History.incrementUndoGroup(db);
         const pageStmt = db.prepare(`
@@ -1074,9 +1094,9 @@ async function createMarcherPage(
  */
 async function updateMarcherPages(
     marcherPageUpdates: ModifiedMarcherPageArgs[]
-): Promise<DatabaseResponse<MarcherPage[]>> {
+): Promise<LegacyDatabaseResponse<MarcherPage[]>> {
     const db = connect();
-    let output: DatabaseResponse<MarcherPage[]> = { success: true };
+    let output: LegacyDatabaseResponse<MarcherPage[]> = { success: true };
     try {
         History.incrementUndoGroup(db);
         for (const marcherPageUpdate of marcherPageUpdates) {
@@ -1220,13 +1240,13 @@ async function getMeasures(db?: Database.Database): Promise<string> {
  * Updates the ABC representation of the measures in the database.
  *
  * @param abcString The new ABC string to put into the database
- * @returns DatabaseResponse
+ * @returns LegacyDatabaseResponse
  */
 async function updateMeasuresAbcString(
     abcString: string
-): Promise<DatabaseResponse<string>> {
+): Promise<LegacyDatabaseResponse<string>> {
     const db = connect();
-    let output: DatabaseResponse<string> = { success: false };
+    let output: LegacyDatabaseResponse<string> = { success: false };
     try {
         History.incrementUndoGroup(db);
         const stmt = db.prepare(`
@@ -1335,17 +1355,17 @@ async function setSelectAudioFile(
  * This also selects the newly created audio file.
  *
  * @param new_ABC_data The new ABC string to put into the database
- * @returns DatabaseResponse
+ * @returns LegacyDatabaseResponse
  */
 export async function insertAudioFile(
     audioFile: AudioFile
-): Promise<DatabaseResponse<AudioFile[]>> {
+): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
     const stmt = db.prepare(
         `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`
     );
     stmt.run();
-    let output: DatabaseResponse<AudioFile[]> = { success: false };
+    let output: LegacyDatabaseResponse<AudioFile[]> = { success: false };
     try {
         History.incrementUndoGroup(db);
         const insertStmt = db.prepare(`
@@ -1396,13 +1416,13 @@ export async function insertAudioFile(
  * Updates a list of audio files. The only thing that can be changed is the nickname.
  *
  * @param audioFileUpdates: Array of ModifiedAudioFileArgs objects to update the objects with
- * @returns - DatabaseResponse{success: boolean, result: Database.result | string}
+ * @returns - LegacyDatabaseResponse{success: boolean, result: Database.result | string}
  */
 async function updateAudioFiles(
     audioFileUpdates: ModifiedAudioFileArgs[]
-): Promise<DatabaseResponse<AudioFile[]>> {
+): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
-    let output: DatabaseResponse<AudioFile[]> = { success: true };
+    let output: LegacyDatabaseResponse<AudioFile[]> = { success: true };
     try {
         History.incrementUndoGroup(db);
         for (const audioFileUpdate of audioFileUpdates) {
@@ -1471,9 +1491,9 @@ async function updateAudioFiles(
  */
 async function deleteAudioFile(
     audioFileId: number
-): Promise<DatabaseResponse<AudioFile>> {
+): Promise<LegacyDatabaseResponse<AudioFile>> {
     const db = connect();
-    let output: DatabaseResponse<AudioFile> = { success: true };
+    let output: LegacyDatabaseResponse<AudioFile> = { success: true };
     try {
         History.incrementUndoGroup(db);
         const pageStmt = db.prepare(`

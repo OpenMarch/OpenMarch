@@ -14,6 +14,7 @@ import Page, {
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
+import { DatabaseResponse } from "electron/database/tables/DatabaseActions";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"]
@@ -160,7 +161,7 @@ const APP_API = {
         ipcRenderer.invoke(
             "field_properties:update",
             newFieldProperties
-        ) as Promise<DbServices.DatabaseResponse<FieldProperties>>,
+        ) as Promise<DbServices.LegacyDatabaseResponse<FieldProperties>>,
 
     // Marcher
     /**
@@ -171,13 +172,16 @@ const APP_API = {
         ipcRenderer.invoke("marcher:getAll") as Promise<Marcher[]>,
     createMarcher: (newMarcher: NewMarcherArgs) =>
         ipcRenderer.invoke("marcher:insert", newMarcher) as Promise<
-            DbServices.DatabaseResponse<Marcher[]>
+            DbServices.LegacyDatabaseResponse<Marcher[]>
         >,
     updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
         ipcRenderer.invoke("marcher:update", modifiedMarchers) as Promise<
-            DbServices.DatabaseResponse<Marcher[]>
+            DbServices.LegacyDatabaseResponse<Marcher[]>
         >,
-    deleteMarcher: (id: number) => ipcRenderer.invoke("marcher:delete", id),
+    deleteMarchers: (marcherIds: Set<number>) =>
+        ipcRenderer.invoke("marcher:delete", marcherIds) as Promise<
+            DatabaseResponse<Marcher[]>
+        >,
 
     // Page
     /**
@@ -187,7 +191,7 @@ const APP_API = {
     getPages: () => ipcRenderer.invoke("page:getAll") as Promise<Page[]>,
     createPages: (pages: NewPageContainer[]) =>
         ipcRenderer.invoke("page:insert", pages) as Promise<
-            DbServices.DatabaseResponse<Page[]>
+            DbServices.LegacyDatabaseResponse<Page[]>
         >,
     updatePages: (
         modifiedPages: ModifiedPageContainer[],
@@ -199,10 +203,10 @@ const APP_API = {
             modifiedPages,
             addToHistoryQueue,
             updateInReverse
-        ) as Promise<DbServices.DatabaseResponse<Page[]>>,
-    deletePage: (id: number) =>
-        ipcRenderer.invoke("page:delete", id) as Promise<
-            DbServices.DatabaseResponse<Page>
+        ) as Promise<DbServices.LegacyDatabaseResponse<Page[]>>,
+    deletePage: (pageId: number) =>
+        ipcRenderer.invoke("page:delete", pageId) as Promise<
+            DbServices.LegacyDatabaseResponse<Page>
         >,
 
     // MarcherPage
@@ -224,7 +228,7 @@ const APP_API = {
         ipcRenderer.invoke("measure:getAll") as Promise<string>,
     updateMeasureAbcString: (abcString: string) =>
         ipcRenderer.invoke("measure:update", abcString) as Promise<
-            DbServices.DatabaseResponse<string>
+            DbServices.LegacyDatabaseResponse<string>
         >,
     launchImportMusicXmlFileDialogue: () =>
         ipcRenderer.invoke("measure:insert") as Promise<string | undefined>,
@@ -232,7 +236,7 @@ const APP_API = {
     // Audio File
     launchInsertAudioFileDialogue: () =>
         ipcRenderer.invoke("audio:insert") as Promise<
-            DbServices.DatabaseResponse<AudioFile[]>
+            DbServices.LegacyDatabaseResponse<AudioFile[]>
         >,
     getAudioFilesDetails: () =>
         ipcRenderer.invoke("audio:getAll") as Promise<AudioFile[]>,
