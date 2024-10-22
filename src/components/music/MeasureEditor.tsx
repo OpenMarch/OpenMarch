@@ -322,9 +322,9 @@ export default function MeasureEditor() {
                             <AlertDialogContent>
                                 <AlertDialogTitle>Warning</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Are you sure you want to delete measure
+                                    Are you sure you want to delete measure{" "}
                                     {selectedMeasure.number}? You cannot undo
-                                    this (yet)!
+                                    this! (yet)
                                 </AlertDialogDescription>
                                 <div className="flex w-full justify-end gap-8">
                                     <AlertDialogTrigger>

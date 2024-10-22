@@ -13,7 +13,16 @@ import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import AudioPlayer from "@/components/singletons/AudioPlayer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
-import { Provider as TooltipProvider } from "@radix-ui/react-tooltip";
+import {
+    CheckCircle,
+    Warning,
+    SealWarning,
+    Info,
+    CircleNotch,
+} from "@phosphor-icons/react";
+import { Toaster } from "sonner";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import TitleBar from "./components/titlebar/TitleBar";
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -29,36 +38,85 @@ function App() {
     else
         return (
             // Context for the selected page. Will change when more specialized
-            <IsPlayingProvider>
-                <SelectedPageProvider>
-                    <SelectedMarchersProvider>
-                        <SelectedAudioFileProvider>
-                            <FieldPropertiesProvider>
-                                <StateInitializer />
-                                <AudioPlayer />
-                                <RegisteredActionsHandler />
-                                <div
-                                    id="app"
-                                    className="flex h-full min-h-0 w-full gap-8 px-8"
-                                >
-                                    <Sidebar />
-                                    <div
-                                        id="workspace"
-                                        className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
-                                    >
-                                        <Toolbar />
-                                        <div className="relative h-full min-h-0">
-                                            <SidebarModal />
-                                            <Canvas />
+            <TooltipProvider delayDuration={500} skipDelayDuration={500}>
+                <IsPlayingProvider>
+                    <SelectedPageProvider>
+                        <SelectedMarchersProvider>
+                            <SelectedAudioFileProvider>
+                                <FieldPropertiesProvider>
+                                    <StateInitializer />
+                                    <AudioPlayer />
+                                    <RegisteredActionsHandler />
+                                    <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 pb-8 font-sans text-text outline-accent">
+                                        <TitleBar />
+                                        <div
+                                            id="app"
+                                            className="flex h-full min-h-0 w-full gap-8 px-8"
+                                        >
+                                            <Sidebar />
+                                            <div
+                                                id="workspace"
+                                                className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
+                                            >
+                                                <Toolbar />
+                                                <div className="relative h-full min-h-0">
+                                                    <SidebarModal />
+                                                    <Canvas />
+                                                </div>
+                                                <TimelineContainer />
+                                            </div>
                                         </div>
-                                        <TimelineContainer />
-                                    </div>
-                                </div>
-                            </FieldPropertiesProvider>
-                        </SelectedAudioFileProvider>
-                    </SelectedMarchersProvider>
-                </SelectedPageProvider>
-            </IsPlayingProvider>
+                                        <Toaster
+                                            visibleToasts={6}
+                                            toastOptions={{
+                                                unstyled: true,
+                                                classNames: {
+                                                    title: "text-body text-text leading-none",
+                                                    description:
+                                                        "text-sub text-text",
+                                                    toast: "p-20 flex gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
+                                                },
+                                            }}
+                                            icons={{
+                                                success: (
+                                                    <CheckCircle
+                                                        size={24}
+                                                        className="text-green"
+                                                    />
+                                                ),
+                                                info: (
+                                                    <Info
+                                                        size={24}
+                                                        className="text-text"
+                                                    />
+                                                ),
+                                                warning: (
+                                                    <Warning
+                                                        size={24}
+                                                        className="text-yellow"
+                                                    />
+                                                ),
+                                                error: (
+                                                    <SealWarning
+                                                        size={24}
+                                                        className="text-red"
+                                                    />
+                                                ),
+                                                loading: (
+                                                    <CircleNotch
+                                                        size={24}
+                                                        className="text-text"
+                                                    />
+                                                ),
+                                            }}
+                                        />
+                                    </main>
+                                </FieldPropertiesProvider>
+                            </SelectedAudioFileProvider>
+                        </SelectedMarchersProvider>
+                    </SelectedPageProvider>
+                </IsPlayingProvider>
+            </TooltipProvider>
         );
 }
 

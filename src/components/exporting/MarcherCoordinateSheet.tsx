@@ -50,13 +50,13 @@ export default function MarcherCoordinateSheet({
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
     const [marcherPagesToUse, setMarcherPagesToUse] = useState<MarcherPage[]>(
-        []
+        [],
     );
 
     useEffect(() => {
         if (!fieldProperties) {
             console.error(
-                "Field properties not found in context - MarcherCoordinateSheet.tsx"
+                "Field properties not found in context - MarcherCoordinateSheet.tsx",
             );
             return;
         }
@@ -373,7 +373,7 @@ export function StaticMarcherCoordinateSheet({
                                 .filter(
                                     (marcherPage) =>
                                         marcherPage.marcher_id ===
-                                        marcherState.id
+                                        marcherState.id,
                                 )
                                 .sort(sortMarcherPages)
                                 .map((marcherPage: MarcherPage) => {
@@ -381,7 +381,7 @@ export function StaticMarcherCoordinateSheet({
 
                                     const page = pagesState.find(
                                         (page) =>
-                                            page.id === marcherPage.page_id
+                                            page.id === marcherPage.page_id,
                                     );
                                     const rCoords = new ReadableCoords({
                                         x: marcherPage.x,

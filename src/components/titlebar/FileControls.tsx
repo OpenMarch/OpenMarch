@@ -8,6 +8,7 @@ import {
 import * as api from "@/api/api";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
 
 function FileControls() {
     return (
@@ -33,6 +34,7 @@ function FileControls() {
             >
                 <File size={18} />
             </RegisteredActionButton>
+            <ExportCoordinatesModal />
             <button
                 onClick={api.performUndo}
                 className="outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:opacity-50"

@@ -39,7 +39,7 @@ export default function AudioSelector() {
 
     return (
         <div className="flex flex-col gap-12">
-            <h5 className="text-h5 leading-none">Measures</h5>
+            <h5 className="text-h5 leading-none">Audio</h5>
             <div className="flex items-center justify-between px-12">
                 <label
                     htmlFor="audio-selector"
@@ -66,7 +66,7 @@ export default function AudioSelector() {
                             >
                                 Import audio file
                             </RegisteredActionButton>
-                            {audioFiles && <SelectSeparator />}
+                            {audioFiles.length > 0 && <SelectSeparator />}
                             {audioFiles.map((audioFile) => (
                                 <SelectItem
                                     key={audioFile.id}

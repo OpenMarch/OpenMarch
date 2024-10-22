@@ -18,7 +18,7 @@ export function SidebarModalLauncher({
     buttonLabel,
     contents,
 }: {
-    buttonLabel: string;
+    buttonLabel: string | ReactNode;
     contents: ReactNode;
 }) {
     const { toggleOpen, setContent, isSidebarModalOpen } =

@@ -188,6 +188,36 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
         >
             <div className="flex flex-col gap-16 px-12">
                 <Form.Field
+                    name="Quantity"
+                    aria-label="new page quantity"
+                    className="flex items-center justify-between gap-32"
+                >
+                    <Form.Label
+                        className="w-full text-body text-text/80"
+                        htmlFor="quantityForm"
+                    >
+                        Quantity
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Input
+                            type="number"
+                            defaultValue={1}
+                            id="quantityForm"
+                            onFocus={() => setTyping(true)}
+                            onBlur={() => setTyping(false)}
+                            onChange={handleQuantityChange}
+                            step={1}
+                            min={1}
+                        />
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
+                <Form.Field
                     aria-label="new page previous page"
                     name="Previous Page"
                     className="flex items-center justify-between gap-32"
@@ -203,6 +233,7 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
                         >
                             <SelectTriggerButton
                                 label={previousPage?.toString() || "Prev."}
+                                className="w-full"
                             />
                             <SelectContent>
                                 <SelectItem value="-1">Last</SelectItem>
@@ -273,36 +304,6 @@ const PageNewForm: React.FC<PageNewFormProps> = ({
                             required
                             min={1}
                             step={1}
-                        />
-                    </Form.Control>
-                    <Form.Message
-                        match={"valueMissing"}
-                        className="text-sub leading-none text-red"
-                    >
-                        Please enter a value.
-                    </Form.Message>
-                </Form.Field>
-                <Form.Field
-                    name="Quantity"
-                    aria-label="new page quantity"
-                    className="flex items-center justify-between gap-32"
-                >
-                    <Form.Label
-                        className="w-full text-body text-text/80"
-                        htmlFor="quantityForm"
-                    >
-                        Quantity
-                    </Form.Label>
-                    <Form.Control asChild>
-                        <Input
-                            type="number"
-                            defaultValue={1}
-                            id="quantityForm"
-                            onFocus={() => setTyping(true)}
-                            onBlur={() => setTyping(false)}
-                            onChange={handleQuantityChange}
-                            step={1}
-                            min={1}
                         />
                     </Form.Control>
                     <Form.Message
