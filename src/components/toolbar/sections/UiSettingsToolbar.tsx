@@ -1,19 +1,13 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import * as Interfaces from "../../global/Interfaces";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "../RegisteredActionButton";
+import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
-export default function UiSettingsToolbar({
-    className,
-}: Interfaces.topBarComponentProps) {
+export default function UiSettingsToolbar() {
     const { uiSettings } = useUiSettingsStore();
 
     return (
-        <div
-            className={`${className}`}
-            title="Ui Settings Toolbar"
-            aria-label="Ui Settings Toolbar"
-        >
+        <ToolbarSection aria-label="Ui Settings Toolbar">
             <RegisteredActionButton
                 registeredAction={
                     RegisteredActionsObjects.togglePreviousPagePaths
@@ -25,11 +19,9 @@ export default function UiSettingsToolbar({
                         : RegisteredActionsObjects.togglePreviousPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`${
-                    uiSettings.previousPaths
-                        ? "btn-primary"
-                        : "btn-primary-appear-disabled"
-                } rounded-none rounded-l`}
+                className={
+                    uiSettings.previousPaths ? "text-accent" : "text-text"
+                }
             >
                 Prev Paths
             </RegisteredActionButton>
@@ -42,14 +34,10 @@ export default function UiSettingsToolbar({
                         : RegisteredActionsObjects.toggleNextPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`${
-                    uiSettings.nextPaths
-                        ? "btn-primary"
-                        : "btn-primary-appear-disabled"
-                } rounded-none rounded-r`}
+                className={uiSettings.nextPaths ? "text-accent" : "text-text"}
             >
                 Next Paths
             </RegisteredActionButton>
-        </div>
+        </ToolbarSection>
     );
 }

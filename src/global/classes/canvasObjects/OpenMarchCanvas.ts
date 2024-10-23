@@ -199,23 +199,23 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         currentMarcherPages.forEach((marcherPage) => {
             const curCanvasMarcher = curCanvasMarchers.find(
                 (canvasMarcher) =>
-                    canvasMarcher.marcherObj.id === marcherPage.marcher_id
+                    canvasMarcher.marcherObj.id === marcherPage.marcher_id,
             );
             // Marcher does not exist on the Canvas, create a new one
             if (!curCanvasMarcher) {
                 const curMarcher = allMarchers.find(
-                    (marcher) => marcher.id === marcherPage.marcher_id
+                    (marcher) => marcher.id === marcherPage.marcher_id,
                 );
                 if (!curMarcher) {
                     console.error(
                         "Marcher object not found in the store for given MarcherPage  - renderMarchers: Canvas.tsx",
-                        marcherPage
+                        marcherPage,
                     );
                     return;
                 }
 
                 this.add(
-                    new CanvasMarcher({ marcher: curMarcher, marcherPage })
+                    new CanvasMarcher({ marcher: curMarcher, marcherPage }),
                 );
             }
             // Marcher exists on the Canvas, move it to the new location if it has changed
@@ -275,12 +275,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const createdStaticMarchers: StaticCanvasMarcher[] = [];
         intendedMarcherPages.forEach((marcherPage) => {
             const curMarcher = allMarchers.find(
-                (marcher) => marcher.id === marcherPage.marcher_id
+                (marcher) => marcher.id === marcherPage.marcher_id,
             );
             if (!curMarcher) {
                 console.error(
                     "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
-                    marcherPage
+                    marcherPage,
                 );
                 return;
             }
@@ -350,13 +350,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         endPageMarcherPages.forEach((previousMarcherPage) => {
             const selectedMarcherPage = startPageMarcherPages.find(
                 (marcherPage) =>
-                    marcherPage.marcher_id === previousMarcherPage.marcher_id
+                    marcherPage.marcher_id === previousMarcherPage.marcher_id,
             );
             // If the marcher does not exist on the selected page, return
             if (!selectedMarcherPage) {
                 console.error(
                     "Selected marcher page not found - renderPathways: Canvas.tsx",
-                    previousMarcherPage
+                    previousMarcherPage,
                 );
                 return;
             }
@@ -423,7 +423,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         { gridLines = true, halfLines = true } = {
             gridLines: true,
             halfLines: true,
-        } as { gridLines?: boolean; halfLines?: boolean }
+        } as { gridLines?: boolean; halfLines?: boolean },
     ) => {
         if (this.staticGridRef) this.remove(this.staticGridRef);
         this.staticGridRef = this.createFieldGrid({
@@ -456,7 +456,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (zoom < 0.35) zoom = 0.35;
         this.zoomToPoint(
             { x: fabricEvent.e.offsetX, y: fabricEvent.e.offsetY },
-            zoom
+            zoom,
         );
         fabricEvent.e.preventDefault();
         fabricEvent.e.stopPropagation();
@@ -519,7 +519,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i += pixelsPerStep
             )
                 fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps)
+                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps),
                 );
             for (
                 let i = centerFrontPoint.xPixels - pixelsPerStep;
@@ -527,7 +527,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i -= pixelsPerStep
             )
                 fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps)
+                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps),
                 );
 
             // Y
@@ -537,7 +537,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i -= pixelsPerStep
             )
                 fieldArray.push(
-                    new fabric.Line([0, i, fieldWidth, i], gridLineProps)
+                    new fabric.Line([0, i, fieldWidth, i], gridLineProps),
                 );
         }
 
@@ -555,7 +555,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i += pixelsPerStep * 4
             )
                 fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
+                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
                 );
             for (
                 let i = centerFrontPoint.xPixels - pixelsPerStep * 4;
@@ -563,7 +563,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i -= pixelsPerStep * 4
             )
                 fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps)
+                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
                 );
 
             // Y
@@ -573,7 +573,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i -= pixelsPerStep * 4
             )
                 fieldArray.push(
-                    new fabric.Line([0, i, fieldWidth, i], darkLineProps)
+                    new fabric.Line([0, i, fieldWidth, i], darkLineProps),
                 );
         }
 
@@ -600,7 +600,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 centerFrontPoint.xPixels +
                 xCheckpoint.stepsFromCenterFront * pixelsPerStep;
             fieldArray.push(
-                new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps)
+                new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps),
             );
 
             // Hashes
@@ -620,8 +620,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             [x1, y, x2 + 1, y],
                             yCheckpoint.useAsReference
                                 ? yCheckpointProps
-                                : ySecondaryCheckpointProps
-                        )
+                                : ySecondaryCheckpointProps,
+                        ),
                     );
                 }
             }
@@ -658,7 +658,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                                 yardNumberCoordinates.homeStepsFromFrontToInside *
                                     pixelsPerStep,
                             ...numberProps,
-                        })
+                        }),
                     );
                     // Away number
                     fieldArray.push(
@@ -671,7 +671,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             flipY: true,
                             flipX: true,
                             ...numberProps,
-                        })
+                        }),
                     );
                 }
             }
@@ -694,8 +694,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     fieldWidth - borderOffset,
                     borderOffset,
                 ],
-                borderProps
-            )
+                borderProps,
+            ),
         );
         // Front line
         fieldArray.push(
@@ -706,8 +706,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     fieldWidth - borderOffset + 1,
                     fieldHeight,
                 ],
-                borderProps
-            )
+                borderProps,
+            ),
         );
         // Left line
         fieldArray.push(
@@ -718,8 +718,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     borderOffset,
                     fieldHeight - borderOffset,
                 ],
-                borderProps
-            )
+                borderProps,
+            ),
         );
         // Right line
         fieldArray.push(
@@ -730,8 +730,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     fieldWidth,
                     fieldHeight - borderOffset,
                 ],
-                borderProps
-            )
+                borderProps,
+            ),
         );
 
         return new fabric.Group(fieldArray, {
@@ -747,7 +747,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param type The type of object to remove (must be a subclass of fabric.Object)
      */
     removeAllObjectsByType<T extends fabric.Object>(
-        type: new (...args: any[]) => T
+        type: new (...args: any[]) => T,
     ) {
         const objects = this.getObjectsByType(type);
 
@@ -780,7 +780,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @returns A list of objects of the specified type in the canvas
      */
     getObjectsByType<T extends fabric.Object>(
-        type: new (...args: any[]) => T
+        type: new (...args: any[]) => T,
     ): T[] {
         return this.getObjects().filter((obj) => obj instanceof type) as T[];
     }
@@ -793,10 +793,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @returns A list of active (selected) objects of the specified type in the canvas
      */
     getActiveObjectsByType<T extends fabric.Object>(
-        type: new (...args: any[]) => T
+        type: new (...args: any[]) => T,
     ): T[] {
         return this.getActiveObjects().filter(
-            (obj) => obj instanceof type
+            (obj) => obj instanceof type,
         ) as T[];
     }
 
@@ -821,7 +821,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     getCanvasMarchersByIds(marcherIds: number[]): CanvasMarcher[] {
         const marcherIdsSet = new Set(marcherIds);
         return this.getCanvasMarchers().filter((marcher) =>
-            marcherIdsSet.has(marcher.marcherObj.id)
+            marcherIdsSet.has(marcher.marcherObj.id),
         );
     }
 
@@ -888,7 +888,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this._eventMarchers.forEach((marcher) =>
             marcher.backgroundRectangle.set({
                 strokeWidth: 0,
-            })
+            }),
         );
         this._eventMarchers = marchers;
         // Change the marcher outline of the marchers in the event
@@ -897,7 +897,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 strokeWidth: 2,
                 stroke: CanvasColors.SHAPE,
                 strokeDashArray: [3, 5],
-            })
+            }),
         );
         this.requestRenderAll();
     }
@@ -929,7 +929,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 {
                     canvas: this,
                     ...ActiveObjectArgs,
-                }
+                },
             );
 
             this.setActiveObject(activeSelection);
@@ -957,7 +957,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 // TODO - this is accessing a private property of fabric.Object. This is not ideal
                 ((fabricEvent.target as any)._objects !== undefined &&
                     (fabricEvent.target as any)._objects.some((obj: any) =>
-                        Selectable.isSelectable(obj)
+                        Selectable.isSelectable(obj),
                     )))
         );
     };

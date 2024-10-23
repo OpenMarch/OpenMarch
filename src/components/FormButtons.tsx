@@ -1,4 +1,13 @@
-interface FormButtonsProps {
+import { Button, ButtonProps } from "@/components/ui/Button";
+import {
+    AlertDialog,
+    AlertDialogTitle,
+    AlertDialogContent,
+    AlertDialogTrigger,
+    AlertDialogDescription,
+} from "./ui/AlertDialog";
+
+interface FormButtonsProps extends ButtonProps {
     isEditingProp?: boolean;
     setIsEditingProp?: React.Dispatch<React.SetStateAction<boolean>>;
     editButton?: string | React.ReactNode;
@@ -8,6 +17,10 @@ interface FormButtonsProps {
      * @returns A function to be called when the form is submitted
      */
     handleSubmit?: () => void;
+    isDangerButton?: boolean;
+    alertDialogTitle?: string;
+    alertDialogDescription?: string;
+    alertDialogActions?: React.ReactNode;
 }
 
 /**
@@ -19,42 +32,78 @@ interface FormButtonsProps {
  * @param editButton - The text to display on the edit button
  * @param handleCancel - A function to call when the cancel button is clicked
  * @param handleSubmit - A function to call when the submit button is clicked. If not provided, the button will submit the form with the type="submit"
+ * @param ButtonProps - Also accepts components/ui/Button props, for styling it.
+ * @param isAlertButton - If true it will change the submit button to launch an AlertDialog
+ * @param alertDialogTitle - Only use if isAlertButton - the title of the AlertDialog
+ * @param alertDialogDescription - Only use if isAlertButton - the description of the AlertDialog
+ * @param alertDialogActions - Only use if isAlertButton - use AlertDialogAction and AlertDialogCancel and buttons for the actions
  * @returns
  */
-export default function FormButtons({ handleCancel,
-    handleSubmit = undefined, isEditingProp = true, setIsEditingProp = undefined,
-    editButton = "Edit" }: FormButtonsProps) {
+export default function FormButtons({
+    handleCancel,
+    handleSubmit = undefined,
+    isEditingProp = true,
+    setIsEditingProp = undefined,
+    editButton = "Edit",
+    isDangerButton,
+    alertDialogTitle,
+    alertDialogDescription,
+    alertDialogActions,
+    ...rest
+}: FormButtonsProps) {
     return (
-        <div style={{ display: 'flex' }}>
-            {!isEditingProp ?
-                <button
-                    className="btn-primary rounded"
-                    title="edit-form-button"
-                    type="button"
+        <>
+            {!isEditingProp ? (
+                <Button
+                    {...rest}
                     onClick={setIsEditingProp && (() => setIsEditingProp(true))}
                 >
                     {editButton}
-                </button>
-                :
+                </Button>
+            ) : (
                 <>
                     {/* handle if handleSubmit is a function */}
-                    {handleSubmit ?
-                        <button className="btn-primary rounded" title="Submit form button" type="button" onClick={handleSubmit}>
-                            Save Changes
-                        </button> :
-                        <button className="btn-primary rounded" title="Submit form button" type="submit">
-                            Save Changes
-                        </button>
-                    }
-                    <button className="btn-secondary rounded mx-1"
-                        title="Cancel form button"
-                        type="button"
+                    {handleSubmit ? (
+                        <>
+                            {isDangerButton ? (
+                                <AlertDialog>
+                                    <AlertDialogTrigger>
+                                        <Button {...rest}>Save Changes</Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogTitle>
+                                            {alertDialogTitle}
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            {alertDialogDescription}
+                                        </AlertDialogDescription>
+                                        <div className="flex w-full justify-end gap-8">
+                                            {alertDialogActions}
+                                        </div>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            ) : (
+                                <Button
+                                    {...rest}
+                                    onClick={handleSubmit}
+                                    variant="primary"
+                                >
+                                    Save Changes
+                                </Button>
+                            )}
+                        </>
+                    ) : (
+                        <Button {...rest}>Save Changes</Button>
+                    )}
+                    <Button
+                        {...rest}
+                        variant="secondary"
                         onClick={handleCancel}
                     >
                         Cancel
-                    </button>
+                    </Button>
                 </>
-            }
-        </div>
+            )}
+        </>
     );
 }

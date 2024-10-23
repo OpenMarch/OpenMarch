@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import {
-    FaFastBackward,
-    FaPause,
-    FaPlay,
-    FaFastForward,
-    FaStepBackward,
-    FaStepForward,
-} from "react-icons/fa";
-import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useIsPlaying } from "../../context/IsPlayingContext";
+    Rewind,
+    SkipBack,
+    Play,
+    Pause,
+    SkipForward,
+    FastForward,
+} from "@phosphor-icons/react";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useIsPlaying } from "@/context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
 import { usePageStore } from "@/stores/PageStore";
-import Page from "../../global/classes/Page";
+import Page from "@/global/classes/Page";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "../RegisteredActionButton";
+import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage } = useSelectedPage()!;
@@ -33,51 +34,42 @@ function PlaybackControls({ className }: topBarComponentProps) {
     }, [pages, selectedPage]);
 
     return (
-        <div
-            className={`playback-controls ${className}`}
-            aria-label="Playback Controls"
-            title="Playback Controls"
-        >
+        <ToolbarSection aria-label="Playback Controls">
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
-                className="btn-secondary rounded-none rounded-l group"
                 disabled={!previousPage || isPlaying}
             >
-                <FaFastBackward />
+                <Rewind size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.previousPage}
-                className="btn-secondary rounded-none"
                 disabled={!previousPage || isPlaying}
             >
-                <FaStepBackward />
+                <SkipBack size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                className="btn-secondary rounded-none"
                 disabled={!nextPage}
             >
-                {isPlaying ? <FaPause /> : <FaPlay />}
+                {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.nextPage}
-                className="btn-secondary rounded-none"
                 disabled={!nextPage || isPlaying}
             >
-                <FaStepForward />
+                <SkipForward size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.lastPage}
-                className="btn-secondary rounded-none rounded-r"
                 disabled={!nextPage || isPlaying}
             >
-                <FaFastForward />
+                <FastForward size={24} />
             </RegisteredActionButton>
-        </div>
+        </ToolbarSection>
     );
 }
 

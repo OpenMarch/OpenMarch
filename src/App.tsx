@@ -1,17 +1,28 @@
-import Canvas from "./components/canvas/Canvas";
-import Topbar from "./components/topbar/Topbar";
-import Sidebar from "./components/sidebar/Sidebar";
-import { SelectedPageProvider } from "./context/SelectedPageContext";
-import { SelectedMarchersProvider } from "./context/SelectedMarchersContext";
-import { IsPlayingProvider } from "./context/IsPlayingContext";
-import StateInitializer from "./components/singletons/StateInitializer";
-import LaunchPage from "./components/LaunchPage";
+import Canvas from "@/components/canvas/Canvas";
+import Toolbar from "@/components/toolbar/Toolbar";
+import Sidebar from "@/components/sidebar/Sidebar";
+import SidebarModal from "@/components/sidebar/SidebarModal";
+import { SelectedPageProvider } from "@/context/SelectedPageContext";
+import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
+import { IsPlayingProvider } from "@/context/IsPlayingContext";
+import StateInitializer from "@/components/singletons/StateInitializer";
+import LaunchPage from "@/components/LaunchPage";
 import { useEffect, useState } from "react";
-import { FieldPropertiesProvider } from "./context/fieldPropertiesContext";
-import RegisteredActionsHandler from "./utilities/RegisteredActionsHandler";
-import TimelineContainer from "./components/timeline/TimelineContainer";
-import AudioPlayer from "./components/singletons/AudioPlayer";
-import { SelectedAudioFileProvider } from "./context/SelectedAudioFileContext";
+import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
+import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
+import TimelineContainer from "@/components/timeline/TimelineContainer";
+import AudioPlayer from "@/components/singletons/AudioPlayer";
+import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
+import {
+    CheckCircle,
+    Warning,
+    SealWarning,
+    Info,
+    CircleNotch,
+} from "@phosphor-icons/react";
+import { Toaster } from "sonner";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import TitleBar from "./components/titlebar/TitleBar";
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -21,12 +32,13 @@ function App() {
             setDatabaseIsReady(result);
         });
     }, []);
-    return (
-        // Context for the selected page. Will change when more specialized
-        <main className="font-sans dark bg-gray-900 fixed h-full w-full z-20 top-0 start-0">
-            {!databaseIsReady ? (
-                <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
-            ) : (
+
+    if (!databaseIsReady)
+        return <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />;
+    else
+        return (
+            // Context for the selected page. Will change when more specialized
+            <TooltipProvider delayDuration={500} skipDelayDuration={500}>
                 <IsPlayingProvider>
                     <SelectedPageProvider>
                         <SelectedMarchersProvider>
@@ -35,26 +47,77 @@ function App() {
                                     <StateInitializer />
                                     <AudioPlayer />
                                     <RegisteredActionsHandler />
-                                    <div
-                                        className="h-full grid justify-stretch"
-                                        style={{
-                                            gridTemplateRows: "120px 1fr 100px",
-                                            gridTemplateColumns: "250px 1fr",
-                                        }}
-                                    >
-                                        <Topbar className="col-span-full box-border border-gray-500 border-0 border-b-2 border-solid" />
-                                        <Sidebar className="row-span-2 box-border border-gray-500 border-0 border-r-2 border-solid" />
-                                        <Canvas />
-                                        <TimelineContainer className="box-border bg-gray-800 border-gray-500 border-0 border-t-2 border-solid" />
-                                    </div>
+                                    <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 pb-8 font-sans text-text outline-accent">
+                                        <TitleBar />
+                                        <div
+                                            id="app"
+                                            className="flex h-full min-h-0 w-full gap-8 px-8"
+                                        >
+                                            <Sidebar />
+                                            <div
+                                                id="workspace"
+                                                className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
+                                            >
+                                                <Toolbar />
+                                                <div className="relative h-full min-h-0">
+                                                    <SidebarModal />
+                                                    <Canvas />
+                                                </div>
+                                                <TimelineContainer />
+                                            </div>
+                                        </div>
+                                        <Toaster
+                                            visibleToasts={6}
+                                            toastOptions={{
+                                                unstyled: true,
+                                                classNames: {
+                                                    title: "text-body text-text leading-none",
+                                                    description:
+                                                        "text-sub text-text",
+                                                    toast: "p-20 flex gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
+                                                },
+                                            }}
+                                            icons={{
+                                                success: (
+                                                    <CheckCircle
+                                                        size={24}
+                                                        className="text-green"
+                                                    />
+                                                ),
+                                                info: (
+                                                    <Info
+                                                        size={24}
+                                                        className="text-text"
+                                                    />
+                                                ),
+                                                warning: (
+                                                    <Warning
+                                                        size={24}
+                                                        className="text-yellow"
+                                                    />
+                                                ),
+                                                error: (
+                                                    <SealWarning
+                                                        size={24}
+                                                        className="text-red"
+                                                    />
+                                                ),
+                                                loading: (
+                                                    <CircleNotch
+                                                        size={24}
+                                                        className="text-text"
+                                                    />
+                                                ),
+                                            }}
+                                        />
+                                    </main>
                                 </FieldPropertiesProvider>
                             </SelectedAudioFileProvider>
                         </SelectedMarchersProvider>
                     </SelectedPageProvider>
                 </IsPlayingProvider>
-            )}
-        </main>
-    );
+            </TooltipProvider>
+        );
 }
 
 export default App;

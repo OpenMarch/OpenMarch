@@ -16,7 +16,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
 
 function domReady(
-    condition: DocumentReadyState[] = ["complete", "interactive"]
+    condition: DocumentReadyState[] = ["complete", "interactive"],
 ) {
     return new Promise((resolve) => {
         if (condition.includes(document.readyState)) {
@@ -44,40 +44,38 @@ const safeDOM = {
     },
 };
 
-/**
- * https://tobiasahlin.com/spinkit
- * https://connoratherton.com/loaders
- * https://projects.lukehaas.me/css-loaders
- * https://matejkustec.github.io/SpinThatShit
- */
 function useLoading() {
-    const className = `loaders-css__square-spin`;
     const styleContent = `
-@keyframes square-spin {
-  25% { transform: perspective(100px) rotateX(180deg) rotateY(0); }
-  50% { transform: perspective(100px) rotateX(180deg) rotateY(180deg); }
-  75% { transform: perspective(100px) rotateX(0) rotateY(180deg); }
-  100% { transform: perspective(100px) rotateX(0) rotateY(0); }
-}
-.${className} > div {
-  animation-fill-mode: both;
-  width: 50px;
-  height: 50px;
-  background: #fff;
-  animation: square-spin 3s 0s cubic-bezier(0.09, 0.57, 0.49, 0.9) infinite;
-}
-.app-loading-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #282c34;
-  z-index: 9;
-}
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .loader > svg {
+        width: 50px;
+        height: 50px;
+        fill: black;
+        animation: spin 1s 0s linear infinite;
+    }
+    .app-loading-wrap {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #EBEDF0;
+        z-index: 9;
+    }
+    @media (prefers-color-scheme: dark) {
+        .loader > svg {
+            fill: white;
+        }
+        .app-loading-wrap {
+            background: #0D1014;
+        }
+    }
     `;
     const oStyle = document.createElement("style");
     const oDiv = document.createElement("div");
@@ -85,7 +83,7 @@ function useLoading() {
     oStyle.id = "app-loading-style";
     oStyle.innerHTML = styleContent;
     oDiv.className = "app-loading-wrap";
-    oDiv.innerHTML = `<div class="${className}"><div></div></div>`;
+    oDiv.innerHTML = `<div class="loader"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 256 256"><path d="M232,128a104,104,0,0,1-208,0c0-41,23.81-78.36,60.66-95.27a8,8,0,0,1,6.68,14.54C60.15,61.59,40,93.27,40,128a88,88,0,0,0,176,0c0-34.73-20.15-66.41-51.34-80.73a8,8,0,0,1,6.68-14.54C208.19,49.64,232,87,232,128Z"></path></svg></div>`;
 
     return {
         appendLoading() {
@@ -98,7 +96,6 @@ function useLoading() {
         },
     };
 }
-
 // ----------------------------------------------------------------------
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -120,6 +117,17 @@ setTimeout(removeLoading, 4999);
  *  I.e. you must type `marchers:readAll` rather than `${table_name}:readAll` for the channel
  */
 const APP_API = {
+    // Titlebar
+    minimizeWindow: () => ipcRenderer.send("window:minimize"),
+    maximizeWindow: () => ipcRenderer.send("window:maximize"),
+    closeWindow: () => ipcRenderer.send("window:close"),
+    openMenu: () => ipcRenderer.send("menu:open"),
+    isMacOS: process.platform === "darwin",
+
+    // Themes
+    getTheme: () => ipcRenderer.invoke("get-theme"),
+    setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
+
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
@@ -146,7 +154,7 @@ const APP_API = {
             tableName: string;
             marcher_ids: number[];
             page_id: number;
-        }) => string
+        }) => string,
     ) => ipcRenderer.on("history:action", (event, args) => callback(args)),
     removeHistoryActionListener: () =>
         ipcRenderer.removeAllListeners("history:action"),
@@ -161,7 +169,7 @@ const APP_API = {
     updateFieldProperties: (newFieldProperties: FieldProperties) =>
         ipcRenderer.invoke(
             "field_properties:update",
-            newFieldProperties
+            newFieldProperties,
         ) as Promise<DbServices.DatabaseResponse<FieldProperties>>,
 
     // Marcher
@@ -194,13 +202,13 @@ const APP_API = {
     updatePages: (
         modifiedPages: ModifiedPageContainer[],
         addToHistoryQueue?: boolean,
-        updateInReverse?: boolean
+        updateInReverse?: boolean,
     ) =>
         ipcRenderer.invoke(
             "page:update",
             modifiedPages,
             addToHistoryQueue,
-            updateInReverse
+            updateInReverse,
         ) as Promise<DbServices.DatabaseResponse<Page[]>>,
     deletePage: (id: number) =>
         ipcRenderer.invoke("page:delete", id) as Promise<

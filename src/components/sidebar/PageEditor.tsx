@@ -2,7 +2,8 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { usePageStore } from "@/stores/PageStore";
 import Page from "@/global/classes/Page";
-import EditorContainer from "./sharedComponents/EditorContainer";
+import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
+import { Input } from "../ui/Input";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
@@ -23,7 +24,7 @@ function PageEditor() {
 
         // Remove focus from the input field
         const inputField = document.getElementById(
-            countsInputId
+            countsInputId,
         ) as HTMLInputElement;
         if (inputField) {
             inputField.blur();
@@ -86,65 +87,97 @@ function PageEditor() {
         }
     }, [pages, selectedPage]);
 
-    return selectedPage ? (
-        <EditorContainer
-            topBorder={false}
-            headerLeftText="Page"
-            headerRightText={selectedPage.name}
-        >
-            <form id={formId} onSubmit={handleSubmit}>
-                {/* <div className="input-group">
+    if (selectedPage)
+        return (
+            <SidebarCollapsible
+                defaultOpen
+                title={`Page ${selectedPage.name}`}
+                className="mt-12"
+            >
+                <form
+                    className="edit-group flex w-full flex-col gap-16 px-6"
+                    id={formId}
+                    onSubmit={handleSubmit}
+                >
+                    {/* <div className="input-group">
                     <label htmlFor="page-name">Name</label>
-                    <input type="text" value={selectedPage.name} onChange={undefined} id="page-name" />
+                    <Input type="text" value={selectedPage.name} onChange={undefined} id="page-name" />
                 </div> */}
-                <div>
-                    <label htmlFor={countsInputId}>Counts</label>
-                    <input
-                        className="bg-transparent text-inherit ml-3 border-none"
-                        type="number"
-                        disabled={isFirstPage}
-                        defaultValue={isFirstPage ? 0 : selectedPage.counts}
-                        id={countsInputId}
-                        onKeyDown={handleKeyDown}
-                        onBlur={handleBlur}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="page-order">Order</label>
-                    <input
-                        className="bg-transparent text-inherit ml-3 border-none"
-                        type="string"
-                        value={
-                            pages.indexOf(selectedPage) + 1 + "/" + pages.length
-                        }
-                        id="page-order"
-                        disabled={true}
-                    />
-                </div>
-                <div>
-                    <label>Measures</label>
-                    {selectedPage.measures.map((measure, index) => {
-                        return (
-                            <span key={index}>
-                                {" "}
-                                {measure.number}
-                                {index !== selectedPage.measures.length - 1 &&
-                                    ","}
-                            </span>
-                        );
-                    })}
-                </div>
-                {/* <div>
+                    <div className="flex w-full items-center justify-between">
+                        <label
+                            className="w-full text-body text-text/80"
+                            htmlFor={countsInputId}
+                        >
+                            Counts
+                        </label>
+                        <Input
+                            compact
+                            type="number"
+                            className="w-fit min-w-0"
+                            disabled={isFirstPage}
+                            defaultValue={isFirstPage ? 0 : selectedPage.counts}
+                            id={countsInputId}
+                            onKeyDown={handleKeyDown}
+                            onBlur={handleBlur}
+                        />
+                    </div>
+                    <div className="flex w-full items-center justify-between">
+                        <label
+                            htmlFor="page-order"
+                            className="text-body text-text/80"
+                        >
+                            Order
+                        </label>
+                        {/*
+                            <Input
+                                className="w-fit min-w-0"
+                                type="string"
+                                value={
+                                    pages.indexOf(selectedPage) +
+                                    1 +
+                                    "/" +
+                                    pages.length
+                                }
+                                id="page-order"
+                                disabled={true}
+                            />
+                            */}
+                        <p className="text-body leading-none text-text">
+                            {pages.indexOf(selectedPage) +
+                                1 +
+                                "/" +
+                                pages.length}
+                        </p>
+                    </div>
+                    <div className="flex w-full items-center justify-between">
+                        <label className="text-body text-text/80">
+                            Measures
+                        </label>
+                        <p className="text-body leading-none text-text">
+                            {selectedPage.measures.map((measure, index) => {
+                                return (
+                                    <span key={index}>
+                                        {" "}
+                                        {measure.number}
+                                        {index !==
+                                            selectedPage.measures.length - 1 &&
+                                            ","}
+                                    </span>
+                                );
+                            })}
+                        </p>
+                    </div>
+                    {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
                     Not yet implemented
                 </div> */}
-                {/* This is here so the form submits when enter is pressed */}
-                <button type="submit" style={{ display: "none" }}>
-                    Submit
-                </button>
-            </form>
-        </EditorContainer>
-    ) : null;
+                    {/* This is here so the form submits when enter is pressed */}
+                    <button type="submit" className="hidden">
+                        Submit
+                    </button>
+                </form>
+            </SidebarCollapsible>
+        );
 }
 
 export default PageEditor;

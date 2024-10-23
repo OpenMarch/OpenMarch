@@ -1,5 +1,4 @@
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
-import EditorContainer from "./sharedComponents/EditorContainer";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 
@@ -11,13 +10,8 @@ export default function AlignmentEditor() {
     } = useAlignmentEventStore();
 
     return alignmentEvent === "default" ? null : (
-        <EditorContainer
-            headerLeftText="Alignment"
-            headerRightText={`${alignmentEvent
-                .charAt(0)
-                .toUpperCase()}${alignmentEvent.substring(1)}`}
-        >
-            <div className="flex mr-4 mb-2">
+        <>
+            <div className="mb-2 mr-4 flex">
                 {alignmentEventNewMarcherPages.length > 0 && (
                     <RegisteredActionButton
                         className="btn-secondary mx-2 flex-grow"
@@ -45,6 +39,6 @@ export default function AlignmentEditor() {
                         .join(", ")}
                 </div>
             </div>
-        </EditorContainer>
+        </>
     );
 }

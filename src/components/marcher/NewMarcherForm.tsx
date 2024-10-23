@@ -1,23 +1,31 @@
-import * as Form from "@/components/templates/Form";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
 import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
+import * as Form from "@radix-ui/react-form";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTriggerButton,
+} from "../ui/Select";
+import { Input } from "../ui/Input";
+import { Button } from "../ui/Button";
+import { toast } from "sonner";
+import { InfoNote } from "../ui/Note";
 
 interface NewMarcherFormProps {
-    hasHeader?: boolean;
     disabledProp?: boolean;
 }
 
-const defaultSection = "default";
+const defaultSection = "Section";
 const defaultDrillPrefix = "-";
 const defaultDrillOrder = 1;
 
 // eslint-disable-next-line react/prop-types
 const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
-    hasHeader = false,
     disabledProp = false,
-}) => {
+}: NewMarcherFormProps) => {
     const [section, setSection] = useState<string>(defaultSection);
     const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);
     const [drillOrder, setDrillOrder] = useState<number>(defaultDrillOrder);
@@ -27,7 +35,6 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const [drillPrefixTouched, setDrillPrefixTouched] =
         useState<boolean>(false);
     const [drillOrderError, setDrillOrderError] = useState<string>("");
-    const [alertMessages, setAlertMessages] = useState<string[]>([]);
     const { marchers } = useMarcherStore!();
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
     const formRef = useRef<HTMLFormElement>(null);
@@ -49,11 +56,10 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
         event.preventDefault();
         let newDrillOrderOffset = 0;
         const existingMarchers = marchers.filter(
-            (marcher: Marcher) => marcher.drill_prefix === drillPrefix
+            (marcher: Marcher) => marcher.drill_prefix === drillPrefix,
         );
         // if (!drillOrderError && section && drillPrefix && drillOrder && quantity) {
         if (!submitIsDisabled) {
-            const newAlertMessages = [...alertMessages];
             for (let i = 0; i < quantity; i++) {
                 // Check to see if the drill order already exists
                 let newDrillOrder = drillOrder + i + newDrillOrderOffset;
@@ -61,7 +67,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 while (
                     existingMarchers.some(
                         (marcher: Marcher) =>
-                            marcher.drill_order === newDrillOrder
+                            marcher.drill_order === newDrillOrder,
                     )
                 ) {
                     newDrillOrderOffset++;
@@ -75,35 +81,26 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 });
 
                 if (response.success)
-                    newAlertMessages.unshift(
-                        `Marcher ${
-                            drillPrefix + newDrillOrder
-                        } created successfully`
+                    toast.success(
+                        `Marcher ${drillPrefix + newDrillOrder} created successfully`,
                     );
                 else {
-                    newAlertMessages.unshift(
-                        `Error creating marcher ${drillPrefix + newDrillOrder}`
+                    toast.error(
+                        `Error creating marcher ${drillPrefix + newDrillOrder}`,
                     );
                     console.error(
-                        `Error creating marcher ${
-                            drillPrefix + newDrillOrder
-                        }:`,
-                        response.error
+                        `Error creating marcher ${drillPrefix + newDrillOrder}:`,
+                        response.error,
                     );
                 }
             }
-            setAlertMessages(newAlertMessages);
             resetForm();
         }
     };
 
-    const handleSectionChange = (
-        event: React.ChangeEvent<HTMLSelectElement>
-    ) => {
+    const handleSectionChange = (value: string) => {
         setSection(defaultSection);
-        const selectedSectionObject = getSectionObjectByName(
-            event.target.value
-        );
+        const selectedSectionObject = getSectionObjectByName(value);
         if (selectedSectionObject) {
             setSection(selectedSectionObject.name);
             setDrillPrefix(selectedSectionObject.prefix);
@@ -128,11 +125,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const validateDrillOrder = useCallback(
         (drillOrder: number) => {
             const existingMarchers = marchers.filter(
-                (marcher: Marcher) => marcher.drill_prefix === drillPrefix
+                (marcher: Marcher) => marcher.drill_prefix === drillPrefix,
             );
             if (
                 existingMarchers.some(
-                    (marcher: Marcher) => marcher.drill_order === drillOrder
+                    (marcher: Marcher) => marcher.drill_order === drillOrder,
                 )
             ) {
                 setDrillOrderError("This drill number already exists");
@@ -140,11 +137,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 setDrillOrderError("");
             }
         },
-        [marchers, drillPrefix]
+        [marchers, drillPrefix],
     );
 
     const handleQuantityChange = (
-        event: React.ChangeEvent<HTMLInputElement>
+        event: React.ChangeEvent<HTMLInputElement>,
     ) => {
         if (event.target.value === "") setQuantity(1);
         else setQuantity(parseInt(event.target.value));
@@ -154,11 +151,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
         // this is an object to avoid an unsafe reference warning
         const i = { newOrder: 1 };
         const existingMarchers = marchers.filter(
-            (marcher: Marcher) => marcher.drill_prefix === drillPrefix
+            (marcher: Marcher) => marcher.drill_prefix === drillPrefix,
         );
         while (
             existingMarchers.some(
-                (marcher: Marcher) => marcher.drill_order === i.newOrder
+                (marcher: Marcher) => marcher.drill_order === i.newOrder,
             )
         ) {
             i.newOrder++;
@@ -203,7 +200,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 drillOrder === undefined ||
                 sectionError !== "" ||
                 drillPrefixError !== "" ||
-                drillOrderError !== ""
+                drillOrderError !== "",
         );
     }, [
         section,
@@ -215,99 +212,132 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     ]);
 
     return (
-        <form onSubmit={handleSubmit} id="newMarcherForm" ref={formRef}>
-            {hasHeader && <h4>Create new marchers</h4>}
-            <div className="mb-3">
-                <Form.Group>
-                    <Form.Label>Section</Form.Label>
-                    <Form.Select
-                        onChange={handleSectionChange}
-                        required
-                        isInvalid={!!sectionError}
-                        value={section}
-                        invalidMessage={sectionError}
+        <Form.Root
+            onSubmit={handleSubmit}
+            id="newMarcherForm"
+            ref={formRef}
+            className="flex h-full flex-col justify-between"
+        >
+            <div className="flex flex-col gap-16 px-12">
+                <Form.Field
+                    name="Quantity"
+                    className="flex items-center justify-between"
+                >
+                    <Form.Label className="w-full text-body text-text/80">
+                        Quantity
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Input
+                            type="number"
+                            defaultValue={1}
+                            onChange={handleQuantityChange}
+                            step={1}
+                            min={1}
+                            max={100}
+                        />
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
                     >
-                        <option value="default">Choose Section...</option>
-                        {Object.values(SECTIONS).map((section) => {
-                            return (
-                                <option key={section.name}>
-                                    {section.name}
-                                </option>
-                            );
-                        })}
-                    </Form.Select>
-                </Form.Group>
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
+                <Form.Field
+                    name="section"
+                    className="flex items-center justify-between"
+                >
+                    <Form.Label className="text-body text-text/80">
+                        Section
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Select onValueChange={handleSectionChange} required>
+                            <SelectTriggerButton label={section || "Section"} />
+                            <SelectContent>
+                                {Object.values(SECTIONS).map((section) => {
+                                    return (
+                                        <SelectItem
+                                            key={section.name}
+                                            value={section.name}
+                                        >
+                                            {section.name}
+                                        </SelectItem>
+                                    );
+                                })}
+                            </SelectContent>
+                        </Select>
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
+                <Form.Field
+                    name="Drill Prefix"
+                    className="flex items-center justify-between"
+                >
+                    <Form.Label className="text-body text-text/80">
+                        Drill Prefix
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Input
+                            type="text"
+                            placeholder="-"
+                            onChange={handlePrefixChange}
+                            value={drillPrefix}
+                            required
+                            maxLength={3}
+                        />
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
+
+                <Form.Field
+                    name="Drill Number"
+                    className="flex items-center justify-between gap-32"
+                >
+                    <Form.Label className="text-body text-text/80">
+                        Drill Number
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Input
+                            type="number"
+                            placeholder="-"
+                            onChange={handleOrderChange}
+                            value={drillOrder}
+                            required
+                            maxLength={3}
+                        />
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
             </div>
 
-            <div className="grid grid-cols-3">
-                <Form.Group>
-                    <Form.Label>Drill Prefix</Form.Label>
-                    <Form.Input
-                        type="text"
-                        placeholder="-"
-                        onChange={handlePrefixChange}
-                        value={drillPrefix}
-                        required
-                        maxLength={3}
-                        isInvalid={!!drillPrefixError}
-                        invalidMessage={drillPrefixError}
-                    />
-                </Form.Group>
-
-                <Form.Group>
-                    <Form.Label>Drill #</Form.Label>
-                    <Form.Input
-                        type="number"
-                        placeholder="-"
-                        onChange={handleOrderChange}
-                        value={drillOrder}
-                        isInvalid={!!drillOrderError}
-                        required
-                        min={1}
-                        step={1}
-                        disabled={quantity > 1}
-                        invalidMessage={drillOrderError}
-                    />
-                    {/* <Form.Feedback type="invalid">{drillOrderError}</Form.Feedback> */}
-                </Form.Group>
-
-                <Form.Group>
-                    <Form.Label>Quantity</Form.Label>
-                    <Form.Input
-                        type="number"
-                        defaultValue={1}
-                        onChange={handleQuantityChange}
-                        step={1}
-                        min={1}
-                    />
-                </Form.Group>
-            </div>
-            <div className="py-2">
-                <button
-                    className="btn-primary"
+            <div className="flex flex-col gap-8">
+                <InfoNote>
+                    New marchers may not show up until a refresh
+                </InfoNote>
+                <Button
                     type="submit"
+                    className="w-full"
                     disabled={submitIsDisabled || disabledProp}
                 >
                     {makeButtonString(quantity, section)}
-                </button>
+                </Button>
             </div>
-            <span>Dev Note: new marchers may not show up until a refresh</span>
-            {alertMessages.map((message, index) => (
-                <Form.Alert
-                    key={index}
-                    type={message.startsWith("Error") ? "error" : "success"}
-                    className="mt-3"
-                    onClose={() =>
-                        setAlertMessages(
-                            alertMessages.filter((_, i) => i !== index)
-                        )
-                    }
-                    dismissible
-                >
-                    {message}
-                </Form.Alert>
-            ))}
-        </form>
+        </Form.Root>
     );
 };
 
