@@ -1,6 +1,8 @@
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import { SidebarCollapsible } from "./SidebarCollapsible";
+import { Button } from "../ui/Button";
 
 export default function AlignmentEditor() {
     const {
@@ -9,36 +11,38 @@ export default function AlignmentEditor() {
         alignmentEventNewMarcherPages,
     } = useAlignmentEventStore();
 
-    return alignmentEvent === "default" ? null : (
-        <>
-            <div className="mb-2 mr-4 flex">
-                {alignmentEventNewMarcherPages.length > 0 && (
+    return (
+        alignmentEvent === "line" && (
+            <SidebarCollapsible
+                defaultOpen
+                title={`Alignment`}
+                className="mt-12 flex flex-col gap-12"
+            >
+                <div className="flex gap-8">
+                    {alignmentEventNewMarcherPages.length > 0 && (
+                        <RegisteredActionButton
+                            registeredAction={
+                                RegisteredActionsObjects.applyAlignmentUpdates
+                            }
+                        >
+                            <Button>Apply</Button>
+                        </RegisteredActionButton>
+                    )}
                     <RegisteredActionButton
-                        className="btn-secondary mx-2 flex-grow"
                         registeredAction={
-                            RegisteredActionsObjects.applyAlignmentUpdates
+                            RegisteredActionsObjects.cancelAlignmentUpdates
                         }
                     >
-                        Apply
+                        <Button variant="secondary">Cancel</Button>
                     </RegisteredActionButton>
-                )}
-                <RegisteredActionButton
-                    className="btn-secondary mx-2 flex-grow"
-                    registeredAction={
-                        RegisteredActionsObjects.cancelAlignmentUpdates
-                    }
-                >
-                    Cancel
-                </RegisteredActionButton>
-            </div>
-            <div>
-                Marchers
-                <div>
+                </div>
+                <p className="text-sub text-text/80">
+                    Marchers{" "}
                     {alignmentEventMarchers
                         .map((marcher) => marcher.drill_number)
                         .join(", ")}
-                </div>
-            </div>
-        </>
+                </p>
+            </SidebarCollapsible>
+        )
     );
 }

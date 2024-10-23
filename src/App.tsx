@@ -33,21 +33,23 @@ function App() {
         });
     }, []);
 
-    if (!databaseIsReady)
-        return <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />;
-    else
-        return (
-            // Context for the selected page. Will change when more specialized
-            <TooltipProvider delayDuration={500} skipDelayDuration={500}>
-                <IsPlayingProvider>
-                    <SelectedPageProvider>
-                        <SelectedMarchersProvider>
-                            <SelectedAudioFileProvider>
-                                <FieldPropertiesProvider>
-                                    <StateInitializer />
-                                    <AudioPlayer />
-                                    <RegisteredActionsHandler />
-                                    <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 pb-8 font-sans text-text outline-accent">
+    return (
+        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 pb-8 font-sans text-text outline-accent">
+            {!databaseIsReady ? (
+                <>
+                    <TitleBar noControls />
+                    <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                </>
+            ) : (
+                <TooltipProvider delayDuration={500} skipDelayDuration={500}>
+                    <IsPlayingProvider>
+                        <SelectedPageProvider>
+                            <SelectedMarchersProvider>
+                                <SelectedAudioFileProvider>
+                                    <FieldPropertiesProvider>
+                                        <StateInitializer />
+                                        <AudioPlayer />
+                                        <RegisteredActionsHandler />
                                         <TitleBar />
                                         <div
                                             id="app"
@@ -110,14 +112,15 @@ function App() {
                                                 ),
                                             }}
                                         />
-                                    </main>
-                                </FieldPropertiesProvider>
-                            </SelectedAudioFileProvider>
-                        </SelectedMarchersProvider>
-                    </SelectedPageProvider>
-                </IsPlayingProvider>
-            </TooltipProvider>
-        );
+                                    </FieldPropertiesProvider>
+                                </SelectedAudioFileProvider>
+                            </SelectedMarchersProvider>
+                        </SelectedPageProvider>
+                    </IsPlayingProvider>
+                </TooltipProvider>
+            )}
+        </main>
+    );
 }
 
 export default App;

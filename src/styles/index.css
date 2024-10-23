@@ -37,7 +37,7 @@
         --stroke: 255, 255, 255, 0.06;
         --text: 208, 208, 208;
         --text-invert: 0, 0, 0;
-        --accent: 142, 117, 255;
+        --accent: 150, 126, 255;
         --red: 227, 74, 74;
         --yellow: 236, 211, 71;
         --green: 113, 222, 86;
@@ -79,6 +79,11 @@
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(var(--text), 0.15);
+}
+
+::selection {
+    background-color: rgb(var(--accent));
+    color: rgb(var(--text-invert));
 }
 
 /* Number input arrows */

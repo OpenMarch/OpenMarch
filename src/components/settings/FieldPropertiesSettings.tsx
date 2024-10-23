@@ -98,11 +98,8 @@ export default function FieldPropertiesSettings() {
                             </SelectContent>
                         </Select>
                         <Button
-                            className="h-[2.5rem] items-center"
+                            className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
                             onClick={applyChanges}
-                            disabled={
-                                currentTemplate?.name === fieldProperties?.name
-                            }
                         >
                             Apply Field Type
                         </Button>

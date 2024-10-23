@@ -9,6 +9,9 @@ import {
     Y_DESCRIPTION,
 } from "@/global/classes/ReadableCoords";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
+import RegisteredActionButton from "../RegisteredActionButton";
+import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import { Button } from "../ui/Button";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -90,14 +93,25 @@ function MarcherEditor() {
                         <SidebarCollapsible
                             defaultOpen
                             title={`Marchers (${selectedMarchers.length})`}
-                            className="mt-12"
+                            className="mt-12 flex flex-col gap-16"
                         >
-                            <h4>Selected</h4>
-                            <p>
+                            <p className="w-full px-6">
                                 {selectedMarchers
                                     .map((marcher) => marcher.drill_number)
                                     .join(", ")}
                             </p>
+                            {selectedMarchers.length >= 3 && (
+                                <RegisteredActionButton
+                                    className="btn-secondary"
+                                    registeredAction={
+                                        RegisteredActionsObjects.alignmentEventLine
+                                    }
+                                >
+                                    <Button className="w-full">
+                                        Create Line
+                                    </Button>
+                                </RegisteredActionButton>
+                            )}
                         </SidebarCollapsible>
                     ) : (
                         // One marcher selected
@@ -123,7 +137,7 @@ function MarcherEditor() {
                                         >
                                             X
                                         </label>
-                                        <div className="flex w-full gap-4">
+                                        <div className="flex w-full justify-end gap-4">
                                             {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
                                             <p className="bg-transparent text-body leading-none">
                                                 {rCoords?.xSteps}
@@ -210,7 +224,7 @@ function MarcherEditor() {
                                         >
                                             Y
                                         </label>
-                                        <div className="flex gap-4">
+                                        <div className="flex justify-end gap-4">
                                             <p className="bg-transparent text-body leading-none">
                                                 {rCoords?.ySteps}
                                             </p>

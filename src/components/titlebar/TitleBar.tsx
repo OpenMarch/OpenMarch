@@ -1,9 +1,8 @@
 import { Minus, Square, List, X } from "@phosphor-icons/react";
 import FileControls from "./FileControls";
-import ThemeSwitcher from "./ThemeSwitcher";
 import SettingsModal from "../settings/SettingsModal";
 
-export default function TitleBar() {
+export default function TitleBar({ noControls }: { noControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
 
     return (
@@ -25,8 +24,12 @@ export default function TitleBar() {
                     <p className="text-body leading-none">OpenMarch</p>
                     <p className="text-body leading-none opacity-50">0.0.2</p>
                 </div>
-                <FileControls />
-                <SettingsModal />
+                {!noControls && (
+                    <>
+                        <FileControls />
+                        <SettingsModal />
+                    </>
+                )}
             </div>
             {!isMacOS && (
                 <div className="titlebar-button flex">
