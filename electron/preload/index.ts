@@ -65,7 +65,7 @@ function useLoading() {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #EBEDF0;
+        background: #ECEBF0;
         z-index: 9;
     }
     @media (prefers-color-scheme: dark) {
@@ -73,7 +73,7 @@ function useLoading() {
             fill: white;
         }
         .app-loading-wrap {
-            background: #0D1014;
+            background: #0F0E13;
         }
     }
     `;
