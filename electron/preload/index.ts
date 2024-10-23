@@ -9,12 +9,12 @@ import MarcherPage, {
 } from "@/global/classes/MarcherPage";
 import Page, {
     ModifiedPageContainer,
-    NewPageContainer,
+    NewPageArgs,
 } from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
-import { DatabaseResponse } from "electron/database/tables/DatabaseActions";
+import { DatabaseResponse } from "electron/database/DatabaseActions";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"]
@@ -169,14 +169,16 @@ const APP_API = {
      * This means you must call `new Marcher(marcher)` on each marcher or else the instance methods will not work.
      */
     getMarchers: () =>
-        ipcRenderer.invoke("marcher:getAll") as Promise<Marcher[]>,
-    createMarcher: (newMarcher: NewMarcherArgs) =>
-        ipcRenderer.invoke("marcher:insert", newMarcher) as Promise<
-            DbServices.LegacyDatabaseResponse<Marcher[]>
+        ipcRenderer.invoke("marcher:getAll") as Promise<
+            DatabaseResponse<Marcher[]>
+        >,
+    createMarchers: (newMarchers: NewMarcherArgs[]) =>
+        ipcRenderer.invoke("marcher:insert", newMarchers) as Promise<
+            DatabaseResponse<Marcher[]>
         >,
     updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
         ipcRenderer.invoke("marcher:update", modifiedMarchers) as Promise<
-            DbServices.LegacyDatabaseResponse<Marcher[]>
+            DatabaseResponse<Marcher[]>
         >,
     deleteMarchers: (marcherIds: Set<number>) =>
         ipcRenderer.invoke("marcher:delete", marcherIds) as Promise<
@@ -188,10 +190,11 @@ const APP_API = {
      * @returns A serialized array of all pages in the database.
      * This means you must call `new Page(page)` on each page or else the instance methods will not work.
      */
-    getPages: () => ipcRenderer.invoke("page:getAll") as Promise<Page[]>,
-    createPages: (pages: NewPageContainer[]) =>
+    getPages: () =>
+        ipcRenderer.invoke("page:getAll") as Promise<DatabaseResponse<Page[]>>,
+    createPages: (pages: NewPageArgs[]) =>
         ipcRenderer.invoke("page:insert", pages) as Promise<
-            DbServices.LegacyDatabaseResponse<Page[]>
+            DatabaseResponse<Page[]>
         >,
     updatePages: (
         modifiedPages: ModifiedPageContainer[],
@@ -203,21 +206,25 @@ const APP_API = {
             modifiedPages,
             addToHistoryQueue,
             updateInReverse
-        ) as Promise<DbServices.LegacyDatabaseResponse<Page[]>>,
+        ) as Promise<DatabaseResponse<Page[]>>,
     deletePage: (pageId: number) =>
         ipcRenderer.invoke("page:delete", pageId) as Promise<
-            DbServices.LegacyDatabaseResponse<Page>
+            DatabaseResponse<Page>
         >,
 
     // MarcherPage
     getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
         ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            MarcherPage[]
+            DatabaseResponse<MarcherPage[]>
         >,
     getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
-        ipcRenderer.invoke("marcher_page:get", id),
+        ipcRenderer.invoke("marcher_page:get", id) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
     updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
-        ipcRenderer.invoke("marcher_page:update", args),
+        ipcRenderer.invoke("marcher_page:update", args) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
 
     // Measure
     /**

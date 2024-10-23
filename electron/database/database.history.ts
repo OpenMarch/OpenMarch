@@ -355,7 +355,7 @@ const switchTriggerMode = (
     deleteRedoRows: boolean,
     tableNames?: Set<string>
 ) => {
-    let sql = `SELECT * FROM sqlite_master WHERE type='trigger'`;
+    let sql = `SELECT * FROM sqlite_master WHERE type='trigger' AND ("name" LIKE '%$_ut' ESCAPE '$' OR "name" LIKE  '%$_it' ESCAPE '$' OR "name" LIKE  '%$_dt' ESCAPE '$')`;
     if (tableNames) {
         sql += ` AND tbl_name IN (${Array.from(tableNames)
             .map((t) => `'${t}'`)
@@ -485,4 +485,25 @@ function executeHistoryAction(
     }
 
     return response;
+}
+
+/**
+ * Clear the most recent redo actions from the most recent group.
+ *
+ * This should be used when there was an error that required changes to be
+ * rolled back but the redo history should not be kept.
+ *
+ * @param db database connection
+ */
+export function clearMostRecentRedo(db: Database.Database) {
+    const maxGroup = (
+        db
+            .prepare(
+                `SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}`
+            )
+            .get() as { max_redo_group: number }
+    ).max_redo_group;
+    db.prepare(
+        `DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ?`
+    ).run(maxGroup);
 }

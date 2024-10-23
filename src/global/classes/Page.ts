@@ -12,8 +12,6 @@ class Page {
 
     /** The id of the page in the database */
     readonly id: number;
-    /** The id of the page for use in the HTML. E.g. "page_2" for page with ID of 2 */
-    readonly id_for_html: string;
     /** The name of the page. E.g. "2A" */
     readonly name: string;
     /** Number of counts to get to this page */
@@ -22,6 +20,10 @@ class Page {
     readonly order: number;
     /** NOT IMPLEMENTED - Any notes about the page. Optional */
     readonly notes?: string;
+    /** The id of the next page in the show. Null if this is the last page. */
+    readonly nextPageId: number | null;
+    /** The id of the previous page in the show. Null if this is the first page. */
+    readonly previousPageId: number | null;
 
     /********** Runtime Attributes **********/
     // These are Attributes that are calculated at runtime and are not stored in the database.
@@ -50,21 +52,22 @@ class Page {
 
     constructor({
         id,
-        id_for_html,
         name,
         counts,
         order,
         notes,
+        nextPageId,
+        previousPageId,
     }: {
         id: number;
-        id_for_html: string;
         name: string;
         counts: number;
         order: number;
         notes?: string;
+        nextPageId: number | null;
+        previousPageId: number | null;
     }) {
         this.id = id;
-        this.id_for_html = id_for_html;
         this.name = name;
 
         if (counts < 0) this.counts = 1;
@@ -73,6 +76,9 @@ class Page {
         this.order = order;
 
         this.notes = notes;
+
+        this.nextPageId = nextPageId;
+        this.previousPageId = previousPageId;
     }
 
     /**************** Getters and Setters ****************/
@@ -130,126 +136,127 @@ class Page {
         error?: { message: string; stack?: string };
         newPages?: NewPageContainer[];
     }> {
-        // Get the existing pages and create them as objects. (Electron only returns serialized data)
-        const existingPages = Page.sortPagesByOrder(await Page.getPages()).map(
-            (page) => {
-                return new Page(page);
-            }
-        );
-        // What all the new pages will look like
-        const futurePages: ModifiedPageArgs[] = existingPages.map((page) => {
-            const isSubset = page.splitPageName().subset !== null;
-            return {
-                id: page.id,
-                counts: page.counts,
-                notes: page.notes,
-                isSubset: isSubset,
-            };
-        });
+        return window.electron.createPages(newPagesArgs);
+        // // Get the existing pages and create them as objects. (Electron only returns serialized data)
+        // const existingPages = Page.sortPagesByOrder(await Page.getPages()).map(
+        //     (page) => {
+        //         return new Page(page);
+        //     }
+        // );
+        // // What all the new pages will look like
+        // const futurePages: ModifiedPageArgs[] = existingPages.map((page) => {
+        //     const isSubset = page.splitPageName().subset !== null;
+        //     return {
+        //         id: page.id,
+        //         counts: page.counts,
+        //         notes: page.notes,
+        //         isSubset: isSubset,
+        //     };
+        // });
 
-        // Fit the new pages into the existing ones
-        const newPageTempId = -1;
-        newPagesArgs.forEach((newPageArg) => {
-            // If there is no previous page, add the new page to the end of the show
-            const previousPageIdx = newPageArg.previousPage
-                ? futurePages.findIndex(
-                      (page) => page.id === newPageArg.previousPage!.id
-                  )
-                : futurePages.length - 1;
+        // // Fit the new pages into the existing ones
+        // const newPageTempId = -1;
+        // newPagesArgs.forEach((newPageArg) => {
+        //     // If there is no previous page, add the new page to the end of the show
+        //     const previousPageIdx = newPageArg.previousPage
+        //         ? futurePages.findIndex(
+        //               (page) => page.id === newPageArg.previousPage!.id
+        //           )
+        //         : futurePages.length - 1;
 
-            // find the next page that is not a new page
-            let newPageIdx = previousPageIdx + 1;
-            if (futurePages.length > 0) {
-                while (
-                    futurePages[newPageIdx] &&
-                    futurePages[newPageIdx].id === newPageTempId
-                )
-                    newPageIdx++;
-            }
+        //     // find the next page that is not a new page
+        //     let newPageIdx = previousPageIdx + 1;
+        //     if (futurePages.length > 0) {
+        //         while (
+        //             futurePages[newPageIdx] &&
+        //             futurePages[newPageIdx].id === newPageTempId
+        //         )
+        //             newPageIdx++;
+        //     }
 
-            futurePages.splice(newPageIdx, 0, {
-                ...newPageArg,
-                id: newPageTempId,
-            });
-        });
+        //     futurePages.splice(newPageIdx, 0, {
+        //         ...newPageArg,
+        //         id: newPageTempId,
+        //     });
+        // });
 
-        // Generate the page names for all the pages (if one was appended in the middle, all the following will change)
-        const futurePageNames = this.generatePageNames(
-            futurePages.map((page) => page.isSubset || false)
-        );
-        let currentOrder = 0;
-        // If we are adding a new page, we need to modify the following existing pages
-        let modifyExistingPages = false;
+        // // Generate the page names for all the pages (if one was appended in the middle, all the following will change)
+        // const futurePageNames = this.generatePageNames(
+        //     futurePages.map((page) => page.isSubset || false)
+        // );
+        // let currentOrder = 0;
+        // // If we are adding a new page, we need to modify the following existing pages
+        // let modifyExistingPages = false;
 
-        const newPageContainers: NewPageContainer[] = [];
-        const modifiedPageContainers: ModifiedPageContainer[] = [];
+        // const newPageContainers: NewPageContainer[] = [];
+        // const modifiedPageContainers: ModifiedPageContainer[] = [];
 
-        // Create containers for the new pages and the existing pages that will to be modified
-        futurePages.forEach((futurePage, i) => {
-            if (futurePage.id === newPageTempId) {
-                const newPageContainer: NewPageContainer = {
-                    name: futurePageNames[i],
-                    counts: futurePage.counts!,
-                    order: currentOrder,
-                };
-                if (futurePage.notes) newPageContainer.notes = futurePage.notes;
+        // // Create containers for the new pages and the existing pages that will to be modified
+        // futurePages.forEach((futurePage, i) => {
+        //     if (futurePage.id === newPageTempId) {
+        //         const newPageContainer: NewPageContainer = {
+        //             name: futurePageNames[i],
+        //             counts: futurePage.counts!,
+        //             order: currentOrder,
+        //         };
+        //         if (futurePage.notes) newPageContainer.notes = futurePage.notes;
 
-                newPageContainers.push(newPageContainer);
-                // Since we are adding a new page, we need to modify the following existing pages
-                modifyExistingPages = true;
-            } else if (modifyExistingPages) {
-                // If we are modifying existing pages, we need to update the order
-                modifiedPageContainers.push({
-                    id: futurePage.id,
-                    name: futurePageNames[i],
-                    order: currentOrder,
-                });
-            }
-            currentOrder++;
-        });
+        //         newPageContainers.push(newPageContainer);
+        //         // Since we are adding a new page, we need to modify the following existing pages
+        //         modifyExistingPages = true;
+        //     } else if (modifyExistingPages) {
+        //         // If we are modifying existing pages, we need to update the order
+        //         modifiedPageContainers.push({
+        //             id: futurePage.id,
+        //             name: futurePageNames[i],
+        //             order: currentOrder,
+        //         });
+        //     }
+        //     currentOrder++;
+        // });
 
-        try {
-            // Update the existing pages names and orders
-            let response = await window.electron.updatePages(
-                modifiedPageContainers,
-                false,
-                true
-            );
-            if (!response.success) {
-                throw response.error;
-            }
+        // try {
+        //     // Update the existing pages names and orders
+        //     let response = await window.electron.updatePages(
+        //         modifiedPageContainers,
+        //         false,
+        //         true
+        //     );
+        //     if (!response.success) {
+        //         throw response.error;
+        //     }
 
-            // Create the new pages
-            response = await window.electron.createPages(newPageContainers);
-            // If this fails, we need to revert the changes to the existing pages
-            if (!response.success) {
-                // Revert the changes to the existing pages
-                modifiedPageContainers.forEach((page) => {
-                    const existingPage = existingPages.find(
-                        (existingPage) => existingPage.id === page.id
-                    )!;
-                    page.name = existingPage.name;
-                    page.order = existingPage.order;
-                });
-                await window.electron.updatePages(
-                    modifiedPageContainers,
-                    false
-                );
-                throw response.error;
-            }
+        //     // Create the new pages
+        //     response = await window.electron.createPages(newPageContainers);
+        //     // If this fails, we need to revert the changes to the existing pages
+        //     if (!response.success) {
+        //         // Revert the changes to the existing pages
+        //         modifiedPageContainers.forEach((page) => {
+        //             const existingPage = existingPages.find(
+        //                 (existingPage) => existingPage.id === page.id
+        //             )!;
+        //             page.name = existingPage.name;
+        //             page.order = existingPage.order;
+        //         });
+        //         await window.electron.updatePages(
+        //             modifiedPageContainers,
+        //             false
+        //         );
+        //         throw response.error;
+        //     }
 
-            // fetch the pages to update the store
-            this.checkForFetchPages();
-            this.fetchPages();
+        //     // fetch the pages to update the store
+        //     this.checkForFetchPages();
+        //     this.fetchPages();
 
-            return { ...response, newPages: newPageContainers };
-        } catch (error: any) {
-            console.error("Error creating pages: ", error);
-            return {
-                success: false,
-                error: error || new Error("Error creating pages"),
-            };
-        }
+        //     return { ...response, newPages: newPageContainers };
+        // } catch (error: any) {
+        //     console.error("Error creating pages: ", error);
+        //     return {
+        //         success: false,
+        //         error: error || new Error("Error creating pages"),
+        //     };
+        // }
     }
 
     /**
@@ -280,7 +287,7 @@ class Page {
      * CAUTION - this will delete all of the pagePages associated with the page.
      * THIS CANNOT BE UNDONE.
      *
-     * @param page_id - The id of the page. Do not use id_for_html.
+     * @param page_id - The id of the page.
      * @returns Response data from the server.
      */
     static async deletePage(page_id: number) {
@@ -670,7 +677,7 @@ export interface NewPageArgs {
      * If you want to add multiple pages that are sequential to each other, provide the page of the initial
      * page in the sequence and make every following page also have that page as the previous page.
      */
-    previousPage?: Page;
+    previousPageId?: number;
     /** If a page is a subset, its name will have an alphabetical letter appended. */
     isSubset: boolean;
     counts: number;
@@ -686,9 +693,9 @@ export interface ModifiedPageArgs {
      */
     id: number;
     /** If a page is a subset, its name will have an alphabetical letter appended. */
-    isSubset?: boolean;
+    is_subset?: boolean;
     counts?: number;
-    notes?: string;
+    notes?: string | null;
 }
 
 /**

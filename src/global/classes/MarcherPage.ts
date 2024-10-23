@@ -1,4 +1,4 @@
-import { DatabaseResponse } from "electron/database/database.services";
+import { DatabaseResponse } from "electron/database/DatabaseActions";
 
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.
@@ -57,7 +57,7 @@ export default class MarcherPage {
             marcher_id,
             page_id,
         });
-        return response;
+        return response.data;
     }
 
     /**

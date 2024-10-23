@@ -51,7 +51,6 @@ export const mockMarchers: Marcher[] = [
 export const mockPages: Page[] = [
     new Page({
         id: 1,
-        id_for_html: "page_1",
         name: "1",
         counts: 16,
         order: 1,
@@ -59,7 +58,6 @@ export const mockPages: Page[] = [
     }),
     new Page({
         id: 2,
-        id_for_html: "page_2",
         name: "2",
         counts: 8,
         order: 2,
@@ -67,7 +65,6 @@ export const mockPages: Page[] = [
     }),
     new Page({
         id: 3,
-        id_for_html: "page_3",
         name: "3",
         counts: 16,
         order: 3,

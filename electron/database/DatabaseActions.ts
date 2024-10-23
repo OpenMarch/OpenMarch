@@ -1,8 +1,6 @@
 import Database from "better-sqlite3";
-import * as History from "../database.history";
-
-const UNDO_HISTORY_TABLE_NAME = "history_undo";
-const REDO_HISTORY_TABLE_NAME = "history_redo";
+import * as History from "./database.history";
+import Constants from "../../src/global/Constants";
 
 /**
  * Response from the database
@@ -34,7 +32,7 @@ function decrementLastUndoGroup(db: Database.Database) {
     const maxGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as max_undo_group FROM ${UNDO_HISTORY_TABLE_NAME}`
+                `SELECT history_group as max_undo_group FROM ${Constants.UndoHistoryTableName}`
             )
             .get() as { max_undo_group: number }
     ).max_undo_group;
@@ -42,67 +40,50 @@ function decrementLastUndoGroup(db: Database.Database) {
     const previousGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as previous_group FROM ${UNDO_HISTORY_TABLE_NAME} WHERE history_group < ?`
+                `SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ?`
             )
             .get(maxGroup) as { previous_group: number }
     ).previous_group;
 
-    db.prepare(
-        `UPDATE ${UNDO_HISTORY_TABLE_NAME} SET history_group = ? WHERE history_group = ?`
-    ).run(previousGroup, maxGroup);
-}
-
-/**
- * Clear the most recent redo actions from the most recent group.
- *
- * This should be used when there was an error that required changes to be
- * rolled back but the redo history should not be kept.
- *
- * @param db database connection
- */
-function clearMostRecentRedo(db: Database.Database) {
-    const maxGroup = (
-        db
-            .prepare(
-                `SELECT MAX(history_group) as max_redo_group FROM ${REDO_HISTORY_TABLE_NAME}`
-            )
-            .get() as { max_redo_group: number }
-    ).max_redo_group;
-    db.prepare(
-        `DELETE FROM ${REDO_HISTORY_TABLE_NAME} WHERE history_group = ?`
-    ).run(maxGroup);
+    if (previousGroup) {
+        db.prepare(
+            `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group = ?`
+        ).run(previousGroup, maxGroup);
+    }
 }
 
 /**
  * Gets a single item from the table. If the item does not exist, an error is returned in the DatabaseResponse.
  *
- * @param db The database connection, or undefined to create a new connection
+ * @param db The database connection
  * @param id The id of the item to get
+ * @param idColumn The column to check with WHERE to get the row. By default "rowid"
  * @param tableName The name of the table to get the item from
- * @param closeDbOnError Whether to close the database connection if an error occurs, default is true
  * @returns A DatabaseResponse with the item
  */
 export function getItem<DatabaseItemType>({
     id,
     db,
     tableName,
-    closeDbOnError = true,
+    idColumn = "rowid",
 }: {
     id: number;
     db: Database.Database;
     tableName: string;
-    closeDbOnError?: boolean;
+    idColumn?: string;
 }): DatabaseResponse<DatabaseItemType | undefined> {
     let output: DatabaseResponse<DatabaseItemType | undefined>;
     try {
-        const stmt = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
+        const stmt = db.prepare(
+            `SELECT * FROM ${tableName} WHERE "${idColumn}" = ?`
+        );
         const result = stmt.get(id) as DatabaseItemType;
         if (!result) {
             output = {
                 success: false,
                 data: result,
                 error: {
-                    message: `No item with "id"=${id} in table "${tableName}"`,
+                    message: `No item with "${idColumn}"=${id} in table "${tableName}"`,
                 },
             };
         } else {
@@ -116,13 +97,12 @@ export function getItem<DatabaseItemType>({
             success: false,
             data: undefined,
             error: {
-                message: error.message || `Error getting item ${id}`,
+                message:
+                    error.message || `Error getting item "${idColumn}"=${id}`,
                 stack: error.stack || "Unable to get error stack",
             },
         };
-        console.error(`Failed to get item ${id}:`, error);
-    } finally {
-        // if (closeDbOnError) db.close();
+        console.error(`Failed to get item "${idColumn}"=${id}:`, error);
     }
     return output;
 }
@@ -147,25 +127,22 @@ function getColumns(db: Database.Database, tableName: string): Set<string> {
 /**
  * Gets all the items from the table
  *
- * @param db The database connection, or undefined to create a new connection
+ * @param db The database connection
  * @param id The id of the item to get
  * @param tableName The name of the table to get the item from
  * @param useNextUndoGroup Whether to increment the undo group, default is true
- * @param closeDbOnError Whether to close the database connection if an error occurs, default is true
  * @returns A DatabaseResponse with the item
  */
 export function getAllItems<DatabaseItemType>({
     db,
     tableName,
     useNextUndoGroup = true,
-    closeDbOnError = true,
 }: {
     db: Database.Database;
     tableName: string;
     useNextUndoGroup?: boolean;
-    closeDbOnError?: boolean;
-}): DatabaseResponse<DatabaseItemType[] | undefined> {
-    let output: DatabaseResponse<DatabaseItemType[] | undefined>;
+}): DatabaseResponse<DatabaseItemType[]> {
+    let output: DatabaseResponse<DatabaseItemType[]>;
     try {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
         const stmt = db.prepare(`SELECT * FROM ${tableName}`);
@@ -197,7 +174,6 @@ export function getAllItems<DatabaseItemType>({
         console.error(`Failed to get item from ${tableName}:`, error);
     } finally {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
-        // if (closeDbOnError) db.close();
     }
     return output;
 }
@@ -217,7 +193,7 @@ function insertClause<NewItemArgs extends Object>(args: NewItemArgs) {
 }
 
 /**
- * @param db The database connection, or undefined to create a new connection
+ * @param db The database connection
  * @param items The items to insert
  * @param tableName The name of the table to get the item from
  * @param useNextUndoGroup Whether to increment the undo group, default is true
@@ -234,11 +210,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
     tableName: string;
     useNextUndoGroup?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
-    let output: DatabaseResponse<DatabaseItemType[]> = {
-        success: false,
-        data: [],
-        error: { message: "Failed to insert item" },
-    };
+    let output: DatabaseResponse<DatabaseItemType[]>;
     try {
         History.incrementUndoGroup(db);
         const newItemIds: number[] = [];
@@ -300,7 +272,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
 
         // Roll back the changes caused by this action
         History.performUndo(db);
-        clearMostRecentRedo(db);
+        History.clearMostRecentRedo(db);
     } finally {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
@@ -308,7 +280,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
 }
 
 /**
- * @param db The database connection, or undefined to create a new connection
+ * @param db The database connection
  * @param items The items to update
  * @returns A DatabaseResponse with the updated items
  */
@@ -422,7 +394,7 @@ export function updateItems<
         // Roll back the changes caused by this action
         if (actionWasPerformed) {
             History.performUndo(db);
-            clearMostRecentRedo(db);
+            History.clearMostRecentRedo(db);
         }
     } finally {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
@@ -431,11 +403,10 @@ export function updateItems<
 }
 
 /**
- * @param db The database connection, or undefined to create a new connection
+ * @param db The database connection
  * @param ids The ids of the items to delete
  * @param tableName The name of the table to get the item from
  * @param idColumn The column to check with WHERE to delete the row. By default "rowid"
- * @param closeDbOnError Whether to close the database connection if an error occurs, default is true
  * @param useNextUndoGroup Whether to increment the undo group after the action is performed, default is true
  * @returns A DatabaseResponse with the deleted item
  */
@@ -457,13 +428,15 @@ export function deleteItems<DatabaseItemType>({
     let currentId: number | undefined;
     const notFoundIds: number[] = [];
     let actionWasPerformed = false;
+    const itemsMap = new Map<number, DatabaseItemType>();
 
     // Verify all of the items exist before deleting any of them
     for (const id of ids) {
-        if (
-            getItem<DatabaseItemType>({ id, db, tableName }).data === undefined
-        ) {
+        const item = getItem<DatabaseItemType>({ id, db, tableName });
+        if (item.data === undefined) {
             notFoundIds.push(id);
+        } else {
+            itemsMap.set(id, item.data);
         }
     }
     // Return an error if any of the items do not exist
@@ -472,7 +445,7 @@ export function deleteItems<DatabaseItemType>({
             success: false,
             data: [],
             error: {
-                message: `No items with ids [${notFoundIds.join(
+                message: `No items with ${idColumn}=[${notFoundIds.join(
                     ", "
                 )}] in table "${tableName}"`,
             },
@@ -485,19 +458,15 @@ export function deleteItems<DatabaseItemType>({
 
         for (const id of ids) {
             currentId = id;
-            const item = getItem<DatabaseItemType>({
-                id,
-                db,
-                tableName,
-            });
-            if (!item || !item.success || !item.data) {
-                throw new Error(item.error?.message || "No item found");
+            const item = itemsMap.get(id);
+            if (!item) {
+                throw new Error(`No item found with "${idColumn}"=${id}`);
             } else {
                 const stmt = db.prepare(
                     `DELETE FROM ${tableName} WHERE "${idColumn}" = ?`
                 );
                 stmt.run(id);
-                deletedObjects.push(item.data);
+                deletedObjects.push(item);
                 actionWasPerformed = true;
             }
         }
@@ -528,7 +497,7 @@ export function deleteItems<DatabaseItemType>({
         // Roll back the changes caused by this action
         if (actionWasPerformed) {
             History.performUndo(db);
-            clearMostRecentRedo(db);
+            History.clearMostRecentRedo(db);
         }
     } finally {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
