@@ -1,3 +1,6 @@
+import { Button } from "./ui/Button";
+import { WarningNote } from "./ui/Note";
+
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
 }
@@ -14,26 +17,30 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     }
 
     return (
-        <div className="flex bg-gray-700 text-white h-full w-full justify-center flex-col items-center text-center">
-            <h1 className="text-5xl font-normal mb-1">Welcome to OpenMarch!</h1>
-            <h4 className="font-normal text-xl mt-1">The open source drill writing software project</h4>
-            <div className="my-8">
-                <button className="btn-primary rounded mx-6 whitespace-nowrap text-lg" onClick={handleCreateNew}>
-                    Create New
-                </button>
-                <button className="btn-primary rounded mx-6 whitespace-nowrap text-lg" onClick={handleOpenExisting}>
-                    Open Existing
-                </button>
+        <div className="flex h-full min-h-0 w-full min-w-0 gap-6 p-6">
+            <div className="flex h-full w-full flex-col items-start justify-center gap-32 p-32">
+                <h1 className="text-[4rem] leading-none">
+                    Welcome to OpenMarch!
+                </h1>
+                <h4 className="text-h4">
+                    The open source drill writing program.
+                </h4>
+                <div className="flex gap-12">
+                    <Button onClick={handleCreateNew}>Create New</Button>
+                    <Button onClick={handleOpenExisting} variant="secondary">
+                        Open Existing
+                    </Button>
+                </div>
+                <WarningNote>
+                    OpenMarch is still in development. By using it, you accept
+                    there may be potential glitches and bugs.
+                </WarningNote>
             </div>
-            <br />
-            <div className="lg:w-2/5 mx-8">
-                <p><strong>
-                    WARNING - This software is currently not released for production.
-                </strong></p>
-                <p>
-                    By using OpenMarch, you accept there may be glitches and quirks that come with using software that is still in development.
-                </p>
-            </div>
+            <img
+                src="/placeholder.jpg"
+                alt="Placeholder"
+                className="h-full w-full rounded-6"
+            />
         </div>
     );
 }

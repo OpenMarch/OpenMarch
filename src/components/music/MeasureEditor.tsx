@@ -3,6 +3,25 @@ import Measure from "@/global/classes/Measure";
 import TimeSignature from "@/global/classes/TimeSignature";
 import { useMeasureStore } from "@/stores/MeasureStore";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    Select,
+    SelectItem,
+    SelectContent,
+    SelectTriggerButton,
+} from "../ui/Select";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import * as Form from "@radix-ui/react-form";
+import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import RegisteredActionButton from "../RegisteredActionButton";
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "../ui/AlertDialog";
 
 export default function MeasureEditor() {
     const [selectedMeasure, setSelectedMeasure] = useState<Measure>();
@@ -45,7 +64,7 @@ export default function MeasureEditor() {
         if (selectedMeasure) {
             setTimeSignatureNumerator(selectedMeasure.timeSignature.numerator);
             setTimeSignatureDenominator(
-                selectedMeasure.timeSignature.denominator
+                selectedMeasure.timeSignature.denominator,
             );
             setBeatUnit(selectedMeasure.beatUnit);
             setTempoBpm(selectedMeasure.tempo);
@@ -54,15 +73,10 @@ export default function MeasureEditor() {
 
     const deleteMeasure = useCallback(() => {
         if (selectedMeasure) {
-            if (
-                window.confirm(
-                    `Are you sure you want to delete measure ${selectedMeasure.number}? \nYou CANNOT UNDO THIS (yet).`
-                )
-            )
-                Measure.deleteMeasure({
-                    measureNumber: selectedMeasure.number,
-                    existingMeasures: measures,
-                });
+            Measure.deleteMeasure({
+                measureNumber: selectedMeasure.number,
+                existingMeasures: measures,
+            });
         }
     }, [selectedMeasure, measures]);
 
@@ -99,210 +113,242 @@ export default function MeasureEditor() {
     }, [resetForm, selectedMeasure]);
 
     return (
-        <div>
-            <div
-                id="measures-container"
-                className="border-solid border-gray-400 p-4 max-h-32 overflow-y-scroll grid grid-cols-8 gap-2 rounded"
-            >
-                {measures.map((measure) => (
-                    <div
-                        className={`transition-all select-none cursor-pointer px-2 py-1 rounded ${
-                            measure.number === selectedMeasure?.number
-                                ? "bg-purple-600 text-white hover:bg-purple-700"
-                                : "hover:bg-gray-300"
-                        }`}
-                        key={measure.number}
-                        onClick={() => setSelectedMeasure(measure)}
-                    >
-                        {measure.number}
+        <div className="flex flex-col gap-24">
+            <div id="measures-container" className="flex flex-col gap-12">
+                <div className="flex items-center justify-between">
+                    <h5 className="text-h5 leading-none">Measures</h5>
+                    <div className="flex gap-8">
+                        <Button size="compact" variant="secondary">
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.launchImportMusicXmlFileDialogue
+                                }
+                                showTooltip={false}
+                                className="hover:text-text focus-visible:outline-none"
+                            >
+                                Import MusicXML
+                            </RegisteredActionButton>
+                        </Button>
+                        {/*
+                            <Button size="compact" variant="primary">
+                                Add
+                            </Button>
+                        */}
                     </div>
-                ))}
+                </div>
+                <div className="flex gap-8 px-12">
+                    {measures.map((measure) => (
+                        <button
+                            className={`rounded-6 border bg-fg-2 px-12 py-6 hover:cursor-pointer ${
+                                measure.number === selectedMeasure?.number
+                                    ? "border-accent"
+                                    : "border-stroke"
+                            }`}
+                            key={measure.number}
+                            onClick={() => setSelectedMeasure(measure)}
+                        >
+                            {measure.number}
+                        </button>
+                    ))}
+                </div>
             </div>
             {selectedMeasure && (
-                <form
+                <Form.Root
                     ref={formRef}
                     id="Edit measure form"
                     onSubmit={(event) => {
                         event.preventDefault();
                         handleSubmit();
                     }}
+                    className="flex flex-col gap-12"
                 >
                     {selectedMeasure && (
-                        <div id="edit measure form">
-                            <h3 className="text-xl font-bold">
+                        <>
+                            <h5 className="text-h5">
                                 Measure {selectedMeasure.number}
-                            </h3>
-                            <div className="flex gap-4">
-                                <div id="edit time signature container">
-                                    <h4 className="text-lg mt-0 mb-1">
-                                        Time Signature
-                                    </h4>
-                                    <div
-                                        className="w-[60%] m-4 flex flex-col gap-2"
-                                        id="time signature container"
-                                    >
-                                        <div
-                                            id="numerator container"
-                                            className="flex"
+                            </h5>
+                            {/* -------- Time Signature -------- */}
+                            <Form.Field
+                                name="timeSignature"
+                                id="time signature container"
+                                className="flex items-center justify-between gap-32 px-12"
+                            >
+                                <Form.Label className="w-full text-body text-text/80">
+                                    Time Signature
+                                </Form.Label>
+                                <div className="flex items-center gap-8">
+                                    <Form.Control asChild>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            required
+                                            step={1}
+                                            value={timeSignatureNumerator}
+                                            onChange={(e) =>
+                                                setTimeSignatureNumerator(
+                                                    e.currentTarget
+                                                        .valueAsNumber,
+                                                )
+                                            }
+                                        />
+                                    </Form.Control>
+                                    /
+                                    <Form.Control asChild>
+                                        <Select
+                                            value={timeSignatureDenominator.toString()}
+                                            onValueChange={(value: string) =>
+                                                setTimeSignatureDenominator(
+                                                    parseInt(
+                                                        value,
+                                                    ) as (typeof TimeSignature.validDenominators)[number],
+                                                )
+                                            }
                                         >
-                                            <label
-                                                htmlFor="measure-time-signature-numerator"
-                                                className="text-md mr-4"
-                                            >
-                                                Numerator
-                                            </label>
-                                            <input
-                                                type="number"
-                                                id="measure-time-signature-numerator"
-                                                className="w-full pl-2"
-                                                min={1}
-                                                required
-                                                step={1}
-                                                value={timeSignatureNumerator}
-                                                onChange={(e) =>
-                                                    setTimeSignatureNumerator(
-                                                        e.currentTarget
-                                                            .valueAsNumber
-                                                    )
-                                                }
+                                            <SelectTriggerButton
+                                                label={timeSignatureDenominator.toString()}
                                             />
-                                        </div>
-                                        <div
-                                            id="numerator container"
-                                            className="flex"
-                                        >
-                                            <label
-                                                htmlFor="measure-time-signature-denominator"
-                                                className="text-md mr-4"
-                                            >
-                                                Denominator
-                                            </label>
-                                            <select
-                                                id="measure-time-signature-denominator"
-                                                value={timeSignatureDenominator.toString()}
-                                                className="w-full pl-2"
-                                                onChange={(e) =>
-                                                    setTimeSignatureDenominator(
-                                                        parseInt(
-                                                            e.currentTarget
-                                                                .value
-                                                        ) as (typeof TimeSignature.validDenominators)[number]
-                                                    )
-                                                }
-                                            >
+                                            <SelectContent>
                                                 {TimeSignature.validDenominators.map(
                                                     (denominator) => (
-                                                        <option
+                                                        <SelectItem
                                                             key={denominator}
-                                                            value={denominator}
+                                                            value={`${denominator}`}
                                                         >
                                                             {denominator}
-                                                        </option>
-                                                    )
+                                                        </SelectItem>
+                                                    ),
                                                 )}
-                                            </select>
-                                        </div>
-                                    </div>
+                                            </SelectContent>
+                                        </Select>
+                                    </Form.Control>
                                 </div>
-                                <div id="edit tempo container">
-                                    <h4 className="text-lg mt-0 mb-1">Tempo</h4>
-                                    <div
-                                        className="w-fit m-4 flex flex-col gap-2"
-                                        id="time signature container"
+                            </Form.Field>
+                            {/* -------- Beat Unit -------- */}
+                            <Form.Field
+                                name="beatUnit"
+                                id="beat unit container"
+                                className="flex items-center justify-between gap-32 px-12"
+                            >
+                                <Form.Label
+                                    htmlFor="measure-tempo-beat-unit"
+                                    className="w-full text-body text-text/80"
+                                >
+                                    Beat Unit
+                                </Form.Label>
+                                <Form.Control asChild>
+                                    <Select
+                                        value={beatUnit.toString()}
+                                        onValueChange={(value: string) =>
+                                            setBeatUnit(
+                                                BeatUnit.fromName(value),
+                                            )
+                                        }
                                     >
-                                        <div
-                                            id="beat unit container"
-                                            className="flex"
-                                        >
-                                            <label
-                                                htmlFor="measure-tempo-beat-unit"
-                                                className="text-md mr-4"
-                                            >
-                                                Beat Unit
-                                            </label>
-                                            <select
-                                                id="measure-tempo-beat-unit"
-                                                value={beatUnit.toString()}
-                                                className="flex-grow"
-                                                onChange={(e) =>
-                                                    setBeatUnit(
-                                                        BeatUnit.fromName(
-                                                            e.currentTarget
-                                                                .value
-                                                        )
-                                                    )
-                                                }
-                                            >
-                                                {BeatUnit.ALL.map(
-                                                    (beatUnit) => (
-                                                        <option
-                                                            key={beatUnit.name}
-                                                            value={
-                                                                beatUnit.name
-                                                            }
-                                                        >
-                                                            {beatUnit.name}
-                                                        </option>
-                                                    )
-                                                )}
-                                            </select>
-                                        </div>
-                                        <div
-                                            id="bpm container"
-                                            className="flex"
-                                        >
-                                            <label
-                                                htmlFor="measure-tempo-bpm"
-                                                className="text-md mr-4"
-                                            >
-                                                BPM
-                                            </label>
-                                            <input
-                                                required
-                                                type="number"
-                                                id="measure-tempo-bpm"
-                                                className="flex-grow"
-                                                value={tempoBpm}
-                                                onChange={(e) => {
-                                                    setTempoBpm(
-                                                        e.currentTarget
-                                                            .valueAsNumber
-                                                    );
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                        <SelectTriggerButton
+                                            label={beatUnit.toString()}
+                                            className="w-[384px]"
+                                        />
+                                        <SelectContent>
+                                            {BeatUnit.ALL.map((beatUnit) => (
+                                                <SelectItem
+                                                    key={beatUnit.name}
+                                                    value={beatUnit.name}
+                                                >
+                                                    {beatUnit.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Form.Control>
+                            </Form.Field>
+                            {/* -------- BPM -------- */}
+                            <Form.Field
+                                name="bpm"
+                                id="bpm container"
+                                className="flex items-center justify-between gap-32 px-12"
+                            >
+                                <Form.Label
+                                    htmlFor="measure-tempo-bpm"
+                                    className="w-full text-body text-text/80"
+                                >
+                                    BPM
+                                </Form.Label>
+                                <Form.Control asChild>
+                                    <Input
+                                        required
+                                        type="number"
+                                        id="measure-tempo-bpm"
+                                        className="flex-grow"
+                                        value={tempoBpm}
+                                        onChange={(e) => {
+                                            setTempoBpm(
+                                                e.currentTarget.valueAsNumber,
+                                            );
+                                        }}
+                                    />
+                                </Form.Control>
+                            </Form.Field>
+                        </>
                     )}
-                    <div className="flex gap-2">
-                        <button
-                            disabled={!selectedMeasure}
-                            type="button"
-                            className="btn-danger"
-                            onClick={deleteMeasure}
-                        >
-                            Delete Measure
-                        </button>
-                        <div className="flex-grow" />
-                        <button
-                            disabled={!hasChanged}
-                            type="button"
-                            className="btn-secondary"
-                            onClick={resetForm}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            disabled={!hasChanged}
-                            type="submit"
-                            className="btn-primary"
-                        >
-                            Save Changes to m{selectedMeasure.number}
-                        </button>
+                    <div className="flex justify-between">
+                        <div className="flex gap-8">
+                            <Button
+                                disabled={!hasChanged}
+                                variant="secondary"
+                                size="compact"
+                                onClick={resetForm}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                disabled={!hasChanged}
+                                type="submit"
+                                variant="primary"
+                                size="compact"
+                            >
+                                Save
+                            </Button>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger>
+                                <Button
+                                    disabled={!selectedMeasure}
+                                    variant="red"
+                                    size="compact"
+                                >
+                                    Delete
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogTitle>Warning</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to delete measure{" "}
+                                    {selectedMeasure.number}? You cannot undo
+                                    this! (yet)
+                                </AlertDialogDescription>
+                                <div className="flex w-full justify-end gap-8">
+                                    <AlertDialogTrigger>
+                                        <Button
+                                            variant="red"
+                                            size="compact"
+                                            onClick={deleteMeasure}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogCancel>
+                                        <Button
+                                            variant="secondary"
+                                            size="compact"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </AlertDialogCancel>
+                                </div>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
-                </form>
+                </Form.Root>
             )}
         </div>
     );

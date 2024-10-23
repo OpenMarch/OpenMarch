@@ -4,6 +4,10 @@ import {
     RegisteredActionsEnum,
 } from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
+import * as RadixTooltip from "@radix-ui/react-tooltip";
+import { TooltipContents } from "./ui/Tooltip";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -39,11 +43,11 @@ export default function RegisteredActionButton({
         const enumString = registeredAction.enumString;
         if (
             !Object.values(RegisteredActionsEnum).includes(
-                enumString as RegisteredActionsEnum
+                enumString as RegisteredActionsEnum,
             )
         )
             console.error(
-                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`
+                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`,
             );
         const registeredActionEnum =
             RegisteredActionsEnum[
@@ -60,29 +64,43 @@ export default function RegisteredActionButton({
         registeredAction.instructionalString,
         removeRegisteredAction,
     ]);
-
-    return (
-        <button
-            title={registeredAction.instructionalString}
-            aria-label={registeredAction.instructionalString}
-            {...rest}
-            ref={buttonRef}
-            className={`${rest?.className ? rest.className : ""} group`}
-        >
-            {children}
-            {showTooltip && (
-                <span
-                    className="absolute w-auto p-2 m-2 min-w-max
-            bottom-0 left-0 right-[90%]
-            rounded-md shadow-md
-            text-white bg-gray-900
-            text-xs font-bold transition-opacity duration-200 opacity-0 scale-0 group-hover:opacity-100 group-hover:scale-100"
-                >
+    // idea
+    // add "keyboardShortcut" prop with special mono font and outline
+    if (showTooltip)
+        return (
+            <RadixTooltip.Root>
+                <RadixTooltip.Trigger className="flex items-center" asChild>
+                    <button
+                        {...rest}
+                        ref={buttonRef}
+                        className={twMerge(
+                            clsx(
+                                `group outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`,
+                                rest.className,
+                            ),
+                        )}
+                    >
+                        {children}
+                    </button>
+                </RadixTooltip.Trigger>
+                <TooltipContents side="bottom">
                     {instructionalString
                         ? instructionalString
                         : registeredAction.instructionalString}
-                </span>
-            )}
-        </button>
-    );
+                </TooltipContents>
+            </RadixTooltip.Root>
+        );
+    else
+        return (
+            <button
+                {...rest}
+                ref={buttonRef}
+                className={clsx(
+                    "group outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
+                    rest.className,
+                )}
+            >
+                {children}
+            </button>
+        );
 }
