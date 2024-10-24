@@ -35,10 +35,7 @@ interface NewPageFormProps {
  * @returns NewPageForm component.
  */
 // eslint-disable-next-line react/prop-types
-const NewPageForm: React.FC<NewPageFormProps> = ({
-    hasHeader = false,
-    disabledProp = false,
-}) => {
+const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledProp = false }) => {
     const [previousPage, setPreviousPage] = useState<Page | undefined>(
         undefined,
     );

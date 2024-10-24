@@ -63,9 +63,9 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             for (let i = 0; i < quantity; i++) {
                 // Check to see if the drill order already exists
                 let newDrillOrder = drillOrder + i + newDrillOrderOffset;
-                // eslint-disable-next-line
                 while (
                     existingMarchers.some(
+                        // eslint-disable-next-line
                         (marcher: Marcher) =>
                             marcher.drill_order === newDrillOrder,
                     )

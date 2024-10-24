@@ -3,11 +3,7 @@ import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
-import {
-    ReadableCoords,
-    X_DESCRIPTION,
-    Y_DESCRIPTION,
-} from "@/global/classes/ReadableCoords";
+import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
