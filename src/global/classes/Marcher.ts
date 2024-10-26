@@ -12,7 +12,7 @@ export class Marcher {
     /** The id of the marcher for use in the HTML. E.g. "marcher_2" for marcher with ID of 2 */
     readonly id_for_html: string;
     /** The name of the marcher. Optional */
-    readonly name: string;
+    readonly name: string | null;
     /** The section the marcher is in. E.g. "Color Guard" */
     readonly section: string;
     /** The drill number of the marcher. E.g. "B1"
@@ -23,9 +23,9 @@ export class Marcher {
     /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
     readonly drill_order: number;
     /** Any notes about the marcher. Optional */
-    readonly notes?: string;
+    readonly notes: string | null;
     /** The year of the marcher. First year, freshman, etc.. Optional */
-    readonly year?: string;
+    readonly year: string | null;
     /**
      * Fetches all of the marchers from the database.
      * This is attached to the Marcher store and needs to be updated in a useEffect hook so that the UI is updated.
@@ -35,21 +35,21 @@ export class Marcher {
     constructor({
         id,
         id_for_html,
-        name,
+        name = null,
         section,
         drill_prefix,
         drill_order,
-        notes,
-        year,
+        notes = null,
+        year = null,
     }: {
         id: number;
         id_for_html: string;
-        name: string;
+        name: string | null;
         section: string;
         drill_prefix: string;
         drill_order: number;
-        notes?: string;
-        year?: string;
+        notes: string | null;
+        year: string | null;
     }) {
         this.id = id;
         this.id_for_html = id_for_html;
@@ -68,19 +68,19 @@ export class Marcher {
      * and the fetchMarchers function is attached to the store and updates the UI.
      * @returns a list of all marchers
      */
-    static async getMarchers() {
+    static async getMarchers(): Promise<Marcher[]> {
         const response = await window.electron.getMarchers();
-        return response;
+        return response.data;
     }
 
     /**
-     * Creates a new marcher in the database and updates the store.
+     * Creates new marchers in the database and updates the store.
      *
-     * @param newMarcher - The new marcher object to be created.
+     * @param newMarchers - The new marcher objects to be created.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async createMarcher(newMarcher: NewMarcherArgs) {
-        const response = await window.electron.createMarcher(newMarcher);
+    static async createMarchers(newMarchers: NewMarcherArgs[]) {
+        const response = await window.electron.createMarchers(newMarchers);
         // fetch the marchers to update the store
         this.checkForFetchMarchers();
         this.fetchMarchers();

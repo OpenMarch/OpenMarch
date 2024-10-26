@@ -38,6 +38,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
     const [showShortcuts, setShowShortcuts] = useState<boolean>(false);
+    const [lastPageId, setLastPageId] = useState<number>(-1);
     const { pages } = usePageStore!();
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -91,7 +92,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
             const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPageArg: NewPageArgs = {
-                    previousPage: previousPage,
+                    previousPageId: previousPage?.id || null,
                     isSubset: isSubset,
                     counts: counts,
                 };
@@ -100,17 +101,30 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
 
             const response = await Page.createPages(newPageArgs);
 
-            if (response.success && response.newPages) {
-                const newPageNames = response.newPages.map((page) => page.name);
+            if (response.success && response.data) {
+                const allPages = await Page.getPages();
+                const createdPagesIds = new Set(
+                    response.data?.map((page) => page.id) || []
+                );
+                const newPageNames: string[] = [];
+                for (const page of allPages) {
+                    if (createdPagesIds.has(page.id)) {
+                        newPageNames.push(page.name);
+                    }
+                }
                 newAlertMessages.unshift(
-                    `Page ${newPageNames.toString()} created successfully`
+                    `Page${
+                        newPageNames.length === 1 ? "" : "s"
+                    } ${newPageNames.toString()} created successfully`
                 );
             } else {
                 console.error(
                     `Error creating pages:`,
                     response.error?.message || ""
                 );
-                newAlertMessages.unshift(`Error creating pages`);
+                newAlertMessages.unshift(
+                    `Error creating pages: ${response.error?.message}`
+                );
             }
 
             setAlertMessages(newAlertMessages);
@@ -168,6 +182,15 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
         }
     }, [counts, formCounts]);
 
+    useEffect(() => {
+        const lastPage = Page.getLastPage(pages);
+        console.log(lastPage);
+        setLastPageId(
+            pages.length === 0 || lastPage === null ? -1 : lastPage.id
+        );
+        formRef.current?.reset();
+    }, [pages]);
+
     return (
         <form
             onSubmit={handleSubmit}
@@ -182,13 +205,18 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
                     <Form.Select
                         aria-label="Select the previous page"
                         onChange={handlePreviousPageChange}
+                        // TODO this is not working
+                        defaultValue={5}
                     >
-                        <option value={-1}>Last</option>
-                        {pages.map((page, index) => (
-                            <option key={index} value={page.id}>
-                                {page.name}
-                            </option>
-                        ))}
+                        {pages.length === 0 ? (
+                            <option value={-1}>-</option>
+                        ) : (
+                            pages.map((page, index) => (
+                                <option key={index} value={page.id}>
+                                    {page.name}
+                                </option>
+                            ))
+                        )}
                     </Form.Select>
                 </Form.Group>
 

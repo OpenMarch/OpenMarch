@@ -14,12 +14,6 @@ export interface DatabaseResponse<DatabaseItemType> {
     readonly data: DatabaseItemType;
 }
 
-// export interface DefaultDatabaseItem {
-//     id: number;
-//     updated_at?: string;
-//     created_at?: string;
-// }
-
 /**
  * Decrement all of the undo actions in the most recent group down by one.
  *
@@ -32,7 +26,7 @@ function decrementLastUndoGroup(db: Database.Database) {
     const maxGroup = (
         db
             .prepare(
-                `SELECT history_group as max_undo_group FROM ${Constants.UndoHistoryTableName}`
+                `SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}`
             )
             .get() as { max_undo_group: number }
     ).max_undo_group;
@@ -130,21 +124,17 @@ function getColumns(db: Database.Database, tableName: string): Set<string> {
  * @param db The database connection
  * @param id The id of the item to get
  * @param tableName The name of the table to get the item from
- * @param useNextUndoGroup Whether to increment the undo group, default is true
  * @returns A DatabaseResponse with the item
  */
 export function getAllItems<DatabaseItemType>({
     db,
     tableName,
-    useNextUndoGroup = true,
 }: {
     db: Database.Database;
     tableName: string;
-    useNextUndoGroup?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
     let output: DatabaseResponse<DatabaseItemType[]>;
     try {
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
         const stmt = db.prepare(`SELECT * FROM ${tableName}`);
         const result = stmt.all() as DatabaseItemType[];
         if (!result) {
@@ -172,8 +162,6 @@ export function getAllItems<DatabaseItemType>({
             },
         };
         console.error(`Failed to get item from ${tableName}:`, error);
-    } finally {
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }
@@ -210,9 +198,19 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
     tableName: string;
     useNextUndoGroup?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
+    console.log("\n=========== start createItems ===========");
     let output: DatabaseResponse<DatabaseItemType[]>;
+    // Track if an action was performed so the undo group can be decremented if needed
+    let actionWasPerformed = false;
+
+    // Track if the undo group was changed in this function so it can be decremented if needed
+    let groupWasIncremented = false;
     try {
-        History.incrementUndoGroup(db);
+        // Increment the undo group so this action can be rolled back if needed
+        const currentUndoGroup = History.getCurrentUndoGroup(db);
+        const newUndoGroup = History.incrementUndoGroup(db);
+        groupWasIncremented = currentUndoGroup !== newUndoGroup;
+        // Increment the undo group so this action can be rolled back if needed
         const newItemIds: number[] = [];
         const columns = getColumns(db, tableName);
 
@@ -233,6 +231,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
             const stmt = db.prepare(
                 `INSERT INTO ${tableName} ${insertClause(newItem)}`
             );
+            actionWasPerformed = true;
             const insertResult = stmt.run(newItem);
             const id = insertResult.lastInsertRowid as number;
             newItemIds.push(id);
@@ -258,7 +257,8 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
         };
 
         // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!useNextUndoGroup) decrementLastUndoGroup(db);
+        if (!useNextUndoGroup && groupWasIncremented && actionWasPerformed)
+            decrementLastUndoGroup(db);
     } catch (error: any) {
         output = {
             success: false,
@@ -275,6 +275,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
         History.clearMostRecentRedo(db);
     } finally {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
+        console.log("=========== end createItems ===========\n");
     }
     return output;
 }
@@ -298,6 +299,7 @@ export function updateItems<
     tableName: string;
     useNextUndoGroup?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
+    console.log("\n=========== start updateItems ===========");
     // Check if all of the items exist
     const notFoundIds: number[] = [];
     const ids = new Set<number>(items.map((item) => item.id));
@@ -329,9 +331,15 @@ export function updateItems<
         data: [],
         error: { message: "Failed to update item" },
     };
+
+    // Track if the undo group was changed in this function so it can be decremented if needed
+    let groupWasIncremented = false;
     try {
         // Increment the undo group so this action can be rolled back if needed
-        History.incrementUndoGroup(db);
+        const currentUndoGroup = History.getCurrentUndoGroup(db);
+        const newUndoGroup = History.incrementUndoGroup(db);
+        groupWasIncremented = currentUndoGroup !== newUndoGroup;
+
         const columns = getColumns(db, tableName);
 
         const updateIds: number[] = [];
@@ -372,7 +380,8 @@ export function updateItems<
             }
         }
         // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!useNextUndoGroup && actionWasPerformed) decrementLastUndoGroup(db);
+        if (!useNextUndoGroup && actionWasPerformed && groupWasIncremented)
+            decrementLastUndoGroup(db);
 
         output = {
             success: true,
@@ -397,6 +406,7 @@ export function updateItems<
             History.clearMostRecentRedo(db);
         }
     } finally {
+        console.log("=========== end updateItems ===========\n");
         if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
@@ -423,6 +433,7 @@ export function deleteItems<DatabaseItemType>({
     useNextUndoGroup?: boolean;
     idColumn?: string;
 }): DatabaseResponse<DatabaseItemType[]> {
+    console.log("\n=========== start deleteItems ===========");
     const deletedObjects: DatabaseItemType[] = [];
     let output: DatabaseResponse<DatabaseItemType[]>;
     let currentId: number | undefined;
@@ -432,7 +443,7 @@ export function deleteItems<DatabaseItemType>({
 
     // Verify all of the items exist before deleting any of them
     for (const id of ids) {
-        const item = getItem<DatabaseItemType>({ id, db, tableName });
+        const item = getItem<DatabaseItemType>({ id, db, tableName, idColumn });
         if (item.data === undefined) {
             notFoundIds.push(id);
         } else {
@@ -452,7 +463,13 @@ export function deleteItems<DatabaseItemType>({
         };
     }
 
+    // Track if the undo group was changed in this function so it can be decremented if needed
+    let groupWasIncremented = false;
     try {
+        // Increment the undo group so this action can be rolled back if needed
+        const currentUndoGroup = History.getCurrentUndoGroup(db);
+        const newUndoGroup = History.incrementUndoGroup(db);
+        groupWasIncremented = currentUndoGroup !== newUndoGroup;
         // Increment the undo group so this action can be rolled back if needed
         History.incrementUndoGroup(db);
 
@@ -472,7 +489,8 @@ export function deleteItems<DatabaseItemType>({
         }
 
         // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!useNextUndoGroup && actionWasPerformed) decrementLastUndoGroup(db);
+        if (!useNextUndoGroup && actionWasPerformed && groupWasIncremented)
+            decrementLastUndoGroup(db);
 
         output = {
             success: true,
@@ -500,6 +518,7 @@ export function deleteItems<DatabaseItemType>({
             History.clearMostRecentRedo(db);
         }
     } finally {
+        console.log("=========== end deleteItems ===========\n");
         if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;

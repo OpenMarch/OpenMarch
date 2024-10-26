@@ -162,7 +162,7 @@ function MarcherList({
                     <tbody>
                         {localMarchers.map((marcher) => (
                             <tr
-                                key={marcher.id_for_html}
+                                key={marcher.id}
                                 data-testid={"marcher row"}
                                 title={`${marcher.drill_number} marcher row`}
                                 aria-label={`${marcher.drill_number} marcher row`}
@@ -220,7 +220,7 @@ function MarcherList({
                                             className="form-control"
                                             aria-label="Marcher name input"
                                             title="Marcher name input"
-                                            defaultValue={marcher.name}
+                                            defaultValue={marcher.name ?? ""}
                                             disabled={!isEditing}
                                             key={marcher.id_for_html}
                                             onChange={(event) =>

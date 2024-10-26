@@ -7,14 +7,12 @@ import Marcher, {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
-import Page, {
-    ModifiedPageContainer,
-    NewPageArgs,
-} from "@/global/classes/Page";
+import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
+import { DatabasePage } from "electron/database/tables/PageTable";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"]
@@ -191,13 +189,15 @@ const APP_API = {
      * This means you must call `new Page(page)` on each page or else the instance methods will not work.
      */
     getPages: () =>
-        ipcRenderer.invoke("page:getAll") as Promise<DatabaseResponse<Page[]>>,
+        ipcRenderer.invoke("page:getAll") as Promise<
+            DatabaseResponse<DatabasePage[]>
+        >,
     createPages: (pages: NewPageArgs[]) =>
         ipcRenderer.invoke("page:insert", pages) as Promise<
-            DatabaseResponse<Page[]>
+            DatabaseResponse<DatabasePage[]>
         >,
     updatePages: (
-        modifiedPages: ModifiedPageContainer[],
+        modifiedPages: ModifiedPageArgs[],
         addToHistoryQueue?: boolean,
         updateInReverse?: boolean
     ) =>
@@ -206,10 +206,10 @@ const APP_API = {
             modifiedPages,
             addToHistoryQueue,
             updateInReverse
-        ) as Promise<DatabaseResponse<Page[]>>,
-    deletePage: (pageId: number) =>
-        ipcRenderer.invoke("page:delete", pageId) as Promise<
-            DatabaseResponse<Page>
+        ) as Promise<DatabaseResponse<DatabasePage[]>>,
+    deletePages: (pageIds: Set<number>) =>
+        ipcRenderer.invoke("page:delete", pageIds) as Promise<
+            DatabaseResponse<DatabasePage[]>
         >,
 
     // MarcherPage

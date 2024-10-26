@@ -10,27 +10,12 @@ import {
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useIsPlaying } from "../../context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
-import { usePageStore } from "@/stores/PageStore";
-import Page from "../../global/classes/Page";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage } = useSelectedPage()!;
-    const { pages } = usePageStore()!;
     const { isPlaying } = useIsPlaying()!;
-    const [previousPage, setPreviousPage] = useState<Page | null>(null);
-    const [nextPage, setNextPage] = useState<Page | null>(null);
-
-    useEffect(() => {
-        if (!pages || pages.length === 0 || !selectedPage) {
-            setPreviousPage(null);
-            setNextPage(null);
-        } else {
-            setPreviousPage(selectedPage.getPreviousPage(pages));
-            setNextPage(selectedPage.getNextPage(pages));
-        }
-    }, [pages, selectedPage]);
 
     return (
         <div
@@ -41,7 +26,11 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
                 className="btn-secondary rounded-none rounded-l group"
-                disabled={!previousPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.previousPageId === null ||
+                    isPlaying
+                }
             >
                 <FaFastBackward />
             </RegisteredActionButton>
@@ -49,7 +38,11 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.previousPage}
                 className="btn-secondary rounded-none"
-                disabled={!previousPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.previousPageId === null ||
+                    isPlaying
+                }
             >
                 <FaStepBackward />
             </RegisteredActionButton>
@@ -57,7 +50,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
                 className="btn-secondary rounded-none"
-                disabled={!nextPage}
+                disabled={!selectedPage || selectedPage.nextPageId === null}
             >
                 {isPlaying ? <FaPause /> : <FaPlay />}
             </RegisteredActionButton>
@@ -65,7 +58,11 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.nextPage}
                 className="btn-secondary rounded-none"
-                disabled={!nextPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.nextPageId === null ||
+                    isPlaying
+                }
             >
                 <FaStepForward />
             </RegisteredActionButton>
@@ -73,7 +70,11 @@ function PlaybackControls({ className }: topBarComponentProps) {
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.lastPage}
                 className="btn-secondary rounded-none rounded-r"
-                disabled={!nextPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.nextPageId === null ||
+                    isPlaying
+                }
             >
                 <FaFastForward />
             </RegisteredActionButton>

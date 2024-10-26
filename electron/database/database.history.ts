@@ -507,3 +507,13 @@ export function clearMostRecentRedo(db: Database.Database) {
         `DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ?`
     ).run(maxGroup);
 }
+
+export function getCurrentUndoGroup(db: Database.Database) {
+    return (
+        db
+            .prepare(
+                `SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};`
+            )
+            .get() as { cur_undo_group: number }
+    ).cur_undo_group;
+}

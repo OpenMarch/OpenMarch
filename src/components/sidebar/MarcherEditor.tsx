@@ -247,8 +247,9 @@ function MarcherEditor() {
                                 className="bg-transparent text-inherit border-none text-right"
                                 type="text"
                                 value={
-                                    selectedMarchers[0].name.length < 1 ||
-                                    selectedMarchers[0].name === " "
+                                    selectedMarchers[0].name === null ||
+                                    selectedMarchers[0].name === " " ||
+                                    selectedMarchers[0].name.length < 1
                                         ? "-"
                                         : selectedMarchers[0].name
                                 }

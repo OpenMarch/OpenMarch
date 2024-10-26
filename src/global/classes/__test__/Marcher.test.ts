@@ -29,11 +29,14 @@ describe("Marcher", () => {
     });
 
     it("should fetch marchers from the database", async () => {
-        vi.spyOn(Marcher, "getMarchers").mockResolvedValue(mockMarchers);
+        vi.spyOn(Marcher, "getMarchers").mockResolvedValue({
+            success: true,
+            data: mockMarchers,
+        });
 
         const getMarchersResult = await Marcher.getMarchers();
 
-        expect(getMarchersResult).toEqual(mockMarchers);
+        expect(getMarchersResult.data).toEqual(mockMarchers);
     });
 
     it("should create a new marcher in the database", async () => {
@@ -52,16 +55,18 @@ describe("Marcher", () => {
 
         // Mock the electron api
         window.electron = {
-            createMarcher: vi.fn().mockResolvedValue(mockResponse),
+            createMarchers: vi.fn().mockResolvedValue(mockResponse),
         } as Partial<ElectronApi> as ElectronApi;
 
         Marcher.checkForFetchMarchers = vi.fn();
         Marcher.fetchMarchers = vi.fn();
 
-        const response = await Marcher.createMarcher(newMarcher);
+        const response = await Marcher.createMarchers([newMarcher]);
 
         expect(response).toEqual(mockResponse);
-        expect(window.electron.createMarcher).toHaveBeenCalledWith(newMarcher);
+        expect(window.electron.createMarchers).toHaveBeenCalledWith([
+            newMarcher,
+        ]);
         expect(Marcher.checkForFetchMarchers).toHaveBeenCalled();
         expect(Marcher.fetchMarchers).toHaveBeenCalled();
     });

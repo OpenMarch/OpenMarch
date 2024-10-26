@@ -1,7 +1,7 @@
 import * as Form from "@/components/templates/Form";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import { Marcher } from "@/global/classes/Marcher";
+import { Marcher, NewMarcherArgs } from "@/global/classes/Marcher";
 import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
 
 interface NewMarcherFormProps {
@@ -48,49 +48,55 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         let newDrillOrderOffset = 0;
-        const existingMarchers = marchers.filter(
-            (marcher: Marcher) => marcher.drill_prefix === drillPrefix
+        const existingDrillOrders = new Set<number>(
+            marchers
+                .filter(
+                    (marcher: Marcher) => marcher.drill_prefix === drillPrefix
+                )
+                .map((marcher: Marcher) => marcher.drill_order)
         );
         // if (!drillOrderError && section && drillPrefix && drillOrder && quantity) {
         if (!submitIsDisabled) {
             const newAlertMessages = [...alertMessages];
+            const newMarchers: NewMarcherArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 // Check to see if the drill order already exists
-                let newDrillOrder = drillOrder + i + newDrillOrderOffset;
-                // eslint-disable-next-line
-                while (
-                    existingMarchers.some(
-                        (marcher: Marcher) =>
-                            marcher.drill_order === newDrillOrder
-                    )
-                ) {
-                    newDrillOrderOffset++;
+                let newDrillOrder = drillOrder + newDrillOrderOffset;
+                while (existingDrillOrders.has(newDrillOrder)) {
                     newDrillOrder++;
                 }
+                newDrillOrderOffset = newDrillOrder - drillOrder;
+                existingDrillOrders.add(newDrillOrder);
 
-                const response = await Marcher.createMarcher({
+                newMarchers.push({
                     section,
                     drill_prefix: drillPrefix,
                     drill_order: newDrillOrder,
                 });
+            }
+            const response = await Marcher.createMarchers(newMarchers);
+            const drillNumbers = response.data.map(
+                (marcher: Marcher) => marcher.drill_number
+            );
 
-                if (response.success)
-                    newAlertMessages.unshift(
-                        `Marcher ${
-                            drillPrefix + newDrillOrder
-                        } created successfully`
-                    );
-                else {
-                    newAlertMessages.unshift(
-                        `Error creating marcher ${drillPrefix + newDrillOrder}`
-                    );
-                    console.error(
-                        `Error creating marcher ${
-                            drillPrefix + newDrillOrder
-                        }:`,
-                        response.error
-                    );
-                }
+            if (response.success)
+                newAlertMessages.unshift(
+                    `Marcher${
+                        response.data.length === 1 ? "" : "s"
+                    } ${drillNumbers.join(", ")} created successfully`
+                );
+            else {
+                newAlertMessages.unshift(
+                    `Error creating marcher${
+                        response.data.length === 1 ? "" : "s"
+                    } ${drillNumbers.join(", ")}`
+                );
+                console.error(
+                    `Error creating marcher${
+                        response.data.length === 1 ? "" : "s"
+                    } ${drillNumbers.join(", ")}:`,
+                    response.error
+                );
             }
             setAlertMessages(newAlertMessages);
             resetForm();

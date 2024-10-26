@@ -67,7 +67,7 @@ describe("PageList", () => {
         // Mock the updatePages function to return a resolved promise
         updatePagesSpy = vi
             .spyOn(Page, "updatePages")
-            .mockResolvedValue({ success: true });
+            .mockResolvedValue({ success: true, data: [] });
 
         const { result } = renderHook(() => usePageStore());
         await act(async () => {

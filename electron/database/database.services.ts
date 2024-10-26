@@ -4,10 +4,6 @@ import path from "path";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history";
-import {
-    DatabasePage,
-    ModifiedPageContainer,
-} from "../../src/global/classes/Page";
 import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import FieldPropertiesTemplates from "../../src/global/classes/FieldProperties.templates";
@@ -16,6 +12,7 @@ import * as PageTable from "./tables/PageTable";
 import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
 import Marcher from "@/global/classes/Marcher";
+import { ModifiedPageArgs } from "@/global/classes/Page";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -342,43 +339,34 @@ export function initHandlers() {
 
     // Page
     ipcMain.handle("page:getAll", async () =>
-        connectWrapper<DatabasePage[]>(PageTable.getPages)
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages)
     );
     ipcMain.handle("page:insert", async (_, args) =>
-        connectWrapper<DatabasePage[]>(PageTable.createPages, {
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
             newPages: args,
         })
     );
-    ipcMain.handle(
-        "page:update",
-        async (
-            _,
-            pages: ModifiedPageContainer[],
-            addToHistoryQueue: boolean,
-            updateInReverse: boolean
-        ) =>
-            PageTable.updatePages({
-                modifiedPages: pages,
-                addToHistoryQueue: addToHistoryQueue,
-                updateInReverse: updateInReverse,
-                db: connect(),
-            })
+    ipcMain.handle("page:update", async (_, pages: ModifiedPageArgs[]) =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
+            modifiedPages: pages,
+        })
     );
-    ipcMain.handle("page:delete", async (_, page_id) =>
-        PageTable.deletePage({ page_id, db: connect() })
+    ipcMain.handle("page:delete", async (_, pageIds) =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
+            pageIds,
+        })
     );
 
     // MarcherPage
     ipcMain.handle("marcher_page:getAll", async (_, args) =>
-        MarcherPageTable.getMarcherPages(args)
+        connectWrapper(MarcherPageTable.getMarcherPages, args)
     );
     ipcMain.handle("marcher_page:get", async (_, args) =>
-        MarcherPageTable.getMarcherPage(args)
+        connectWrapper(MarcherPageTable.getMarcherPage, args)
     );
     ipcMain.handle("marcher_page:update", async (_, args) =>
-        MarcherPageTable.updateMarcherPages({
+        connectWrapper(MarcherPageTable.updateMarcherPages, {
             marcherPageUpdates: args,
-            db: connect(),
         })
     );
 

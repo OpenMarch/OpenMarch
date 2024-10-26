@@ -1,14 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import Database from "better-sqlite3";
 import * as PageTable from "../PageTable";
 import * as MarcherTable from "../MarcherTable";
 import * as MarcherPageTable from "../MarcherPageTable";
-import Constants from "../../../../src/global/Constants";
 import * as History from "../../database.history";
-import Page, { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
+import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
 import { NewMarcherArgs } from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
-import exp from "constants";
+import Constants from "@/global/Constants";
 
 const sorter = (a: any, b: any) => a.id - b.id;
 const trimData = (data: any[]) =>
@@ -22,71 +21,71 @@ it("passes", () => {
 });
 
 describe("PageTable", () => {
-    // describe("createPageTable", () => {
-    //     let db: Database.Database;
+    describe("createPageTable", () => {
+        let db: Database.Database;
 
-    //     beforeEach(() => {
-    //         db = new Database(":memory:");
-    //         History.createHistoryTables(db);
-    //     });
+        beforeEach(() => {
+            db = new Database(":memory:");
+            History.createHistoryTables(db);
+        });
 
-    //     it("should create the page table if it does not exist", () => {
-    //         // Expect the page table to not exist
-    //         let tableInfo = db
-    //             .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
-    //             .all() as { name: string }[];
-    //         expect(tableInfo.length).toBe(0);
-    //         const triggerSpy = vi.spyOn(History, "createUndoTriggers");
-    //         const createTableResponse = PageTable.createPageTable(db);
-    //         expect(createTableResponse.success).toBeTruthy();
+        it("should create the page table if it does not exist", () => {
+            // Expect the page table to not exist
+            let tableInfo = db
+                .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
+                .all() as { name: string }[];
+            expect(tableInfo.length).toBe(0);
+            const triggerSpy = vi.spyOn(History, "createUndoTriggers");
+            const createTableResponse = PageTable.createPageTable(db);
+            expect(createTableResponse.success).toBeTruthy();
 
-    //         // Expect the page table to be created
-    //         tableInfo = db
-    //             .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
-    //             .all() as { name: string }[];
-    //         const expectedColumns = [
-    //             "id",
-    //             "is_subset",
-    //             "next_page_id",
-    //             "notes",
-    //             "counts",
-    //             "created_at",
-    //             "updated_at",
-    //         ];
-    //         const columnNames = tableInfo.map((column) => column.name);
-    //         expect(columnNames.sort()).toEqual(expectedColumns.sort());
+            // Expect the page table to be created
+            tableInfo = db
+                .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
+                .all() as { name: string }[];
+            const expectedColumns = [
+                "id",
+                "is_subset",
+                "next_page_id",
+                "notes",
+                "counts",
+                "created_at",
+                "updated_at",
+            ];
+            const columnNames = tableInfo.map((column) => column.name);
+            expect(columnNames.sort()).toEqual(expectedColumns.sort());
 
-    //         expect(triggerSpy).toHaveBeenCalledWith(
-    //             db,
-    //             Constants.PageTableName
-    //         );
-    //     });
+            expect(triggerSpy).toHaveBeenCalledWith(
+                db,
+                Constants.PageTableName
+            );
+        });
 
-    //     it("should log an error if table creation fails", () => {
-    //         const error = new Error("Test error");
-    //         const prepareSpy = vi
-    //             .spyOn(db, "prepare")
-    //             .mockImplementation(() => {
-    //                 throw error;
-    //             });
-    //         const consoleErrorSpy = vi
-    //             .spyOn(console, "error")
-    //             .mockImplementation(() => {});
+        it("should log an error if table creation fails", () => {
+            const error = new Error("Test error");
+            const prepareSpy = vi
+                .spyOn(db, "prepare")
+                .mockImplementation(() => {
+                    throw error;
+                });
+            const consoleErrorSpy = vi
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
 
-    //         const response = PageTable.createPageTable(db);
-    //         expect(response.success).toBeFalsy();
-    //         expect(response.error).toEqual({
-    //             message: error,
-    //             stack: error.stack,
-    //         });
+            const response = PageTable.createPageTable(db);
+            expect(response.success).toBeFalsy();
+            expect(response.error).toEqual({
+                message: error,
+                stack: error.stack,
+            });
 
-    //         expect(prepareSpy).toHaveBeenCalled();
-    //         expect(consoleErrorSpy).toHaveBeenCalledWith(
-    //             "Failed to create page table:",
-    //             error
-    //         );
-    //     });
-    // });
+            expect(prepareSpy).toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                "Failed to create page table:",
+                error
+            );
+        });
+    });
 
     describe("database interactions", () => {
         let db: Database.Database;

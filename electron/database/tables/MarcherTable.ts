@@ -121,6 +121,7 @@ export function createMarchers({
                 }
             }
         }
+        History.incrementUndoGroup(db);
         return marcherInsertResponse;
     } catch (error: any) {
         console.error("Failed to create marchers:", error);
@@ -148,46 +149,12 @@ export function updateMarchers({
     modifiedMarchers: ModifiedMarcherArgs[];
     db: Database.Database;
 }): DatabaseResponse<Marcher[]> {
-    let output: DatabaseResponse<Marcher[]> = { success: true, data: [] };
-
-    // List of properties to exclude
-    const excludedProperties = ["id"];
-
-    try {
-        for (const modifiedMarcher of modifiedMarchers) {
-            History.incrementUndoGroup(db);
-            // Generate the SET clause of the SQL query
-            const setClause = Object.keys(modifiedMarcher)
-                .filter((key) => !excludedProperties.includes(key))
-                .map((key) => `${key} = @${key}`)
-                .join(", ");
-
-            // Check if the SET clause is empty
-            if (setClause.length === 0) {
-                throw new Error("No valid properties to update");
-            }
-            const stmt = db.prepare(`
-                UPDATE ${Constants.MarcherTableName}
-                SET ${setClause}, updated_at = @new_updated_at
-                WHERE id = @id
-            `);
-
-            stmt.run({
-                ...modifiedMarcher,
-                new_updated_at: new Date().toISOString(),
-            });
-        }
-    } catch (error: any) {
-        console.error(error);
-        output = {
-            success: false,
-            data: [],
-            error: { message: error.message, stack: error.stack },
-        };
-    } finally {
-        History.incrementUndoGroup(db);
-    }
-    return output;
+    const updateResponse = DbActions.updateItems<Marcher, ModifiedMarcherArgs>({
+        db,
+        items: modifiedMarchers,
+        tableName: Constants.MarcherTableName,
+    });
+    return updateResponse;
 }
 
 /**
@@ -204,14 +171,13 @@ export function deleteMarchers({
     marcherIds: Set<number>;
     db: Database.Database;
 }): DbActions.DatabaseResponse<Marcher[]> {
-    console.log("DELETE MARCHERS", marcherIds);
+    History.incrementUndoGroup(db);
     const marcherDeleteResponse = DbActions.deleteItems<Marcher>({
         ids: marcherIds,
         tableName: Constants.MarcherTableName,
         db,
-        useNextUndoGroup: true,
+        useNextUndoGroup: false,
     });
-    console.log("DELETING MARCHER PAGES");
 
     if (!marcherDeleteResponse.success) {
         console.error(
@@ -221,26 +187,37 @@ export function deleteMarchers({
         return marcherDeleteResponse;
     }
 
-    const marcherPageDeleteResponse = DbActions.deleteItems({
-        ids: marcherIds,
-        tableName: Constants.MarcherPageTableName,
-        db,
-        useNextUndoGroup: false,
-        idColumn: "marcher_id",
-    });
-    console.log("DELETED MARCHER PAGES");
+    // Check if there are any marcherPages
+    const marcherPagesNum = (
+        db
+            .prepare(
+                `SELECT COUNT(*) as mp_count FROM ${Constants.MarcherPageTableName}`
+            )
+            .get() as { mp_count: number }
+    ).mp_count;
 
-    if (!marcherPageDeleteResponse.success) {
-        console.error(
-            "Failed to delete marcher pages:",
-            marcherPageDeleteResponse.error
-        );
-        History.performUndo(db);
-        return {
-            success: false,
-            error: marcherPageDeleteResponse.error,
-            data: [],
-        };
+    if (marcherPagesNum > 0) {
+        const marcherPageDeleteResponse = DbActions.deleteItems({
+            ids: marcherIds,
+            tableName: Constants.MarcherPageTableName,
+            db,
+            useNextUndoGroup: false,
+            idColumn: "marcher_id",
+        });
+
+        if (!marcherPageDeleteResponse.success) {
+            console.error(
+                "Failed to delete marcher pages:",
+                marcherPageDeleteResponse.error
+            );
+            History.performUndo(db);
+            History.clearMostRecentRedo(db);
+            return {
+                success: false,
+                error: marcherPageDeleteResponse.error,
+                data: [],
+            };
+        }
     }
 
     return marcherDeleteResponse;

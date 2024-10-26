@@ -41,19 +41,20 @@ export function getMarcherPages(args: {
     marcher_id?: number;
     page_id?: number;
 }): DatabaseResponse<MarcherPage[]> {
-    const db = args.db;
-    let stmt = db.prepare(`SELECT * FROM ${Constants.MarcherPageTableName}`);
+    let stmt = args.db.prepare(
+        `SELECT * FROM ${Constants.MarcherPageTableName}`
+    );
     if (args) {
         if (args.marcher_id && args.page_id)
-            stmt = db.prepare(
+            stmt = args.db.prepare(
                 `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`
             );
         else if (args.marcher_id)
-            stmt = db.prepare(
+            stmt = args.db.prepare(
                 `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`
             );
         else if (args.page_id)
-            stmt = db.prepare(
+            stmt = args.db.prepare(
                 `SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`
             );
     }

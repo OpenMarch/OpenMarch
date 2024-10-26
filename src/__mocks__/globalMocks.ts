@@ -55,6 +55,8 @@ export const mockPages: Page[] = [
         counts: 16,
         order: 1,
         notes: "This is the first page",
+        nextPageId: 2,
+        previousPageId: null,
     }),
     new Page({
         id: 2,
@@ -62,6 +64,8 @@ export const mockPages: Page[] = [
         counts: 8,
         order: 2,
         notes: "This is the second page",
+        nextPageId: 3,
+        previousPageId: 1,
     }),
     new Page({
         id: 3,
@@ -69,6 +73,8 @@ export const mockPages: Page[] = [
         counts: 16,
         order: 3,
         notes: undefined,
+        nextPageId: null,
+        previousPageId: 2,
     }),
 ] as const;
 
