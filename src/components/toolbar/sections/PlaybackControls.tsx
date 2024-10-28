@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
     Rewind,
     SkipBack,
@@ -10,62 +9,63 @@ import {
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { topBarComponentProps } from "@/global/Interfaces";
-import { usePageStore } from "@/stores/PageStore";
-import Page from "@/global/classes/Page";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
 function PlaybackControls({ className }: topBarComponentProps) {
     const { selectedPage } = useSelectedPage()!;
-    const { pages } = usePageStore()!;
     const { isPlaying } = useIsPlaying()!;
-    const [previousPage, setPreviousPage] = useState<Page | null>(null);
-    const [nextPage, setNextPage] = useState<Page | null>(null);
-
-    useEffect(() => {
-        if (!pages || pages.length === 0 || !selectedPage) {
-            setPreviousPage(null);
-            setNextPage(null);
-        } else {
-            setPreviousPage(selectedPage.getPreviousPage(pages));
-            setNextPage(selectedPage.getNextPage(pages));
-        }
-    }, [pages, selectedPage]);
 
     return (
         <ToolbarSection aria-label="Playback Controls">
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
-                disabled={!previousPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.previousPageId === null ||
+                    isPlaying
+                }
             >
                 <Rewind size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.previousPage}
-                disabled={!previousPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.previousPageId === null ||
+                    isPlaying
+                }
             >
                 <SkipBack size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                disabled={!nextPage}
+                disabled={!selectedPage || selectedPage.nextPageId === null}
             >
                 {isPlaying ? <Pause size={24} /> : <Play size={24} />}
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.nextPage}
-                disabled={!nextPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.nextPageId === null ||
+                    isPlaying
+                }
             >
                 <SkipForward size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.lastPage}
-                disabled={!nextPage || isPlaying}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.nextPageId === null ||
+                    isPlaying
+                }
             >
                 <FastForward size={24} />
             </RegisteredActionButton>

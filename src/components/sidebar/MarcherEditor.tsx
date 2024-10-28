@@ -308,8 +308,9 @@ function MarcherEditor() {
                                     </label>
 
                                     <p className="bg-transparent text-body leading-none">
-                                        {selectedMarchers[0].name.length < 1 ||
-                                        selectedMarchers[0].name === " "
+                                        {selectedMarchers[0].name === null ||
+                                        selectedMarchers[0].name === " " ||
+                                        selectedMarchers[0].name.length < 1
                                             ? "-"
                                             : selectedMarchers[0].name}
                                     </p>

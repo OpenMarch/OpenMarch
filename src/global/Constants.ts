@@ -4,6 +4,7 @@ export const Constants = {
     MarcherPageTableName: "marcher_pages",
     UndoHistoryTableName: "history_undo",
     RedoHistoryTableName: "history_redo",
+    HistoryStatsTableName: "history_stats",
     FieldPropertiesTableName: "field_properties",
     MeasureTableName: "measures",
     AudioFilesTableName: "audio_files",

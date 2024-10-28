@@ -53,8 +53,25 @@ export default function MarcherList({
             modifiedMarchers.push({ id: Number(pageId), ...changes });
 
         if (deletionsRef.current.length > 0) {
+            let windowConfirmStr = `Deleting Marchers`;
+            windowConfirmStr += `\n\nYou are about to delete ${
+                deletionsRef.current.length > 1
+                    ? `${deletionsRef.current.length} marchers`
+                    : "a marcher."
+            }, `;
+            windowConfirmStr += `\n\nThis can be undone at any time with [Ctrl + Z].`;
+            windowConfirmStr += `\n\nMarchers that will be deleted:`;
             for (const marcherId of deletionsRef.current)
-                await Marcher.deleteMarcher(marcherId);
+                windowConfirmStr += `\n- ${
+                    marchers?.find((marcher) => marcher.id === marcherId)
+                        ?.drill_number
+                }`;
+            if (window.confirm(windowConfirmStr)) {
+                const marcherIdsSet = new Set(
+                    deletionsRef.current.map((id) => id),
+                );
+                await Marcher.deleteMarchers(marcherIdsSet);
+            }
         }
 
         const result = Marcher.updateMarchers(modifiedMarchers);
@@ -277,7 +294,9 @@ export default function MarcherList({
                                                 compact
                                                 aria-label="Marcher name input"
                                                 title="Marcher name input"
-                                                defaultValue={marcher.name}
+                                                defaultValue={
+                                                    marcher.name ?? ""
+                                                }
                                                 disabled={!isEditing}
                                                 key={marcher.id_for_html}
                                                 onChange={(event) =>

@@ -35,7 +35,10 @@ interface NewPageFormProps {
  * @returns NewPageForm component.
  */
 // eslint-disable-next-line react/prop-types
-const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledProp = false }) => {
+const NewPageForm: React.FC<NewPageFormProps> = ({
+    hasHeader = false,
+    disabledProp = false,
+}) => {
     const [previousPage, setPreviousPage] = useState<Page | undefined>(
         undefined,
     );
@@ -101,7 +104,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
             const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPageArg: NewPageArgs = {
-                    previousPage: previousPage,
+                    previousPageId: previousPage?.id || null,
                     isSubset: isSubset,
                     counts: counts,
                 };
@@ -110,20 +113,16 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ hasHeader = false, disabledPr
 
             const response = await Page.createPages(newPageArgs);
 
-            if (response.success && response.newPages) {
-                response.newPages
-                    .map((page) => page.name)
-                    .forEach((page) => {
-                        toast.success(
-                            `Page ${page.toString()} created successfully`,
-                        );
-                    });
+            if (response.success && response.data) {
+                response.data.forEach((page) => {
+                    toast.success(`Page ${page.name} created successfully`);
+                });
             } else {
                 console.error(
                     `Error creating pages:`,
                     response.error?.message || "",
                 );
-                toast.error(`Error creating pages`);
+                toast.error(`Error creating pages: ${response.error?.message}`);
             }
 
             resetForm();

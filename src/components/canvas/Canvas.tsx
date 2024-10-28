@@ -347,9 +347,6 @@ export default function Canvas({
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage) {
-            const prevPage = selectedPage.getPreviousPage(pages);
-            const nextPage = selectedPage.getNextPage(pages);
-
             for (const pathway of pagePathways.current) {
                 canvas.remove(pathway);
             }
@@ -364,10 +361,10 @@ export default function Canvas({
                     selectedPage.id,
                 );
 
-            if (uiSettings.previousPaths && prevPage) {
+            if (uiSettings.previousPaths && selectedPage.previousPageId) {
                 const prevPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    prevPage.id,
+                    selectedPage.previousPageId,
                 );
 
                 canvas.renderStaticMarchers({
@@ -382,10 +379,10 @@ export default function Canvas({
                 });
                 pagePathways.current.push(...renderedPathways);
             }
-            if (uiSettings.nextPaths && nextPage) {
+            if (uiSettings.nextPaths && selectedPage.nextPageId) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    nextPage.id,
+                    selectedPage.nextPageId,
                 );
 
                 canvas.renderStaticMarchers({
@@ -423,20 +420,22 @@ export default function Canvas({
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {
-        if (canvas && selectedPage) {
+        if (canvas && selectedPage && selectedPage.nextPageId) {
             if (isPlaying) {
+                const nextPageId = selectedPage.nextPageId;
+                if (nextPageId === null) return;
                 const nextPage = selectedPage.getNextPage(pages);
-                if (!nextPage) return;
+                if (nextPage === null) return;
 
                 const nextPageMarcherPages = marcherPages.filter(
-                    (marcherPage) => marcherPage.page_id === nextPage.id,
+                    (marcherPage) => marcherPage.page_id === nextPageId,
                 );
                 canvas.getCanvasMarchers().forEach((canvasMarcher) => {
                     const marcherPageToUse = nextPageMarcherPages.find(
                         (marcherPage) =>
                             marcherPage.marcher_id ===
                                 canvasMarcher.marcherObj.id &&
-                            marcherPage.page_id === nextPage.id,
+                            marcherPage.page_id === nextPageId,
                     );
                     if (!marcherPageToUse) {
                         console.error(

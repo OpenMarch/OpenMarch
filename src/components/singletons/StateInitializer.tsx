@@ -12,6 +12,7 @@ import MarcherPage from "../../global/classes/MarcherPage";
 import Measure from "../../global/classes/Measure";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
+import { HistoryResponse } from "electron/database/database.services";
 
 /**
  * A component that initializes the state of the application.
@@ -91,45 +92,42 @@ function StateInitializer() {
 
     // Listen for history actions (undo/redo) from the main process
     useEffect(() => {
-        const handler = (args: {
-            tableName: string;
-            marcher_ids: number[];
-            page_id: number;
-        }) => {
-            switch (args.tableName) {
-                case Constants.MarcherTableName:
-                    fetchMarchers();
-                    if (args.marcher_ids.length > 0) {
-                        // TODO support passing in all of the marchers that were modified in the undo
-                        const newMarchers = marchers.filter((marcher) =>
-                            args.marcher_ids.includes(marcher.id)
-                        );
-                        setSelectedMarchers(newMarchers);
-                    } else {
-                        setSelectedMarchers([]);
-                    }
-                    break;
-                case Constants.MarcherPageTableName:
-                    fetchMarcherPages();
-                    if (args.marcher_ids.length > 0) {
-                        // TODO support passing in all of the marchers that were modified in the undo
-                        const newMarchers = marchers.filter((marcher) =>
-                            args.marcher_ids.includes(marcher.id)
-                        );
-                        setSelectedMarchers(newMarchers);
-                    } else {
-                        setSelectedMarchers([]);
-                    }
-                    if (args.page_id > 0)
-                        setSelectedPage(getPage(args.page_id));
-                    break;
-                case Constants.PageTableName:
-                    fetchPages();
-                    if (args.page_id > 0)
-                        setSelectedPage(getPage(args.page_id));
-                    break;
+        const handler = (args: HistoryResponse) => {
+            for (const tableName of args.tableNames) {
+                switch (tableName) {
+                    case Constants.MarcherTableName:
+                        fetchMarchers();
+                        if (args.marcherIds.length > 0) {
+                            // TODO support passing in all of the marchers that were modified in the undo
+                            const newMarchers = marchers.filter((marcher) =>
+                                args.marcherIds.includes(marcher.id)
+                            );
+                            setSelectedMarchers(newMarchers);
+                        } else {
+                            setSelectedMarchers([]);
+                        }
+                        break;
+                    case Constants.MarcherPageTableName:
+                        fetchMarcherPages();
+                        if (args.marcherIds.length > 0) {
+                            // TODO support passing in all of the marchers that were modified in the undo
+                            const newMarchers = marchers.filter((marcher) =>
+                                args.marcherIds.includes(marcher.id)
+                            );
+                            setSelectedMarchers(newMarchers);
+                        } else {
+                            setSelectedMarchers([]);
+                        }
+                        if (args.pageId && args.pageId > 0)
+                            setSelectedPage(getPage(args.pageId));
+                        break;
+                    case Constants.PageTableName:
+                        fetchPages();
+                        if (args.pageId && args.pageId > 0)
+                            setSelectedPage(getPage(args.pageId));
+                        break;
+                }
             }
-            return "SUCCESS";
         };
 
         window.electron.onHistoryAction(handler);

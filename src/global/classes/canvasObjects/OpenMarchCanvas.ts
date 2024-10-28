@@ -108,10 +108,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         else
             this.currentPage = new Page({
                 id: -1,
-                id_for_html: "page_-1",
                 name: "Default",
                 order: -1,
                 counts: 16,
+                nextPageId: null,
+                previousPageId: null,
             });
 
         // Set canvas size
@@ -194,12 +195,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         allMarchers: Marcher[];
     }) => {
         // Get the canvas marchers on the canvas
-        const curCanvasMarchers: CanvasMarcher[] = this.getCanvasMarchers();
+        const canvasMarchersMap = new Map<number, CanvasMarcher>(
+            this.getCanvasMarchers().map((m) => [m.marcherObj.id, m]),
+        );
+        const allMarchersMap = new Map<number, Marcher>(
+            allMarchers.map((m) => [m.id, m]),
+        );
 
-        currentMarcherPages.forEach((marcherPage) => {
-            const curCanvasMarcher = curCanvasMarchers.find(
-                (canvasMarcher) =>
-                    canvasMarcher.marcherObj.id === marcherPage.marcher_id,
+        for (const marcherPage of currentMarcherPages) {
+            const curCanvasMarcher = canvasMarchersMap.get(
+                marcherPage.marcher_id,
             );
             // Marcher does not exist on the Canvas, create a new one
             if (!curCanvasMarcher) {
@@ -211,7 +216,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         "Marcher object not found in the store for given MarcherPage  - renderMarchers: Canvas.tsx",
                         marcherPage,
                     );
-                    return;
+                    continue;
                 }
 
                 this.add(
@@ -222,7 +227,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             else {
                 curCanvasMarcher.setMarcherCoords(marcherPage);
             }
-        });
+        }
+
+        const marcherPageMarcherIds: Set<number> = new Set(
+            currentMarcherPages.map((marcherPage) => marcherPage.marcher_id),
+        );
+
+        // Check for any canvas marchers that are no longer in the current marcher pages
+        if (marcherPageMarcherIds.size !== canvasMarchersMap.size) {
+            canvasMarchersMap.forEach((canvasMarcher, marcherId) => {
+                if (!marcherPageMarcherIds.has(marcherId)) {
+                    this.remove(canvasMarcher);
+                }
+            });
+        }
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
