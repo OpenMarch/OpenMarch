@@ -8,7 +8,6 @@ import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates
 export const mockMarchers: Marcher[] = [
     new Marcher({
         id: 1,
-        id_for_html: "marcher_1",
         name: "Marc Sylvester",
         section: "Flute",
         drill_prefix: "F",
@@ -18,7 +17,6 @@ export const mockMarchers: Marcher[] = [
     }),
     new Marcher({
         id: 2,
-        id_for_html: "marcher_2",
         name: "George Zingali",
         section: "Snare",
         drill_prefix: "S",
@@ -28,7 +26,6 @@ export const mockMarchers: Marcher[] = [
     }),
     new Marcher({
         id: 3,
-        id_for_html: "marcher_3",
         name: "John Bilby",
         section: "Trumpet",
         drill_prefix: "T",
@@ -38,7 +35,6 @@ export const mockMarchers: Marcher[] = [
     }),
     new Marcher({
         id: 4,
-        id_for_html: "marcher_4",
         name: "",
         section: "Baritone",
         drill_prefix: "B",

@@ -45,7 +45,7 @@ function PageList({
             windowConfirmStr += `\n\nYou are about to delete ${
                 deletionsRef.current.length > 1
                     ? `${deletionsRef.current.length} pages`
-                    : "a page"
+                    : "a page."
             }, `;
             windowConfirmStr += `\n\nThis can be undone at any time with [Ctrl + Z].`;
             windowConfirmStr += `\n\nPages that will be deleted:`;

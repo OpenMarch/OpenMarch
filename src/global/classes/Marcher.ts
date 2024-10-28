@@ -42,12 +42,12 @@ export class Marcher {
         year = null,
     }: {
         id: number;
-        name: string | null;
+        name?: string | null;
         section: string;
         drill_prefix: string;
         drill_order: number;
-        notes: string | null;
-        year: string | null;
+        notes?: string | null;
+        year?: string | null;
     }) {
         this.id = id;
         this.id_for_html = `marcher_${id}`;
@@ -120,7 +120,7 @@ export class Marcher {
     static checkForFetchMarchers() {
         if (!this.fetchMarchers)
             console.error(
-                "fetchMarchers is not defined. The UI will not update properly."
+                "fetchMarchers is not defined. The UI will not update properly.",
             );
     }
 

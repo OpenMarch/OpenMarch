@@ -64,36 +64,39 @@ export default function MarcherCoordinateSheet({
             ? FieldProperties.PIXELS_PER_STEP
             : 0;
         if (example && fieldProperties) {
-            setMarcherToUse({
-                id: 1,
-                name: "Example Marcher",
-                drill_number: "B1",
-                section: "Baritone",
-                id_for_html: "example-marcher",
-                drill_prefix: "B",
-                drill_order: 1,
-            });
+            setMarcherToUse(
+                new Marcher({
+                    id: 1,
+                    name: "Example Marcher",
+                    section: "Baritone",
+                    drill_prefix: "B",
+                    drill_order: 1,
+                }),
+            );
             setPagesToUse([
                 new Page({
                     id: 1,
                     name: "1",
                     counts: 8,
                     order: 1,
-                    id_for_html: "example-page-1",
+                    nextPageId: 2,
+                    previousPageId: null,
                 }),
                 new Page({
                     id: 2,
                     name: "2",
                     counts: 16,
                     order: 2,
-                    id_for_html: "example-page-2",
+                    nextPageId: 3,
+                    previousPageId: 1,
                 }),
                 new Page({
                     id: 3,
                     name: "2A",
                     counts: 5,
                     order: 3,
-                    id_for_html: "example-page-3",
+                    nextPageId: null,
+                    previousPageId: 2,
                 }),
             ]);
             setMarcherPagesToUse([

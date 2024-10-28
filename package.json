@@ -3,7 +3,7 @@
     "productName": "OpenMarch",
     "version": "0.0.4",
     "main": "dist-electron/main/index.js",
-    "description": "Electron Vite React boilerplate.",
+    "description": "OpenMarch is a free and open-source drill-designing software.",
     "author": "Alex Dumouchelle",
     "license": "GPL-3.0",
     "private": true,
@@ -15,8 +15,7 @@
     "scripts": {
         "dev": "eslint . && vite",
         "app:prepare": "node_modules/.bin/electron-rebuild -f -w better-sqlite3",
-        "build:mac": "tsc && vite build && electron-builder --mac ",
-        "build:win": "tsc && vite build && electron-builder --win",
+        "build": "tsc && vite build && electron-builder -mwl ",
         "preview": "vite preview",
         "pree2e": "vite build --mode=test",
         "e2e": "playwright test",

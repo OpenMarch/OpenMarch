@@ -7,7 +7,6 @@ describe("Marcher", () => {
     it("should create a marcher object", () => {
         const marcher = new Marcher({
             id: 1,
-            id_for_html: "marcher_1",
             name: "John Doe",
             section: "Color Guard",
             drill_prefix: "B",
@@ -29,14 +28,11 @@ describe("Marcher", () => {
     });
 
     it("should fetch marchers from the database", async () => {
-        vi.spyOn(Marcher, "getMarchers").mockResolvedValue({
-            success: true,
-            data: mockMarchers,
-        });
+        vi.spyOn(Marcher, "getMarchers").mockResolvedValue(mockMarchers);
 
         const getMarchersResult = await Marcher.getMarchers();
 
-        expect(getMarchersResult.data).toEqual(mockMarchers);
+        expect(getMarchersResult).toEqual(mockMarchers);
     });
 
     it("should create a new marcher in the database", async () => {
@@ -104,7 +100,7 @@ describe("Marcher", () => {
 
         expect(response).toEqual(mockResponse);
         expect(window.electron.updateMarchers).toHaveBeenCalledWith(
-            modifiedMarchers
+            modifiedMarchers,
         );
         expect(Marcher.checkForFetchMarchers).toHaveBeenCalled();
         expect(Marcher.fetchMarchers).toHaveBeenCalled();
