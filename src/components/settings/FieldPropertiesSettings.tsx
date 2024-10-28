@@ -2,7 +2,17 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldProperties from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Checkbox } from "../ui/Checkbox";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTriggerButton,
+} from "../ui/Select";
+import { Button } from "../ui/Button";
+import { DangerNote } from "../ui/Note";
 
 export default function FieldPropertiesSettings() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
@@ -11,19 +21,14 @@ export default function FieldPropertiesSettings() {
     >(fieldProperties);
     const { uiSettings, setUiSettings } = useUiSettingsStore();
 
-    const handleFieldTypeChange = useCallback(
-        (event: ChangeEvent<HTMLSelectElement>) => {
-            const template = Object.values(FieldPropertiesTemplates).find(
-                (FieldPropertiesTemplate) =>
-                    FieldPropertiesTemplate.name === event.target.value
-            );
-            if (!template)
-                console.error("Template not found", event.target.value);
+    const handleFieldTypeChange = useCallback((value: string) => {
+        const template = Object.values(FieldPropertiesTemplates).find(
+            (FieldPropertiesTemplate) => FieldPropertiesTemplate.name === value,
+        );
+        if (!template) console.error("Template not found", value);
 
-            setCurrentTemplate(template);
-        },
-        []
-    );
+        setCurrentTemplate(template);
+    }, []);
 
     const applyChanges = useCallback(() => {
         if (currentTemplate) setFieldProperties(currentTemplate);
@@ -34,74 +39,91 @@ export default function FieldPropertiesSettings() {
     }, [fieldProperties]);
 
     return (
-        <div>
-            <h3 className="text-2xl">Field Properties</h3>
-            <div className="grid grid-cols-2 gap-4">
-                <div className="flex gap-2">
-                    <div>Show grid lines</div>
-                    <input
-                        type="checkbox"
+        <div className="flex flex-col gap-16">
+            <h5 className="col-span-full h-fit text-h5">Field Properties</h5>
+            <div className="grid grid-cols-2 gap-x-0 gap-y-16">
+                <div className="flex w-full items-center gap-12">
+                    <Checkbox
+                        id="gridLines"
                         checked={uiSettings.gridLines}
-                        onChange={() =>
+                        onCheckedChange={() =>
                             setUiSettings({
                                 ...uiSettings,
                                 gridLines: !uiSettings.gridLines,
                             })
                         }
                     />
+                    <label htmlFor="gridLines" className="text-body">
+                        Show grid lines
+                    </label>
                 </div>
-                <div className="flex gap-2">
-                    <div>Show half lines</div>
-                    <input
-                        type="checkbox"
+                <div className="flex w-full items-center gap-12">
+                    <Checkbox
+                        id="halfLines"
                         checked={uiSettings.halfLines}
-                        onChange={() =>
+                        onCheckedChange={() =>
                             setUiSettings({
                                 ...uiSettings,
                                 halfLines: !uiSettings.halfLines,
                             })
                         }
                     />
+                    <label htmlFor="halfLines" className="text-body">
+                        Show half lines
+                    </label>
                 </div>
-                <div>Field type</div>
-                <select
-                    className="p-1 rounded"
-                    onChange={handleFieldTypeChange}
-                    defaultValue={fieldProperties?.name}
-                >
-                    {Object.entries(FieldPropertiesTemplates).map(
-                        (template, index) => (
-                            <option key={index}>{template[1].name}</option>
-                        )
-                    )}
-                </select>
-                <div
-                    className="col-span-2 text-sm text-red-500"
-                    hidden={
-                        fieldProperties?.name === currentTemplate?.name ||
-                        (fieldProperties?.width === currentTemplate?.width &&
-                            fieldProperties?.height ===
-                                currentTemplate?.height &&
-                            fieldProperties?.centerFrontPoint.xPixels ===
-                                currentTemplate?.centerFrontPoint.xPixels &&
-                            fieldProperties?.centerFrontPoint.yPixels ===
-                                currentTemplate?.centerFrontPoint.yPixels)
-                    }
-                >
-                    <strong className="text-md">Warning</strong> - changing to
-                    this field type of a different size will lead to different
-                    marcher coordinates on the new field type. Coordinates on
-                    your original field type will be unaffected if you switch
-                    back before making any changes. We will try to fix this in a
-                    future update.
+                <div className="col-span-full flex items-center justify-between gap-16">
+                    <p className="text-body">Field type</p>
+                    <div className="flex gap-8">
+                        <Select
+                            onValueChange={handleFieldTypeChange}
+                            defaultValue={fieldProperties?.name}
+                        >
+                            <SelectTriggerButton
+                                label={fieldProperties?.name || "Field type"}
+                            />
+                            <SelectContent>
+                                <SelectGroup>
+                                    {Object.entries(
+                                        FieldPropertiesTemplates,
+                                    ).map((template, index) => (
+                                        <SelectItem
+                                            key={index}
+                                            value={template[1].name}
+                                        >
+                                            {template[1].name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
+                            onClick={applyChanges}
+                        >
+                            Apply Field Type
+                        </Button>
+                    </div>
                 </div>
-                <button
-                    className="btn-primary col-span-2"
-                    onClick={applyChanges}
-                    disabled={currentTemplate?.name === fieldProperties?.name}
-                >
-                    Apply Field Type
-                </button>
+            </div>
+            <div
+                className="col-span-full"
+                hidden={
+                    fieldProperties?.name === currentTemplate?.name ||
+                    (fieldProperties?.width === currentTemplate?.width &&
+                        fieldProperties?.height === currentTemplate?.height &&
+                        fieldProperties?.centerFrontPoint.xPixels ===
+                            currentTemplate?.centerFrontPoint.xPixels &&
+                        fieldProperties?.centerFrontPoint.yPixels ===
+                            currentTemplate?.centerFrontPoint.yPixels)
+                }
+            >
+                <DangerNote>
+                    Changing to this field type of a different size will lead to
+                    different marcher coordinates on the new field type.
+                    Coordinates on your original field type will be unaffected
+                    if you switch back before making any changes.
+                </DangerNote>
             </div>
         </div>
     );

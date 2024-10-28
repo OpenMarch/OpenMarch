@@ -1,17 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
-import { FaTrashAlt } from "react-icons/fa";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
 import { SECTIONS } from "@/global/classes/Sections";
+import { Button } from "@/components/ui/Button";
+import { Trash } from "@phosphor-icons/react";
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import { Input } from "../ui/Input";
+import FormButtons from "../FormButtons";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTriggerText,
+} from "../ui/Select";
+import { AlertDialogAction, AlertDialogCancel } from "../ui/AlertDialog";
 
-function MarcherList({
+export default function MarcherList({
     hasHeader = false,
     isEditingStateProp = undefined,
     submitActivatorStateProp = undefined,
     cancelActivatorStateProp = undefined,
 }: ListFormProps) {
+    const { isOpen } = useSidebarModalStore();
     const [isEditingLocal, setIsEditingLocal] = useState(false);
     const [isEditing, setIsEditing] = isEditingStateProp || [
         isEditingLocal,
@@ -42,23 +53,25 @@ function MarcherList({
             modifiedMarchers.push({ id: Number(pageId), ...changes });
 
         if (deletionsRef.current.length > 0) {
-            let windowConfirmStr = `-- WARNING --`;
+            let windowConfirmStr = `Deleting Marchers`;
             windowConfirmStr += `\n\nYou are about to delete ${
                 deletionsRef.current.length > 1
                     ? `${deletionsRef.current.length} marchers`
-                    : "a marcher"
+                    : "a marcher."
             }, `;
-            windowConfirmStr += `which will also delete ALL of their coordinates for every page.`;
-            windowConfirmStr += `\n\nTHIS CANNOT BE UNDONE.`;
+            windowConfirmStr += `\n\nThis can be undone at any time with [Ctrl + Z].`;
             windowConfirmStr += `\n\nMarchers that will be deleted:`;
             for (const marcherId of deletionsRef.current)
                 windowConfirmStr += `\n- ${
                     marchers?.find((marcher) => marcher.id === marcherId)
                         ?.drill_number
                 }`;
-            if (window.confirm(windowConfirmStr))
-                for (const marcherId of deletionsRef.current)
-                    await Marcher.deleteMarcher(marcherId);
+            if (window.confirm(windowConfirmStr)) {
+                const marcherIdsSet = new Set(
+                    deletionsRef.current.map((id) => id),
+                );
+                await Marcher.deleteMarchers(marcherIdsSet);
+            }
         }
 
         const result = Marcher.updateMarchers(modifiedMarchers);
@@ -70,7 +83,7 @@ function MarcherList({
     function handleDeleteMarcher(marcherId: number) {
         deletionsRef.current.push(marcherId);
         setLocalMarchers(
-            localMarchers?.filter((marcher) => marcher.id !== marcherId)
+            localMarchers?.filter((marcher) => marcher.id !== marcherId),
         );
     }
 
@@ -82,21 +95,26 @@ function MarcherList({
     }
 
     const handleChange = (
-        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+        value: string,
         attribute: string,
-        marcherId: number
+        marcherId: number,
     ) => {
         // create an entry for the marcher if it doesn't exist
         if (!changesRef.current[marcherId]) changesRef.current[marcherId] = {};
 
         // record the change
-        changesRef.current[marcherId][attribute] = event.target.value;
+        changesRef.current[marcherId][attribute] = value;
     };
 
     // Update local marchers when marchers are fetched
     useEffect(() => {
         setLocalMarchers(marchers);
     }, [marchers]);
+
+    // Turn off editing if the modal closes
+    useEffect(() => {
+        setIsEditing(false);
+    }, [isOpen, setIsEditing]);
 
     // Activate submit with an external activator (like a button in a parent component)
     useEffect(() => {
@@ -116,159 +134,204 @@ function MarcherList({
         // eslint-disable-next-line
     }, [cancelActivator, setCancelActivator]);
 
-    return (
-        <form
-            id={"marcherListForm"}
-            onSubmit={(event) => {
-                event.preventDefault();
-                handleSubmit();
-            }}
-        >
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-                {(hasHeader && <h4>Marcher List</h4>) || <div />}
-                {/* Do not show this button if the form is being controlled by a parent component.
-                  Form buttons exist on both the bottom and top of the form */}
-                {!isEditingStateProp && (
-                    <FormButtons
-                        handleCancel={handleCancel}
-                        editButton={"Edit Marchers"}
-                        isEditingProp={isEditing}
-                        setIsEditingProp={setIsEditing}
-                        handleSubmit={handleSubmit}
-                    />
-                )}
-            </div>
-            <table
-                className="w-full table-fixed table h-full"
-                style={{ cursor: "default" }}
-                title="marcher-list-table"
+    if (marchers.length > 0)
+        return (
+            <form
+                id={"marcherListForm"}
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    handleSubmit();
+                }}
+                className="flex flex-col gap-16 text-body text-text"
             >
-                <thead className="thead-dark text-left">
-                    <tr>
-                        <th className="w-1/6" scope="col">
-                            #
-                        </th>
-                        <th className="w-1/3" scope="col">
-                            Section
-                        </th>
-                        <th className="w-auto" scope="col">
-                            Name
-                        </th>
-                    </tr>
-                </thead>
-                {localMarchers && marchers && (
-                    <tbody>
-                        {localMarchers.map((marcher) => (
-                            <tr
-                                key={marcher.id_for_html}
-                                data-testid={"marcher row"}
-                                title={`${marcher.drill_number} marcher row`}
-                                aria-label={`${marcher.drill_number} marcher row`}
-                            >
-                                <th
-                                    scope="row"
-                                    title="Marcher drill number"
-                                    className="text-left"
-                                >
-                                    {marcher.drill_prefix + marcher.drill_order}
-                                </th>
-                                <td
-                                    title="Marcher section"
-                                    aria-label="Marcher section"
-                                >
-                                    {isEditing ? (
-                                        <select
-                                            className="form-select"
-                                            defaultValue={marcher.section}
-                                            aria-label="Marcher section input"
-                                            title="Marcher section input"
-                                            disabled={!isEditing}
-                                            onChange={(event) =>
-                                                handleChange(
-                                                    event,
-                                                    "section",
-                                                    marcher.id
-                                                )
-                                            }
-                                        >
-                                            <option value=""></option>
-                                            {Object.values(SECTIONS).map(
-                                                (section) => {
-                                                    return (
-                                                        <option
-                                                            key={section.name}
-                                                        >
-                                                            {section.name}
-                                                        </option>
-                                                    );
-                                                }
-                                            )}
-                                        </select>
-                                    ) : (
-                                        marcher.section
-                                    )}
-                                </td>
-                                <td
-                                    title="Marcher name"
-                                    aria-label="Marcher name"
-                                >
-                                    {isEditing ? (
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            aria-label="Marcher name input"
-                                            title="Marcher name input"
-                                            defaultValue={marcher.name}
-                                            disabled={!isEditing}
-                                            key={marcher.id_for_html}
-                                            onChange={(event) =>
-                                                handleChange(
-                                                    event,
-                                                    "name",
-                                                    marcher.id
-                                                )
-                                            }
-                                        />
-                                    ) : (
-                                        marcher.name
-                                    )}
-                                </td>
-                                {isEditing && (
-                                    <td>
-                                        <button
-                                            className="btn-danger float-right"
-                                            onClick={() =>
-                                                handleDeleteMarcher(marcher.id)
-                                            }
-                                        >
-                                            <FaTrashAlt />
-                                        </button>
-                                    </td>
+                <div className="flex w-full items-center justify-between">
+                    <p className="text-body text-text">List</p>
+                    <div className="flex gap-8">
+                        {!isEditingStateProp &&
+                        localMarchers &&
+                        marchers.length > 0 ? (
+                            <>
+                                {deletionsRef.current.length > 0 ? (
+                                    <FormButtons
+                                        variant="primary"
+                                        size="compact"
+                                        handleCancel={handleCancel}
+                                        editButton={"Edit Marchers"}
+                                        isEditingProp={isEditing}
+                                        setIsEditingProp={setIsEditing}
+                                        handleSubmit={handleSubmit}
+                                        isDangerButton={true}
+                                        alertDialogTitle="Warning"
+                                        alertDialogDescription={`You are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} marchers` : "a marcher"}, which will delete all their coordinates on all pages. This can not be undone, are you sure?`}
+                                        alertDialogActions={
+                                            <>
+                                                <AlertDialogAction>
+                                                    <Button
+                                                        variant="red"
+                                                        size="compact"
+                                                        onClick={handleSubmit}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </AlertDialogAction>
+                                                <AlertDialogCancel>
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="compact"
+                                                        onClick={handleCancel}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                </AlertDialogCancel>
+                                            </>
+                                        }
+                                    />
+                                ) : (
+                                    <FormButtons
+                                        variant="secondary"
+                                        size="compact"
+                                        handleCancel={handleCancel}
+                                        editButton={"Edit Marchers"}
+                                        isEditingProp={isEditing}
+                                        setIsEditingProp={setIsEditing}
+                                        handleSubmit={handleSubmit}
+                                    />
                                 )}
-                            </tr>
-                        ))}
-                    </tbody>
-                )}
-            </table>
-            <div className="flex justify-between">
-                <div />
-                {/* Do not show this button if the form is being controlled by a parent component.
-                  Form buttons exist on both the bottom and top of the form */}
-                {!isEditingStateProp ? (
-                    <FormButtons
-                        handleCancel={handleCancel}
-                        editButton={"Edit Marchers"}
-                        isEditingProp={isEditing}
-                        setIsEditingProp={setIsEditing}
-                        handleSubmit={handleSubmit}
-                    />
-                ) : (
-                    // exists to ensure default submit behavior
-                    <button type="submit" hidden={true} />
-                )}
-            </div>
-        </form>
-    );
+                            </>
+                        ) : (
+                            // exists to ensure default submit behavior
+                            <button type="submit" hidden={true} />
+                        )}
+                    </div>
+                </div>
+                <div
+                    id="table"
+                    className="flex h-fit w-[27rem] min-w-0 flex-col gap-10"
+                >
+                    {localMarchers && marchers.length > 0 && (
+                        <>
+                            <div id="key" className="flex items-center gap-4">
+                                <div className="w-[13%]">
+                                    <p className="font-mono text-sub text-text/90">
+                                        #
+                                    </p>
+                                </div>
+                                <div className="w-[45%]">
+                                    <p className="text-sub text-text/90">
+                                        Section
+                                    </p>
+                                </div>
+                                <div className="w-[45%]">
+                                    <p className="text-sub text-text/90">
+                                        Name
+                                    </p>
+                                </div>
+                            </div>
+                            {localMarchers.map((marcher) => (
+                                <div
+                                    id={`${marcher.drill_number} marcher row`}
+                                    key={marcher.id_for_html}
+                                    className="flex items-center gap-4"
+                                >
+                                    <div className="w-[13%]">
+                                        <p className="font-mono text-body text-text">
+                                            {marcher.drill_prefix +
+                                                marcher.drill_order}
+                                        </p>
+                                    </div>
+                                    <div className="w-[45%]">
+                                        {isEditing ? (
+                                            <Select
+                                                defaultValue={marcher.section}
+                                                aria-label="Marcher section input"
+                                                disabled={!isEditing}
+                                                onValueChange={(
+                                                    value: string,
+                                                ) =>
+                                                    handleChange(
+                                                        value,
+                                                        "section",
+                                                        marcher.id,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTriggerText
+                                                    label={
+                                                        marcher.section ||
+                                                        "Section"
+                                                    }
+                                                />
+                                                <SelectContent>
+                                                    {Object.values(
+                                                        SECTIONS,
+                                                    ).map((section) => {
+                                                        return (
+                                                            <SelectItem
+                                                                key={
+                                                                    section.name
+                                                                }
+                                                                value={
+                                                                    section.name
+                                                                }
+                                                            >
+                                                                {section.name}
+                                                            </SelectItem>
+                                                        );
+                                                    })}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <p className="text-body text-text">
+                                                {marcher.section}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="flex w-[45%] items-center gap-6">
+                                        {isEditing ? (
+                                            <Input
+                                                className="w-full"
+                                                type="text"
+                                                compact
+                                                aria-label="Marcher name input"
+                                                title="Marcher name input"
+                                                defaultValue={
+                                                    marcher.name ?? ""
+                                                }
+                                                disabled={!isEditing}
+                                                key={marcher.id_for_html}
+                                                onChange={(event) =>
+                                                    handleChange(
+                                                        event.target.value,
+                                                        "name",
+                                                        marcher.id,
+                                                    )
+                                                }
+                                            />
+                                        ) : (
+                                            <p className="text-body text-text">
+                                                {marcher.name}
+                                            </p>
+                                        )}
+                                        {isEditing && (
+                                            <Button
+                                                variant="red"
+                                                size="compact"
+                                                content="icon"
+                                                onClick={() =>
+                                                    handleDeleteMarcher(
+                                                        marcher.id,
+                                                    )
+                                                }
+                                            >
+                                                <Trash size={18} />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </>
+                    )}
+                </div>
+            </form>
+        );
 }
-
-export default MarcherList;

@@ -1,4 +1,6 @@
+import { DatabasePage } from "electron/database/tables/PageTable";
 import Measure from "./Measure";
+import { DatabaseResponse } from "electron/database/DatabaseActions";
 
 /**
  * A class that represents a Page in the database.
@@ -12,16 +14,20 @@ class Page {
 
     /** The id of the page in the database */
     readonly id: number;
-    /** The id of the page for use in the HTML. E.g. "page_2" for page with ID of 2 */
-    readonly id_for_html: string;
     /** The name of the page. E.g. "2A" */
-    readonly name: string;
+    private _name: string;
     /** Number of counts to get to this page */
     readonly counts: number;
     /** The order of the page in the show. E.g. 1, 2, 3, etc. */
     readonly order: number;
     /** NOT IMPLEMENTED - Any notes about the page. Optional */
     readonly notes?: string;
+    /** The id of the next page in the show. Null if this is the last page. */
+    readonly nextPageId: number | null;
+    /** The id of the previous page in the show. Null if this is the first page. */
+    readonly previousPageId: number | null;
+    /** If a page is a subset, its name will have an alphabetical letter appended. */
+    readonly isSubset: boolean = false;
 
     /********** Runtime Attributes **********/
     // These are Attributes that are calculated at runtime and are not stored in the database.
@@ -50,22 +56,25 @@ class Page {
 
     constructor({
         id,
-        id_for_html,
         name,
         counts,
         order,
         notes,
+        nextPageId,
+        previousPageId,
+        isSubset = false,
     }: {
         id: number;
-        id_for_html: string;
         name: string;
         counts: number;
         order: number;
         notes?: string;
+        nextPageId: number | null;
+        previousPageId: number | null;
+        isSubset?: boolean;
     }) {
         this.id = id;
-        this.id_for_html = id_for_html;
-        this.name = name;
+        this._name = name;
 
         if (counts < 0) this.counts = 1;
         else this.counts = counts;
@@ -73,6 +82,11 @@ class Page {
         this.order = order;
 
         this.notes = notes;
+
+        this.nextPageId = nextPageId;
+        this.previousPageId = previousPageId;
+
+        this.isSubset = isSubset;
     }
 
     /**************** Getters and Setters ****************/
@@ -106,7 +120,76 @@ class Page {
         return this._timestamp;
     }
 
+    /** The name of the page. E.g. "2A" */
+    public get name() {
+        return this._name;
+    }
+
+    private set name(name: string) {
+        this._name = name;
+    }
+
     /**************** Public Static Methods ****************/
+    /**
+     * Converts the pages from the database (which are stored as a linked list) to Page objects.
+     *
+     * @param databasePages The pages from the database
+     * @returns A list of Page objects
+     */
+    static fromDatabasePages(databasePages: DatabasePage[]): Page[] {
+        if (databasePages.length === 0) return [];
+        let createdPages: Page[] = [];
+        // Find the first page
+        const nextPageIds = new Set(
+            databasePages.map((page) => page.next_page_id)
+        );
+        const firstPage = databasePages.find(
+            (page) => !nextPageIds.has(page.id)
+        );
+        if (!firstPage) {
+            throw new Error(
+                "Failed to find first page! The linked list is broken."
+            );
+        }
+
+        // Loop through the pages and create the Page objects, updating order and the previous page id
+        const databasePageMap = new Map<number, DatabasePage>(
+            databasePages.map((page) => [page.id, page])
+        );
+        let currentPage: DatabasePage | undefined = firstPage;
+        let currentPreviousPageId = null;
+        let orderTracker = 0;
+        while (currentPage) {
+            createdPages.push(
+                new Page({
+                    id: currentPage.id,
+                    name: "NOT YET",
+                    counts: currentPage.counts,
+                    order: orderTracker++,
+                    notes: currentPage.notes || undefined,
+                    nextPageId: currentPage.next_page_id,
+                    previousPageId: currentPreviousPageId,
+                    isSubset: currentPage.is_subset,
+                })
+            );
+
+            if (currentPage.next_page_id === null) break;
+            else {
+                currentPreviousPageId = currentPage.id;
+                currentPage = databasePageMap.get(currentPage.next_page_id);
+            }
+        }
+
+        // Add the names to the pages
+        createdPages.sort((a, b) => a.order - b.order);
+        const isSubsetArr = createdPages.map((page) => page.isSubset);
+        const pageNames = Page.generatePageNames(isSubsetArr);
+        createdPages.forEach((page, i) => {
+            page.name = pageNames[i];
+        });
+
+        return createdPages;
+    }
 
     /**
      * Fetches all of the pages from the database.
@@ -114,142 +197,28 @@ class Page {
      * and the fetchPages function is attached to the store and updates the UI.
      * @returns a list of all pages
      */
-    static async getPages() {
+    static async getPages(): Promise<Page[]> {
         const response = await window.electron.getPages();
-        return response;
+        return this.fromDatabasePages(response.data);
     }
 
     /**
      * Creates one or more new pages in the database and updates the store.
      *
      * @param newPagesArg - The new pages to be created in order of how they should be created.
-     * @returns DatabaseResponse: { success: boolean; error?: Error; newPages?: NewPageContainer[];}
+     * @returns DatabaseResponse with the new pages.
      */
-    static async createPages(newPagesArgs: NewPageArgs[]): Promise<{
-        success: boolean;
-        error?: { message: string; stack?: string };
-        newPages?: NewPageContainer[];
-    }> {
-        // Get the existing pages and create them as objects. (Electron only returns serialized data)
-        const existingPages = Page.sortPagesByOrder(await Page.getPages()).map(
-            (page) => {
-                return new Page(page);
-            }
-        );
-        // What all the new pages will look like
-        const futurePages: ModifiedPageArgs[] = existingPages.map((page) => {
-            const isSubset = page.splitPageName().subset !== null;
-            return {
-                id: page.id,
-                counts: page.counts,
-                notes: page.notes,
-                isSubset: isSubset,
-            };
-        });
-
-        // Fit the new pages into the existing ones
-        const newPageTempId = -1;
-        newPagesArgs.forEach((newPageArg) => {
-            // If there is no previous page, add the new page to the end of the show
-            const previousPageIdx = newPageArg.previousPage
-                ? futurePages.findIndex(
-                      (page) => page.id === newPageArg.previousPage!.id
-                  )
-                : futurePages.length - 1;
-
-            // find the next page that is not a new page
-            let newPageIdx = previousPageIdx + 1;
-            if (futurePages.length > 0) {
-                while (
-                    futurePages[newPageIdx] &&
-                    futurePages[newPageIdx].id === newPageTempId
-                )
-                    newPageIdx++;
-            }
-
-            futurePages.splice(newPageIdx, 0, {
-                ...newPageArg,
-                id: newPageTempId,
-            });
-        });
-
-        // Generate the page names for all the pages (if one was appended in the middle, all the following will change)
-        const futurePageNames = this.generatePageNames(
-            futurePages.map((page) => page.isSubset || false)
-        );
-        let currentOrder = 0;
-        // If we are adding a new page, we need to modify the following existing pages
-        let modifyExistingPages = false;
-
-        const newPageContainers: NewPageContainer[] = [];
-        const modifiedPageContainers: ModifiedPageContainer[] = [];
-
-        // Create containers for the new pages and the existing pages that will to be modified
-        futurePages.forEach((futurePage, i) => {
-            if (futurePage.id === newPageTempId) {
-                const newPageContainer: NewPageContainer = {
-                    name: futurePageNames[i],
-                    counts: futurePage.counts!,
-                    order: currentOrder,
-                };
-                if (futurePage.notes) newPageContainer.notes = futurePage.notes;
-
-                newPageContainers.push(newPageContainer);
-                // Since we are adding a new page, we need to modify the following existing pages
-                modifyExistingPages = true;
-            } else if (modifyExistingPages) {
-                // If we are modifying existing pages, we need to update the order
-                modifiedPageContainers.push({
-                    id: futurePage.id,
-                    name: futurePageNames[i],
-                    order: currentOrder,
-                });
-            }
-            currentOrder++;
-        });
-
-        try {
-            // Update the existing pages names and orders
-            let response = await window.electron.updatePages(
-                modifiedPageContainers,
-                false,
-                true
-            );
-            if (!response.success) {
-                throw response.error;
-            }
-
-            // Create the new pages
-            response = await window.electron.createPages(newPageContainers);
-            // If this fails, we need to revert the changes to the existing pages
-            if (!response.success) {
-                // Revert the changes to the existing pages
-                modifiedPageContainers.forEach((page) => {
-                    const existingPage = existingPages.find(
-                        (existingPage) => existingPage.id === page.id
-                    )!;
-                    page.name = existingPage.name;
-                    page.order = existingPage.order;
-                });
-                await window.electron.updatePages(
-                    modifiedPageContainers,
-                    false
-                );
-                throw response.error;
-            }
-
-            // fetch the pages to update the store
-            this.checkForFetchPages();
-            this.fetchPages();
-
-            return { ...response, newPages: newPageContainers };
-        } catch (error: any) {
-            console.error("Error creating pages: ", error);
-            return {
-                success: false,
-                error: error || new Error("Error creating pages"),
-            };
-        }
+    static async createPages(
+        newPagesArgs: NewPageArgs[]
+    ): Promise<DatabaseResponse<Page[]>> {
+        const createResponse = await window.electron.createPages(newPagesArgs);
+        // fetch the pages to update the store
+        this.checkForFetchPages();
+        this.fetchPages();
+        return {
+            ...createResponse,
+            data: this.fromDatabasePages(createResponse.data),
+        };
     }
 
     /**
@@ -260,14 +229,15 @@ class Page {
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updatePages(modifiedPagesArg: ModifiedPageArgs[]) {
-        const modifiedPagesToSend: ModifiedPageContainer[] =
-            modifiedPagesArg.map((page) => {
-                const modifiedPage: ModifiedPageContainer = { id: page.id };
+        const modifiedPagesToSend: ModifiedPageArgs[] = modifiedPagesArg.map(
+            (page) => {
+                const modifiedPage: ModifiedPageArgs = { id: page.id };
                 if (page.counts) modifiedPage.counts = page.counts;
                 if (page.notes) modifiedPage.notes = page.notes;
 
                 return modifiedPage;
-            });
+            }
+        );
         const response = await window.electron.updatePages(modifiedPagesToSend);
         // fetch the pages to update the store
         this.checkForFetchPages();
@@ -276,85 +246,18 @@ class Page {
     }
 
     /**
-     * Deletes a page from the database.
+     * Deletes pages from the database.
      * CAUTION - this will delete all of the pagePages associated with the page.
-     * THIS CANNOT BE UNDONE.
      *
-     * @param page_id - The id of the page. Do not use id_for_html.
+     * @param pageIds - The ids of the pages to delete.
      * @returns Response data from the server.
      */
-    static async deletePage(page_id: number) {
-        // Get the existing pages and create them as objects. (Electron only returns serialized data)
-        const existingPages = Page.sortPagesByOrder(await Page.getPages()).map(
-            (page) => {
-                return new Page(page);
-            }
-        );
-        const deletedPage = existingPages.find((page) => page.id === page_id);
-
-        if (!deletedPage) {
-            console.error("Error deleting page: Page not found");
-            return {
-                success: false,
-                error: new Error(
-                    `Error deleting page: Page with id: ${page_id} not found`
-                ),
-            };
-        }
-
-        const futurePages: ModifiedPageArgs[] = [];
-        existingPages.forEach((page) => {
-            // Only update the order of the pages after the deleted page
-            if (page.id !== deletedPage!.id) {
-                const isSubset = page.splitPageName().subset !== null;
-                futurePages.push({
-                    id: page.id,
-                    counts: page.counts,
-                    notes: page.notes,
-                    isSubset: isSubset,
-                });
-            }
-        });
-
-        const futurePageNames = this.generatePageNames(
-            futurePages.map((page) => page.isSubset || false)
-        );
-        let currentOrder = 0;
-        const modifiedPageContainers: ModifiedPageContainer[] = [];
-        futurePages.forEach((futurePage, i) => {
-            if (currentOrder >= deletedPage!.order) {
-                modifiedPageContainers.push({
-                    id: futurePage.id,
-                    name: futurePageNames[i],
-                    order: currentOrder,
-                });
-            }
-            currentOrder++;
-        });
-
-        try {
-            this.checkForFetchPages();
-            const deleteResponse = await window.electron.deletePage(page_id);
-            if (!deleteResponse.success) {
-                throw deleteResponse.error;
-            }
-            const updateResponse = await window.electron.updatePages(
-                modifiedPageContainers,
-                false
-            );
-            if (!updateResponse.success) {
-                throw updateResponse.error;
-            }
-            // fetch the pages to update the store
-            this.fetchPages();
-            return updateResponse;
-        } catch (error: any) {
-            console.error("Error deleting page: ", error);
-            return {
-                success: false,
-                error: error || new Error("Error deleting page"),
-            };
-        }
+    static async deletePages(pageIds: Set<number>) {
+        const deleteResponse = await window.electron.deletePages(pageIds);
+        // fetch the pages to update the store
+        this.checkForFetchPages();
+        this.fetchPages();
+        return deleteResponse;
     }
 
     /**
@@ -510,29 +413,28 @@ class Page {
      * @throws If the current Page is not found in the list of all Pages.
      */
     getNextPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0) return null;
+        if (!allPages || allPages.length === 0 || !this.nextPageId === null)
+            return null;
 
-        const higherOrderPages = allPages.filter(
-            (page) => page.order > this.order
+        const pagesMap = new Map<number, Page>(
+            allPages.map((page) => [page.id, page])
         );
-        if (higherOrderPages.length === 0) return null; // the current page is the last page
+        if (!pagesMap.has(this.id)) {
+            throw new Error(
+                `Current page "id=${this.id}" not found in list of all pages.`
+            );
+        }
 
-        // find the nearest page with an order greater than the current page
-        const sortedHigherOrderPages = Page.sortPagesByOrder(higherOrderPages);
-        const nextPage = sortedHigherOrderPages.reduce(
-            (nearestNextPage, current) => {
-                if (
-                    current.order > this.order &&
-                    (nearestNextPage === null ||
-                        current.order < nearestNextPage.order)
-                ) {
-                    return current;
-                }
-                return nearestNextPage;
-            }
-        );
+        // There is no next page
+        if (this.nextPageId === null) return null;
 
-        return nextPage !== this ? nextPage : null;
+        const nextPage = pagesMap.get(this.nextPageId);
+        if (!nextPage) {
+            throw new Error(
+                `Next page "id=${this.nextPageId}" not found in list of all pages.`
+            );
+        }
+        return nextPage;
     }
 
     /**
@@ -544,34 +446,31 @@ class Page {
      * @throws If the current Page is not found in the list of all Pages.
      */
     getPreviousPage(allPages: Page[]): Page | null {
-        if (!allPages || allPages.length === 0) return null;
+        if (!allPages || allPages.length === 0 || this.previousPageId === null)
+            return null;
 
-        const lowerOrderPages = allPages.filter(
-            (page) => page.order < this.order
+        const pagesMap = new Map<number, Page>(
+            allPages.map((page) => [page.id, page])
         );
-        if (lowerOrderPages.length === 0) return null; // the current page is the first page
+        if (!pagesMap.has(this.id)) {
+            throw new Error(
+                `Current page "id=${this.id}" not found in list of all pages.`
+            );
+        }
 
-        // find the nearest page with an order greater than the current page
-        const sortedLowerOrderPages =
-            Page.sortPagesByOrder(lowerOrderPages).reverse();
-        const previousPage = sortedLowerOrderPages.reduce(
-            (nearestPreviousPage, current) => {
-                if (
-                    current.order < this.order &&
-                    (nearestPreviousPage === null ||
-                        current.order > nearestPreviousPage.order)
-                ) {
-                    return current;
-                }
-                return nearestPreviousPage;
-            }
-        );
+        // There is no previous page
+        if (this.previousPageId === null) return null;
 
-        return previousPage !== this ? previousPage : null;
+        const previousPage = pagesMap.get(this.previousPageId);
+        if (!previousPage) {
+            throw new Error(
+                `Previous page "id=${this.previousPageId}" not found in list of all pages.`
+            );
+        }
+        return previousPage;
     }
 
     /**************** Private Static Methods ****************/
-
     /**
      * Creates a list of page names based on the list of booleans that pages are subsets or not.
      *
@@ -648,7 +547,7 @@ class Page {
      * @param pageName The name of the current page to split.
      * @returns - { number: number, subset: string | null}
      */
-    private splitPageName(): { number: number; subset: string | null } {
+    private W(): { number: number; subset: string | null } {
         const match = this.name.match(/^(\d+)([A-Za-z]*)$/);
         if (match) {
             const subsetLetter = match[2].length > 0 ? match[2] : null;
@@ -670,7 +569,7 @@ export interface NewPageArgs {
      * If you want to add multiple pages that are sequential to each other, provide the page of the initial
      * page in the sequence and make every following page also have that page as the previous page.
      */
-    previousPage?: Page;
+    previousPageId: number | null;
     /** If a page is a subset, its name will have an alphabetical letter appended. */
     isSubset: boolean;
     counts: number;
@@ -678,7 +577,7 @@ export interface NewPageArgs {
 }
 
 /**
- * Defines the editable fields of a page.
+ * Defines the editable fields of a page. Only the fields that need to be updated are included.
  */
 export interface ModifiedPageArgs {
     /**
@@ -686,33 +585,9 @@ export interface ModifiedPageArgs {
      */
     id: number;
     /** If a page is a subset, its name will have an alphabetical letter appended. */
-    isSubset?: boolean;
+    is_subset?: boolean;
     counts?: number;
-    notes?: string;
-}
-
-/**
- * This SHOULD NOT be used outside of the Page class or database functions.
- * The object that is sent to the database to create a new page.
- */
-export interface NewPageContainer {
-    name: string;
-    counts: number;
-    order: number;
-    notes?: string;
-}
-
-/**
- * This SHOULD NOT be used outside of the Page class or database functions.
- * The object that is sent to the database to modify a page.
- */
-export interface ModifiedPageContainer {
-    /** ID of the page to update */
-    id: number;
-    name?: string;
-    counts?: number;
-    order?: number;
-    notes?: string;
+    notes?: string | null;
 }
 
 /**

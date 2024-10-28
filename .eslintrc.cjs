@@ -1,7 +1,7 @@
 /* eslint-env node */
 module.exports = {
-    extends: ['eslint:recommended', 'react-app'],
-    parser: '@typescript-eslint/parser',
+    extends: ["eslint:recommended", "react-app"],
+    parser: "@typescript-eslint/parser",
     root: true,
     globals: {
         console: "readonly",
@@ -11,17 +11,18 @@ module.exports = {
         node: true,
         es6: true,
     },
+    plugins: ["eslint-plugin-react", "eslint-plugin-react-hooks"],
     rules: {
         "@typescript-eslint/no-var-requires": "off",
         "react/prop-types": "warn",
         "react/no-unescaped-entities": "warn",
         "react/jsx-key": "warn",
         "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "warn"
+        "react-hooks/exhaustive-deps": "warn",
     },
-    "settings": {
-      "react": {
-        "version": "detect"
-      }
-    }
-  };
+    settings: {
+        react: {
+            version: "detect",
+        },
+    },
+};

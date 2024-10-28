@@ -27,12 +27,12 @@ import {
 describe("MarcherList", () => {
     const validateMarcherRows = (
         marcherRows: HTMLElement[],
-        expectedMarchers: Marcher[]
+        expectedMarchers: Marcher[],
     ) => {
         for (const marcherRow of marcherRows) {
             const marcherInRow = {
                 drill_number: within(marcherRow).getByTitle(
-                    "Marcher drill number"
+                    "Marcher drill number",
                 ).textContent,
                 section:
                     within(marcherRow).getByTitle("Marcher section")
@@ -40,7 +40,7 @@ describe("MarcherList", () => {
                 name: within(marcherRow).getByTitle("Marcher name").textContent,
             };
             const marcherToCompare = mockMarchers.find(
-                (marcher) => marcher.drill_number === marcherInRow.drill_number
+                (marcher) => marcher.drill_number === marcherInRow.drill_number,
             );
 
             expect(marcherToCompare).toBeDefined();
@@ -60,7 +60,7 @@ describe("MarcherList", () => {
         // Mock the updateMarchers function to return a resolved promise
         updateMarchersSpy = vi
             .spyOn(Marcher, "updateMarchers")
-            .mockResolvedValue({ success: true });
+            .mockResolvedValue({ success: true, data: [] });
 
         vi.mock("@/stores/marcher/useMarcherStore", () => {
             return {
@@ -111,18 +111,18 @@ describe("MarcherList", () => {
         async function editMarcher(
             getByTitle: (
                 id: Matcher,
-                options?: MatcherOptions | undefined
+                options?: MatcherOptions | undefined,
             ) => HTMLElement,
             getAllByRole: (
                 role: ByRoleMatcher,
-                options?: ByRoleOptions | undefined
+                options?: ByRoleOptions | undefined,
             ) => HTMLElement[],
             changes: {
                 marcherId: number;
                 newName?: string;
                 newSection?: string;
                 oldMarcher: Marcher;
-            }[]
+            }[],
         ) {
             // Set the list to editing mode
             const editButton = getAllByRole("button", { name: /edit/i })[0];
@@ -134,7 +134,7 @@ describe("MarcherList", () => {
 
                 // Get the first row in the table
                 const marcherRow = getByTitle(
-                    `${change.oldMarcher.drill_number} marcher row`
+                    `${change.oldMarcher.drill_number} marcher row`,
                 );
                 expect(marcherRow).toBeDefined();
 
@@ -147,23 +147,23 @@ describe("MarcherList", () => {
                     act(() =>
                         fireEvent.change(nameInput, {
                             target: { value: change.newName },
-                        })
+                        }),
                     );
                 }
 
                 if (change.newSection) {
                     // validate that the marcher's old section is not the same as the new section (for testing purposes only, this is not a real requirement of the app)
                     expect(change.oldMarcher.section).not.toBe(
-                        change.newSection
+                        change.newSection,
                     );
                     // Type the new section into the input
                     const sectionInput = within(marcherRow).getByTitle(
-                        "Marcher section input"
+                        "Marcher section input",
                     );
                     act(() =>
                         fireEvent.change(sectionInput, {
                             target: { value: change.newSection },
-                        })
+                        }),
                     );
                 }
             });
@@ -182,26 +182,26 @@ describe("MarcherList", () => {
                     section: string;
                 }) => {
                     const correspondingChange = changes.find(
-                        (change) => change.marcherId === updateMarcherResult.id
+                        (change) => change.marcherId === updateMarcherResult.id,
                     );
                     expect(correspondingChange).toBeDefined();
 
                     if (!correspondingChange) {
                         console.error(
-                            "No corresponding change found for marcher id"
+                            "No corresponding change found for marcher id",
                         );
                         return;
                     }
                     expect(updateMarcherResult.id).toBe(
-                        correspondingChange?.marcherId
+                        correspondingChange?.marcherId,
                     );
                     expect(updateMarcherResult.name).toBe(
-                        correspondingChange.newName || undefined
+                        correspondingChange.newName || undefined,
                     );
                     expect(updateMarcherResult.section).toBe(
-                        correspondingChange.newSection || undefined
+                        correspondingChange.newSection || undefined,
                     );
-                }
+                },
             );
         }
 
@@ -251,7 +251,7 @@ describe("MarcherList", () => {
                     newName: "Ross Geller",
                     newSection: "Snare",
                     oldMarcher: mockMarchers.find(
-                        (marcher) => marcher.id === 1
+                        (marcher) => marcher.id === 1,
                     )!,
                 },
                 {
@@ -259,7 +259,7 @@ describe("MarcherList", () => {
                     newName: "Joey Tribbiani",
                     newSection: "Rifle",
                     oldMarcher: mockMarchers.find(
-                        (marcher) => marcher.id === 2
+                        (marcher) => marcher.id === 2,
                     )!,
                 },
                 {
@@ -267,7 +267,7 @@ describe("MarcherList", () => {
                     newName: "Chandler Bing",
                     newSection: "Alto Sax",
                     oldMarcher: mockMarchers.find(
-                        (marcher) => marcher.id === 3
+                        (marcher) => marcher.id === 3,
                     )!,
                 },
             ];

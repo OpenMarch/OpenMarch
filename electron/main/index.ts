@@ -57,6 +57,12 @@ async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
+        minWidth: 1400,
+        minHeight: 800,
+        autoHideMenuBar: true,
+        frame: false,
+        trafficLightPosition: { x: 24, y: 7 },
+        titleBarStyle: "hidden",
         webPreferences: {
             preload,
             // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
@@ -79,9 +85,10 @@ async function createWindow(title?: string) {
 
     // Test actively push message to the Electron-Renderer
     win.webContents.on("did-finish-load", () => {
+        win?.maximize();
         win?.webContents.send(
             "main-process-message",
-            new Date().toLocaleString()
+            new Date().toLocaleString(),
         );
     });
 
@@ -116,7 +123,7 @@ app.whenReady().then(async () => {
 
     ipcMain.handle("audio:insert", async () => insertAudioFile());
     ipcMain.handle("measure:insert", async () =>
-        launchImportMusicXmlFileDialogue()
+        launchImportMusicXmlFileDialogue(),
     );
 
     // Getters
@@ -134,7 +141,7 @@ function initGetters() {
         "send:selectedMarchers",
         async (_, selectedMarchersId: number[]) => {
             store.set("selectedMarchersId", selectedMarchersId);
-        }
+        },
     );
 
     // Store locked x or y axis
@@ -151,7 +158,7 @@ function initGetters() {
     ipcMain.on(
         "send:exportIndividual",
         async (_, coordinateSheets: string[]) =>
-            await generatePDF(coordinateSheets)
+            await generatePDF(coordinateSheets),
     );
 }
 
@@ -177,6 +184,52 @@ app.on("open-file", (event, path) => {
 //     }
 //   });
 // }
+
+app.on("second-instance", () => {
+    if (win) {
+        // Focus on the main window if the user tried to open another
+        if (win.isMinimized()) win.restore();
+        win.focus();
+    }
+});
+
+// Custom title bar buttons
+
+const isMacOS = process.platform === "darwin";
+
+ipcMain.on("window:minimize", () => {
+    win?.minimize();
+});
+
+ipcMain.on("window:maximize", () => {
+    if (win?.isMaximized()) {
+        win.unmaximize();
+    } else {
+        win?.maximize();
+    }
+});
+
+ipcMain.on("window:close", () => {
+    win?.close();
+});
+
+ipcMain.on(`menu:open`, () => {
+    if (!isMacOS) {
+        applicationMenu.popup();
+    }
+});
+
+// Theme stores
+
+ipcMain.handle("get-theme", () => {
+    return store.get("theme", "light");
+});
+
+ipcMain.handle("set-theme", (event, theme) => {
+    store.set("theme", theme);
+});
+
+//
 
 app.on("second-instance", () => {
     if (win) {
@@ -297,7 +350,10 @@ export async function loadDatabaseFile() {
     // If there is no previous path, open a dialog
     dialog
         .showOpenDialog(win, {
-            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+            filters: [
+                { name: "OpenMarch File", extensions: ["dots"] },
+                { name: "All Files", extensions: ["*"] },
+            ],
         })
         .then((path) => {
             DatabaseServices.setDbPath(path.filePaths[0]);
@@ -321,7 +377,7 @@ export async function loadDatabaseFile() {
  * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
  */
 export async function insertAudioFile(): Promise<
-    DatabaseServices.DatabaseResponse<AudioFile[]>
+    DatabaseServices.LegacyDatabaseResponse<AudioFile[]>
 > {
     console.log("insertAudioFile");
 
@@ -331,12 +387,13 @@ export async function insertAudioFile(): Promise<
             error: { message: "insertAudioFile: window not loaded" },
         };
 
-    let databaseResponse: DatabaseServices.DatabaseResponse<AudioFile[]>;
+    let databaseResponse: DatabaseServices.LegacyDatabaseResponse<AudioFile[]>;
     // If there is no previous path, open a dialog
     databaseResponse = await dialog
         .showOpenDialog(win, {
             filters: [
                 { name: "Audio File", extensions: ["mp3", "wav", "ogg"] },
+                { name: "All Files", extensions: ["*"] },
             ],
         })
         .then((path) => {
@@ -406,9 +463,10 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
     const dialogueResponse = await dialog.showOpenDialog(win, {
         filters: [
             {
-                name: "MusicXML File (compressed or uncompressed)",
+                name: "MusicXML File (uncompressed)",
                 extensions: [/**'mxl',**/ "musicxml", "xml"],
             },
+            { name: "All Files", extensions: ["*"] },
         ],
     });
 
@@ -436,15 +494,15 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
  * @returns 200 for success, -1 for failure
  */
 export async function executeHistoryAction(type: "undo" | "redo") {
-    const response = await DatabaseServices.historyAction(type);
+    const response = DatabaseServices.performHistoryAction(type);
 
-    if (!response?.success) {
+    if (!response.success) {
         console.log(`Error ${type}ing`);
         return -1;
     }
 
     // send a message to the renderer to fetch the updated data
-    win?.webContents.send("history:action", response.history_data);
+    win?.webContents.send("history:action", response);
 
     return 200;
 }

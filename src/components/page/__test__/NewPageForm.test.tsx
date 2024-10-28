@@ -9,7 +9,6 @@ import {
 } from "@testing-library/react";
 import NewPageForm from "../NewPageForm";
 import Page, { NewPageArgs } from "@/global/classes/Page";
-import { ElectronApi } from "electron/preload";
 import { mockPages } from "@/__mocks__/globalMocks";
 import { usePageStore } from "@/stores/PageStore";
 import {
@@ -38,19 +37,18 @@ describe("NewPageForm", () => {
             };
         });
 
-        window.electron = {
-            createPages: vi.fn().mockResolvedValue({ success: true }),
-            updatePages: vi.fn().mockResolvedValue({ success: true }),
-        } as Partial<ElectronApi> as ElectronApi;
-
+        vi.spyOn(Page, "createPages").mockResolvedValue({
+            success: true,
+            data: mockPages,
+        });
         vi.spyOn(Page, "getPages").mockResolvedValue(mockPages);
 
         Page.fetchPages = vi.fn();
-        vi.spyOn(Page, "getPages").mockResolvedValue(mockPages);
 
         // Render the component
         render(<NewPageForm />);
         createPagesSpy = vi.spyOn(Page, "createPages");
+
         const { result } = renderHook(() => usePageStore());
         await act(async () => {
             result.current.fetchPages();
@@ -70,7 +68,7 @@ describe("NewPageForm", () => {
         const expectedNewPage: NewPageArgs = {
             isSubset: true,
             counts: mockCounts,
-            previousPage: undefined,
+            previousPageId: null,
         };
 
         // Fill in the form inputs
@@ -111,17 +109,17 @@ describe("NewPageForm", () => {
 
         const expectedNewPages: NewPageArgs[] = [
             {
-                previousPage: mockPages[0],
+                previousPageId: mockPages[0].id,
                 isSubset: false,
                 counts: mockCounts,
             },
             {
-                previousPage: mockPages[0],
+                previousPageId: mockPages[0].id,
                 isSubset: false,
                 counts: mockCounts,
             },
             {
-                previousPage: mockPages[0],
+                previousPageId: mockPages[0].id,
                 isSubset: false,
                 counts: mockCounts,
             },
@@ -164,10 +162,14 @@ describe("NewPageForm", () => {
     });
 
     it("submits the form and fails", async () => {
-        window.electron = {
-            createPages: vi.fn().mockResolvedValue({ success: false }),
-            updatePages: vi.fn().mockResolvedValue({ success: false }),
-        } as Partial<ElectronApi> as ElectronApi;
+        const mockResponse = {
+            success: false,
+            data: [],
+            error: { message: "This is an error message" },
+        };
+        const failCreatePagesSpy = vi
+            .spyOn(Page, "createPages")
+            .mockResolvedValue(mockResponse);
 
         // Mock the necessary dependencies and props
         const mockCounts = 12;
@@ -176,7 +178,7 @@ describe("NewPageForm", () => {
         const expectedNewPage: NewPageArgs = {
             isSubset: true,
             counts: mockCounts,
-            previousPage: undefined,
+            previousPageId: null,
         };
 
         // Fill in the form inputs
@@ -203,7 +205,7 @@ describe("NewPageForm", () => {
             .mockImplementation(() => {});
 
         await waitFor(() =>
-            expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage])
+            expect(failCreatePagesSpy).toHaveBeenCalledWith([expectedNewPage])
         );
         await waitFor(() =>
             expect(screen.getByLabelText("create page response")).toBeDefined()
@@ -211,6 +213,9 @@ describe("NewPageForm", () => {
         // Only way I could think of to test success message
         expect(screen.getByTitle("form alert").className).toContain(
             "alert-error"
+        );
+        expect(screen.getByTitle("form alert").textContent).toContain(
+            mockResponse.error.message
         );
 
         consoleErrorSpy.mockRestore();

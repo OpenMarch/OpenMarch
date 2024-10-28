@@ -7,16 +7,15 @@ import Marcher, {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
-import Page, {
-    ModifiedPageContainer,
-    NewPageContainer,
-} from "@/global/classes/Page";
+import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
+import { DatabaseResponse } from "electron/database/DatabaseActions";
+import { DatabasePage } from "electron/database/tables/PageTable";
 
 function domReady(
-    condition: DocumentReadyState[] = ["complete", "interactive"]
+    condition: DocumentReadyState[] = ["complete", "interactive"],
 ) {
     return new Promise((resolve) => {
         if (condition.includes(document.readyState)) {
@@ -44,40 +43,38 @@ const safeDOM = {
     },
 };
 
-/**
- * https://tobiasahlin.com/spinkit
- * https://connoratherton.com/loaders
- * https://projects.lukehaas.me/css-loaders
- * https://matejkustec.github.io/SpinThatShit
- */
 function useLoading() {
-    const className = `loaders-css__square-spin`;
     const styleContent = `
-@keyframes square-spin {
-  25% { transform: perspective(100px) rotateX(180deg) rotateY(0); }
-  50% { transform: perspective(100px) rotateX(180deg) rotateY(180deg); }
-  75% { transform: perspective(100px) rotateX(0) rotateY(180deg); }
-  100% { transform: perspective(100px) rotateX(0) rotateY(0); }
-}
-.${className} > div {
-  animation-fill-mode: both;
-  width: 50px;
-  height: 50px;
-  background: #fff;
-  animation: square-spin 3s 0s cubic-bezier(0.09, 0.57, 0.49, 0.9) infinite;
-}
-.app-loading-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #282c34;
-  z-index: 9;
-}
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .loader > svg {
+        width: 50px;
+        height: 50px;
+        fill: black;
+        animation: spin 1s 0s linear infinite;
+    }
+    .app-loading-wrap {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ECEBF0;
+        z-index: 9;
+    }
+    @media (prefers-color-scheme: dark) {
+        .loader > svg {
+            fill: white;
+        }
+        .app-loading-wrap {
+            background: #0F0E13;
+        }
+    }
     `;
     const oStyle = document.createElement("style");
     const oDiv = document.createElement("div");
@@ -85,7 +82,7 @@ function useLoading() {
     oStyle.id = "app-loading-style";
     oStyle.innerHTML = styleContent;
     oDiv.className = "app-loading-wrap";
-    oDiv.innerHTML = `<div class="${className}"><div></div></div>`;
+    oDiv.innerHTML = `<div class="loader"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 256 256"><path d="M232,128a104,104,0,0,1-208,0c0-41,23.81-78.36,60.66-95.27a8,8,0,0,1,6.68,14.54C60.15,61.59,40,93.27,40,128a88,88,0,0,0,176,0c0-34.73-20.15-66.41-51.34-80.73a8,8,0,0,1,6.68-14.54C208.19,49.64,232,87,232,128Z"></path></svg></div>`;
 
     return {
         appendLoading() {
@@ -98,7 +95,6 @@ function useLoading() {
         },
     };
 }
-
 // ----------------------------------------------------------------------
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -120,6 +116,17 @@ setTimeout(removeLoading, 4999);
  *  I.e. you must type `marchers:readAll` rather than `${table_name}:readAll` for the channel
  */
 const APP_API = {
+    // Titlebar
+    minimizeWindow: () => ipcRenderer.send("window:minimize"),
+    maximizeWindow: () => ipcRenderer.send("window:maximize"),
+    closeWindow: () => ipcRenderer.send("window:close"),
+    openMenu: () => ipcRenderer.send("menu:open"),
+    isMacOS: process.platform === "darwin",
+
+    // Themes
+    getTheme: () => ipcRenderer.invoke("get-theme"),
+    setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
+
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
@@ -141,13 +148,11 @@ const APP_API = {
 
     // History
     /** Activates on undo or redo. */
-    onHistoryAction: (
-        callback: (args: {
-            tableName: string;
-            marcher_ids: number[];
-            page_id: number;
-        }) => string
-    ) => ipcRenderer.on("history:action", (event, args) => callback(args)),
+    onHistoryAction: (callback: (args: DbServices.HistoryResponse) => void) =>
+        ipcRenderer.on(
+            "history:action",
+            (event, args: DbServices.HistoryResponse) => callback(args),
+        ),
     removeHistoryActionListener: () =>
         ipcRenderer.removeAllListeners("history:action"),
     undo: () => ipcRenderer.invoke("history:undo"),
@@ -161,8 +166,8 @@ const APP_API = {
     updateFieldProperties: (newFieldProperties: FieldProperties) =>
         ipcRenderer.invoke(
             "field_properties:update",
-            newFieldProperties
-        ) as Promise<DbServices.DatabaseResponse<FieldProperties>>,
+            newFieldProperties,
+        ) as Promise<DbServices.LegacyDatabaseResponse<FieldProperties>>,
 
     // Marcher
     /**
@@ -170,52 +175,64 @@ const APP_API = {
      * This means you must call `new Marcher(marcher)` on each marcher or else the instance methods will not work.
      */
     getMarchers: () =>
-        ipcRenderer.invoke("marcher:getAll") as Promise<Marcher[]>,
-    createMarcher: (newMarcher: NewMarcherArgs) =>
-        ipcRenderer.invoke("marcher:insert", newMarcher) as Promise<
-            DbServices.DatabaseResponse<Marcher[]>
+        ipcRenderer.invoke("marcher:getAll") as Promise<
+            DatabaseResponse<Marcher[]>
+        >,
+    createMarchers: (newMarchers: NewMarcherArgs[]) =>
+        ipcRenderer.invoke("marcher:insert", newMarchers) as Promise<
+            DatabaseResponse<Marcher[]>
         >,
     updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
         ipcRenderer.invoke("marcher:update", modifiedMarchers) as Promise<
-            DbServices.DatabaseResponse<Marcher[]>
+            DatabaseResponse<Marcher[]>
         >,
-    deleteMarcher: (id: number) => ipcRenderer.invoke("marcher:delete", id),
+    deleteMarchers: (marcherIds: Set<number>) =>
+        ipcRenderer.invoke("marcher:delete", marcherIds) as Promise<
+            DatabaseResponse<Marcher[]>
+        >,
 
     // Page
     /**
      * @returns A serialized array of all pages in the database.
      * This means you must call `new Page(page)` on each page or else the instance methods will not work.
      */
-    getPages: () => ipcRenderer.invoke("page:getAll") as Promise<Page[]>,
-    createPages: (pages: NewPageContainer[]) =>
+    getPages: () =>
+        ipcRenderer.invoke("page:getAll") as Promise<
+            DatabaseResponse<DatabasePage[]>
+        >,
+    createPages: (pages: NewPageArgs[]) =>
         ipcRenderer.invoke("page:insert", pages) as Promise<
-            DbServices.DatabaseResponse<Page[]>
+            DatabaseResponse<DatabasePage[]>
         >,
     updatePages: (
-        modifiedPages: ModifiedPageContainer[],
+        modifiedPages: ModifiedPageArgs[],
         addToHistoryQueue?: boolean,
-        updateInReverse?: boolean
+        updateInReverse?: boolean,
     ) =>
         ipcRenderer.invoke(
             "page:update",
             modifiedPages,
             addToHistoryQueue,
-            updateInReverse
-        ) as Promise<DbServices.DatabaseResponse<Page[]>>,
-    deletePage: (id: number) =>
-        ipcRenderer.invoke("page:delete", id) as Promise<
-            DbServices.DatabaseResponse<Page>
+            updateInReverse,
+        ) as Promise<DatabaseResponse<DatabasePage[]>>,
+    deletePages: (pageIds: Set<number>) =>
+        ipcRenderer.invoke("page:delete", pageIds) as Promise<
+            DatabaseResponse<DatabasePage[]>
         >,
 
     // MarcherPage
     getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
         ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            MarcherPage[]
+            DatabaseResponse<MarcherPage[]>
         >,
     getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
-        ipcRenderer.invoke("marcher_page:get", id),
+        ipcRenderer.invoke("marcher_page:get", id) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
     updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
-        ipcRenderer.invoke("marcher_page:update", args),
+        ipcRenderer.invoke("marcher_page:update", args) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
 
     // Measure
     /**
@@ -226,7 +243,7 @@ const APP_API = {
         ipcRenderer.invoke("measure:getAll") as Promise<string>,
     updateMeasureAbcString: (abcString: string) =>
         ipcRenderer.invoke("measure:update", abcString) as Promise<
-            DbServices.DatabaseResponse<string>
+            DbServices.LegacyDatabaseResponse<string>
         >,
     launchImportMusicXmlFileDialogue: () =>
         ipcRenderer.invoke("measure:insert") as Promise<string | undefined>,
@@ -234,7 +251,7 @@ const APP_API = {
     // Audio File
     launchInsertAudioFileDialogue: () =>
         ipcRenderer.invoke("audio:insert") as Promise<
-            DbServices.DatabaseResponse<AudioFile[]>
+            DbServices.LegacyDatabaseResponse<AudioFile[]>
         >,
     getAudioFilesDetails: () =>
         ipcRenderer.invoke("audio:getAll") as Promise<AudioFile[]>,

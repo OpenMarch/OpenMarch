@@ -52,10 +52,10 @@ export default function Canvas({
 
     /* -------------------------- Selection Functions -------------------------- */
     const unimplementedError = (
-        selectableClass: Selectable.SelectableClasses
+        selectableClass: Selectable.SelectableClasses,
     ) => {
         throw new Error(
-            `Invalid selectable class "${selectableClass}". Have you implemented all of the cases in Canvas.tsx for each selectable item on the canvas?`
+            `Invalid selectable class "${selectableClass}". Have you implemented all of the cases in Canvas.tsx for each selectable item on the canvas?`,
         );
     };
 
@@ -71,7 +71,7 @@ export default function Canvas({
 
         // Get all the classIds of the possible selectable classes
         const addClassIdsToSet = (
-            selectedClass: Selectable.SelectableClasses
+            selectedClass: Selectable.SelectableClasses,
         ) => {
             switch (selectedClass) {
                 case Selectable.SelectableClasses.MARCHER: {
@@ -82,21 +82,21 @@ export default function Canvas({
                             .map((canvasMarcher) => [
                                 canvasMarcher.marcherObj.id,
                                 canvasMarcher,
-                            ])
+                            ]),
                     );
                     for (const selectedMarcher of selectedMarchers) {
                         const canvasMarcher = canvasMarchers.get(
-                            selectedMarcher.id
+                            selectedMarcher.id,
                         );
                         if (!canvasMarcher) {
                             console.error(
                                 "SelectedMarcher not found on Canvas",
-                                selectedMarcher
+                                selectedMarcher,
                             );
                             continue;
                         }
                         globalSelectedClassIds.add(
-                            Selectable.getClassId(canvasMarcher)
+                            Selectable.getClassId(canvasMarcher),
                         );
                     }
                     break;
@@ -129,8 +129,8 @@ export default function Canvas({
 
         const activeObjectClassIds: Set<string> = new Set<string>(
             selectableObjects.map((selectableObject) =>
-                Selectable.getClassId(selectableObject)
-            )
+                Selectable.getClassId(selectableObject),
+            ),
         );
 
         const globalSelectedClassIds = getGLobalSelectedObjectClassIds();
@@ -167,7 +167,7 @@ export default function Canvas({
         const allObjectsToSelect: Selectable.ISelectable[] = [];
         for (const selectableActiveObject of canvas.getActiveSelectableObjects()) {
             newSelectedObjects[selectableActiveObject.classString].push(
-                selectableActiveObject.objectToGloballySelect
+                selectableActiveObject.objectToGloballySelect,
             );
             allObjectsToSelect.push(selectableActiveObject);
         }
@@ -175,13 +175,15 @@ export default function Canvas({
         canvas.setActiveObjects(allObjectsToSelect);
 
         const selectObjectsGlobally = (
-            selectableClass: Selectable.SelectableClasses
+            selectableClass: Selectable.SelectableClasses,
         ) => {
             switch (selectableClass) {
                 case Selectable.SelectableClasses.MARCHER: {
                     // Marcher
                     setSelectedMarchers(
-                        newSelectedObjects[Selectable.SelectableClasses.MARCHER]
+                        newSelectedObjects[
+                            Selectable.SelectableClasses.MARCHER
+                        ],
                     );
                     break;
                 }
@@ -202,7 +204,7 @@ export default function Canvas({
      */
     const handleDeselect = useCallback(() => {
         const deselectObjects = (
-            selectableClass: Selectable.SelectableClasses
+            selectableClass: Selectable.SelectableClasses,
         ) => {
             switch (selectableClass) {
                 case Selectable.SelectableClasses.MARCHER: {
@@ -216,7 +218,7 @@ export default function Canvas({
         };
 
         for (const selectableClass of Object.values(
-            Selectable.SelectableClasses
+            Selectable.SelectableClasses,
         )) {
             deselectObjects(selectableClass);
         }
@@ -245,7 +247,7 @@ export default function Canvas({
                 .map((selectableObject) => [
                     Selectable.getClassId(selectableObject),
                     selectableObject,
-                ])
+                ]),
         );
 
         const globalSelectedClassIds = getGLobalSelectedObjectClassIds();
@@ -285,7 +287,7 @@ export default function Canvas({
                     fieldProperties,
                     uiSettings,
                     currentPage: selectedPage,
-                })
+                }),
             );
         }
     }, [selectedPage, fieldProperties, testCanvas, uiSettings, canvas]);
@@ -300,12 +302,12 @@ export default function Canvas({
                     break;
                 default:
                     canvas.setListeners(
-                        new DefaultListeners({ canvas: canvas })
+                        new DefaultListeners({ canvas: canvas }),
                     );
                     break;
             }
             canvas.eventMarchers = canvas.getCanvasMarchersByIds(
-                alignmentEventMarchers.map((marcher) => marcher.id)
+                alignmentEventMarchers.map((marcher) => marcher.id),
             );
 
             // Cleanup
@@ -335,7 +337,7 @@ export default function Canvas({
             canvas.renderMarchers({
                 currentMarcherPages: MarcherPage.filterByPageId(
                     marcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 ),
                 allMarchers: marchers,
             });
@@ -345,9 +347,6 @@ export default function Canvas({
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage) {
-            const prevPage = selectedPage.getPreviousPage(pages);
-            const nextPage = selectedPage.getNextPage(pages);
-
             for (const pathway of pagePathways.current) {
                 canvas.remove(pathway);
             }
@@ -359,13 +358,13 @@ export default function Canvas({
             if (uiSettings.previousPaths || uiSettings.nextPaths)
                 selectedPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 );
 
-            if (uiSettings.previousPaths && prevPage) {
+            if (uiSettings.previousPaths && selectedPage.previousPageId) {
                 const prevPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    prevPage.id
+                    selectedPage.previousPageId,
                 );
 
                 canvas.renderStaticMarchers({
@@ -380,10 +379,10 @@ export default function Canvas({
                 });
                 pagePathways.current.push(...renderedPathways);
             }
-            if (uiSettings.nextPaths && nextPage) {
+            if (uiSettings.nextPaths && selectedPage.nextPageId) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    nextPage.id
+                    selectedPage.nextPageId,
                 );
 
                 canvas.renderStaticMarchers({
@@ -421,25 +420,27 @@ export default function Canvas({
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {
-        if (canvas && selectedPage) {
+        if (canvas && selectedPage && selectedPage.nextPageId) {
             if (isPlaying) {
+                const nextPageId = selectedPage.nextPageId;
+                if (nextPageId === null) return;
                 const nextPage = selectedPage.getNextPage(pages);
-                if (!nextPage) return;
+                if (nextPage === null) return;
 
                 const nextPageMarcherPages = marcherPages.filter(
-                    (marcherPage) => marcherPage.page_id === nextPage.id
+                    (marcherPage) => marcherPage.page_id === nextPageId,
                 );
                 canvas.getCanvasMarchers().forEach((canvasMarcher) => {
                     const marcherPageToUse = nextPageMarcherPages.find(
                         (marcherPage) =>
                             marcherPage.marcher_id ===
                                 canvasMarcher.marcherObj.id &&
-                            marcherPage.page_id === nextPage.id
+                            marcherPage.page_id === nextPageId,
                     );
                     if (!marcherPageToUse) {
                         console.error(
                             "Marcher page not found - startAnimation: Canvas.tsx",
-                            canvasMarcher
+                            canvasMarcher,
                         );
                         return;
                     }
@@ -471,7 +472,7 @@ export default function Canvas({
                 canvas.renderMarchers({
                     currentMarcherPages: MarcherPage.filterByPageId(
                         marcherPages,
-                        selectedPage.id
+                        selectedPage.id,
                     ),
                     allMarchers: marchers,
                 });
@@ -489,18 +490,20 @@ export default function Canvas({
     ]);
 
     return (
-        <div className={`overflow-hidden ${className}`}>
+        <div className={`h-full overflow-hidden rounded-6 ${className}`}>
             {marchers.length > 0 && pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
                 // If there are no marchers or pages, display a message
-                <div className="flex bg-gray-900 text-white h-full w-full align-middle flex-col justify-center text-center">
-                    <h3>To start the show, create Marchers and Pages</h3>
-                    <p>Then {"`Window -> Refresh` (or `Ctrl+R`)"}</p>
-                    <h5>
+                <div className="flex h-full w-full flex-col justify-center gap-8 text-center align-middle text-text">
+                    <h4 className="text-h4">
+                        To start the show, create Marchers and Pages
+                    </h4>
+                    <p>Then refresh the window. (Ctrl/Cmd+R)</p>
+                    <p>
                         If anything in OpenMarch ever seems broken, a refresh
                         will often fix it.
-                    </h5>
+                    </p>
                 </div>
             )}
         </div>

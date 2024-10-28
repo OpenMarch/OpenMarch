@@ -1,8 +1,7 @@
 <!-- WHENEVER MODIFYING THIS FILE, you must also modify /docs/README.md to ensure the website is up to date.
     maybe there's a better way to do this without symlinks. someone better than me at ruby pls -->
 
-[OpenMarch](https://github.com/AlexDumo/OpenMarch) is an open source drill writing software built on web app frameworks.
-It will be a cross platform desktop app.
+[OpenMarch](https://github.com/OpenMarch/OpenMarch) is an open source drill writing software built on web app frameworks.
 
 ## What can OpenMarch do?
 

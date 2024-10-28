@@ -20,7 +20,6 @@ export const falsyUiSettings: UiSettings = {
 export const mockMarchers: Marcher[] = [
     new Marcher({
         id: 1,
-        id_for_html: "marcher_1",
         name: "Marc Sylvester",
         section: "Flute",
         drill_prefix: "F",
@@ -30,7 +29,6 @@ export const mockMarchers: Marcher[] = [
     }),
     new Marcher({
         id: 2,
-        id_for_html: "marcher_2",
         name: "George Zingali",
         section: "Snare",
         drill_prefix: "S",
@@ -40,7 +38,6 @@ export const mockMarchers: Marcher[] = [
     }),
     new Marcher({
         id: 3,
-        id_for_html: "marcher_3",
         name: "John Bilby",
         section: "Trumpet",
         drill_prefix: "T",
@@ -50,7 +47,6 @@ export const mockMarchers: Marcher[] = [
     }),
     new Marcher({
         id: 4,
-        id_for_html: "marcher_4",
         name: "",
         section: "Baritone",
         drill_prefix: "B",
@@ -63,27 +59,30 @@ export const mockMarchers: Marcher[] = [
 export const mockPages: Page[] = [
     new Page({
         id: 1,
-        id_for_html: "page_1",
         name: "1",
         counts: 16,
         order: 1,
         notes: "This is the first page",
+        nextPageId: 2,
+        previousPageId: null,
     }),
     new Page({
         id: 2,
-        id_for_html: "page_2",
         name: "2",
         counts: 8,
         order: 2,
         notes: "This is the second page",
+        nextPageId: 3,
+        previousPageId: 1,
     }),
     new Page({
         id: 3,
-        id_for_html: "page_3",
         name: "3",
         counts: 16,
         order: 3,
         notes: undefined,
+        nextPageId: null,
+        previousPageId: 2,
     }),
 ] as const;
 
