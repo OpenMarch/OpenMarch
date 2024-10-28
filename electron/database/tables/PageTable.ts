@@ -8,6 +8,7 @@ import {
 import * as DbActions from "../DatabaseActions";
 import * as MarcherTable from "./MarcherTable";
 import * as MarcherPageTable from "./MarcherPageTable";
+import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 
 /** How a page is represented in the database */
 export interface DatabasePage {
@@ -158,92 +159,96 @@ export function createPages({
     db: Database.Database;
 }): DbActions.DatabaseResponse<DatabasePage[]> {
     const createdPages: DatabasePage[] = [];
+    let output: DbActions.DatabaseResponse<DatabasePage[]>;
+    console.log("\n=========== start createPages ===========");
 
     History.incrementUndoGroup(db);
+    // Track if any action was performed so that we can undo if necessary
+    let actionWasPerformed = false;
 
     // Reverse the order of the new pages so that they are created in the correct order
     const reversedNewPages = [...newPages].reverse();
-    for (const newPage of reversedNewPages) {
-        let itemToInsert: NewPage;
-        const { previousPageId, isSubset, ...rest } = newPage;
-        let previousPage: DatabasePage | undefined;
-        if (previousPageId) {
-            // Get the previous page from the database
-            previousPage = previousPageId
-                ? DbActions.getItem<DatabasePage>({
-                      db,
-                      tableName: Constants.PageTableName,
-                      id: previousPageId,
-                  }).data
-                : undefined;
-            // Define the new page by getting the next_page_id from the previous page
-            itemToInsert = {
-                ...rest,
-                next_page_id: previousPage?.next_page_id || null,
-                is_subset: isSubset ? 1 : 0,
-            };
-        } else {
-            const firstPageResponse = getFirstPage({ db });
-            if (!firstPageResponse.success) {
-                const message =
-                    "Failed to find first page! The linked list is broken.";
-                console.error(message);
-                History.performUndo(db);
-                return {
-                    success: false,
-                    error: { message },
-                    data: [],
+    try {
+        for (const newPage of reversedNewPages) {
+            let itemToInsert: NewPage;
+            const { previousPageId, isSubset, ...rest } = newPage;
+            let previousPage: DatabasePage | undefined;
+            if (previousPageId) {
+                // Get the previous page from the database
+                previousPage = previousPageId
+                    ? DbActions.getItem<DatabasePage>({
+                          db,
+                          tableName: Constants.PageTableName,
+                          id: previousPageId,
+                      }).data
+                    : undefined;
+                // Define the new page by getting the next_page_id from the previous page
+                itemToInsert = {
+                    ...rest,
+                    next_page_id: previousPage?.next_page_id || null,
+                    is_subset: isSubset ? 1 : 0,
+                };
+            } else {
+                const firstPageResponse = getFirstPage({ db });
+                if (!firstPageResponse.success) {
+                    throw new Error(
+                        "Failed to find first page! The linked list is broken: " +
+                            firstPageResponse.error?.message ||
+                            "No first page found"
+                    );
+                }
+                // Define the new page by getting the next_page_id from the previous page
+                itemToInsert = {
+                    ...rest,
+                    next_page_id: firstPageResponse.data?.id || null,
+                    is_subset: isSubset ? 1 : 0,
                 };
             }
-            // Define the new page by getting the next_page_id from the previous page
-            itemToInsert = {
-                ...rest,
-                next_page_id: firstPageResponse.data?.id || null,
-                is_subset: isSubset ? 1 : 0,
-            };
-        }
-        const createResponse = processPageTableResponse(
-            DbActions.createItems<DatabasePage, NewPage>({
-                db,
-                tableName: Constants.PageTableName,
-                items: [itemToInsert],
-                useNextUndoGroup: false,
-            })
-        );
-        if (!createResponse.success) {
-            console.error("Failed to create page:", createResponse.error);
-            History.performUndo(db);
-            return createResponse;
-        }
-        createdPages.push(createResponse.data[0]);
+            const createPageResponse = processPageTableResponse(
+                DbActions.createItems<DatabasePage, NewPage>({
+                    db,
+                    tableName: Constants.PageTableName,
+                    items: [itemToInsert],
+                    useNextUndoGroup: false,
+                    printHeaders: false,
+                })
+            );
 
-        // Update the previous page to point to the new page
-        if (previousPage) {
-            const updateResponse = DbActions.updateItems<
-                DatabasePage,
-                { id: number; next_page_id: number | null }
-            >({
-                db,
-                tableName: Constants.PageTableName,
-                items: [
-                    {
-                        id: previousPage.id,
-                        next_page_id: createResponse.data[0].id,
-                    },
-                ],
-                useNextUndoGroup: false,
-            });
-            if (!updateResponse.success) {
-                console.error(
-                    "Failed to update previous page:",
-                    updateResponse.error
+            actionWasPerformed = true;
+            if (!createPageResponse.success) {
+                throw new Error(
+                    "Failed to create page: " +
+                        createPageResponse.error?.message || ""
                 );
-                History.performUndo(db);
-                return updateResponse;
             }
-        }
+            createdPages.push(createPageResponse.data[0]);
 
-        try {
+            // Update the previous page to point to the new page
+            if (previousPage) {
+                const updateResponse = DbActions.updateItems<
+                    DatabasePage,
+                    { id: number; next_page_id: number | null }
+                >({
+                    db,
+                    tableName: Constants.PageTableName,
+                    items: [
+                        {
+                            id: previousPage.id,
+                            next_page_id: createPageResponse.data[0].id,
+                        },
+                    ],
+                    useNextUndoGroup: false,
+                    printHeaders: false,
+                });
+
+                if (!updateResponse.success) {
+                    throw new Error(
+                        "Failed to update previous page's next_page_id: " +
+                            updateResponse.error?.message || ""
+                    );
+                }
+            }
+
             // Add a marcherPage for this page for each marcher
             // Get all existing marchers
             const marchers = MarcherTable.getMarchers({ db }).data;
@@ -262,6 +267,7 @@ export function createPages({
                 ])
             );
             // For each marcher, create a new MarcherPage
+            const newMarcherPages: ModifiedMarcherPageArgs[] = [];
             for (const marcher of marchers) {
                 let coords = previousPageMarcherPageCoordsMap.get(marcher.id);
                 if (!coords) {
@@ -271,46 +277,45 @@ export function createPages({
                     };
                 }
 
-                const createMarcherPageResponse =
-                    MarcherPageTable.createMarcherPage({
-                        db,
-                        newMarcherPage: {
-                            marcher_id: marcher.id,
-                            page_id: createResponse.data[0].id,
-                            ...coords,
-                        },
-                        useNextUndoGroup: false,
-                    });
-                if (!createMarcherPageResponse.success) {
-                    console.error(
-                        "Failed to create marcherPage:",
-                        createMarcherPageResponse.error
-                    );
-                    History.performUndo(db);
-                    return {
-                        success: false,
-                        error: createMarcherPageResponse.error,
-                        data: [],
-                    };
-                }
+                newMarcherPages.push({
+                    marcher_id: marcher.id,
+                    page_id: createPageResponse.data[0].id,
+                    ...coords,
+                });
             }
-        } catch (error: any) {
-            console.error(
-                "Error creating marcherPages after creating page",
-                error
-            );
+            const createMarcherPageResponse =
+                MarcherPageTable.createMarcherPages({
+                    db,
+                    newMarcherPages,
+                    useNextUndoGroup: false,
+                });
+            if (!createMarcherPageResponse.success) {
+                throw new Error(
+                    `Failed to create marcherPage for page_id=${createPageResponse.data[0].id}: ` +
+                        createMarcherPageResponse.error?.message || ""
+                );
+            }
+        }
+        output = { success: true, data: createdPages };
+        History.incrementUndoGroup(db);
+    } catch (error: any) {
+        console.error("Error creating pages: ", error);
+        if (actionWasPerformed) {
             History.performUndo(db);
             History.clearMostRecentRedo(db);
-            return {
-                success: false,
-                error: { message: error, stack: "could not get stack" },
-                data: [],
-            };
         }
+        output = {
+            success: false,
+            error: {
+                message: error,
+                stack: error.stack || "could not get stack",
+            },
+            data: [],
+        };
+    } finally {
+        console.log("=========== end createPages ===========\n");
     }
-
-    History.incrementUndoGroup(db);
-    return { success: true, data: createdPages };
+    return output;
 }
 
 /**
@@ -327,19 +332,23 @@ export function updatePages({
     db: Database.Database;
     modifiedPages: ModifiedPageArgs[];
 }): DbActions.DatabaseResponse<DatabasePage[]> {
+    console.log("\n=========== start updatePages ===========");
     const newModifiedPages = modifiedPages.map((modifiedPage) => {
         return {
             ...modifiedPage,
             is_subset: modifiedPage.is_subset ? 1 : 0,
         };
     });
-    return processPageTableResponse(
+    const response = processPageTableResponse(
         DbActions.updateItems<DatabasePage, any>({
             db,
             items: newModifiedPages,
             tableName: Constants.PageTableName,
+            printHeaders: false,
         })
     );
+    console.log("=========== end updatePages ===========\n");
+    return response;
 }
 
 /**
@@ -356,34 +365,32 @@ export function deletePages({
     pageIds: Set<number>;
     db: Database.Database;
 }): DbActions.DatabaseResponse<DatabasePage[]> {
+    console.log("\n=========== start deletePages ===========");
+    let output: DbActions.DatabaseResponse<DatabasePage[]>;
     History.incrementUndoGroup(db);
     // Check if there are any marcherPages before deleting the pages
     const marcherPages = MarcherPageTable.getMarcherPages({
         db,
     }).data;
-    if (marcherPages.length === 0) {
-        console.log("No marcherPages found. Skipping marcherPage deletion");
-    } else {
-        const deleteMarcherPageResponse = DbActions.deleteItems({
-            ids: pageIds,
-            tableName: Constants.MarcherPageTableName,
-            db,
-            useNextUndoGroup: false,
-            idColumn: "page_id",
-        });
-        if (!deleteMarcherPageResponse.success) {
-            console.error(
-                "Failed to delete marcher pages:",
-                deleteMarcherPageResponse.error
-            );
-            return {
-                success: false,
-                error: deleteMarcherPageResponse.error,
-                data: [],
-            };
-        }
-    }
     try {
+        if (marcherPages.length === 0) {
+            console.log("No marcherPages found. Skipping marcherPage deletion");
+        } else {
+            const deleteMarcherPageResponse = DbActions.deleteItems({
+                ids: pageIds,
+                tableName: Constants.MarcherPageTableName,
+                db,
+                useNextUndoGroup: false,
+                printHeaders: false,
+                idColumn: "page_id",
+            });
+            if (!deleteMarcherPageResponse.success) {
+                throw new Error(
+                    "Failed to delete marcherPages: " +
+                        (deleteMarcherPageResponse.error?.message || "")
+                );
+            }
+        }
         // Update the next_page_id of the previous page to point to the next page
         const pages = getPages({ db }).data;
         const pagesMap = new Map(pages.map((page) => [page.id, page]));
@@ -437,6 +444,7 @@ export function deletePages({
             items: modifiedPages,
             tableName: Constants.PageTableName,
             useNextUndoGroup: false,
+            printHeaders: false,
         });
         if (!updateResponse.success) {
             throw new Error(
@@ -451,6 +459,7 @@ export function deletePages({
                 tableName: Constants.PageTableName,
                 db,
                 useNextUndoGroup: false, // Don't do this
+                printHeaders: false,
             })
         );
         if (!deletePagesResponse.success)
@@ -458,15 +467,18 @@ export function deletePages({
                 "Failed to delete pages " +
                     (deletePagesResponse.error?.message || "")
             );
-        return deletePagesResponse;
+        output = deletePagesResponse;
     } catch (error: any) {
         console.error("Failed to delete pages:", error);
         History.performUndo(db);
         History.clearMostRecentRedo(db);
-        return {
+        output = {
             success: false,
             error: { message: error, stack: error.stack },
             data: [],
         };
+    } finally {
+        console.log("=========== end deletePages ===========\n");
     }
+    return output;
 }

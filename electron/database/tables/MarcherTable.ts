@@ -9,30 +9,37 @@ import Marcher, {
 import * as PageTable from "./PageTable";
 import * as MarcherPageTable from "./MarcherPageTable";
 import { DatabaseResponse } from "../DatabaseActions";
+import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 
-export function createMarcherTable(db: Database.Database) {
+export function createMarcherTable(
+    db: Database.Database
+): DatabaseResponse<string> {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
                 "id"	        INTEGER PRIMARY KEY,
-                "id_for_html"	TEXT UNIQUE,
                 "name"	        TEXT,
                 "section"	    TEXT NOT NULL,
                 "year"	        TEXT,
                 "notes"	        TEXT,
                 "drill_prefix"	TEXT NOT NULL,
                 "drill_order"	INTEGER NOT NULL,
-                "drill_number"	TEXT UNIQUE NOT NULL,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL,
                 UNIQUE ("drill_prefix", "drill_order")
             );
         `);
         History.createUndoTriggers(db, Constants.MarcherTableName);
-    } catch (error) {
+        console.log("Marcher table created.");
+        return { success: true, data: Constants.MarcherTableName };
+    } catch (error: any) {
         console.error("Failed to create marcher table:", error);
+        return {
+            success: false,
+            error: { message: error, stack: error.stack },
+            data: "",
+        };
     }
-    console.log("Marcher table created.");
 }
 
 /**
@@ -64,25 +71,20 @@ export function createMarchers({
     newMarchers: NewMarcherArgs[];
     db: Database.Database;
 }): DatabaseResponse<Marcher[]> {
+    console.log("\n=========== start createPages ===========");
     History.incrementUndoGroup(db);
-
-    const marchersToInsert: any[] = [];
-    // Combine drill prefix and order to create drill number
-    for (const marcher of newMarchers) {
-        marchersToInsert.push({
-            ...marcher,
-            drill_number: `${marcher.drill_prefix}${marcher.drill_order}`,
-        });
-    }
+    let output: DatabaseResponse<Marcher[]>;
+    let actionWasPerformed = false;
 
     try {
         const marcherInsertResponse = DbActions.createItems<
             Marcher,
             NewMarcherArgs
         >({
-            items: marchersToInsert,
+            items: newMarchers,
             tableName: Constants.MarcherTableName,
             db,
+            printHeaders: false,
             useNextUndoGroup: false,
         });
         if (!marcherInsertResponse.success) {
@@ -100,39 +102,45 @@ export function createMarchers({
             );
         }
         // Create a marcherPage for each marcher
+        const newMarcherPages: ModifiedMarcherPageArgs[] = [];
         for (const marcher of marcherInsertResponse.data) {
             for (const page of allPages.data) {
-                const createMarcherPageResponse =
-                    MarcherPageTable.createMarcherPage({
-                        newMarcherPage: {
-                            marcher_id: marcher.id,
-                            page_id: page.id,
-                            x: 100,
-                            y: 100,
-                        },
-                        db,
-                        useNextUndoGroup: false,
-                    });
-                if (!createMarcherPageResponse.success) {
-                    throw new Error(
-                        createMarcherPageResponse.error?.message ||
-                            "Failed to create marcherPage"
-                    );
-                }
+                newMarcherPages.push({
+                    marcher_id: marcher.id,
+                    page_id: page.id,
+                    x: 100,
+                    y: 100,
+                });
             }
+        }
+        const createMarcherPageResponse = MarcherPageTable.createMarcherPages({
+            newMarcherPages,
+            db,
+            useNextUndoGroup: false,
+        });
+        if (!createMarcherPageResponse.success) {
+            throw new Error(
+                createMarcherPageResponse.error?.message ||
+                    "Failed to create marcherPage"
+            );
         }
         History.incrementUndoGroup(db);
         return marcherInsertResponse;
     } catch (error: any) {
         console.error("Failed to create marchers:", error);
-        History.performUndo(db);
-        History.clearMostRecentRedo(db);
-        return {
+        if (actionWasPerformed) {
+            History.performUndo(db);
+            History.clearMostRecentRedo(db);
+        }
+        output = {
             success: false,
             error: { message: error.message, stack: error.stack },
             data: [],
         };
+    } finally {
+        console.log("=========== end createPages ===========\n");
     }
+    return output;
 }
 
 /**
@@ -149,11 +157,14 @@ export function updateMarchers({
     modifiedMarchers: ModifiedMarcherArgs[];
     db: Database.Database;
 }): DatabaseResponse<Marcher[]> {
+    console.log("\n=========== start updatePages ===========");
     const updateResponse = DbActions.updateItems<Marcher, ModifiedMarcherArgs>({
         db,
         items: modifiedMarchers,
         tableName: Constants.MarcherTableName,
+        printHeaders: false,
     });
+    console.log("=========== end updatePages ===========\n");
     return updateResponse;
 }
 

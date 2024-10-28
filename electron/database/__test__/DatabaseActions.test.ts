@@ -2,6 +2,7 @@ import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as DbActions from "../DatabaseActions";
 import { createHistoryTables, createUndoTriggers } from "../database.history";
+import * as History from "../database.history";
 
 // Mock ipcMain and ipcRenderer
 vi.mock("electron", () => ({
@@ -208,6 +209,240 @@ describe("Database Actions", () => {
             expect(result.data[1].id).toBe(2);
             expect(result.data[1].name).toBe("john");
             expect(result.data[1].age).toBe(12);
+        });
+
+        describe("undo and redo", () => {
+            it("should undo the creation of a single item after redo", () => {
+                const item = { name: "jeff" };
+                const result = DbActions.createItems<Row, NewRow>({
+                    tableName: mockTableName,
+                    items: [item],
+                    db,
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.error).toBeUndefined();
+                expect(result.data[0].id).toBeGreaterThan(0);
+
+                // Perform undo
+                const undoResult = History.performUndo(db);
+                expect(undoResult.success).toBe(true);
+                expect(undoResult.error).toBeUndefined();
+
+                // Perform redo
+                const redoResult = History.performRedo(db);
+                expect(redoResult.success).toBe(true);
+                expect(redoResult.error).toBeUndefined();
+
+                // Perform undo again
+                const secondUndoResult = History.performUndo(db);
+                expect(secondUndoResult.success).toBe(true);
+                expect(secondUndoResult.error).toBeUndefined();
+
+                // Verify the item was removed again
+                const getResult = DbActions.getItem<Row>({
+                    id: result.data[0].id,
+                    db,
+                    tableName: mockTableName,
+                });
+                expect(getResult.success).toBe(false);
+                expect(getResult.error?.message).toBe(
+                    `No item with "rowid"=${result.data[0].id} in table "${mockTableName}"`
+                );
+                expect(getResult.data).toBeUndefined();
+            });
+
+            it("should undo, redo, and undo the creation of multiple items", () => {
+                const items = [
+                    { name: "jeff" },
+                    { name: "bob" },
+                    { name: "carl" },
+                ];
+                const result = DbActions.createItems<Row, NewRow>({
+                    tableName: mockTableName,
+                    items,
+                    db,
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.error).toBeUndefined();
+                result.data.forEach((item) => {
+                    expect(item.id).toBeGreaterThan(0);
+                });
+
+                // Perform undo
+                const undoResult = History.performUndo(db);
+                expect(undoResult.success).toBe(true);
+                expect(undoResult.error).toBeUndefined();
+
+                // Perform redo
+                const redoResult = History.performRedo(db);
+                expect(redoResult.success).toBe(true);
+                expect(redoResult.error).toBeUndefined();
+
+                // Perform undo again
+                const secondUndoResult = History.performUndo(db);
+                expect(secondUndoResult.success).toBe(true);
+                expect(secondUndoResult.error).toBeUndefined();
+
+                // Verify the items were removed again
+                result.data.forEach((item) => {
+                    const getResult = DbActions.getItem<Row>({
+                        id: item.id,
+                        db,
+                        tableName: mockTableName,
+                    });
+                    expect(getResult.success).toBe(false);
+                    expect(getResult.error?.message).toBe(
+                        `No item with "rowid"=${item.id} in table "${mockTableName}"`
+                    );
+                    expect(getResult.data).toBeUndefined();
+                });
+            });
+
+            it('should undo, redo, and undo multiple creation actions across multiple tables when "useNextUndoGroup" is false', () => {
+                const table1 = "table1";
+                const table2 = "table2";
+
+                // Create two tables
+                db.prepare(
+                    `CREATE TABLE ${table1} (
+                        id INTEGER PRIMARY KEY,
+                        name TEXT,
+                        age INTEGER,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );`
+                ).run();
+
+                db.prepare(
+                    `CREATE TABLE ${table2} (
+                        id INTEGER PRIMARY KEY,
+                        description TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );`
+                ).run();
+
+                createHistoryTables(db);
+                createUndoTriggers(db, table1);
+                createUndoTriggers(db, table2);
+
+                type NewRowT2 = { description: string; id?: number };
+                type RowT2 = {
+                    description: string;
+                    created_at: string;
+                    updated_at: string;
+                    id: number;
+                };
+
+                const trimRows = (rows: Row[] | RowT2[]) => {
+                    return rows.map((row) => {
+                        const { id, created_at, updated_at, ...rest } = row;
+                        return rest;
+                    });
+                };
+
+                const existingItemsTable1 = [
+                    { name: "stacy", age: 55 },
+                    { name: "kim", age: null },
+                ];
+                History.incrementUndoGroup(db);
+                DbActions.createItems<Row, NewRow>({
+                    tableName: table1,
+                    items: existingItemsTable1,
+                    db,
+                    useNextUndoGroup: false,
+                });
+                const existingItemsTable2 = [{ description: "desc0" }];
+                DbActions.createItems<RowT2, NewRowT2>({
+                    tableName: table2,
+                    items: existingItemsTable2,
+                    db,
+                    useNextUndoGroup: false,
+                });
+
+                // Insert items into both tables
+                const itemsTable1 = [
+                    { name: "jeff", age: null },
+                    { name: "bob", age: 1 },
+                ];
+                const itemsTable2 = [
+                    { description: "desc1" },
+                    { description: "desc2" },
+                ];
+
+                History.incrementUndoGroup(db);
+                const resultTable1 = DbActions.createItems<Row, NewRow>({
+                    tableName: table1,
+                    items: itemsTable1,
+                    db,
+                    useNextUndoGroup: false,
+                });
+                const resultTable2 = DbActions.createItems<RowT2, NewRowT2>({
+                    tableName: table2,
+                    items: itemsTable2,
+                    db,
+                    useNextUndoGroup: false,
+                });
+
+                expect(resultTable1.success).toBe(true);
+                expect(resultTable1.error).toBeUndefined();
+                expect(resultTable2.success).toBe(true);
+                expect(resultTable2.error).toBeUndefined();
+
+                const getTable1Items = () =>
+                    DbActions.getAllItems<Row>({
+                        db,
+                        tableName: table1,
+                    });
+                const getTable2Items = () =>
+                    DbActions.getAllItems<RowT2>({
+                        db,
+                        tableName: table2,
+                    });
+                // Expect the items to be in the table
+                expect(trimRows(getTable1Items().data)).toEqual([
+                    ...existingItemsTable1,
+                    ...itemsTable1,
+                ]);
+                expect(trimRows(getTable2Items().data)).toEqual([
+                    ...existingItemsTable2,
+                    ...itemsTable2,
+                ]);
+
+                // Perform undo
+                const undoResult = History.performUndo(db);
+                expect(undoResult.success).toBe(true);
+                expect(trimRows(getTable1Items().data)).toEqual([
+                    ...existingItemsTable1,
+                ]);
+                expect(trimRows(getTable2Items().data)).toEqual([
+                    ...existingItemsTable2,
+                ]);
+
+                // Perform redo
+                const redoResult = History.performRedo(db);
+                expect(redoResult.success).toBe(true);
+                expect(trimRows(getTable1Items().data)).toEqual([
+                    ...existingItemsTable1,
+                    ...itemsTable1,
+                ]);
+                expect(trimRows(getTable2Items().data)).toEqual([
+                    ...existingItemsTable2,
+                    ...itemsTable2,
+                ]);
+
+                // Perform undo again
+                const secondUndoResult = History.performUndo(db);
+                expect(secondUndoResult.success).toBe(true);
+                expect(trimRows(getTable1Items().data)).toEqual([
+                    ...existingItemsTable1,
+                ]);
+                expect(trimRows(getTable2Items().data)).toEqual([
+                    ...existingItemsTable2,
+                ]);
+            });
         });
     });
 
@@ -451,8 +686,8 @@ describe("Database Actions", () => {
                 expect(updatedItem.created_at).toEqual(
                     originalItem?.created_at
                 );
-                // Sleep for 5ms to ensure the updated_at field is different
-                await new Promise((resolve) => setTimeout(resolve, 5));
+                // Sleep for 10ms to ensure the updated_at field is different
+                await new Promise((resolve) => setTimeout(resolve, 10));
                 expect(updatedItem.updated_at).not.toEqual(
                     originalItem?.updated_at
                 );

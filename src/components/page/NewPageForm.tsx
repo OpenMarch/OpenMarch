@@ -206,7 +206,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
                         aria-label="Select the previous page"
                         onChange={handlePreviousPageChange}
                         // TODO this is not working
-                        defaultValue={5}
+                        defaultValue={-1}
                     >
                         {pages.length === 0 ? (
                             <option value={-1}>-</option>

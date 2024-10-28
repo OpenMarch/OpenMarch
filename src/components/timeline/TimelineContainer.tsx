@@ -67,7 +67,6 @@ export default function TimelineContainer({
                     )}
                     <div className="row-span-2">
                         {pages.map((page, index) => {
-                            if (page.name === "8") console.log("page 8", page);
                             if (index === 0) return null;
                             const width = page.duration * pxPerSecond;
                             // console.log("page width", width)

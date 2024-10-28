@@ -16,10 +16,6 @@ const trimData = (data: any[]) =>
         return { ...rest, notes: rest.notes ? rest.notes : null };
     });
 
-it("passes", () => {
-    expect(true).toBe(true);
-});
-
 describe("PageTable", () => {
     describe("createPageTable", () => {
         let db: Database.Database;
@@ -100,7 +96,9 @@ describe("PageTable", () => {
 
         describe("createPages", () => {
             it("should insert a new page into the database", () => {
-                const newPages = [{ counts: 10, isSubset: false }];
+                const newPages = [
+                    { counts: 10, isSubset: false, previousPageId: null },
+                ];
                 const expectedCreatedPages = [
                     {
                         id: 1,
@@ -125,7 +123,9 @@ describe("PageTable", () => {
             });
 
             it("should insert sequential pages into the database with previous page defined", () => {
-                let newPages: NewPageArgs[] = [{ counts: 12, isSubset: false }];
+                let newPages: NewPageArgs[] = [
+                    { counts: 12, isSubset: false, previousPageId: null },
+                ];
                 let expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
                         id: 1,
@@ -270,7 +270,9 @@ describe("PageTable", () => {
             });
 
             it("should insert new pages at the start of the database with no previous page defined", () => {
-                let newPages: NewPageArgs[] = [{ counts: 12, isSubset: false }];
+                let newPages: NewPageArgs[] = [
+                    { counts: 12, isSubset: false, previousPageId: null },
+                ];
                 let expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
                         id: 1,
@@ -312,6 +314,7 @@ describe("PageTable", () => {
                     {
                         counts: 10,
                         isSubset: true,
+                        previousPageId: null,
                     },
                 ];
                 expectedCreatedPages = [
@@ -361,6 +364,7 @@ describe("PageTable", () => {
                         counts: 16,
                         isSubset: false,
                         notes: "jeff notes",
+                        previousPageId: null,
                     },
                 ];
                 expectedCreatedPages = [
@@ -414,9 +418,14 @@ describe("PageTable", () => {
 
             it("should insert new pages into the database at the same time", () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false },
-                    { counts: 10, isSubset: true },
-                    { counts: 16, isSubset: false, notes: "jeff notes" },
+                    { counts: 12, isSubset: false, previousPageId: null },
+                    { counts: 10, isSubset: true, previousPageId: null },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        notes: "jeff notes",
+                        previousPageId: null,
+                    },
                 ];
                 const expectedCreatedPages = [
                     {
@@ -470,9 +479,14 @@ describe("PageTable", () => {
 
             it("should insert new pages into the middle of the database at the same time", () => {
                 let newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false },
-                    { counts: 10, isSubset: true },
-                    { counts: 16, isSubset: false, notes: "jeff notes" },
+                    { counts: 12, isSubset: false, previousPageId: null },
+                    { counts: 10, isSubset: true, previousPageId: null },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "jeff notes",
+                    },
                 ];
                 let expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
@@ -647,9 +661,14 @@ describe("PageTable", () => {
                 expect(allMarcherPages().data.length).toBe(0);
 
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false },
-                    { counts: 10, isSubset: true },
-                    { counts: 16, isSubset: false, notes: "jeff notes" },
+                    { counts: 12, isSubset: false, previousPageId: null },
+                    { counts: 10, isSubset: true, previousPageId: null },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "jeff notes",
+                    },
                 ];
                 const expectedCreatedPages = [
                     {
@@ -720,10 +739,25 @@ describe("PageTable", () => {
 
         it("updates multiple pages", () => {
             const newPages: NewPageArgs[] = [
-                { counts: 32, isSubset: true, notes: "do not touch" },
-                { counts: 12, isSubset: false, notes: "notes jeff" },
-                { counts: 10, isSubset: true },
-                { counts: 16, isSubset: false, notes: "jeff notes" },
+                {
+                    counts: 32,
+                    isSubset: true,
+                    previousPageId: null,
+                    notes: "do not touch",
+                },
+                {
+                    counts: 12,
+                    isSubset: false,
+                    previousPageId: null,
+                    notes: "notes jeff",
+                },
+                { counts: 10, isSubset: true, previousPageId: null },
+                {
+                    counts: 16,
+                    isSubset: false,
+                    previousPageId: null,
+                    notes: "jeff notes",
+                },
             ];
             const expectedCreatedPages = [
                 {
@@ -849,9 +883,14 @@ describe("PageTable", () => {
         describe("deletePage", () => {
             it("should delete a page by id from the database", async () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false },
-                    { counts: 10, isSubset: true },
-                    { counts: 16, isSubset: false, notes: "jeff notes" },
+                    { counts: 12, isSubset: false, previousPageId: null },
+                    { counts: 10, isSubset: true, previousPageId: null },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "jeff notes",
+                    },
                 ];
                 const expectedCreatedPages = [
                     {
@@ -943,12 +982,27 @@ describe("PageTable", () => {
             });
             it("should delete multiple pages by id from the database", async () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false },
-                    { counts: 10, isSubset: true },
-                    { counts: 16, isSubset: false, notes: "jeff notes" },
-                    { counts: 45, isSubset: true },
-                    { counts: 14, isSubset: false, notes: "bad notes" },
-                    { counts: 90, isSubset: true, notes: "nice notes" },
+                    { counts: 12, isSubset: false, previousPageId: null },
+                    { counts: 10, isSubset: true, previousPageId: null },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "jeff notes",
+                    },
+                    { counts: 45, isSubset: true, previousPageId: null },
+                    {
+                        counts: 14,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "bad notes",
+                    },
+                    {
+                        counts: 90,
+                        isSubset: true,
+                        previousPageId: null,
+                        notes: "nice notes",
+                    },
                 ];
 
                 const expectedCreatedPages = [
@@ -1106,12 +1160,27 @@ describe("PageTable", () => {
                 expectMarcherPagesLengthToBe(0);
 
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false },
-                    { counts: 10, isSubset: true },
-                    { counts: 16, isSubset: false, notes: "jeff notes" },
-                    { counts: 45, isSubset: true },
-                    { counts: 14, isSubset: false, notes: "bad notes" },
-                    { counts: 90, isSubset: true, notes: "nice notes" },
+                    { counts: 12, isSubset: false, previousPageId: null },
+                    { counts: 10, isSubset: true, previousPageId: null },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "jeff notes",
+                    },
+                    { counts: 45, isSubset: true, previousPageId: null },
+                    {
+                        counts: 14,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "bad notes",
+                    },
+                    {
+                        counts: 90,
+                        isSubset: true,
+                        previousPageId: null,
+                        notes: "nice notes",
+                    },
                 ];
 
                 const expectedCreatedPages = [
@@ -1258,5 +1327,1128 @@ describe("PageTable", () => {
                 expect(marcherPagesMap.size).toBe(0);
             });
         });
+    });
+
+    describe("undo/redo", () => {
+        let db: Database.Database;
+
+        beforeEach(() => {
+            db = new Database(":memory:");
+            History.createHistoryTables(db);
+            PageTable.createPageTable(db);
+            MarcherPageTable.createMarcherPageTable(db);
+            MarcherTable.createMarcherTable(db);
+        });
+        describe("CreatePages", () => {
+            describe("without any marchers", () => {
+                it("should undo and redo a single created page correctly", () => {
+                    const newPage: NewPageArgs = {
+                        counts: 12,
+                        isSubset: false,
+                        previousPageId: null,
+                    };
+
+                    // Create a new page
+                    const createResult = PageTable.createPages({
+                        newPages: [newPage],
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(1);
+
+                    const createdPage = createResult.data[0];
+                    expect(createdPage.counts).toBe(12);
+                    expect(createdPage.is_subset).toBe(false);
+
+                    // Undo the creation
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the page is no longer in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(0);
+
+                    // Redo the creation
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the page is back in the database
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(1);
+                    const redonePage = getPagesAfterRedo.data[0];
+                    expect(redonePage.counts).toBe(12);
+                    expect(redonePage.is_subset).toBe(false);
+
+                    // Undo the creation again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the page is no longer in the database
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(0);
+                });
+
+                it("should undo and redo multiple created pages correctly", () => {
+                    const newPages: NewPageArgs[] = [
+                        { counts: 12, isSubset: false, previousPageId: null },
+                        { counts: 10, isSubset: true, previousPageId: null },
+                        {
+                            counts: 16,
+                            isSubset: false,
+                            previousPageId: null,
+                            notes: "jeff notes",
+                        },
+                    ];
+
+                    // Create new pages
+                    const createResult = PageTable.createPages({
+                        newPages,
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(3);
+
+                    const createdPages = createResult.data;
+                    expect(createdPages[0].counts).toBe(16);
+                    expect(createdPages[0].is_subset).toBe(false);
+                    expect(createdPages[0].notes).toBe("jeff notes");
+                    expect(createdPages[1].counts).toBe(10);
+                    expect(createdPages[1].is_subset).toBe(true);
+                    expect(createdPages[2].counts).toBe(12);
+                    expect(createdPages[2].is_subset).toBe(false);
+
+                    // Undo the creation
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the pages are no longer in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(0);
+
+                    // Redo the creation
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the pages are back in the database
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(3);
+                    const redonePages = getPagesAfterRedo.data;
+                    expect(redonePages[0].counts).toBe(16);
+                    expect(redonePages[0].is_subset).toBe(false);
+                    expect(redonePages[0].notes).toBe("jeff notes");
+                    expect(redonePages[1].counts).toBe(10);
+                    expect(redonePages[1].is_subset).toBe(true);
+                    expect(redonePages[2].counts).toBe(12);
+                    expect(redonePages[2].is_subset).toBe(false);
+
+                    // Undo the creation again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the pages are no longer in the database
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(0);
+                });
+
+                it("can undo, redo, and undo the creation of multiple pages while other pages exist in the database", () => {
+                    const existingPages: NewPageArgs[] = [
+                        { counts: 5, isSubset: false, previousPageId: null },
+                        { counts: 8, isSubset: true, previousPageId: null },
+                    ];
+
+                    // Create existing pages
+                    const createExistingResult = PageTable.createPages({
+                        newPages: existingPages,
+                        db,
+                    });
+                    expect(createExistingResult.success).toBe(true);
+                    expect(createExistingResult.data.length).toBe(2);
+
+                    const newPages: NewPageArgs[] = [
+                        { counts: 12, isSubset: false, previousPageId: null },
+                        { counts: 10, isSubset: true, previousPageId: null },
+                        {
+                            counts: 16,
+                            isSubset: false,
+                            previousPageId: null,
+                            notes: "jeff notes",
+                        },
+                    ];
+
+                    // Create new pages
+                    const createResult = PageTable.createPages({
+                        newPages,
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(3);
+
+                    const createdPages = createResult.data;
+                    expect(createdPages[0].counts).toBe(16);
+                    expect(createdPages[0].is_subset).toBe(false);
+                    expect(createdPages[0].notes).toBe("jeff notes");
+                    expect(createdPages[1].counts).toBe(10);
+                    expect(createdPages[1].is_subset).toBe(true);
+                    expect(createdPages[2].counts).toBe(12);
+                    expect(createdPages[2].is_subset).toBe(false);
+
+                    // Undo the creation
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the new pages are no longer in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(2);
+
+                    // Redo the creation
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the new pages are back in the database
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(5);
+                    const redonePages = getPagesAfterRedo.data.slice(2);
+                    expect(redonePages[0].counts).toBe(16);
+                    expect(redonePages[0].is_subset).toBe(false);
+                    expect(redonePages[0].notes).toBe("jeff notes");
+                    expect(redonePages[1].counts).toBe(10);
+                    expect(redonePages[1].is_subset).toBe(true);
+                    expect(redonePages[2].counts).toBe(12);
+                    expect(redonePages[2].is_subset).toBe(false);
+
+                    // Undo the creation again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the new pages are no longer in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(2);
+                });
+            });
+            describe("with marchers", () => {
+                it("should undo, redo, and undo the creation of a single page and the associated marcher pages when 3 marchers exist", () => {
+                    const marchers: NewMarcherArgs[] = [
+                        {
+                            name: "jeff",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 1,
+                        },
+                        {
+                            name: "ana",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 2,
+                        },
+                        {
+                            name: "qwerty",
+                            section: "wood",
+                            drill_prefix: "W",
+                            drill_order: 3,
+                        },
+                    ];
+
+                    // Create marchers
+                    const createMarchersResponse = MarcherTable.createMarchers({
+                        newMarchers: marchers,
+                        db,
+                    });
+                    expect(createMarchersResponse.success).toBe(true);
+                    expect(createMarchersResponse.data.length).toBe(3);
+
+                    const newPage: NewPageArgs = {
+                        counts: 12,
+                        isSubset: false,
+                        previousPageId: null,
+                    };
+
+                    // Create a new page
+                    const createResult = PageTable.createPages({
+                        newPages: [newPage],
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(1);
+
+                    const createdPage = createResult.data[0];
+                    expect(createdPage.counts).toBe(12);
+                    expect(createdPage.is_subset).toBe(false);
+
+                    // Verify marcher pages are created
+                    const marcherPages = MarcherPageTable.getMarcherPages({
+                        db,
+                    });
+                    expect(marcherPages.success).toBe(true);
+                    expect(marcherPages.data.length).toBe(3);
+
+                    // Undo the creation
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the page and marcher pages are no longer in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(0);
+
+                    const marcherPagesAfterUndo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo.success).toBe(true);
+                    expect(marcherPagesAfterUndo.data.length).toBe(0);
+
+                    // Redo the creation
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the page and marcher pages are back in the database
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(1);
+                    const redonePage = getPagesAfterRedo.data[0];
+                    expect(redonePage.counts).toBe(12);
+                    expect(redonePage.is_subset).toBe(false);
+
+                    const marcherPagesAfterRedo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterRedo.success).toBe(true);
+                    expect(marcherPagesAfterRedo.data.length).toBe(3);
+
+                    // Undo the creation again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the page and marcher pages are no longer in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(0);
+
+                    const marcherPagesAfterUndo2 =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo2.success).toBe(true);
+                    expect(marcherPagesAfterUndo2.data.length).toBe(0);
+                });
+
+                it("should undo, redo, and undo the creation of multiple pages and the associated marcher pages when 3 marchers exist", () => {
+                    const marchers: NewMarcherArgs[] = [
+                        {
+                            name: "jeff",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 1,
+                        },
+                        {
+                            name: "ana",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 2,
+                        },
+                        {
+                            name: "qwerty",
+                            section: "wood",
+                            drill_prefix: "W",
+                            drill_order: 3,
+                        },
+                    ];
+
+                    // Create marchers
+                    const createMarchersResponse = MarcherTable.createMarchers({
+                        newMarchers: marchers,
+                        db,
+                    });
+                    expect(createMarchersResponse.success).toBe(true);
+                    expect(createMarchersResponse.data.length).toBe(3);
+
+                    const newPages: NewPageArgs[] = [
+                        { counts: 12, isSubset: false, previousPageId: null },
+                        { counts: 10, isSubset: true, previousPageId: null },
+                        {
+                            counts: 16,
+                            isSubset: false,
+                            previousPageId: null,
+                            notes: "jeff notes",
+                        },
+                    ];
+
+                    // Create new pages
+                    const createResult = PageTable.createPages({
+                        newPages,
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(3);
+
+                    const createdPages = createResult.data;
+                    expect(createdPages[0].counts).toBe(16);
+                    expect(createdPages[0].is_subset).toBe(false);
+                    expect(createdPages[0].notes).toBe("jeff notes");
+                    expect(createdPages[1].counts).toBe(10);
+                    expect(createdPages[1].is_subset).toBe(true);
+                    expect(createdPages[2].counts).toBe(12);
+                    expect(createdPages[2].is_subset).toBe(false);
+
+                    // Verify marcher pages are created
+                    const marcherPages = MarcherPageTable.getMarcherPages({
+                        db,
+                    });
+                    expect(marcherPages.success).toBe(true);
+                    expect(marcherPages.data.length).toBe(9);
+
+                    // Undo the creation
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the pages and marcher pages are no longer in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(0);
+
+                    const marcherPagesAfterUndo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo.success).toBe(true);
+                    expect(marcherPagesAfterUndo.data.length).toBe(0);
+
+                    // Redo the creation
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the pages and marcher pages are back in the database
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(3);
+                    const redonePages = getPagesAfterRedo.data;
+                    expect(redonePages[0].counts).toBe(16);
+                    expect(redonePages[0].is_subset).toBe(false);
+                    expect(redonePages[0].notes).toBe("jeff notes");
+                    expect(redonePages[1].counts).toBe(10);
+                    expect(redonePages[1].is_subset).toBe(true);
+                    expect(redonePages[2].counts).toBe(12);
+                    expect(redonePages[2].is_subset).toBe(false);
+
+                    const marcherPagesAfterRedo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterRedo.success).toBe(true);
+                    expect(marcherPagesAfterRedo.data.length).toBe(9);
+
+                    // Undo the creation again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the pages and marcher pages are no longer in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(0);
+
+                    const marcherPagesAfterUndo2 =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo2.success).toBe(true);
+                    expect(marcherPagesAfterUndo2.data.length).toBe(0);
+                });
+            });
+        });
+
+        describe("updatePages", () => {
+            it("can undo, redo, and undo the updating of a single page", () => {
+                const newPage: NewPageArgs = {
+                    counts: 12,
+                    isSubset: false,
+                    previousPageId: null,
+                };
+
+                // Create a new page
+                const createResult = PageTable.createPages({
+                    newPages: [newPage],
+                    db,
+                });
+                expect(createResult.success).toBe(true);
+                expect(createResult.data.length).toBe(1);
+
+                const createdPage = createResult.data[0];
+                expect(createdPage.counts).toBe(12);
+                expect(createdPage.is_subset).toBe(false);
+
+                // Update the page
+                const updatedPage: ModifiedPageArgs = {
+                    id: createdPage.id,
+                    counts: 15,
+                    is_subset: true,
+                    notes: "updated notes",
+                };
+
+                const updateResult = PageTable.updatePages({
+                    modifiedPages: [updatedPage],
+                    db,
+                });
+                expect(updateResult.success).toBe(true);
+                expect(updateResult.data.length).toBe(1);
+
+                const updatedPageResult = updateResult.data[0];
+                expect(updatedPageResult.counts).toBe(15);
+                expect(updatedPageResult.is_subset).toBe(true);
+                expect(updatedPageResult.notes).toBe("updated notes");
+
+                // Undo the update
+                const undoResult = History.performUndo(db);
+                expect(undoResult.success).toBe(true);
+
+                // Verify the page is reverted to its original state
+                const getPagesAfterUndo = PageTable.getPages({ db });
+                expect(getPagesAfterUndo.success).toBe(true);
+                expect(getPagesAfterUndo.data.length).toBe(1);
+                const revertedPage = getPagesAfterUndo.data[0];
+                expect(revertedPage.counts).toBe(12);
+                expect(revertedPage.is_subset).toBe(false);
+                expect(revertedPage.notes).toBeNull();
+
+                // Redo the update
+                const redoResult = History.performRedo(db);
+                expect(redoResult.success).toBe(true);
+
+                // Verify the page is updated again
+                const getPagesAfterRedo = PageTable.getPages({ db });
+                expect(getPagesAfterRedo.success).toBe(true);
+                expect(getPagesAfterRedo.data.length).toBe(1);
+                const redonePage = getPagesAfterRedo.data[0];
+                expect(redonePage.counts).toBe(15);
+                expect(redonePage.is_subset).toBe(true);
+                expect(redonePage.notes).toBe("updated notes");
+
+                // Undo the update again
+                const undoResult2 = History.performUndo(db);
+                expect(undoResult2.success).toBe(true);
+
+                // Verify the page is reverted to its original state again
+                const getPagesAfterUndo2 = PageTable.getPages({ db });
+                expect(getPagesAfterUndo2.success).toBe(true);
+                expect(getPagesAfterUndo2.data.length).toBe(1);
+                const revertedPage2 = getPagesAfterUndo2.data[0];
+                expect(revertedPage2.counts).toBe(12);
+                expect(revertedPage2.is_subset).toBe(false);
+                expect(revertedPage2.notes).toBeNull();
+            });
+
+            it("can undo, redo, and undo the updating of multiple pages at once", () => {
+                const newPages: NewPageArgs[] = [
+                    { counts: 12, isSubset: false, previousPageId: null },
+                    { counts: 10, isSubset: true, previousPageId: null },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        previousPageId: null,
+                        notes: "jeff notes",
+                    },
+                ];
+
+                // Create new pages
+                const createResult = PageTable.createPages({
+                    newPages,
+                    db,
+                });
+                expect(createResult.success).toBe(true);
+                expect(createResult.data.length).toBe(3);
+
+                const createdPages = createResult.data;
+
+                // Update the pages
+                const updatedPages: ModifiedPageArgs[] = [
+                    {
+                        id: createdPages[0].id,
+                        counts: 15,
+                        is_subset: true,
+                        notes: "updated notes 1",
+                    },
+                    {
+                        id: createdPages[1].id,
+                        counts: 11,
+                        is_subset: false,
+                        notes: "updated notes 2",
+                    },
+                    {
+                        id: createdPages[2].id,
+                        counts: 17,
+                        is_subset: true,
+                        notes: "updated notes 3",
+                    },
+                ];
+
+                const updateResult = PageTable.updatePages({
+                    modifiedPages: updatedPages,
+                    db,
+                });
+                expect(updateResult.success).toBe(true);
+                expect(updateResult.data.length).toBe(3);
+
+                const updatedPageResults = updateResult.data;
+                expect(updatedPageResults[0].counts).toBe(15);
+                expect(updatedPageResults[0].is_subset).toBe(true);
+                expect(updatedPageResults[0].notes).toBe("updated notes 1");
+                expect(updatedPageResults[1].counts).toBe(11);
+                expect(updatedPageResults[1].is_subset).toBe(false);
+                expect(updatedPageResults[1].notes).toBe("updated notes 2");
+                expect(updatedPageResults[2].counts).toBe(17);
+                expect(updatedPageResults[2].is_subset).toBe(true);
+                expect(updatedPageResults[2].notes).toBe("updated notes 3");
+
+                // Undo the updates
+                const undoResult = History.performUndo(db);
+                expect(undoResult.success).toBe(true);
+
+                // Verify the pages are reverted to their original state
+                const getPagesAfterUndo = PageTable.getPages({ db });
+                expect(getPagesAfterUndo.success).toBe(true);
+                expect(getPagesAfterUndo.data.length).toBe(3);
+                const revertedPages = getPagesAfterUndo.data;
+                expect(revertedPages[0].counts).toBe(16);
+                expect(revertedPages[0].is_subset).toBe(false);
+                expect(revertedPages[0].notes).toBe("jeff notes");
+                expect(revertedPages[1].counts).toBe(10);
+                expect(revertedPages[1].is_subset).toBe(true);
+                expect(revertedPages[1].notes).toBeNull();
+                expect(revertedPages[2].counts).toBe(12);
+                expect(revertedPages[2].is_subset).toBe(false);
+                expect(revertedPages[2].notes).toBeNull();
+
+                // Redo the updates
+                const redoResult = History.performRedo(db);
+                expect(redoResult.success).toBe(true);
+
+                // Verify the pages are updated again
+                const getPagesAfterRedo = PageTable.getPages({ db });
+                expect(getPagesAfterRedo.success).toBe(true);
+                expect(getPagesAfterRedo.data.length).toBe(3);
+                const redonePages = getPagesAfterRedo.data;
+                expect(redonePages[0].counts).toBe(15);
+                expect(redonePages[0].is_subset).toBe(true);
+                expect(redonePages[0].notes).toBe("updated notes 1");
+                expect(redonePages[1].counts).toBe(11);
+                expect(redonePages[1].is_subset).toBe(false);
+                expect(redonePages[1].notes).toBe("updated notes 2");
+                expect(redonePages[2].counts).toBe(17);
+                expect(redonePages[2].is_subset).toBe(true);
+                expect(redonePages[2].notes).toBe("updated notes 3");
+
+                // Undo the updates again
+                const undoResult2 = History.performUndo(db);
+                expect(undoResult2.success).toBe(true);
+
+                // Verify the pages are reverted to their original state again
+                const getPagesAfterUndo2 = PageTable.getPages({ db });
+                expect(getPagesAfterUndo2.success).toBe(true);
+                expect(getPagesAfterUndo2.data.length).toBe(3);
+                const revertedPages2 = getPagesAfterUndo2.data;
+                expect(revertedPages2[0].counts).toBe(16);
+                expect(revertedPages2[0].is_subset).toBe(false);
+                expect(revertedPages2[0].notes).toBe("jeff notes");
+                expect(revertedPages2[1].counts).toBe(10);
+                expect(revertedPages2[1].is_subset).toBe(true);
+                expect(revertedPages2[1].notes).toBeNull();
+                expect(revertedPages2[2].counts).toBe(12);
+                expect(revertedPages2[2].is_subset).toBe(false);
+                expect(revertedPages2[2].notes).toBeNull();
+            });
+        });
+
+        describe("deletePages", () => {
+            describe("without any marchers", () => {
+                it("should undo, redo, and undo a single page being deleted", () => {
+                    const newPage: NewPageArgs = {
+                        counts: 12,
+                        isSubset: false,
+                        previousPageId: null,
+                    };
+
+                    // Create a new page
+                    const createResult = PageTable.createPages({
+                        newPages: [newPage],
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(1);
+
+                    const createdPage = createResult.data[0];
+                    expect(createdPage.counts).toBe(12);
+                    expect(createdPage.is_subset).toBe(false);
+
+                    // Delete the page
+                    const deleteResult = PageTable.deletePages({
+                        pageIds: new Set<number>([createdPage.id]),
+                        db,
+                    });
+                    expect(deleteResult.success).toBe(true);
+                    expect(deleteResult.data.length).toBe(1);
+
+                    const deletedPage = deleteResult.data[0];
+                    expect(deletedPage.id).toBe(createdPage.id);
+
+                    // Undo the deletion
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the page is back in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(1);
+                    const undonePage = getPagesAfterUndo.data[0];
+                    expect(undonePage.counts).toBe(12);
+                    expect(undonePage.is_subset).toBe(false);
+
+                    // Redo the deletion
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the page is deleted again
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(0);
+
+                    // Undo the deletion again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the page is back in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(1);
+                    const undonePage2 = getPagesAfterUndo2.data[0];
+                    expect(undonePage2.counts).toBe(12);
+                    expect(undonePage2.is_subset).toBe(false);
+                });
+
+                it("should undo, redo, and undo multiple pages being deleted", () => {
+                    const newPages: NewPageArgs[] = [
+                        { counts: 12, isSubset: false, previousPageId: null },
+                        { counts: 10, isSubset: true, previousPageId: null },
+                        {
+                            counts: 16,
+                            isSubset: false,
+                            previousPageId: null,
+                            notes: "jeff notes",
+                        },
+                    ];
+
+                    // Create new pages
+                    const createResult = PageTable.createPages({
+                        newPages,
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(3);
+
+                    const createdPages = createResult.data;
+
+                    // Delete the pages
+                    const deleteResult = PageTable.deletePages({
+                        pageIds: new Set<number>(
+                            createdPages.map((page) => page.id)
+                        ),
+                        db,
+                    });
+                    expect(deleteResult.success).toBe(true);
+                    expect(deleteResult.data.length).toBe(3);
+
+                    const deletedPages = deleteResult.data;
+                    expect(deletedPages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    // Undo the deletion
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the pages are back in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(3);
+                    const undonePages = getPagesAfterUndo.data;
+                    expect(undonePages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    // Redo the deletion
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the pages are deleted again
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(0);
+
+                    // Undo the deletion again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the pages are back in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(3);
+                    const undonePages2 = getPagesAfterUndo2.data;
+                    expect(undonePages2.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+                });
+
+                it("should undo, redo, and undo multiple pages being deleted while other pages already exist", () => {
+                    const existingPages: NewPageArgs[] = [
+                        { counts: 5, isSubset: false, previousPageId: null },
+                        { counts: 8, isSubset: true, previousPageId: null },
+                    ];
+
+                    // Create existing pages
+                    const createExistingResult = PageTable.createPages({
+                        newPages: existingPages,
+                        db,
+                    });
+                    expect(createExistingResult.success).toBe(true);
+                    expect(createExistingResult.data.length).toBe(2);
+
+                    const newPages: NewPageArgs[] = [
+                        { counts: 12, isSubset: false, previousPageId: null },
+                        { counts: 10, isSubset: true, previousPageId: null },
+                        {
+                            counts: 16,
+                            isSubset: false,
+                            previousPageId: null,
+                            notes: "jeff notes",
+                        },
+                    ];
+
+                    // Create new pages
+                    const createResult = PageTable.createPages({
+                        newPages,
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(3);
+
+                    const createdPages = createResult.data;
+
+                    // Delete the new pages
+                    const deleteResult = PageTable.deletePages({
+                        pageIds: new Set<number>(
+                            createdPages.map((page) => page.id)
+                        ),
+                        db,
+                    });
+                    expect(deleteResult.success).toBe(true);
+                    expect(deleteResult.data.length).toBe(3);
+
+                    const deletedPages = deleteResult.data;
+                    expect(deletedPages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    // Undo the deletion
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the new pages are back in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(5);
+                    const undonePages = getPagesAfterUndo.data.slice(2);
+                    expect(undonePages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    // Redo the deletion
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the new pages are deleted again
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(2);
+
+                    // Undo the deletion again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the new pages are back in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(5);
+                    const undonePages2 = getPagesAfterUndo2.data.slice(2);
+                    expect(undonePages2.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+                });
+            });
+
+            describe("with marchers", () => {
+                it("should undo, redo, and undo the deletion of multiple pages and their MarcherPages when marchers exist", () => {
+                    const marchers: NewMarcherArgs[] = [
+                        {
+                            name: "jeff",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 1,
+                        },
+                        {
+                            name: "ana",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 2,
+                        },
+                        {
+                            name: "qwerty",
+                            section: "wood",
+                            drill_prefix: "W",
+                            drill_order: 3,
+                        },
+                    ];
+
+                    // Create marchers
+                    const createMarchersResponse = MarcherTable.createMarchers({
+                        newMarchers: marchers,
+                        db,
+                    });
+                    expect(createMarchersResponse.success).toBe(true);
+                    expect(createMarchersResponse.data.length).toBe(3);
+
+                    const newPages: NewPageArgs[] = [
+                        { counts: 12, isSubset: false, previousPageId: null },
+                        { counts: 10, isSubset: true, previousPageId: null },
+                        {
+                            counts: 16,
+                            isSubset: false,
+                            previousPageId: null,
+                            notes: "jeff notes",
+                        },
+                    ];
+
+                    // Create new pages
+                    const createResult = PageTable.createPages({
+                        newPages,
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(3);
+
+                    const createdPages = createResult.data;
+
+                    // Verify marcher pages are created
+                    const marcherPages = MarcherPageTable.getMarcherPages({
+                        db,
+                    });
+                    expect(marcherPages.success).toBe(true);
+                    expect(marcherPages.data.length).toBe(9);
+
+                    // Delete the pages
+                    const deleteResult = PageTable.deletePages({
+                        pageIds: new Set<number>(
+                            createdPages.map((page) => page.id)
+                        ),
+                        db,
+                    });
+                    expect(deleteResult.success).toBe(true);
+                    expect(deleteResult.data.length).toBe(3);
+
+                    const deletedPages = deleteResult.data;
+                    expect(deletedPages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    // Verify marcher pages are deleted
+                    const marcherPagesAfterDelete =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterDelete.success).toBe(true);
+                    expect(marcherPagesAfterDelete.data.length).toBe(0);
+
+                    // Undo the deletion
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the pages and marcher pages are back in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(3);
+                    const undonePages = getPagesAfterUndo.data;
+                    expect(undonePages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    const marcherPagesAfterUndo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo.success).toBe(true);
+                    expect(marcherPagesAfterUndo.data.length).toBe(9);
+
+                    // Redo the deletion
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the pages and marcher pages are deleted again
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(0);
+
+                    const marcherPagesAfterRedo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterRedo.success).toBe(true);
+                    expect(marcherPagesAfterRedo.data.length).toBe(0);
+
+                    // Undo the deletion again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the pages and marcher pages are back in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(3);
+                    const undonePages2 = getPagesAfterUndo2.data;
+                    expect(undonePages2.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    const marcherPagesAfterUndo2 =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo2.success).toBe(true);
+                    expect(marcherPagesAfterUndo2.data.length).toBe(9);
+                });
+
+                it("should undo, redo, and undo the deletion of multiple pages and their MarcherPages when marchers and pages exist", () => {
+                    const marchers: NewMarcherArgs[] = [
+                        {
+                            name: "jeff",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 1,
+                        },
+                        {
+                            name: "ana",
+                            section: "brass",
+                            drill_prefix: "B",
+                            drill_order: 2,
+                        },
+                        {
+                            name: "qwerty",
+                            section: "wood",
+                            drill_prefix: "W",
+                            drill_order: 3,
+                        },
+                    ];
+
+                    // Create marchers
+                    const createMarchersResponse = MarcherTable.createMarchers({
+                        newMarchers: marchers,
+                        db,
+                    });
+                    expect(createMarchersResponse.success).toBe(true);
+                    expect(createMarchersResponse.data.length).toBe(3);
+
+                    const newPages: NewPageArgs[] = [
+                        { counts: 12, isSubset: false, previousPageId: null },
+                        { counts: 10, isSubset: true, previousPageId: null },
+                        {
+                            counts: 16,
+                            isSubset: false,
+                            previousPageId: null,
+                            notes: "jeff notes",
+                        },
+                    ];
+
+                    // Create new pages
+                    const createResult = PageTable.createPages({
+                        newPages,
+                        db,
+                    });
+                    expect(createResult.success).toBe(true);
+                    expect(createResult.data.length).toBe(3);
+
+                    const createdPages = createResult.data;
+
+                    // Verify marcher pages are created
+                    const marcherPages = MarcherPageTable.getMarcherPages({
+                        db,
+                    });
+                    expect(marcherPages.success).toBe(true);
+                    expect(marcherPages.data.length).toBe(9);
+
+                    // Delete the pages
+                    const deleteResult = PageTable.deletePages({
+                        pageIds: new Set<number>(
+                            createdPages.map((page) => page.id)
+                        ),
+                        db,
+                    });
+                    expect(deleteResult.success).toBe(true);
+                    expect(deleteResult.data.length).toBe(3);
+
+                    const deletedPages = deleteResult.data;
+                    expect(deletedPages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    // Verify marcher pages are deleted
+                    const marcherPagesAfterDelete =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterDelete.success).toBe(true);
+                    expect(marcherPagesAfterDelete.data.length).toBe(0);
+
+                    // Undo the deletion
+                    const undoResult = History.performUndo(db);
+                    expect(undoResult.success).toBe(true);
+
+                    // Verify the pages and marcher pages are back in the database
+                    const getPagesAfterUndo = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo.success).toBe(true);
+                    expect(getPagesAfterUndo.data.length).toBe(3);
+                    const undonePages = getPagesAfterUndo.data;
+                    expect(undonePages.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    const marcherPagesAfterUndo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo.success).toBe(true);
+                    expect(marcherPagesAfterUndo.data.length).toBe(9);
+
+                    // Redo the deletion
+                    const redoResult = History.performRedo(db);
+                    expect(redoResult.success).toBe(true);
+
+                    // Verify the pages and marcher pages are deleted again
+                    const getPagesAfterRedo = PageTable.getPages({ db });
+                    expect(getPagesAfterRedo.success).toBe(true);
+                    expect(getPagesAfterRedo.data.length).toBe(0);
+
+                    const marcherPagesAfterRedo =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterRedo.success).toBe(true);
+                    expect(marcherPagesAfterRedo.data.length).toBe(0);
+
+                    // Undo the deletion again
+                    const undoResult2 = History.performUndo(db);
+                    expect(undoResult2.success).toBe(true);
+
+                    // Verify the pages and marcher pages are back in the database again
+                    const getPagesAfterUndo2 = PageTable.getPages({ db });
+                    expect(getPagesAfterUndo2.success).toBe(true);
+                    expect(getPagesAfterUndo2.data.length).toBe(3);
+                    const undonePages2 = getPagesAfterUndo2.data;
+                    expect(undonePages2.map((page) => page.id).sort()).toEqual(
+                        createdPages.map((page) => page.id).sort()
+                    );
+
+                    const marcherPagesAfterUndo2 =
+                        MarcherPageTable.getMarcherPages({ db });
+                    expect(marcherPagesAfterUndo2.success).toBe(true);
+                    expect(marcherPagesAfterUndo2.data.length).toBe(9);
+                });
+            });
+        });
+    });
+
+    describe.skip("error handling", () => {
+        /* This needs to make sure that when there is an error during creation, updating, or deletion,
+            the changes are rolled back, the redo table doesn't have those actions in it, and no other data
+            is affected by accident
+            */
     });
 });

@@ -43,6 +43,9 @@ function decrementLastUndoGroup(db: Database.Database) {
         db.prepare(
             `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group = ?`
         ).run(previousGroup, maxGroup);
+        db.prepare(
+            `UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ?`
+        ).run(previousGroup);
     }
 }
 
@@ -185,6 +188,7 @@ function insertClause<NewItemArgs extends Object>(args: NewItemArgs) {
  * @param items The items to insert
  * @param tableName The name of the table to get the item from
  * @param useNextUndoGroup Whether to increment the undo group, default is true
+ * @param printHeaders Whether to print the headers for the action, default is true
  * @returns The id of the inserted item
  */
 export function createItems<DatabaseItemType, NewItemArgs extends Object>({
@@ -192,13 +196,23 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
     items,
     tableName,
     useNextUndoGroup = true,
+    printHeaders = true,
 }: {
     db: Database.Database;
     items: NewItemArgs[];
     tableName: string;
     useNextUndoGroup?: boolean;
+    printHeaders?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
-    console.log("\n=========== start createItems ===========");
+    if (items.length === 0) {
+        console.log("CREATE ITEMS - No items to create were provided");
+        return {
+            success: true,
+            data: [],
+        };
+    }
+    if (printHeaders)
+        console.log("\n=========== start createItems ===========");
     let output: DatabaseResponse<DatabaseItemType[]>;
     // Track if an action was performed so the undo group can be decremented if needed
     let actionWasPerformed = false;
@@ -210,7 +224,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
         const currentUndoGroup = History.getCurrentUndoGroup(db);
         const newUndoGroup = History.incrementUndoGroup(db);
         groupWasIncremented = currentUndoGroup !== newUndoGroup;
-        // Increment the undo group so this action can be rolled back if needed
+
         const newItemIds: number[] = [];
         const columns = getColumns(db, tableName);
 
@@ -275,7 +289,8 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
         History.clearMostRecentRedo(db);
     } finally {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
-        console.log("=========== end createItems ===========\n");
+        if (printHeaders)
+            console.log("============ end createItems ============\n");
     }
     return output;
 }
@@ -293,13 +308,23 @@ export function updateItems<
     items,
     tableName,
     useNextUndoGroup = true,
+    printHeaders = true,
 }: {
     items: UpdatedItemArgs[];
     db: Database.Database;
     tableName: string;
     useNextUndoGroup?: boolean;
+    printHeaders?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
-    console.log("\n=========== start updateItems ===========");
+    if (items.length === 0) {
+        console.log("UPDATE ITEMS - No items to update were provided");
+        return {
+            success: true,
+            data: [],
+        };
+    }
+    if (printHeaders)
+        console.log("\n=========== start updateItems ===========");
     // Check if all of the items exist
     const notFoundIds: number[] = [];
     const ids = new Set<number>(items.map((item) => item.id));
@@ -406,7 +431,8 @@ export function updateItems<
             History.clearMostRecentRedo(db);
         }
     } finally {
-        console.log("=========== end updateItems ===========\n");
+        if (printHeaders)
+            console.log("============ end updateItems ============\n");
         if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
@@ -426,14 +452,24 @@ export function deleteItems<DatabaseItemType>({
     tableName,
     useNextUndoGroup,
     idColumn = "rowid",
+    printHeaders = true,
 }: {
     ids: Set<number>;
     db: Database.Database;
     tableName: string;
     useNextUndoGroup?: boolean;
     idColumn?: string;
+    printHeaders?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
-    console.log("\n=========== start deleteItems ===========");
+    if (ids.size === 0) {
+        console.log("DELETE ITEMS - No items to delete were provided");
+        return {
+            success: true,
+            data: [],
+        };
+    }
+    if (printHeaders)
+        console.log("\n=========== start deleteItems ===========");
     const deletedObjects: DatabaseItemType[] = [];
     let output: DatabaseResponse<DatabaseItemType[]>;
     let currentId: number | undefined;
@@ -518,7 +554,8 @@ export function deleteItems<DatabaseItemType>({
             History.clearMostRecentRedo(db);
         }
     } finally {
-        console.log("=========== end deleteItems ===========\n");
+        if (printHeaders)
+            console.log("============ end deleteItems ============\n");
         if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;

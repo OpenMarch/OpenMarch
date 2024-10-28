@@ -83,23 +83,22 @@ export function getMarcherPage(args: {
 }
 
 /**
- * Adds a new marcherPage to the database.
+ * Adds new marcherPages to the database.
  * NOTE - this function should only be called from createMarcher and createPage.
  * A marcherPage should not be created manually by the user.
- * ALSO NOTE - this function does not open or close the database connection.
  *
  * @param db The database connection
- * @param newMarcherPage The marcherPage to add
+ * @param newMarcherPages The marcherPages to add
  * @param useNextUndoGroup Whether or not to use the next undo group
  * @returns
  */
-export function createMarcherPage({
+export function createMarcherPages({
     db,
-    newMarcherPage,
+    newMarcherPages,
     useNextUndoGroup,
 }: {
     db: Database.Database;
-    newMarcherPage: ModifiedMarcherPageArgs;
+    newMarcherPages: ModifiedMarcherPageArgs[];
     useNextUndoGroup: boolean;
 }): DatabaseResponse<MarcherPage | null> {
     const response = DbActions.createItems<
@@ -107,9 +106,10 @@ export function createMarcherPage({
         ModifiedMarcherPageArgs
     >({
         db,
-        items: [newMarcherPage],
+        items: newMarcherPages,
         tableName: Constants.MarcherPageTableName,
         useNextUndoGroup,
+        printHeaders: false,
     });
 
     return {

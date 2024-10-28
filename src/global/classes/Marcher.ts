@@ -34,7 +34,6 @@ export class Marcher {
 
     constructor({
         id,
-        id_for_html,
         name = null,
         section,
         drill_prefix,
@@ -43,7 +42,6 @@ export class Marcher {
         year = null,
     }: {
         id: number;
-        id_for_html: string;
         name: string | null;
         section: string;
         drill_prefix: string;
@@ -52,7 +50,7 @@ export class Marcher {
         year: string | null;
     }) {
         this.id = id;
-        this.id_for_html = id_for_html;
+        this.id_for_html = `marcher_${id}`;
         this.name = name;
         this.section = section;
         this.drill_number = drill_prefix + drill_order;
@@ -154,12 +152,12 @@ export default Marcher;
  * Defines the required/available fields of a new marcher.
  */
 export interface NewMarcherArgs {
-    name?: string;
+    name?: string | null;
     section: string;
     drill_prefix: string;
     drill_order: number;
-    year?: string;
-    notes?: string;
+    year?: string | null;
+    notes?: string | null;
 }
 
 /**
@@ -170,10 +168,10 @@ export interface ModifiedMarcherArgs {
      * The id of the marcher to update.
      */
     id: number;
-    name?: string;
+    name?: string | null;
     section?: string;
     drill_prefix?: string;
     drill_order?: number;
-    year?: string;
-    notes?: string;
+    year?: string | null;
+    notes?: string | null;
 }
