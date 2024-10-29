@@ -1,3 +1,4 @@
+import { DatabaseResponse } from "electron/database/DatabaseActions";
 import { getSectionObjectByName } from "./Sections";
 
 /**
@@ -68,7 +69,9 @@ export class Marcher {
      */
     static async getMarchers(): Promise<Marcher[]> {
         const response = await window.electron.getMarchers();
-        return response.data;
+        return response.data.map(
+            (dbMarcher: DatabaseMarcher) => new Marcher(dbMarcher),
+        );
     }
 
     /**
@@ -77,12 +80,19 @@ export class Marcher {
      * @param newMarchers - The new marcher objects to be created.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async createMarchers(newMarchers: NewMarcherArgs[]) {
+    static async createMarchers(
+        newMarchers: NewMarcherArgs[],
+    ): Promise<DatabaseResponse<Marcher[]>> {
         const response = await window.electron.createMarchers(newMarchers);
         // fetch the marchers to update the store
         this.checkForFetchMarchers();
         this.fetchMarchers();
-        return response;
+        return {
+            ...response,
+            data: response.data.map(
+                (dbMarcher: DatabaseMarcher) => new Marcher(dbMarcher),
+            ),
+        };
     }
 
     /**
@@ -91,12 +101,19 @@ export class Marcher {
      * @param modifiedMarchers - The objects to update the marchers with.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async updateMarchers(modifiedMarchers: ModifiedMarcherArgs[]) {
+    static async updateMarchers(
+        modifiedMarchers: ModifiedMarcherArgs[],
+    ): Promise<DatabaseResponse<Marcher[]>> {
         const response = await window.electron.updateMarchers(modifiedMarchers);
         // fetch the marchers to update the store
         this.checkForFetchMarchers();
         this.fetchMarchers();
-        return response;
+        return {
+            ...response,
+            data: response.data.map(
+                (dbMarcher: DatabaseMarcher) => new Marcher(dbMarcher),
+            ),
+        };
     }
 
     /**
@@ -106,12 +123,19 @@ export class Marcher {
      * @param marcher_id - The id of the marcher. Do not use id_for_html.
      * @returns Response data from the server.
      */
-    static async deleteMarchers(marcherIds: Set<number>) {
+    static async deleteMarchers(
+        marcherIds: Set<number>,
+    ): Promise<DatabaseResponse<Marcher[]>> {
         const response = await window.electron.deleteMarchers(marcherIds);
         // fetch the marchers to update the store
         this.checkForFetchMarchers();
         this.fetchMarchers();
-        return response;
+        return {
+            ...response,
+            data: response.data.map(
+                (dbMarcher: DatabaseMarcher) => new Marcher(dbMarcher),
+            ),
+        };
     }
 
     /**
@@ -144,9 +168,38 @@ export class Marcher {
         // If the sections are the same, return the drill order comparison
         else return a.drill_order - b.drill_order;
     }
+
+    static _toDatabaseMarchers(marchers: Marcher[]): DatabaseMarcher[] {
+        return marchers.map((marcher) => ({
+            id: marcher.id,
+            name: marcher.name,
+            section: marcher.section,
+            drill_prefix: marcher.drill_prefix,
+            drill_order: marcher.drill_order,
+            notes: marcher.notes,
+            year: marcher.year,
+            created_at: "",
+            updated_at: "",
+        }));
+    }
 }
 
 export default Marcher;
+
+/**
+ * Defines the fields of a marcher in the database.
+ */
+export interface DatabaseMarcher {
+    id: number;
+    name: string | null;
+    section: string;
+    drill_prefix: string;
+    drill_order: number;
+    notes: string | null;
+    year: string | null;
+    created_at: string;
+    updated_at: string;
+}
 
 /**
  * Defines the required/available fields of a new marcher.

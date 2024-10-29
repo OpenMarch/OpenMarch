@@ -1,6 +1,7 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import FieldProperties from "@/global/classes/FieldProperties";
 import Marcher, {
+    DatabaseMarcher,
     ModifiedMarcherArgs,
     NewMarcherArgs,
 } from "@/global/classes/Marcher";
@@ -176,19 +177,19 @@ const APP_API = {
      */
     getMarchers: () =>
         ipcRenderer.invoke("marcher:getAll") as Promise<
-            DatabaseResponse<Marcher[]>
+            DatabaseResponse<DatabaseMarcher[]>
         >,
     createMarchers: (newMarchers: NewMarcherArgs[]) =>
         ipcRenderer.invoke("marcher:insert", newMarchers) as Promise<
-            DatabaseResponse<Marcher[]>
+            DatabaseResponse<DatabaseMarcher[]>
         >,
     updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
         ipcRenderer.invoke("marcher:update", modifiedMarchers) as Promise<
-            DatabaseResponse<Marcher[]>
+            DatabaseResponse<DatabaseMarcher[]>
         >,
     deleteMarchers: (marcherIds: Set<number>) =>
         ipcRenderer.invoke("marcher:delete", marcherIds) as Promise<
-            DatabaseResponse<Marcher[]>
+            DatabaseResponse<DatabaseMarcher[]>
         >,
 
     // Page

@@ -1,7 +1,13 @@
 import { ElectronApi } from "electron/preload";
-import { Marcher, NewMarcherArgs, ModifiedMarcherArgs } from "../Marcher";
+import {
+    Marcher,
+    NewMarcherArgs,
+    ModifiedMarcherArgs,
+    DatabaseMarcher,
+} from "../Marcher";
 import { mockMarchers } from "@/__mocks__/globalMocks";
 import { describe, expect, it, vi } from "vitest";
+import { DatabaseResponse } from "electron/database/DatabaseActions";
 
 describe("Marcher", () => {
     it("should create a marcher object", () => {
@@ -45,13 +51,31 @@ describe("Marcher", () => {
             notes: "No notes",
         };
 
-        const mockResponse = {
+        const mockDatabaseResponse = {
             success: true,
+            data: [
+                {
+                    id: 1,
+                    name: "Jane Smith",
+                    section: "Brass",
+                    drill_prefix: "T",
+                    drill_order: 2,
+                    year: "Sophomore",
+                    notes: "No notes",
+                    created_at: "2021-01-01",
+                    updated_at: "2021-01-01",
+                },
+            ],
+        };
+
+        const mockClassResponse = {
+            success: true,
+            data: [new Marcher(mockDatabaseResponse.data[0])],
         };
 
         // Mock the electron api
         window.electron = {
-            createMarchers: vi.fn().mockResolvedValue(mockResponse),
+            createMarchers: vi.fn().mockResolvedValue(mockDatabaseResponse),
         } as Partial<ElectronApi> as ElectronApi;
 
         Marcher.checkForFetchMarchers = vi.fn();
@@ -59,7 +83,7 @@ describe("Marcher", () => {
 
         const response = await Marcher.createMarchers([newMarcher]);
 
-        expect(response).toEqual(mockResponse);
+        expect(response).toEqual(mockClassResponse);
         expect(window.electron.createMarchers).toHaveBeenCalledWith([
             newMarcher,
         ]);
@@ -84,13 +108,35 @@ describe("Marcher", () => {
             mockMarchers[3],
         ];
 
-        const mockResponse = {
+        const mockDatabaseResponse: DatabaseResponse<DatabaseMarcher[]> = {
             success: true,
+            data: modifiedMarchers.map((m) => ({
+                ...m,
+                updated_at: "2021-01-01",
+                created_at: "2021-01-01",
+                name: m.name ?? null,
+                notes: m.notes ?? null,
+                year: m.year ?? null,
+                section:
+                    m.section ||
+                    mockMarchers.find((mm) => mm.id === m.id)!.section,
+                drill_order:
+                    m.drill_order ||
+                    mockMarchers.find((mm) => mm.id === m.id)!.drill_order,
+                drill_prefix:
+                    m.drill_prefix ||
+                    mockMarchers.find((mm) => mm.id === m.id)!.drill_prefix,
+            })),
+        };
+
+        const mockClassResponse = {
+            success: true,
+            data: mockDatabaseResponse.data.map((m) => new Marcher(m)),
         };
 
         // Mock the electron api
         window.electron = {
-            updateMarchers: vi.fn().mockResolvedValue(mockResponse),
+            updateMarchers: vi.fn().mockResolvedValue(mockDatabaseResponse),
         } as Partial<ElectronApi> as ElectronApi;
 
         Marcher.checkForFetchMarchers = vi.fn();
@@ -98,7 +144,7 @@ describe("Marcher", () => {
 
         const response = await Marcher.updateMarchers(modifiedMarchers);
 
-        expect(response).toEqual(mockResponse);
+        expect(response).toEqual(mockClassResponse);
         expect(window.electron.updateMarchers).toHaveBeenCalledWith(
             modifiedMarchers,
         );
@@ -109,13 +155,40 @@ describe("Marcher", () => {
     it("should delete a marcher from the database", async () => {
         const marcherIds = new Set([1]);
 
-        const mockResponse = {
+        const mockDatabaseResponse = {
             success: true,
+            data: [
+                {
+                    ...mockMarchers[0],
+                    updated_at: "2021-01-01",
+                    created_at: "2021-01-01",
+                    name: mockMarchers[0].name ?? null,
+                    notes: mockMarchers[0].notes ?? null,
+                    year: mockMarchers[0].year ?? null,
+                    section:
+                        mockMarchers[0].section ||
+                        mockMarchers.find((mm) => mm.id === mockMarchers[0].id)!
+                            .section,
+                    drill_order:
+                        mockMarchers[0].drill_order ||
+                        mockMarchers.find((mm) => mm.id === mockMarchers[0].id)!
+                            .drill_order,
+                    drill_prefix:
+                        mockMarchers[0].drill_prefix ||
+                        mockMarchers.find((mm) => mm.id === mockMarchers[0].id)!
+                            .drill_prefix,
+                },
+            ],
+        };
+
+        const mockClassResponse = {
+            success: true,
+            data: [new Marcher(mockDatabaseResponse.data[0])],
         };
 
         // Mock the electron api
         window.electron = {
-            deleteMarchers: vi.fn().mockResolvedValue(mockResponse),
+            deleteMarchers: vi.fn().mockResolvedValue(mockDatabaseResponse),
         } as Partial<ElectronApi> as ElectronApi;
 
         Marcher.checkForFetchMarchers = vi.fn();
@@ -123,7 +196,7 @@ describe("Marcher", () => {
 
         const response = await Marcher.deleteMarchers(marcherIds);
 
-        expect(response).toEqual(mockResponse);
+        expect(response).toEqual(mockClassResponse);
         expect(window.electron.deleteMarchers).toHaveBeenCalledWith(marcherIds);
         expect(Marcher.checkForFetchMarchers).toHaveBeenCalled();
         expect(Marcher.fetchMarchers).toHaveBeenCalled();
@@ -134,6 +207,7 @@ describe("Marcher", () => {
 
         const mockResponse = {
             success: true,
+            data: [],
         };
 
         // Mock the electron api

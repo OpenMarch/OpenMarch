@@ -2,9 +2,10 @@ import Constants from "../../../src/global/Constants";
 import * as History from "../database.history";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
-import Marcher, {
+import {
     ModifiedMarcherArgs,
     NewMarcherArgs,
+    DatabaseMarcher,
 } from "../../../src/global/classes/Marcher";
 import * as PageTable from "./PageTable";
 import * as MarcherPageTable from "./MarcherPageTable";
@@ -12,7 +13,7 @@ import { DatabaseResponse } from "../DatabaseActions";
 import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 
 export function createMarcherTable(
-    db: Database.Database
+    db: Database.Database,
 ): DatabaseResponse<string> {
     try {
         db.exec(`
@@ -50,8 +51,8 @@ export function getMarchers({
     db,
 }: {
     db: Database.Database;
-}): DatabaseResponse<Marcher[]> {
-    const response = DbActions.getAllItems<Marcher>({
+}): DatabaseResponse<DatabaseMarcher[]> {
+    const response = DbActions.getAllItems<DatabaseMarcher>({
         db,
         tableName: Constants.MarcherTableName,
     });
@@ -70,15 +71,15 @@ export function createMarchers({
 }: {
     newMarchers: NewMarcherArgs[];
     db: Database.Database;
-}): DatabaseResponse<Marcher[]> {
+}): DatabaseResponse<DatabaseMarcher[]> {
     console.log("\n=========== start createPages ===========");
     History.incrementUndoGroup(db);
-    let output: DatabaseResponse<Marcher[]>;
+    let output: DatabaseResponse<DatabaseMarcher[]>;
     let actionWasPerformed = false;
 
     try {
         const marcherInsertResponse = DbActions.createItems<
-            Marcher,
+            DatabaseMarcher,
             NewMarcherArgs
         >({
             items: newMarchers,
@@ -90,7 +91,7 @@ export function createMarchers({
         if (!marcherInsertResponse.success) {
             throw new Error(
                 marcherInsertResponse.error?.message ||
-                    "Failed to create marchers"
+                    "Failed to create marchers",
             );
         }
 
@@ -98,7 +99,7 @@ export function createMarchers({
         const allPages = PageTable.getPages({ db });
         if (!allPages.success) {
             throw new Error(
-                allPages.error?.message || "Failed to get all pages"
+                allPages.error?.message || "Failed to get all pages",
             );
         }
         // Create a marcherPage for each marcher
@@ -121,7 +122,7 @@ export function createMarchers({
         if (!createMarcherPageResponse.success) {
             throw new Error(
                 createMarcherPageResponse.error?.message ||
-                    "Failed to create marcherPage"
+                    "Failed to create marcherPage",
             );
         }
         History.incrementUndoGroup(db);
@@ -156,9 +157,12 @@ export function updateMarchers({
 }: {
     modifiedMarchers: ModifiedMarcherArgs[];
     db: Database.Database;
-}): DatabaseResponse<Marcher[]> {
+}): DatabaseResponse<DatabaseMarcher[]> {
     console.log("\n=========== start updatePages ===========");
-    const updateResponse = DbActions.updateItems<Marcher, ModifiedMarcherArgs>({
+    const updateResponse = DbActions.updateItems<
+        DatabaseMarcher,
+        ModifiedMarcherArgs
+    >({
         db,
         items: modifiedMarchers,
         tableName: Constants.MarcherTableName,
@@ -181,9 +185,9 @@ export function deleteMarchers({
 }: {
     marcherIds: Set<number>;
     db: Database.Database;
-}): DbActions.DatabaseResponse<Marcher[]> {
+}): DbActions.DatabaseResponse<DatabaseMarcher[]> {
     History.incrementUndoGroup(db);
-    const marcherDeleteResponse = DbActions.deleteItems<Marcher>({
+    const marcherDeleteResponse = DbActions.deleteItems<DatabaseMarcher>({
         ids: marcherIds,
         tableName: Constants.MarcherTableName,
         db,
@@ -193,7 +197,7 @@ export function deleteMarchers({
     if (!marcherDeleteResponse.success) {
         console.error(
             "Failed to delete marchers:",
-            marcherDeleteResponse.error
+            marcherDeleteResponse.error,
         );
         return marcherDeleteResponse;
     }
@@ -202,7 +206,7 @@ export function deleteMarchers({
     const marcherPagesNum = (
         db
             .prepare(
-                `SELECT COUNT(*) as mp_count FROM ${Constants.MarcherPageTableName}`
+                `SELECT COUNT(*) as mp_count FROM ${Constants.MarcherPageTableName}`,
             )
             .get() as { mp_count: number }
     ).mp_count;
@@ -219,7 +223,7 @@ export function deleteMarchers({
         if (!marcherPageDeleteResponse.success) {
             console.error(
                 "Failed to delete marcher pages:",
-                marcherPageDeleteResponse.error
+                marcherPageDeleteResponse.error,
             );
             History.performUndo(db);
             History.clearMostRecentRedo(db);

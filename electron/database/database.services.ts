@@ -11,7 +11,7 @@ import * as MarcherTable from "./tables/MarcherTable";
 import * as PageTable from "./tables/PageTable";
 import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
-import Marcher from "@/global/classes/Marcher";
+import { DatabaseMarcher } from "@/global/classes/Marcher";
 import { ModifiedPageArgs } from "@/global/classes/Page";
 
 export class LegacyDatabaseResponse<T> {
@@ -84,7 +84,7 @@ export function initDatabase() {
     MarcherPageTable.createMarcherPageTable(db);
     createFieldPropertiesTable(
         db,
-        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES
+        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
     );
     createMeasureTable(db);
     createAudioFileTable(db);
@@ -105,13 +105,13 @@ export function connect() {
                       __dirname,
                       "../../",
                       "electron/database/",
-                      "database.db"
+                      "database.db",
                   );
         return Database(dbPath, { verbose: console.log });
     } catch (error: any) {
         throw new Error(
             "Failed to connect to database:\nPLEASE RUN 'node_modules/.bin/electron-rebuild -f -w better-sqlite3' to resolve this",
-            error
+            error,
         );
     }
 }
@@ -186,7 +186,7 @@ export function connect() {
 
 function createFieldPropertiesTable(
     db: Database.Database,
-    fieldProperties: FieldProperties
+    fieldProperties: FieldProperties,
 ) {
     try {
         db.exec(`
@@ -286,7 +286,7 @@ function createAudioFileTable(db: Database.Database) {
 /* ============================ Handlers ============================ */
 async function connectWrapper<T>(
     func: (args: any) => DatabaseResponse<T | undefined>,
-    args: any = {}
+    args: any = {},
 ): Promise<DatabaseResponse<T | undefined>> {
     const db = connect();
     let result: Promise<DatabaseResponse<T | undefined>>;
@@ -313,67 +313,67 @@ export function initHandlers() {
     // Field properties
     ipcMain.handle("field_properties:get", async () => getFieldProperties());
     ipcMain.handle("field_properties:update", async (_, field_properties) =>
-        updateFieldProperties(field_properties)
+        updateFieldProperties(field_properties),
     );
 
     // File IO handlers located in electron/main/index.ts
     // Marcher
     ipcMain.handle("marcher:getAll", async () =>
-        connectWrapper<Marcher[]>(MarcherTable.getMarchers, {})
+        connectWrapper<DatabaseMarcher[]>(MarcherTable.getMarchers, {}),
     );
     ipcMain.handle("marcher:insert", async (_, args) =>
-        connectWrapper<Marcher[]>(MarcherTable.createMarchers, {
+        connectWrapper<DatabaseMarcher[]>(MarcherTable.createMarchers, {
             newMarchers: args,
-        })
+        }),
     );
     ipcMain.handle("marcher:update", async (_, args) =>
-        connectWrapper<Marcher[]>(MarcherTable.updateMarchers, {
+        connectWrapper<DatabaseMarcher[]>(MarcherTable.updateMarchers, {
             modifiedMarchers: args,
-        })
+        }),
     );
     ipcMain.handle("marcher:delete", async (_, marcherIds) =>
-        connectWrapper<Marcher[]>(MarcherTable.deleteMarchers, {
+        connectWrapper<DatabaseMarcher[]>(MarcherTable.deleteMarchers, {
             marcherIds,
-        })
+        }),
     );
 
     // Page
     ipcMain.handle("page:getAll", async () =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages)
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages),
     );
     ipcMain.handle("page:insert", async (_, args) =>
         connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
             newPages: args,
-        })
+        }),
     );
     ipcMain.handle("page:update", async (_, pages: ModifiedPageArgs[]) =>
         connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
             modifiedPages: pages,
-        })
+        }),
     );
     ipcMain.handle("page:delete", async (_, pageIds) =>
         connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
             pageIds,
-        })
+        }),
     );
 
     // MarcherPage
     ipcMain.handle("marcher_page:getAll", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPages, args)
+        connectWrapper(MarcherPageTable.getMarcherPages, args),
     );
     ipcMain.handle("marcher_page:get", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPage, args)
+        connectWrapper(MarcherPageTable.getMarcherPage, args),
     );
     ipcMain.handle("marcher_page:update", async (_, args) =>
         connectWrapper(MarcherPageTable.updateMarcherPages, {
             marcherPageUpdates: args,
-        })
+        }),
     );
 
     // Measure
     ipcMain.handle("measure:getAll", async () => getMeasures());
     ipcMain.handle("measure:update", async (_, abcString: string) =>
-        updateMeasuresAbcString(abcString)
+        updateMeasuresAbcString(abcString),
     );
 
     // Audio Files
@@ -381,13 +381,13 @@ export function initHandlers() {
     ipcMain.handle("audio:getAll", async () => getAudioFilesDetails());
     ipcMain.handle("audio:getSelected", async () => getSelectedAudioFile());
     ipcMain.handle("audio:select", async (_, audioFileId: number) =>
-        setSelectAudioFile(audioFileId)
+        setSelectAudioFile(audioFileId),
     );
     ipcMain.handle("audio:update", async (_, args: ModifiedAudioFileArgs[]) =>
-        updateAudioFiles(args)
+        updateAudioFiles(args),
     );
     ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
-        deleteAudioFile(audioFileId)
+        deleteAudioFile(audioFileId),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {
@@ -415,7 +415,7 @@ const tableNameFromSql = (sql: string): string => {
  * @returns The action from the SQL statement.
  */
 const sqlActionFromSql = (
-    sql: string
+    sql: string,
 ): "UPDATE" | "DELETE" | "INSERT" | "ERROR" => {
     const action = sql.split(" ")[0].toUpperCase();
     if (action === "UPDATE" || action === "DELETE" || action === "INSERT")
@@ -435,7 +435,7 @@ const rowIdFromSql = (sql: string): number => {
  */
 export function performHistoryAction(
     type: "undo" | "redo",
-    db?: Database.Database
+    db?: Database.Database,
 ): HistoryResponse {
     const dbToUse = db || connect();
     let response: History.HistoryResponse;
@@ -463,7 +463,7 @@ export function performHistoryAction(
                     const marcherPageId = rowIdFromSql(sqlStatement);
                     const marcherPage = dbToUse
                         .prepare(
-                            `SELECT marcher_id, page_id FROM ${Constants.MarcherPageTableName} WHERE rowid = (?)`
+                            `SELECT marcher_id, page_id FROM ${Constants.MarcherPageTableName} WHERE rowid = (?)`,
                         )
                         .get(marcherPageId) as
                         | { marcher_id: number; page_id: number }
@@ -502,11 +502,11 @@ export function performHistoryAction(
  * @returns
  */
 export async function getFieldProperties(
-    db?: Database.Database
+    db?: Database.Database,
 ): Promise<FieldProperties> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.FieldPropertiesTableName}`
+        `SELECT * FROM ${Constants.FieldPropertiesTableName}`,
     );
     const result = await stmt.get({});
     const jsonData = (result as any).json_data;
@@ -522,7 +522,7 @@ export async function getFieldProperties(
  * @returns {success: boolean, result?: FieldProperties, error?: string}
  */
 export async function updateFieldProperties(
-    fieldProperties: FieldProperties
+    fieldProperties: FieldProperties,
 ): Promise<LegacyDatabaseResponse<FieldProperties>> {
     const db = connect();
     let output: LegacyDatabaseResponse<FieldProperties> = { success: true };
@@ -568,7 +568,7 @@ z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
 async function getMeasures(db?: Database.Database): Promise<string> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`
+        `SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`,
     );
     const response = stmt.all() as {
         abc_data: string;
@@ -590,7 +590,7 @@ async function getMeasures(db?: Database.Database): Promise<string> {
  * @returns LegacyDatabaseResponse
  */
 async function updateMeasuresAbcString(
-    abcString: string
+    abcString: string,
 ): Promise<LegacyDatabaseResponse<string>> {
     const db = connect();
     let output: LegacyDatabaseResponse<string> = { success: false };
@@ -628,11 +628,11 @@ async function updateMeasuresAbcString(
  * @returns Array of measures
  */
 async function getAudioFilesDetails(
-    db?: Database.Database
+    db?: Database.Database,
 ): Promise<AudioFile[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(
-        `SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`
+        `SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`,
     );
     const response = stmt.all() as AudioFile[];
     if (!db) dbToUse.close();
@@ -647,16 +647,16 @@ async function getAudioFilesDetails(
  * @returns The currently selected audio file in the database. Includes audio data.
  */
 export async function getSelectedAudioFile(
-    db?: Database.Database
+    db?: Database.Database,
 ): Promise<AudioFile | null> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`
+        `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`,
     );
     const result = await stmt.get();
     if (!result) {
         const firstAudioFileStmt = dbToUse.prepare(
-            `SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`
+            `SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`,
         );
         const firstAudioFile = (await firstAudioFileStmt.get()) as AudioFile;
         if (!firstAudioFile) {
@@ -678,16 +678,16 @@ export async function getSelectedAudioFile(
  * @returns The newly selected AudioFile object including the audio data
  */
 async function setSelectAudioFile(
-    audioFileId: number
+    audioFileId: number,
 ): Promise<AudioFile | null> {
     const db = connect();
     History.incrementUndoGroup(db);
     const stmt = db.prepare(
-        `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`
+        `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`,
     );
     stmt.run();
     const selectStmt = db.prepare(
-        `UPDATE ${Constants.AudioFilesTableName} SET selected = 1 WHERE id = @audioFileId`
+        `UPDATE ${Constants.AudioFilesTableName} SET selected = 1 WHERE id = @audioFileId`,
     );
     await selectStmt.run({ audioFileId });
     const result = await getSelectedAudioFile(db);
@@ -705,11 +705,11 @@ async function setSelectAudioFile(
  * @returns LegacyDatabaseResponse
  */
 export async function insertAudioFile(
-    audioFile: AudioFile
+    audioFile: AudioFile,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
     const stmt = db.prepare(
-        `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`
+        `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`,
     );
     stmt.run();
     let output: LegacyDatabaseResponse<AudioFile[]> = { success: false };
@@ -766,7 +766,7 @@ export async function insertAudioFile(
  * @returns - LegacyDatabaseResponse{success: boolean, result: Database.result | string}
  */
 async function updateAudioFiles(
-    audioFileUpdates: ModifiedAudioFileArgs[]
+    audioFileUpdates: ModifiedAudioFileArgs[],
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
     let output: LegacyDatabaseResponse<AudioFile[]> = { success: true };
@@ -785,11 +785,11 @@ async function updateAudioFiles(
 
             let existingAudioFiles = await getAudioFilesDetails();
             const previousState = existingAudioFiles.find(
-                (audioFile) => audioFile.id === audioFileUpdate.id
+                (audioFile) => audioFile.id === audioFileUpdate.id,
             );
             if (!previousState) {
                 console.error(
-                    `No audio file found with ID ${audioFileUpdate.id}`
+                    `No audio file found with ID ${audioFileUpdate.id}`,
                 );
                 continue;
             }
@@ -807,11 +807,11 @@ async function updateAudioFiles(
             // Get the new audio file
             existingAudioFiles = await getAudioFilesDetails();
             const newAudioFile = existingAudioFiles.find(
-                (audioFile) => audioFile.id === audioFileUpdate.id
+                (audioFile) => audioFile.id === audioFileUpdate.id,
             );
             if (!newAudioFile) {
                 console.error(
-                    `No audio file found with ID ${audioFileUpdate.id}`
+                    `No audio file found with ID ${audioFileUpdate.id}`,
                 );
                 continue;
             }
@@ -837,7 +837,7 @@ async function updateAudioFiles(
  * @returns {success: boolean, error?: string}
  */
 async function deleteAudioFile(
-    audioFileId: number
+    audioFileId: number,
 ): Promise<LegacyDatabaseResponse<AudioFile>> {
     const db = connect();
     let output: LegacyDatabaseResponse<AudioFile> = { success: true };

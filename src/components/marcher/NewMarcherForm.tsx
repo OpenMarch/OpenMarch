@@ -35,7 +35,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const [drillPrefixTouched, setDrillPrefixTouched] =
         useState<boolean>(false);
     const [drillOrderError, setDrillOrderError] = useState<string>("");
-    const { marchers } = useMarcherStore!();
+    const { marchers } = useMarcherStore()!;
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
     const formRef = useRef<HTMLFormElement>(null);
 
@@ -67,7 +67,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             const newMarchers: NewMarcherArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 // Check to see if the drill order already exists
-                let newDrillOrder = drillOrder + i + newDrillOrderOffset;
+                let newDrillOrder = drillOrder + newDrillOrderOffset;
                 while (existingDrillOrders.has(newDrillOrder)) {
                     newDrillOrder++;
                 }
@@ -342,6 +342,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 <Button
                     type="submit"
                     className="w-full"
+                    aria-label="Create Marcher Button"
                     disabled={submitIsDisabled || disabledProp}
                 >
                     {makeButtonString(quantity, section)}
