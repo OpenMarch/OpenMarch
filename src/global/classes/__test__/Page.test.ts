@@ -142,6 +142,9 @@ describe("Page", () => {
             const electronCreatePagesSpy = vi
                 .spyOn(window.electron, "createPages")
                 .mockResolvedValue(mockResponse);
+            vi.spyOn(window.electron, "getPages").mockResolvedValue(
+                mockResponse,
+            );
 
             const createResponse = await Page.createPages([newPageArgs[0]]);
 
@@ -156,6 +159,59 @@ describe("Page", () => {
             expect(fetchPagesSpy).toHaveBeenCalled();
         });
 
+        it("should create a new page in the database when one already exists", async () => {
+            const mockResponse1 = {
+                success: true,
+                data: [databasePages[0]],
+            };
+            const mockResponse2 = {
+                success: true,
+                data: [databasePages[1]],
+            };
+            const expectedPages = Page.fromDatabasePages([
+                ...mockResponse1.data,
+                ...mockResponse2.data,
+            ]);
+
+            vi.spyOn(Page, "checkForFetchPages");
+            vi.spyOn(Page, "fetchPages");
+
+            let electronCreatePagesSpy = vi
+                .spyOn(window.electron, "createPages")
+                .mockResolvedValue(mockResponse1);
+            vi.spyOn(window.electron, "getPages").mockResolvedValue(
+                mockResponse1,
+            );
+
+            const createResponse1 = await Page.createPages([newPageArgs[0]]);
+
+            expect(createResponse1).toEqual({
+                success: true,
+                data: [expectedPages[0]],
+            });
+            expect(electronCreatePagesSpy).toHaveBeenCalledWith([
+                newPageArgs[0],
+            ]);
+
+            electronCreatePagesSpy = vi
+                .spyOn(window.electron, "createPages")
+                .mockResolvedValue(mockResponse2);
+            vi.spyOn(window.electron, "getPages").mockResolvedValue({
+                success: true,
+                data: [...mockResponse1.data, ...mockResponse2.data],
+            });
+
+            const createResponse2 = await Page.createPages([newPageArgs[1]]);
+
+            expect(createResponse2).toEqual({
+                success: true,
+                data: [expectedPages[1]],
+            });
+            expect(electronCreatePagesSpy).toHaveBeenCalledWith([
+                newPageArgs[1],
+            ]);
+        });
+
         it("should create multiple new pages in the database", async () => {
             const mockResponse = {
                 success: true,
@@ -167,6 +223,9 @@ describe("Page", () => {
             const electronCreatePagesSpy = vi
                 .spyOn(window.electron, "createPages")
                 .mockResolvedValue(mockResponse);
+            vi.spyOn(window.electron, "getPages").mockResolvedValue(
+                mockResponse,
+            );
 
             const createResponse = await Page.createPages(newPageArgs);
 
@@ -715,7 +774,7 @@ describe("Page", () => {
             const sortedPages = Page.sortPagesByOrder(shuffledPages);
             for (let i = 0; i < sortedPages.length - 1; i++) {
                 expect(sortedPages[i].order).toBeLessThan(
-                    sortedPages[i + 1].order
+                    sortedPages[i + 1].order,
                 );
             }
         });

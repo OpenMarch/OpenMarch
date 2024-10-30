@@ -79,7 +79,6 @@ export default function TimelineContainer() {
                         </div>
                     )}
                     {pages.map((page, index) => {
-                        if (page.name === "8") console.log("page 8", page);
                         if (index === 0) return null;
                         const width = page.duration * pxPerSecond;
                         return (
@@ -132,7 +131,6 @@ export default function TimelineContainer() {
                         } seconds - ${measure.getBigBeats()} counts - time signature: ${measure.timeSignature.toString()} - tempo: ${
                             measure.tempo
                         }bpm - rehearsalMark ${measure.rehearsalMark}`;
-                        // console.log("page width", width)
                         return (
                             <div
                                 key={index}

@@ -141,20 +141,20 @@ class Page {
         let createdPages: Page[] = [];
         // Find the first page
         const nextPageIds = new Set(
-            databasePages.map((page) => page.next_page_id)
+            databasePages.map((page) => page.next_page_id),
         );
         const firstPage = databasePages.find(
-            (page) => !nextPageIds.has(page.id)
+            (page) => !nextPageIds.has(page.id),
         );
         if (!firstPage) {
             throw new Error(
-                "Failed to find first page! The linked list is broken."
+                "Failed to find first page! The linked list is broken.",
             );
         }
 
         // Loop through the pages and create the Page objects, updating order and the previous page id
         const databasePageMap = new Map<number, DatabasePage>(
-            databasePages.map((page) => [page.id, page])
+            databasePages.map((page) => [page.id, page]),
         );
         let currentPage: DatabasePage | undefined = firstPage;
         let currentPreviousPageId = null;
@@ -170,7 +170,7 @@ class Page {
                     nextPageId: currentPage.next_page_id,
                     previousPageId: currentPreviousPageId,
                     isSubset: currentPage.is_subset,
-                })
+                }),
             );
 
             if (currentPage.next_page_id === null) break;
@@ -209,16 +209,30 @@ class Page {
      * @returns DatabaseResponse with the new pages.
      */
     static async createPages(
-        newPagesArgs: NewPageArgs[]
+        newPagesArgs: NewPageArgs[],
     ): Promise<DatabaseResponse<Page[]>> {
         const createResponse = await window.electron.createPages(newPagesArgs);
-        // fetch the pages to update the store
-        this.checkForFetchPages();
-        this.fetchPages();
-        return {
-            ...createResponse,
-            data: this.fromDatabasePages(createResponse.data),
-        };
+
+        if (createResponse.success) {
+            const updatedPageIds = new Set(
+                createResponse.data.map((p) => p.id),
+            );
+
+            // fetch the pages to update the store
+            this.checkForFetchPages();
+            this.fetchPages();
+
+            const allPages = await this.getPages();
+            const updatedPages = allPages.filter((p) =>
+                updatedPageIds.has(p.id),
+            );
+            return {
+                ...createResponse,
+                data: updatedPages,
+            };
+        } else {
+            return { ...createResponse, data: [] };
+        }
     }
 
     /**
@@ -236,7 +250,7 @@ class Page {
                 if (page.notes) modifiedPage.notes = page.notes;
 
                 return modifiedPage;
-            }
+            },
         );
         const response = await window.electron.updatePages(modifiedPagesToSend);
         // fetch the pages to update the store
@@ -266,7 +280,7 @@ class Page {
     static checkForFetchPages() {
         if (!this.fetchPages)
             console.error(
-                "fetchPages is not defined. The UI will not update properly."
+                "fetchPages is not defined. The UI will not update properly.",
             );
     }
 
@@ -417,11 +431,11 @@ class Page {
             return null;
 
         const pagesMap = new Map<number, Page>(
-            allPages.map((page) => [page.id, page])
+            allPages.map((page) => [page.id, page]),
         );
         if (!pagesMap.has(this.id)) {
             throw new Error(
-                `Current page "id=${this.id}" not found in list of all pages.`
+                `Current page "id=${this.id}" not found in list of all pages.`,
             );
         }
 
@@ -431,7 +445,7 @@ class Page {
         const nextPage = pagesMap.get(this.nextPageId);
         if (!nextPage) {
             throw new Error(
-                `Next page "id=${this.nextPageId}" not found in list of all pages.`
+                `Next page "id=${this.nextPageId}" not found in list of all pages.`,
             );
         }
         return nextPage;
@@ -450,11 +464,11 @@ class Page {
             return null;
 
         const pagesMap = new Map<number, Page>(
-            allPages.map((page) => [page.id, page])
+            allPages.map((page) => [page.id, page]),
         );
         if (!pagesMap.has(this.id)) {
             throw new Error(
-                `Current page "id=${this.id}" not found in list of all pages.`
+                `Current page "id=${this.id}" not found in list of all pages.`,
             );
         }
 
@@ -464,7 +478,7 @@ class Page {
         const previousPage = pagesMap.get(this.previousPageId);
         if (!previousPage) {
             throw new Error(
-                `Previous page "id=${this.previousPageId}" not found in list of all pages.`
+                `Previous page "id=${this.previousPageId}" not found in list of all pages.`,
             );
         }
         return previousPage;
