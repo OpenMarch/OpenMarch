@@ -101,7 +101,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
             const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPageArg: NewPageArgs = {
-                    previousPageId: previousPage?.id || null,
+                    previousPageId: previousPage?.id || 0,
                     isSubset: isSubset,
                     counts: counts,
                 };

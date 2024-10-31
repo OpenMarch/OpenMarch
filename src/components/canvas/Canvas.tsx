@@ -491,7 +491,7 @@ export default function Canvas({
 
     return (
         <div className={`h-full overflow-hidden rounded-6 ${className}`}>
-            {marchers.length > 0 && pages.length > 0 ? (
+            {pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
                 // If there are no marchers or pages, display a message

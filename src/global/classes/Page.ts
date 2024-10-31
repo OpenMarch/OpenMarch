@@ -577,13 +577,12 @@ export default Page;
  */
 export interface NewPageArgs {
     /**
-     * Provide this to determine the order of the page and the name.
-     * If not provided, the page will be created at the end of the show.
+     * The page the desired new page should come after
      *
      * If you want to add multiple pages that are sequential to each other, provide the page of the initial
      * page in the sequence and make every following page also have that page as the previous page.
      */
-    previousPageId: number | null;
+    previousPageId: number;
     /** If a page is a subset, its name will have an alphabetical letter appended. */
     isSubset: boolean;
     counts: number;
