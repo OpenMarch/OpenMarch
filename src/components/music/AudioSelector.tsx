@@ -40,7 +40,7 @@ export default function AudioSelector() {
     return (
         <div className="flex flex-col gap-12">
             <h5 className="text-h5 leading-none">Audio</h5>
-            <div className="flex items-center justify-between px-12">
+            <div className="flex items-center justify-between gap-8 px-12">
                 <label
                     htmlFor="audio-selector"
                     className="w-full text-body text-text/80"
