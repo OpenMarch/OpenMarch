@@ -11,15 +11,15 @@ title: OpenMarch
 [OpenMarch](https://github.com/AlexDumo/OpenMarch) is a free open source drill writing software built on web app frameworks.
 It will be released as cross platform desktop app for drill writers, band directors, and students alike.
 
-### Try it out - [Install 0.0.3](https://github.com/OpenMarch/OpenMarch/releases/tag/v0.0.3)
+### Try it out - [Install 0.0.4](https://github.com/OpenMarch/OpenMarch/releases/tag/v0.0.4)
 
 For the first time, a monthly release is coming with an installer!
 Note that there are bugs and this code is not production-ready.
 Use at your own risk and have fun!
 
-**Check out the [October 2024 Update](/jekyll/update/2024/10/02/updates.html) for the most recent demo!**
+**Check out the [November 2024 Update](/jekyll/update/2024/10/31/updates.html) for the most recent demo!**
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/reXz_3wm46Y?si=tKiCtgocPLq4hw5R" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/CfrTJT9D_BQ?si=iOnlXj2bFFBHwj4I" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Help build OpenMarch
 

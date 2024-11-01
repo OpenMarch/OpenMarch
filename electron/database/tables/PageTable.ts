@@ -19,8 +19,10 @@ export interface DatabasePage {
     notes: string | null;
 }
 
+export const FIRST_PAGE_ID = 0;
+
 export function createPageTable(
-    db: Database.Database
+    db: Database.Database,
 ): DbActions.DatabaseResponse<string> {
     try {
         db.prepare(
@@ -30,13 +32,21 @@ export function createPageTable(
             "is_subset"	        INTEGER NOT NULL DEFAULT 0 CHECK (is_subset IN (0, 1)),
             "notes"	            TEXT,
             "counts"	        INTEGER NOT NULL CHECK (counts >= 0),
-            "created_at"	    TEXT NOT NULL,
-            "updated_at"	    TEXT NOT NULL,
+            "created_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updated_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "next_page_id"	    INTEGER,
             FOREIGN KEY ("next_page_id") REFERENCES "${Constants.PageTableName}"("id")
             );
-        `
+        `,
         ).run();
+
+        // Create page 1 with 0 counts. Page 1 should always exist
+        // It is safe to assume there are no marchers in the database at this point, so MarcherPages do not need to be created
+        db.prepare(
+            `INSERT INTO ${Constants.PageTableName} ("counts", "id") VALUES (0, ${FIRST_PAGE_ID})`,
+        ).run();
+
+        // Make the undo triggers after so the creation of the first page cannot be undone
         History.createUndoTriggers(db, Constants.PageTableName);
 
         return { success: true, data: Constants.PageTableName };
@@ -65,7 +75,7 @@ interface NewPage {
  * @returns The processed response
  */
 function processPageTableResponse(
-    response: DbActions.DatabaseResponse<DatabasePage[]>
+    response: DbActions.DatabaseResponse<DatabasePage[]>,
 ): DbActions.DatabaseResponse<DatabasePage[]> {
     if (
         !response.success ||
@@ -145,6 +155,17 @@ export function getPages({
     return processPageTableResponse(response);
 }
 
+interface ModifiedDatabasePageArgs {
+    /**
+     * The id of the page to update.
+     */
+    id: number;
+    /** If a page is a subset, its name will have an alphabetical letter appended. */
+    is_subset?: 0 | 1;
+    counts?: number;
+    notes?: string | null;
+}
+
 /**
  * Create one or many new pages.
  *
@@ -172,38 +193,27 @@ export function createPages({
         for (const newPage of reversedNewPages) {
             let itemToInsert: NewPage;
             const { previousPageId, isSubset, ...rest } = newPage;
-            let previousPage: DatabasePage | undefined;
-            if (previousPageId) {
-                // Get the previous page from the database
-                previousPage = previousPageId
-                    ? DbActions.getItem<DatabasePage>({
-                          db,
-                          tableName: Constants.PageTableName,
-                          id: previousPageId,
-                      }).data
-                    : undefined;
-                // Define the new page by getting the next_page_id from the previous page
-                itemToInsert = {
-                    ...rest,
-                    next_page_id: previousPage?.next_page_id || null,
-                    is_subset: isSubset ? 1 : 0,
-                };
-            } else {
-                const firstPageResponse = getFirstPage({ db });
-                if (!firstPageResponse.success) {
-                    throw new Error(
-                        "Failed to find first page! The linked list is broken: " +
-                            firstPageResponse.error?.message ||
-                            "No first page found"
-                    );
-                }
-                // Define the new page by getting the next_page_id from the previous page
-                itemToInsert = {
-                    ...rest,
-                    next_page_id: firstPageResponse.data?.id || null,
-                    is_subset: isSubset ? 1 : 0,
-                };
+
+            // Get the previous page from the database
+            const previousPage = DbActions.getItem<DatabasePage>({
+                db,
+                tableName: Constants.PageTableName,
+                id: previousPageId,
+            }).data;
+
+            if (previousPage === undefined) {
+                throw new Error(
+                    `CreatePages: Could not find page with id ${previousPageId} to use as a previous page.`,
+                );
             }
+
+            // Define the new page by getting the next_page_id from the previous page
+            itemToInsert = {
+                ...rest,
+                next_page_id: previousPage?.next_page_id || null,
+                is_subset: isSubset ? 1 : 0,
+            };
+
             const createPageResponse = processPageTableResponse(
                 DbActions.createItems<DatabasePage, NewPage>({
                     db,
@@ -211,14 +221,14 @@ export function createPages({
                     items: [itemToInsert],
                     useNextUndoGroup: false,
                     printHeaders: false,
-                })
+                }),
             );
 
             actionWasPerformed = true;
             if (!createPageResponse.success) {
                 throw new Error(
                     "Failed to create page: " +
-                        createPageResponse.error?.message || ""
+                        createPageResponse.error?.message || "",
                 );
             }
             createdPages.push(createPageResponse.data[0]);
@@ -244,7 +254,7 @@ export function createPages({
                 if (!updateResponse.success) {
                     throw new Error(
                         "Failed to update previous page's next_page_id: " +
-                            updateResponse.error?.message || ""
+                            updateResponse.error?.message || "",
                     );
                 }
             }
@@ -264,7 +274,7 @@ export function createPages({
                 previousPageMarcherPages.map((marcherPage) => [
                     marcherPage.marcher_id,
                     { x: marcherPage.x, y: marcherPage.y },
-                ])
+                ]),
             );
             // For each marcher, create a new MarcherPage
             const newMarcherPages: ModifiedMarcherPageArgs[] = [];
@@ -292,14 +302,14 @@ export function createPages({
             if (!createMarcherPageResponse.success) {
                 throw new Error(
                     `Failed to create marcherPage for page_id=${createPageResponse.data[0].id}: ` +
-                        createMarcherPageResponse.error?.message || ""
+                        createMarcherPageResponse.error?.message || "",
                 );
             }
         }
         output = { success: true, data: createdPages };
         History.incrementUndoGroup(db);
     } catch (error: any) {
-        console.error("Error creating pages: ", error);
+        console.error("Error creating page. Rolling back changes.", error);
         if (actionWasPerformed) {
             History.performUndo(db);
             History.clearMostRecentRedo(db);
@@ -333,19 +343,25 @@ export function updatePages({
     modifiedPages: ModifiedPageArgs[];
 }): DbActions.DatabaseResponse<DatabasePage[]> {
     console.log("\n=========== start updatePages ===========");
-    const newModifiedPages = modifiedPages.map((modifiedPage) => {
-        return {
-            ...modifiedPage,
-            is_subset: modifiedPage.is_subset ? 1 : 0,
-        };
-    });
+    const newModifiedPages: ModifiedDatabasePageArgs[] = modifiedPages.map(
+        (modifiedPage) => {
+            // Do not modify counts or is_subset in first_page
+            if (modifiedPage.id === FIRST_PAGE_ID) {
+                return { ...modifiedPage, counts: 0, is_subset: 0 };
+            }
+            return {
+                ...modifiedPage,
+                is_subset: modifiedPage.is_subset ? 1 : 0,
+            };
+        },
+    );
     const response = processPageTableResponse(
-        DbActions.updateItems<DatabasePage, any>({
+        DbActions.updateItems<DatabasePage, ModifiedDatabasePageArgs>({
             db,
             items: newModifiedPages,
             tableName: Constants.PageTableName,
             printHeaders: false,
-        })
+        }),
     );
     console.log("=========== end updatePages ===========\n");
     return response;
@@ -367,6 +383,10 @@ export function deletePages({
 }): DbActions.DatabaseResponse<DatabasePage[]> {
     console.log("\n=========== start deletePages ===========");
     let output: DbActions.DatabaseResponse<DatabasePage[]>;
+
+    // Do not delete the first page
+    pageIds.delete(FIRST_PAGE_ID);
+
     History.incrementUndoGroup(db);
     // Check if there are any marcherPages before deleting the pages
     const marcherPages = MarcherPageTable.getMarcherPages({
@@ -387,7 +407,7 @@ export function deletePages({
             if (!deleteMarcherPageResponse.success) {
                 throw new Error(
                     "Failed to delete marcherPages: " +
-                        (deleteMarcherPageResponse.error?.message || "")
+                        (deleteMarcherPageResponse.error?.message || ""),
                 );
             }
         }
@@ -398,7 +418,7 @@ export function deletePages({
         const firstPageResponse = getFirstPage({ db });
         if (!firstPageResponse.success) {
             throw new Error(
-                firstPageResponse.error?.message || "No first page found"
+                firstPageResponse.error?.message || "No first page found",
             );
         }
         const pageIdsToDelete = pageIds;
@@ -449,7 +469,7 @@ export function deletePages({
         if (!updateResponse.success) {
             throw new Error(
                 "Failed to update the next_page_id while deleting pages\n" +
-                    (updateResponse.error?.message || "")
+                    (updateResponse.error?.message || ""),
             );
         }
 
@@ -460,16 +480,16 @@ export function deletePages({
                 db,
                 useNextUndoGroup: false, // Don't do this
                 printHeaders: false,
-            })
+            }),
         );
         if (!deletePagesResponse.success)
             throw new Error(
                 "Failed to delete pages " +
-                    (deletePagesResponse.error?.message || "")
+                    (deletePagesResponse.error?.message || ""),
             );
         output = deletePagesResponse;
     } catch (error: any) {
-        console.error("Failed to delete pages:", error);
+        console.error("Failed to delete pages.  Rolling back changes", error);
         History.performUndo(db);
         History.clearMostRecentRedo(db);
         output = {

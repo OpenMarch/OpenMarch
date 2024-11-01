@@ -30,18 +30,15 @@ interface NewPageFormProps {
 /**
  * A form to create new pages.
  *
- * @param {boolean} hasHeader - Whether to display a header. False by default.
  * @param {boolean} disabledProp - Whether the form is disabled. False by default.
  * @returns NewPageForm component.
  */
 // eslint-disable-next-line react/prop-types
-const NewPageForm: React.FC<NewPageFormProps> = ({
-    hasHeader = false,
-    disabledProp = false,
-}) => {
+const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
     const [previousPage, setPreviousPage] = useState<Page | undefined>(
         undefined,
     );
+    const [lastCreatedPage, setLastCreatedPage] = useState<Page | null>(null);
     const [counts, setCounts] = useState<number>(8);
     const [formCounts, setFormCounts] = useState<string>(
         counts.toString() || "8",
@@ -104,7 +101,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
             const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPageArg: NewPageArgs = {
-                    previousPageId: previousPage?.id || null,
+                    previousPageId: previousPage?.id || 0,
                     isSubset: isSubset,
                     counts: counts,
                 };
@@ -117,11 +114,13 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
                 response.data.forEach((page) => {
                     toast.success(`Page ${page.name} created successfully`);
                 });
+                setLastCreatedPage(Page.getLastPage(response.data));
             } else {
                 console.error(
                     `Error creating pages:`,
                     response.error?.message || "",
                 );
+                setLastCreatedPage(null);
                 toast.error(`Error creating pages: ${response.error?.message}`);
             }
 
@@ -137,6 +136,16 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
                 pages.find((page) => page.id === selectedPageId) || undefined,
             );
     };
+
+    // Set the previous page to the last page by default when all pages change
+    useEffect(() => {
+        if (lastCreatedPage) {
+            setPreviousPage(lastCreatedPage);
+        } else {
+            const lastPage = Page.getLastPage(pages) ?? undefined;
+            setPreviousPage(lastPage);
+        }
+    }, [lastCreatedPage, pages]);
 
     const handleCountsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.value === "") {
@@ -225,14 +234,13 @@ const NewPageForm: React.FC<NewPageFormProps> = ({
                         <Select
                             aria-label="Select the previous page"
                             onValueChange={handlePreviousPageChange}
-                            defaultValue="-1"
+                            value={previousPage?.id.toString() || "-1"}
                         >
                             <SelectTriggerButton
                                 label={previousPage?.toString() || "Prev."}
                                 className="w-full"
                             />
                             <SelectContent>
-                                <SelectItem value="-1">Last</SelectItem>
                                 {pages.map((page, index) => (
                                     <SelectItem
                                         key={index}

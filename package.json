@@ -4,7 +4,7 @@
     "version": "0.0.4",
     "main": "dist-electron/main/index.js",
     "description": "OpenMarch is a free and open-source drill-designing software.",
-    "author": "Alex Dumouchelle",
+    "author": "OpenMarch LLC",
     "license": "GPL-3.0",
     "private": true,
     "debug": {

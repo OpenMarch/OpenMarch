@@ -68,18 +68,20 @@ describe("NewPageForm", () => {
         const expectedNewPage: NewPageArgs = {
             isSubset: true,
             counts: mockCounts,
-            previousPageId: null,
+            previousPageId: 1,
         };
 
         // Fill in the form inputs
         const countsInput = screen.getByLabelText("Counts");
         act(() =>
-            fireEvent.change(countsInput, { target: { value: mockCounts } })
+            fireEvent.change(countsInput, { target: { value: mockCounts } }),
         );
 
         const quantityInput = screen.getByLabelText("Quantity");
         act(() =>
-            fireEvent.change(quantityInput, { target: { value: mockQuantity } })
+            fireEvent.change(quantityInput, {
+                target: { value: mockQuantity },
+            }),
         );
 
         const isSubsetCheckbox = screen.getByLabelText("Subset");
@@ -90,14 +92,14 @@ describe("NewPageForm", () => {
         act(() => fireEvent.submit(form));
 
         await waitFor(() =>
-            expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage])
+            expect(createPagesSpy).toHaveBeenCalledWith([expectedNewPage]),
         );
         await waitFor(() =>
-            expect(screen.getByLabelText("create page response")).toBeDefined()
+            expect(screen.getByLabelText("create page response")).toBeDefined(),
         );
         // Only way I could think of to test success message
         expect(screen.getByTitle("form alert").className).toContain(
-            "alert-success"
+            "alert-success",
         );
     });
 
@@ -128,21 +130,23 @@ describe("NewPageForm", () => {
         // Fill in the form inputs
         const countsInput = screen.getByLabelText("Counts");
         act(() =>
-            fireEvent.change(countsInput, { target: { value: mockCounts } })
+            fireEvent.change(countsInput, { target: { value: mockCounts } }),
         );
 
         const quantityInput = screen.getByLabelText("Quantity");
         act(() =>
-            fireEvent.change(quantityInput, { target: { value: mockQuantity } })
+            fireEvent.change(quantityInput, {
+                target: { value: mockQuantity },
+            }),
         );
 
         const previousPageInput = screen.getByLabelText(
-            "Select the previous page"
+            "Select the previous page",
         );
         act(() =>
             fireEvent.change(previousPageInput, {
                 target: { value: mockPages[0].name },
-            })
+            }),
         );
 
         // Submit the form
@@ -150,14 +154,14 @@ describe("NewPageForm", () => {
         act(() => fireEvent.submit(form));
 
         await waitFor(() =>
-            expect(createPagesSpy).toHaveBeenCalledWith(expectedNewPages)
+            expect(createPagesSpy).toHaveBeenCalledWith(expectedNewPages),
         );
         await waitFor(() =>
-            expect(screen.getByLabelText("create page response")).toBeDefined()
+            expect(screen.getByLabelText("create page response")).toBeDefined(),
         );
         // Only way I could think of to test success message
         expect(screen.getByTitle("form alert").className).toContain(
-            "alert-success"
+            "alert-success",
         );
     });
 
@@ -178,18 +182,20 @@ describe("NewPageForm", () => {
         const expectedNewPage: NewPageArgs = {
             isSubset: true,
             counts: mockCounts,
-            previousPageId: null,
+            previousPageId: 1,
         };
 
         // Fill in the form inputs
         const countsInput = screen.getByLabelText("Counts");
         act(() =>
-            fireEvent.change(countsInput, { target: { value: mockCounts } })
+            fireEvent.change(countsInput, { target: { value: mockCounts } }),
         );
 
         const quantityInput = screen.getByLabelText("Quantity");
         act(() =>
-            fireEvent.change(quantityInput, { target: { value: mockQuantity } })
+            fireEvent.change(quantityInput, {
+                target: { value: mockQuantity },
+            }),
         );
 
         const isSubsetCheckbox = screen.getByLabelText("Subset");
@@ -205,17 +211,17 @@ describe("NewPageForm", () => {
             .mockImplementation(() => {});
 
         await waitFor(() =>
-            expect(failCreatePagesSpy).toHaveBeenCalledWith([expectedNewPage])
+            expect(failCreatePagesSpy).toHaveBeenCalledWith([expectedNewPage]),
         );
         await waitFor(() =>
-            expect(screen.getByLabelText("create page response")).toBeDefined()
+            expect(screen.getByLabelText("create page response")).toBeDefined(),
         );
         // Only way I could think of to test success message
         expect(screen.getByTitle("form alert").className).toContain(
-            "alert-error"
+            "alert-error",
         );
         expect(screen.getByTitle("form alert").textContent).toContain(
-            mockResponse.error.message
+            mockResponse.error.message,
         );
 
         consoleErrorSpy.mockRestore();

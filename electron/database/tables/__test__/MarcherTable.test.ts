@@ -48,7 +48,7 @@ describe("MarcherTable", () => {
 
             expect(triggerSpy).toHaveBeenCalledWith(
                 db,
-                Constants.MarcherTableName
+                Constants.MarcherTableName,
             );
         });
 
@@ -73,7 +73,7 @@ describe("MarcherTable", () => {
             expect(prepareSpy).toHaveBeenCalled();
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 "Failed to create marcher table:",
-                error
+                error,
             );
         });
     });
@@ -112,7 +112,7 @@ describe("MarcherTable", () => {
                 expect(createdMarcher.year).toBe(newMarcher.year);
                 expect(createdMarcher.notes).toBe(newMarcher.notes);
                 expect(createdMarcher.drill_prefix).toBe(
-                    newMarcher.drill_prefix
+                    newMarcher.drill_prefix,
                 );
                 expect(createdMarcher.drill_order).toBe(newMarcher.drill_order);
 
@@ -125,7 +125,7 @@ describe("MarcherTable", () => {
                 expect(fetchedMarcher.year).toBe(newMarcher.year);
                 expect(fetchedMarcher.notes).toBe(newMarcher.notes);
                 expect(fetchedMarcher.drill_prefix).toBe(
-                    newMarcher.drill_prefix
+                    newMarcher.drill_prefix,
                 );
                 expect(fetchedMarcher.drill_order).toBe(newMarcher.drill_order);
             });
@@ -185,15 +185,15 @@ describe("MarcherTable", () => {
                     const fetchedMarcher = getResult.data[index];
                     expect(fetchedMarcher.name).toBe(newMarcher.name ?? null);
                     expect(fetchedMarcher.section).toBe(
-                        newMarcher.section ?? null
+                        newMarcher.section ?? null,
                     );
                     expect(fetchedMarcher.year).toBe(newMarcher.year ?? null);
                     expect(fetchedMarcher.notes).toBe(newMarcher.notes ?? null);
                     expect(fetchedMarcher.drill_prefix).toBe(
-                        newMarcher.drill_prefix
+                        newMarcher.drill_prefix,
                     );
                     expect(fetchedMarcher.drill_order).toBe(
-                        newMarcher.drill_order
+                        newMarcher.drill_order,
                     );
                 });
             });
@@ -203,14 +203,8 @@ describe("MarcherTable", () => {
                     {
                         counts: 32,
                         isSubset: true,
-                        previousPageId: null,
+                        previousPageId: 0,
                         notes: "Page 1",
-                    },
-                    {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: null,
-                        notes: "Page 2",
                     },
                 ];
 
@@ -279,7 +273,7 @@ describe("MarcherTable", () => {
                     marcherPages.data.map((marcherPage) => [
                         marcherPage.id,
                         marcherPage,
-                    ])
+                    ]),
                 );
 
                 // Check that there is a marcherPage for every marcher and page combination
@@ -288,7 +282,7 @@ describe("MarcherTable", () => {
                         const marcherPage = marcherPages.data.find(
                             (marcherPage) =>
                                 marcherPage.page_id === page.id &&
-                                marcherPage.marcher_id === marcher.id
+                                marcherPage.marcher_id === marcher.id,
                         );
                         expect(marcherPage).toBeDefined();
                         if (!marcherPage) continue;
@@ -298,7 +292,7 @@ describe("MarcherTable", () => {
                         marcherPagesMap.delete(marcherPage.id);
                     }
                 }
-                expect(marcherPagesMap.size).toBe(0);
+                expect(marcherPagesMap.size).toBe(5);
             });
         });
 
@@ -343,10 +337,10 @@ describe("MarcherTable", () => {
                 expect(fetchedMarcher.year).toBe(updatedMarcher.year);
                 expect(fetchedMarcher.notes).toBe(updatedMarcher.notes);
                 expect(fetchedMarcher.drill_prefix).toBe(
-                    updatedMarcher.drill_prefix
+                    updatedMarcher.drill_prefix,
                 );
                 expect(fetchedMarcher.drill_order).toBe(
-                    updatedMarcher.drill_order
+                    updatedMarcher.drill_order,
                 );
             });
 
@@ -422,7 +416,7 @@ describe("MarcherTable", () => {
                 expect(fetchedMarcher.year).toBe(newMarcher.year);
                 expect(fetchedMarcher.notes).toBe(newMarcher.notes);
                 expect(fetchedMarcher.drill_prefix).toBe(
-                    newMarcher.drill_prefix
+                    newMarcher.drill_prefix,
                 );
                 expect(fetchedMarcher.drill_order).toBe(newMarcher.drill_order);
             });
@@ -507,10 +501,10 @@ describe("MarcherTable", () => {
                     expect(fetchedMarcher.year).toBe(updatedMarcher.year);
                     expect(fetchedMarcher.notes).toBe(updatedMarcher.notes);
                     expect(fetchedMarcher.drill_prefix).toBe(
-                        updatedMarcher.drill_prefix
+                        updatedMarcher.drill_prefix,
                     );
                     expect(fetchedMarcher.drill_order).toBe(
-                        updatedMarcher.drill_order
+                        updatedMarcher.drill_order,
                     );
                 });
             });
@@ -585,7 +579,7 @@ describe("MarcherTable", () => {
                 expect(createResult.success).toBe(true);
 
                 const createdMarcherIds = createResult.data.map(
-                    (marcher) => marcher.id
+                    (marcher) => marcher.id,
                 );
 
                 const deleteResult = MarcherTable.deleteMarchers({
@@ -596,7 +590,7 @@ describe("MarcherTable", () => {
                 expect(deleteResult.success).toBe(true);
                 expect(deleteResult.data.length).toBe(3);
                 expect(
-                    deleteResult.data.map((marcher) => marcher.id).sort()
+                    deleteResult.data.map((marcher) => marcher.id).sort(),
                 ).toEqual(createdMarcherIds.sort());
 
                 const getResult = MarcherTable.getMarchers({ db });
@@ -656,7 +650,7 @@ describe("MarcherTable", () => {
                 expect(createResult.success).toBe(true);
 
                 const createdMarcherIds = createResult.data.map(
-                    (marcher) => marcher.id
+                    (marcher) => marcher.id,
                 );
                 const deleteIds = new Set<number>([
                     createdMarcherIds[1],
@@ -671,7 +665,7 @@ describe("MarcherTable", () => {
                 expect(deleteResult.success).toBe(true);
                 expect(deleteResult.data.length).toBe(2);
                 expect(
-                    deleteResult.data.map((marcher) => marcher.id).sort()
+                    deleteResult.data.map((marcher) => marcher.id).sort(),
                 ).toEqual(Array.from(deleteIds).sort());
 
                 const getResult = MarcherTable.getMarchers({ db });
@@ -679,10 +673,10 @@ describe("MarcherTable", () => {
                 expect(getResult.data.length).toBe(3);
 
                 const remainingIds = createdMarcherIds.filter(
-                    (id) => !deleteIds.has(id)
+                    (id) => !deleteIds.has(id),
                 );
                 expect(
-                    getResult.data.map((marcher) => marcher.id).sort()
+                    getResult.data.map((marcher) => marcher.id).sort(),
                 ).toEqual(remainingIds.sort());
             });
 
@@ -691,14 +685,8 @@ describe("MarcherTable", () => {
                     {
                         counts: 32,
                         isSubset: true,
-                        previousPageId: null,
+                        previousPageId: 0,
                         notes: "Page 1",
-                    },
-                    {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: null,
-                        notes: "Page 2",
                     },
                 ];
 
@@ -766,7 +754,7 @@ describe("MarcherTable", () => {
                 expect(deleteResult.success).toBe(true);
                 expect(deleteResult.data.length).toBe(2);
                 expect(
-                    deleteResult.data.map((marcher) => marcher.id).sort()
+                    deleteResult.data.map((marcher) => marcher.id).sort(),
                 ).toEqual(Array.from(deleteIds).sort());
 
                 const getResult = MarcherTable.getMarchers({ db });
@@ -777,7 +765,7 @@ describe("MarcherTable", () => {
                     .map((marcher) => marcher.id)
                     .filter((id) => !deleteIds.has(id));
                 expect(
-                    getResult.data.map((marcher) => marcher.id).sort()
+                    getResult.data.map((marcher) => marcher.id).sort(),
                 ).toEqual(remainingIds.sort());
 
                 const allMarcherPages = MarcherPageTable.getMarcherPages({
@@ -790,7 +778,7 @@ describe("MarcherTable", () => {
                     allMarcherPages.data.map((marcherPage) => [
                         marcherPage.id,
                         marcherPage,
-                    ])
+                    ]),
                 );
 
                 // Check that there is a marcherPage for every remaining marcher and page combination
@@ -799,7 +787,7 @@ describe("MarcherTable", () => {
                         const marcherPage = allMarcherPages.data.find(
                             (marcherPage) =>
                                 marcherPage.page_id === page.id &&
-                                marcherPage.marcher_id === marcher.id
+                                marcherPage.marcher_id === marcher.id,
                         );
                         expect(marcherPage).toBeDefined();
                         if (!marcherPage) continue;
@@ -809,1249 +797,9 @@ describe("MarcherTable", () => {
                         marcherPagesMap.delete(marcherPage.id);
                     }
                 }
-                expect(marcherPagesMap.size).toBe(0);
+                expect(marcherPagesMap.size).toBe(3);
             });
         });
-
-        // describe("createMarchers", () => {
-        //     it("should insert a new marcher into the database", () => {
-
-        //     });
-
-        //     it("should insert sequential marchers into the database with previous marcher defined", () => {
-        //         let newMarchers: NewMarcherArgs[] = [
-        //             { counts: 12, isSubset: false, previousMarcherId: null },
-        //         ];
-        //         let expectedCreatedMarchers: Marcher[] = [
-        //             {
-        //                 id: 1,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         let createResult = MarcherTable.createMarchers({
-        //             newMarchers,
-        //             db,
-        //         });
-        //         let getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         let trimmedCreateData = createResult.data.map(
-        //             (marcher: any) => {
-        //                 const { created_at, updated_at, ...rest } = marcher;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                 };
-        //             }
-        //         );
-        //         let trimmedGetData = getResult.data.map(
-        //             (marcher: any, index) => {
-        //                 const { created_at, updated_at, ...rest } = marcher;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                     id: index + 1,
-        //                 };
-        //             }
-        //         );
-        //         expect(trimmedCreateData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-
-        //         // NEW MARCHER 2
-        //         newMarchers = [
-        //             {
-        //                 counts: 10,
-        //                 isSubset: true,
-        //                 previousMarcherId: 1,
-        //             },
-        //         ];
-        //         expectedCreatedMarchers = [
-        //             {
-        //                 id: 1,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: 2,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: null,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         createResult = MarcherTable.createMarchers({ newMarchers, db });
-        //         getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         trimmedCreateData = createResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         trimmedGetData = getResult.data.map((marcher: any, index) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //                 id: index + 1,
-        //             };
-        //         });
-        //         expect(trimmedCreateData).toEqual([expectedCreatedMarchers[1]]);
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-
-        //         // NEW MARCHER 3
-        //         newMarchers = [
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 previousMarcherId: 2,
-        //                 notes: "jeff notes",
-        //             },
-        //         ];
-        //         expectedCreatedMarchers = [
-        //             {
-        //                 id: 1,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: 2,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: 3,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //         ];
-
-        //         createResult = MarcherTable.createMarchers({ newMarchers, db });
-        //         getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         trimmedCreateData = createResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         trimmedGetData = getResult.data.map((marcher: any, index) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //                 id: index + 1,
-        //             };
-        //         });
-        //         expect(trimmedCreateData).toEqual([expectedCreatedMarchers[2]]);
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-        //     });
-
-        //     it("should insert new marchers at the start of the database with no previous marcher defined", () => {
-        //         let newMarchers: NewMarcherArgs[] = [
-        //             { counts: 12, isSubset: false, previousMarcherId: null },
-        //         ];
-        //         let expectedCreatedMarchers: MarcherTable.DatabaseMarcher[] = [
-        //             {
-        //                 id: 1,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         let createResult = MarcherTable.createMarchers({
-        //             newMarchers,
-        //             db,
-        //         });
-        //         let getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         let trimmedCreateData = createResult.data.map(
-        //             (marcher: any) => {
-        //                 const { created_at, updated_at, ...rest } = marcher;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                 };
-        //             }
-        //         );
-        //         let trimmedGetData = getResult.data.map(
-        //             (marcher: any, index) => {
-        //                 const { created_at, updated_at, ...rest } = marcher;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                     id: index + 1,
-        //                 };
-        //             }
-        //         );
-        //         expect(trimmedCreateData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-
-        //         // NEW MARCHER 2
-        //         newMarchers = [
-        //             {
-        //                 counts: 10,
-        //                 isSubset: true,
-        //                 previousMarcherId: null,
-        //             },
-        //         ];
-        //         expectedCreatedMarchers = [
-        //             {
-        //                 id: 1,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: 1,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         createResult = MarcherTable.createMarchers({ newMarchers, db });
-        //         getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         trimmedCreateData = createResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         trimmedGetData = getResult.data.map((marcher: any, index) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //                 id: index + 1,
-        //             };
-        //         });
-        //         expect(trimmedCreateData).toEqual([expectedCreatedMarchers[1]]);
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-
-        //         // NEW MARCHER 3
-        //         newMarchers = [
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 notes: "jeff notes",
-        //                 previousMarcherId: null,
-        //             },
-        //         ];
-        //         expectedCreatedMarchers = [
-        //             {
-        //                 id: 1,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: 1,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_marcher_id: 2,
-        //                 notes: "jeff notes",
-        //             },
-        //         ];
-
-        //         createResult = MarcherTable.createMarchers({ newMarchers, db });
-        //         getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         trimmedCreateData = createResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         trimmedGetData = getResult.data.map((marcher: any, index) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //                 id: index + 1,
-        //             };
-        //         });
-        //         expect(trimmedCreateData).toEqual([expectedCreatedMarchers[2]]);
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort((marcher: any) => marcher.id)
-        //         );
-        //     });
-
-        //     it("should insert new marchers into the database at the same time", () => {
-        //         const newMarchers: NewMarcherArgs[] = [
-        //             { counts: 12, isSubset: false, previousMarcherId: null },
-        //             { counts: 10, isSubset: true, previousMarcherId: null },
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 notes: "jeff notes",
-        //                 previousMarcherId: null,
-        //             },
-        //         ];
-        //         const expectedCreatedMarchers = [
-        //             {
-        //                 id: 1,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: 1,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: 2,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         const createResult = MarcherTable.createMarchers({
-        //             newMarchers,
-        //             db,
-        //         });
-        //         const getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         const trimmedCreateData = createResult.data.map(
-        //             (marcher: any) => {
-        //                 const { created_at, updated_at, ...rest } = marcher;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                 };
-        //             }
-        //         );
-        //         const trimmedGetData = getResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         expect(trimmedCreateData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort(sorter)
-        //         );
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort(sorter)
-        //         );
-        //     });
-
-        //     it("should insert new marchers into the middle of the database at the same time", () => {
-        //         let newMarchers: NewMarcherArgs[] = [
-        //             { counts: 12, isSubset: false, previousMarcherId: null },
-        //             { counts: 10, isSubset: true, previousMarcherId: null },
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 previousMarcherId: null,
-        //                 notes: "jeff notes",
-        //             },
-        //         ];
-        //         let expectedCreatedMarchers: MarcherTable.DatabaseMarcher[] = [
-        //             {
-        //                 id: 1,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: 1,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: 2,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         let createResult = MarcherTable.createMarchers({
-        //             newMarchers,
-        //             db,
-        //         });
-        //         let getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         let trimmedCreateData = createResult.data.map(
-        //             (marcher: any) => {
-        //                 const { created_at, updated_at, ...rest } = marcher;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                 };
-        //             }
-        //         );
-        //         let trimmedGetData = getResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         expect(trimmedCreateData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort(sorter)
-        //         );
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort(sorter)
-        //         );
-
-        //         // NEW MARCHERS IN MIDDLE
-        //         newMarchers = [
-        //             { counts: 13, isSubset: false, previousMarcherId: 2 },
-        //             { counts: 11, isSubset: true, previousMarcherId: 2 },
-        //             {
-        //                 counts: 17,
-        //                 isSubset: false,
-        //                 notes: "jeff notes 2",
-        //                 previousMarcherId: 1,
-        //             },
-        //         ];
-        //         expectedCreatedMarchers = [
-        //             {
-        //                 id: 4,
-        //                 counts: 17,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: "jeff notes 2",
-        //             },
-        //             {
-        //                 id: 1,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_marcher_id: 4,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 5,
-        //                 counts: 11,
-        //                 is_subset: true,
-        //                 next_marcher_id: 1,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 6,
-        //                 counts: 13,
-        //                 is_subset: false,
-        //                 next_marcher_id: 5,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: 6,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: 2,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         createResult = MarcherTable.createMarchers({ newMarchers, db });
-        //         getResult = MarcherTable.getMarchers({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         trimmedCreateData = createResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         trimmedGetData = getResult.data.map((marcher: any) => {
-        //             const { created_at, updated_at, ...rest } = marcher;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         const expectedCreated = [
-        //             expectedCreatedMarchers[0],
-        //             expectedCreatedMarchers[2],
-        //             expectedCreatedMarchers[3],
-        //         ];
-        //         expect(trimmedCreateData.sort(sorter)).toEqual(
-        //             expectedCreated.sort(sorter)
-        //         );
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort(sorter)
-        //         );
-        //     });
-
-        //     it("should also create marcherPages when marchers exist in the database", () => {
-        //         const marchers: NewMarcherArgs[] = [
-        //             {
-        //                 name: "jeff",
-        //                 section: "brass",
-        //                 drill_prefix: "B",
-        //                 drill_order: 1,
-        //             },
-        //             {
-        //                 name: "ana",
-        //                 section: "brass",
-        //                 drill_prefix: "B",
-        //                 drill_order: 2,
-        //             },
-        //             {
-        //                 name: "qwerty",
-        //                 section: "wood",
-        //                 drill_prefix: "W",
-        //                 drill_order: 3,
-        //             },
-        //             {
-        //                 name: "pal",
-        //                 section: "brass",
-        //                 drill_prefix: "B",
-        //                 drill_order: 4,
-        //             },
-        //         ];
-        //         const createMarchersResponse = MarcherTable.createMarchers({
-        //             newMarchers: marchers,
-        //             db,
-        //         });
-        //         expect(createMarchersResponse.success).toBe(true);
-        //         let allMarcherPages = () =>
-        //             MarcherPageTable.getMarcherPages({ db });
-        //         expect(allMarcherPages().data.length).toBe(0);
-
-        //         const newMarchers: NewMarcherArgs[] = [
-        //             { counts: 12, isSubset: false, previousMarcherId: null },
-        //             { counts: 10, isSubset: true, previousMarcherId: null },
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 previousMarcherId: null,
-        //                 notes: "jeff notes",
-        //             },
-        //         ];
-        //         const expectedCreatedMarchers = [
-        //             {
-        //                 id: 1,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_marcher_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_marcher_id: 1,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_marcher_id: 2,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         const createResult = MarcherTable.createMarchers({
-        //             newMarchers,
-        //             db,
-        //         });
-
-        //         expect(createResult.success).toBe(true);
-        //         const trimmedCreateData = createResult.data.map(
-        //             (marcher: any) => {
-        //                 const { created_at, updated_at, ...rest } = marcher;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                 };
-        //             }
-        //         );
-        //         expect(trimmedCreateData.sort(sorter)).toEqual(
-        //             expectedCreatedMarchers.sort(sorter)
-        //         );
-
-        //         const marcherPages = MarcherPageTable.getMarcherPages({ db });
-        //         expect(marcherPages.success).toBe(true);
-        //         const marcherPagesMap = new Map<number, MarcherPage>(
-        //             marcherPages.data.map((marcherPage) => [
-        //                 marcherPage.id,
-        //                 marcherPage,
-        //             ])
-        //         );
-
-        //         // Check that there is a marcherPage for every marcher and marcher combination
-        //         for (const marcher of createMarchersResponse.data) {
-        //             for (const marcher of createResult.data) {
-        //                 const marcherPage = marcherPages.data.find(
-        //                     (marcherPage) =>
-        //                         marcherPage.marcher_id === marcher.id &&
-        //                         marcherPage.marcher_id === marcher.id
-        //                 );
-        //                 expect(marcherPage).toBeDefined();
-        //                 if (!marcherPage) continue;
-        //                 // Check that the marcherPage is in the map
-        //                 expect(marcherPagesMap.has(marcherPage.id)).toBe(true);
-        //                 // Remove the marcherPage from the map
-        //                 marcherPagesMap.delete(marcherPage.id);
-        //             }
-        //         }
-        //         expect(marcherPagesMap.size).toBe(0);
-        //     });
-        // });
-
-        // it("updates multiple pages", () => {
-        //     const newPages: NewPageArgs[] = [
-        //         {
-        //             counts: 32,
-        //             isSubset: true,
-        //             previousPageId: null,
-        //             notes: "do not touch",
-        //         },
-        //         {
-        //             counts: 12,
-        //             isSubset: false,
-        //             previousPageId: null,
-        //             notes: "notes jeff",
-        //         },
-        //         { counts: 10, isSubset: true, previousPageId: null },
-        //         {
-        //             counts: 16,
-        //             isSubset: false,
-        //             previousPageId: null,
-        //             notes: "jeff notes",
-        //         },
-        //     ];
-        //     const expectedCreatedPages = [
-        //         {
-        //             id: 1,
-        //             counts: 16,
-        //             is_subset: false,
-        //             next_page_id: null,
-        //             notes: "jeff notes",
-        //         },
-        //         {
-        //             id: 2,
-        //             counts: 10,
-        //             is_subset: true,
-        //             next_page_id: 1,
-        //             notes: null,
-        //         },
-        //         {
-        //             id: 3,
-        //             counts: 12,
-        //             is_subset: false,
-        //             next_page_id: 2,
-        //             notes: "notes jeff",
-        //         },
-        //         {
-        //             id: 4,
-        //             counts: 32,
-        //             is_subset: true,
-        //             next_page_id: 3,
-        //             notes: "do not touch",
-        //         },
-        //     ];
-
-        //     const createResult = PageTable.createPages({ newPages, db });
-
-        //     expect(createResult.success).toBe(true);
-        //     const trimmedCreateData = createResult.data.map((page: any) => {
-        //         const { created_at, updated_at, ...rest } = page;
-        //         return {
-        //             ...rest,
-        //             notes: rest.notes ? rest.notes : null,
-        //         };
-        //     });
-        //     expect(trimmedCreateData.sort(sorter)).toEqual(
-        //         expectedCreatedPages.sort(sorter)
-        //     );
-
-        //     const updatedPages: ModifiedPageArgs[] = [
-        //         {
-        //             id: 1,
-        //             counts: 17,
-        //             is_subset: true,
-        //             notes: null,
-        //         },
-        //         {
-        //             id: 2,
-        //             counts: 11,
-        //             is_subset: false,
-        //             notes: "new note",
-        //         },
-        //         {
-        //             id: 3,
-        //         },
-        //     ];
-
-        //     const expectedUpdatedPages = [
-        //         {
-        //             id: 1,
-        //             counts: 17,
-        //             is_subset: true,
-        //             next_page_id: null,
-        //             notes: null,
-        //         },
-        //         {
-        //             id: 2,
-        //             counts: 11,
-        //             is_subset: false,
-        //             next_page_id: 1,
-        //             notes: "new note",
-        //         },
-        //         {
-        //             id: 3,
-        //             counts: 12,
-        //             is_subset: false,
-        //             next_page_id: 2,
-        //             notes: "notes jeff",
-        //         },
-        //     ];
-        //     const expectedAllPages = [
-        //         ...expectedUpdatedPages,
-        //         expectedCreatedPages[3],
-        //     ];
-
-        //     const updateResult = PageTable.updatePages({
-        //         modifiedPages: updatedPages,
-        //         db,
-        //     });
-        //     expect(updateResult.success).toBe(true);
-        //     const trimmedUpdateData = updateResult.data.map((page: any) => {
-        //         const { created_at, updated_at, ...rest } = page;
-        //         return {
-        //             ...rest,
-        //             notes: rest.notes ? rest.notes : null,
-        //         };
-        //     });
-        //     expect(trimmedUpdateData.sort(sorter)).toEqual(
-        //         expectedUpdatedPages.sort(sorter)
-        //     );
-
-        //     const allPages = PageTable.getPages({ db });
-        //     expect(allPages.success).toBe(true);
-        //     const trimmedAllData = allPages.data.map((page: any) => {
-        //         const { created_at, updated_at, ...rest } = page;
-        //         return {
-        //             ...rest,
-        //             notes: rest.notes ? rest.notes : null,
-        //         };
-        //     });
-        //     expect(trimmedAllData.sort(sorter)).toEqual(
-        //         expectedAllPages.sort(sorter)
-        //     );
-        // });
-
-        // describe("deletePage", () => {
-        //     it("should delete a page by id from the database", async () => {
-        //         const newPages: NewPageArgs[] = [
-        //             { counts: 12, isSubset: false, previousPageId: null },
-        //             { counts: 10, isSubset: true, previousPageId: null },
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 previousPageId: null,
-        //                 notes: "jeff notes",
-        //             },
-        //         ];
-        //         const expectedCreatedPages = [
-        //             {
-        //                 id: 1,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_page_id: 1,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_page_id: 2,
-        //                 notes: null,
-        //             },
-        //         ];
-
-        //         const createResult = PageTable.createPages({ newPages, db });
-        //         const getResult = PageTable.getPages({ db });
-
-        //         expect(createResult.success).toBe(true);
-        //         const trimmedGetData = getResult.data.map((page: any) => {
-        //             const { created_at, updated_at, ...rest } = page;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         expect(trimmedGetData.sort(sorter)).toEqual(
-        //             expectedCreatedPages.sort(sorter)
-        //         );
-
-        //         let expectedDeletedPage = {
-        //             id: 2,
-        //             counts: 10,
-        //             is_subset: true,
-        //             next_page_id: null,
-        //             notes: null,
-        //         };
-        //         let expectedPages = [
-        //             {
-        //                 id: 1,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_page_id: 1,
-        //                 notes: null,
-        //             },
-        //         ];
-        //         const deletePageResponse = PageTable.deletePages({
-        //             pageIds: new Set<number>([2]),
-        //             db,
-        //         });
-        //         expect(deletePageResponse.success).toBe(true);
-        //         const trimmedDeleteData = deletePageResponse.data.map(
-        //             (page: any) => {
-        //                 const { created_at, updated_at, ...rest } = page;
-        //                 return {
-        //                     ...rest,
-        //                     notes: rest.notes ? rest.notes : null,
-        //                 };
-        //             }
-        //         );
-        //         expect(trimmedDeleteData).toEqual([expectedDeletedPage]);
-        //         const allPages = PageTable.getPages({ db });
-        //         expect(allPages.success).toBe(true);
-        //         const trimmedAllData = allPages.data.map((page: any) => {
-        //             const { created_at, updated_at, ...rest } = page;
-        //             return {
-        //                 ...rest,
-        //                 notes: rest.notes ? rest.notes : null,
-        //             };
-        //         });
-        //         expect(trimmedAllData.sort(sorter)).toEqual(expectedPages);
-        //     });
-        //     it("should delete multiple pages by id from the database", async () => {
-        //         const newPages: NewPageArgs[] = [
-        //             { counts: 12, isSubset: false, previousPageId: null },
-        //             { counts: 10, isSubset: true, previousPageId: null },
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 previousPageId: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             { counts: 45, isSubset: true, previousPageId: null },
-        //             {
-        //                 counts: 14,
-        //                 isSubset: false,
-        //                 previousPageId: null,
-        //                 notes: "bad notes",
-        //             },
-        //             {
-        //                 counts: 90,
-        //                 isSubset: true,
-        //                 previousPageId: null,
-        //                 notes: "nice notes",
-        //             },
-        //         ];
-
-        //         const expectedCreatedPages = [
-        //             {
-        //                 id: 6,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_page_id: 5,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 5,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_page_id: 4,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 4,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_page_id: 3,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 45,
-        //                 is_subset: true,
-        //                 next_page_id: 2,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 14,
-        //                 is_subset: false,
-        //                 next_page_id: 1,
-        //                 notes: "bad notes",
-        //             },
-        //             {
-        //                 id: 1,
-        //                 counts: 90,
-        //                 is_subset: true,
-        //                 next_page_id: null,
-        //                 notes: "nice notes",
-        //             },
-        //         ];
-
-        //         const createResult = PageTable.createPages({ newPages, db });
-        //         expect(createResult.success).toBe(true);
-        //         expect(trimData(createResult.data).sort(sorter)).toEqual(
-        //             expectedCreatedPages.sort(sorter)
-        //         );
-
-        //         const expectedDeletedPages = [
-        //             {
-        //                 id: 6,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 4,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 45,
-        //                 is_subset: true,
-        //                 next_page_id: null,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 1,
-        //                 counts: 90,
-        //                 is_subset: true,
-        //                 next_page_id: null,
-        //                 notes: "nice notes",
-        //             },
-        //         ];
-        //         const expectedPages = [
-        //             {
-        //                 id: 5,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_page_id: 2,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 14,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: "bad notes",
-        //             },
-        //         ];
-        //         const deletePageResponse = PageTable.deletePages({
-        //             pageIds: new Set<number>([1, 3, 4, 6]),
-        //             db,
-        //         });
-        //         expect(deletePageResponse.success).toBe(true);
-        //         expect(trimData(deletePageResponse.data).sort(sorter)).toEqual(
-        //             trimData(expectedDeletedPages).sort(sorter)
-        //         );
-        //         const allPages = PageTable.getPages({ db });
-        //         expect(allPages.success).toBe(true);
-        //         expect(trimData(allPages.data).sort(sorter)).toEqual(
-        //             expectedPages.sort(sorter)
-        //         );
-        //     });
-
-        //     it("should delete pages and their associated marcherPages", () => {
-        //         const marchers: NewMarcherArgs[] = [
-        //             {
-        //                 name: "jeff",
-        //                 section: "brass",
-        //                 drill_prefix: "B",
-        //                 drill_order: 1,
-        //             },
-        //             {
-        //                 name: "ana",
-        //                 section: "brass",
-        //                 drill_prefix: "B",
-        //                 drill_order: 2,
-        //             },
-        //             {
-        //                 name: "qwerty",
-        //                 section: "wood",
-        //                 drill_prefix: "W",
-        //                 drill_order: 3,
-        //             },
-        //             {
-        //                 name: "pal",
-        //                 section: "brass",
-        //                 drill_prefix: "B",
-        //                 drill_order: 4,
-        //             },
-        //         ];
-        //         const createMarchersResponse = MarcherTable.createMarchers({
-        //             newMarchers: marchers,
-        //             db,
-        //         });
-        //         expect(createMarchersResponse.success).toBe(true);
-        //         expect(createMarchersResponse.data.length).toBe(4);
-        //         const expectMarcherPagesLengthToBe = (length: number) => {
-        //             const marcherPages = MarcherPageTable.getMarcherPages({
-        //                 db,
-        //             });
-        //             expect(marcherPages.success).toBe(true);
-        //             expect(marcherPages.data.length).toBe(length);
-        //         };
-        //         expectMarcherPagesLengthToBe(0);
-
-        //         const newPages: NewPageArgs[] = [
-        //             { counts: 12, isSubset: false, previousPageId: null },
-        //             { counts: 10, isSubset: true, previousPageId: null },
-        //             {
-        //                 counts: 16,
-        //                 isSubset: false,
-        //                 previousPageId: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             { counts: 45, isSubset: true, previousPageId: null },
-        //             {
-        //                 counts: 14,
-        //                 isSubset: false,
-        //                 previousPageId: null,
-        //                 notes: "bad notes",
-        //             },
-        //             {
-        //                 counts: 90,
-        //                 isSubset: true,
-        //                 previousPageId: null,
-        //                 notes: "nice notes",
-        //             },
-        //         ];
-
-        //         const expectedCreatedPages = [
-        //             {
-        //                 id: 6,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_page_id: 5,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 5,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_page_id: 4,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 4,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_page_id: 3,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 45,
-        //                 is_subset: true,
-        //                 next_page_id: 2,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 14,
-        //                 is_subset: false,
-        //                 next_page_id: 1,
-        //                 notes: "bad notes",
-        //             },
-        //             {
-        //                 id: 1,
-        //                 counts: 90,
-        //                 is_subset: true,
-        //                 next_page_id: null,
-        //                 notes: "nice notes",
-        //             },
-        //         ];
-
-        //         const createResult = PageTable.createPages({ newPages, db });
-        //         expect(createResult.success).toBe(true);
-        //         expect(trimData(createResult.data).sort(sorter)).toEqual(
-        //             expectedCreatedPages.sort(sorter)
-        //         );
-
-        //         expectMarcherPagesLengthToBe(
-        //             expectedCreatedPages.length * marchers.length
-        //         );
-
-        //         const expectedDeletedPages = [
-        //             {
-        //                 id: 6,
-        //                 counts: 12,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 4,
-        //                 counts: 16,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: "jeff notes",
-        //             },
-        //             {
-        //                 id: 3,
-        //                 counts: 45,
-        //                 is_subset: true,
-        //                 next_page_id: null,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 1,
-        //                 counts: 90,
-        //                 is_subset: true,
-        //                 next_page_id: null,
-        //                 notes: "nice notes",
-        //             },
-        //         ];
-        //         const expectedPages = [
-        //             {
-        //                 id: 5,
-        //                 counts: 10,
-        //                 is_subset: true,
-        //                 next_page_id: 2,
-        //                 notes: null,
-        //             },
-        //             {
-        //                 id: 2,
-        //                 counts: 14,
-        //                 is_subset: false,
-        //                 next_page_id: null,
-        //                 notes: "bad notes",
-        //             },
-        //         ];
-        //         const deletePageResponse = PageTable.deletePages({
-        //             pageIds: new Set<number>([1, 3, 4, 6]),
-        //             db,
-        //         });
-        //         expect(deletePageResponse.success).toBe(true);
-        //         expect(trimData(deletePageResponse.data).sort(sorter)).toEqual(
-        //             trimData(expectedDeletedPages).sort(sorter)
-        //         );
-        //         const allPages = PageTable.getPages({ db });
-        //         expect(allPages.success).toBe(true);
-        //         expect(trimData(allPages.data).sort(sorter)).toEqual(
-        //             expectedPages.sort(sorter)
-        //         );
-
-        //         expectMarcherPagesLengthToBe(
-        //             marchers.length * expectedPages.length
-        //         );
-        //         const marcherPages = MarcherPageTable.getMarcherPages({ db });
-        //         const marcherPagesMap = new Map<number, MarcherPage>(
-        //             marcherPages.data.map((marcherPage) => [
-        //                 marcherPage.id,
-        //                 marcherPage,
-        //             ])
-        //         );
-        //         // Check that there is a marcherPage for every marcher and page combination
-        //         for (const marcher of createMarchersResponse.data) {
-        //             for (const page of allPages.data) {
-        //                 const marcherPage = marcherPages.data.find(
-        //                     (marcherPage) =>
-        //                         marcherPage.page_id === page.id &&
-        //                         marcherPage.marcher_id === marcher.id
-        //                 );
-        //                 expect(marcherPage).toBeDefined();
-        //                 if (!marcherPage) continue;
-        //                 // Check that the marcherPage is in the map
-        //                 expect(marcherPagesMap.has(marcherPage.id)).toBe(true);
-        //                 // Remove the marcherPage from the map
-        //                 marcherPagesMap.delete(marcherPage.id);
-        //             }
-        //         }
-        //         expect(marcherPagesMap.size).toBe(0);
-        //     });
-        // });
     });
 
     describe("undoRedo", () => {
@@ -2153,7 +901,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdMarchers.map((marcher) => marcher.id)
+                        createdMarchers.map((marcher) => marcher.id),
                     );
 
                     // Undo the creation
@@ -2174,7 +922,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdMarchers.map((marcher) => marcher.id)
+                        createdMarchers.map((marcher) => marcher.id),
                     );
 
                     // Undo the creation again
@@ -2220,7 +968,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdExistingMarchers.map((marcher) => marcher.id)
+                        createdExistingMarchers.map((marcher) => marcher.id),
                     );
 
                     const newMarchers: NewMarcherArgs[] = [
@@ -2256,8 +1004,8 @@ describe("MarcherTable", () => {
                     expect(getResult.data.length).toBe(4);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
                         [...createdExistingMarchers, ...createdNewMarchers].map(
-                            (marcher) => marcher.id
-                        )
+                            (marcher) => marcher.id,
+                        ),
                     );
 
                     // Undo the creation of new marchers
@@ -2269,7 +1017,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdExistingMarchers.map((marcher) => marcher.id)
+                        createdExistingMarchers.map((marcher) => marcher.id),
                     );
 
                     // Redo the creation of new marchers
@@ -2282,8 +1030,8 @@ describe("MarcherTable", () => {
                     expect(getResult.data.length).toBe(4);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
                         [...createdExistingMarchers, ...createdNewMarchers].map(
-                            (marcher) => marcher.id
-                        )
+                            (marcher) => marcher.id,
+                        ),
                     );
 
                     // Undo the creation of new marchers again
@@ -2295,7 +1043,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdExistingMarchers.map((marcher) => marcher.id)
+                        createdExistingMarchers.map((marcher) => marcher.id),
                     );
                 });
             });
@@ -2306,14 +1054,8 @@ describe("MarcherTable", () => {
                         {
                             counts: 32,
                             isSubset: true,
-                            previousPageId: null,
+                            previousPageId: 0,
                             notes: "Page 1",
-                        },
-                        {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: null,
-                            notes: "Page 2",
                         },
                     ];
 
@@ -2409,14 +1151,8 @@ describe("MarcherTable", () => {
                         {
                             counts: 32,
                             isSubset: true,
-                            previousPageId: null,
+                            previousPageId: 0,
                             notes: "Existing Page 1",
-                        },
-                        {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: null,
-                            notes: "Existing Page 2",
                         },
                     ];
 
@@ -2570,7 +1306,7 @@ describe("MarcherTable", () => {
                 expect(getResult.success).toBe(true);
                 expect(getResult.data.length).toBe(2);
                 expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                    createdMarchers.map((marcher) => marcher.id)
+                    createdMarchers.map((marcher) => marcher.id),
                 );
 
                 const updatedMarchers: ModifiedMarcherArgs[] =
@@ -2596,7 +1332,7 @@ describe("MarcherTable", () => {
                 expect(getResult.success).toBe(true);
                 expect(getResult.data.length).toBe(2);
                 expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                    updatedMarchers.map((marcher) => marcher.id)
+                    updatedMarchers.map((marcher) => marcher.id),
                 );
                 updatedMarchers.forEach((updatedMarcher, index) => {
                     const fetchedMarcher = getResult.data[index];
@@ -2605,10 +1341,10 @@ describe("MarcherTable", () => {
                     expect(fetchedMarcher.year).toBe(updatedMarcher.year);
                     expect(fetchedMarcher.notes).toBe(updatedMarcher.notes);
                     expect(fetchedMarcher.drill_prefix).toBe(
-                        updatedMarcher.drill_prefix
+                        updatedMarcher.drill_prefix,
                     );
                     expect(fetchedMarcher.drill_order).toBe(
-                        updatedMarcher.drill_order
+                        updatedMarcher.drill_order,
                     );
                 });
 
@@ -2621,7 +1357,7 @@ describe("MarcherTable", () => {
                 expect(getResult.success).toBe(true);
                 expect(getResult.data.length).toBe(2);
                 expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                    createdMarchers.map((marcher) => marcher.id)
+                    createdMarchers.map((marcher) => marcher.id),
                 );
                 createdMarchers.forEach((createdMarcher, index) => {
                     const fetchedMarcher = getResult.data[index];
@@ -2630,10 +1366,10 @@ describe("MarcherTable", () => {
                     expect(fetchedMarcher.year).toBe(createdMarcher.year);
                     expect(fetchedMarcher.notes).toBe(createdMarcher.notes);
                     expect(fetchedMarcher.drill_prefix).toBe(
-                        createdMarcher.drill_prefix
+                        createdMarcher.drill_prefix,
                     );
                     expect(fetchedMarcher.drill_order).toBe(
-                        createdMarcher.drill_order
+                        createdMarcher.drill_order,
                     );
                 });
 
@@ -2646,7 +1382,7 @@ describe("MarcherTable", () => {
                 expect(getResult.success).toBe(true);
                 expect(getResult.data.length).toBe(2);
                 expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                    updatedMarchers.map((marcher) => marcher.id)
+                    updatedMarchers.map((marcher) => marcher.id),
                 );
                 updatedMarchers.forEach((updatedMarcher, index) => {
                     const fetchedMarcher = getResult.data[index];
@@ -2655,10 +1391,10 @@ describe("MarcherTable", () => {
                     expect(fetchedMarcher.year).toBe(updatedMarcher.year);
                     expect(fetchedMarcher.notes).toBe(updatedMarcher.notes);
                     expect(fetchedMarcher.drill_prefix).toBe(
-                        updatedMarcher.drill_prefix
+                        updatedMarcher.drill_prefix,
                     );
                     expect(fetchedMarcher.drill_order).toBe(
-                        updatedMarcher.drill_order
+                        updatedMarcher.drill_order,
                     );
                 });
 
@@ -2671,7 +1407,7 @@ describe("MarcherTable", () => {
                 expect(getResult.success).toBe(true);
                 expect(getResult.data.length).toBe(2);
                 expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                    createdMarchers.map((marcher) => marcher.id)
+                    createdMarchers.map((marcher) => marcher.id),
                 );
                 createdMarchers.forEach((createdMarcher, index) => {
                     const fetchedMarcher = getResult.data[index];
@@ -2680,10 +1416,10 @@ describe("MarcherTable", () => {
                     expect(fetchedMarcher.year).toBe(createdMarcher.year);
                     expect(fetchedMarcher.notes).toBe(createdMarcher.notes);
                     expect(fetchedMarcher.drill_prefix).toBe(
-                        createdMarcher.drill_prefix
+                        createdMarcher.drill_prefix,
                     );
                     expect(fetchedMarcher.drill_order).toBe(
-                        createdMarcher.drill_order
+                        createdMarcher.drill_order,
                     );
                 });
             });
@@ -2790,13 +1526,13 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdMarchers.map((marcher) => marcher.id)
+                        createdMarchers.map((marcher) => marcher.id),
                     );
 
                     // Delete the marchers
                     const deleteResult = MarcherTable.deleteMarchers({
                         marcherIds: new Set<number>(
-                            createdMarchers.map((marcher) => marcher.id)
+                            createdMarchers.map((marcher) => marcher.id),
                         ),
                         db,
                     });
@@ -2816,7 +1552,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdMarchers.map((marcher) => marcher.id)
+                        createdMarchers.map((marcher) => marcher.id),
                     );
 
                     // Redo the deletion
@@ -2837,7 +1573,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdMarchers.map((marcher) => marcher.id)
+                        createdMarchers.map((marcher) => marcher.id),
                     );
                 });
 
@@ -2874,7 +1610,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdExistingMarchers.map((marcher) => marcher.id)
+                        createdExistingMarchers.map((marcher) => marcher.id),
                     );
 
                     const newMarchers: NewMarcherArgs[] = [
@@ -2910,14 +1646,14 @@ describe("MarcherTable", () => {
                     expect(getResult.data.length).toBe(4);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
                         [...createdExistingMarchers, ...createdNewMarchers].map(
-                            (marcher) => marcher.id
-                        )
+                            (marcher) => marcher.id,
+                        ),
                     );
 
                     // Delete the new marchers
                     const deleteResult = MarcherTable.deleteMarchers({
                         marcherIds: new Set<number>(
-                            createdNewMarchers.map((marcher) => marcher.id)
+                            createdNewMarchers.map((marcher) => marcher.id),
                         ),
                         db,
                     });
@@ -2928,7 +1664,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdExistingMarchers.map((marcher) => marcher.id)
+                        createdExistingMarchers.map((marcher) => marcher.id),
                     );
 
                     // Undo the deletion
@@ -2941,8 +1677,8 @@ describe("MarcherTable", () => {
                     expect(getResult.data.length).toBe(4);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
                         [...createdExistingMarchers, ...createdNewMarchers].map(
-                            (marcher) => marcher.id
-                        )
+                            (marcher) => marcher.id,
+                        ),
                     );
 
                     // Redo the deletion
@@ -2954,7 +1690,7 @@ describe("MarcherTable", () => {
                     expect(getResult.success).toBe(true);
                     expect(getResult.data.length).toBe(2);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
-                        createdExistingMarchers.map((marcher) => marcher.id)
+                        createdExistingMarchers.map((marcher) => marcher.id),
                     );
 
                     // Undo the deletion again
@@ -2967,8 +1703,8 @@ describe("MarcherTable", () => {
                     expect(getResult.data.length).toBe(4);
                     expect(getResult.data.map((marcher) => marcher.id)).toEqual(
                         [...createdExistingMarchers, ...createdNewMarchers].map(
-                            (marcher) => marcher.id
-                        )
+                            (marcher) => marcher.id,
+                        ),
                     );
                 });
             });
@@ -2979,14 +1715,8 @@ describe("MarcherTable", () => {
                         {
                             counts: 32,
                             isSubset: true,
-                            previousPageId: null,
+                            previousPageId: 0,
                             notes: "Page 1",
-                        },
-                        {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: null,
-                            notes: "Page 2",
                         },
                     ];
 
@@ -3050,8 +1780,8 @@ describe("MarcherTable", () => {
                     const deleteResult = MarcherTable.deleteMarchers({
                         marcherIds: new Set<number>(
                             createMarchersResponse.data.map(
-                                (marcher) => marcher.id
-                            )
+                                (marcher) => marcher.id,
+                            ),
                         ),
                         db,
                     });
@@ -3097,15 +1827,9 @@ describe("MarcherTable", () => {
                 it("should undo, redo, and undo the deletion of multiple marchers and their MarcherPages when pages and marchers exist", () => {
                     const existingPages: NewPageArgs[] = [
                         {
-                            counts: 32,
-                            isSubset: true,
-                            previousPageId: null,
-                            notes: "Existing Page 1",
-                        },
-                        {
                             counts: 16,
                             isSubset: false,
-                            previousPageId: null,
+                            previousPageId: 0,
                             notes: "Existing Page 2",
                         },
                     ];
@@ -3197,8 +1921,8 @@ describe("MarcherTable", () => {
                     const deleteResult = MarcherTable.deleteMarchers({
                         marcherIds: new Set<number>(
                             createMarchersResponse.data.map(
-                                (marcher) => marcher.id
-                            )
+                                (marcher) => marcher.id,
+                            ),
                         ),
                         db,
                     });

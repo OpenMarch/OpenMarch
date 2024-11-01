@@ -71,7 +71,7 @@ You can switch between fields of the same size with no issue.
 - [x] Draw and distribute lines of marchers
 - [x] Ability to switch to high school football field (and pro + with and w/o end zones as a bonus)
 
-### Plans for October
+### Plans for November
 
 Must haves -
 
