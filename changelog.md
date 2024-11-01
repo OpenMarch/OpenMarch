@@ -1,44 +1,52 @@
-# 0.0.3 - Alignment
+# 0.0.4 - New UI and Database
 
 ## Features
 
-- **Lines**
-  - Steps to create a line:
-    1. Select a group of 3 or more marchers
-    1. Click the `Draw Line` button in the marcher editor or press `L`
-    1. Draw a straight line
-    1. Adjust the order the Marchers will be on the line by dragging them around
-    1. Press `Apply` in the alignment editor or `Enter` to apply the changes
-  - This is the start of a new feature called an "Alignment Event." This will be how other shapes are created as well
-- **Different field types**
-  - Clicking the gear icon in the topbar, the field type can be changed (currently only high school and college)
-  - Users can also turn the grid lines on and off to have a more clean view
+### New UI
+
+Thanks to the hard work of [dukc](https://github.com/dukcc), the UI has a new modern look.
+The new interface also brings the following:
+
+- Dark and light mode
+- Turning popup windows into side lists (so the user can still edit the canvas)
+- Ability to collapse the sidebar inspectors
+- A measure/page timeline that is actually readable
+- An overall better place to spend your time
+
+### Undo and Redo
+
+Essentially everything that modifies the database can be undone and restored.
+Before, only the editing of Marchers, Pages, and MarcherPages were part of the history stack.
+Now you can do the following:
+
+- Undo and redo the creation, modification, and deletion of rows in every table
+  - Marchers
+  - Pages
+  - MarcherPages
+  - FieldProperties
+  - Audio
+  - Measures
+- There is now a limit to how many actions are saved so the file doesn't take up infinite storage
+  - Default is 500 actions
 
 ## Quality of life
 
-- **Mac users can double click files in Finder to open them in OpenMarch**
-  - Users must manually set this by clicking "Choose Application"
-  - OpenMarch's logo still doesn't show on the icon for the file
-  - Not tested on Windows
+- The first page now always exists and cannot be deleted
+  - There was no reason for a user to make a 0-count page, as page 1 will always exist
+- The canvas shows up immediately on launch (thanks to the implementation of the permanent page 1)
 
 ## Dev
 
-- **Switched from Jest to Vitest**
-  - This simplifies the config files needed (since we're already using Vite) and the tests are a lot faster
-  - The VSCode extension is not too polished in comparison to Jest unfortunately
-- **Reorganized files for the sidebar, topbar, and timeline to have their own folders**
-  - Sidebar editors now have their own container component `EditorContainer.tsx`
-- **There is now a `Selectable` interface to select more than just marchers on the canvas**
-  - Originally, this was for MarcherLines, but I decided for now to not make them editable. This will greatly simplify the code and users can just cancel and create a new line
-  - This will be useful (hopefully) when props and non-marcher objects are implemented
-- **There is now an abstract class for database tables in electron `TableController.ts`**
-  - This will make adding new tables to OpenMarch much easier
-  - Rather than repeating functions in one large file, there will be a generic abstract class called `TableController` that will have common functions
-  - This was also originally used for MarcherLines when I wanted them to be their own separate objects, but I decided against that
-  - I want to transition all of the existing tables to this if I can find a way to do it easily
-  - I haven't figured out history in this abstract class yet
-- **Refactored the Canvas.tsx component to have an accompanying `OpenMarchCanvas.ts` class**
-  - This will allow for better code isolation, testing, and organization
-- **Made a way to switch the listeners on the canvas based on the `AlignmentEvent`**
-  - `CanvasListeners` are a way to change the default behavior of the canvas.
-  - All `CanvasListeners` should extend the `DefaultListeners` so that default functionality can easily be implemented with `super`
+### UI
+
+- Standard components using [Radix](https://www.radix-ui.com/)
+- Unified variables with tailwind
+
+### Database
+
+- `DatabaseActions.ts` - Standard database interactions
+  - Rather than trying to force `TableController` objects, I've made a collection of functions in a file called `DatabaseActions` which standardize interactions with the database.
+  - The decision to go functional as opposed to object-oriented was due to the hyper-customization each table needed in its own case.
+- History triggers
+  - All actions performed on the database are automatically recorded using triggers at the SQLite level
+  - To add a table to the history stack, call `createUndoTriggers(db, tableName)` from `database.history.ts`

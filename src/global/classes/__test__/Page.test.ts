@@ -53,34 +53,34 @@ describe("Page", () => {
         beforeEach(() => {
             newPageArgs = [
                 {
-                    previousPageId: null,
+                    previousPageId: 0,
                     isSubset: false,
                     counts: 16,
                     notes: "Some notes",
                 },
                 {
-                    previousPageId: null,
+                    previousPageId: 1,
                     counts: 8,
                     isSubset: false,
                     notes: "Other notes",
                 },
                 {
-                    previousPageId: null,
+                    previousPageId: 2,
                     counts: 32,
                     isSubset: true,
                 },
                 {
-                    previousPageId: null,
+                    previousPageId: 3,
                     counts: 1,
                     isSubset: true,
                 },
                 {
-                    previousPageId: null,
+                    previousPageId: 4,
                     counts: 1,
                     isSubset: true,
                 },
                 {
-                    previousPageId: null,
+                    previousPageId: 5,
                     counts: 1,
                     isSubset: false,
                 },
