@@ -21,9 +21,7 @@ categories: jekyll update
 
 For the first time in OpenMarch history (about one year), we have someone who's made a significant contribution to the project!
 
-First off, we have a logo now!
-
-![OpenMarch Logo](../logo/OpenMarch_TextLogo_Purple.png)
+First off, we have a logo now! (I can't figure out how to print images in this blog post. Look at the YouTube Channel)
 
 This also comes in an app icon version as well as some other reduced versions.
 This is all thanks to [Ben Moulse](https://www.behance.net/Moulse) and his amazing work/flexibility.
