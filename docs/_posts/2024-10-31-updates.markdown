@@ -23,7 +23,7 @@ For the first time in OpenMarch history (about one year), we have someone who's 
 
 First off, we have a logo now!
 
-![OpenMarch Logo](../logo/OpenMarch_TextLogo_Purple.png)
+![OpenMarch Logo](OpenMarch_TextLogo_Purple.png)
 
 This also comes in an app icon version as well as some other reduced versions.
 This is all thanks to [Ben Moulse](https://www.behance.net/Moulse) and his amazing work/flexibility.
