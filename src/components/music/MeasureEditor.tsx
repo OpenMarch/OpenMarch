@@ -113,8 +113,11 @@ export default function MeasureEditor() {
     }, [resetForm, selectedMeasure]);
 
     return (
-        <div className="flex flex-col gap-24">
-            <div id="measures-container" className="flex flex-col gap-12">
+        <div className="flex w-[30rem] flex-col gap-24">
+            <div
+                id="measures-container"
+                className="flex w-full min-w-0 flex-col gap-12"
+            >
                 <div className="flex items-center justify-between">
                     <h5 className="text-h5 leading-none">Measures</h5>
                     <div className="flex gap-8">
@@ -136,7 +139,7 @@ export default function MeasureEditor() {
                         */}
                     </div>
                 </div>
-                <div className="flex gap-8 px-12">
+                <div className="flex w-full flex-nowrap gap-8 overflow-x-scroll px-12 pb-8">
                     {measures.map((measure) => (
                         <button
                             className={`rounded-6 border bg-fg-2 px-12 py-6 hover:cursor-pointer ${
