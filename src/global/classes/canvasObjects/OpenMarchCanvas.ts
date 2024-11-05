@@ -15,6 +15,7 @@ import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
+import MarcherCurve from "./MarcherCurve";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -134,6 +135,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         if (listeners) this.setListeners(listeners);
 
+        // ADD MARCHER CURVE
+        const marcherCurve = new MarcherCurve({
+            canvas: this,
+            startPoint: { x: 5, y: 5 },
+            controlPoint: { x: 150, y: 250 },
+            endPoint: { x: 200, y: 100 },
+        });
+
         this.requestRenderAll();
     }
 
@@ -208,9 +217,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
             // Marcher does not exist on the Canvas, create a new one
             if (!curCanvasMarcher) {
-                const curMarcher = allMarchers.find(
-                    (marcher) => marcher.id === marcherPage.marcher_id,
-                );
+                const curMarcher = allMarchersMap.get(marcherPage.marcher_id);
                 if (!curMarcher) {
                     console.error(
                         "Marcher object not found in the store for given MarcherPage  - renderMarchers: Canvas.tsx",

@@ -101,6 +101,10 @@ export default function Canvas({
                     }
                     break;
                 }
+                case Selectable.SelectableClasses.CURVE_POINT: {
+                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.CURVE_POINT]);
+                    break;
+                }
                 default: {
                     unimplementedError(selectedClass);
                 }
@@ -162,6 +166,7 @@ export default function Canvas({
             [key in Selectable.SelectableClasses]: any[];
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
+            [Selectable.SelectableClasses.CURVE_POINT]: [],
         };
 
         const allObjectsToSelect: Selectable.ISelectable[] = [];
@@ -187,6 +192,11 @@ export default function Canvas({
                     );
                     break;
                 }
+                case Selectable.SelectableClasses.CURVE_POINT: {
+                    // CurvePoint
+                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.CURVE_POINT]);
+                    break;
+                }
                 default: {
                     unimplementedError(selectableClass);
                 }
@@ -209,6 +219,10 @@ export default function Canvas({
             switch (selectableClass) {
                 case Selectable.SelectableClasses.MARCHER: {
                     setSelectedMarchers([]);
+                    break;
+                }
+                case Selectable.SelectableClasses.CURVE_POINT: {
+                    // setSelectedCurvePoints([]);
                     break;
                 }
                 default: {
