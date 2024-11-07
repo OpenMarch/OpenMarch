@@ -977,12 +977,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // fabricEvent.target checks if the mouse is on the canvas at all
         return (
             fabricEvent.target &&
-            (Selectable.isSelectable(fabricEvent.target) ||
+            (fabricEvent.target.selectable ||
                 // If the target is a group of selectable objects (currently only checked if any of the objects are selectable)
                 // TODO - this is accessing a private property of fabric.Object. This is not ideal
                 ((fabricEvent.target as any)._objects !== undefined &&
-                    (fabricEvent.target as any)._objects.some((obj: any) =>
-                        Selectable.isSelectable(obj),
+                    (fabricEvent.target as any)._objects.some(
+                        (obj: any) => obj.selectable,
                     )))
         );
     };
