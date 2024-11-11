@@ -5,6 +5,9 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
 
+export const DEFAULT_DOT_RADIUS = 5;
+export const DEFAULT_COLOR = "red";
+
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
  * It includes things such as the fabric objects and other canvas-specific properties.
@@ -14,9 +17,9 @@ export default class CanvasMarcher
     implements Selectable.ISelectable
 {
     // Styles
-    private static readonly dotRadius = 5;
+    private static readonly dotRadius = DEFAULT_DOT_RADIUS;
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
-    private static readonly color = "red";
+    private static readonly color = DEFAULT_COLOR;
     readonly classString = Selectable.SelectableClasses.MARCHER;
     backgroundRectangle: fabric.Rect;
 
@@ -74,7 +77,7 @@ export default class CanvasMarcher
                 lockRotation: true,
                 hoverCursor: "pointer",
                 ...ActiveObjectArgs,
-            }
+            },
         );
         // add a rectangle for stroke and fill
         this.backgroundRectangle = new fabric.Rect({
@@ -108,7 +111,7 @@ export default class CanvasMarcher
         const canvas = this.canvas;
         if (!canvas)
             throw new Error(
-                "Canvas does not exist - getCanvas: CanvasMarcher.ts"
+                "Canvas does not exist - getCanvas: CanvasMarcher.ts",
             );
         return canvas;
     }
@@ -119,17 +122,17 @@ export default class CanvasMarcher
      */
     private getDotOffset(): { x: number; y: number } {
         const dot = this._objects.find(
-            (obj) => "radius" in obj
+            (obj) => "radius" in obj,
         ) as fabric.Circle;
 
         if (dot.originX !== "center" || dot.originY !== "center")
             throw new Error(
-                "Dot origin is not center, this will lead to incorrect coords - setCoords: CanvasMarcher.ts"
+                "Dot origin is not center, this will lead to incorrect coords - setCoords: CanvasMarcher.ts",
             );
         if (dot.left === undefined || dot.top === undefined)
             // 0 can lead to false negative, so need to check for undefined
             throw new Error(
-                "Dot does not have left or top properties - setCoords: CanvasMarcher.ts"
+                "Dot does not have left or top properties - setCoords: CanvasMarcher.ts",
             );
 
         return {
@@ -176,7 +179,7 @@ export default class CanvasMarcher
             x: number;
             y: number;
         },
-        _adjustForGroup = true
+        _adjustForGroup = true,
     ) {
         let groupOffset = { x: 0, y: 0 };
         if (_adjustForGroup) groupOffset = this.getGroupOffset();
@@ -228,7 +231,7 @@ export default class CanvasMarcher
 
     /******* PUBLIC METHODS *******/
     static isCanvasMarcher(object: fabric.Object): object is CanvasMarcher {
-        return true;
+        return object instanceof CanvasMarcher;
     }
     /**
      * Sets the coordinates of the marcher on the canvas from a MarcherPage object.
@@ -242,7 +245,7 @@ export default class CanvasMarcher
 
         if (this.left === undefined || this.top === undefined)
             throw new Error(
-                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts"
+                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
             );
         this.marcherPage = marcherPage;
         this.left = newCanvasCoords.x;
@@ -262,7 +265,7 @@ export default class CanvasMarcher
     getMarcherCoords(): { x: number; y: number } {
         if (this.left === undefined || this.top === undefined)
             throw new Error(
-                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts"
+                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
             );
         const databaseCoords = this.canvasCoordsToDatabaseCoords({
             x: this.left,
@@ -282,22 +285,7 @@ export default class CanvasMarcher
         marcherPage: MarcherPage;
         durationMilliseconds: number;
     }) {
-        const groupOffset = this.getGroupOffset();
-        const dotOffset = this.getDotOffset();
-
-        const newCanvasCoords = {
-            x:
-                marcherPage.x -
-                groupOffset.x -
-                dotOffset.x +
-                CanvasMarcher.gridOffset,
-            y:
-                marcherPage.y -
-                groupOffset.y -
-                dotOffset.y +
-                CanvasMarcher.gridOffset,
-        };
-
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(marcherPage);
         const callback = this.animate(
             {
                 left: newCanvasCoords.x,
@@ -311,7 +299,7 @@ export default class CanvasMarcher
                     this.setCoords();
                 },
                 easing: linearEasing,
-            }
+            },
         );
 
         this.setCoords();
