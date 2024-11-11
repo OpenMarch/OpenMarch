@@ -15,7 +15,7 @@ import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
-import MarcherCurve from "./MarcherCurve";
+import MarcherCurve from "./MarcherShape";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -138,7 +138,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // ADD MARCHER CURVE
         const marcherCurve = new MarcherCurve({
             canvas: this,
-            startPoint: { x: 5, y: 5 },
+            startPoint: { x: 100, y: 100 },
             controlPoint: { x: 150, y: 250 },
             endPoint: { x: 200, y: 100 },
         });
