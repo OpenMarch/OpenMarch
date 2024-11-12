@@ -143,6 +143,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 ShapePoint.Quadratic(150, 250, 600, 100),
                 ShapePoint.Line(400, 100),
                 ShapePoint.Cubic(650, 250, 300, 800, 400, 100),
+                ShapePoint.Close(),
             ],
         });
 

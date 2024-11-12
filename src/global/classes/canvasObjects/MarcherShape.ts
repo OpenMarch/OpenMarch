@@ -5,7 +5,7 @@ import { CanvasColors } from "@/components/canvas/CanvasConstants";
 /**
  * An SVG point in the MarcherShape path.
  */
-type PathPoint = [string, ...number[]];
+export type PathPoint = [string, ...number[]];
 
 /**
  * Represents a MarcherShape object, which is a canvas path with control points.
@@ -39,12 +39,12 @@ export default class MarcherShape {
         const controlPoints: ShapePointController[] = [];
         for (let pointIndex = 0; pointIndex < points.length; pointIndex++) {
             const point = points[pointIndex];
+            // Create a control point for each coordinate in the point
             for (
                 let coordinateIndex = 0;
                 coordinateIndex < point.coordinates.length;
                 coordinateIndex++
             ) {
-                //
                 const controlPoint = new ShapePointController({
                     marcherShape: this,
                     pointIndex,
@@ -159,8 +159,6 @@ class ShapePointController extends fabric.Circle {
      */
     coordIndex: number;
 
-    canvas: OpenMarchCanvas;
-
     /** The point directly before this one in the path */
     incomingPoint: ShapePointController | null;
     /** The point directly after this one in the path */
@@ -168,6 +166,7 @@ class ShapePointController extends fabric.Circle {
     /** A fabric line that leads to the outgoing point to visual the relationship */
     outgoingLine: fabric.Line | null;
 
+    canvas: OpenMarchCanvas;
     left: number;
     top: number;
 
@@ -399,11 +398,12 @@ class ShapePointController extends fabric.Circle {
     }
 }
 
+/**
+ * The fabric.Path object that represents the path of the shape.
+ */
 export class ShapePath extends fabric.Path {
     /**
-     *
      * @param points The points to draw the path from
-     * @param offset The offset to apply to the given path
      */
     constructor(points: ShapePoint[]) {
         super(ShapePoint.pointsToString(points), {
@@ -450,7 +450,7 @@ export class ShapePoint {
      */
     toString() {
         const array = this.toArray();
-        return `${this.command} ${array.slice(1).join(", ")} `;
+        return `${this.command} ${array.slice(1).join(" ")} `;
     }
 
     /**
@@ -464,6 +464,11 @@ export class ShapePoint {
         return output;
     }
 
+    /**
+     * Converts an array of command-coordinate tuples into an array of ShapePoint objects.
+     * @param array - An array of command-coordinate tuples, where the first element is the command string and the remaining elements are the coordinate values.
+     * @returns An array of ShapePoint objects representing the input array.
+     */
     static fromArray(array: PathPoint[]): ShapePoint[] {
         const points: ShapePoint[] = [];
         for (const point of array) {
@@ -486,14 +491,17 @@ export class ShapePoint {
     }
 
     /**
-     * Applies an offset to the coordinates of the ShapePoint.
+     * Applies an offset to the coordinates of the ShapePoint in place.
+     *
      * @param offset - An object containing the x and y offsets to apply.
+     * @returns The modified ShapePoint object (which is the same object).
      */
     applyOffset(offset: { x: number; y: number }) {
         for (const point of this.coordinates) {
             point.x += offset.x;
             point.y += offset.y;
         }
+        return this;
     }
 
     /**
@@ -567,33 +575,36 @@ export class ShapePoint {
         ]);
     }
 
+    /**
+     * Creates a Line command ShapePoint.
+     * @param x The X coordinate of the end point.
+     * @param y The Y coordinate of the end point.
+     * @returns A new ShapePoint with the "L" command.
+     */
     static Line(x: number, y: number): ShapePoint {
         return new ShapePoint("L", [{ x, y }]);
     }
 
+    /**
+     * Creates a ShapePoint with the "Z" command, which closes the current path by drawing a straight line from the current point to the start point of the path.
+     * @returns A new ShapePoint with the "Z" command.
+     */
     static Close(): ShapePoint {
         return new ShapePoint("Z", []);
     }
 
-    static Arch(rx: number, ry: number, x: number, y: number): ShapePoint {
-        return new ShapePoint("A", [
-            { x: rx, y: ry },
-
-            { x, y },
-        ]);
-    }
-
     // /**
-    //  * Creates a "smooth" cubic Bézier curve ShapePoint to the specified coordinates, using the previous control point as a reference.
-    //  * @param cx2 The X coordinate of the second control point.
-    //  * @param cy2 The Y coordinate of the second control point.
+    //  * Creates an Arc command ShapePoint.
+    //  * @param rx The radius of the ellipse in the X-axis.
+    //  * @param ry The radius of the ellipse in the Y-axis.
     //  * @param x The X coordinate of the end point.
     //  * @param y The Y coordinate of the end point.
-    //  * @returns A new ShapePoint with the "S" command.
+    //  * @returns A new ShapePoint with the "A" command.
     //  */
-    // static S(cx2: number, cy2: number, x: number, y: number): ShapePoint {
-    //     return new ShapePoint("C", [
-    //         { x: cx2, y: cy2 },
+    // static Arch(rx: number, ry: number, x: number, y: number): ShapePoint {
+    //     return new ShapePoint("A", [
+    //         { x: rx, y: ry },
+
     //         { x, y },
     //     ]);
     // }
