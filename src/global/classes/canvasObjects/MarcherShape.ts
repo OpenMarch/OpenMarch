@@ -1,6 +1,8 @@
 import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { CanvasColors } from "@/components/canvas/CanvasConstants";
+import MarcherPage from "../MarcherPage";
+import CanvasMarcher from "./CanvasMarcher";
 
 /**
  * An SVG point in the MarcherShape path.
@@ -12,10 +14,15 @@ export type PathPoint = [string, ...number[]];
  * The MarcherShape class handles the creation, movement, and redrawing of the path and its control points.
  */
 export default class MarcherShape {
-    canvas?: OpenMarchCanvas;
+    canvas: OpenMarchCanvas;
     /** The control points of this shape */
     controlPoints: ShapePointController[];
 
+    /**
+     * Represents the initial position and offset of a curve in the MarcherShape.
+     * The `initialPosition` property holds the initial x and y coordinates of the curve.
+     * The `fromInitial` property holds the x and y offsets from the initial position.
+     */
     curveOffset: {
         initialPosition: { x: number; y: number };
         fromInitial: { x: number; y: number };
@@ -24,17 +31,27 @@ export default class MarcherShape {
         fromInitial: { x: 0, y: 0 },
     };
 
+    /**
+     * The path of the MarcherShape object, which represents the shape of the canvas path.
+     */
     shapePath: ShapePath;
+
+    canvasMarchers: CanvasMarcher[];
+
+    tempMarcherPoints: fabric.Circle[] = [];
 
     constructor({
         canvas,
+        canvasMarchers,
         points,
     }: {
         canvas: OpenMarchCanvas;
+        canvasMarchers: CanvasMarcher[];
         points: ShapePoint[];
     }) {
         this.canvas = canvas;
         this.shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
+        this.canvasMarchers = canvasMarchers;
 
         const controlPoints: ShapePointController[] = [];
         for (let pointIndex = 0; pointIndex < points.length; pointIndex++) {
@@ -62,6 +79,19 @@ export default class MarcherShape {
         this.controlPoints = controlPoints;
         this.controlPoints.forEach((p) => p.drawOutgoingLine());
         this.canvas.add(...this.controlPoints);
+        this.distributeMarchers();
+        this.bringControlPointsToFront();
+    }
+
+    /**
+     * Brings the control points of the MarcherShape to the front of the canvas.
+     * This ensures the control points are visible and not obscured by other canvas objects.
+     */
+    bringControlPointsToFront() {
+        if (this.controlPoints)
+            this.controlPoints.forEach((p) => {
+                p.bringToFront();
+            });
     }
 
     /**
@@ -81,6 +111,12 @@ export default class MarcherShape {
             console.error("The shape does not have coordinates");
             return;
         }
+
+        // Delete the tempMarcherPoints from the canvas while moving the shape
+        this.tempMarcherPoints.forEach((p) => {
+            this.canvas.remove(p);
+        });
+
         this.curveOffset.fromInitial = {
             x: this.shapePath.left - this.curveOffset.initialPosition.x,
             y: this.shapePath.top - this.curveOffset.initialPosition.y,
@@ -126,14 +162,39 @@ export default class MarcherShape {
         this.canvas.add(this.shapePath);
         this.shapePath.on("moving", this.moveHandler.bind(this));
 
-        // Refresh the control point listeners
-        if (this.controlPoints) {
-            this.controlPoints.forEach((p) => {
-                p.bringToFront();
-            });
-        }
+        this.bringControlPointsToFront();
 
         return this.shapePath;
+    }
+
+    distributeMarchers() {
+        if (!this.shapePath)
+            throw new Error("No path exists to distribute marchers on");
+
+        const svgNamespace = "http://www.w3.org/2000/svg";
+        const tempSvgPath = document.createElementNS(svgNamespace, "path");
+        tempSvgPath.setAttribute(
+            "d",
+            ShapePoint.pointsToString(this.shapePath.points),
+        );
+
+        const pathLength = tempSvgPath.getTotalLength();
+
+        const numberOfDots = this.canvasMarchers.length;
+        const spacing = pathLength / (numberOfDots - 1);
+
+        // Loop to create and place the dots along the path
+        for (let i = 0; i < numberOfDots; i++) {
+            const point = tempSvgPath.getPointAtLength(i * spacing);
+            const canvasMarcher = this.canvasMarchers[i];
+            const newMarcherPage = new MarcherPage({
+                ...canvasMarcher.marcherPage,
+                x: point.x,
+                y: point.y,
+            });
+            this.canvasMarchers[i].setMarcherCoords(newMarcherPage);
+        }
+        this.canvas.requestRenderAll();
     }
 }
 
@@ -313,6 +374,8 @@ class ShapePointController extends fabric.Circle {
         this.marcherShape.shapePath.objectCaching = false;
         if (this.marcherShape.shapePath.path && this.left && this.top) {
             this.refreshParentPathCoordinates();
+            this.marcherShape.distributeMarchers();
+            this.marcherShape.bringControlPointsToFront();
         }
         this.refreshLines();
     }
