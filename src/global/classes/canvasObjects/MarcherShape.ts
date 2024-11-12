@@ -3,13 +3,18 @@ import OpenMarchCanvas from "./OpenMarchCanvas";
 import { CanvasColors } from "@/components/canvas/CanvasConstants";
 
 /**
+ * An SVG point in the MarcherShape path.
+ */
+type PathPoint = [string, ...number[]];
+
+/**
  * Represents a MarcherShape object, which is a canvas path with control points.
  * The MarcherShape class handles the creation, movement, and redrawing of the path and its control points.
  */
 export default class MarcherShape {
     canvas?: OpenMarchCanvas;
     /** The control points of this shape */
-    points: ShapePoint[];
+    controlPoints: ShapePointController[];
 
     curveOffset: {
         initialPosition: { x: number; y: number };
@@ -19,48 +24,44 @@ export default class MarcherShape {
         fromInitial: { x: 0, y: 0 },
     };
 
-    pathObj: fabric.Path;
+    shapePath: ShapePath;
 
     constructor({
         canvas,
-        startPoint,
-        endPoint,
-        controlPoint,
+        points,
     }: {
         canvas: OpenMarchCanvas;
-        startPoint: { x: number; y: number };
-        endPoint: { x: number; y: number };
-        controlPoint: { x: number; y: number };
+        points: ShapePoint[];
     }) {
-        this.pathObj = this.redrawPath([
-            ["M", startPoint.x, startPoint.y],
-            ["Q", controlPoint.x, controlPoint.y, endPoint.x, endPoint.y],
-        ]);
-        const start = new ShapePoint({
-            marcherShape: this,
-            pointIndex: 0,
-            coordIndex: 1,
-            canvas,
-        });
-        const control = new ShapePoint({
-            marcherShape: this,
-            pointIndex: 1,
-            coordIndex: 1,
-            canvas,
-            incomingPoint: start,
-        });
-        const end = new ShapePoint({
-            marcherShape: this,
-            pointIndex: 1,
-            coordIndex: 3,
-            canvas,
-            incomingPoint: control,
-        });
-        this.points = [start, end, control];
-        this.points.forEach((p) => p.drawOutgoingLine());
         this.canvas = canvas;
-        this.canvas.add(this.pathObj);
-        this.canvas.add(...this.points);
+        this.shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
+
+        const controlPoints: ShapePointController[] = [];
+        for (let pointIndex = 0; pointIndex < points.length; pointIndex++) {
+            const point = points[pointIndex];
+            for (
+                let coordinateIndex = 0;
+                coordinateIndex < point.coordinates.length;
+                coordinateIndex++
+            ) {
+                //
+                const controlPoint = new ShapePointController({
+                    marcherShape: this,
+                    pointIndex,
+                    coordIndex: 1 + coordinateIndex * 2,
+                    canvas,
+                    incomingPoint:
+                        // If the point is the first point in the path or a line, there is no incoming point
+                        pointIndex > 0 && point.command !== "L"
+                            ? controlPoints[controlPoints.length - 1]
+                            : null,
+                });
+                controlPoints.push(controlPoint);
+            }
+        }
+        this.controlPoints = controlPoints;
+        this.controlPoints.forEach((p) => p.drawOutgoingLine());
+        this.canvas.add(...this.controlPoints);
     }
 
     /**
@@ -69,19 +70,22 @@ export default class MarcherShape {
      * @param e The event that triggered the move
      */
     moveHandler(e: fabric.IEvent) {
-        if (!this.pathObj) {
-            console.error("The pathObj is not defined");
+        if (!this.shapePath) {
+            console.error("The shapePath is not defined");
             return;
         }
-        if (this.pathObj.left === undefined || this.pathObj.top === undefined) {
+        if (
+            this.shapePath.left === undefined ||
+            this.shapePath.top === undefined
+        ) {
             console.error("The shape does not have coordinates");
             return;
         }
         this.curveOffset.fromInitial = {
-            x: this.pathObj.left - this.curveOffset.initialPosition.x,
-            y: this.pathObj.top - this.curveOffset.initialPosition.y,
+            x: this.shapePath.left - this.curveOffset.initialPosition.x,
+            y: this.shapePath.top - this.curveOffset.initialPosition.y,
         };
-        this.points.forEach((p) => {
+        this.controlPoints.forEach((p) => {
             p.handleParentMove();
         });
     }
@@ -93,100 +97,43 @@ export default class MarcherShape {
      * It adjusts the coordinates of the path based on the offset from the
      * initial position of the shape.
      *
-     * If there is a current pathObj, it is deleted
+     * If there is a current shapePath, it is deleted
      *
      * @param pathArg The new path data to be drawn, represented as an array of
      * path commands and coordinates.
      * @returns The updated fabric.Path object representing the redrawn shape.
      */
-    redrawPath(pathArg: (string | number)[][]) {
-        if (this.pathObj && this.canvas) {
-            this.canvas.remove(this.pathObj);
+    recreatePath(pathArg: PathPoint[]) {
+        if (this.shapePath && this.canvas) {
+            this.canvas.remove(this.shapePath);
         }
 
-        let pathToDraw: (string | number)[][] = [];
+        const points = ShapePoint.fromArray(pathArg);
+        points.forEach((p) => p.applyOffset(this.curveOffset.fromInitial));
+
+        this.shapePath = new ShapePath(points);
         if (
-            this.pathObj &&
-            this.pathObj.path &&
-            this.curveOffset.fromInitial.x !== 0 &&
-            this.curveOffset.fromInitial.y !== 0
-        ) {
-            pathToDraw = [];
-            pathArg.forEach((point, index) => {
-                const command = (point as any)[0] as string;
-                if (command === "M" || command === "Q") {
-                    // For M and Q commands, adjust x,y coordinates by the offset
-                    // Points are stored as [command, x, y] for M
-                    // and [command, cx, cy, x, y] for Q
-                    const coordinates = point as unknown as (string | number)[];
-
-                    // Adjust x,y coordinates
-                    if (command === "M") {
-                        coordinates[1] =
-                            (coordinates[1] as number) +
-                            this.curveOffset.fromInitial.x;
-                        coordinates[2] =
-                            (coordinates[2] as number) +
-                            this.curveOffset.fromInitial.y;
-                    }
-
-                    // For Q command, adjust both control point and end point
-                    if (command === "Q") {
-                        // Adjust control point (cx,cy)
-                        coordinates[1] =
-                            (coordinates[1] as number) +
-                            this.curveOffset.fromInitial.x;
-                        coordinates[2] =
-                            (coordinates[2] as number) +
-                            this.curveOffset.fromInitial.y;
-                        // Adjust end point (x,y)
-                        coordinates[3] =
-                            (coordinates[3] as number) +
-                            this.curveOffset.fromInitial.x;
-                        coordinates[4] =
-                            (coordinates[4] as number) +
-                            this.curveOffset.fromInitial.y;
-                    }
-
-                    pathToDraw.push(coordinates);
-                }
-            });
-        } else pathToDraw = pathArg;
-
-        this.pathObj = new fabric.Path(
-            pathToDraw as unknown as fabric.Point[],
-            {
-                fill: "",
-                strokeWidth: 2,
-                stroke: CanvasColors.SHAPE,
-                objectCaching: true,
-                hasControls: false,
-                borderColor: "#0d6efd",
-                borderScaleFactor: 2,
-                // selectable: false,
-                hoverCursor: "default",
-            },
-        );
-        if (this.pathObj.left === undefined || this.pathObj.top === undefined) {
+            this.shapePath.left === undefined ||
+            this.shapePath.top === undefined
+        )
             throw new Error("The shape does not have coordinates");
-        }
 
         this.curveOffset = {
-            initialPosition: { x: this.pathObj.left, y: this.pathObj.top },
+            initialPosition: { x: this.shapePath.left, y: this.shapePath.top },
             fromInitial: { x: 0, y: 0 },
         };
-        if (this.canvas) this.canvas.add(this.pathObj);
-
-        this.pathObj.on("moving", this.moveHandler.bind(this));
+        if (!this.canvas) throw new Error("The canvas is not defined");
+        this.canvas.add(this.shapePath);
+        this.shapePath.on("moving", this.moveHandler.bind(this));
 
         // Refresh the control point listeners
-        if (this.points) {
-            this.points.forEach((p) => {
+        if (this.controlPoints) {
+            this.controlPoints.forEach((p) => {
                 p.bringToFront();
             });
         }
 
-        return this.pathObj;
+        return this.shapePath;
     }
 }
 
@@ -196,7 +143,7 @@ export default class MarcherShape {
  * It handles the movement and modification of the control point, and updates the corresponding
  * coordinates in the path.
  */
-class ShapePoint extends fabric.Circle {
+class ShapePointController extends fabric.Circle {
     /**
      * The path this control point is a part of
      */
@@ -215,9 +162,9 @@ class ShapePoint extends fabric.Circle {
     canvas: OpenMarchCanvas;
 
     /** The point directly before this one in the path */
-    incomingPoint: ShapePoint | null;
+    incomingPoint: ShapePointController | null;
     /** The point directly after this one in the path */
-    outgoingPoint: ShapePoint | null;
+    outgoingPoint: ShapePointController | null;
     /** A fabric line that leads to the outgoing point to visual the relationship */
     outgoingLine: fabric.Line | null;
 
@@ -236,14 +183,14 @@ class ShapePoint extends fabric.Circle {
         pointIndex: number;
         coordIndex: number;
         canvas: OpenMarchCanvas;
-        incomingPoint?: ShapePoint | null;
-        outgoingPoint?: ShapePoint | null;
+        incomingPoint?: ShapePointController | null;
+        outgoingPoint?: ShapePointController | null;
     }) {
         if (coordIndex === 0)
             console.warn(
                 "The coordinate index in the SVG point likely should not be 0, as this is the SVG command",
             );
-        if (!marcherShape.pathObj.path) {
+        if (!marcherShape.shapePath.path) {
             throw new Error("The parent path does not have a path");
         }
 
@@ -269,8 +216,8 @@ class ShapePoint extends fabric.Circle {
 
         this.outgoingPoint = outgoingPoint;
         // If the outgoing point does not have this as an incoming point, set it to this
-        if (this.outgoingPoint && !(this.outgoingPoint.incomingPoint === this))
-            this.outgoingPoint.incomingPoint = this;
+        // if (this.outgoingPoint && !(this.outgoingPoint.incomingPoint === this))
+        //     this.outgoingPoint.incomingPoint = this;
 
         this.outgoingLine = null;
         this.canvas = canvas;
@@ -293,7 +240,7 @@ class ShapePoint extends fabric.Circle {
      * This method updates the coordinates of the corresponding path point in the parent path's path array. It calculates the new coordinates based on the current position of the control point and the curve offset, and then sets the updated coordinates in the path array. Finally, it marks the parent path as dirty to trigger a redraw.
      */
     refreshParentPathCoordinates() {
-        if (!this.marcherShape.pathObj.path) {
+        if (!this.marcherShape.shapePath.path) {
             console.error("The parent path does not have a path");
             return;
         }
@@ -302,19 +249,19 @@ class ShapePoint extends fabric.Circle {
             return;
         }
         (
-            this.marcherShape.pathObj.path[
+            this.marcherShape.shapePath.path[
                 this.pointIndex
             ] as unknown as number[]
         )[this.coordIndex] =
             this.left - this.marcherShape.curveOffset.fromInitial.x;
         (
-            this.marcherShape.pathObj.path[
+            this.marcherShape.shapePath.path[
                 this.pointIndex
             ] as unknown as number[]
         )[this.coordIndex + 1] =
             this.top - this.marcherShape.curveOffset.fromInitial.y;
-        this.marcherShape.pathObj.setCoords();
-        this.marcherShape.pathObj.dirty = true;
+        this.marcherShape.shapePath.setCoords();
+        this.marcherShape.shapePath.dirty = true;
     }
 
     /**
@@ -327,11 +274,11 @@ class ShapePoint extends fabric.Circle {
      * @property {number} top - The top coordinate of the path point.
      */
     getPathCoordinates() {
-        if (!this.marcherShape.pathObj.path) {
+        if (!this.marcherShape.shapePath.path) {
             console.error("The parent path does not have a path");
             return;
         }
-        const pathPoint = this.marcherShape.pathObj.path[
+        const pathPoint = this.marcherShape.shapePath.path[
             this.pointIndex
         ] as unknown as number[];
         const point = {
@@ -364,8 +311,8 @@ class ShapePoint extends fabric.Circle {
      * @param e - The fabric.js event object containing information about the move event.
      */
     moveHandler(e: fabric.IEvent) {
-        this.marcherShape.pathObj.objectCaching = false;
-        if (this.marcherShape.pathObj.path && this.left && this.top) {
+        this.marcherShape.shapePath.objectCaching = false;
+        if (this.marcherShape.shapePath.path && this.left && this.top) {
             this.refreshParentPathCoordinates();
         }
         this.refreshLines();
@@ -379,13 +326,13 @@ class ShapePoint extends fabric.Circle {
      * @param path - The path of the parent object, as an array of (string | number)[][] elements.
      */
     modifiedHandler(e: fabric.IEvent) {
-        if (!this.marcherShape.pathObj.path) {
+        if (!this.marcherShape.shapePath.path) {
             console.error("The parent path does not have a path");
             return;
         }
 
-        this.marcherShape.redrawPath(
-            this.marcherShape.pathObj.path as unknown as (string | number)[][],
+        this.marcherShape.recreatePath(
+            this.marcherShape.shapePath.path as unknown as PathPoint[],
         );
     }
 
@@ -450,6 +397,206 @@ class ShapePoint extends fabric.Circle {
 
         return outgoingLine;
     }
+}
+
+export class ShapePath extends fabric.Path {
+    /**
+     *
+     * @param points The points to draw the path from
+     * @param offset The offset to apply to the given path
+     */
+    constructor(points: ShapePoint[]) {
+        super(ShapePoint.pointsToString(points), {
+            fill: "",
+            strokeWidth: 2,
+            stroke: CanvasColors.SHAPE,
+            objectCaching: true,
+            hasControls: false,
+            borderColor: "#0d6efd",
+            borderScaleFactor: 2,
+            // selectable: false,
+            hoverCursor: "default",
+        });
+    }
+
+    get points(): ShapePoint[] {
+        if (!this.path) {
+            console.error("The path is not defined");
+            return [];
+        }
+        return ShapePoint.fromArray(this.path as any as PathPoint[]);
+    }
+}
+
+/**
+ * Represents a single point in a shape path, with a command and coordinates.
+ * The `ShapePoint` class provides methods to work with and manipulate these points.
+ */
+export class ShapePoint {
+    command: string;
+    coordinates: { x: number; y: number }[];
+
+    private constructor(
+        command: string,
+        coordinates: { x: number; y: number }[],
+    ) {
+        this.command = command;
+        this.coordinates = coordinates;
+    }
+
+    /**
+     * Converts the ShapePoint to a string representation in SVG path format
+     * @returns A string in the format "command x, y "
+     */
+    toString() {
+        const array = this.toArray();
+        return `${this.command} ${array.slice(1).join(", ")} `;
+    }
+
+    /**
+     * Converts an array of ShapePoints into a single SVG path string
+     * @param points Array of ShapePoint objects to convert
+     * @returns Combined string of all points in SVG path format
+     */
+    static pointsToString(points: ShapePoint[]) {
+        let output = "";
+        for (const p of points) output += p.toString();
+        return output;
+    }
+
+    static fromArray(array: PathPoint[]): ShapePoint[] {
+        const points: ShapePoint[] = [];
+        for (const point of array) {
+            const command = point[0] as string;
+            const coordinates = point.slice(1) as number[];
+            const coordPairs: { x: number; y: number }[] = [];
+            for (let i = 0; i < coordinates.length; i += 2) {
+                if (i + 1 >= coordinates.length) {
+                    console.warn(
+                        `Warning: Incomplete coordinate pair for command ${command}`,
+                    );
+                    break;
+                }
+                coordPairs.push({ x: coordinates[i], y: coordinates[i + 1] });
+            }
+
+            points.push(new ShapePoint(command, coordPairs));
+        }
+        return points;
+    }
+
+    /**
+     * Applies an offset to the coordinates of the ShapePoint.
+     * @param offset - An object containing the x and y offsets to apply.
+     */
+    applyOffset(offset: { x: number; y: number }) {
+        for (const point of this.coordinates) {
+            point.x += offset.x;
+            point.y += offset.y;
+        }
+    }
+
+    /**
+     * Converts the ShapePoint into an array format with command as first element
+     * @returns Tuple with command string followed by coordinate numbers
+     */
+    toArray(): PathPoint {
+        return [
+            this.command,
+            ...this.coordinates.flatMap((coord) => [coord.x, coord.y]),
+        ];
+    }
+
+    /**
+     * Converts an array of ShapePoints into an array of command-coordinate tuples
+     * @param points Array of ShapePoint objects to convert
+     * @returns Array of tuples, each containing a command string and coordinates
+     */
+    static pointsToArray(points: ShapePoint[]): Array<PathPoint> {
+        return points.map((point) => point.toArray());
+    }
+
+    /******************** GENERATORS *********************/
+    /**
+     * Creates a Move command ShapePoint
+     * @param x X coordinate to move to
+     * @param y Y coordinate to move to
+     * @returns New ShapePoint with "M" command
+     */
+    static Move(x: number, y: number): ShapePoint {
+        return new ShapePoint("M", [{ x, y }]);
+    }
+
+    /**
+     * Creates a Quadratic curve command ShapePoint
+     * @param cx Control point X coordinate
+     * @param cy Control point Y coordinate
+     * @param x End point X coordinate
+     * @param y End point Y coordinate
+     * @returns New ShapePoint with "Q" command
+     */
+    static Quadratic(cx: number, cy: number, x: number, y: number): ShapePoint {
+        return new ShapePoint("Q", [
+            { x: cx, y: cy },
+            { x, y },
+        ]);
+    }
+
+    /**
+     * Creates a Cubic Bézier curve command ShapePoint.
+     * @param cx1 The X coordinate of the first control point.
+     * @param cy1 The Y coordinate of the first control point.
+     * @param cx2 The X coordinate of the second control point.
+     * @param cy2 The Y coordinate of the second control point.
+     * @param x The X coordinate of the end point.
+     * @param y The Y coordinate of the end point.
+     * @returns A new ShapePoint with the "C" command.
+     */
+    static Cubic(
+        cx1: number,
+        cy1: number,
+        cx2: number,
+        cy2: number,
+        x: number,
+        y: number,
+    ): ShapePoint {
+        return new ShapePoint("C", [
+            { x: cx1, y: cy1 },
+            { x: cx2, y: cy2 },
+            { x, y },
+        ]);
+    }
+
+    static Line(x: number, y: number): ShapePoint {
+        return new ShapePoint("L", [{ x, y }]);
+    }
+
+    static Close(): ShapePoint {
+        return new ShapePoint("Z", []);
+    }
+
+    static Arch(rx: number, ry: number, x: number, y: number): ShapePoint {
+        return new ShapePoint("A", [
+            { x: rx, y: ry },
+
+            { x, y },
+        ]);
+    }
+
+    // /**
+    //  * Creates a "smooth" cubic Bézier curve ShapePoint to the specified coordinates, using the previous control point as a reference.
+    //  * @param cx2 The X coordinate of the second control point.
+    //  * @param cy2 The Y coordinate of the second control point.
+    //  * @param x The X coordinate of the end point.
+    //  * @param y The Y coordinate of the end point.
+    //  * @returns A new ShapePoint with the "S" command.
+    //  */
+    // static S(cx2: number, cy2: number, x: number, y: number): ShapePoint {
+    //     return new ShapePoint("C", [
+    //         { x: cx2, y: cy2 },
+    //         { x, y },
+    //     ]);
+    // }
 }
 
 /**

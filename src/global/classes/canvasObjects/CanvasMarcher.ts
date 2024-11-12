@@ -74,7 +74,7 @@ export default class CanvasMarcher
                 lockRotation: true,
                 hoverCursor: "pointer",
                 ...ActiveObjectArgs,
-            }
+            },
         );
         // add a rectangle for stroke and fill
         this.backgroundRectangle = new fabric.Rect({
@@ -108,7 +108,7 @@ export default class CanvasMarcher
         const canvas = this.canvas;
         if (!canvas)
             throw new Error(
-                "Canvas does not exist - getCanvas: CanvasMarcher.ts"
+                "Canvas does not exist - getCanvas: CanvasMarcher.ts",
             );
         return canvas;
     }
@@ -119,17 +119,17 @@ export default class CanvasMarcher
      */
     private getDotOffset(): { x: number; y: number } {
         const dot = this._objects.find(
-            (obj) => "radius" in obj
+            (obj) => "radius" in obj,
         ) as fabric.Circle;
 
         if (dot.originX !== "center" || dot.originY !== "center")
             throw new Error(
-                "Dot origin is not center, this will lead to incorrect coords - setCoords: CanvasMarcher.ts"
+                "Dot origin is not center, this will lead to incorrect coords - setCoords: CanvasMarcher.ts",
             );
         if (dot.left === undefined || dot.top === undefined)
             // 0 can lead to false negative, so need to check for undefined
             throw new Error(
-                "Dot does not have left or top properties - setCoords: CanvasMarcher.ts"
+                "Dot does not have left or top properties - setCoords: CanvasMarcher.ts",
             );
 
         return {
@@ -176,7 +176,7 @@ export default class CanvasMarcher
             x: number;
             y: number;
         },
-        _adjustForGroup = true
+        _adjustForGroup = true,
     ) {
         let groupOffset = { x: 0, y: 0 };
         if (_adjustForGroup) groupOffset = this.getGroupOffset();
@@ -242,7 +242,7 @@ export default class CanvasMarcher
 
         if (this.left === undefined || this.top === undefined)
             throw new Error(
-                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts"
+                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
             );
         this.marcherPage = marcherPage;
         this.left = newCanvasCoords.x;
@@ -262,7 +262,7 @@ export default class CanvasMarcher
     getMarcherCoords(): { x: number; y: number } {
         if (this.left === undefined || this.top === undefined)
             throw new Error(
-                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts"
+                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
             );
         const databaseCoords = this.canvasCoordsToDatabaseCoords({
             x: this.left,
@@ -311,7 +311,7 @@ export default class CanvasMarcher
                     this.setCoords();
                 },
                 easing: linearEasing,
-            }
+            },
         );
 
         this.setCoords();
