@@ -88,10 +88,6 @@ export function initDatabase() {
     );
     createMeasureTable(db);
     createAudioFileTable(db);
-    // for (const table of Object.values(ALL_TABLES)) {
-    //     console.log("TABLE", table.tableName);
-    //     table.createTable(db);
-    // }
     console.log("Database created.");
     db.close();
 }
@@ -116,74 +112,6 @@ export function connect() {
     }
 }
 
-// function createMarcherTable(db: Database.Database) {
-//     try {
-//         db.exec(`
-//             CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
-//                 "id"	        INTEGER PRIMARY KEY,
-//                 "id_for_html"	TEXT UNIQUE,
-//                 "name"	        TEXT,
-//                 "section"	    TEXT NOT NULL,
-//                 "year"	        TEXT,
-//                 "notes"	        TEXT,
-//                 "drill_prefix"	TEXT NOT NULL,
-//                 "drill_order"	INTEGER NOT NULL,
-//                 "drill_number"	TEXT UNIQUE NOT NULL,
-//                 "created_at"	TEXT NOT NULL,
-//                 "updated_at"	TEXT NOT NULL,
-//                 UNIQUE ("drill_prefix", "drill_order")
-//             );
-//         `);
-//         History.createUndoTriggers(db, Constants.MarcherTableName);
-//     } catch (error) {
-//         console.error("Failed to create marcher table:", error);
-//     }
-//     console.log("Marcher table created.");
-// }
-
-// function createPageTable(db: Database.Database) {
-//     try {
-//         db.exec(`
-//             CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
-//                 "id"	            INTEGER PRIMARY KEY,
-//                 "is_subset"	        INTEGER NOT NULL,
-//                 "previous_page_id"	INTEGER UNIQUE,
-//                 "next_page_id"	    INTEGER UNIQUE,
-//                 "notes"	            TEXT,
-//                 "counts"	        INTEGER NOT NULL,
-//                 "created_at"	    TEXT NOT NULL,
-//                 "updated_at"	    TEXT NOT NULL
-//             );
-//         `);
-//         History.createUndoTriggers(db, Constants.PageTableName);
-//     } catch (error) {
-//         console.error("Failed to create page table:", error);
-//     }
-// }
-
-// function createMarcherPageTable(db: Database.Database) {
-//     try {
-//         db.exec(`
-//             CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
-//                 "id"            INTEGER PRIMARY KEY,
-//                 "id_for_html"   TEXT UNIQUE,
-//                 "marcher_id"    INTEGER NOT NULL,
-//                 "page_id"       INTEGER NOT NULL,
-//                 "x"             REAL,
-//                 "y"             REAL,
-//                 "created_at"    TEXT NOT NULL,
-//                 "updated_at"    TEXT NOT NULL,
-//                 "notes"         TEXT
-//             );
-//             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
-//             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
-//         `);
-//         History.createUndoTriggers(db, Constants.MarcherPageTableName);
-//     } catch (error) {
-//         console.error("Failed to create marcher_page table:", error);
-//     }
-// }
-
 function createFieldPropertiesTable(
     db: Database.Database,
     fieldProperties: FieldProperties,
@@ -191,7 +119,7 @@ function createFieldPropertiesTable(
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.FieldPropertiesTableName}" (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY CHECK (id = 1),
                 json_data TEXT
             );
         `);
@@ -223,7 +151,7 @@ function createMeasureTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY CHECK (id = 1),
                 abc_data TEXT,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
