@@ -26,7 +26,7 @@ function decrementLastUndoGroup(db: Database.Database) {
     const maxGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}`
+                `SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}`,
             )
             .get() as { max_undo_group: number }
     ).max_undo_group;
@@ -34,17 +34,17 @@ function decrementLastUndoGroup(db: Database.Database) {
     const previousGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ?`
+                `SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ?`,
             )
             .get(maxGroup) as { previous_group: number }
     ).previous_group;
 
     if (previousGroup) {
         db.prepare(
-            `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group = ?`
+            `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group = ?`,
         ).run(previousGroup, maxGroup);
         db.prepare(
-            `UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ?`
+            `UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ?`,
         ).run(previousGroup);
     }
 }
@@ -72,7 +72,7 @@ export function getItem<DatabaseItemType>({
     let output: DatabaseResponse<DatabaseItemType | undefined>;
     try {
         const stmt = db.prepare(
-            `SELECT * FROM ${tableName} WHERE "${idColumn}" = ?`
+            `SELECT * FROM ${tableName} WHERE "${idColumn}" = ?`,
         );
         const result = stmt.get(id) as DatabaseItemType;
         if (!result) {
@@ -105,6 +105,66 @@ export function getItem<DatabaseItemType>({
 }
 
 /**
+ * Gets all items from the table with a given column value.
+ *
+ * @param db The database connection
+ * @param value The id of the item to get
+ * @param col The column to check with WHERE to get the row
+ * @param tableName The name of the table to get the item from
+ * @returns A DatabaseResponse with the item
+ */
+export function getItemsByColValue<DatabaseItemType>({
+    valueArg,
+    db,
+    tableName,
+    col,
+}: {
+    valueArg: number | string | null;
+    db: Database.Database;
+    tableName: string;
+    col?: string;
+}): DatabaseResponse<DatabaseItemType[]> {
+    let output: DatabaseResponse<DatabaseItemType[]>;
+    // Convert null to string
+    let condition: string;
+    if (valueArg === null) {
+        condition = `"${col}" IS  NULL`;
+    } else if (typeof valueArg === "string") {
+        condition = `"${col}" = '${valueArg}'`;
+    } else {
+        condition = `"${col}" = ${valueArg}`;
+    }
+    try {
+        console.log(`SELECT * FROM ${tableName} WHERE ${condition}`);
+        console.log(
+            getAllItems<DatabaseItemType>({
+                db,
+                tableName,
+            }),
+        );
+        const stmt = db.prepare(
+            `SELECT * FROM ${tableName} WHERE ${condition}`,
+        );
+        const result = stmt.all() as DatabaseItemType[];
+        output = {
+            success: true,
+            data: result,
+        };
+    } catch (error: any) {
+        output = {
+            success: false,
+            data: [],
+            error: {
+                message: error.message || `Error getting item ${condition}`,
+                stack: error.stack || "Unable to get error stack",
+            },
+        };
+        console.error(`Failed to get item ${condition}:`, error);
+    }
+    return output;
+}
+
+/**
  * Retrieves a set of columns for the specified table
  *
  * @param db database connection
@@ -117,7 +177,7 @@ function getColumns(db: Database.Database, tableName: string): Set<string> {
             db.prepare(`PRAGMA table_info(${tableName});`).all() as {
                 name: string;
             }[]
-        ).map((response) => response.name)
+        ).map((response) => response.name),
     );
 }
 
@@ -243,7 +303,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
             if (columns.has("updated_at")) newItem.updated_at = createdAt;
 
             const stmt = db.prepare(
-                `INSERT INTO ${tableName} ${insertClause(newItem)}`
+                `INSERT INTO ${tableName} ${insertClause(newItem)}`,
             );
             actionWasPerformed = true;
             const insertResult = stmt.run(newItem);
@@ -259,7 +319,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
             }).data;
             if (!newItem) {
                 throw new Error(
-                    `No item with id ${id} in table "${tableName}"`
+                    `No item with id ${id} in table "${tableName}"`,
                 );
             } else {
                 newItems.push(newItem);
@@ -284,6 +344,8 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
             },
         };
 
+        console.log(`Error creating items in table ${tableName}:`, error);
+
         // Roll back the changes caused by this action
         History.performUndo(db);
         History.clearMostRecentRedo(db);
@@ -302,7 +364,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
  */
 export function updateItems<
     DatabaseItemType,
-    UpdatedItemArgs extends { id: number }
+    UpdatedItemArgs extends { id: number },
 >({
     db,
     items,
@@ -345,7 +407,7 @@ export function updateItems<
             data: [],
             error: {
                 message: `No items with ids [${notFoundIds.join(
-                    ", "
+                    ", ",
                 )}] in table "${tableName}"`,
             },
         };
@@ -385,7 +447,7 @@ export function updateItems<
                 continue;
             }
             const stmt = db.prepare(
-                `UPDATE ${tableName} SET ${setClause} WHERE "rowid" = @id`
+                `UPDATE ${tableName} SET ${setClause} WHERE "rowid" = @id`,
             );
             stmt.run(updatedItem);
             actionWasPerformed = true;
@@ -493,7 +555,7 @@ export function deleteItems<DatabaseItemType>({
             data: [],
             error: {
                 message: `No items with ${idColumn}=[${notFoundIds.join(
-                    ", "
+                    ", ",
                 )}] in table "${tableName}"`,
             },
         };
@@ -516,7 +578,7 @@ export function deleteItems<DatabaseItemType>({
                 throw new Error(`No item found with "${idColumn}"=${id}`);
             } else {
                 const stmt = db.prepare(
-                    `DELETE FROM ${tableName} WHERE "${idColumn}" = ?`
+                    `DELETE FROM ${tableName} WHERE "${idColumn}" = ?`,
                 );
                 stmt.run(id);
                 deletedObjects.push(item);
@@ -545,7 +607,7 @@ export function deleteItems<DatabaseItemType>({
         };
         console.error(
             `Failed to delete item ${currentId} while trying to delete items ${idColumn}"=${ids}:`,
-            error
+            error,
         );
 
         // Roll back the changes caused by this action
