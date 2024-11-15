@@ -114,12 +114,12 @@ export function getItem<DatabaseItemType>({
  * @returns A DatabaseResponse with the item
  */
 export function getItemsByColValue<DatabaseItemType>({
-    valueArg,
+    value,
     db,
     tableName,
     col,
 }: {
-    valueArg: number | string | null;
+    value: number | string | null;
     db: Database.Database;
     tableName: string;
     col?: string;
@@ -127,12 +127,12 @@ export function getItemsByColValue<DatabaseItemType>({
     let output: DatabaseResponse<DatabaseItemType[]>;
     // Convert null to string
     let condition: string;
-    if (valueArg === null) {
+    if (value === null) {
         condition = `"${col}" IS  NULL`;
-    } else if (typeof valueArg === "string") {
-        condition = `"${col}" = '${valueArg}'`;
+    } else if (typeof value === "string") {
+        condition = `"${col}" = '${value}'`;
     } else {
-        condition = `"${col}" = ${valueArg}`;
+        condition = `"${col}" = ${value}`;
     }
     try {
         console.log(`SELECT * FROM ${tableName} WHERE ${condition}`);

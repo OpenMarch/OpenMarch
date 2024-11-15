@@ -542,7 +542,7 @@ describe("Database Actions", () => {
             });
 
             const result = DbActions.getItemsByColValue<Row>({
-                valueArg: "jeff",
+                value: "jeff",
                 db,
                 tableName: mockTableName,
                 col: "name",
@@ -569,7 +569,7 @@ describe("Database Actions", () => {
             });
 
             const result = DbActions.getItemsByColValue<Row>({
-                valueArg: 25,
+                value: 25,
                 db,
                 tableName: mockTableName,
                 col: "age",
@@ -594,7 +594,7 @@ describe("Database Actions", () => {
             });
 
             const result = DbActions.getItemsByColValue<Row>({
-                valueArg: null,
+                value: null,
                 db,
                 tableName: mockTableName,
                 col: "age",
@@ -618,7 +618,7 @@ describe("Database Actions", () => {
             });
 
             const result = DbActions.getItemsByColValue<Row>({
-                valueArg: "nonexistent",
+                value: "nonexistent",
                 db,
                 tableName: mockTableName,
                 col: "name",
@@ -641,7 +641,7 @@ describe("Database Actions", () => {
             });
 
             const result = DbActions.getItemsByColValue<Row>({
-                valueArg: "test",
+                value: "test",
                 db,
                 tableName: mockTableName,
                 col: "invalid_column",
