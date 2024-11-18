@@ -3,10 +3,10 @@ import { describe, beforeEach, afterEach, test, expect } from "vitest";
 import {
     createShapeTable,
     getShapes,
-    createShape,
-    updateShape,
-    deleteShape,
-} from "../MarcherShapeTable";
+    createShapes,
+    updateShapes,
+    deleteShapes,
+} from "../ShapeTable";
 import * as History from "../../database.history";
 
 describe("MarcherShapeTable", () => {
@@ -41,14 +41,14 @@ describe("MarcherShapeTable", () => {
         });
     });
 
-    describe("createShape", () => {
+    describe("createShapes", () => {
         test("successfully creates new shape", () => {
             const newShape = {
                 name: "Test Shape",
                 notes: "Test Notes",
             };
 
-            const result = createShape({ db, args: [newShape] });
+            const result = createShapes({ db, args: [newShape] });
             expect(result.success).toBe(true);
             expect(result.data[0]).toMatchObject({
                 name: "Test Shape",
@@ -58,15 +58,15 @@ describe("MarcherShapeTable", () => {
         });
     });
 
-    describe("updateShape", () => {
+    describe("updateShapes", () => {
         test("updates existing shape", async () => {
             // First create a shape
-            const created = createShape({
+            const created = createShapes({
                 db,
                 args: [{ name: "Original Shape" }],
             });
 
-            const updateResult = updateShape({
+            const updateResult = updateShapes({
                 db,
                 args: [
                     {
@@ -85,15 +85,15 @@ describe("MarcherShapeTable", () => {
         });
     });
 
-    describe("deleteShape", () => {
+    describe("deleteShapes", () => {
         test("deletes existing shape", () => {
             // First create a shape
-            const created = createShape({
+            const created = createShapes({
                 db,
                 args: [{ name: "To Be Deleted" }],
             });
 
-            const deleteResult = deleteShape({
+            const deleteResult = deleteShapes({
                 db,
                 ids: new Set([created.data[0].id]),
             });
@@ -108,7 +108,7 @@ describe("MarcherShapeTable", () => {
 
     describe("error handling", () => {
         test("handles invalid updates gracefully", () => {
-            const result = updateShape({
+            const result = updateShapes({
                 db,
                 args: [{ id: 999, name: "NonExistent" }],
             });
@@ -116,7 +116,7 @@ describe("MarcherShapeTable", () => {
         });
 
         test("handles invalid deletes gracefully", () => {
-            const result = deleteShape({
+            const result = deleteShapes({
                 db,
                 ids: new Set([999]),
             });

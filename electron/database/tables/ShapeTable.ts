@@ -6,21 +6,21 @@ import * as History from "../database.history";
 
 export interface Shape {
     id: number;
-    name: string;
+    name: string | null;
     created_at: string;
     updated_at: string;
-    notes: string;
+    notes: string | null;
 }
 
 export interface NewShapeArgs {
-    name: string;
-    notes?: string;
+    name?: string | null;
+    notes?: string | null;
 }
 
 export interface ModifiedShapeArgs {
     id: number;
-    name?: string;
-    notes?: string;
+    name?: string | null;
+    notes?: string | null;
 }
 
 /**
@@ -69,7 +69,7 @@ export function getShapes({
  * @param args Array of NewShapeArgs containing name and optional notes
  * @returns DatabaseResponse containing the created Shape objects
  */
-export function createShape({
+export function createShapes({
     db,
     args,
 }: {
@@ -89,7 +89,7 @@ export function createShape({
  * @param args Array of ModifiedShapeArgs containing id and optional name/notes updates
  * @returns DatabaseResponse containing the updated Shape objects
  */
-export function updateShape({
+export function updateShapes({
     db,
     args,
 }: {
@@ -109,7 +109,7 @@ export function updateShape({
  * @param ids Set of shape IDs to delete
  * @returns DatabaseResponse containing the deleted Shape objects
  */
-export function deleteShape({
+export function deleteShapes({
     db,
     ids,
 }: {
