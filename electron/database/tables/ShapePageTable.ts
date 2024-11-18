@@ -37,12 +37,14 @@ export function createShapePageTable(db: Database.Database) {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.ShapePageTableName}" (
                 "id"            INTEGER PRIMARY KEY,
-                "shape_id"      INTEGER NOT NULL REFERENCES "${Constants.ShapeTableName}" ("id"),
-                "page_id"       INTEGER NOT NULL REFERENCES "${Constants.PageTableName}" ("id"),
+                "shape_id"      INTEGER NOT NULL,
+                "page_id"       INTEGER NOT NULL,
                 "svg_path"      TEXT NOT NULL,
                 "created_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "updated_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "notes"         TEXT,
+                FOREIGN KEY (shape_id) REFERENCES "${Constants.ShapeTableName}" ("id") ON DELETE CASCADE,
+                FOREIGN KEY (page_id) REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE,
                 UNIQUE (shape_id, page_id)
             );
         `);

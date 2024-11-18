@@ -48,6 +48,8 @@ export function createShapePageMarcherTable(db: Database.Database) {
                 "created_at"        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "updated_at"        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "notes"             TEXT,
+                FOREIGN KEY (shape_page_id) REFERENCES "${Constants.ShapePageTableName}" ("id") ON DELETE CASCADE,
+                FOREIGN KEY (marcher_id) REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE,
                 UNIQUE (shape_page_id, position_order),
                 UNIQUE (shape_page_id, marcher_id)
             );

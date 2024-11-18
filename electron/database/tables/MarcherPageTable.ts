@@ -19,14 +19,16 @@ export function createMarcherPageTable(db: Database.Database) {
                 "y"             REAL,
                 "created_at"    TEXT NOT NULL,
                 "updated_at"    TEXT NOT NULL,
-                "notes"         TEXT
+                "notes"         TEXT,
+                FOREIGN KEY ("marcher_id") REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+                FOREIGN KEY ("page_id") REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
             );
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
         `);
         History.createUndoTriggers(db, Constants.MarcherPageTableName);
     } catch (error) {
-        console.error("Failed to create marcher_page table:", error);
+        throw new Error(`Failed to create marcher_page table: ${error}`);
     }
 }
 
@@ -42,20 +44,20 @@ export function getMarcherPages(args: {
     page_id?: number;
 }): DatabaseResponse<MarcherPage[]> {
     let stmt = args.db.prepare(
-        `SELECT * FROM ${Constants.MarcherPageTableName}`
+        `SELECT * FROM ${Constants.MarcherPageTableName}`,
     );
     if (args) {
         if (args.marcher_id && args.page_id)
             stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`,
             );
         else if (args.marcher_id)
             stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`,
             );
         else if (args.page_id)
             stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`,
             );
     }
     const result = stmt.all() as MarcherPage[];
@@ -142,7 +144,7 @@ export function updateMarcherPages({
                 db
                     .prepare(
                         `SELECT id FROM ${Constants.MarcherPageTableName}
-            WHERE "marcher_id" = (@marcher_id) AND "page_id" = (@page_id)`
+            WHERE "marcher_id" = (@marcher_id) AND "page_id" = (@page_id)`,
                     )
                     .get({
                         marcher_id: update.marcher_id,

@@ -462,10 +462,16 @@ function executeHistoryAction(
             switchTriggerMode(db, "undo", false, tableNames);
         }
 
-        // Execute all of the SQL statements in reverse order
+        // Temporarily disable foreign key checks
+        db.prepare("PRAGMA foreign_keys = OFF;").run();
+
+        /// Execute all of the SQL statements in the current history group
         for (const sqlStatement of sqlStatements) {
             db.prepare(sqlStatement).run();
         }
+
+        // Re-enable foreign key checks
+        db.prepare("PRAGMA foreign_keys = ON;").run();
 
         // Delete all of the SQL statements in the current undo group
         db.prepare(

@@ -135,13 +135,6 @@ export function getItemsByColValue<DatabaseItemType>({
         condition = `"${col}" = ${value}`;
     }
     try {
-        console.log(`SELECT * FROM ${tableName} WHERE ${condition}`);
-        console.log(
-            getAllItems<DatabaseItemType>({
-                db,
-                tableName,
-            }),
-        );
         const stmt = db.prepare(
             `SELECT * FROM ${tableName} WHERE ${condition}`,
         );

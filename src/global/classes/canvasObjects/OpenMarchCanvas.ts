@@ -135,18 +135,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         if (listeners) this.setListeners(listeners);
 
-        // ADD MARCHER CURVE
-        const marcherCurve = new MarcherCurve({
-            canvas: this,
-            points: [
-                ShapePoint.Move(100, 100),
-                ShapePoint.Quadratic(150, 250, 600, 100),
-                ShapePoint.Line(400, 100),
-                ShapePoint.Cubic(650, 250, 300, 800, 400, 100),
-                ShapePoint.Close(),
-            ],
-        });
-
         this.requestRenderAll();
     }
 
@@ -256,6 +244,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.requestRenderAll();
+
+        // ADD MARCHER CURVE
+        new MarcherCurve({
+            canvas: this,
+            points: [
+                ShapePoint.Move(100, 100),
+                // ShapePoint.Quadratic(150, 250, 600, 100),
+                // ShapePoint.Line(400, 100),
+                ShapePoint.Cubic(650, 250, 300, 800, 400, 100),
+                // ShapePoint.Close(),
+            ],
+            canvasMarchers: this.getCanvasMarchers(),
+        });
     };
 
     /**

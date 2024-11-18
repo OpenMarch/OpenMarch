@@ -9,8 +9,11 @@ import {
 } from "../ShapePageTable";
 import * as History from "../../database.history";
 import Constants from "@/global/Constants";
-import { createPageTable } from "../PageTable";
-import { createShapes, createShapeTable } from "../ShapeTable";
+import { createPages, createPageTable, deletePages } from "../PageTable";
+import * as DbMocks from "./DatabaseMocks";
+import { createShapes, createShapeTable, deleteShapes } from "../ShapeTable";
+import { createMarcherPageTable } from "../MarcherPageTable";
+import { createMarcherTable } from "../MarcherTable";
 
 describe("ShapePageTable CRUD Operations", () => {
     let db: Database.Database;
@@ -21,8 +24,15 @@ describe("ShapePageTable CRUD Operations", () => {
         createShapePageTable(db);
         createPageTable(db);
         createShapeTable(db);
+        createMarcherPageTable(db);
+        createMarcherTable(db);
         // Create a shape
-        createShapes({ db, args: [{}, {}] });
+        expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
+            true,
+        );
+        expect(createPages({ db, newPages: DbMocks.NewPages }).success).toBe(
+            true,
+        );
     });
 
     afterEach(() => {
@@ -135,5 +145,36 @@ describe("ShapePageTable CRUD Operations", () => {
 
         const duplicate = createShapePages({ db, args: newShapePage });
         expect(duplicate.success).toBe(false);
+    });
+
+    it("should delete shape pages when the shape is deleted", () => {
+        const newShapePages = [
+            { shape_id: 1, page_id: 0, svg_path: "M 0 0 L 100 100" },
+            { shape_id: 1, page_id: 1, svg_path: "M 0 0 L 100 100" },
+            { shape_id: 2, page_id: 0, svg_path: "M 50 50 L 150 150" },
+            { shape_id: 2, page_id: 1, svg_path: "M 50 50 L 150 150" },
+        ];
+        expect(createShapePages({ db, args: newShapePages }).success).toBe(
+            true,
+        );
+        expect(deleteShapes({ db, ids: new Set([1]) }).success).toBeTruthy();
+
+        const remaining = getShapePages({ db }).data;
+        expect(remaining).toMatchObject([newShapePages[2], newShapePages[3]]);
+    });
+
+    it("should delete shape pages when the page is deleted", () => {
+        const newShapePages = [
+            { shape_id: 1, page_id: 0, svg_path: "M 0 0 L 100 100" },
+            { shape_id: 1, page_id: 1, svg_path: "M 0 0 L 100 100" },
+            { shape_id: 2, page_id: 0, svg_path: "M 50 50 L 150 150" },
+            { shape_id: 2, page_id: 1, svg_path: "M 50 50 L 150 150" },
+        ];
+        expect(createShapePages({ db, args: newShapePages }).success).toBe(
+            true,
+        );
+        expect(deletePages({ db, pageIds: new Set([1]) }).success).toBeTruthy();
+        const remaining = getShapePages({ db }).data;
+        expect(remaining).toMatchObject([newShapePages[0], newShapePages[2]]);
     });
 });

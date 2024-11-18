@@ -41,9 +41,8 @@ export function createShapeTable(db: Database.Database) {
         `);
         History.createUndoTriggers(db, Constants.ShapeTableName);
     } catch (error) {
-        console.error(
-            `Failed to create ${Constants.ShapeTableName} table:`,
-            error,
+        throw new Error(
+            `Failed to create ${Constants.ShapeTableName} table: ${error}`,
         );
     }
 }
