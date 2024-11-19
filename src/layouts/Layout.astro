@@ -1,0 +1,21 @@
+---
+import "@fontsource/dm-sans";
+import "@/styles/base.css";
+
+import Nav from "@/components/Nav";
+
+const { title } = Astro.props;
+---
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+        <title>{title} - OpenMarch</title>
+    </head>
+    <body class="bg-bg-1 text-text">
+        <Nav />
+        <slot />
+    </body>
+</html>

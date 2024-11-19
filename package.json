@@ -1,24 +1,39 @@
 {
-  "name": "openmarch-website",
-  "type": "module",
-  "version": "0.0.1",
-  "scripts": {
-    "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro check && astro build",
-    "preview": "astro preview",
-    "astro": "astro"
-  },
-  "dependencies": {
-    "@astrojs/check": "^0.9.4",
-    "@astrojs/react": "^3.6.2",
-    "@astrojs/tailwind": "^5.1.2",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "astro": "^4.16.7",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwindcss": "^3.4.14",
-    "typescript": "^5.6.3"
-  }
+    "name": "@openmarch/website",
+    "type": "module",
+    "version": "0.0.0",
+    "scripts": {
+        "dev": "astro dev",
+        "start": "astro dev",
+        "build": "astro check && astro build",
+        "preview": "astro preview",
+        "astro": "astro",
+        "prettier": "prettier . --write"
+    },
+    "dependencies": {
+        "@astrojs/check": "^0.9.4",
+        "@astrojs/react": "^3.6.2",
+        "@astrojs/tailwind": "^5.1.2",
+        "@fontsource/dm-sans": "^5.1.0",
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+        "astro": "^4.16.13",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "tailwindcss": "^3.4.15",
+        "typescript": "^5.6.3"
+    },
+    "devDependencies": {
+        "prettier": "^3.3.3",
+        "prettier-plugin-astro": "^0.14.1",
+        "prettier-plugin-tailwindcss": "^0.6.8"
+    },
+    "prettier": {
+        "plugins": [
+            "prettier-plugin-astro",
+            "prettier-plugin-tailwindcss"
+        ],
+        "tabWidth": 4,
+        "useTabs": false
+    }
 }
