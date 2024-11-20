@@ -14,6 +14,9 @@ import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
 import { DatabasePage } from "electron/database/tables/PageTable";
+import { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
+import { ShapePage } from "electron/database/tables/ShapePageTable";
+import { Shape } from "electron/database/tables/ShapeTable";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -266,6 +269,65 @@ const APP_API = {
         >,
     deleteAudioFile: (audioFileId: number) =>
         ipcRenderer.invoke("audio:delete", audioFileId) as Promise<AudioFile[]>,
+
+    /*********** SHAPES ***********/
+    // Shape
+    getShapes: () =>
+        ipcRenderer.invoke("shape:getAll") as Promise<
+            DatabaseResponse<Shape[]>
+        >,
+    createShape: (shape: Shape) =>
+        ipcRenderer.invoke("shape:create", shape) as Promise<
+            DatabaseResponse<Shape>
+        >,
+    updateShape: (shape: Shape) =>
+        ipcRenderer.invoke("shape:update", shape) as Promise<
+            DatabaseResponse<Shape>
+        >,
+    deleteShape: (id: number) =>
+        ipcRenderer.invoke("shape:delete", id) as Promise<
+            DatabaseResponse<void>
+        >,
+
+    // ShapePage
+    getShapePages: () =>
+        ipcRenderer.invoke("shapePage:getAll") as Promise<
+            DatabaseResponse<ShapePage[]>
+        >,
+    createShapePage: (shapePage: ShapePage) =>
+        ipcRenderer.invoke("shapePage:create", shapePage) as Promise<
+            DatabaseResponse<ShapePage>
+        >,
+    updateShapePage: (shapePage: ShapePage) =>
+        ipcRenderer.invoke("shapePage:update", shapePage) as Promise<
+            DatabaseResponse<ShapePage>
+        >,
+    deleteShapePage: (id: number) =>
+        ipcRenderer.invoke("shapePage:delete", id) as Promise<
+            DatabaseResponse<void>
+        >,
+
+    //ShapePageMarcher
+    getShapePageMarchers: () =>
+        ipcRenderer.invoke("shapePageMarcher:getAll") as Promise<
+            DatabaseResponse<ShapePageMarcher[]>
+        >,
+    createShapePageMarcher: (shapePageMarcher: ShapePageMarcher) =>
+        ipcRenderer.invoke(
+            "shapePageMarcher:create",
+            shapePageMarcher,
+        ) as Promise<DatabaseResponse<ShapePageMarcher>>,
+    updateShapePageMarcher: (shapePageMarcher: ShapePageMarcher) =>
+        ipcRenderer.invoke(
+            "shapePageMarcher:update",
+            shapePageMarcher,
+        ) as Promise<DatabaseResponse<ShapePageMarcher>>,
+    deleteShapePageMarcher: (id: number) =>
+        ipcRenderer.invoke("shapePageMarcher:delete", id) as Promise<
+            DatabaseResponse<void>
+        >,
+
+    /******************************/
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

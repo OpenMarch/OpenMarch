@@ -13,9 +13,9 @@ import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
 import { DatabaseMarcher } from "@/global/classes/Marcher";
 import { ModifiedPageArgs } from "@/global/classes/Page";
-import { createShapeTable } from "./tables/ShapeTable";
-import { createShapePageMarcherTable } from "./tables/ShapePageMarcherTable";
-import { createShapePageTable } from "./tables/ShapePageTable";
+import * as ShapeTable from "./tables/ShapeTable";
+import * as ShapePageTable from "./tables/ShapePageTable";
+import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -92,9 +92,9 @@ export function initDatabase() {
     );
     createMeasureTable(db);
     createAudioFileTable(db);
-    createShapeTable(db);
-    createShapePageTable(db);
-    createShapePageMarcherTable(db);
+    ShapeTable.createShapeTable(db);
+    ShapePageTable.createShapePageTable(db);
+    ShapePageMarcherTable.createShapePageMarcherTable(db);
     console.log("Database created.");
     db.close();
 }
@@ -323,6 +323,95 @@ export function initHandlers() {
     );
     ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
         deleteAudioFile(audioFileId),
+    );
+
+    /*********** SHAPES ***********/
+    // Shape
+    ipcMain.handle("shape:getAll", async () =>
+        connectWrapper<ShapeTable.Shape[]>(ShapeTable.getShapes),
+    );
+    ipcMain.handle("shape:insert", async (_, args: ShapeTable.NewShapeArgs[]) =>
+        connectWrapper<ShapeTable.Shape[]>(ShapeTable.createShapes, { args }),
+    );
+    ipcMain.handle(
+        "shape:update",
+        async (_, args: ShapeTable.ModifiedShapeArgs[]) =>
+            connectWrapper<ShapeTable.Shape[]>(ShapeTable.updateShapes, {
+                args,
+            }),
+    );
+    ipcMain.handle("shape:delete", async (_, shapeIds: Set<number>) =>
+        connectWrapper<ShapeTable.Shape[]>(ShapeTable.deleteShapes, {
+            shapeIds,
+        }),
+    );
+
+    // ShapePage
+    ipcMain.handle("shape_page:getAll", async () =>
+        connectWrapper<ShapePageTable.ShapePage[]>(
+            ShapePageTable.getShapePages,
+        ),
+    );
+    ipcMain.handle(
+        "shape_page:insert",
+        async (_, args: ShapePageTable.NewShapePageArgs[]) =>
+            connectWrapper<ShapePageTable.ShapePage[]>(
+                ShapePageTable.createShapePages,
+                { args },
+            ),
+    );
+    ipcMain.handle(
+        "shape_page:update",
+        async (_, args: ShapePageTable.ModifiedShapePageArgs[]) =>
+            connectWrapper<ShapePageTable.ShapePage[]>(
+                ShapePageTable.updateShapePages,
+                {
+                    args,
+                },
+            ),
+    );
+    ipcMain.handle("shape_page:delete", async (_, shapePageIds: Set<number>) =>
+        connectWrapper<ShapePageTable.ShapePage[]>(
+            ShapePageTable.deleteShapePages,
+            {
+                shapePageIds,
+            },
+        ),
+    );
+
+    // ShapePageMarcher
+    ipcMain.handle("shape_page_marcher:getAll", async () =>
+        connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+            ShapePageMarcherTable.getShapePageMarchers,
+        ),
+    );
+    ipcMain.handle(
+        "shape_page_marcher:insert",
+        async (_, args: ShapePageMarcherTable.NewShapePageMarcherArgs[]) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.createShapePageMarchers,
+                { args },
+            ),
+    );
+    ipcMain.handle(
+        "shape_page_marcher:update",
+        async (_, args: ShapePageMarcherTable.ModifiedShapePageMarcherArgs[]) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.updateShapePageMarchers,
+                {
+                    args,
+                },
+            ),
+    );
+    ipcMain.handle(
+        "shape_page_marcher:delete",
+        async (_, shapePageMarcherIds: Set<number>) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.deleteShapePageMarchers,
+                {
+                    shapePageMarcherIds,
+                },
+            ),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {
