@@ -13,6 +13,9 @@ import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
 import { DatabaseMarcher } from "@/global/classes/Marcher";
 import { ModifiedPageArgs } from "@/global/classes/Page";
+import { createShapeTable } from "./tables/ShapeTable";
+import { createShapePageMarcherTable } from "./tables/ShapePageMarcherTable";
+import { createShapePageTable } from "./tables/ShapePageTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -67,6 +70,7 @@ export function getDbPath() {
 }
 
 export function databaseIsReady() {
+    console.log("databaseIsReady", DB_PATH);
     return DB_PATH.length > 0 && fs.existsSync(DB_PATH);
 }
 
@@ -88,6 +92,9 @@ export function initDatabase() {
     );
     createMeasureTable(db);
     createAudioFileTable(db);
+    createShapeTable(db);
+    createShapePageTable(db);
+    createShapePageMarcherTable(db);
     console.log("Database created.");
     db.close();
 }
@@ -124,7 +131,7 @@ function createFieldPropertiesTable(
             );
         `);
     } catch (error) {
-        console.error("Failed to create field properties table:", error);
+        throw new Error(`Failed to create field properties table: ${error}`);
     }
     const stmt = db.prepare(`
         INSERT INTO ${Constants.FieldPropertiesTableName} (
@@ -180,7 +187,7 @@ function createMeasureTable(db: Database.Database) {
         History.createUndoTriggers(db, Constants.MeasureTableName);
         console.log("Measures table created.");
     } catch (error) {
-        console.error("Failed to create Measures table:", error);
+        throw new Error(`Failed to create Measures table: ${error}`);
     }
 }
 
@@ -206,7 +213,7 @@ function createAudioFileTable(db: Database.Database) {
         `);
         History.createUndoTriggers(db, Constants.AudioFilesTableName);
     } catch (error) {
-        console.error("Failed to create audio file table:", error);
+        throw new Error(`Failed to create audio file table: ${error}`);
     }
     console.log("audio file table created.");
 }
