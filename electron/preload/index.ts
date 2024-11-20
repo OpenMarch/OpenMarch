@@ -14,9 +14,17 @@ import { contextBridge, ipcRenderer } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
 import { DatabasePage } from "electron/database/tables/PageTable";
-import { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
+import {
+    ModifiedShapePageMarcherArgs,
+    NewShapePageMarcherArgs,
+    ShapePageMarcher,
+} from "electron/database/tables/ShapePageMarcherTable";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
-import { Shape } from "electron/database/tables/ShapeTable";
+import {
+    ModifiedShapeArgs,
+    NewShapeArgs,
+    Shape,
+} from "electron/database/tables/ShapeTable";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -276,17 +284,17 @@ const APP_API = {
         ipcRenderer.invoke("shape:getAll") as Promise<
             DatabaseResponse<Shape[]>
         >,
-    createShape: (shape: Shape) =>
-        ipcRenderer.invoke("shape:create", shape) as Promise<
-            DatabaseResponse<Shape>
+    createShapes: (newShapes: NewShapeArgs[]) =>
+        ipcRenderer.invoke("shape:create", newShapes) as Promise<
+            DatabaseResponse<Shape[]>
         >,
-    updateShape: (shape: Shape) =>
-        ipcRenderer.invoke("shape:update", shape) as Promise<
-            DatabaseResponse<Shape>
+    updateShapes: (modifiedShapes: ModifiedShapeArgs[]) =>
+        ipcRenderer.invoke("shape:update", modifiedShapes) as Promise<
+            DatabaseResponse<Shape[]>
         >,
-    deleteShape: (id: number) =>
-        ipcRenderer.invoke("shape:delete", id) as Promise<
-            DatabaseResponse<void>
+    deleteShapes: (idsToDelete: Set<number>) =>
+        ipcRenderer.invoke("shape:delete", idsToDelete) as Promise<
+            DatabaseResponse<Shape[]>
         >,
 
     // ShapePage
@@ -294,17 +302,17 @@ const APP_API = {
         ipcRenderer.invoke("shapePage:getAll") as Promise<
             DatabaseResponse<ShapePage[]>
         >,
-    createShapePage: (shapePage: ShapePage) =>
-        ipcRenderer.invoke("shapePage:create", shapePage) as Promise<
-            DatabaseResponse<ShapePage>
+    createShapePage: (newShapePages: ShapePage[]) =>
+        ipcRenderer.invoke("shapePage:create", newShapePages) as Promise<
+            DatabaseResponse<ShapePage[]>
         >,
-    updateShapePage: (shapePage: ShapePage) =>
-        ipcRenderer.invoke("shapePage:update", shapePage) as Promise<
-            DatabaseResponse<ShapePage>
+    updateShapePage: (modifiedShapePages: ModifiedShapeArgs[]) =>
+        ipcRenderer.invoke("shapePage:update", modifiedShapePages) as Promise<
+            DatabaseResponse<ShapePage[]>
         >,
-    deleteShapePage: (id: number) =>
-        ipcRenderer.invoke("shapePage:delete", id) as Promise<
-            DatabaseResponse<void>
+    deleteShapePage: (idsToDelete: Set<number>) =>
+        ipcRenderer.invoke("shapePage:delete", idsToDelete) as Promise<
+            DatabaseResponse<ShapePage[]>
         >,
 
     //ShapePageMarcher
@@ -312,18 +320,22 @@ const APP_API = {
         ipcRenderer.invoke("shapePageMarcher:getAll") as Promise<
             DatabaseResponse<ShapePageMarcher[]>
         >,
-    createShapePageMarcher: (shapePageMarcher: ShapePageMarcher) =>
+    createShapePageMarcher: (
+        newShapePageMarcherArgs: NewShapePageMarcherArgs[],
+    ) =>
         ipcRenderer.invoke(
             "shapePageMarcher:create",
-            shapePageMarcher,
-        ) as Promise<DatabaseResponse<ShapePageMarcher>>,
-    updateShapePageMarcher: (shapePageMarcher: ShapePageMarcher) =>
+            newShapePageMarcherArgs,
+        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
+    updateShapePageMarcher: (
+        modifiedShapePageMarcher: ModifiedShapePageMarcherArgs[],
+    ) =>
         ipcRenderer.invoke(
             "shapePageMarcher:update",
-            shapePageMarcher,
-        ) as Promise<DatabaseResponse<ShapePageMarcher>>,
-    deleteShapePageMarcher: (id: number) =>
-        ipcRenderer.invoke("shapePageMarcher:delete", id) as Promise<
+            modifiedShapePageMarcher,
+        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
+    deleteShapePageMarcher: (idsToDelete: Set<number>) =>
+        ipcRenderer.invoke("shapePageMarcher:delete", idsToDelete) as Promise<
             DatabaseResponse<void>
         >,
 
