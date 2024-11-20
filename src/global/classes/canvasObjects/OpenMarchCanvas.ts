@@ -53,6 +53,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     staticGridRef: fabric.Group = new fabric.Group([]);
     private _listeners?: CanvasListeners;
 
+    private delete_later_was_rendered = false;
+
     // ---- AlignmentEvent changes ----
     /**
      * Updates the event marchers in global state. Must be set in a React component
@@ -246,17 +248,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
 
         // ADD MARCHER CURVE
-        new MarcherCurve({
-            canvas: this,
-            points: [
-                ShapePoint.Move(100, 100),
-                // ShapePoint.Quadratic(150, 250, 600, 100),
-                // ShapePoint.Line(400, 100),
-                ShapePoint.Cubic(650, 250, 300, 800, 400, 100),
-                // ShapePoint.Close(),
-            ],
-            canvasMarchers: this.getCanvasMarchers(),
-        });
+        if (!this.delete_later_was_rendered) {
+            new MarcherCurve({
+                canvas: this,
+                points: [
+                    ShapePoint.Move(100, 100),
+                    ShapePoint.Quadratic(150, 250, 600, 100),
+                    ShapePoint.Line(400, 100),
+                    ShapePoint.Cubic(650, 250, 300, 800, 150, 600),
+                    // ShapePoint.Close(),
+                ],
+                canvasMarchers: this.getCanvasMarchers(),
+            });
+            this.delete_later_was_rendered = true;
+        }
     };
 
     /**

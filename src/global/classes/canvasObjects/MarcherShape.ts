@@ -167,34 +167,150 @@ export default class MarcherShape {
         return this.shapePath;
     }
 
+    /**
+     * Distributes the marchers along the path of the MarcherShape object.
+     * This method calculates the new coordinates for each marcher based on the
+     * SVG path and places the marchers at those coordinates.
+     * If the number of marchers does not match the number of coordinates,
+     * an error is thrown.
+     */
     distributeMarchers() {
         if (!this.shapePath)
             throw new Error("No path exists to distribute marchers on");
 
-        const svgNamespace = "http://www.w3.org/2000/svg";
-        const tempSvgPath = document.createElementNS(svgNamespace, "path");
-        tempSvgPath.setAttribute(
-            "d",
-            ShapePoint.pointsToString(this.shapePath.points),
-        );
-
-        const pathLength = tempSvgPath.getTotalLength();
-
-        const numberOfDots = this.canvasMarchers.length;
-        const spacing = pathLength / (numberOfDots - 1);
+        const newCoordinates = MarcherShape.distributeAlongPath({
+            itemIds: this.canvasMarchers.map((m) => ({ id: m.id })),
+            svgPath: this.shapePath,
+        });
 
         // Loop to create and place the dots along the path
-        for (let i = 0; i < numberOfDots; i++) {
-            const point = tempSvgPath.getPointAtLength(i * spacing);
+        for (let i = 0; i < newCoordinates.length; i++) {
             const canvasMarcher = this.canvasMarchers[i];
+            const newCoordinate = newCoordinates[i];
             const newMarcherPage = new MarcherPage({
                 ...canvasMarcher.marcherPage,
-                x: point.x,
-                y: point.y,
+                x: newCoordinate.x,
+                y: newCoordinate.y,
             });
             this.canvasMarchers[i].setMarcherCoords(newMarcherPage);
         }
         this.canvas.requestRenderAll();
+    }
+
+    /**
+     * Distributes a set of items (e.g. marchers) evenly along an SVG path.
+     *
+     * @param itemIds - An array of objects with `id` properties, representing the items to be distributed.
+     * @param svgPath - The SVG path along which the items will be distributed.
+     * @returns An array of objects with `id`, `x`, and `y` properties, representing the coordinates where the items should be placed.
+     */
+    static distributeAlongPath({
+        itemIds,
+        svgPath,
+    }: {
+        itemIds: { id: number }[];
+        svgPath: ShapePath;
+    }): { id: number; x: number; y: number }[] {
+        const separatePaths: string[] = [];
+        let activeString = "";
+
+        // Loop through the SVG path and separate it into individual paths
+        for (const svgPoint of svgPath.points) {
+            if (svgPoint.command === "M") activeString = svgPoint.toString();
+            else {
+                separatePaths.push(activeString + " " + svgPoint.toString());
+
+                // Update the active string to the end coordinate of the current point
+                const coordsLength = svgPoint.coordinates.length;
+                const endCoordinate = svgPoint.coordinates[coordsLength - 1];
+                activeString = `M ${endCoordinate.x} ${endCoordinate.y}`;
+            }
+        }
+        // Calculate the length of each segment of the SVG path
+        const svgSegmentLengths: number[] = [];
+        const svgPathObjects: SVGPathElement[] = [];
+        const svgNamespace = "http://www.w3.org/2000/svg";
+        for (const pathString of separatePaths) {
+            const tempSvgPath = document.createElementNS(svgNamespace, "path");
+            svgPathObjects.push(tempSvgPath);
+            tempSvgPath.setAttribute("d", pathString.toString());
+
+            svgSegmentLengths.push(tempSvgPath.getTotalLength());
+        }
+
+        if (itemIds.length < svgSegmentLengths.length + 1)
+            console.warn(
+                "The number of marchers is less than the number of segments in the path. This means there are not enough marchers to place on each point. The shape will be distributed unevenly.",
+            );
+
+        const totalLength = svgSegmentLengths.reduce((a, b) => a + b, 0);
+        let itemsRemaining = itemIds.length;
+        const itemsPerSegment: number[] = svgSegmentLengths.map((_) => 0);
+        // Add one marcher to each segment
+        for (let i = 0; i < svgSegmentLengths.length; i++) {
+            if (itemsRemaining === 0) break;
+            itemsPerSegment[i] = 1;
+            itemsRemaining -= 1;
+        }
+
+        // Calculate how many items should be placed on each segment
+        for (let i = 0; i < svgSegmentLengths.length; i++) {
+            // Only factor in the items length minus the number of segments plus 1.
+            // This is because each segment needs to have at least one marcher on the segment.
+            // We need to add 1 for the ending segment since it will have 2 points.
+            const svgSegmentLength = svgSegmentLengths[i];
+            itemsPerSegment[i] += Math.round(
+                (svgSegmentLength / totalLength) * itemsRemaining,
+            );
+        }
+        const totalItems = itemsPerSegment.reduce((a, b) => a + b, 0);
+        if (totalItems === itemIds.length + 1) {
+            // find the segment with the most items and reduce it by 1
+            const maxIndex = itemsPerSegment.indexOf(
+                Math.max(...itemsPerSegment),
+            );
+            itemsPerSegment[maxIndex] -= 1;
+        } else if (totalItems === itemIds.length - 1) {
+            // find the segment with the most items and reduce it by 1
+            const minIndex = itemsPerSegment.indexOf(
+                Math.min(...itemsPerSegment),
+            );
+            itemsPerSegment[minIndex] += 1;
+        } else if (totalItems !== itemIds.length) {
+            console.warn(
+                "Mismatch between number of marchers and number of segments.",
+                {
+                    totalItems,
+                    itemIds: itemIds.length,
+                },
+            );
+        }
+
+        // Place marchers evenly on each segment based on length
+        // Ensure that every segment has at least one marcher (on the point) and that the last point has a marcher on it.
+        const output: { id: number; x: number; y: number }[] = [];
+        let currentItemIndex = 0;
+        for (let i = 0; i < svgSegmentLengths.length; i++) {
+            const segmentLength = svgSegmentLengths[i];
+            const itemsOnSegment = itemsPerSegment[i];
+
+            // If this is the last segment and we are including the end point, we need to reduce the spacing by 1
+            const isLastSegment = i === svgSegmentLengths.length - 1;
+            const spacing =
+                segmentLength / (itemsOnSegment - (isLastSegment ? 1 : 0));
+            // Don't include the start point if it is not included
+            for (let j = 0; j < itemsOnSegment; j++) {
+                const point = svgPathObjects[i].getPointAtLength(spacing * j);
+                output.push({
+                    id: itemIds[currentItemIndex].id,
+                    x: point.x,
+                    y: point.y,
+                });
+                currentItemIndex++;
+            }
+        }
+
+        return output;
     }
 }
 
@@ -275,9 +391,6 @@ class ShapePointController extends fabric.Circle {
             this.incomingPoint.outgoingPoint = this;
 
         this.outgoingPoint = outgoingPoint;
-        // If the outgoing point does not have this as an incoming point, set it to this
-        // if (this.outgoingPoint && !(this.outgoingPoint.incomingPoint === this))
-        //     this.outgoingPoint.incomingPoint = this;
 
         this.outgoingLine = null;
         this.canvas = canvas;
@@ -488,6 +601,15 @@ export class ShapePath extends fabric.Path {
             return [];
         }
         return ShapePoint.fromArray(this.path as any as PathPoint[]);
+    }
+
+    /**
+     * String representation of all the points in the path.
+     *
+     * @returns A string representation of the path. E.g. "M 0 0 L 100 100"
+     */
+    toString() {
+        return this.points.map((point) => point.toString()).join(" ");
     }
 }
 
