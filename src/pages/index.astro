@@ -1,13 +1,50 @@
 ---
-import ThemeSwitcher from "@/components/ThemeSwitcher.astro";
 import Layout from "@/layouts/Layout.astro";
+import { Button } from "@/components/ui/Button";
 ---
 
 <Layout title="Home">
-    <div class="h-[300vh] p-64">
-        <h1 class="text-[96px] text-text">
-            Free & open source drill writing software
-        </h1>
-        <ThemeSwitcher />
+    <div class="flex flex-col gap-64 p-64">
+        <section id="landing" class="flex h-[80vh] flex-col relative justify-center gap-32 ">
+            <div class="flex flex-col gap-24 max-w-[60%]">
+                <code class="font-mono text-accent text-[1.25rem]">v0.0.4</code>
+                <h1 class="text-[96px] leading-[130%]">Free & open-source drill writing software</h1>
+                <div class="flex gap-32">
+                    <p class="text-body">Fast and intuitive drill writing experience for marching band, indoor ensembles, drum corp, or anything else</p>
+                </div>
+                <div class="flex gap-8">
+                    <a href="/download">
+                        <Button>Download</Button>
+                    </a>
+                    <a href="/#drill-writing">
+                        <Button variant="secondary">Learn More</Button>
+                    </a>
+                    <a href="https://github.com/OpenMarch/OpenMarch">
+                        <Button variant="secondary">GitHub</Button>
+                    </a>
+                    <a href="https://discord.gg/eTsQ98uZzq">
+                        <Button variant="secondary">Discord</Button>
+                    </a>
+                </div>
+            </div>
+            <div class="bg-[url('/landing/land-light.png')] bg-cover -z-40 dark:bg-[url('/landing/land-dark.png')] aspect-[1408/731] w-[64vw] top-1/2 -translate-y-1/2 h-auto absolute right-[-20%]" />
+            <div class="w-[22vw] h-[18vw] bg-accent blur-[512px] opacity-40 -z-50 absolute bottom-0 left-0" />
+        </section>
+        <section id="drill-writing" class="flex h-screen flex-col relative justify-center gap-32 ">
+            <div class="flex flex-col gap-24 max-w-[42%]">
+                <h1 class="text-[96px] leading-[130%]">Drill writing</h1>
+                <p class="text-body">Create lines, shapes, and align your marchers with ease, quickly.</p>
+            </div>
+            <div class="bg-[url('/landing/drill-write-light.png')] bg-cover -z-40 dark:bg-[url('/landing/drill-write-dark.png')] aspect-[1408/731] w-[64vw] top-1/2 -translate-y-1/2 h-auto absolute right-[-10%]" />
+            <div class="w-[22vw] h-[18vw] bg-accent blur-[512px] opacity-40 -z-50 absolute bottom-0 left-1/2 -translate-x-1/2" />
+        </section>
+        <section id="music" class="flex h-screen flex-col relative justify-center gap-32 ">
+            <div class="flex flex-col gap-24 max-w-[42%]">
+                <h1 class="text-[96px] leading-[130%]">Music integration</h1>
+                <p class="text-body">Import your MusicXML and audio files to have your measures and music inside the program, ready for you to write drill on top of.</p>
+            </div>
+            <div class="bg-[url('/landing/music-light.png')] bg-cover -z-40 dark:bg-[url('/landing/music-dark.png')] aspect-[1408/731] w-[64vw] top-1/2 -translate-y-1/2 h-auto absolute right-[-10%]" />
+            <div class="w-[22vw] h-[18vw] bg-accent blur-[512px] opacity-40 -z-50 absolute bottom-0 right-0" />
+        </section>
     </div>
 </Layout>
