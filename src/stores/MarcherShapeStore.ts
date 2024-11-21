@@ -20,7 +20,6 @@ export const useShapePageStore = create<ShapePageStoreInterface>((set) => ({
         } else {
             newShapePages = allShapePages.data;
         }
-        // Todo, create shapePage objects only after we have optimized the getShapePages function
         set({ shapePages: newShapePages });
     },
 }));

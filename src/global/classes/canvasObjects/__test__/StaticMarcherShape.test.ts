@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ShapePath, ShapePoint, VanillaPoint } from "../MarcherShape";
+import { ShapePath, ShapePoint, VanillaPoint } from "../StaticMarcherShape";
 import OpenMarchCanvas from "../OpenMarchCanvas";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
 import { falsyUiSettings } from "@/components/canvas/__test__/MocksForCanvas";

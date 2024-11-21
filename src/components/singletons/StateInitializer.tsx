@@ -13,6 +13,8 @@ import Measure from "../../global/classes/Measure";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { HistoryResponse } from "electron/database/database.services";
+import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import { useShapePageStore } from "@/stores/MarcherShapeStore";
 
 /**
  * A component that initializes the state of the application.
@@ -27,6 +29,7 @@ function StateInitializer() {
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
+    const { fetchShapePages } = useShapePageStore()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -58,6 +61,11 @@ function StateInitializer() {
         Measure.fetchMeasures();
     }, [fetchMeasures]);
 
+    useEffect(() => {
+        MarcherShape.fetchShapePages = fetchShapePages;
+        MarcherShape.fetchShapePages();
+    }, [fetchShapePages]);
+
     /*******************************************************************/
 
     // Select the first page if none are selected. Intended to activate at the initial loading of a webpage
@@ -80,14 +88,14 @@ function StateInitializer() {
         (id: number) => {
             return marchers.find((marcher) => marcher.id === id) || null;
         },
-        [marchers]
+        [marchers],
     );
 
     const getPage = useCallback(
         (id: number) => {
             return pages.find((page) => page.id === id) || null;
         },
-        [pages]
+        [pages],
     );
 
     // Listen for history actions (undo/redo) from the main process
@@ -100,7 +108,7 @@ function StateInitializer() {
                         if (args.marcherIds.length > 0) {
                             // TODO support passing in all of the marchers that were modified in the undo
                             const newMarchers = marchers.filter((marcher) =>
-                                args.marcherIds.includes(marcher.id)
+                                args.marcherIds.includes(marcher.id),
                             );
                             setSelectedMarchers(newMarchers);
                         } else {
@@ -112,7 +120,7 @@ function StateInitializer() {
                         if (args.marcherIds.length > 0) {
                             // TODO support passing in all of the marchers that were modified in the undo
                             const newMarchers = marchers.filter((marcher) =>
-                                args.marcherIds.includes(marcher.id)
+                                args.marcherIds.includes(marcher.id),
                             );
                             setSelectedMarchers(newMarchers);
                         } else {
