@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { PathPoint, ShapePath, ShapePoint } from "../MarcherShape";
+import { ShapePath, ShapePoint, VanillaPoint } from "../StaticMarcherShape";
 import OpenMarchCanvas from "../OpenMarchCanvas";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
 import { falsyUiSettings } from "@/components/canvas/__test__/MocksForCanvas";
 
-describe.todo("MarcherShape", () => {
+describe.todo("StaticMarcherShape", () => {
     let canvas: OpenMarchCanvas;
     const mockFieldProperties =
         FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -101,8 +101,8 @@ describe("ShapePoint", () => {
     });
 
     describe("fromArray", () => {
-        it("should convert an array of PathPoint to an array of ShapePoint", () => {
-            const array: PathPoint[] = [
+        it("should convert an array of VanillaPoint to an array of ShapePoint", () => {
+            const array: VanillaPoint[] = [
                 ["M", 100, 200],
                 ["L", 100, 200],
                 ["Q", 100, 200, 300, 400],
@@ -153,6 +153,59 @@ describe("ShapePoint", () => {
             const offsetPoint = point.applyOffset(offset);
             expect(offsetPoint.command).toBe("M");
             expect(offsetPoint.coordinates).toEqual([{ x: 150, y: 250 }]);
+        });
+    });
+
+    describe("ShapePoint.fromString", () => {
+        it("should parse a simple SVG path string", () => {
+            const svgPath = "M 100 200 L 300 400 Z";
+            const points = ShapePoint.fromString(svgPath);
+            expect(points).toEqual([
+                ShapePoint.Move(100, 200),
+                ShapePoint.Line(300, 400),
+                ShapePoint.Close(),
+            ]);
+        });
+
+        it("should parse a complex SVG path with curves", () => {
+            const svgPath = "M 0 0 Q 50 50 100 100 C 150 150 200 200 250 250 Z";
+            const points = ShapePoint.fromString(svgPath);
+            expect(points).toEqual([
+                ShapePoint.Move(0, 0),
+                ShapePoint.Quadratic(50, 50, 100, 100),
+                ShapePoint.Cubic(150, 150, 200, 200, 250, 250),
+                ShapePoint.Close(),
+            ]);
+        });
+
+        it("should handle multiple subpaths", () => {
+            const svgPath = "M 0 0 L 100 100 M 200 200 L 300 300";
+            const points = ShapePoint.fromString(svgPath);
+            expect(points).toEqual([
+                ShapePoint.Move(0, 0),
+                ShapePoint.Line(100, 100),
+                ShapePoint.Move(200, 200),
+                ShapePoint.Line(300, 300),
+            ]);
+        });
+
+        it("should handle decimal values", () => {
+            const svgPath = "M 10.5 20.7 L 30.2 40.9";
+            const points = ShapePoint.fromString(svgPath);
+            expect(points).toEqual([
+                ShapePoint.Move(10.5, 20.7),
+                ShapePoint.Line(30.2, 40.9),
+            ]);
+        });
+
+        it("should handle negative values", () => {
+            const svgPath = "M -10 -20 L -30 -40 Q -50 -60 -70 -80";
+            const points = ShapePoint.fromString(svgPath);
+            expect(points).toEqual([
+                ShapePoint.Move(-10, -20),
+                ShapePoint.Line(-30, -40),
+                ShapePoint.Quadratic(-50, -60, -70, -80),
+            ]);
         });
     });
 });

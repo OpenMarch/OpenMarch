@@ -342,7 +342,7 @@ export function initHandlers() {
     );
     ipcMain.handle("shape:delete", async (_, shapeIds: Set<number>) =>
         connectWrapper<ShapeTable.Shape[]>(ShapeTable.deleteShapes, {
-            shapeIds,
+            ids: shapeIds,
         }),
     );
 
@@ -374,16 +374,21 @@ export function initHandlers() {
         connectWrapper<ShapePageTable.ShapePage[]>(
             ShapePageTable.deleteShapePages,
             {
-                shapePageIds,
+                ids: shapePageIds,
             },
         ),
     );
 
     // ShapePageMarcher
-    ipcMain.handle("shape_page_marcher:getAll", async () =>
-        connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
-            ShapePageMarcherTable.getShapePageMarchers,
-        ),
+    ipcMain.handle(
+        "shape_page_marcher:getAll",
+        async (_, shapePageId: number) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.getShapePageMarchers,
+                {
+                    shapePageId,
+                },
+            ),
     );
     ipcMain.handle(
         "shape_page_marcher:insert",
@@ -409,7 +414,7 @@ export function initHandlers() {
             connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
                 ShapePageMarcherTable.deleteShapePageMarchers,
                 {
-                    shapePageMarcherIds,
+                    ids: shapePageMarcherIds,
                 },
             ),
     );

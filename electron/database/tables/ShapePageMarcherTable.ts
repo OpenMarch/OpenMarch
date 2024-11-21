@@ -65,19 +65,31 @@ export function createShapePageMarcherTable(db: Database.Database) {
     }
 }
 /**
- * Retrieves all shapePageMarchers from the database
+ * Retrieves all shapePageMarchers from the database or filters by shapePageId.
+ *
  * @param db The database instance
+ * @param shapePageId The shapePageId to filter by. If undefined, all shapePageMarchers are returned
  * @returns DatabaseResponse containing an array of ShapePageMarcher objects
  */
 export function getShapePageMarchers({
     db,
+    shapePageId,
 }: {
     db: Database.Database;
+    shapePageId?: number;
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
-    return DbActions.getAllItems<ShapePageMarcher>({
-        db,
-        tableName: Constants.ShapePageMarcherTableName,
-    });
+    if (shapePageId !== undefined)
+        return DbActions.getItemsByColValue<ShapePageMarcher>({
+            db,
+            tableName: Constants.ShapePageMarcherTableName,
+            col: "shape_page_id",
+            value: shapePageId,
+        });
+    else
+        return DbActions.getAllItems<ShapePageMarcher>({
+            db,
+            tableName: Constants.ShapePageMarcherTableName,
+        });
 }
 
 /**
@@ -188,12 +200,13 @@ function flattenOrder({
         // Create array of modified SPMs with incremental position_order values
         const modifiedSpms: ModifiedShapePageMarcherArgs[] = [];
         sortedSpms.forEach((spm, index) => {
-            const newIndex = index + 1;
-            if (spm.position_order !== newIndex)
+            const newIndex = index;
+            if (spm.position_order !== newIndex) {
                 modifiedSpms.push({
                     id: spm.id,
                     position_order: index + 1,
                 });
+            }
         });
 
         // Update all SPMs with new position_order values

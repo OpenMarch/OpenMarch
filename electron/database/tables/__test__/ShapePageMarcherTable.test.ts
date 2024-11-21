@@ -151,6 +151,70 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
             expect(result.data[1].notes).toBeNull();
         });
     });
+
+    describe("GetShapePageMarchers", () => {
+        it("should return empty array when no shape page marchers exist", () => {
+            const result = getShapePageMarchers({ db });
+            expect(result.success).toBe(true);
+            expect(result.data).toHaveLength(0);
+        });
+
+        it("should return only marchers for specified shape_page_id", () => {
+            const spms = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+                { shape_page_id: 2, marcher_id: 3, position_order: 1 },
+            ];
+            createShapePageMarchers({ db, args: spms });
+
+            const result = getShapePageMarchers({ db, shapePageId: 1 });
+            expect(result.success).toBe(true);
+            expect(result.data).toHaveLength(2);
+            expect(result.data).toMatchObject([spms[0], spms[1]]);
+        });
+
+        it("should return empty array when shape_page_id has no marchers", () => {
+            const spms = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+            ];
+            createShapePageMarchers({ db, args: spms });
+
+            const result = getShapePageMarchers({ db, shapePageId: 2 });
+            expect(result.success).toBe(true);
+            expect(result.data).toHaveLength(0);
+        });
+
+        it("should return all marchers when no shape_page_id is specified", () => {
+            const spms = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 2, marcher_id: 2, position_order: 1 },
+                { shape_page_id: 3, marcher_id: 3, position_order: 1 },
+            ];
+            createShapePageMarchers({ db, args: spms });
+
+            const result = getShapePageMarchers({ db });
+            expect(result.success).toBe(true);
+            expect(result.data).toHaveLength(3);
+            expect(result.data).toMatchObject(spms);
+        });
+
+        it("should return marchers with all fields including notes", () => {
+            const spm = {
+                shape_page_id: 1,
+                marcher_id: 1,
+                position_order: 1,
+                notes: "Test notes",
+            };
+            createShapePageMarchers({ db, args: [spm] });
+
+            const result = getShapePageMarchers({ db, shapePageId: 1 });
+            expect(result.success).toBe(true);
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0]).toMatchObject(spm);
+        });
+    });
+
     describe("UpdateShapePageMarchers", () => {
         it("should successfully update a single ShapePageMarcher's notes", () => {
             const initialSPM = {

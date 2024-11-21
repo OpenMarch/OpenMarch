@@ -128,7 +128,6 @@ app.whenReady().then(async () => {
 
     // Getters
     initGetters();
-    DatabaseServices.initDatabase();
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
 });

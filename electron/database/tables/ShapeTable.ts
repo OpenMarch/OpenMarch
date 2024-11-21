@@ -115,6 +115,7 @@ export function deleteShapes({
     db: Database.Database;
     ids: Set<number>;
 }): DatabaseResponse<Shape[]> {
+    console.log("DELETING SHAPES", ids);
     return DbActions.deleteItems<Shape>({
         db,
         tableName: Constants.ShapeTableName,

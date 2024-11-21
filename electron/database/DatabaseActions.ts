@@ -479,7 +479,7 @@ export function updateItems<
         };
 
         console.error(`Failed to update items from ${tableName}:`, error);
-
+        console.error(`UPDATED ITEMS:`, items);
         // Roll back the changes caused by this action
         if (actionWasPerformed) {
             History.performUndo(db);

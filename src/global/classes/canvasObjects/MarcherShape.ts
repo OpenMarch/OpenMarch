@@ -3,23 +3,30 @@ import OpenMarchCanvas from "./OpenMarchCanvas";
 import { CanvasColors } from "@/components/canvas/CanvasConstants";
 import MarcherPage from "../MarcherPage";
 import CanvasMarcher from "./CanvasMarcher";
+import { DatabaseResponse } from "electron/database/DatabaseActions";
+import { ShapePage } from "electron/database/tables/ShapePageTable";
 
 /**
- * An SVG point in the MarcherShape path.
+ * An SVG point in the StaticMarcherShape path.
+ *
+ * This is the lowest type of the point and is how a path's point is represented in fabric.js
  */
-export type PathPoint = [string, ...number[]];
+export type VanillaPoint = [string, ...number[]];
 
 /**
- * Represents a MarcherShape object, which is a canvas path with control points.
- * The MarcherShape class handles the creation, movement, and redrawing of the path and its control points.
+ * A canvas path with control points.
+ * The StaticMarcherShape class handles the creation, movement, and redrawing of the path and its control points.
+ *
+ * This class does not interact with the database at all.
  */
-export default class MarcherShape {
+export class StaticMarcherShape {
+    /** The canvas this StaticMarcherShape belongs to */
     canvas: OpenMarchCanvas;
     /** The control points of this shape */
     controlPoints: ShapePointController[];
 
     /**
-     * Represents the initial position and offset of a curve in the MarcherShape.
+     * Represents the initial position and offset of a curve in the StaticMarcherShape.
      * The `initialPosition` property holds the initial x and y coordinates of the curve.
      * The `fromInitial` property holds the x and y offsets from the initial position.
      */
@@ -32,13 +39,12 @@ export default class MarcherShape {
     };
 
     /**
-     * The path of the MarcherShape object, which represents the shape of the canvas path.
+     * The path of the StaticMarcherShape object, which represents the shape of the canvas path.
      */
     shapePath: ShapePath;
 
-    canvasMarchers: CanvasMarcher[];
-
-    tempMarcherPoints: fabric.Circle[] = [];
+    /** The marchers that are currently on this shape in the order that they are on the shape */
+    private _canvasMarchers: CanvasMarcher[];
 
     constructor({
         canvas,
@@ -51,7 +57,7 @@ export default class MarcherShape {
     }) {
         this.canvas = canvas;
         this.shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
-        this.canvasMarchers = canvasMarchers;
+        this._canvasMarchers = canvasMarchers;
 
         const controlPoints: ShapePointController[] = [];
         for (let pointIndex = 0; pointIndex < points.length; pointIndex++) {
@@ -84,7 +90,7 @@ export default class MarcherShape {
     }
 
     /**
-     * Brings the control points of the MarcherShape to the front of the canvas.
+     * Brings the control points of the StaticMarcherShape to the front of the canvas.
      * This ensures the control points are visible and not obscured by other canvas objects.
      */
     bringControlPointsToFront() {
@@ -112,11 +118,6 @@ export default class MarcherShape {
             return;
         }
 
-        // Delete the tempMarcherPoints from the canvas while moving the shape
-        this.tempMarcherPoints.forEach((p) => {
-            this.canvas.remove(p);
-        });
-
         this.curveOffset.fromInitial = {
             x: this.shapePath.left - this.curveOffset.initialPosition.x,
             y: this.shapePath.top - this.curveOffset.initialPosition.y,
@@ -127,7 +128,7 @@ export default class MarcherShape {
     }
 
     /**
-     * Redraws the path of the MarcherShape object on the canvas.
+     * Redraws the path of the StaticMarcherShape object on the canvas.
      * This method is responsible for updating the path object on the canvas
      * to reflect any changes made to the control points or the overall shape.
      * It adjusts the coordinates of the path based on the offset from the
@@ -139,7 +140,7 @@ export default class MarcherShape {
      * path commands and coordinates.
      * @returns The updated fabric.Path object representing the redrawn shape.
      */
-    recreatePath(pathArg: PathPoint[]) {
+    recreatePath(pathArg: VanillaPoint[]) {
         if (this.shapePath && this.canvas) {
             this.canvas.remove(this.shapePath);
         }
@@ -168,7 +169,7 @@ export default class MarcherShape {
     }
 
     /**
-     * Distributes the marchers along the path of the MarcherShape object.
+     * Distributes the marchers along the path of the StaticMarcherShape object.
      * This method calculates the new coordinates for each marcher based on the
      * SVG path and places the marchers at those coordinates.
      * If the number of marchers does not match the number of coordinates,
@@ -178,7 +179,7 @@ export default class MarcherShape {
         if (!this.shapePath)
             throw new Error("No path exists to distribute marchers on");
 
-        const newCoordinates = MarcherShape.distributeAlongPath({
+        const newCoordinates = StaticMarcherShape.distributeAlongPath({
             itemIds: this.canvasMarchers.map((m) => ({ id: m.id })),
             svgPath: this.shapePath,
         });
@@ -195,6 +196,16 @@ export default class MarcherShape {
             this.canvasMarchers[i].setMarcherCoords(newMarcherPage);
         }
         this.canvas.requestRenderAll();
+    }
+
+    get canvasMarchers() {
+        return this._canvasMarchers;
+    }
+
+    set canvasMarchers(canvasMarchers: CanvasMarcher[]) {
+        this._canvasMarchers = canvasMarchers;
+        this.distributeMarchers();
+        this.bringControlPointsToFront();
     }
 
     /**
@@ -315,7 +326,152 @@ export default class MarcherShape {
 }
 
 /**
- * Represents a control point for a MarcherShape object, which is part of a path in a canvas.
+ * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
+ */
+export class MarcherShape extends StaticMarcherShape {
+    /** The id of the current ShapePage */
+    shapePage: ShapePage;
+    /** The name of this shape. Optional */
+    name?: string;
+    /** Notes about this shape. Optional */
+    notes?: string;
+
+    constructor({
+        shapePage,
+        canvas,
+    }: {
+        shapePage: ShapePage;
+        canvas: OpenMarchCanvas;
+    }) {
+        const points = ShapePoint.fromString(shapePage.svg_path);
+        super({ canvas, canvasMarchers: [], points });
+        this.shapePage = shapePage;
+        this.refreshMarchers();
+    }
+
+    /**
+     * Refreshes the marchers associated with the current ShapePage.
+     *
+     * Fetches the marcher IDs from the database, sorts them by position order,
+     * and maps them to the corresponding CanvasMarcher instances on the canvas.
+     */
+    async refreshMarchers() {
+        const spmsResponse = await window.electron.getShapePageMarchers(
+            this.shapePage.id,
+        );
+        if (!spmsResponse.success) {
+            console.error(spmsResponse.error);
+            return;
+        }
+        const marcherIds = spmsResponse.data
+            .sort((a, b) => a.position_order - b.position_order)
+            .map((spm) => spm.marcher_id);
+
+        const canvasMarchersMap = new Map(
+            this.canvas
+                .getCanvasMarchersByIds(marcherIds)
+                .map((spm) => [spm.id, spm]),
+        );
+        this.canvasMarchers = marcherIds.map((id) => {
+            const spm = canvasMarchersMap.get(id);
+            if (!spm) throw new Error(`Could not find marcher with id ${id}`);
+            return spm;
+        });
+    }
+    /****************** DATABASE FUNCTIONS *******************/
+    static async createMarcherShape({
+        pageId,
+        marcherIds,
+        start,
+        end,
+    }: {
+        pageId: number;
+        marcherIds: number[];
+        start: { x: number; y: number };
+        end: { x: number; y: number };
+    }) {
+        const checkResponse = (response: DatabaseResponse<any>) => {
+            if (!response.success)
+                throw new Error(
+                    `Error creating StaticMarcherShape - ${response.error?.message}`,
+                );
+        };
+        try {
+            const createShapeResponse = await window.electron.createShapes([
+                {},
+            ]);
+            if (!createShapeResponse.success)
+                throw new Error(
+                    `Error creating StaticMarcherShape: ${createShapeResponse.error?.message}`,
+                );
+            const svgPath = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+            const createShapePageResponse =
+                await window.electron.createShapePages([
+                    {
+                        shape_id: createShapeResponse.data[0].id,
+                        page_id: pageId,
+                        svg_path: svgPath,
+                    },
+                ]);
+            if (!createShapePageResponse.success) {
+                window.electron.deleteShapes(
+                    new Set([createShapeResponse.data[0].id]),
+                );
+                throw new Error(
+                    `Error creating StaticMarcherShape: ${createShapeResponse.error?.message}`,
+                );
+            }
+            const spmsToCreate = marcherIds.map((marcher_id, i) => {
+                return {
+                    shape_page_id: createShapePageResponse.data[0].id,
+                    marcher_id,
+                    position_order: i,
+                };
+            });
+            const createSpmResponse =
+                await window.electron.createShapePageMarchers(spmsToCreate);
+            if (!createSpmResponse.success) {
+                window.electron.deleteShapes(
+                    new Set([createShapeResponse.data[0].id]),
+                );
+                window.electron.deleteShapePages(
+                    new Set([createShapePageResponse.data[0].id]),
+                );
+                throw new Error(
+                    `Error creating StaticMarcherShape: ${createSpmResponse.error?.message}`,
+                );
+            }
+        } catch (error: any) {
+            console.error(`Error creating StaticMarcherShape - ${error}`);
+        }
+    }
+
+    static async updateMarcherShape(marcherShape: MarcherShape) {
+        const updateResponse = await window.electron.updateShapePages([
+            {
+                id: marcherShape.shapePage.id,
+                svg_path: marcherShape.shapePath.toString(),
+            },
+        ]);
+        if (!updateResponse.success)
+            console.error(
+                `Error updating StaticMarcherShape - ${updateResponse.error}`,
+            );
+    }
+
+    static async deleteMarcherShape(marcherShape: MarcherShape) {
+        const deleteResponse = await window.electron.deleteShapes(
+            new Set([marcherShape.shapePage.shape_id]),
+        );
+        if (!deleteResponse.success)
+            console.error(
+                `Error deleting StaticMarcherShape - ${deleteResponse.error}`,
+            );
+    }
+}
+
+/**
+ * Represents a control point for a StaticMarcherShape object, which is part of a path in a canvas.
  * The control point is associated with a specific point and coordinate index in the path.
  * It handles the movement and modification of the control point, and updates the corresponding
  * coordinates in the path.
@@ -324,7 +480,7 @@ class ShapePointController extends fabric.Circle {
     /**
      * The path this control point is a part of
      */
-    marcherShape: MarcherShape;
+    marcherShape: StaticMarcherShape;
     /**
      * The index of the point in the path.
      * I.e. `this.marcherShape.path.path[this.pathIndex]` is the point this control point is associated with
@@ -355,7 +511,7 @@ class ShapePointController extends fabric.Circle {
         incomingPoint = null,
         outgoingPoint = null,
     }: {
-        marcherShape: MarcherShape;
+        marcherShape: StaticMarcherShape;
         pointIndex: number;
         coordIndex: number;
         canvas: OpenMarchCanvas;
@@ -408,7 +564,7 @@ class ShapePointController extends fabric.Circle {
     }
 
     /**
-     * Refreshes the coordinates of the path point associated with this MarcherShape object.
+     * Refreshes the coordinates of the path point associated with this StaticMarcherShape object.
      *
      * This method updates the coordinates of the corresponding path point in the parent path's path array. It calculates the new coordinates based on the current position of the control point and the curve offset, and then sets the updated coordinates in the path array. Finally, it marks the parent path as dirty to trigger a redraw.
      */
@@ -438,9 +594,9 @@ class ShapePointController extends fabric.Circle {
     }
 
     /**
-     * Gets the coordinates of the path point associated with this MarcherShape object.
+     * Gets the coordinates of the path point associated with this StaticMarcherShape object.
      *
-     * This method retrieves the coordinates of the path point that corresponds to this MarcherShape object. It extracts the left and top coordinates from the path array and returns them as an object.
+     * This method retrieves the coordinates of the path point that corresponds to this StaticMarcherShape object. It extracts the left and top coordinates from the path array and returns them as an object.
      *
      * @returns {Object} An object containing the left and top coordinates of the path point, or `null` if the parent path does not have a path.
      * @property {number} left - The left coordinate of the path point.
@@ -451,12 +607,12 @@ class ShapePointController extends fabric.Circle {
             console.error("The parent path does not have a path");
             return;
         }
-        const pathPoint = this.marcherShape.shapePath.path[
+        const VanillaPoint = this.marcherShape.shapePath.path[
             this.pointIndex
         ] as unknown as number[];
         const point = {
-            left: pathPoint[this.coordIndex],
-            top: pathPoint[this.coordIndex + 1],
+            left: VanillaPoint[this.coordIndex],
+            top: VanillaPoint[this.coordIndex + 1],
         };
         return point;
     }
@@ -465,13 +621,14 @@ class ShapePointController extends fabric.Circle {
      * Handles the movement of the parent path by updating the control point's coordinates
      */
     handleParentMove() {
-        const pathPoint = this.getPathCoordinates();
-        if (!pathPoint) {
+        const VanillaPoint = this.getPathCoordinates();
+        if (!VanillaPoint) {
             throw new Error("The point does not have coordinates");
         }
         this.left =
-            pathPoint.left + this.marcherShape.curveOffset.fromInitial.x;
-        this.top = pathPoint.top + this.marcherShape.curveOffset.fromInitial.y;
+            VanillaPoint.left + this.marcherShape.curveOffset.fromInitial.x;
+        this.top =
+            VanillaPoint.top + this.marcherShape.curveOffset.fromInitial.y;
 
         this.refreshLines();
     }
@@ -494,9 +651,9 @@ class ShapePointController extends fabric.Circle {
     }
 
     /**
-     * Redraws the parent path of the MarcherShape object.
+     * Redraws the parent path of the StaticMarcherShape object.
      *
-     * This method is called when the MarcherShape object has been modified, and the parent path needs to be redrawn.
+     * This method is called when the StaticMarcherShape object has been modified, and the parent path needs to be redrawn.
      *
      * @param path - The path of the parent object, as an array of (string | number)[][] elements.
      */
@@ -507,7 +664,7 @@ class ShapePointController extends fabric.Circle {
         }
 
         this.marcherShape.recreatePath(
-            this.marcherShape.shapePath.path as unknown as PathPoint[],
+            this.marcherShape.shapePath.path as unknown as VanillaPoint[],
         );
     }
 
@@ -600,7 +757,7 @@ export class ShapePath extends fabric.Path {
             console.error("The path is not defined");
             return [];
         }
-        return ShapePoint.fromArray(this.path as any as PathPoint[]);
+        return ShapePoint.fromArray(this.path as any as VanillaPoint[]);
     }
 
     /**
@@ -654,7 +811,7 @@ export class ShapePoint {
      * @param array - An array of command-coordinate tuples, where the first element is the command string and the remaining elements are the coordinate values.
      * @returns An array of ShapePoint objects representing the input array.
      */
-    static fromArray(array: PathPoint[]): ShapePoint[] {
+    static fromArray(array: VanillaPoint[]): ShapePoint[] {
         const points: ShapePoint[] = [];
         for (const point of array) {
             const command = point[0] as string;
@@ -693,7 +850,7 @@ export class ShapePoint {
      * Converts the ShapePoint into an array format with command as first element
      * @returns Tuple with command string followed by coordinate numbers
      */
-    toArray(): PathPoint {
+    toArray(): VanillaPoint {
         return [
             this.command,
             ...this.coordinates.flatMap((coord) => [coord.x, coord.y]),
@@ -705,8 +862,25 @@ export class ShapePoint {
      * @param points Array of ShapePoint objects to convert
      * @returns Array of tuples, each containing a command string and coordinates
      */
-    static pointsToArray(points: ShapePoint[]): Array<PathPoint> {
+    static pointsToArray(points: ShapePoint[]): VanillaPoint[] {
         return points.map((point) => point.toArray());
+    }
+
+    /**
+     * Creates an array of `ShapePoint` objects from an SVG path string.
+     *
+     * This method takes advantage of the fact that the `fabric.Path` class can parse SVG paths.
+     *
+     * @param svgPath - The SVG path string to parse.
+     * @returns An array of `ShapePoint` objects representing the parsed path.
+     */
+    static fromString(svgPath: string): ShapePoint[] {
+        // Take advantage of the fact that fabric.Path can parse SVG paths
+        const tempPath = new fabric.Path(svgPath);
+        const points = ShapePoint.fromArray(
+            tempPath.path as any as VanillaPoint[],
+        );
+        return points;
     }
 
     /******************** GENERATORS *********************/
