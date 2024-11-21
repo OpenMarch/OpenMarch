@@ -379,6 +379,18 @@ export class MarcherShape extends StaticMarcherShape {
         });
     }
     /****************** DATABASE FUNCTIONS *******************/
+    /**
+     * Creates a new StaticMarcherShape on the canvas and associates it with the specified page and marchers.
+     *
+     * This method handles the creation of the shape, shape page, and the association of marchers to the shape page.
+     * It ensures that the necessary database records are created and that the shape is properly initialized on the canvas.
+     *
+     * @param pageId - The ID of the page to associate the new shape with.
+     * @param marcherIds - The IDs of the marchers to associate with the new shape.
+     * @param start - The starting point of the shape, represented as an object with `x` and `y` properties.
+     * @param end - The ending point of the shape, represented as an object with `x` and `y` properties.
+     * @returns A Promise that resolves when the shape has been successfully created.
+     */
     static async createMarcherShape({
         pageId,
         marcherIds,
@@ -390,12 +402,6 @@ export class MarcherShape extends StaticMarcherShape {
         start: { x: number; y: number };
         end: { x: number; y: number };
     }) {
-        const checkResponse = (response: DatabaseResponse<any>) => {
-            if (!response.success)
-                throw new Error(
-                    `Error creating StaticMarcherShape - ${response.error?.message}`,
-                );
-        };
         try {
             const createShapeResponse = await window.electron.createShapes([
                 {},
@@ -446,6 +452,11 @@ export class MarcherShape extends StaticMarcherShape {
         }
     }
 
+    /**
+     * Updates the SVG path of a MarcherShape object in the canvas.
+     * @param marcherShape - The MarcherShape object to update.
+     * @returns - A Promise that resolves when the update is complete, or rejects with an error message.
+     */
     static async updateMarcherShape(marcherShape: MarcherShape) {
         const updateResponse = await window.electron.updateShapePages([
             {
@@ -459,6 +470,11 @@ export class MarcherShape extends StaticMarcherShape {
             );
     }
 
+    /**
+     * Deletes a MarcherShape object from the canvas.
+     * @param marcherShape - The MarcherShape object to delete.
+     * @returns - A Promise that resolves when the deletion is complete, or rejects with an error message.
+     */
     static async deleteMarcherShape(marcherShape: MarcherShape) {
         const deleteResponse = await window.electron.deleteShapes(
             new Set([marcherShape.shapePage.shape_id]),
