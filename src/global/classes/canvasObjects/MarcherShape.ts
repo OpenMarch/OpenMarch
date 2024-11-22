@@ -19,6 +19,19 @@ export class MarcherShape extends StaticMarcherShape {
      */
     static fetchShapePages: () => Promise<void>;
 
+    /**
+     * Constructs a new `MarcherShape` instance with the provided `ShapePage` and `OpenMarchCanvas`.
+     *
+     * This constructor initializes the `MarcherShape` by parsing the `svg_path` property of the `ShapePage`
+     * and passing it to the `StaticMarcherShape` constructor. It then sets the `shapePage` property and
+     * calls the `refreshMarchers()` method to fetch and map the associated marchers.
+     *
+     * After construction, all of the items are added to the canvas.
+     *
+     * @param {Object} params - The parameters for constructing the `MarcherShape`.
+     * @param {ShapePage} params.shapePage - The `ShapePage` associated with this `MarcherShape`.
+     * @param {OpenMarchCanvas} params.canvas - The `OpenMarchCanvas` instance this `MarcherShape` is associated with.
+     */
     constructor({
         shapePage,
         canvas,

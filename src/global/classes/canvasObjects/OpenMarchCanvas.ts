@@ -15,7 +15,8 @@ import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
-import { ShapePoint, StaticMarcherShape } from "./MarcherShape";
+import { ShapePage } from "electron/database/tables/ShapePageTable";
+import { MarcherShape } from "./MarcherShape";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -46,14 +47,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: 0,
         time: 0,
     };
+    marcherShapes: MarcherShape[] = [];
     /**
      * The reference to the grid (the lines on the field) object to use for caching
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
      */
     staticGridRef: fabric.Group = new fabric.Group([]);
     private _listeners?: CanvasListeners;
-
-    private delete_later_was_rendered = false;
 
     // ---- AlignmentEvent changes ----
     /**
@@ -184,6 +184,38 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /******* Marcher Functions *******/
+    renderMarcherShapes({ shapePages }: { shapePages: ShapePage[] }) {
+        const existingMarcherShapeMap = new Map(
+            this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
+        );
+
+        // Remove shapes that no longer exist
+        const newShapeIds = new Set(shapePages.map((sp) => sp.shape_id));
+        const removedShapeIds = new Set();
+        for (const existingMarcherShape of existingMarcherShapeMap) {
+            if (!newShapeIds.has(existingMarcherShape[0])) {
+                removedShapeIds.add(existingMarcherShape[0]);
+                existingMarcherShape[1].destroy();
+            }
+        }
+        if (removedShapeIds.size !== 0) {
+            this.marcherShapes = this.marcherShapes.filter(
+                (ms) => !removedShapeIds.has(ms.shapePage.shape_id),
+            );
+        }
+
+        for (const shapePage of shapePages) {
+            if (existingMarcherShapeMap.has(shapePage.shape_id)) {
+                existingMarcherShapeMap
+                    .get(shapePage.shape_id)
+                    ?.updateWithSvg(shapePage.svg_path);
+            } else {
+                this.marcherShapes.push(
+                    new MarcherShape({ canvas: this, shapePage }),
+                );
+            }
+        }
+    }
     /**
      * Render the given marcherPages on the canvas
      *
@@ -246,22 +278,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.requestRenderAll();
-
-        // ADD MARCHER CURVE
-        if (!this.delete_later_was_rendered) {
-            new StaticMarcherShape({
-                canvas: this,
-                points: [
-                    ShapePoint.Move(100, 100),
-                    // ShapePoint.Quadratic(150, 250, 600, 100),
-                    ShapePoint.Line(400, 100),
-                    ShapePoint.Cubic(650, 250, 300, 800, 150, 600),
-                    // ShapePoint.Close(),
-                ],
-                canvasMarchers: this.getCanvasMarchers(),
-            });
-            this.delete_later_was_rendered = true;
-        }
     };
 
     /**

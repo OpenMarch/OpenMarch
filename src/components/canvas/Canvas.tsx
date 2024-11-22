@@ -15,6 +15,7 @@ import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import { useShapePageStore } from "@/stores/MarcherShapeStore";
 
 /**
  * The field/stage UI of OpenMarch
@@ -34,6 +35,7 @@ export default function Canvas({
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { marcherPages } = useMarcherPageStore()!;
+    const { shapePages } = useShapePageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -423,6 +425,19 @@ export default function Canvas({
         uiSettings.nextPaths,
         uiSettings.previousPaths,
     ]);
+
+    // Update/render the MarcherShapes when the selected page or the ShapePages change
+    useEffect(() => {
+        if (canvas && selectedPage && shapePages) {
+            canvas.currentPage = selectedPage;
+            const currentShapePages = shapePages.filter(
+                (sp) => sp.page_id === selectedPage.id,
+            );
+            canvas.renderMarcherShapes({
+                shapePages: currentShapePages,
+            });
+        }
+    }, [canvas, selectedPage, shapePages]);
 
     // Update the canvas when the field properties change
     useEffect(() => {

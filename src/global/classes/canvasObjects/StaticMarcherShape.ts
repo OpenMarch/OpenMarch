@@ -3,8 +3,6 @@ import OpenMarchCanvas from "./OpenMarchCanvas";
 import { CanvasColors } from "@/components/canvas/CanvasConstants";
 import MarcherPage from "../MarcherPage";
 import CanvasMarcher from "./CanvasMarcher";
-import { DatabaseResponse } from "electron/database/DatabaseActions";
-import { ShapePage } from "electron/database/tables/ShapePageTable";
 
 /**
  * An SVG point in the StaticMarcherShape path.
@@ -46,6 +44,19 @@ export class StaticMarcherShape {
     /** The marchers that are currently on this shape in the order that they are on the shape */
     private _canvasMarchers: CanvasMarcher[];
 
+    /**
+     * Constructs a new `StaticMarcherShape` instance with the provided canvas, canvas marchers, and shape points.
+     *
+     * This constructor initializes the shape path, control points, and other properties of the `StaticMarcherShape` class.
+     * It creates control points for each coordinate in the provided shape points, and sets up the necessary event handlers and canvas interactions.
+     *
+     * After construction, all of the items are added to the canvas.
+     *
+     * @param {Object} params - The parameters for constructing the `StaticMarcherShape`.
+     * @param {OpenMarchCanvas} params.canvas - The canvas this `StaticMarcherShape` belongs to.
+     * @param {CanvasMarcher[]} params.canvasMarchers - The marchers that are currently on this shape.
+     * @param {ShapePoint[]} params.points - The points that define the shape of this `StaticMarcherShape`.
+     */
     constructor({
         canvas,
         canvasMarchers,
@@ -127,6 +138,17 @@ export class StaticMarcherShape {
         });
     }
 
+    updateWithSvg(svgPath: string) {
+        const points = ShapePoint.fromString(svgPath);
+        const vanillaPoints: VanillaPoint[] = points.map((p) => {
+            const output: VanillaPoint = [p.command];
+            for (const coordinate of p.coordinates)
+                output.push(coordinate.x, coordinate.y);
+            return output;
+        });
+        this.recreatePath(vanillaPoints);
+    }
+
     /**
      * Redraws the path of the StaticMarcherShape object on the canvas.
      * This method is responsible for updating the path object on the canvas
@@ -166,6 +188,18 @@ export class StaticMarcherShape {
         this.bringControlPointsToFront();
 
         return this.shapePath;
+    }
+
+    /**
+     * Destroys the StaticMarcherShape by removing the shape path and control points from the canvas.
+     */
+    destroy() {
+        if (this.canvas) {
+            if (this.shapePath) this.canvas.remove(this.shapePath);
+            this.controlPoints.forEach((point) => {
+                this.canvas.remove(point);
+            });
+        }
     }
 
     /**
