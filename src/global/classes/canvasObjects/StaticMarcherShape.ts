@@ -1,6 +1,6 @@
 import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { CanvasColors } from "@/components/canvas/CanvasConstants";
+import { CanvasColors } from "../../../components/canvas/CanvasConstants";
 import MarcherPage from "../MarcherPage";
 import CanvasMarcher from "./CanvasMarcher";
 

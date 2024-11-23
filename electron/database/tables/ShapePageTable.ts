@@ -4,8 +4,8 @@ import * as DbActions from "../DatabaseActions";
 import { DatabaseResponse } from "../DatabaseActions";
 import * as History from "../database.history";
 import { getShapePageMarchers } from "./ShapePageMarcherTable";
-import { StaticMarcherShape } from "@/global/classes/canvasObjects/StaticMarcherShape";
-import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
+import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
+import { StaticMarcherShape } from "../../../src/global/classes/canvasObjects/StaticMarcherShape";
 import { updateMarcherPages } from "./MarcherPageTable";
 
 export interface ShapePage {
