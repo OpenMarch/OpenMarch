@@ -2,6 +2,7 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import * as History from "../database.history";
+import MarcherPage from "@/global/classes/MarcherPage";
 
 /**
  * A Shape can have many ShapePages to signify its existence on multiple pages.
@@ -64,6 +65,7 @@ export function createShapePageMarcherTable(db: Database.Database) {
         );
     }
 }
+
 /**
  * Retrieves all shapePageMarchers from the database or filters by shapePageId.
  *
@@ -90,6 +92,43 @@ export function getShapePageMarchers({
             db,
             tableName: Constants.ShapePageMarcherTableName,
         });
+}
+
+export function getSpmByMarcherPage({
+    db,
+    marcherPage,
+}: {
+    db: Database.Database;
+    marcherPage: { marcher_id: number; page_id: number };
+}): DbActions.DatabaseResponse<ShapePageMarcher | null> {
+    let output: DbActions.DatabaseResponse<ShapePageMarcher | null>;
+    try {
+        const response = db
+            .prepare(
+                `SELECT id FROM ${Constants.ShapePageMarcherTableName}
+            WHERE "marcher_id" = (@marcher_id) AND "page_id" = (@page_id)`,
+            )
+            .get({
+                marcher_id: marcherPage.marcher_id,
+                page_id: marcherPage.page_id,
+            }) as ShapePageMarcher;
+        if (response) output = { success: true, data: response };
+        else
+            output = {
+                success: true,
+                data: null,
+            };
+    } catch (error: any) {
+        output = {
+            success: false,
+            data: null,
+            error: {
+                message: `Failed to get ShapePageMarcher by marcherPage: ${marcherPage}`,
+                stack: error.stack || "Unable to get stack trace",
+            },
+        };
+    }
+    return output;
 }
 
 /**

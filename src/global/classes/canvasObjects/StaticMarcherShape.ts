@@ -254,13 +254,18 @@ export class StaticMarcherShape {
         svgPath,
     }: {
         itemIds: { id: number }[];
-        svgPath: ShapePath;
+        svgPath: string | ShapePath;
     }): { id: number; x: number; y: number }[] {
+        const shapePath =
+            typeof svgPath === "string"
+                ? new ShapePath(ShapePoint.fromString(svgPath))
+                : svgPath;
+
         const separatePaths: string[] = [];
         let activeString = "";
 
         // Loop through the SVG path and separate it into individual paths
-        for (const svgPoint of svgPath.points) {
+        for (const svgPoint of shapePath.points) {
             if (svgPoint.command === "M") activeString = svgPoint.toString();
             else {
                 separatePaths.push(activeString + " " + svgPoint.toString());

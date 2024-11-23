@@ -14,6 +14,7 @@ import * as DbMocks from "./DatabaseMocks";
 import { createShapes, createShapeTable, deleteShapes } from "../ShapeTable";
 import { createMarcherPageTable } from "../MarcherPageTable";
 import { createMarcherTable } from "../MarcherTable";
+import { createShapePageMarcherTable } from "../ShapePageMarcherTable";
 
 describe("ShapePageTable CRUD Operations", () => {
     let db: Database.Database;
@@ -25,6 +26,7 @@ describe("ShapePageTable CRUD Operations", () => {
         createPageTable(db);
         createShapeTable(db);
         createMarcherPageTable(db);
+        createShapePageMarcherTable(db);
         createMarcherTable(db);
         // Create a shape
         expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
