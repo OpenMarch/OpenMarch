@@ -236,7 +236,7 @@ export default class CanvasMarcher
      *
      * @param marcherPage The MarcherPage object to set the coordinates from.
      */
-    setMarcherCoords(marcherPage: MarcherPage) {
+    setMarcherCoords(marcherPage: MarcherPage, updateMarcherPageObj = true) {
         // Offset the new canvas coordinates (center of the dot/label group) by the dot's position
         const newCanvasCoords = this.databaseCoordsToCanvasCoords(marcherPage);
 
@@ -244,7 +244,7 @@ export default class CanvasMarcher
             throw new Error(
                 "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
             );
-        this.marcherPage = marcherPage;
+        if (updateMarcherPageObj) this.marcherPage = marcherPage;
         this.left = newCanvasCoords.x;
         this.top = newCanvasCoords.y;
 

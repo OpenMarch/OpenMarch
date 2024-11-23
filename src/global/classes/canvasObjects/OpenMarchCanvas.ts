@@ -184,6 +184,26 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /******* Marcher Functions *******/
+    /**
+     * Brings all control points of the marcher shapes to the front of the canvas.
+     * This ensures the control points are always visible and on top of the marcher shapes.
+     */
+    bringAllControlPointsTooFront() {
+        // Put all of the control points to the front if they exist
+        for (const marcherShape of this.marcherShapes) {
+            marcherShape.controlPoints.forEach((controlPoint) => {
+                controlPoint.bringToFront();
+            });
+        }
+    }
+
+    /**
+     * Renders the marcher shapes on the canvas based on the provided shape pages.
+     * This method handles adding new shapes, updating existing shapes, and removing
+     * shapes that are no longer present in the shape pages.
+     *
+     * @param shapePages - An array of shape pages containing the SVG paths to render.
+     */
     renderMarcherShapes({ shapePages }: { shapePages: ShapePage[] }) {
         const existingMarcherShapeMap = new Map(
             this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
@@ -277,6 +297,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
+
+        this.bringAllControlPointsTooFront();
         this.requestRenderAll();
     };
 
@@ -291,6 +313,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
+
         this.requestRenderAll();
     };
 
@@ -304,6 +327,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         curCanvasMarchers.forEach((canvasMarcher) => {
             this.bringToFront(canvasMarcher);
         });
+        this.bringAllControlPointsTooFront();
     };
 
     /**

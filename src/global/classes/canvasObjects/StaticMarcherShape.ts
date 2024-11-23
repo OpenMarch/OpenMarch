@@ -24,11 +24,11 @@ export class StaticMarcherShape {
     controlPoints: ShapePointController[];
 
     /**
-     * Represents the initial position and offset of a curve in the StaticMarcherShape.
-     * The `initialPosition` property holds the initial x and y coordinates of the curve.
+     * Represents the initial position and offset of a move in the StaticMarcherShape.
+     * The `initialPosition` property holds the initial x and y coordinates of the shape.
      * The `fromInitial` property holds the x and y offsets from the initial position.
      */
-    curveOffset: {
+    moveOffset: {
         initialPosition: { x: number; y: number };
         fromInitial: { x: number; y: number };
     } = {
@@ -129,15 +129,42 @@ export class StaticMarcherShape {
             return;
         }
 
-        this.curveOffset.fromInitial = {
-            x: this.shapePath.left - this.curveOffset.initialPosition.x,
-            y: this.shapePath.top - this.curveOffset.initialPosition.y,
+        this.moveOffset.fromInitial = {
+            x: this.shapePath.left - this.moveOffset.initialPosition.x,
+            y: this.shapePath.top - this.moveOffset.initialPosition.y,
         };
         this.controlPoints.forEach((p) => {
             p.handleParentMove();
         });
+        this.canvasMarchers.forEach((m) => {
+            const newMarcherPage = {
+                ...m.marcherPage,
+                x: m.marcherPage.x + this.moveOffset.fromInitial.x,
+                y: m.marcherPage.y + this.moveOffset.fromInitial.y,
+            };
+            m.setMarcherCoords(newMarcherPage, false);
+        });
     }
 
+    /**
+     * Handles the modification of the shape by recreating the path based on the updated shape path.
+     * This method is called when the shape is modified, such as when control points are moved.
+     * It updates the canvas to reflect the new shape by recreating the path using the updated coordinates.
+     *
+     * @param e The fabric.js event object that triggered the modification.
+     */
+    modifiedHandler(e: fabric.IEvent) {
+        this.recreatePath(this.shapePath.path as any as VanillaPoint[]);
+    }
+
+    /**
+     * Updates the StaticMarcherShape with a new SVG path.
+     * This method converts the SVG path string into an array of VanillaPoint objects,
+     * which are then used to recreate the shape path on the canvas.
+     * After updating the path, the method also updates the control points to match the new shape.
+     *
+     * @param svgPath - The SVG path string to be used to update the shape.
+     */
     updateWithSvg(svgPath: string) {
         const points = ShapePoint.fromString(svgPath);
         const vanillaPoints: VanillaPoint[] = points.map((p) => {
@@ -147,6 +174,9 @@ export class StaticMarcherShape {
             return output;
         });
         this.recreatePath(vanillaPoints);
+        this.controlPoints.forEach((p) => {
+            p.handleParentMove();
+        });
     }
 
     /**
@@ -168,7 +198,7 @@ export class StaticMarcherShape {
         }
 
         const points = ShapePoint.fromArray(pathArg);
-        points.forEach((p) => p.applyOffset(this.curveOffset.fromInitial));
+        points.forEach((p) => p.applyOffset(this.moveOffset.fromInitial));
 
         this.shapePath = new ShapePath(points);
         if (
@@ -177,13 +207,14 @@ export class StaticMarcherShape {
         )
             throw new Error("The shape does not have coordinates");
 
-        this.curveOffset = {
+        this.moveOffset = {
             initialPosition: { x: this.shapePath.left, y: this.shapePath.top },
             fromInitial: { x: 0, y: 0 },
         };
         if (!this.canvas) throw new Error("The canvas is not defined");
         this.canvas.add(this.shapePath);
         this.shapePath.on("moving", this.moveHandler.bind(this));
+        this.shapePath.on("modified", this.modifiedHandler.bind(this));
 
         this.bringControlPointsToFront();
 
@@ -476,13 +507,13 @@ class ShapePointController extends fabric.Circle {
                 this.pointIndex
             ] as unknown as number[]
         )[this.coordIndex] =
-            this.left - this.marcherShape.curveOffset.fromInitial.x;
+            this.left - this.marcherShape.moveOffset.fromInitial.x;
         (
             this.marcherShape.shapePath.path[
                 this.pointIndex
             ] as unknown as number[]
         )[this.coordIndex + 1] =
-            this.top - this.marcherShape.curveOffset.fromInitial.y;
+            this.top - this.marcherShape.moveOffset.fromInitial.y;
         this.marcherShape.shapePath.setCoords();
         this.marcherShape.shapePath.dirty = true;
     }
@@ -520,9 +551,9 @@ class ShapePointController extends fabric.Circle {
             throw new Error("The point does not have coordinates");
         }
         this.left =
-            VanillaPoint.left + this.marcherShape.curveOffset.fromInitial.x;
+            VanillaPoint.left + this.marcherShape.moveOffset.fromInitial.x;
         this.top =
-            VanillaPoint.top + this.marcherShape.curveOffset.fromInitial.y;
+            VanillaPoint.top + this.marcherShape.moveOffset.fromInitial.y;
 
         this.refreshLines();
     }
@@ -557,7 +588,6 @@ class ShapePointController extends fabric.Circle {
             return;
         }
 
-        console.log("modifiedHandler", this.marcherShape.shapePath.path);
         this.marcherShape.recreatePath(
             this.marcherShape.shapePath.path as unknown as VanillaPoint[],
         );

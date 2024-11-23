@@ -87,6 +87,11 @@ export class MarcherShape extends StaticMarcherShape {
         super.distributeMarchers();
     }
 
+    moveHandler(e: fabric.IEvent): void {
+        super.moveHandler(e);
+        this.hasBeenSavedToDatabase = false;
+    }
+
     recreatePath(pathArg: VanillaPoint[]): ShapePath {
         const newPath = super.recreatePath(pathArg);
         if (!this.hasBeenSavedToDatabase) {
