@@ -336,12 +336,12 @@ export const RegisteredActionsObjects: {
     applyQuickShape: new RegisteredAction({
         desc: "Snaps marchers to shape without creating an editable object",
         enumString: "applyQuickShape",
-        keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "Enter", shift: true }),
     }),
     createMarcherShape: new RegisteredAction({
         desc: "Creates a new shape that can be edited across pages",
         enumString: "createMarcherShape",
-        keyboardShortcut: new KeyboardShortcut({ key: "Enter", shift: true }),
+        keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
     }),
     cancelAlignmentUpdates: new RegisteredAction({
         desc: "Cancel updates to marchers",
@@ -641,7 +641,6 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.applyQuickShape: {
-                    console.log("applyQuickShape", alignmentEventMarchers);
                     MarcherPage.updateMarcherPages(
                         alignmentEventNewMarcherPages,
                     );
