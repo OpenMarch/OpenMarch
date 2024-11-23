@@ -1,0 +1,74 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { Button } from "@/components/ui/Button";
+import { getCollection } from "astro:content";
+import { Windows, MacOS, Linux } from "../components/OsLogos";
+
+const blogs = await getCollection("blog");
+---
+
+<Layout title="Home">
+    <div class="flex flex-col gap-64 p-64">
+        <section
+            id="download"
+            class="relative flex h-[80vh] flex-col justify-center gap-32"
+        >
+            <div
+                class="flex h-full w-full flex-col items-center justify-center"
+            >
+                <h1 class="text-center text-[72px]">
+                    Download the Modern <br /> Drill Writing App
+                </h1>
+            </div>
+            <div class="grid h-fit grid-cols-3 gap-12">
+                <div
+                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48"
+                >
+                    <Windows />
+                    <h1 class="text-h1">Windows</h1>
+                    <div class="flex flex-wrap gap-12">
+                        <a
+                            href="https://github.com/OpenMarch/OpenMarch/releases/latest/download/OpenMarch_0.0.4_windows.zip"
+                        >
+                            <Button variant="secondary">
+                                Download for x64
+                            </Button>
+                        </a>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48"
+                >
+                    <MacOS />
+                    <h1 class="text-h1">macOS</h1>
+                    <div class="flex flex-wrap gap-12">
+                        <a
+                            href="https://github.com/OpenMarch/OpenMarch/releases/latest/download/OpenMarch_0.0.4_macOS.zip"
+                        >
+                            <Button variant="secondary"> Download .dmg </Button>
+                        </a>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48"
+                >
+                    <Linux />
+                    <h1 class="text-h1">Linux</h1>
+                    <div class="flex flex-wrap gap-12">
+                        <a
+                            href="https://github.com/OpenMarch/OpenMarch/releases/latest/download/OpenMarch_0.0.4_linux.zip"
+                        >
+                            <Button variant="secondary">
+                                Download AppImage & Snap
+                            </Button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="absolute left-1/2 top-0 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 bg-accent opacity-40 blur-[512px]"
+            >
+            </div>
+        </section>
+    </div>
+</Layout>
