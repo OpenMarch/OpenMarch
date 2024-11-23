@@ -3,10 +3,10 @@ import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import { DatabaseResponse } from "../DatabaseActions";
 import * as History from "../database.history";
-import { getShapePageMarchers } from "./ShapePageMarcherTable";
+import { createShapePageMarchers } from "./ShapePageMarcherTable";
 import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
-import { StaticMarcherShape } from "../../../src/global/classes/canvasObjects/StaticMarcherShape";
 import { updateMarcherPages } from "./MarcherPageTable";
+import { createShapes } from "./ShapeTable";
 
 export interface ShapePage {
     id: number;
@@ -19,6 +19,17 @@ export interface ShapePage {
 }
 
 export interface NewShapePageArgs {
+    marcher_coordinates: {
+        marcher_id: number;
+        x: number;
+        y: number;
+    }[];
+    shape_id?: number;
+    page_id: number;
+    svg_path: string;
+    notes?: string | null;
+}
+interface ActualNewShapePageArgs {
     shape_id: number;
     page_id: number;
     svg_path: string;
@@ -26,6 +37,11 @@ export interface NewShapePageArgs {
 }
 
 export interface ModifiedShapePageArgs {
+    marcher_coordinates?: {
+        marcher_id: number;
+        x: number;
+        y: number;
+    }[];
     id: number;
     svg_path?: string;
     notes?: string | null;
@@ -83,55 +99,41 @@ export function getShapePages({
  *
  * @param db The database instance
  * @param shapePage The ShapePage for which to update the associated MarcherPages
+ * @param
  * @throws Error if there is an issue retrieving the ShapePageMarchers or updating the MarcherPages
  */
 function updateChildMarcherPages({
     db,
-    shapePage,
+    pageId,
+    marcherCoordinates,
 }: {
     db: Database.Database;
-    shapePage: ShapePage;
+    pageId: number;
+    marcherCoordinates: {
+        marcher_id: number;
+        x: number;
+        y: number;
+    }[];
 }) {
-    // Get all of the ShapePageMarchers that are associated with this ShapePage
-    const shapePageMarchersResponse = getShapePageMarchers({
+    const marcherPageUpdates: ModifiedMarcherPageArgs[] =
+        marcherCoordinates.map((coordinate) => {
+            return {
+                marcher_id: coordinate.marcher_id,
+                page_id: pageId,
+                x: coordinate.x,
+                y: coordinate.y,
+            };
+        });
+    // Update the MarcherPages in the database
+    const updateMarcherPagesResponse = updateMarcherPages({
         db,
-        shapePageId: shapePage.id,
+        marcherPageUpdates,
+        isChildAction: true,
     });
-    if (!shapePageMarchersResponse.success)
+    if (!updateMarcherPagesResponse.success)
         throw new Error(
-            `Failed to get ShapePageMarchers: ${shapePageMarchersResponse.error?.message}\n`,
+            `Failed to get update child MarcherPages: ${updateMarcherPagesResponse.error?.message}\n`,
         );
-    const marcherIds: { id: number }[] = shapePageMarchersResponse.data.map(
-        (spm) => {
-            return { id: spm.marcher_id };
-        },
-    );
-    if (marcherIds.length > 0) {
-        // Get the new coordinates for the marcher shapes
-        const newCoordinates = StaticMarcherShape.distributeAlongPath({
-            itemIds: marcherIds,
-            svgPath: shapePage?.svg_path,
-        });
-        const marcherPageUpdates: ModifiedMarcherPageArgs[] =
-            newCoordinates.map((coordinate) => {
-                return {
-                    marcher_id: coordinate.id,
-                    page_id: shapePage.page_id,
-                    x: coordinate.x,
-                    y: coordinate.y,
-                };
-            });
-        // Update the MarcherPages in the database
-        const updateMarcherPagesResponse = updateMarcherPages({
-            db,
-            marcherPageUpdates,
-            isChildAction: true,
-        });
-        if (!updateMarcherPagesResponse.success)
-            throw new Error(
-                `Failed to get update child MarcherPages: ${shapePageMarchersResponse.error?.message}\n`,
-            );
-    }
 }
 
 /**
@@ -156,7 +158,7 @@ export function createShapePages({
         };
 
     let output: DbActions.DatabaseResponse<ShapePage[]>;
-    const createdShapePages = new Set<number>();
+    const createdShapePages: ShapePage[] = [];
     console.log("\n=========== start createShapePages ===========");
 
     // Track if any action was performed so that we can undo if necessary
@@ -164,34 +166,76 @@ export function createShapePages({
 
     try {
         History.incrementUndoGroup(db);
-        const createdShapePagesResponse = DbActions.createItems<
-            ShapePage,
-            NewShapePageArgs
-        >({
-            db,
-            items: args,
-            tableName: Constants.ShapePageTableName,
-            printHeaders: false,
-            useNextUndoGroup: false,
-        });
-        if (!createdShapePagesResponse.success)
-            throw new Error(
-                `Failed to create ShapePages: ${createdShapePagesResponse.error?.message}\n`,
-            );
-        actionWasPerformed = true;
-        for (const createdShapePage of createdShapePagesResponse.data) {
-            createdShapePages.add(createdShapePage.id);
-        }
+        for (const newShapePage of args) {
+            let shapeIdToUse = newShapePage.shape_id;
+            // If no shape_id is provided, create a new shape
+            if (shapeIdToUse === undefined) {
+                const createdShapeResponse = createShapes({
+                    db,
+                    args: [{}],
+                    isChildAction: true,
+                });
+                if (!createdShapeResponse.success)
+                    throw new Error(
+                        `Failed to create Shape: ${createdShapeResponse.error?.message}\n`,
+                    );
+                shapeIdToUse = createdShapeResponse.data[0].id;
+                actionWasPerformed = true;
+            }
 
-        for (const createdShapePage of createdShapePagesResponse.data) {
+            // Create the ShapePage
+            const { marcher_coordinates, ...shapePageToCreate } = {
+                ...newShapePage,
+                shape_id: shapeIdToUse,
+            };
+            const createdShapePageResponse = DbActions.createItems<
+                ShapePage,
+                ActualNewShapePageArgs
+            >({
+                db,
+                items: [shapePageToCreate],
+                tableName: Constants.ShapePageTableName,
+                printHeaders: false,
+                useNextUndoGroup: false,
+            });
+            if (!createdShapePageResponse.success)
+                throw new Error(
+                    `Failed to create ShapePages: ${createdShapePageResponse.error?.message}\n`,
+                );
+            actionWasPerformed = true;
+            createdShapePages.push(createdShapePageResponse.data[0]);
+
+            // Create needed ShapePageMarchers
+            const marcherIds = newShapePage.marcher_coordinates.map(
+                (coordinate) => coordinate.marcher_id,
+            );
+            const spmsToCreate = marcherIds.map((marcher_id, i) => {
+                return {
+                    shape_page_id: createdShapePageResponse.data[0].id,
+                    marcher_id,
+                    position_order: i,
+                };
+            });
+            const createSpmResponse = createShapePageMarchers({
+                db,
+                args: spmsToCreate,
+                isChildAction: true,
+            });
+            if (!createSpmResponse.success)
+                throw new Error(
+                    `Error creating StaticMarcherShape: ${createSpmResponse.error?.message}`,
+                );
+
+            // Update MarcherPages with new coordinates
             updateChildMarcherPages({
                 db,
-                shapePage: createdShapePage,
+                pageId: newShapePage.page_id,
+                marcherCoordinates: newShapePage.marcher_coordinates,
             });
         }
         output = {
             success: true,
-            data: createdShapePagesResponse.data,
+            data: createdShapePages,
         };
     } catch (error: any) {
         console.error(
@@ -241,13 +285,15 @@ export function updateShapePages({
     try {
         History.incrementUndoGroup(db);
         for (const updatedShapePage of args) {
+            const { marcher_coordinates, ...updatedShapePageToUse } =
+                updatedShapePage;
             // Update the ShapePage in the database
             const updateShapePageResponse = DbActions.updateItems<
                 ShapePage,
                 ModifiedShapePageArgs
             >({
                 db,
-                items: [updatedShapePage],
+                items: [updatedShapePageToUse],
                 tableName: Constants.ShapePageTableName,
                 printHeaders: false,
                 useNextUndoGroup: false,
@@ -261,6 +307,11 @@ export function updateShapePages({
 
             // If the SVG path was updated, update the MarcherShapes that are associated with this ShapePage
             if (updatedShapePage.svg_path !== undefined) {
+                if (!updatedShapePage.marcher_coordinates) {
+                    throw new Error(
+                        "New SVG path was set but no marcher coordinates were provided.",
+                    );
+                }
                 const thisShapePageResponse = DbActions.getItem<ShapePage>({
                     db,
                     tableName: Constants.ShapePageTableName,
@@ -275,7 +326,8 @@ export function updateShapePages({
                     );
                 updateChildMarcherPages({
                     db,
-                    shapePage: thisShapePageResponse.data,
+                    pageId: thisShapePageResponse.data.page_id,
+                    marcherCoordinates: updatedShapePage.marcher_coordinates,
                 });
             }
         }

@@ -557,6 +557,7 @@ class ShapePointController extends fabric.Circle {
             return;
         }
 
+        console.log("modifiedHandler", this.marcherShape.shapePath.path);
         this.marcherShape.recreatePath(
             this.marcherShape.shapePath.path as unknown as VanillaPoint[],
         );
@@ -661,6 +662,10 @@ export class ShapePath extends fabric.Path {
      */
     toString() {
         return this.points.map((point) => point.toString()).join(" ");
+    }
+
+    equals(other: ShapePath) {
+        return this.toString() === other.toString();
     }
 }
 

@@ -129,6 +129,12 @@ function StateInitializer() {
                         if (args.pageId && args.pageId > 0)
                             setSelectedPage(getPage(args.pageId));
                         break;
+                    case Constants.ShapeTableName:
+                    case Constants.ShapePageTableName:
+                    case Constants.ShapePageMarcherTableName:
+                        fetchMarcherPages();
+                        fetchShapePages();
+                        break;
                     case Constants.PageTableName:
                         fetchPages();
                         if (args.pageId && args.pageId > 0)
@@ -152,6 +158,7 @@ function StateInitializer() {
         setSelectedPage,
         setSelectedMarchers,
         marchers,
+        fetchShapePages,
     ]);
 
     // Listen for fetch actions from the main process

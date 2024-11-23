@@ -2,7 +2,6 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import * as History from "../database.history";
-import MarcherPage from "@/global/classes/MarcherPage";
 
 /**
  * A Shape can have many ShapePages to signify its existence on multiple pages.
@@ -105,8 +104,9 @@ export function getSpmByMarcherPage({
     try {
         const response = db
             .prepare(
-                `SELECT id FROM ${Constants.ShapePageMarcherTableName}
-            WHERE "marcher_id" = (@marcher_id) AND "page_id" = (@page_id)`,
+                `SELECT spm.id as spm_id FROM ${Constants.ShapePageMarcherTableName} spm
+                INNER JOIN ${Constants.ShapePageTableName} sp ON sp.id = spm.shape_page_id
+                WHERE "marcher_id" = (@marcher_id) AND "page_id" = (@page_id)`,
             )
             .get({
                 marcher_id: marcherPage.marcher_id,
@@ -123,7 +123,7 @@ export function getSpmByMarcherPage({
             success: false,
             data: null,
             error: {
-                message: `Failed to get ShapePageMarcher by marcherPage: ${marcherPage}`,
+                message: `Failed to get ShapePageMarcher by marcherPage ${JSON.stringify(marcherPage)}: ${error}\n`,
                 stack: error.stack || "Unable to get stack trace",
             },
         };
@@ -274,23 +274,31 @@ function flattenOrder({
  * Creates new shapePageMarchers in the database
  * @param db The database instance
  * @param args Array of NewShapePageMarcherArgs containing name and optional notes
+ * @param isChildAction Whether the action is a child action of another action
  * @returns DatabaseResponse containing the created Shape objects
  */
 export function createShapePageMarchers({
     db,
     args,
+    isChildAction = false,
 }: {
     db: Database.Database;
     args: NewShapePageMarcherArgs[];
+    isChildAction?: boolean;
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
     let output: DbActions.DatabaseResponse<ShapePageMarcher[]>;
     const createdSPMIds: Set<number> = new Set();
-    console.log("\n=========== start createShapePageMarchers ===========");
+    if (!isChildAction)
+        console.log("\n=========== start createShapePageMarchers ===========");
+    else
+        console.log(
+            "=========== start createShapePageMarchers (child action) ===========",
+        );
     // Track if any action was performed so that we can undo if necessary
     let actionWasPerformed = false;
 
     try {
-        History.incrementUndoGroup(db);
+        if (!isChildAction) History.incrementUndoGroup(db);
 
         // Loop through the new SPMs and create them in the database, maintaining the linked list when necessary
         for (const newItem of args) {
@@ -346,7 +354,7 @@ export function createShapePageMarchers({
             "Error creating ShapePageMarchers. Rolling back changes.",
             error,
         );
-        if (actionWasPerformed) {
+        if (actionWasPerformed && !isChildAction) {
             History.performUndo(db);
             History.clearMostRecentRedo(db);
         }
@@ -359,7 +367,14 @@ export function createShapePageMarchers({
             data: [],
         };
     } finally {
-        console.log("=========== end createShapePageMarchers ===========\n");
+        if (!isChildAction)
+            console.log(
+                "=========== end createShapePageMarchers ===========\n",
+            );
+        else
+            console.log(
+                "=========== end createShapePageMarchers (child action) ===========",
+            );
     }
 
     return output;

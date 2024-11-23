@@ -8,11 +8,16 @@ import {
     createShapePageMarcherTable,
     deleteShapePageMarchers,
     getShapePageMarchers,
+    getSpmByMarcherPage,
     updateShapePageMarchers,
 } from "../ShapePageMarcherTable";
 import { createMarchers, createMarcherTable } from "../MarcherTable";
 import * as DbMocks from "./DatabaseMocks";
-import { createShapePages, createShapePageTable } from "../ShapePageTable";
+import {
+    createShapePages,
+    createShapePageTable,
+    getShapePages,
+} from "../ShapePageTable";
 import { createMarcherPageTable } from "../MarcherPageTable";
 
 describe("ShapePageMarcherTable CRUD Operations", () => {
@@ -518,6 +523,54 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
             });
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
+        });
+    });
+    describe("GetSpmByMarcherPage", () => {
+        it("should return null when no matching ShapePageMarcher exists", () => {
+            const result = getSpmByMarcherPage({
+                db,
+                marcherPage: { marcher_id: 1, page_id: 1 },
+            });
+            expect(result.success).toBe(true);
+            expect(result.data).toBeNull();
+        });
+
+        it("should return the correct ShapePageMarcher when it exists", () => {
+            const shapePage = getShapePages({ db }).data[0];
+            const newSPM = {
+                shape_page_id: shapePage.id,
+                marcher_id: 1,
+                position_order: 1,
+                notes: "Test notes",
+            };
+            expect(
+                createShapePageMarchers({ db, args: [newSPM] }).success,
+            ).toBe(true);
+
+            const result = getSpmByMarcherPage({
+                db,
+                marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
+            });
+            expect(result.success).toBe(true);
+            expect(result.data).toMatchObject({ spm_id: expect.any(Number) });
+        });
+
+        it("should return null when the marcher_id is invalid", () => {
+            const result = getSpmByMarcherPage({
+                db,
+                marcherPage: { marcher_id: -1, page_id: 1 },
+            });
+            expect(result.success).toBe(true);
+            expect(result.data).toBeNull();
+        });
+
+        it("should return null when the page_id is invalid", () => {
+            const result = getSpmByMarcherPage({
+                db,
+                marcherPage: { marcher_id: 1, page_id: -1 },
+            });
+            expect(result.success).toBe(true);
+            expect(result.data).toBeNull();
         });
     });
 });

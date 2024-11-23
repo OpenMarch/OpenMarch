@@ -1,6 +1,11 @@
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
-import { ShapePoint, StaticMarcherShape } from "./StaticMarcherShape";
+import {
+    ShapePath,
+    ShapePoint,
+    StaticMarcherShape,
+    VanillaPoint,
+} from "./StaticMarcherShape";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -12,6 +17,8 @@ export class MarcherShape extends StaticMarcherShape {
     name?: string;
     /** Notes about this shape. Optional */
     notes?: string;
+    /** A tracker for whether the shape has been saved to the database */
+    hasBeenSavedToDatabase: boolean = false;
 
     /**
      * Fetches all of the ShapePages from the database.
@@ -74,6 +81,20 @@ export class MarcherShape extends StaticMarcherShape {
             return spm;
         });
     }
+
+    distributeMarchers() {
+        this.hasBeenSavedToDatabase = false;
+        super.distributeMarchers();
+    }
+
+    recreatePath(pathArg: VanillaPoint[]): ShapePath {
+        const newPath = super.recreatePath(pathArg);
+        if (!this.hasBeenSavedToDatabase) {
+            MarcherShape.updateMarcherShape(this);
+            this.hasBeenSavedToDatabase = true;
+        }
+        return newPath;
+    }
     /****************** DATABASE FUNCTIONS *******************/
     /**
      * Fetches all of the ShapePages from the database.
@@ -117,50 +138,32 @@ export class MarcherShape extends StaticMarcherShape {
         end: { x: number; y: number };
     }) {
         try {
-            const createShapeResponse = await window.electron.createShapes([
-                {},
-            ]);
-            if (!createShapeResponse.success)
-                throw new Error(
-                    `Error creating StaticMarcherShape: ${createShapeResponse.error?.message}`,
-                );
             const svgPath = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+            const itemIds: { id: number }[] = marcherIds.map((id) => {
+                return { id };
+            });
+            const marcherCoordinates = MarcherShape.distributeAlongPath({
+                svgPath,
+                itemIds,
+            }).map((marcherCoordinate) => {
+                return {
+                    marcher_id: marcherCoordinate.id,
+                    x: marcherCoordinate.x,
+                    y: marcherCoordinate.y,
+                };
+            });
             const createShapePageResponse =
                 await window.electron.createShapePages([
                     {
-                        shape_id: createShapeResponse.data[0].id,
                         page_id: pageId,
                         svg_path: svgPath,
+                        marcher_coordinates: marcherCoordinates,
                     },
                 ]);
-            if (!createShapePageResponse.success) {
-                window.electron.deleteShapes(
-                    new Set([createShapeResponse.data[0].id]),
-                );
+            if (!createShapePageResponse.success)
                 throw new Error(
-                    `Error creating StaticMarcherShape: ${createShapeResponse.error?.message}`,
+                    `Error creating MarcherShape: ${createShapePageResponse.error?.message}\n`,
                 );
-            }
-            const spmsToCreate = marcherIds.map((marcher_id, i) => {
-                return {
-                    shape_page_id: createShapePageResponse.data[0].id,
-                    marcher_id,
-                    position_order: i,
-                };
-            });
-            const createSpmResponse =
-                await window.electron.createShapePageMarchers(spmsToCreate);
-            if (!createSpmResponse.success) {
-                window.electron.deleteShapes(
-                    new Set([createShapeResponse.data[0].id]),
-                );
-                window.electron.deleteShapePages(
-                    new Set([createShapePageResponse.data[0].id]),
-                );
-                throw new Error(
-                    `Error creating StaticMarcherShape: ${createSpmResponse.error?.message}`,
-                );
-            }
         } catch (error: any) {
             console.error(`Error creating StaticMarcherShape - ${error}`);
         }
@@ -174,15 +177,32 @@ export class MarcherShape extends StaticMarcherShape {
      * @returns - A Promise that resolves when the update is complete, or rejects with an error message.
      */
     static async updateMarcherShape(marcherShape: MarcherShape) {
+        const itemIds: { id: number }[] = marcherShape.canvasMarchers.map(
+            (cm) => {
+                return { id: cm.marcherObj.id };
+            },
+        );
+        const marcherCoordinates = MarcherShape.distributeAlongPath({
+            svgPath: marcherShape.shapePath,
+            itemIds,
+        }).map((marcherCoordinate) => {
+            return {
+                marcher_id: marcherCoordinate.id,
+                x: marcherCoordinate.x,
+                y: marcherCoordinate.y,
+            };
+        });
+
         const updateResponse = await window.electron.updateShapePages([
             {
                 id: marcherShape.shapePage.id,
                 svg_path: marcherShape.shapePath.toString(),
+                marcher_coordinates: marcherCoordinates,
             },
         ]);
         if (!updateResponse.success)
             console.error(
-                `Error updating StaticMarcherShape - ${updateResponse.error}`,
+                `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
             );
         this.checkForFetchShapePages();
         this.fetchShapePages();

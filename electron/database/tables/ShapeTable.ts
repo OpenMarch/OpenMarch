@@ -66,19 +66,24 @@ export function getShapes({
  * Creates new shapes in the database
  * @param db The database instance
  * @param args Array of NewShapeArgs containing name and optional notes
+ * @param isChildAction Whether the action is a child action of a parent action
  * @returns DatabaseResponse containing the created Shape objects
  */
 export function createShapes({
     db,
     args,
+    isChildAction = false,
 }: {
     db: Database.Database;
     args: NewShapeArgs[];
+    isChildAction?: boolean;
 }): DatabaseResponse<Shape[]> {
     return DbActions.createItems<Shape, NewShapeArgs>({
         db,
         tableName: Constants.ShapeTableName,
         items: args,
+        printHeaders: !isChildAction,
+        useNextUndoGroup: !isChildAction,
     });
 }
 

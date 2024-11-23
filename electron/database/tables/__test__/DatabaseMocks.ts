@@ -90,22 +90,70 @@ export const NewShapePages: NewShapePageArgs[] = [
         page_id: 1,
         svg_path: "M 0 0 L 100 100",
         notes: "This is a note",
+        marcher_coordinates: [
+            {
+                marcher_id: 1,
+                x: 10,
+                y: 20,
+            },
+            {
+                marcher_id: 2,
+                x: 30,
+                y: 40,
+            },
+        ],
     },
     {
         shape_id: 2,
         page_id: 1,
         svg_path: "M 200 200 L 100 100",
         notes: null,
+        marcher_coordinates: [
+            {
+                marcher_id: 1,
+                x: 10,
+                y: 20,
+            },
+            {
+                marcher_id: 2,
+                x: 30,
+                y: 40,
+            },
+        ],
     },
     {
         shape_id: 2,
         page_id: 2,
         svg_path: "M 0 0 Q 150 150 780 500",
+        marcher_coordinates: [
+            {
+                marcher_id: 1,
+                x: 10,
+                y: 20,
+            },
+            {
+                marcher_id: 2,
+                x: 30,
+                y: 40,
+            },
+        ],
     },
     {
         shape_id: 1,
         page_id: 4,
         svg_path: "M 0 0 L 100 100",
         notes: "This is a note",
+        marcher_coordinates: [
+            {
+                marcher_id: 1,
+                x: 10,
+                y: 20,
+            },
+            {
+                marcher_id: 2,
+                x: 30,
+                y: 40,
+            },
+        ],
     },
 ];
