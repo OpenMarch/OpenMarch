@@ -1,0 +1,90 @@
+---
+import { LogoTextMark } from "./LogoTextMark";
+import ThemeSwitcher from "./ThemeSwitcher.astro";
+---
+
+<footer class="m-64 mt-0 flex justify-between border-t border-t-stroke p-64">
+    <div class="flex w-[25%] flex-col gap-24">
+        <div class="flex items-end gap-16">
+            <LogoTextMark />
+            <p class="text-body leading-none">GPL-3.0</p>
+            <p class="text-body leading-none">2024</p>
+        </div>
+        <p class="text-body leading-[150%]">
+            Fast, free and intuitive drill writing experience for marching band,
+            indoor ensembles, drum corp, or anything else.
+        </p>
+        <ThemeSwitcher />
+    </div>
+    <div class="flex gap-48">
+        <div class="flex flex-col gap-24">
+            <h4 class="text-h4">App</h4>
+            <a
+                href="/download"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Download
+            </a>
+            <a
+                href="/#drill-writing"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Features
+            </a>
+            <a
+                href="/docs"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Docs
+            </a>
+            <a
+                href="/docs/contributing"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Contribute
+            </a>
+        </div>
+        <div class="flex flex-col gap-24">
+            <h4 class="text-h4">Community</h4>
+            <a
+                href="#"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Discord
+            </a>
+            <a
+                href="#"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                GitHub
+            </a>
+            <a
+                href="#"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                YouTube
+            </a>
+        </div>
+        <div class="flex flex-col gap-24">
+            <h4 class="text-h4">Organization</h4>
+            <a
+                href="/about"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                About
+            </a>
+            <a
+                href="/blog"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Blog
+            </a>
+            <a
+                href="/contact"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Contact
+            </a>
+        </div>
+    </div>
+</footer>

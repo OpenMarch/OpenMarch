@@ -2,9 +2,10 @@
 import "@fontsource/dm-sans";
 import "@fontsource/dm-mono";
 import "@/styles/base.css";
+import "@phosphor-icons/web/regular";
 
 import Nav from "@/components/Nav";
-import ThemeSwitcher from "@/components/ThemeSwitcher.astro";
+import Footer from "@/components/Footer.astro";
 
 const { title } = Astro.props;
 ---
@@ -16,9 +17,9 @@ const { title } = Astro.props;
         <link rel="icon" href="/favicon.png" type="image/png" />
         <title>{title} - OpenMarch</title>
     </head>
-    <body class="bg-bg-1 text-text overflow-x-hidden scroll-smooth">
+    <body class="overflow-x-hidden scroll-smooth bg-bg-1 text-text">
         <Nav />
         <slot />
-        <ThemeSwitcher />
+        <Footer />
     </body>
 </html>

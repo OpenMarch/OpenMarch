@@ -23,6 +23,9 @@ importers:
       '@fontsource/dm-sans':
         specifier: ^5.1.0
         version: 5.1.0
+      '@phosphor-icons/web':
+        specifier: ^2.1.1
+        version: 2.1.1
       '@types/react':
         specifier: ^18.3.12
         version: 18.3.12
@@ -531,6 +534,9 @@ packages:
 
   '@oslojs/encoding@1.1.0':
     resolution: {integrity: sha512-70wQhgYmndg4GCPxPPxPGevRKqTIJ2Nh4OkiMWmDAVYsTQ+Ta7Sq+rPevXyXGdzr30/qZBnyOalCszoMxlyldQ==}
+
+  '@phosphor-icons/web@2.1.1':
+    resolution: {integrity: sha512-QjrfbItu5Rb2i37GzsKxmrRHfZPTVk3oXSPBnQ2+oACDbQRWGAeB0AsvZw263n1nFouQuff+khOCtRbrc6+k+A==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -2746,6 +2752,8 @@ snapshots:
       fastq: 1.17.1
 
   '@oslojs/encoding@1.1.0': {}
+
+  '@phosphor-icons/web@2.1.1': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
