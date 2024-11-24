@@ -239,7 +239,6 @@ export default function Canvas({
     }, [
         activeObjectsAreGloballySelected,
         canvas,
-        selectedShapePages,
         setSelectedMarchers,
         setSelectedShapePages,
     ]);
