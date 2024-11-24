@@ -14,7 +14,7 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
-import { useShapePageStore } from "@/stores/MarcherShapeStore";
+import { useShapePageStore } from "@/stores/ShapePageStore";
 
 /**
  * A component that initializes the state of the application.

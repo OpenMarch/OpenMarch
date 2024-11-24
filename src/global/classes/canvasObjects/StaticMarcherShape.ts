@@ -23,6 +23,8 @@ export class StaticMarcherShape {
     /** The control points of this shape */
     controlPoints: ShapePointController[];
 
+    _controlEnabled: boolean;
+
     /**
      * Represents the initial position and offset of a move in the StaticMarcherShape.
      * The `initialPosition` property holds the initial x and y coordinates of the shape.
@@ -61,16 +63,41 @@ export class StaticMarcherShape {
         canvas,
         canvasMarchers,
         points,
+        controlEnabled = false,
     }: {
         canvas: OpenMarchCanvas;
         canvasMarchers: CanvasMarcher[];
         points: ShapePoint[];
+        controlEnabled?: boolean;
     }) {
         this.canvas = canvas;
         this.shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
         this._canvasMarchers = canvasMarchers;
+        this.controlPoints = [];
 
-        const controlPoints: ShapePointController[] = [];
+        if (controlEnabled) {
+            this._controlEnabled = false;
+            this.enableControl();
+        } else {
+            this._controlEnabled = true;
+            this.disableControl();
+        }
+
+        this.distributeMarchers();
+        this.bringControlPointsToFront();
+    }
+
+    disableControl() {
+        if (!this._controlEnabled) return; // Control already disabled
+        for (const controlPoint of this.controlPoints) controlPoint.destroy();
+        this.shapePath.disableControl();
+        this._controlEnabled = false;
+    }
+
+    enableControl() {
+        if (this._controlEnabled) return; // Control already enabled
+        const points = this.shapePath.points;
+        const newControlPoints: ShapePointController[] = [];
         for (let pointIndex = 0; pointIndex < points.length; pointIndex++) {
             const point = points[pointIndex];
             // Create a control point for each coordinate in the point
@@ -83,21 +110,22 @@ export class StaticMarcherShape {
                     marcherShape: this,
                     pointIndex,
                     coordIndex: 1 + coordinateIndex * 2,
-                    canvas,
+                    canvas: this.canvas,
                     incomingPoint:
                         // If the point is the first point in the path or a line, there is no incoming point
                         pointIndex > 0 && point.command !== "L"
-                            ? controlPoints[controlPoints.length - 1]
+                            ? newControlPoints[newControlPoints.length - 1]
                             : null,
                 });
-                controlPoints.push(controlPoint);
+                newControlPoints.push(controlPoint);
             }
         }
-        this.controlPoints = controlPoints;
+        this.controlPoints = newControlPoints;
         this.controlPoints.forEach((p) => p.drawOutgoingLine());
         this.canvas.add(...this.controlPoints);
-        this.distributeMarchers();
-        this.bringControlPointsToFront();
+
+        this.shapePath.enableControl();
+        this._controlEnabled = true;
     }
 
     /**
@@ -217,6 +245,8 @@ export class StaticMarcherShape {
         this.shapePath.on("modified", this.modifiedHandler.bind(this));
 
         this.bringControlPointsToFront();
+        if (this._controlEnabled) this.shapePath.enableControl();
+        else this.shapePath.disableControl();
 
         return this.shapePath;
     }
@@ -460,6 +490,7 @@ class ShapePointController extends fabric.Circle {
             originX: "center",
             originY: "center",
             hasControls: false,
+            hoverCursor: "point",
         });
 
         this.marcherShape = marcherShape;
@@ -486,6 +517,11 @@ class ShapePointController extends fabric.Circle {
         // Create the new listeners
         this.on("moving", this.moveHandler.bind(this));
         this.on("modified", this.modifiedHandler.bind(this));
+    }
+
+    destroy() {
+        this.canvas.remove(this);
+        if (this.outgoingLine) this.canvas.remove(this.outgoingLine);
     }
 
     /**
@@ -672,9 +708,24 @@ export class ShapePath extends fabric.Path {
             hasControls: false,
             borderColor: "#0d6efd",
             borderScaleFactor: 2,
-            // selectable: false,
-            hoverCursor: "default",
         });
+        this.disableControl();
+    }
+
+    enableControl() {
+        this.stroke = CanvasColors.SHAPE;
+        this.strokeWidth = 2;
+        this.strokeDashArray = [];
+        this.selectable = true;
+        this.hoverCursor = "move";
+    }
+
+    disableControl() {
+        this.stroke = CanvasColors.TEMP_PATH;
+        this.strokeWidth = 1;
+        this.strokeDashArray = [5, 3];
+        this.selectable = false;
+        this.hoverCursor = "default";
     }
 
     get points(): ShapePoint[] {

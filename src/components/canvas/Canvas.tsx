@@ -15,7 +15,8 @@ import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { useShapePageStore } from "@/stores/MarcherShapeStore";
+import { useShapePageStore } from "@/stores/ShapePageStore";
+import Marcher from "@/global/classes/Marcher";
 
 /**
  * The field/stage UI of OpenMarch
@@ -35,7 +36,8 @@ export default function Canvas({
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { marcherPages } = useMarcherPageStore()!;
-    const { shapePages } = useShapePageStore()!;
+    const { shapePages, selectedShapePages, setSelectedShapePages } =
+        useShapePageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -103,8 +105,8 @@ export default function Canvas({
                     }
                     break;
                 }
-                case Selectable.SelectableClasses.CURVE_POINT: {
-                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.CURVE_POINT]);
+                case Selectable.SelectableClasses.MARCHER_SHAPE: {
+                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
                     break;
                 }
                 default: {
@@ -168,7 +170,7 @@ export default function Canvas({
             [key in Selectable.SelectableClasses]: any[];
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
-            [Selectable.SelectableClasses.CURVE_POINT]: [],
+            [Selectable.SelectableClasses.MARCHER_SHAPE]: [],
         };
 
         const allObjectsToSelect: Selectable.ISelectable[] = [];
@@ -187,16 +189,41 @@ export default function Canvas({
             switch (selectableClass) {
                 case Selectable.SelectableClasses.MARCHER: {
                     // Marcher
-                    setSelectedMarchers(
-                        newSelectedObjects[
-                            Selectable.SelectableClasses.MARCHER
-                        ],
+                    const marchersToSelect: Marcher[] = newSelectedObjects[
+                        Selectable.SelectableClasses.MARCHER
+                    ] as any as Marcher[];
+                    setSelectedMarchers(marchersToSelect);
+                    const marcherIds = new Set(
+                        marchersToSelect.map((m) => m.id),
                     );
+
+                    // Check if any shapePage has this marcher in it
+                    const currentSelectedShapePageIds = new Set(
+                        selectedShapePages.map((sp) => sp.id),
+                    );
+                    const marcherShapesToSelect = [];
+                    for (const marcherShape of canvas.marcherShapes) {
+                        if (
+                            currentSelectedShapePageIds.has(
+                                marcherShape.shapePage.id,
+                            ) ||
+                            marcherShape.canvasMarchers.find((cm) =>
+                                marcherIds.has(cm.marcherObj.id),
+                            ) !== undefined
+                        ) {
+                            marcherShapesToSelect.push(marcherShape);
+                        }
+                    }
+
+                    setSelectedShapePages(
+                        marcherShapesToSelect.map((ms) => ms.shapePage),
+                    );
+
                     break;
                 }
-                case Selectable.SelectableClasses.CURVE_POINT: {
+                case Selectable.SelectableClasses.MARCHER_SHAPE: {
                     // CurvePoint
-                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.CURVE_POINT]);
+                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
                     break;
                 }
                 default: {
@@ -209,7 +236,13 @@ export default function Canvas({
         for (const value of Object.values(Selectable.SelectableClasses)) {
             selectObjectsGlobally(value as Selectable.SelectableClasses);
         }
-    }, [activeObjectsAreGloballySelected, canvas, setSelectedMarchers]);
+    }, [
+        activeObjectsAreGloballySelected,
+        canvas,
+        selectedShapePages,
+        setSelectedMarchers,
+        setSelectedShapePages,
+    ]);
 
     /**
      * Handler for clearing global selected objects in the store
@@ -223,7 +256,7 @@ export default function Canvas({
                     setSelectedMarchers([]);
                     break;
                 }
-                case Selectable.SelectableClasses.CURVE_POINT: {
+                case Selectable.SelectableClasses.MARCHER_SHAPE: {
                     // setSelectedCurvePoints([]);
                     break;
                 }
@@ -437,7 +470,31 @@ export default function Canvas({
                 shapePages: currentShapePages,
             });
         }
-    }, [canvas, selectedPage, shapePages]);
+    }, [canvas, selectedPage, setSelectedShapePages, shapePages]);
+
+    // Update the control points on MarcherShapes when the selectedShapePages change
+    useEffect(() => {
+        if (canvas && selectedShapePages) {
+            console.log("Selected shape pages changed", selectedShapePages);
+            for (const selectedShapePage of selectedShapePages) {
+                const shapePageOnCanvas = canvas.marcherShapes.find(
+                    (ms) => ms.shapePage.id === selectedShapePage.id,
+                );
+                if (!shapePageOnCanvas)
+                    console.warn("Selected shape page was not found on canvas");
+                else shapePageOnCanvas.enableControl();
+            }
+            // Disable control of all of the non-selected shape pages
+            const selectedShapePageIds = new Set(
+                selectedShapePages.map((sp) => sp.id),
+            );
+            for (const marcherShape of canvas.marcherShapes) {
+                if (!selectedShapePageIds.has(marcherShape.shapePage.id)) {
+                    marcherShape.disableControl();
+                }
+            }
+        }
+    }, [canvas, selectedShapePages]);
 
     // Update the canvas when the field properties change
     useEffect(() => {
