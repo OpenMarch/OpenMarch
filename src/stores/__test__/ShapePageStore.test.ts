@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { useShapePageStore } from "../MarcherShapeStore";
+import { useShapePageStore } from "../ShapePageStore";
 
 describe.todo("shapePageStore", () => {
     // afterEach(async () => {
