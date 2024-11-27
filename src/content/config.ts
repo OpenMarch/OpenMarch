@@ -1,26 +1,16 @@
 import { z, defineCollection } from "astro:content";
-
-const blog = defineCollection({
-    type: "content",
-    schema: z.object({
-        title: z.string(),
-        author: z.string(),
-        summary: z.string(),
-        date: z.string(),
-        image: z.string(),
-    }),
-});
-
-const docs = defineCollection({
-    type: "content",
-    schema: z.object({
-        title: z.string(),
-        directory: z.boolean().optional(),
-        defaultOpen: z.boolean().optional(),
-    }),
-});
+import { docsSchema } from "@astrojs/starlight/schema";
 
 export const collections = {
-    blog: blog,
-    docs: docs,
+    blog: defineCollection({
+        type: "content",
+        schema: z.object({
+            title: z.string(),
+            author: z.string(),
+            summary: z.string(),
+            date: z.string(),
+            image: z.string(),
+        }),
+    }),
+    docs: defineCollection({ schema: docsSchema() }),
 };

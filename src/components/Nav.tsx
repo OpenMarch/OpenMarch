@@ -19,6 +19,12 @@ export default function Nav() {
                         Home
                     </a>
                     <a
+                        href="/guides"
+                        className="text-body text-text duration-150 ease-out hover:text-accent"
+                    >
+                        Guides
+                    </a>
+                    <a
                         href="/blog"
                         className="text-body text-text duration-150 ease-out hover:text-accent"
                     >
@@ -67,6 +73,9 @@ export default function Nav() {
             >
                 <a href="/" className="text-h4 text-text">
                     Home
+                </a>
+                <a href="/guides" className="text-h4 text-text">
+                    Guides
                 </a>
                 <a href="/blog" className="text-h4 text-text">
                     Blog

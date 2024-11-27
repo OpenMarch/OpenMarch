@@ -15,6 +15,7 @@
         "@astrojs/mdx": "^3.1.9",
         "@astrojs/react": "^3.6.2",
         "@astrojs/sitemap": "^3.2.1",
+        "@astrojs/starlight": "^0.29.2",
         "@astrojs/tailwind": "^5.1.2",
         "@fontsource/dm-mono": "^5.1.0",
         "@fontsource/dm-sans": "^5.1.0",
