@@ -66,3 +66,7 @@
     background-color: rgb(var(--accent));
     color: rgb(var(--text-invert));
 }
+
+html {
+    scroll-behavior: smooth;
+}

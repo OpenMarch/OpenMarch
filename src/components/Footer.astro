@@ -3,8 +3,10 @@ import { LogoTextMark } from "./LogoTextMark";
 import ThemeSwitcher from "./ThemeSwitcher.astro";
 ---
 
-<footer class="m-64 mt-0 flex justify-between border-t border-t-stroke p-64">
-    <div class="flex w-[25%] flex-col gap-24">
+<footer
+    class="m-64 mt-0 flex justify-between gap-48 border-t border-t-stroke p-64 max-[920px]:flex-col max-[920px]:justify-start max-[750px]:p-0 max-[750px]:pt-32"
+>
+    <div class="flex w-[33%] flex-col gap-24 max-[920px]:w-full">
         <div class="flex items-end gap-16">
             <LogoTextMark />
             <p class="text-body leading-none">GPL-3.0</p>
@@ -16,7 +18,7 @@ import ThemeSwitcher from "./ThemeSwitcher.astro";
         </p>
         <ThemeSwitcher />
     </div>
-    <div class="flex gap-48">
+    <div class="flex flex-wrap gap-48">
         <div class="flex flex-col gap-24">
             <h4 class="text-h4">App</h4>
             <a
@@ -78,12 +80,6 @@ import ThemeSwitcher from "./ThemeSwitcher.astro";
                 class="text-body duration-150 ease-out hover:text-accent"
             >
                 Blog
-            </a>
-            <a
-                href="/contact"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                Contact
             </a>
         </div>
     </div>

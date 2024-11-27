@@ -1,55 +1,92 @@
 import { Button } from "./ui/Button.tsx";
 import { LogoTextMark } from "./LogoTextMark.tsx";
+import React, { useState } from "react";
 
 export default function Nav() {
+    const [isOpen, setIsOpen] = useState<boolean>(false);
+
     return (
-        <nav className="sticky top-0 z-50 flex w-full items-center justify-between border-b border-stroke bg-modal px-64 py-16 shadow-modal backdrop-blur-md">
-            <a href="/">
-                <LogoTextMark />
-            </a>
-            <div className="flex items-center gap-16">
-                <a
-                    href="/"
-                    className="text-body text-text duration-150 ease-out hover:text-accent"
+        <nav className="sticky top-0 z-[99] flex h-[4rem] w-full flex-col">
+            <nav className="flex w-full items-center justify-between border-b border-stroke bg-modal px-64 py-16 shadow-modal backdrop-blur-md max-[750px]:px-24">
+                <a href="/">
+                    <LogoTextMark />
+                </a>
+                <div className="flex items-center gap-16 max-[675px]:hidden">
+                    <a
+                        href="/"
+                        className="text-body text-text duration-150 ease-out hover:text-accent"
+                    >
+                        Home
+                    </a>
+                    <a
+                        href="/blog"
+                        className="text-body text-text duration-150 ease-out hover:text-accent"
+                    >
+                        Blog
+                    </a>
+                    <a href="/download">
+                        <Button variant="primary" size="compact">
+                            Download
+                        </Button>
+                    </a>
+                    <a href="https://github.com/OpenMarch/OpenMarch">
+                        <Button
+                            variant="secondary"
+                            size="compact"
+                            className="items-center gap-6"
+                        >
+                            <LogoGitHub />
+                            Star
+                        </Button>
+                    </a>
+                    <a href="https://discord.gg/eTsQ98uZzq">
+                        <Button
+                            variant="secondary"
+                            size="compact"
+                            className="items-center gap-6"
+                        >
+                            <LogoDiscord />
+                            Discord
+                        </Button>
+                    </a>
+                </div>
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="h-fit min-[675px]:hidden"
                 >
+                    {isOpen ? (
+                        <i className="ph ph-x text-[1.5rem]"></i>
+                    ) : (
+                        <i className="ph ph-list text-[1.5rem]"></i>
+                    )}
+                </button>
+            </nav>
+            <div
+                id="mobile"
+                className={`${isOpen ? "flex" : "hidden"} z-[99] m-12 animate-scale-in flex-col items-center gap-32 rounded-6 border border-stroke bg-modal p-32 backdrop-blur-32`}
+            >
+                <a href="/" className="text-h4 text-text">
                     Home
                 </a>
-                <a
-                    href="/docs"
-                    className="text-body text-text duration-150 ease-out hover:text-accent"
-                >
-                    Docs
-                </a>
-                <a
-                    href="/blog"
-                    className="text-body text-text duration-150 ease-out hover:text-accent"
-                >
+                <a href="/blog" className="text-h4 text-text">
                     Blog
                 </a>
-                <a href="/download">
-                    <Button variant="primary" size="compact">
-                        Download
-                    </Button>
+                <a href="/download" className="text-h4 text-text">
+                    Download
                 </a>
-                <a href="https://github.com/OpenMarch/OpenMarch">
-                    <Button
-                        variant="secondary"
-                        size="compact"
-                        className="items-center gap-6"
-                    >
-                        <LogoGitHub />
-                        Star
-                    </Button>
+                <a
+                    href="https://github.com/OpenMarch/OpenMarch"
+                    className="flex items-center gap-8 text-h4 text-text"
+                >
+                    <LogoGitHub />
+                    Star
                 </a>
-                <a href="https://discord.gg/eTsQ98uZzq">
-                    <Button
-                        variant="secondary"
-                        size="compact"
-                        className="items-center gap-6"
-                    >
-                        <LogoDiscord />
-                        Discord
-                    </Button>
+                <a
+                    href="https://discord.gg/eTsQ98uZzq"
+                    className="flex items-center gap-8 text-h4 text-text"
+                >
+                    <LogoDiscord />
+                    Discord
                 </a>
             </div>
         </nav>

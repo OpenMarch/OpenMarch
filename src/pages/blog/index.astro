@@ -9,23 +9,26 @@ const blogs = await getCollection("blog");
 ---
 
 <Layout title="Blog">
-    <div class="flex flex-col gap-64 p-64">
+    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
         <section
             id="landing"
-            class="relative flex h-[40vh] min-h-0 flex-col justify-center gap-32 px-256"
+            class="relative flex h-[40vh] min-h-0 flex-col justify-center gap-32 px-256 max-[1400px]:px-24"
         >
-            <h1 class="text-[128px]">Blog</h1>
+            <h1 class="text-[128px] max-[750px]:text-h1">Blog</h1>
             <div
                 class="absolute left-0 top-[-20%] -z-50 h-[18vw] w-[22vw] bg-accent opacity-40 blur-[512px]"
             >
             </div>
         </section>
-        <section id="blogs" class="flex flex-col gap-32 px-256 py-12">
+        <section
+            id="blogs"
+            class="flex flex-col gap-32 px-256 py-12 max-[1400px]:px-24"
+        >
             {
                 blogs.map((blog) => (
                     <a
                         href={`/blog/${blog.slug}`}
-                        class="flex gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
+                        class="flex gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent max-[600px]:flex-col max-[500px]:p-16"
                     >
                         <div class="flex w-full flex-col gap-16">
                             <h2 class="w-full text-h2">{blog.data.title}</h2>
