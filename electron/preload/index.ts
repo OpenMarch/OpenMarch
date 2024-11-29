@@ -54,7 +54,7 @@ function useLoading() {
         width: 50px;
         height: 50px;
         fill: black;
-        animation: spin 1s 0s linear infinite;
+        animation: spin 750ms linear infinite;
     }
     .app-loading-wrap {
         position: fixed;

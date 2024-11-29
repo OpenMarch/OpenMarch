@@ -53,25 +53,8 @@ export default function MarcherList({
             modifiedMarchers.push({ id: Number(pageId), ...changes });
 
         if (deletionsRef.current.length > 0) {
-            let windowConfirmStr = `Deleting Marchers`;
-            windowConfirmStr += `\n\nYou are about to delete ${
-                deletionsRef.current.length > 1
-                    ? `${deletionsRef.current.length} marchers`
-                    : "a marcher."
-            }, `;
-            windowConfirmStr += `\n\nThis can be undone at any time with [Ctrl + Z].`;
-            windowConfirmStr += `\n\nMarchers that will be deleted:`;
-            for (const marcherId of deletionsRef.current)
-                windowConfirmStr += `\n- ${
-                    marchers?.find((marcher) => marcher.id === marcherId)
-                        ?.drill_number
-                }`;
-            if (window.confirm(windowConfirmStr)) {
-                const marcherIdsSet = new Set(
-                    deletionsRef.current.map((id) => id),
-                );
-                await Marcher.deleteMarchers(marcherIdsSet);
-            }
+            const marcherIdsSet = new Set(deletionsRef.current.map((id) => id));
+            await Marcher.deleteMarchers(marcherIdsSet);
         }
 
         const result = Marcher.updateMarchers(modifiedMarchers);
@@ -162,7 +145,24 @@ export default function MarcherList({
                                         handleSubmit={handleSubmit}
                                         isDangerButton={true}
                                         alertDialogTitle="Warning"
-                                        alertDialogDescription={`You are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} marchers` : "a marcher"}, which will delete all their coordinates on all pages. This can not be undone, are you sure?`}
+                                        alertDialogDescription={`
+                                            You are about to delete these marchers:
+                                            ${deletionsRef.current
+                                                .map((marcherId) => {
+                                                    const marcherName =
+                                                        marchers?.find(
+                                                            (marcher) =>
+                                                                marcher.id ===
+                                                                marcherId,
+                                                        )?.drill_number;
+                                                    return (
+                                                        marcherName || "Unknown"
+                                                    );
+                                                })
+                                                .join(
+                                                    ", ",
+                                                )}. This can be undone with [Ctrl/Cmd+Z].
+                                        `}
                                         alertDialogActions={
                                             <>
                                                 <AlertDialogAction>

@@ -41,20 +41,7 @@ function PageList({
         const modifiedPages: ModifiedPageArgs[] = [];
 
         if (deletionsRef.current.length > 0) {
-            let windowConfirmStr = `Deleting Pages`;
-            windowConfirmStr += `\n\nYou are about to delete ${
-                deletionsRef.current.length > 1
-                    ? `${deletionsRef.current.length} pages`
-                    : "a page."
-            }, `;
-            windowConfirmStr += `\n\nThis can be undone at any time with [Ctrl + Z].`;
-            windowConfirmStr += `\n\nPages that will be deleted:`;
-            for (const pageId of deletionsRef.current)
-                windowConfirmStr += `\nPg. ${
-                    pages?.find((page) => page.id === pageId)?.name
-                }`;
-            if (window.confirm(windowConfirmStr))
-                await Page.deletePages(new Set(deletionsRef.current));
+            await Page.deletePages(new Set(deletionsRef.current));
         }
 
         for (const [pageId, changes] of Object.entries(changesRef.current))
@@ -150,7 +137,20 @@ function PageList({
                                     handleSubmit={handleSubmit}
                                     isDangerButton={true}
                                     alertDialogTitle="Warning"
-                                    alertDialogDescription={`You are about to delete ${deletionsRef.current.length > 1 ? `${deletionsRef.current.length} pages` : "a page"}, which will delete the coordinates for ALL marchers on them. This can not be undone, are you sure?`}
+                                    alertDialogDescription={`
+                                        You are about to delete:
+                                        ${deletionsRef.current
+                                            .map((pageId) => {
+                                                const pageName = pages?.find(
+                                                    (page) =>
+                                                        page.id === pageId,
+                                                )?.name;
+                                                return `Pg. ${pageName || "Unknown"}`;
+                                            })
+                                            .join(
+                                                ", ",
+                                            )}. This will delete all the coordinates for the marchers on the page. This can be undone with [Ctrl/Cmd+Z].
+                                    `}
                                     alertDialogActions={
                                         <>
                                             <AlertDialogAction>
