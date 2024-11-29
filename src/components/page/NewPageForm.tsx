@@ -189,7 +189,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
             onSubmit={handleSubmit}
             id="newPageForm"
             ref={formRef}
-            className="flex h-full flex-col justify-between"
+            className="flex h-full flex-col gap-16"
         >
             <div className="flex flex-col gap-16 px-12">
                 <Form.Field

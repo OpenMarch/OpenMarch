@@ -226,7 +226,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             onSubmit={handleSubmit}
             id="newMarcherForm"
             ref={formRef}
-            className="flex h-full flex-col justify-between"
+            className="flex h-full flex-col gap-16"
         >
             <div className="flex flex-col gap-16 px-12">
                 <Form.Field
@@ -336,9 +336,6 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             </div>
 
             <div className="flex flex-col gap-8">
-                <InfoNote>
-                    New marchers may not show up until a refresh
-                </InfoNote>
                 <Button
                     type="submit"
                     className="w-full"
@@ -347,6 +344,9 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 >
                     {makeButtonString(quantity, section)}
                 </Button>
+                <InfoNote>
+                        New marchers may not show up until a refresh
+                    </InfoNote>
             </div>
         </Form.Root>
     );

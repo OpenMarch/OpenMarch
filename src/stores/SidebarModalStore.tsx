@@ -5,6 +5,7 @@ type SidebarModalStore = {
     isOpen: boolean;
     content: ReactNode;
     toggleOpen: () => void;
+    setOpen: (open: boolean) => void;
     setContent: (content: ReactNode) => void;
 };
 
@@ -20,6 +21,10 @@ export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
     toggleOpen: () =>
         set((state) => ({
             isOpen: !state.isOpen,
+        })),
+    setOpen: (open: boolean) =>
+        set(() => ({
+            isOpen: open,
         })),
     setContent: (newContent) =>
         set(() => ({
