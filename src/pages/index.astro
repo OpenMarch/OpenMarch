@@ -2,10 +2,11 @@
 import Layout from "@/layouts/Layout.astro";
 import { Button } from "@/components/ui/Button";
 import LinkButton from "@/components/ui/LinkButton.astro";
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
 
 const blogs = await getCollection("blog");
+type Blog = CollectionEntry<"blog">;
 ---
 
 <Layout title="Home">
@@ -210,34 +211,37 @@ const blogs = await getCollection("blog");
                 class="grid grid-cols-3 gap-32 max-[1200px]:grid-cols-2 max-[850px]:grid-cols-1"
             >
                 {
-                    blogs.map((blog) => (
-                        <a
-                            href={`/blog/${blog.slug}`}
-                            class="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
-                        >
-                            <Image
-                                src={blog.data.image}
-                                width={670}
-                                height={420}
-                                alt={blog.data.summary}
-                                class="aspect-video h-auto w-full rounded-6 border border-stroke"
-                            />
-                            <div class="flex w-full flex-col gap-16">
-                                <h2 class="w-full text-h2">
-                                    {blog.data.title}
-                                </h2>
-                                <p class="w-full text-body leading-[150%]">
-                                    {blog.data.summary}
-                                </p>
-                                <p class="w-full text-body leading-[150%]">
-                                    by {blog.data.author}
-                                </p>
-                                <p class="w-full text-body leading-[150%]">
-                                    {blog.data.date}
-                                </p>
-                            </div>
-                        </a>
-                    ))
+                    blogs
+                        .reverse()
+                        .slice(0, 3)
+                        .map((blog: Blog) => (
+                            <a
+                                href={`/blog/${blog.slug}`}
+                                class="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
+                            >
+                                <Image
+                                    src={blog.data.image}
+                                    width={670}
+                                    height={420}
+                                    alt={blog.data.title}
+                                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                                />
+                                <div class="flex w-full flex-col gap-16">
+                                    <h2 class="w-full text-h2">
+                                        {blog.data.title}
+                                    </h2>
+                                    <p class="w-full text-body leading-[150%]">
+                                        {blog.data.summary}
+                                    </p>
+                                    <p class="w-full text-body leading-[150%]">
+                                        by {blog.data.author}
+                                    </p>
+                                    <p class="w-full text-body leading-[150%]">
+                                        {blog.data.date}
+                                    </p>
+                                </div>
+                            </a>
+                        ))
                 }
             </div>
         </section>

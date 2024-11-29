@@ -1,12 +1,6 @@
 ---
-title: My docs
-description: Learn more about my project in this docs site built with Starlight.
+title: Docs
+description: Coming soon.
 ---
 
-Welcome to my project!
-
-```ts
-console.log("asd")
-// comment
-// ``
-```
+Documentation is coming soon for OpenMarch. If you're looking for support, you should join our [Discord](https://discord.gg/eTsQ98uZzq)!

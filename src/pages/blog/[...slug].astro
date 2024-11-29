@@ -1,5 +1,5 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
 import Prose from "@/components/Prose.astro";
@@ -12,6 +12,9 @@ export async function getStaticPaths() {
     }));
 }
 
+interface Props {
+    entry: CollectionEntry<"blog">;
+}
 const { entry } = Astro.props;
 const { Content } = await entry.render();
 ---
@@ -23,8 +26,8 @@ const { Content } = await entry.render();
                 src={entry.data.image}
                 width={1280}
                 height={720}
-                alt={entry.data.summary}
-                class="aspect-video h-auto w-full rounded-6 border border-stroke"
+                alt={entry.data.title}
+                class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
             />
             <h1 class="text-h1">{entry.data.title}</h1>
             <div class="flex gap-16">

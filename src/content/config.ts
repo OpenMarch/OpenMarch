@@ -7,7 +7,6 @@ export const collections = {
         schema: z.object({
             title: z.string(),
             author: z.string(),
-            summary: z.string(),
             date: z.string(),
             image: z.string(),
         }),

@@ -31,6 +31,7 @@ export default defineConfig({
                 baseUrl: "https://github.com/OpenMarch/website/tree/main/",
             },
             disable404Route: true,
+            favicon: "./public/favicon.png",
             customCss: [
                 "@fontsource/dm-sans/400.css",
                 "@fontsource/dm-sans/600.css",
