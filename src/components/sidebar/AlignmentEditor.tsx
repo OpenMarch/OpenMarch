@@ -20,13 +20,22 @@ export default function AlignmentEditor() {
             >
                 <div className="flex gap-8">
                     {alignmentEventNewMarcherPages.length > 0 && (
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.applyQuickShape
-                            }
-                        >
-                            <Button>Apply</Button>
-                        </RegisteredActionButton>
+                        <div>
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.createMarcherShape
+                                }
+                            >
+                                <Button>Create Shape</Button>
+                            </RegisteredActionButton>
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.applyQuickShape
+                                }
+                            >
+                                <Button>Apply coordinates</Button>
+                            </RegisteredActionButton>
+                        </div>
                     )}
                     <RegisteredActionButton
                         registeredAction={

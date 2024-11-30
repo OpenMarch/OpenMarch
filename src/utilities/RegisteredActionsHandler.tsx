@@ -718,6 +718,7 @@ function RegisteredActionsHandler() {
             setAlignmentEventMarchers,
             setIsPlaying,
             setSelectedAudioFile,
+            setSelectedMarcherShapes,
             setSelectedMarchers,
             setSelectedPage,
             setUiSettings,
