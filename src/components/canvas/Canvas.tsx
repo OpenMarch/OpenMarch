@@ -15,6 +15,8 @@ import LineListeners from "./listeners/LineListeners";
 import { CanvasColors } from "./CanvasConstants";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import { useShapePageStore } from "@/stores/ShapePageStore";
+import Marcher from "@/global/classes/Marcher";
 
 /**
  * The field/stage UI of OpenMarch
@@ -34,6 +36,8 @@ export default function Canvas({
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { marcherPages } = useMarcherPageStore()!;
+    const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
+        useShapePageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -101,6 +105,10 @@ export default function Canvas({
                     }
                     break;
                 }
+                case Selectable.SelectableClasses.MARCHER_SHAPE: {
+                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
+                    break;
+                }
                 default: {
                     unimplementedError(selectedClass);
                 }
@@ -162,6 +170,7 @@ export default function Canvas({
             [key in Selectable.SelectableClasses]: any[];
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
+            [Selectable.SelectableClasses.MARCHER_SHAPE]: [],
         };
 
         const allObjectsToSelect: Selectable.ISelectable[] = [];
@@ -180,11 +189,34 @@ export default function Canvas({
             switch (selectableClass) {
                 case Selectable.SelectableClasses.MARCHER: {
                     // Marcher
-                    setSelectedMarchers(
-                        newSelectedObjects[
-                            Selectable.SelectableClasses.MARCHER
-                        ],
+                    const marchersToSelect: Marcher[] = newSelectedObjects[
+                        Selectable.SelectableClasses.MARCHER
+                    ] as any as Marcher[];
+                    setSelectedMarchers(marchersToSelect);
+                    const marcherIds = new Set(
+                        marchersToSelect.map((m) => m.id),
                     );
+
+                    // Only modify the selected shape if marchers were selected
+                    if (marchersToSelect.length > 0) {
+                        const marcherShapesToSelect = [];
+                        for (const marcherShape of canvas.marcherShapes) {
+                            if (
+                                marcherShape.canvasMarchers.find((cm) =>
+                                    marcherIds.has(cm.marcherObj.id),
+                                ) !== undefined
+                            ) {
+                                marcherShapesToSelect.push(marcherShape);
+                            }
+                        }
+                        setSelectedMarcherShapes(marcherShapesToSelect);
+                    }
+
+                    break;
+                }
+                case Selectable.SelectableClasses.MARCHER_SHAPE: {
+                    // CurvePoint
+                    // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
                     break;
                 }
                 default: {
@@ -197,7 +229,12 @@ export default function Canvas({
         for (const value of Object.values(Selectable.SelectableClasses)) {
             selectObjectsGlobally(value as Selectable.SelectableClasses);
         }
-    }, [activeObjectsAreGloballySelected, canvas, setSelectedMarchers]);
+    }, [
+        activeObjectsAreGloballySelected,
+        canvas,
+        setSelectedMarcherShapes,
+        setSelectedMarchers,
+    ]);
 
     /**
      * Handler for clearing global selected objects in the store
@@ -209,6 +246,10 @@ export default function Canvas({
             switch (selectableClass) {
                 case Selectable.SelectableClasses.MARCHER: {
                     setSelectedMarchers([]);
+                    break;
+                }
+                case Selectable.SelectableClasses.MARCHER_SHAPE: {
+                    // setSelectedCurvePoints([]);
                     break;
                 }
                 default: {
@@ -409,6 +450,106 @@ export default function Canvas({
         uiSettings.nextPaths,
         uiSettings.previousPaths,
     ]);
+
+    // Update/render the MarcherShapes when the selected page or the ShapePages change
+    useEffect(() => {
+        if (canvas && selectedPage && shapePages) {
+            canvas.currentPage = selectedPage;
+            const currentShapePages = shapePages.filter(
+                (sp) => sp.page_id === selectedPage.id,
+            );
+            canvas.renderMarcherShapes({
+                shapePages: currentShapePages,
+            });
+        }
+    }, [
+        canvas,
+        selectedPage,
+        shapePages,
+        selectedMarcherShapes,
+        setSelectedMarcherShapes,
+    ]);
+
+    // // Refresh the selectedMarcherShapes when the ShapePages change
+    // useEffect(() => {
+    //     if (
+    //         canvas &&
+    //         selectedPage &&
+    //         shapePages &&
+    //         selectedMarcherShapes &&
+    //         selectedMarcherShapes.length > 0
+    //     ) {
+    //         const selectedMarcherShapeIds = new Set(
+    //             selectedMarcherShapes.map((ms) => ms.shapePage.id),
+    //         );
+    //         const selectedMarcherShapeMap = new Map<number, MarcherShape>(
+    //             selectedMarcherShapes.map((ms) => [ms.shapePage.id, ms]),
+    //         );
+    //         const canvasMarcherShapeMap = new Map<number, MarcherShape>(
+    //             canvas.marcherShapes.map((ms) => [ms.shapePage.id, ms]),
+    //         );
+
+    //         let newMarcherShapesAreDifferent = false;
+    //         const marcherShapesToSelect = [];
+    //         for (const shapePageIdToSelect of selectedMarcherShapeIds) {
+    //             const canvasMarcherShape =
+    //                 canvasMarcherShapeMap.get(shapePageIdToSelect);
+
+    //             if (canvasMarcherShape) {
+    //                 marcherShapesToSelect.push(canvasMarcherShape);
+
+    //                 const oldMarcherShape =
+    //                     selectedMarcherShapeMap.get(shapePageIdToSelect);
+    //                 if (!oldMarcherShape) {
+    //                     console.warn(
+    //                         `Could not find marcher shape for shape page id ${shapePageIdToSelect}`,
+    //                     );
+    //                     continue;
+    //                 }
+
+    //                 if (!newMarcherShapesAreDifferent)
+    //                     newMarcherShapesAreDifferent =
+    //                         !canvasMarcherShape.equals(oldMarcherShape);
+
+    //                 console.log(
+    //                     "marcherShapes are different",
+    //                     newMarcherShapesAreDifferent,
+    //                     oldMarcherShape.shapePath.toString(),
+    //                     canvasMarcherShape.shapePath.toString(),
+    //                 );
+    //             }
+    //         }
+
+    //         if (
+    //             newMarcherShapesAreDifferent &&
+    //             marcherShapesToSelect.length > 0
+    //         )
+    //             setSelectedMarcherShapes(marcherShapesToSelect);
+    //     }
+    // }, [
+    //     canvas,
+    //     selectedMarcherShapes,
+    //     selectedPage,
+    //     setSelectedMarcherShapes,
+    //     shapePages,
+    // ]);
+
+    // Update the control points on MarcherShapes when the selectedShapePages change
+    useEffect(() => {
+        if (canvas && selectedMarcherShapes) {
+            // Disable control of all of the non-selected shape pages and enable control of selected ones
+            const selectedMarcherShapeSpIds = new Set(
+                selectedMarcherShapes.map((ms) => ms.shapePage.id),
+            );
+            for (const marcherShape of canvas.marcherShapes) {
+                if (selectedMarcherShapeSpIds.has(marcherShape.shapePage.id))
+                    marcherShape.enableControl();
+                else {
+                    marcherShape.disableControl();
+                }
+            }
+        }
+    }, [canvas, selectedMarcherShapes]);
 
     // Update the canvas when the field properties change
     useEffect(() => {

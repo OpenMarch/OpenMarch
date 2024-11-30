@@ -15,6 +15,8 @@ import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
+import { ShapePage } from "electron/database/tables/ShapePageTable";
+import { MarcherShape } from "./MarcherShape";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -45,6 +47,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: 0,
         time: 0,
     };
+    marcherShapes: MarcherShape[] = [];
     /**
      * The reference to the grid (the lines on the field) object to use for caching
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
@@ -182,6 +185,58 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /******* Marcher Functions *******/
     /**
+     * Brings all control points of the marcher shapes to the front of the canvas.
+     * This ensures the control points are always visible and on top of the marcher shapes.
+     */
+    bringAllControlPointsTooFront() {
+        // Put all of the control points to the front if they exist
+        for (const marcherShape of this.marcherShapes) {
+            marcherShape.controlPoints.forEach((controlPoint) => {
+                controlPoint.bringToFront();
+            });
+        }
+    }
+
+    /**
+     * Renders the marcher shapes on the canvas based on the provided shape pages.
+     * This method handles adding new shapes, updating existing shapes, and removing
+     * shapes that are no longer present in the shape pages.
+     *
+     * @param shapePages - An array of shape pages containing the SVG paths to render.
+     */
+    renderMarcherShapes({ shapePages }: { shapePages: ShapePage[] }) {
+        const existingMarcherShapeMap = new Map(
+            this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
+        );
+
+        // Remove shapes that no longer exist
+        const newShapeIds = new Set(shapePages.map((sp) => sp.shape_id));
+        const removedShapeIds = new Set();
+        for (const existingMarcherShape of existingMarcherShapeMap) {
+            if (!newShapeIds.has(existingMarcherShape[0])) {
+                removedShapeIds.add(existingMarcherShape[0]);
+                existingMarcherShape[1].destroy();
+            }
+        }
+        if (removedShapeIds.size !== 0) {
+            this.marcherShapes = this.marcherShapes.filter(
+                (ms) => !removedShapeIds.has(ms.shapePage.shape_id),
+            );
+        }
+
+        for (const shapePage of shapePages) {
+            if (existingMarcherShapeMap.has(shapePage.shape_id)) {
+                existingMarcherShapeMap
+                    .get(shapePage.shape_id)
+                    ?.updateWithSvg(shapePage.svg_path);
+            } else {
+                this.marcherShapes.push(
+                    new MarcherShape({ canvas: this, shapePage }),
+                );
+            }
+        }
+    }
+    /**
      * Render the given marcherPages on the canvas
      *
      * @param currentMarcherPages All of the marcher pages (must be filtered by the intended page)
@@ -208,9 +263,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
             // Marcher does not exist on the Canvas, create a new one
             if (!curCanvasMarcher) {
-                const curMarcher = allMarchers.find(
-                    (marcher) => marcher.id === marcherPage.marcher_id,
-                );
+                const curMarcher = allMarchersMap.get(marcherPage.marcher_id);
                 if (!curMarcher) {
                     console.error(
                         "Marcher object not found in the store for given MarcherPage  - renderMarchers: Canvas.tsx",
@@ -244,6 +297,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
+
+        this.bringAllControlPointsTooFront();
         this.requestRenderAll();
     };
 
@@ -258,6 +313,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
+
         this.requestRenderAll();
     };
 
@@ -271,6 +327,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         curCanvasMarchers.forEach((canvasMarcher) => {
             this.bringToFront(canvasMarcher);
         });
+        this.bringAllControlPointsTooFront();
     };
 
     /**
@@ -970,12 +1027,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // fabricEvent.target checks if the mouse is on the canvas at all
         return (
             fabricEvent.target &&
-            (Selectable.isSelectable(fabricEvent.target) ||
+            (fabricEvent.target.selectable ||
                 // If the target is a group of selectable objects (currently only checked if any of the objects are selectable)
                 // TODO - this is accessing a private property of fabric.Object. This is not ideal
                 ((fabricEvent.target as any)._objects !== undefined &&
-                    (fabricEvent.target as any)._objects.some((obj: any) =>
-                        Selectable.isSelectable(obj),
+                    (fabricEvent.target as any)._objects.some(
+                        (obj: any) => obj.selectable,
                     )))
         );
     };

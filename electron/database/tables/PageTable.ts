@@ -35,7 +35,7 @@ export function createPageTable(
             "created_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "next_page_id"	    INTEGER,
-            FOREIGN KEY ("next_page_id") REFERENCES "${Constants.PageTableName}"("id")
+            FOREIGN KEY ("next_page_id") REFERENCES "${Constants.PageTableName}" ("id")
             );
         `,
         ).run();
@@ -51,12 +51,7 @@ export function createPageTable(
 
         return { success: true, data: Constants.PageTableName };
     } catch (error: any) {
-        console.error("Failed to create page table:", error);
-        return {
-            success: false,
-            error: { message: error, stack: error.stack },
-            data: Constants.PageTableName,
-        };
+        throw new Error(`Failed to create page table: ${error}`);
     }
 }
 
@@ -388,29 +383,7 @@ export function deletePages({
     pageIds.delete(FIRST_PAGE_ID);
 
     History.incrementUndoGroup(db);
-    // Check if there are any marcherPages before deleting the pages
-    const marcherPages = MarcherPageTable.getMarcherPages({
-        db,
-    }).data;
     try {
-        if (marcherPages.length === 0) {
-            console.log("No marcherPages found. Skipping marcherPage deletion");
-        } else {
-            const deleteMarcherPageResponse = DbActions.deleteItems({
-                ids: pageIds,
-                tableName: Constants.MarcherPageTableName,
-                db,
-                useNextUndoGroup: false,
-                printHeaders: false,
-                idColumn: "page_id",
-            });
-            if (!deleteMarcherPageResponse.success) {
-                throw new Error(
-                    "Failed to delete marcherPages: " +
-                        (deleteMarcherPageResponse.error?.message || ""),
-                );
-            }
-        }
         // Update the next_page_id of the previous page to point to the next page
         const pages = getPages({ db }).data;
         const pagesMap = new Map(pages.map((page) => [page.id, page]));

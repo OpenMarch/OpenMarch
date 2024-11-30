@@ -3,7 +3,6 @@ import * as CanvasConstants from "@/components/canvas/CanvasConstants";
 import FieldProperties from "../FieldProperties";
 import MarcherPage from "../MarcherPage";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import Page from "../Page";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.
@@ -12,10 +11,6 @@ export default class MarcherLine extends fabric.Line {
     canvas?: OpenMarchCanvas;
     /** The ID of the group that this MarcherLine belongs to */
     groupId?: number;
-    /** The ID of the start page */
-    startPageId: number;
-    /** The ID of the end page (inclusive) */
-    endPageId: number;
     /** The ID of the MarcherLine in the database. If the ID is -1, that means the line is not in the database */
     id: number;
     /** The notes for the MarcherLine */
@@ -23,7 +18,7 @@ export default class MarcherLine extends fabric.Line {
     /** The refresh method is used to update the store with the new items from the database. */
     static refresh: () => void = () => {
         console.error(
-            "MarcherLine refresh method not set. The store will not update properly."
+            "MarcherLine refresh method not set. The store will not update properly.",
         );
     };
 
@@ -64,8 +59,6 @@ export default class MarcherLine extends fabric.Line {
         });
         this.id = id;
         this.groupId = groupId;
-        this.startPageId = startPageId;
-        this.endPageId = endPageId;
         this.gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2;
         this.notes = notes;
     }
@@ -149,7 +142,7 @@ export default class MarcherLine extends fabric.Line {
             this.y2 === undefined
         ) {
             console.error(
-                "Line coordinates not set. Cannot distribute marchers"
+                "Line coordinates not set. Cannot distribute marchers",
             );
             return marcherPages;
         }
@@ -166,7 +159,7 @@ export default class MarcherLine extends fabric.Line {
                     x: x1 + xDistance * index,
                     y: y1 + yDistance * index,
                 });
-            }
+            },
         );
 
         return distributedMarcherPages;
@@ -189,7 +182,7 @@ export default class MarcherLine extends fabric.Line {
     }) => {
         if (!this.canvas) {
             console.error(
-                "Canvas object not defined in Line object. Cannot round coordinates"
+                "Canvas object not defined in Line object. Cannot round coordinates",
             );
             return;
         }
@@ -234,61 +227,6 @@ export default class MarcherLine extends fabric.Line {
         if (value) this.set(CanvasConstants.HasControls as Partial<this>);
         else this.set(CanvasConstants.NoControls as Partial<this>);
     }
-
-    /**
-     * Gets all of the MarcherLines that fall on a given page
-     *
-     * @param marcherLines The marcherLines to filter from
-     * @param page The page to get the marcherLines for
-     * @param allPages All of the pages in the show (needed to find the order of the pages)
-     * @returns Array of MarcherLines that are on the given page
-     */
-    static getMarcherLinesForPage = ({
-        marcherLines,
-        page,
-        allPages,
-    }: {
-        marcherLines: MarcherLine[];
-        page: Page;
-        allPages: Page[];
-    }): MarcherLine[] => {
-        const pageMap = new Map<number, Page>();
-        allPages.forEach((page) => {
-            pageMap.set(page.id, page);
-        });
-        const filteredMarcherLines = marcherLines.filter((marcherLine) => {
-            const startPage = pageMap.get(marcherLine.startPageId);
-            if (!startPage) {
-                console.error(
-                    "Start page not found - renderMarcherLines: Canvas.tsx",
-                    marcherLine
-                );
-                return false;
-            }
-            // The intended page is before the line's start page, so return false
-            if (page.order < startPage.order) return false;
-
-            const endPage = pageMap.get(marcherLine.endPageId);
-            if (!endPage) {
-                console.error(
-                    "End page not found - renderMarcherLines: Canvas.tsx",
-                    marcherLine
-                );
-                return false;
-            }
-            if (startPage.order > endPage.order) {
-                console.error(
-                    "Start page is after end page - renderMarcherLines: Canvas.tsx",
-                    marcherLine
-                );
-                return false;
-            }
-
-            // return whether the intended page is or is before the line's end page
-            return page.order <= endPage.order;
-        });
-        return filteredMarcherLines;
-    };
 
     /******************** COORDINATE GETTER AND SETTER OVERLOADS ********************/
     /**

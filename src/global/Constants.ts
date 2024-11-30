@@ -8,6 +8,9 @@ export const Constants = {
     FieldPropertiesTableName: "field_properties",
     MeasureTableName: "measures",
     AudioFilesTableName: "audio_files",
+    ShapeTableName: "shapes",
+    ShapePageTableName: "shape_pages",
+    ShapePageMarcherTableName: "shape_page_marchers",
 
     PagePrefix: "page",
     NewPageId: "NEW_PAGE", // deprecated?

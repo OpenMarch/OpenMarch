@@ -15,6 +15,8 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import Measure from "@/global/classes/Measure";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
+import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import { useShapePageStore } from "@/stores/ShapePageStore";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -55,7 +57,8 @@ export enum RegisteredActionsEnum {
     togglePreviousPagePaths = "togglePreviousPagePaths",
 
     // Cursor Mode
-    applyAlignmentUpdates = "applyAlignmentUpdates",
+    applyQuickShape = "applyQuickShape",
+    createMarcherShape = "createMarcherShape",
     cancelAlignmentUpdates = "cancelAlignmentUpdates",
     alignmentEventDefault = "alignmentEventDefault",
     alignmentEventLine = "alignmentEventLine",
@@ -126,7 +129,7 @@ export class RegisteredAction {
 
         if (
             !Object.values(RegisteredActionsEnum).includes(
-                enumString as RegisteredActionsEnum
+                enumString as RegisteredActionsEnum,
             )
         )
             console.error(`Invalid enumString: ${enumString}. This should be a RegisteredActionsEnum value.
@@ -331,9 +334,14 @@ export const RegisteredActionsObjects: {
     }),
 
     // Cursor Mode
-    applyAlignmentUpdates: new RegisteredAction({
-        desc: "Apply updates to marchers",
-        enumString: "applyAlignmentUpdates",
+    applyQuickShape: new RegisteredAction({
+        desc: "Snaps marchers to shape without creating an editable object",
+        enumString: "applyQuickShape",
+        keyboardShortcut: new KeyboardShortcut({ key: "Enter", shift: true }),
+    }),
+    createMarcherShape: new RegisteredAction({
+        desc: "Creates a new shape that can be edited across pages",
+        enumString: "createMarcherShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
     }),
     cancelAlignmentUpdates: new RegisteredAction({
@@ -377,6 +385,7 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
+    const { setSelectedMarcherShapes } = useShapePageStore()!;
     const {
         resetAlignmentEvent,
         setAlignmentEvent,
@@ -399,15 +408,15 @@ function RegisteredActionsHandler() {
         }
         // Get the marcherPages for the selected Page to make searching faster
         const selectedPageMarcherPages: MarcherPage[] = marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === selectedPage.id
+            (marcherPage) => marcherPage.page_id === selectedPage.id,
         );
 
         const selectedMarcherPages: MarcherPage[] = [];
         selectedMarchers.forEach((marcher) => {
             selectedMarcherPages.push(
                 selectedPageMarcherPages.find(
-                    (marcherPage) => marcherPage.marcher_id === marcher.id
-                )!
+                    (marcherPage) => marcherPage.marcher_id === marcher.id,
+                )!,
             );
         });
         return selectedMarcherPages;
@@ -523,13 +532,13 @@ function RegisteredActionsHandler() {
                     const previousPage = selectedPage.getPreviousPage(pages);
                     const previousPageMarcherPages = marcherPages.filter(
                         (marcherPage) =>
-                            marcherPage.page_id === previousPage?.id
+                            marcherPage.page_id === previousPage?.id,
                     );
                     const changes = previousPageMarcherPages.map(
                         (marcherPage) => ({
                             ...marcherPage,
                             page_id: selectedPage.id,
-                        })
+                        }),
                     );
                     MarcherPage.updateMarcherPages(changes);
                     break;
@@ -537,19 +546,19 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
                     const previousPage = selectedPage.getPreviousPage(pages);
                     const selectedMarcherIds = selectedMarchers.map(
-                        (marcher) => marcher.id
+                        (marcher) => marcher.id,
                     );
                     const previousMarcherPages = marcherPages.filter(
                         (marcherPage) =>
                             marcherPage.page_id === previousPage?.id &&
-                            selectedMarcherIds.includes(marcherPage.marcher_id)
+                            selectedMarcherIds.includes(marcherPage.marcher_id),
                     );
                     if (previousMarcherPages) {
                         const changes = previousMarcherPages.map(
                             (marcherPage) => ({
                                 ...marcherPage,
                                 page_id: selectedPage.id,
-                            })
+                            }),
                         );
                         MarcherPage.updateMarcherPages(changes);
                     }
@@ -565,7 +574,7 @@ function RegisteredActionsHandler() {
                             denominator: 1,
                             xAxis: !uiSettings.lockX,
                             yAxis: !uiSettings.lockY,
-                        }
+                        },
                     );
                     MarcherPage.updateMarcherPages(roundedCoords);
                     break;
@@ -573,13 +582,13 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.lockX:
                     setUiSettings(
                         { ...uiSettings, lockX: !uiSettings.lockX },
-                        "lockX"
+                        "lockX",
                     );
                     break;
                 case RegisteredActionsEnum.lockY:
                     setUiSettings(
                         { ...uiSettings, lockY: !uiSettings.lockY },
-                        "lockY"
+                        "lockY",
                     );
                     break;
                 case RegisteredActionsEnum.alignVertically: {
@@ -629,14 +638,38 @@ function RegisteredActionsHandler() {
 
                 /****************** Cursor Mode ******************/
                 case RegisteredActionsEnum.cancelAlignmentUpdates: {
-                    setSelectedMarchers(alignmentEventMarchers);
+                    if (alignmentEventMarchers.length > 0) {
+                        setSelectedMarchers(alignmentEventMarchers);
+                        resetAlignmentEvent();
+                    } else {
+                        // Deselect all shapes and marchers
+                        setSelectedMarchers([]);
+                        setSelectedMarcherShapes([]);
+                    }
+                    break;
+                }
+                case RegisteredActionsEnum.applyQuickShape: {
+                    MarcherPage.updateMarcherPages(
+                        alignmentEventNewMarcherPages,
+                    );
                     resetAlignmentEvent();
                     break;
                 }
-                case RegisteredActionsEnum.applyAlignmentUpdates: {
-                    MarcherPage.updateMarcherPages(
-                        alignmentEventNewMarcherPages
+                case RegisteredActionsEnum.createMarcherShape: {
+                    const firstMarcherPage = alignmentEventNewMarcherPages[0];
+                    const lastMarcherPage =
+                        alignmentEventNewMarcherPages[
+                            alignmentEventNewMarcherPages.length - 1
+                        ];
+                    const marcherIds = alignmentEventNewMarcherPages.map(
+                        (marcherPage) => marcherPage.marcher_id,
                     );
+                    MarcherShape.createMarcherShape({
+                        marcherIds,
+                        start: firstMarcherPage,
+                        end: lastMarcherPage,
+                        pageId: selectedPage.id,
+                    });
                     resetAlignmentEvent();
                     break;
                 }
@@ -647,7 +680,7 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.alignmentEventLine: {
                     if (selectedMarchers.length < 2) {
                         console.error(
-                            "Not enough marchers selected to create a line. Need at least 2 marchers selected."
+                            "Not enough marchers selected to create a line. Need at least 2 marchers selected.",
                         );
                         break;
                     }
@@ -664,7 +697,7 @@ function RegisteredActionsHandler() {
 
                 default:
                     console.error(
-                        `No action registered for "${registeredActionObject.instructionalString}"`
+                        `No action registered for "${registeredActionObject.instructionalString}"`,
                     );
                     return;
             }
@@ -685,11 +718,12 @@ function RegisteredActionsHandler() {
             setAlignmentEventMarchers,
             setIsPlaying,
             setSelectedAudioFile,
+            setSelectedMarcherShapes,
             setSelectedMarchers,
             setSelectedPage,
             setUiSettings,
             uiSettings,
-        ]
+        ],
     );
 
     /**
@@ -708,7 +742,7 @@ function RegisteredActionsHandler() {
             // Check for duplicate keyboard shortcuts
             if (tempDict[keyboardShortcut] !== undefined)
                 console.error(
-                    `Duplicate keyboard shortcut for \`${keyboardShortcut}\` \nAction: \`${action}\` and \`${tempDict[keyboardShortcut]}\``
+                    `Duplicate keyboard shortcut for \`${keyboardShortcut}\` \nAction: \`${action}\` and \`${tempDict[keyboardShortcut]}\``,
                 );
             tempDict[keyboardShortcut] = action as RegisteredActionsEnum;
         });
@@ -722,7 +756,7 @@ function RegisteredActionsHandler() {
         (e: KeyboardEvent) => {
             if (
                 !document.activeElement?.matches(
-                    "input, textarea, select, [contenteditable]"
+                    "input, textarea, select, [contenteditable]",
                 )
             ) {
                 // Check the key code and convert it to a key string
@@ -746,7 +780,7 @@ function RegisteredActionsHandler() {
                 } else if (!ignoredKeys.has(key)) {
                     console.error(
                         `RegisteredAction Warning: No keyCode handler found for "${code}".`,
-                        "This key may not work as expected if using as a registered action shortcut."
+                        "This key may not work as expected if using as a registered action shortcut.",
                     );
                     key = e.key;
                 }
@@ -759,13 +793,13 @@ function RegisteredActionsHandler() {
                 const keyString = keyboardAction.toString();
                 if (keyboardShortcutDictionary.current[keyString]) {
                     triggerAction(
-                        keyboardShortcutDictionary.current[keyString]
+                        keyboardShortcutDictionary.current[keyString],
                     );
                     e.preventDefault();
                 }
             }
         },
-        [triggerAction]
+        [triggerAction],
     );
 
     /**

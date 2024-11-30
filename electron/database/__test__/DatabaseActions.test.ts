@@ -76,7 +76,7 @@ describe("Database Actions", () => {
             age INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );`
+            );`,
         ).run();
         createHistoryTables(db);
         createUndoTriggers(db, mockTableName);
@@ -106,10 +106,10 @@ describe("Database Actions", () => {
             expect(result.data[0].id).toBeGreaterThan(0);
             // created_at and updated_at should be the same since this is an insert
             expect(result.data[0].created_at).toEqual(
-                result.data[0].updated_at
+                result.data[0].updated_at,
             );
             const createdAtMs = new Date(
-                result.data[0].created_at as string
+                result.data[0].created_at as string,
             ).getTime();
             expect(createdAtMs).toBeGreaterThanOrEqual(before);
             expect(createdAtMs).toBeLessThanOrEqual(after);
@@ -136,10 +136,10 @@ describe("Database Actions", () => {
                 expect(result.data[i].id).toBeGreaterThan(0);
                 // created_at and updated_at should be the same since this is an insert
                 expect(result.data[i].created_at).toEqual(
-                    result.data[i].updated_at
+                    result.data[i].updated_at,
                 );
                 const createdAtMs = new Date(
-                    result.data[i].created_at as string
+                    result.data[i].created_at as string,
                 ).getTime();
                 expect(createdAtMs).toBeGreaterThanOrEqual(before);
                 expect(createdAtMs).toBeLessThanOrEqual(after);
@@ -172,10 +172,10 @@ describe("Database Actions", () => {
                 expect(result.data[i].id).toBeGreaterThan(0);
                 // created_at and updated_at should be the same since this is an insert
                 expect(result.data[i].created_at).toEqual(
-                    result.data[i].updated_at
+                    result.data[i].updated_at,
                 );
                 const createdAtMs = new Date(
-                    result.data[i].created_at as string
+                    result.data[i].created_at as string,
                 ).getTime();
                 expect(createdAtMs).toBeGreaterThanOrEqual(before);
                 expect(createdAtMs).toBeLessThanOrEqual(after);
@@ -247,7 +247,7 @@ describe("Database Actions", () => {
                 });
                 expect(getResult.success).toBe(false);
                 expect(getResult.error?.message).toBe(
-                    `No item with "rowid"=${result.data[0].id} in table "${mockTableName}"`
+                    `No item with "rowid"=${result.data[0].id} in table "${mockTableName}"`,
                 );
                 expect(getResult.data).toBeUndefined();
             });
@@ -294,7 +294,7 @@ describe("Database Actions", () => {
                     });
                     expect(getResult.success).toBe(false);
                     expect(getResult.error?.message).toBe(
-                        `No item with "rowid"=${item.id} in table "${mockTableName}"`
+                        `No item with "rowid"=${item.id} in table "${mockTableName}"`,
                     );
                     expect(getResult.data).toBeUndefined();
                 });
@@ -312,7 +312,7 @@ describe("Database Actions", () => {
                         age INTEGER,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );`
+                    );`,
                 ).run();
 
                 db.prepare(
@@ -321,7 +321,7 @@ describe("Database Actions", () => {
                         description TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    );`
+                    );`,
                 ).run();
 
                 createHistoryTables(db);
@@ -468,7 +468,7 @@ describe("Database Actions", () => {
             if (result.data === undefined)
                 throw new Error("result.data is undefined");
             expect(
-                result.data.map(({ created_at, updated_at, ...rest }) => rest)
+                result.data.map(({ created_at, updated_at, ...rest }) => rest),
             ).toEqual(items.map((item) => ({ ...item, age: null })));
             // TODO make it so this test doesn't use the age field
         });
@@ -492,7 +492,7 @@ describe("Database Actions", () => {
             if (result.data === undefined)
                 throw new Error("result.data is undefined");
             expect(
-                removeMetadata({ item: result.data, removeId: false })
+                removeMetadata({ item: result.data, removeId: false }),
             ).toEqual({
                 ...items[0],
                 age: null,
@@ -509,7 +509,7 @@ describe("Database Actions", () => {
             if (result.data === undefined)
                 throw new Error("result.data is undefined");
             expect(
-                removeMetadata({ item: result.data, removeId: false })
+                removeMetadata({ item: result.data, removeId: false }),
             ).toEqual({ ...items[1], id: 2 });
         });
 
@@ -522,9 +522,134 @@ describe("Database Actions", () => {
 
             expect(result.success).toBe(false);
             expect(result.error?.message).toBe(
-                'No item with "rowid"=1 in table "mockTable"'
+                'No item with "rowid"=1 in table "mockTable"',
             );
             expect(result.data).toBeUndefined();
+        });
+    });
+
+    describe("getItemsByColValue", () => {
+        it("should return items matching a string column value", () => {
+            const items = [
+                { name: "jeff", age: 25 },
+                { name: "bob", age: 30 },
+                { name: "jeff", age: 35 },
+            ];
+            DbActions.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
+
+            const result = DbActions.getItemsByColValue<Row>({
+                value: "jeff",
+                db,
+                tableName: mockTableName,
+                col: "name",
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.error).toBeUndefined();
+            expect(result.data.length).toBe(2);
+            expect(result.data.every((item) => item.name === "jeff")).toBe(
+                true,
+            );
+        });
+
+        it("should return items matching a number column value", () => {
+            const items = [
+                { name: "jeff", age: 25 },
+                { name: "bob", age: 30 },
+                { name: "carl", age: 25 },
+            ];
+            DbActions.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
+
+            const result = DbActions.getItemsByColValue<Row>({
+                value: 25,
+                db,
+                tableName: mockTableName,
+                col: "age",
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.error).toBeUndefined();
+            expect(result.data.length).toBe(2);
+            expect(result.data.every((item) => item.age === 25)).toBe(true);
+        });
+
+        it("should return items matching null values", () => {
+            const items = [
+                { name: "jeff", age: null },
+                { name: "bob", age: 30 },
+                { name: "carl", age: null },
+            ];
+            DbActions.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
+
+            const result = DbActions.getItemsByColValue<Row>({
+                value: null,
+                db,
+                tableName: mockTableName,
+                col: "age",
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.error).toBeUndefined();
+            expect(result.data.length).toBe(2);
+            expect(result.data.every((item) => item.age === null)).toBe(true);
+        });
+
+        it("should return an empty array when no matches are found", () => {
+            const items = [
+                { name: "jeff", age: 25 },
+                { name: "bob", age: 30 },
+            ];
+            DbActions.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
+
+            const result = DbActions.getItemsByColValue<Row>({
+                value: "nonexistent",
+                db,
+                tableName: mockTableName,
+                col: "name",
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.error).toBeUndefined();
+            expect(result.data).toEqual([]);
+        });
+
+        it("should handle invalid column names", () => {
+            const items = [
+                { name: "jeff", age: 25 },
+                { name: "bob", age: 30 },
+            ];
+            DbActions.createItems<Row, NewRow>({
+                items,
+                db,
+                tableName: mockTableName,
+            });
+
+            const result = DbActions.getItemsByColValue<Row>({
+                value: "test",
+                db,
+                tableName: mockTableName,
+                col: "invalid_column",
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBeDefined();
+            expect(result.data).toEqual([]);
         });
     });
 
@@ -552,18 +677,18 @@ describe("Database Actions", () => {
 
             // created_at should be the same, updated_at should be different
             expect(updateResult.data[0].created_at).toEqual(
-                insertResult.data[0].created_at
+                insertResult.data[0].created_at,
             );
             expect(updateResult.data[0].updated_at).not.toEqual(
-                insertResult.data[0].updated_at
+                insertResult.data[0].updated_at,
             );
             const updatedAtMs = new Date(
-                updateResult.data[0].updated_at
+                updateResult.data[0].updated_at,
             ).getTime();
             expect(updatedAtMs).toBeGreaterThanOrEqual(before);
             expect(updatedAtMs).toBeLessThanOrEqual(after);
             expect(
-                removeMetadata({ item: updateResult.data[0], removeId: false })
+                removeMetadata({ item: updateResult.data[0], removeId: false }),
             ).toEqual({
                 ...updatedItem,
                 age: null,
@@ -580,7 +705,7 @@ describe("Database Actions", () => {
             if (getResult.data === undefined)
                 throw new Error("getResult.data is undefined");
             expect(
-                removeMetadata({ item: getResult.data, removeId: false })
+                removeMetadata({ item: getResult.data, removeId: false }),
             ).toEqual({
                 ...updatedItem,
                 age: null,
@@ -681,15 +806,15 @@ describe("Database Actions", () => {
             for (const updatedItem of updateResult.data) {
                 // created_at should be the same, updated_at should be different
                 const originalItem = insertResult.data.find(
-                    (item) => item.id === updatedItem.id
+                    (item) => item.id === updatedItem.id,
                 );
                 expect(updatedItem.created_at).toEqual(
-                    originalItem?.created_at
+                    originalItem?.created_at,
                 );
                 // Sleep for 10ms to ensure the updated_at field is different
                 await new Promise((resolve) => setTimeout(resolve, 10));
                 expect(updatedItem.updated_at).not.toEqual(
-                    originalItem?.updated_at
+                    originalItem?.updated_at,
                 );
                 const updatedAtMs = new Date(updatedItem.updated_at).getTime();
                 expect(updatedAtMs).toBeGreaterThanOrEqual(before);
@@ -710,7 +835,7 @@ describe("Database Actions", () => {
 
             expect(result.success).toBe(false);
             expect(result.error?.message).toEqual(
-                'No items with ids [1, 2] in table "mockTable"'
+                'No items with ids [1, 2] in table "mockTable"',
             );
             expect(result.data).toEqual([]);
         });
@@ -738,7 +863,7 @@ describe("Database Actions", () => {
             if (removeResult.data === undefined)
                 throw new Error("removeResult.data is undefined");
             const trimmedData = removeResult.data.map((item) =>
-                removeMetadata({ item, removeId: false })
+                removeMetadata({ item, removeId: false }),
             );
             expect(trimmedData).toEqual([
                 {
@@ -755,7 +880,7 @@ describe("Database Actions", () => {
             expect(result.success).toBe(true);
             expect(result.error).toBeUndefined();
             expect(
-                result.data!.map(({ created_at, updated_at, ...rest }) => rest)
+                result.data!.map(({ created_at, updated_at, ...rest }) => rest),
             ).toEqual([{ ...items[1], id: 2 }]);
         });
 
@@ -782,7 +907,7 @@ describe("Database Actions", () => {
             if (removeResult.data === undefined)
                 throw new Error("removeResult.data is undefined");
             let trimmedData = removeResult.data.map((item) =>
-                removeMetadata({ item, removeId: false })
+                removeMetadata({ item, removeId: false }),
             );
             expect(trimmedData).toEqual([items[0], items[2]]);
 
@@ -793,7 +918,7 @@ describe("Database Actions", () => {
             if (dbContents.data === undefined)
                 throw new Error("dbContents.data is undefined");
             trimmedData = dbContents.data.map((item) =>
-                removeMetadata({ item, removeId: false })
+                removeMetadata({ item, removeId: false }),
             );
             expect(trimmedData).toEqual([items[1], items[3]]);
         });
@@ -827,7 +952,7 @@ describe("Database Actions", () => {
             if (dbContents.data === undefined)
                 throw new Error("dbContents.data is undefined");
             const trimmedData = dbContents.data.map((item) =>
-                removeMetadata({ item, removeId: false })
+                removeMetadata({ item, removeId: false }),
             );
             expect(trimmedData).toEqual(items);
         });

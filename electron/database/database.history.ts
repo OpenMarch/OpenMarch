@@ -25,6 +25,9 @@ export type HistoryResponse = {
     error?: { message: string; stack: string };
 };
 
+/**
+ * A row in the history stats table.
+ */
 export type HistoryStatsRow = {
     /** useless id */
     readonly id: 1;
@@ -53,6 +56,9 @@ export type HistoryStatsRow = {
     group_limit: number;
 };
 
+/**
+ * A row in the undo or redo history table.
+ */
 export type HistoryTableRow = {
     /**
      * The sequence number of the action in the history table.
@@ -72,6 +78,11 @@ export type HistoryTableRow = {
     sql: string;
 };
 
+/**
+ * Creates the tables to track history in the database
+ *
+ * @param db The database connection
+ */
 export function createHistoryTables(db: Database.Database) {
     const sqlStr = (tableName: string) => `
     CREATE TABLE IF NOT EXISTS ${tableName} (
@@ -89,12 +100,23 @@ export function createHistoryTables(db: Database.Database) {
         cur_undo_group INTEGER NOT NULL,
         cur_redo_group INTEGER NOT NULL,
         group_limit INTEGER NOT NULL
-    );`
+    );`,
     ).run();
     db.prepare(
         `INSERT OR IGNORE INTO ${Constants.HistoryStatsTableName}
-        (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 0, 0, 500);`
+        (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 0, 0, 500);`,
     ).run();
+}
+
+/**
+ * Creates triggers for a table to record undo/redo history in the database.
+ * These actions happen automatically when a row is inserted, updated, or deleted.
+ *
+ * @param db The database connection
+ * @param tableName name of the table to create triggers for
+ */
+export function createUndoTriggers(db: Database.Database, tableName: string) {
+    createTriggers(db, tableName, "undo", true);
 }
 
 /**
@@ -107,17 +129,6 @@ export function createHistoryTables(db: Database.Database) {
  */
 export function incrementUndoGroup(db: Database.Database) {
     return incrementGroup(db, "undo");
-}
-
-/**
- * Creates triggers for a table to record undo/redo history in the application.
- * These actions happen automatically when a row is inserted, updated, or deleted.
- *
- * @param db The database connection
- * @param tableName name of the table to create triggers for
- */
-export function createUndoTriggers(db: Database.Database, tableName: string) {
-    createTriggers(db, tableName, "undo", true);
 }
 
 /**
@@ -179,7 +190,7 @@ function incrementGroup(db: Database.Database, type: HistoryType) {
         (
             db
                 .prepare(
-                    `SELECT max("history_group") as current_group FROM ${historyTableName};`
+                    `SELECT max("history_group") as current_group FROM ${historyTableName};`,
                 )
                 .get() as { current_group?: number }
         ).current_group || 0;
@@ -187,14 +198,14 @@ function incrementGroup(db: Database.Database, type: HistoryType) {
     const groupString = type === "undo" ? "cur_undo_group" : "cur_redo_group";
     const newGroup = maxGroup + 1;
     db.prepare(
-        `UPDATE ${Constants.HistoryStatsTableName} SET "${groupString}"=${newGroup};`
+        `UPDATE ${Constants.HistoryStatsTableName} SET "${groupString}"=${newGroup};`,
     ).run();
 
     const groupLimit =
         (
             db
                 .prepare(
-                    `SELECT group_limit FROM ${Constants.HistoryStatsTableName};`
+                    `SELECT group_limit FROM ${Constants.HistoryStatsTableName};`,
                 )
                 .get() as HistoryStatsRow
         )?.group_limit || -1;
@@ -204,7 +215,7 @@ function incrementGroup(db: Database.Database, type: HistoryType) {
         const allGroups = (
             db
                 .prepare(
-                    `SELECT DISTINCT "history_group" FROM ${historyTableName} ORDER BY "history_group";`
+                    `SELECT DISTINCT "history_group" FROM ${historyTableName} ORDER BY "history_group";`,
                 )
                 .all() as { history_group: number }[]
         ).map((row) => row.history_group);
@@ -213,11 +224,11 @@ function incrementGroup(db: Database.Database, type: HistoryType) {
             // Delete all of the groups that are older than the group limit
             const groupsToDelete = allGroups.slice(
                 0,
-                allGroups.length - groupLimit
+                allGroups.length - groupLimit,
             );
             for (const group of groupsToDelete) {
                 db.prepare(
-                    `DELETE FROM ${historyTableName} WHERE "history_group"=${group};`
+                    `DELETE FROM ${historyTableName} WHERE "history_group"=${group};`,
                 ).run();
             }
         }
@@ -245,7 +256,7 @@ function refreshCurrentGroups(db: Database.Database) {
             (
                 db
                     .prepare(
-                        `SELECT max("history_group") as max_group FROM ${tableName};`
+                        `SELECT max("history_group") as max_group FROM ${tableName};`,
                     )
                     .get() as { max_group: number }
             ).max_group || 0; // default to 0 if there are no rows in the history table
@@ -253,7 +264,7 @@ function refreshCurrentGroups(db: Database.Database) {
         db.prepare(
             `UPDATE ${Constants.HistoryStatsTableName} SET "${groupColumn}"=${
                 currentGroup + 1
-            };`
+            };`,
         ).run();
     };
 
@@ -276,7 +287,7 @@ function createTriggers(
     db: Database.Database,
     tableName: string,
     type: HistoryType,
-    deleteRedoRows: boolean = true
+    deleteRedoRows: boolean = true,
 ) {
     const columns = db
         .prepare(`SELECT name FROM pragma_table_info('${tableName}');`)
@@ -291,13 +302,13 @@ function createTriggers(
         db
             .prepare(
                 `SELECT ${groupColumn} as current_group
-                FROM ${Constants.HistoryStatsTableName};`
+                FROM ${Constants.HistoryStatsTableName};`,
             )
             .get() as { current_group: number }
     ).current_group;
     if (currentGroup === undefined) {
         console.error(
-            "Could not get current group number from history stats table"
+            "Could not get current group number from history stats table",
         );
         return;
     }
@@ -323,8 +334,8 @@ function createTriggers(
     sqlStmt = `CREATE TRIGGER IF NOT EXISTS "${tableName}_ut" AFTER UPDATE ON "${tableName}" BEGIN
         INSERT INTO ${historyTableName} ("sequence" , "history_group", "sql")
             VALUES(NULL, (SELECT ${groupColumn} FROM history_stats), 'UPDATE "${tableName}" SET ${columns
-        .map((c) => `"${c.name}"='||quote(old."${c.name}")||'`)
-        .join(",")} WHERE rowid='||old.rowid);
+                .map((c) => `"${c.name}"='||quote(old."${c.name}")||'`)
+                .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
     db.prepare(sqlStmt).run();
@@ -332,10 +343,10 @@ function createTriggers(
     sqlStmt = `CREATE TRIGGER IF NOT EXISTS "${tableName}_dt" BEFORE DELETE ON "${tableName}" BEGIN
           INSERT INTO ${historyTableName} ("sequence" , "history_group", "sql")
             VALUES(NULL, (SELECT ${groupColumn} FROM history_stats), 'INSERT INTO "${tableName}" (${columns
-        .map((column) => `"${column.name}"`)
-        .join(",")}) VALUES (${columns
-        .map((c) => `'||quote(old."${c.name}")||'`)
-        .join(",")})');
+                .map((column) => `"${column.name}"`)
+                .join(",")}) VALUES (${columns
+                .map((c) => `'||quote(old."${c.name}")||'`)
+                .join(",")})');
           ${sideEffect}
       END;`;
     db.prepare(sqlStmt).run();
@@ -353,7 +364,7 @@ const switchTriggerMode = (
     db: Database.Database,
     mode: HistoryType,
     deleteRedoRows: boolean,
-    tableNames?: Set<string>
+    tableNames?: Set<string>,
 ) => {
     let sql = `SELECT * FROM sqlite_master WHERE type='trigger' AND ("name" LIKE '%$_ut' ESCAPE '$' OR "name" LIKE  '%$_it' ESCAPE '$' OR "name" LIKE  '%$_dt' ESCAPE '$')`;
     if (tableNames) {
@@ -386,7 +397,7 @@ const switchTriggerMode = (
  */
 function executeHistoryAction(
     db: Database.Database,
-    type: HistoryType
+    type: HistoryType,
 ): HistoryResponse {
     let response: HistoryResponse = {
         success: false,
@@ -403,7 +414,7 @@ function executeHistoryAction(
         let currentGroup = (
             db
                 .prepare(
-                    `SELECT max("history_group") as max_group FROM ${tableName};`
+                    `SELECT max("history_group") as max_group FROM ${tableName};`,
                 )
                 .get() as { max_group: number }
         ).max_group;
@@ -419,7 +430,7 @@ function executeHistoryAction(
                         ? Constants.UndoHistoryTableName
                         : Constants.RedoHistoryTableName
                 }
-                WHERE "history_group"=${group} ORDER BY sequence DESC;`
+                WHERE "history_group"=${group} ORDER BY sequence DESC;`,
                     )
                     .all() as HistoryTableRow[]
             ).map((row) => row.sql);
@@ -451,14 +462,20 @@ function executeHistoryAction(
             switchTriggerMode(db, "undo", false, tableNames);
         }
 
-        // Execute all of the SQL statements in reverse order
+        // Temporarily disable foreign key checks
+        db.prepare("PRAGMA foreign_keys = OFF;").run();
+
+        /// Execute all of the SQL statements in the current history group
         for (const sqlStatement of sqlStatements) {
             db.prepare(sqlStatement).run();
         }
 
+        // Re-enable foreign key checks
+        db.prepare("PRAGMA foreign_keys = ON;").run();
+
         // Delete all of the SQL statements in the current undo group
         db.prepare(
-            `DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};`
+            `DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};`,
         ).run();
 
         // Refresh the current group number in the history stats table
@@ -499,20 +516,24 @@ export function clearMostRecentRedo(db: Database.Database) {
     const maxGroup = (
         db
             .prepare(
-                `SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}`
+                `SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}`,
             )
             .get() as { max_redo_group: number }
     ).max_redo_group;
     db.prepare(
-        `DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ?`
+        `DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ?`,
     ).run(maxGroup);
 }
 
+/**
+ * @param db database connection
+ * @returns The current undo group number in the history stats table
+ */
 export function getCurrentUndoGroup(db: Database.Database) {
     return (
         db
             .prepare(
-                `SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};`
+                `SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};`,
             )
             .get() as { cur_undo_group: number }
     ).cur_undo_group;

@@ -13,6 +13,9 @@ import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
 import { DatabaseMarcher } from "@/global/classes/Marcher";
 import { ModifiedPageArgs } from "@/global/classes/Page";
+import * as ShapeTable from "./tables/ShapeTable";
+import * as ShapePageTable from "./tables/ShapePageTable";
+import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -67,6 +70,7 @@ export function getDbPath() {
 }
 
 export function databaseIsReady() {
+    console.log("databaseIsReady", DB_PATH);
     return DB_PATH.length > 0 && fs.existsSync(DB_PATH);
 }
 
@@ -88,10 +92,9 @@ export function initDatabase() {
     );
     createMeasureTable(db);
     createAudioFileTable(db);
-    // for (const table of Object.values(ALL_TABLES)) {
-    //     console.log("TABLE", table.tableName);
-    //     table.createTable(db);
-    // }
+    ShapeTable.createShapeTable(db);
+    ShapePageTable.createShapePageTable(db);
+    ShapePageMarcherTable.createShapePageMarcherTable(db);
     console.log("Database created.");
     db.close();
 }
@@ -116,74 +119,6 @@ export function connect() {
     }
 }
 
-// function createMarcherTable(db: Database.Database) {
-//     try {
-//         db.exec(`
-//             CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
-//                 "id"	        INTEGER PRIMARY KEY,
-//                 "id_for_html"	TEXT UNIQUE,
-//                 "name"	        TEXT,
-//                 "section"	    TEXT NOT NULL,
-//                 "year"	        TEXT,
-//                 "notes"	        TEXT,
-//                 "drill_prefix"	TEXT NOT NULL,
-//                 "drill_order"	INTEGER NOT NULL,
-//                 "drill_number"	TEXT UNIQUE NOT NULL,
-//                 "created_at"	TEXT NOT NULL,
-//                 "updated_at"	TEXT NOT NULL,
-//                 UNIQUE ("drill_prefix", "drill_order")
-//             );
-//         `);
-//         History.createUndoTriggers(db, Constants.MarcherTableName);
-//     } catch (error) {
-//         console.error("Failed to create marcher table:", error);
-//     }
-//     console.log("Marcher table created.");
-// }
-
-// function createPageTable(db: Database.Database) {
-//     try {
-//         db.exec(`
-//             CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
-//                 "id"	            INTEGER PRIMARY KEY,
-//                 "is_subset"	        INTEGER NOT NULL,
-//                 "previous_page_id"	INTEGER UNIQUE,
-//                 "next_page_id"	    INTEGER UNIQUE,
-//                 "notes"	            TEXT,
-//                 "counts"	        INTEGER NOT NULL,
-//                 "created_at"	    TEXT NOT NULL,
-//                 "updated_at"	    TEXT NOT NULL
-//             );
-//         `);
-//         History.createUndoTriggers(db, Constants.PageTableName);
-//     } catch (error) {
-//         console.error("Failed to create page table:", error);
-//     }
-// }
-
-// function createMarcherPageTable(db: Database.Database) {
-//     try {
-//         db.exec(`
-//             CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
-//                 "id"            INTEGER PRIMARY KEY,
-//                 "id_for_html"   TEXT UNIQUE,
-//                 "marcher_id"    INTEGER NOT NULL,
-//                 "page_id"       INTEGER NOT NULL,
-//                 "x"             REAL,
-//                 "y"             REAL,
-//                 "created_at"    TEXT NOT NULL,
-//                 "updated_at"    TEXT NOT NULL,
-//                 "notes"         TEXT
-//             );
-//             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
-//             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
-//         `);
-//         History.createUndoTriggers(db, Constants.MarcherPageTableName);
-//     } catch (error) {
-//         console.error("Failed to create marcher_page table:", error);
-//     }
-// }
-
 function createFieldPropertiesTable(
     db: Database.Database,
     fieldProperties: FieldProperties,
@@ -191,12 +126,12 @@ function createFieldPropertiesTable(
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.FieldPropertiesTableName}" (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY CHECK (id = 1),
                 json_data TEXT
             );
         `);
     } catch (error) {
-        console.error("Failed to create field properties table:", error);
+        throw new Error(`Failed to create field properties table: ${error}`);
     }
     const stmt = db.prepare(`
         INSERT INTO ${Constants.FieldPropertiesTableName} (
@@ -223,7 +158,7 @@ function createMeasureTable(db: Database.Database) {
     try {
         db.exec(`
             CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
-                id INTEGER PRIMARY KEY,
+                id INTEGER PRIMARY KEY CHECK (id = 1),
                 abc_data TEXT,
                 "created_at"	TEXT NOT NULL,
                 "updated_at"	TEXT NOT NULL
@@ -252,7 +187,7 @@ function createMeasureTable(db: Database.Database) {
         History.createUndoTriggers(db, Constants.MeasureTableName);
         console.log("Measures table created.");
     } catch (error) {
-        console.error("Failed to create Measures table:", error);
+        throw new Error(`Failed to create Measures table: ${error}`);
     }
 }
 
@@ -278,7 +213,7 @@ function createAudioFileTable(db: Database.Database) {
         `);
         History.createUndoTriggers(db, Constants.AudioFilesTableName);
     } catch (error) {
-        console.error("Failed to create audio file table:", error);
+        throw new Error(`Failed to create audio file table: ${error}`);
     }
     console.log("audio file table created.");
 }
@@ -388,6 +323,100 @@ export function initHandlers() {
     );
     ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
         deleteAudioFile(audioFileId),
+    );
+
+    /*********** SHAPES ***********/
+    // Shape
+    ipcMain.handle("shape:getAll", async () =>
+        connectWrapper<ShapeTable.Shape[]>(ShapeTable.getShapes),
+    );
+    ipcMain.handle("shape:insert", async (_, args: ShapeTable.NewShapeArgs[]) =>
+        connectWrapper<ShapeTable.Shape[]>(ShapeTable.createShapes, { args }),
+    );
+    ipcMain.handle(
+        "shape:update",
+        async (_, args: ShapeTable.ModifiedShapeArgs[]) =>
+            connectWrapper<ShapeTable.Shape[]>(ShapeTable.updateShapes, {
+                args,
+            }),
+    );
+    ipcMain.handle("shape:delete", async (_, shapeIds: Set<number>) =>
+        connectWrapper<ShapeTable.Shape[]>(ShapeTable.deleteShapes, {
+            ids: shapeIds,
+        }),
+    );
+
+    // ShapePage
+    ipcMain.handle("shape_page:getAll", async () =>
+        connectWrapper<ShapePageTable.ShapePage[]>(
+            ShapePageTable.getShapePages,
+        ),
+    );
+    ipcMain.handle(
+        "shape_page:insert",
+        async (_, args: ShapePageTable.NewShapePageArgs[]) =>
+            connectWrapper<ShapePageTable.ShapePage[]>(
+                ShapePageTable.createShapePages,
+                { args },
+            ),
+    );
+    ipcMain.handle(
+        "shape_page:update",
+        async (_, args: ShapePageTable.ModifiedShapePageArgs[]) =>
+            connectWrapper<ShapePageTable.ShapePage[]>(
+                ShapePageTable.updateShapePages,
+                {
+                    args,
+                },
+            ),
+    );
+    ipcMain.handle("shape_page:delete", async (_, shapePageIds: Set<number>) =>
+        connectWrapper<ShapePageTable.ShapePage[]>(
+            ShapePageTable.deleteShapePages,
+            {
+                ids: shapePageIds,
+            },
+        ),
+    );
+
+    // ShapePageMarcher
+    ipcMain.handle(
+        "shape_page_marcher:getAll",
+        async (_, shapePageId: number) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.getShapePageMarchers,
+                {
+                    shapePageId,
+                },
+            ),
+    );
+    ipcMain.handle(
+        "shape_page_marcher:insert",
+        async (_, args: ShapePageMarcherTable.NewShapePageMarcherArgs[]) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.createShapePageMarchers,
+                { args },
+            ),
+    );
+    ipcMain.handle(
+        "shape_page_marcher:update",
+        async (_, args: ShapePageMarcherTable.ModifiedShapePageMarcherArgs[]) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.updateShapePageMarchers,
+                {
+                    args,
+                },
+            ),
+    );
+    ipcMain.handle(
+        "shape_page_marcher:delete",
+        async (_, shapePageMarcherIds: Set<number>) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
+                ShapePageMarcherTable.deleteShapePageMarchers,
+                {
+                    ids: shapePageMarcherIds,
+                },
+            ),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {

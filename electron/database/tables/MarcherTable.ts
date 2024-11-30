@@ -34,12 +34,7 @@ export function createMarcherTable(
         console.log("Marcher table created.");
         return { success: true, data: Constants.MarcherTableName };
     } catch (error: any) {
-        console.error("Failed to create marcher table:", error);
-        return {
-            success: false,
-            error: { message: error, stack: error.stack },
-            data: "",
-        };
+        throw new Error(`Failed to create marcher table: ${error}`);
     }
 }
 
@@ -200,39 +195,6 @@ export function deleteMarchers({
             marcherDeleteResponse.error,
         );
         return marcherDeleteResponse;
-    }
-
-    // Check if there are any marcherPages
-    const marcherPagesNum = (
-        db
-            .prepare(
-                `SELECT COUNT(*) as mp_count FROM ${Constants.MarcherPageTableName}`,
-            )
-            .get() as { mp_count: number }
-    ).mp_count;
-
-    if (marcherPagesNum > 0) {
-        const marcherPageDeleteResponse = DbActions.deleteItems({
-            ids: marcherIds,
-            tableName: Constants.MarcherPageTableName,
-            db,
-            useNextUndoGroup: false,
-            idColumn: "marcher_id",
-        });
-
-        if (!marcherPageDeleteResponse.success) {
-            console.error(
-                "Failed to delete marcher pages:",
-                marcherPageDeleteResponse.error,
-            );
-            History.performUndo(db);
-            History.clearMostRecentRedo(db);
-            return {
-                success: false,
-                error: marcherPageDeleteResponse.error,
-                data: [],
-            };
-        }
     }
 
     return marcherDeleteResponse;

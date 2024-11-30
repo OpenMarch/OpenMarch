@@ -6,6 +6,7 @@ import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import { DatabaseResponse } from "../DatabaseActions";
 import * as History from "../database.history";
+import { getSpmByMarcherPage } from "./ShapePageMarcherTable";
 
 export function createMarcherPageTable(db: Database.Database) {
     try {
@@ -19,14 +20,16 @@ export function createMarcherPageTable(db: Database.Database) {
                 "y"             REAL,
                 "created_at"    TEXT NOT NULL,
                 "updated_at"    TEXT NOT NULL,
-                "notes"         TEXT
+                "notes"         TEXT,
+                FOREIGN KEY ("marcher_id") REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+                FOREIGN KEY ("page_id") REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
             );
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
         `);
         History.createUndoTriggers(db, Constants.MarcherPageTableName);
     } catch (error) {
-        console.error("Failed to create marcher_page table:", error);
+        throw new Error(`Failed to create marcher_page table: ${error}`);
     }
 }
 
@@ -42,20 +45,20 @@ export function getMarcherPages(args: {
     page_id?: number;
 }): DatabaseResponse<MarcherPage[]> {
     let stmt = args.db.prepare(
-        `SELECT * FROM ${Constants.MarcherPageTableName}`
+        `SELECT * FROM ${Constants.MarcherPageTableName}`,
     );
     if (args) {
         if (args.marcher_id && args.page_id)
             stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`,
             );
         else if (args.marcher_id)
             stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`,
             );
         else if (args.page_id)
             stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`
+                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`,
             );
     }
     const result = stmt.all() as MarcherPage[];
@@ -122,38 +125,90 @@ export function createMarcherPages({
 interface NewModifiedMarcherPageArgs extends ModifiedMarcherPageArgs {
     id: number;
 }
+
+/**
+ * Checks if a given MarcherPage is locked, by checking if there is a record in the ShapePageMarcher table for the
+ * provided marcher_id and page_id.
+ *
+ * @param db - The database connection.
+ * @param marcherId - The ID of the Marcher.
+ * @param pageId - The ID of the Page.
+ * @returns - `true` if the MarcherPage is locked, `false` otherwise.
+ * @throws - An error if there was a failure to check the lock status.
+ */
+const isLocked = ({
+    db,
+    marcherId,
+    pageId,
+}: {
+    db: Database.Database;
+    marcherId: number;
+    pageId: number;
+}): boolean => {
+    let output = false;
+    try {
+        // Check the ShapePageMarcher table to see if there is a record for this marcher_id and page_id
+        const response = getSpmByMarcherPage({
+            db,
+            marcherPage: { marcher_id: marcherId, page_id: pageId },
+        });
+        if (!response.success)
+            throw new Error(response.error?.message || "Failed to get SPM");
+        output = response.data !== null;
+    } catch (error) {
+        throw new Error(`Failed to check if MarcherPage is locked: ${error}\n`);
+    }
+    return output;
+};
+
 /**
  * Updates a list of marcherPages with the given values.
  *
  * @param marcherPageUpdates: Array of UpdateMarcherPage objects that contain the marcher_id and page_id of the
  *                  marcherPage to update and the values to update it with
+ * @param isChildAction Whether or not this is a child action of another action.
+ *                      If true, it will not check for shape dependencies or increment the undo group.
  * @returns - {success: boolean, result: Database.result | string}
  */
 export function updateMarcherPages({
     db,
     marcherPageUpdates,
+    isChildAction = false,
 }: {
     db: Database.Database;
     marcherPageUpdates: ModifiedMarcherPageArgs[];
+    isChildAction?: boolean;
 }): DatabaseResponse<MarcherPage[]> {
-    const newUpdatedItems: NewModifiedMarcherPageArgs[] =
-        marcherPageUpdates.map((update) => {
-            const id = (
-                db
-                    .prepare(
-                        `SELECT id FROM ${Constants.MarcherPageTableName}
-            WHERE "marcher_id" = (@marcher_id) AND "page_id" = (@page_id)`
-                    )
-                    .get({
-                        marcher_id: update.marcher_id,
-                        page_id: update.page_id,
-                    }) as { id: number }
-            ).id;
-            return {
+    const newUpdatedItems: NewModifiedMarcherPageArgs[] = [];
+    for (const update of marcherPageUpdates) {
+        const id = (
+            db
+                .prepare(
+                    `SELECT id FROM ${Constants.MarcherPageTableName}
+                        WHERE "marcher_id" = (@marcher_id) AND "page_id" = (@page_id)`,
+                )
+                .get({
+                    marcher_id: update.marcher_id,
+                    page_id: update.page_id,
+                }) as { id: number }
+        ).id;
+
+        // Do not check if this is locked if this is a child action
+        let mpIsLocked = false;
+        if (!isChildAction) {
+            mpIsLocked = isLocked({
+                db,
+                marcherId: update.marcher_id,
+                pageId: update.page_id,
+            });
+        }
+
+        if (!mpIsLocked)
+            newUpdatedItems.push({
                 ...update,
                 id,
-            };
-        });
+            });
+    }
 
     const response = DbActions.updateItems<
         MarcherPage,
@@ -162,6 +217,8 @@ export function updateMarcherPages({
         db,
         items: newUpdatedItems,
         tableName: Constants.MarcherPageTableName,
+        useNextUndoGroup: !isChildAction,
+        printHeaders: !isChildAction,
     });
 
     return response;
