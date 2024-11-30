@@ -44,7 +44,7 @@ type Blog = CollectionEntry<"blog">;
                 </div>
             </div>
             <div
-                class="absolute bottom-0 left-0 -z-50 h-[18vw] w-[22vw] bg-accent opacity-40 blur-[512px]"
+                class="absolute bottom-0 left-0 -z-50 h-[18vw] w-[22vw] rounded-full bg-accent opacity-40 blur-[512px]"
             >
             </div>
         </section>
@@ -68,7 +68,7 @@ type Blog = CollectionEntry<"blog">;
                 </div>
             </div>
             <div
-                class="absolute bottom-0 left-1/2 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 bg-accent opacity-40 blur-[512px]"
+                class="absolute bottom-0 left-1/2 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px]"
             >
             </div>
         </section>
@@ -93,7 +93,7 @@ type Blog = CollectionEntry<"blog">;
                 </div>
             </div>
             <div
-                class="absolute bottom-0 right-0 -z-50 h-[18vw] w-[22vw] bg-accent opacity-40 blur-[512px]"
+                class="absolute bottom-0 right-0 -z-50 h-[18vw] w-[22vw] rounded-full bg-accent opacity-40 blur-[512px]"
             >
             </div>
         </section>
@@ -230,9 +230,6 @@ type Blog = CollectionEntry<"blog">;
                                     <h2 class="w-full text-h2">
                                         {blog.data.title}
                                     </h2>
-                                    <p class="w-full text-body leading-[150%]">
-                                        {blog.data.summary}
-                                    </p>
                                     <p class="w-full text-body leading-[150%]">
                                         by {blog.data.author}
                                     </p>
