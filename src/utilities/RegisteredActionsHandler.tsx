@@ -16,6 +16,7 @@ import AudioFile from "@/global/classes/AudioFile";
 import Measure from "@/global/classes/Measure";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import { useShapePageStore } from "@/stores/ShapePageStore";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -384,6 +385,7 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
+    const { setSelectedMarcherShapes } = useShapePageStore()!;
     const {
         resetAlignmentEvent,
         setAlignmentEvent,
@@ -636,8 +638,14 @@ function RegisteredActionsHandler() {
 
                 /****************** Cursor Mode ******************/
                 case RegisteredActionsEnum.cancelAlignmentUpdates: {
-                    setSelectedMarchers(alignmentEventMarchers);
-                    resetAlignmentEvent();
+                    if (alignmentEventMarchers.length > 0) {
+                        setSelectedMarchers(alignmentEventMarchers);
+                        resetAlignmentEvent();
+                    } else {
+                        // Deselect all shapes and marchers
+                        setSelectedMarchers([]);
+                        setSelectedMarcherShapes([]);
+                    }
                     break;
                 }
                 case RegisteredActionsEnum.applyQuickShape: {

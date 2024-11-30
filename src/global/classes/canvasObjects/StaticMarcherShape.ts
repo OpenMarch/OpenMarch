@@ -11,6 +11,14 @@ import CanvasMarcher from "./CanvasMarcher";
  */
 export type VanillaPoint = [string, ...number[]];
 
+export enum SvgCommandEnum {
+    MOVE = "M",
+    LINE = "L",
+    QUADRATIC = "Q",
+    CUBIC = "C",
+    CLOSE = "Z",
+}
+
 /**
  * A canvas path with control points.
  * The StaticMarcherShape class handles the creation, movement, and redrawing of the path and its control points.
@@ -339,11 +347,18 @@ export class StaticMarcherShape {
 
         const separatePaths: string[] = [];
         let activeString = "";
+        const firstCoord = shapePath.points[0].coordinates[0];
 
         // Loop through the SVG path and separate it into individual paths
         for (const svgPoint of shapePath.points) {
-            if (svgPoint.command === "M") activeString = svgPoint.toString();
-            else {
+            if (svgPoint.command === SvgCommandEnum.MOVE)
+                activeString = svgPoint.toString();
+            else if (svgPoint.command === SvgCommandEnum.CLOSE) {
+                separatePaths.push(
+                    activeString + ` L ${firstCoord.x} ${firstCoord.y}`,
+                );
+                activeString = `M ${firstCoord.x} ${firstCoord.y}`;
+            } else {
                 separatePaths.push(activeString + " " + svgPoint.toString());
 
                 // Update the active string to the end coordinate of the current point
@@ -419,13 +434,19 @@ export class StaticMarcherShape {
         for (let i = 0; i < svgSegmentLengths.length; i++) {
             const segmentLength = svgSegmentLengths[i];
             const itemsOnSegment = itemsPerSegment[i];
+            const command = shapePath.points[i + 1].command;
+            const isAfterClose =
+                i > 0 && shapePath.points[i].command === SvgCommandEnum.CLOSE;
 
             // If this is the last segment and we are including the end point, we need to reduce the spacing by 1
-            const isLastSegment = i === svgSegmentLengths.length - 1;
+            const isLastSegment =
+                i === svgSegmentLengths.length - 1 &&
+                command !== SvgCommandEnum.CLOSE;
             const spacing =
                 segmentLength / (itemsOnSegment - (isLastSegment ? 1 : 0));
+
             // Don't include the start point if it is not included
-            for (let j = 0; j < itemsOnSegment; j++) {
+            for (let j = isAfterClose ? 1 : 0; j < itemsOnSegment; j++) {
                 const point = svgPathObjects[i].getPointAtLength(spacing * j);
                 output.push({
                     id: itemIds[currentItemIndex].id,
@@ -800,27 +821,19 @@ export class ShapePath extends fabric.Path {
     }
 }
 
-export enum SvgCommandEnum {
-    MOVE = "M",
-    LINE = "L",
-    QUADRATIC = "Q",
-    CUBIC = "C",
-    CLOSE = "Z",
-}
-
 type Coordinate = {
     x: number;
     y: number;
 };
 
-interface SgvCommand {
+interface SvgCommand {
     readonly readableDescription: string;
     readonly command: SvgCommandEnum;
     readonly numberOfCoordinates: number;
 }
 
 export const SvgCommands: {
-    [key in SvgCommandEnum]: SgvCommand;
+    [key in SvgCommandEnum]: SvgCommand;
 } = {
     [SvgCommandEnum.MOVE]: {
         readableDescription: "Move",
@@ -848,6 +861,12 @@ export const SvgCommands: {
         numberOfCoordinates: 0,
     },
 };
+
+export const secondSegmentSvgCommands: SvgCommand[] = [
+    SvgCommands[SvgCommandEnum.LINE],
+    SvgCommands[SvgCommandEnum.QUADRATIC],
+    SvgCommands[SvgCommandEnum.CUBIC],
+];
 /**
  * Represents a single point in a shape path, with a command and coordinates.
  * The `ShapePoint` class provides methods to work with and manipulate these points.

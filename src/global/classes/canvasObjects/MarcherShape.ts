@@ -111,24 +111,30 @@ export class MarcherShape extends StaticMarcherShape {
      */
     addSegment() {
         // Figure out if its pointing left or right
-        let secondToLastCoord: { x: number; y: number };
         const lastPoint =
             this.shapePath.points[this.shapePath.points.length - 1];
-        const lastCoord =
-            lastPoint.coordinates[lastPoint.coordinates.length - 1];
-        if (lastPoint.coordinates.length > 1) {
+        let lastCoord: { x: number; y: number };
+        if (lastPoint.command === SvgCommandEnum.CLOSE)
+            // Make the last coordinates the first coordinates on close
+            lastCoord = this.shapePath.points[0].coordinates[0];
+        else
+            lastCoord = lastPoint.coordinates[lastPoint.coordinates.length - 1];
+
+        let secondToLastCoord: { x: number; y: number };
+        if (lastPoint.command === SvgCommandEnum.CLOSE)
+            secondToLastCoord = this.shapePath.points[0].coordinates[0];
+        else if (lastPoint.coordinates.length > 1)
             secondToLastCoord =
                 lastPoint.coordinates[lastPoint.coordinates.length - 2];
-        } else if (this.shapePath.points.length >= 2) {
+        else if (this.shapePath.points.length >= 2) {
             const secondToLastPoint =
                 this.shapePath.points[this.shapePath.points.length - 2];
             secondToLastCoord =
                 secondToLastPoint.coordinates[
                     secondToLastPoint.coordinates.length - 1
                 ];
-        } else {
-            secondToLastCoord = { x: 0, y: 0 };
-        }
+        } else secondToLastCoord = { x: 0, y: 0 };
+
         const isPointingRight = secondToLastCoord.x <= lastCoord.x;
 
         const newCoordinateOffset = isPointingRight

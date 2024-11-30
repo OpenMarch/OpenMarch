@@ -2,7 +2,7 @@ import { SidebarCollapsible } from "./SidebarCollapsible";
 import { Button } from "../ui/Button";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import * as Form from "@radix-ui/react-form";
 import {
     SelectItem,
@@ -11,19 +11,13 @@ import {
     SelectTriggerButton,
 } from "../ui/Select";
 import {
+    secondSegmentSvgCommands,
     SvgCommandEnum,
     SvgCommands,
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
-import { FaPlus, FaTrash } from "react-icons/fa";
 
 export default function ShapeEditor() {
-    const { selectedMarcherShapes, setSelectedMarcherShapes } =
-        useShapePageStore()!;
-    const formRefs = useRef<Map<number, HTMLFormElement>>(new Map());
-
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        const shapePageId = parseInt(event.currentTarget.id.split("-")[0], 10);
-    };
+    const { selectedMarcherShapes } = useShapePageStore()!;
 
     const updateSegment = useCallback(
         ({
@@ -51,7 +45,6 @@ export default function ShapeEditor() {
     const singleShapeEditor = (marcherShape: MarcherShape) => {
         return (
             <Form.Root
-                onSubmit={handleSubmit}
                 id={`${marcherShape.shapePage.id}-shapeForm`}
                 className="flex flex-col gap-2"
             >
@@ -95,20 +88,21 @@ export default function ShapeEditor() {
                                     >
                                         <SelectTriggerButton label={"Type"} />
                                         <SelectContent>
-                                            {Object.values(SvgCommands).map(
-                                                (cmd) => {
-                                                    return (
-                                                        <SelectItem
-                                                            key={cmd.command}
-                                                            value={cmd.command}
-                                                        >
-                                                            {
-                                                                cmd.readableDescription
-                                                            }
-                                                        </SelectItem>
-                                                    );
-                                                },
-                                            )}
+                                            {(index > 1
+                                                ? Object.values(SvgCommands)
+                                                : secondSegmentSvgCommands
+                                            ).map((cmd) => {
+                                                return (
+                                                    <SelectItem
+                                                        key={cmd.command}
+                                                        value={cmd.command}
+                                                    >
+                                                        {
+                                                            cmd.readableDescription
+                                                        }
+                                                    </SelectItem>
+                                                );
+                                            })}
                                         </SelectContent>
                                     </Select>
                                 </Form.Control>
@@ -127,7 +121,7 @@ export default function ShapeEditor() {
                     }}
                     type="button"
                 >
-                    <FaPlus />
+                    Add Segment
                 </Button>
                 <Button
                     onClick={() => {
@@ -137,32 +131,8 @@ export default function ShapeEditor() {
                     }}
                     type="button"
                 >
-                    <FaTrash />
+                    Delete Segment
                 </Button>
-                {/* <Form.Field
-                    name="Drill Prefix"
-                    className="flex items-center justify-between"
-                >
-                    <Form.Label className="text-body text-text/80">
-                        Drill Prefix
-                    </Form.Label>
-                    <Form.Control asChild>
-                        <Input
-                            type="text"
-                            placeholder="-"
-                            onChange={handlePrefixChange}
-                            value={drillPrefix}
-                            required
-                            maxLength={3}
-                        />
-                    </Form.Control>
-                    <Form.Message
-                        match={"valueMissing"}
-                        className="text-sub leading-none text-red"
-                    >
-                        Please enter a value.
-                    </Form.Message>
-                </Form.Field> */}
             </Form.Root>
         );
     };
@@ -184,24 +154,6 @@ export default function ShapeEditor() {
                         </div>
                     );
                 })}
-                {/* <div className="flex gap-8">
-                    {alignmentEventNewMarcherPages.length > 0 && (
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.applyQuickShape
-                            }
-                        >
-                            <Button>Apply</Button>
-                        </RegisteredActionButton>
-                    )}
-                    <RegisteredActionButton
-                        registeredAction={
-                            RegisteredActionsObjects.cancelAlignmentUpdates
-                        }
-                    >
-                        <Button variant="secondary">Cancel</Button>
-                    </RegisteredActionButton>
-                </div> */}
             </SidebarCollapsible>
         )
     );
