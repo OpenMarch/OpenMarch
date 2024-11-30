@@ -22,7 +22,7 @@ export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
         set((state) => ({
             isOpen: !state.isOpen,
         })),
-    setOpen: (open: boolean) =>
+    setOpen: (open) =>
         set(() => ({
             isOpen: open,
         })),

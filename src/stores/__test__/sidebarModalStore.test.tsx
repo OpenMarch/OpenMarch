@@ -37,6 +37,18 @@ describe("useSidebarModalStore", () => {
         expect(useSidebarModalStore.getState().isOpen).toBe(false);
     });
 
+    it("should set isOpen state", () => {
+        const { setOpen, isOpen } = useSidebarModalStore.getState();
+
+        expect(isOpen).toBe(false);
+
+        setOpen(true);
+        expect(useSidebarModalStore.getState().isOpen).toBe(true);
+
+        setOpen(false);
+        expect(useSidebarModalStore.getState().isOpen).toBe(false);
+    });
+
     it("should set content", () => {
         const { setContent, content } = useSidebarModalStore.getState();
 

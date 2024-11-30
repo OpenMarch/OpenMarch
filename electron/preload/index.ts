@@ -1,6 +1,6 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import FieldProperties from "@/global/classes/FieldProperties";
-import Marcher, {
+import {
     DatabaseMarcher,
     ModifiedMarcherArgs,
     NewMarcherArgs,
@@ -54,7 +54,7 @@ function useLoading() {
         width: 50px;
         height: 50px;
         fill: black;
-        animation: spin 750ms linear infinite;
+        animation: spin 700ms linear infinite;
     }
     .app-loading-wrap {
         position: fixed;
@@ -130,6 +130,7 @@ const APP_API = {
 
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
+    databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),

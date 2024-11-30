@@ -129,9 +129,33 @@ template.push(
             role: "help",
             submenu: [
                 {
-                    label: "Learn More",
+                    label: "Website",
                     click: async () => {
                         await shell.openExternal("https://openmarch.com");
+                    },
+                },
+                {
+                    label: "Docs/Guides",
+                    click: async () => {
+                        await shell.openExternal(
+                            "https://openmarch.com/guides",
+                        );
+                    },
+                },
+                {
+                    label: "Discord",
+                    click: async () => {
+                        await shell.openExternal(
+                            "https://discord.gg/eTsQ98uZzq",
+                        );
+                    },
+                },
+                {
+                    label: "GitHub",
+                    click: async () => {
+                        await shell.openExternal(
+                            "https://github.com/OpenMarch",
+                        );
                     },
                 },
             ],

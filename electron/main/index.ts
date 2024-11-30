@@ -115,6 +115,9 @@ app.whenReady().then(async () => {
 
     // File IO handlers
     ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
+    ipcMain.handle("database:getPath", () => {
+        return DatabaseServices.getDbPath();
+    });
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());

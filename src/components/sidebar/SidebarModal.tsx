@@ -7,19 +7,16 @@ export default function SidebarModal() {
 
     const handleFocus = () => {
         setIsFocused(true);
-        console.log("focus");
     };
 
     const handleBlur = () => {
         setIsFocused(false);
-        console.log("blur");
     };
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (isFocused && event.key === "Escape") {
                 setOpen(false);
-                console.log("asdasdasd");
             }
         };
 

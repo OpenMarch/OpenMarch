@@ -1,12 +1,29 @@
 import { Minus, Square, List, X } from "@phosphor-icons/react";
 import FileControls from "./FileControls";
 import SettingsModal from "../settings/SettingsModal";
+import { useEffect, useState } from "react";
 
 export default function TitleBar({ noControls }: { noControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
 
+    const [dbPath, setDbPath] = useState("");
+
+    useEffect(() => {
+        const fetchDbPath = async () => {
+            try {
+                const path = await window.electron.databaseGetPath();
+                setDbPath(path);
+            } catch (error) {
+                setDbPath("Failed to fetch database path");
+                console.error("Error fetching database path:", error);
+            }
+        };
+
+        fetchDbPath();
+    }, []);
+
     return (
-        <div className="main-app-titlebar flex h-fit w-full items-center justify-between text-text">
+        <div className="main-app-titlebar relative flex h-fit w-full items-center justify-between text-text">
             <div
                 className={`flex items-center gap-20 px-24 py-8 ${isMacOS && "ml-64"}`}
             >
@@ -31,6 +48,9 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                     </>
                 )}
             </div>
+            <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-sub">
+                {dbPath}
+            </p>
             {!isMacOS && (
                 <div className="titlebar-button flex">
                     <button
