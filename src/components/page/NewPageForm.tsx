@@ -21,6 +21,8 @@ import { Button } from "../ui/Button";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { toast } from "sonner";
 import { TooltipContents } from "../ui/Tooltip";
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import { PageListContents } from "./PagesModal";
 
 interface NewPageFormProps {
     hasHeader?: boolean;
@@ -48,6 +50,8 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
     const [typing, setTyping] = useState<boolean>(false);
     const { pages } = usePageStore!();
     const formRef = useRef<HTMLFormElement>(null);
+
+    const { setContent } = useSidebarModalStore();
 
     useEffect(() => {
         if (!typing) {
@@ -96,6 +100,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        setContent(<PageListContents />);
         event.preventDefault();
         if (counts && quantity) {
             const newPageArgs: NewPageArgs[] = [];
@@ -189,7 +194,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
             onSubmit={handleSubmit}
             id="newPageForm"
             ref={formRef}
-            className="flex h-full flex-col justify-between"
+            className="flex h-full flex-col gap-16"
         >
             <div className="flex flex-col gap-16 px-12">
                 <Form.Field
