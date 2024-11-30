@@ -13,6 +13,8 @@ import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { toast } from "sonner";
 import { InfoNote } from "../ui/Note";
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import { MarcherListContents } from "./MarchersModal";
 
 interface NewMarcherFormProps {
     disabledProp?: boolean;
@@ -38,6 +40,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const { marchers } = useMarcherStore()!;
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
     const formRef = useRef<HTMLFormElement>(null);
+    const { setContent } = useSidebarModalStore();
 
     const resetForm = () => {
         setSection(defaultSection);
@@ -53,6 +56,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        setContent(<MarcherListContents />);
         event.preventDefault();
         let newDrillOrderOffset = 0;
         const existingDrillOrders = new Set<number>(
@@ -345,8 +349,8 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     {makeButtonString(quantity, section)}
                 </Button>
                 <InfoNote>
-                        New marchers may not show up until a refresh
-                    </InfoNote>
+                    New marchers may not show up until a refresh
+                </InfoNote>
             </div>
         </Form.Root>
     );
