@@ -654,7 +654,7 @@ function RegisteredActionsHandler() {
                             alignmentEventNewMarcherPages.length - 1
                         ];
                     const marcherIds = alignmentEventNewMarcherPages.map(
-                        (marcherPage) => marcherPage.id,
+                        (marcherPage) => marcherPage.marcher_id,
                     );
                     MarcherShape.createMarcherShape({
                         marcherIds,

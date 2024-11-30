@@ -66,7 +66,8 @@ export function getShapes({
  * Creates new shapes in the database
  * @param db The database instance
  * @param args Array of NewShapeArgs containing name and optional notes
- * @param isChildAction Whether the action is a child action of a parent action
+ * @param isChildAction Whether the action is a child action of a parent action. NOTE, this will always use the next history group
+ *  As it is expected this action will always be first.
  * @returns DatabaseResponse containing the created Shape objects
  */
 export function createShapes({
@@ -83,7 +84,6 @@ export function createShapes({
         tableName: Constants.ShapeTableName,
         items: args,
         printHeaders: !isChildAction,
-        useNextUndoGroup: !isChildAction,
     });
 }
 

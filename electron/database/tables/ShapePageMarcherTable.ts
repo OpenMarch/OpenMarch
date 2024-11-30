@@ -350,11 +350,14 @@ export function createShapePageMarchers({
         for (const shapePageId of shapePageIdsThatWereModified)
             flattenOrder({ db, shapePageId });
     } catch (error: any) {
-        console.error(
-            "Error creating ShapePageMarchers. Rolling back changes.",
-            error,
-        );
-        if (actionWasPerformed && !isChildAction) {
+        const rollBackChanges = actionWasPerformed && !isChildAction;
+        const errorMessage =
+            "Error creating ShapePageMarchers. " +
+            (rollBackChanges
+                ? "Rolling back changes."
+                : "Not rolling back changes.");
+        console.error(errorMessage, error);
+        if (rollBackChanges) {
             History.performUndo(db);
             History.clearMostRecentRedo(db);
         }

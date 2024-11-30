@@ -765,6 +765,7 @@ export class ShapePath extends fabric.Path {
         this.strokeWidth = 2;
         this.strokeDashArray = [];
         this.selectable = true;
+        this.backgroundColor = CanvasColors.TEMP_PATH_TRANSPARENT;
         this.hoverCursor = "move";
     }
 
@@ -773,6 +774,7 @@ export class ShapePath extends fabric.Path {
         this.strokeWidth = 1;
         this.strokeDashArray = [5, 3];
         this.selectable = false;
+        this.backgroundColor = "transparent";
         this.hoverCursor = "default";
     }
 
@@ -831,12 +833,12 @@ export const SvgCommands: {
         numberOfCoordinates: 1,
     },
     [SvgCommandEnum.QUADRATIC]: {
-        readableDescription: "Quadratic Curve",
+        readableDescription: "Single Curve",
         command: SvgCommandEnum.QUADRATIC,
         numberOfCoordinates: 2,
     },
     [SvgCommandEnum.CUBIC]: {
-        readableDescription: "Cubic Curve",
+        readableDescription: "Double Curve",
         command: SvgCommandEnum.CUBIC,
         numberOfCoordinates: 6,
     },

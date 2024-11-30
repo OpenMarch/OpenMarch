@@ -238,11 +238,14 @@ export function createShapePages({
             data: createdShapePages,
         };
     } catch (error: any) {
-        console.error(
-            "Error creating ShapePages. Rolling back changes.",
-            error,
-        );
-        if (actionWasPerformed) {
+        const rollBackChanges = actionWasPerformed;
+        const errorMessage =
+            "Error creating ShapePages. " +
+            (rollBackChanges
+                ? "Rolling back changes."
+                : "Not rolling back changes.");
+        console.error(errorMessage, error);
+        if (rollBackChanges) {
             History.performUndo(db);
             History.clearMostRecentRedo(db);
         }
