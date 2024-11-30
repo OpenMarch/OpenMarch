@@ -1,0 +1,61 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { Image } from "astro:assets";
+---
+
+<Layout title="About">
+    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
+        <section
+            id="download"
+            class="relative flex h-fit w-full min-w-0 flex-col items-center gap-32"
+        >
+            <div
+                class="flex h-[50vh] min-h-0 w-full flex-col items-start justify-center px-64 max-[1000px]:p-32"
+            >
+                <h1 class="text-left text-[96px] max-[700px]:text-h1">
+                    About Us
+                </h1>
+            </div>
+            <div
+                class="flex h-fit w-full flex-col gap-64 rounded-6 border border-stroke bg-fg-1 px-256 py-128 max-[1000px]:p-32"
+            >
+                <h1 class="text-h1">About</h1>
+                <p class="leading-loose text-text">
+                    OpenMarch is an open source drill writing software built on
+                    web app frameworks. Our goal is to be a free and easy drill
+                    writing solution for marching bands, indoor programs, and
+                    applicable performing ensembles. OpenMarch hopes to be
+                    enough for 90% of ensembles with reasonable design needs. We
+                    want to make drill writing effortless. OpenMarch is designed
+                    with three principles: stay free, stay fast, and stay
+                    simple. There may never be a day where OpenMarch has support
+                    for a 3D rendered marching band of 900 with live video feed
+                    jumbotron props. OpenMarch's current (and really only) focus
+                    is on the drill-writing experience. We hope you like our
+                    software.
+                </p>
+                <h1 class="text-h1">Team</h1>
+                <div class="grid grid-cols-3 gap-32 max-[920px]:grid-cols-1">
+                    <div class="flex flex-col gap-16">
+                        <h2 class="text-h2">Alex</h2>
+                        <h4 class="text-h4">Founder & lead developer</h4>
+                    </div>
+                    <div class="flex flex-col gap-16">
+                        <h2 class="text-h2">Ben</h2>
+                        <h4 class="text-h4">Graphic designer</h4>
+                    </div>
+                    <div class="flex flex-col gap-16">
+                        <h2 class="text-h2">dukc</h2>
+                        <h4 class="text-h4">
+                            UI designer & front-end developer
+                        </h4>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="absolute left-1/2 top-0 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 bg-accent opacity-40 blur-[512px]"
+            >
+            </div>
+        </section>
+    </div>
+</Layout>
