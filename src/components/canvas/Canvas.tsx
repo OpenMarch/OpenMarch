@@ -36,7 +36,7 @@ export default function Canvas({
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { marcherPages } = useMarcherPageStore()!;
-    const { shapePages, selectedShapePages, setSelectedShapePages } =
+    const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
@@ -197,27 +197,20 @@ export default function Canvas({
                         marchersToSelect.map((m) => m.id),
                     );
 
-                    // Check if any shapePage has this marcher in it
-                    const currentSelectedShapePageIds = new Set(
-                        selectedShapePages.map((sp) => sp.id),
-                    );
-                    const marcherShapesToSelect = [];
-                    for (const marcherShape of canvas.marcherShapes) {
-                        if (
-                            currentSelectedShapePageIds.has(
-                                marcherShape.shapePage.id,
-                            ) ||
-                            marcherShape.canvasMarchers.find((cm) =>
-                                marcherIds.has(cm.marcherObj.id),
-                            ) !== undefined
-                        ) {
-                            marcherShapesToSelect.push(marcherShape);
+                    // Only modify the selected shape if marchers were selected
+                    if (marchersToSelect.length > 0) {
+                        const marcherShapesToSelect = [];
+                        for (const marcherShape of canvas.marcherShapes) {
+                            if (
+                                marcherShape.canvasMarchers.find((cm) =>
+                                    marcherIds.has(cm.marcherObj.id),
+                                ) !== undefined
+                            ) {
+                                marcherShapesToSelect.push(marcherShape);
+                            }
                         }
+                        setSelectedMarcherShapes(marcherShapesToSelect);
                     }
-
-                    setSelectedShapePages(
-                        marcherShapesToSelect.map((ms) => ms.shapePage),
-                    );
 
                     break;
                 }
@@ -239,8 +232,8 @@ export default function Canvas({
     }, [
         activeObjectsAreGloballySelected,
         canvas,
+        setSelectedMarcherShapes,
         setSelectedMarchers,
-        setSelectedShapePages,
     ]);
 
     /**
@@ -469,31 +462,94 @@ export default function Canvas({
                 shapePages: currentShapePages,
             });
         }
-    }, [canvas, selectedPage, setSelectedShapePages, shapePages]);
+    }, [
+        canvas,
+        selectedPage,
+        shapePages,
+        selectedMarcherShapes,
+        setSelectedMarcherShapes,
+    ]);
+
+    // // Refresh the selectedMarcherShapes when the ShapePages change
+    // useEffect(() => {
+    //     if (
+    //         canvas &&
+    //         selectedPage &&
+    //         shapePages &&
+    //         selectedMarcherShapes &&
+    //         selectedMarcherShapes.length > 0
+    //     ) {
+    //         const selectedMarcherShapeIds = new Set(
+    //             selectedMarcherShapes.map((ms) => ms.shapePage.id),
+    //         );
+    //         const selectedMarcherShapeMap = new Map<number, MarcherShape>(
+    //             selectedMarcherShapes.map((ms) => [ms.shapePage.id, ms]),
+    //         );
+    //         const canvasMarcherShapeMap = new Map<number, MarcherShape>(
+    //             canvas.marcherShapes.map((ms) => [ms.shapePage.id, ms]),
+    //         );
+
+    //         let newMarcherShapesAreDifferent = false;
+    //         const marcherShapesToSelect = [];
+    //         for (const shapePageIdToSelect of selectedMarcherShapeIds) {
+    //             const canvasMarcherShape =
+    //                 canvasMarcherShapeMap.get(shapePageIdToSelect);
+
+    //             if (canvasMarcherShape) {
+    //                 marcherShapesToSelect.push(canvasMarcherShape);
+
+    //                 const oldMarcherShape =
+    //                     selectedMarcherShapeMap.get(shapePageIdToSelect);
+    //                 if (!oldMarcherShape) {
+    //                     console.warn(
+    //                         `Could not find marcher shape for shape page id ${shapePageIdToSelect}`,
+    //                     );
+    //                     continue;
+    //                 }
+
+    //                 if (!newMarcherShapesAreDifferent)
+    //                     newMarcherShapesAreDifferent =
+    //                         !canvasMarcherShape.equals(oldMarcherShape);
+
+    //                 console.log(
+    //                     "marcherShapes are different",
+    //                     newMarcherShapesAreDifferent,
+    //                     oldMarcherShape.shapePath.toString(),
+    //                     canvasMarcherShape.shapePath.toString(),
+    //                 );
+    //             }
+    //         }
+
+    //         if (
+    //             newMarcherShapesAreDifferent &&
+    //             marcherShapesToSelect.length > 0
+    //         )
+    //             setSelectedMarcherShapes(marcherShapesToSelect);
+    //     }
+    // }, [
+    //     canvas,
+    //     selectedMarcherShapes,
+    //     selectedPage,
+    //     setSelectedMarcherShapes,
+    //     shapePages,
+    // ]);
 
     // Update the control points on MarcherShapes when the selectedShapePages change
     useEffect(() => {
-        if (canvas && selectedShapePages) {
-            console.log("Selected shape pages changed", selectedShapePages);
-            for (const selectedShapePage of selectedShapePages) {
-                const shapePageOnCanvas = canvas.marcherShapes.find(
-                    (ms) => ms.shapePage.id === selectedShapePage.id,
-                );
-                if (!shapePageOnCanvas)
-                    console.warn("Selected shape page was not found on canvas");
-                else shapePageOnCanvas.enableControl();
-            }
-            // Disable control of all of the non-selected shape pages
-            const selectedShapePageIds = new Set(
-                selectedShapePages.map((sp) => sp.id),
+        if (canvas && selectedMarcherShapes) {
+            // Disable control of all of the non-selected shape pages and enable control of selected ones
+            const selectedMarcherShapeSpIds = new Set(
+                selectedMarcherShapes.map((ms) => ms.shapePage.id),
             );
             for (const marcherShape of canvas.marcherShapes) {
-                if (!selectedShapePageIds.has(marcherShape.shapePage.id)) {
+                if (selectedMarcherShapeSpIds.has(marcherShape.shapePage.id))
+                    marcherShape.enableControl();
+                else {
                     marcherShape.disableControl();
                 }
             }
         }
-    }, [canvas, selectedShapePages]);
+    }, [canvas, selectedMarcherShapes]);
 
     // Update the canvas when the field properties change
     useEffect(() => {

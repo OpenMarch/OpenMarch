@@ -1,24 +1,170 @@
-import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
-import RegisteredActionButton from "../RegisteredActionButton";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { SidebarCollapsible } from "./SidebarCollapsible";
 import { Button } from "../ui/Button";
+import { useShapePageStore } from "@/stores/ShapePageStore";
+import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import { useCallback, useRef } from "react";
+import * as Form from "@radix-ui/react-form";
+import {
+    SelectItem,
+    Select,
+    SelectContent,
+    SelectTriggerButton,
+} from "../ui/Select";
+import {
+    SvgCommandEnum,
+    SvgCommands,
+} from "@/global/classes/canvasObjects/StaticMarcherShape";
 
-export default function AlignmentEditor() {
-    const {
-        alignmentEvent,
-        alignmentEventMarchers,
-        alignmentEventNewMarcherPages,
-    } = useAlignmentEventStore();
+export default function ShapeEditor() {
+    const { selectedMarcherShapes, setSelectedMarcherShapes } =
+        useShapePageStore()!;
+    const formRefs = useRef<Map<number, HTMLFormElement>>(new Map());
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        const shapePageId = parseInt(event.currentTarget.id.split("-")[0], 10);
+    };
+
+    const updateSegment = useCallback(
+        ({
+            shapePageId,
+            index,
+            newSvg,
+        }: {
+            shapePageId: number;
+            index: number;
+            newSvg: SvgCommandEnum;
+        }) => {
+            // console.log("updateSegment", { shapePageId, index, newSvg });
+            const marcherShape = selectedMarcherShapes.find(
+                (marcherShape) => marcherShape.shapePage.id === shapePageId,
+            );
+            if (!marcherShape) {
+                console.error("Marcher shape not found with id", shapePageId);
+                return;
+            }
+            marcherShape.updateSegment({ index, newSvg });
+        },
+        [selectedMarcherShapes],
+    );
+
+    const singleShapeEditor = (marcherShape: MarcherShape) => {
+        return (
+            <Form.Root
+                onSubmit={handleSubmit}
+                id={`${marcherShape.shapePage.id}-shapeForm`}
+                className="flex flex-col gap-2"
+            >
+                <div className="max-h-64 overflow-y-auto">
+                    {marcherShape.canvasMarchers.length > 0 && (
+                        <p className="">
+                            {marcherShape.canvasMarchers
+                                .map((cm) => cm.marcherObj.drill_number)
+                                .join(", ")}
+                        </p>
+                    )}
+                </div>
+                <Form.Field
+                    name="section"
+                    className="flex items-center justify-between"
+                >
+                    <Form.Label className="text-body text-text/80">
+                        Segments
+                    </Form.Label>
+
+                    {marcherShape.shapePath.points.map(
+                        (point, index) =>
+                            index > 0 && ( // do not render the first shape (move)
+                                <Form.Control asChild key={index}>
+                                    <Select
+                                        required
+                                        value={
+                                            SvgCommands[point.command].command
+                                        }
+                                        onValueChange={(
+                                            newSvg: SvgCommandEnum,
+                                        ) =>
+                                            updateSegment({
+                                                shapePageId:
+                                                    marcherShape.shapePage.id,
+                                                index,
+                                                newSvg,
+                                            })
+                                        }
+                                    >
+                                        <SelectTriggerButton label={"Type"} />
+                                        <SelectContent>
+                                            {Object.values(SvgCommands).map(
+                                                (cmd) => {
+                                                    return (
+                                                        <SelectItem
+                                                            key={cmd.command}
+                                                            value={cmd.command}
+                                                        >
+                                                            {
+                                                                cmd.readableDescription
+                                                            }
+                                                        </SelectItem>
+                                                    );
+                                                },
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </Form.Control>
+                            ),
+                    )}
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field>
+                {/* <Form.Field
+                    name="Drill Prefix"
+                    className="flex items-center justify-between"
+                >
+                    <Form.Label className="text-body text-text/80">
+                        Drill Prefix
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Input
+                            type="text"
+                            placeholder="-"
+                            onChange={handlePrefixChange}
+                            value={drillPrefix}
+                            required
+                            maxLength={3}
+                        />
+                    </Form.Control>
+                    <Form.Message
+                        match={"valueMissing"}
+                        className="text-sub leading-none text-red"
+                    >
+                        Please enter a value.
+                    </Form.Message>
+                </Form.Field> */}
+            </Form.Root>
+        );
+    };
 
     return (
-        alignmentEvent === "line" && (
+        selectedMarcherShapes.length > 0 && (
             <SidebarCollapsible
                 defaultOpen
-                title={`Alignment`}
-                className="mt-12 flex flex-col gap-12"
+                title={"Shapes"}
+                className="max-h-100 mt-12 flex flex-col gap-12 overflow-y-auto"
             >
-                <div className="flex gap-8">
+                {selectedMarcherShapes.map((marcherShape) => {
+                    return (
+                        <div
+                            key={marcherShape.shapePage.id}
+                            className="flex flex-col gap-2"
+                        >
+                            {singleShapeEditor(marcherShape)}
+                        </div>
+                    );
+                })}
+                {/* <div className="flex gap-8">
                     {alignmentEventNewMarcherPages.length > 0 && (
                         <RegisteredActionButton
                             registeredAction={
@@ -35,13 +181,7 @@ export default function AlignmentEditor() {
                     >
                         <Button variant="secondary">Cancel</Button>
                     </RegisteredActionButton>
-                </div>
-                <p className="text-sub text-text/80">
-                    Marchers{" "}
-                    {alignmentEventMarchers
-                        .map((marcher) => marcher.drill_number)
-                        .join(", ")}
-                </p>
+                </div> */}
             </SidebarCollapsible>
         )
     );

@@ -18,8 +18,10 @@ export type VanillaPoint = [string, ...number[]];
  * This class does not interact with the database at all.
  */
 export class StaticMarcherShape {
+    readonly SUPPORTED_SvgCommandEnumS = ["M", "L", "Q", "C", "Z"];
+
     /** The canvas this StaticMarcherShape belongs to */
-    canvas: OpenMarchCanvas;
+    canvas?: OpenMarchCanvas;
     /** The control points of this shape */
     controlPoints: ShapePointController[];
 
@@ -31,8 +33,8 @@ export class StaticMarcherShape {
      * The `fromInitial` property holds the x and y offsets from the initial position.
      */
     moveOffset: {
-        initialPosition: { x: number; y: number };
-        fromInitial: { x: number; y: number };
+        initialPosition: Coordinate;
+        fromInitial: Coordinate;
     } = {
         initialPosition: { x: 0, y: 0 },
         fromInitial: { x: 0, y: 0 },
@@ -41,7 +43,7 @@ export class StaticMarcherShape {
     /**
      * The path of the StaticMarcherShape object, which represents the shape of the canvas path.
      */
-    shapePath: ShapePath;
+    private _shapePath: ShapePath;
 
     /** The marchers that are currently on this shape in the order that they are on the shape */
     private _canvasMarchers: CanvasMarcher[];
@@ -71,7 +73,7 @@ export class StaticMarcherShape {
         controlEnabled?: boolean;
     }) {
         this.canvas = canvas;
-        this.shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
+        this._shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
         this._canvasMarchers = canvasMarchers;
         this.controlPoints = [];
 
@@ -84,19 +86,15 @@ export class StaticMarcherShape {
         }
 
         this.distributeMarchers();
-        this.bringControlPointsToFront();
-    }
-
-    disableControl() {
-        if (!this._controlEnabled) return; // Control already disabled
-        for (const controlPoint of this.controlPoints) controlPoint.destroy();
-        this.shapePath.disableControl();
-        this._controlEnabled = false;
     }
 
     enableControl() {
+        if (!this.canvas) {
+            console.error("Canvas is not defined");
+            return;
+        }
         if (this._controlEnabled) return; // Control already enabled
-        const points = this.shapePath.points;
+        const points = this._shapePath.points;
         const newControlPoints: ShapePointController[] = [];
         for (let pointIndex = 0; pointIndex < points.length; pointIndex++) {
             const point = points[pointIndex];
@@ -123,9 +121,17 @@ export class StaticMarcherShape {
         this.controlPoints = newControlPoints;
         this.controlPoints.forEach((p) => p.drawOutgoingLine());
         this.canvas.add(...this.controlPoints);
+        this.bringControlPointsToFront();
 
-        this.shapePath.enableControl();
+        this._shapePath.enableControl();
         this._controlEnabled = true;
+    }
+
+    disableControl() {
+        if (!this._controlEnabled) return; // Control already disabled
+        for (const controlPoint of this.controlPoints) controlPoint.destroy();
+        this._shapePath.disableControl();
+        this._controlEnabled = false;
     }
 
     /**
@@ -145,21 +151,21 @@ export class StaticMarcherShape {
      * @param e The event that triggered the move
      */
     moveHandler(e: fabric.IEvent) {
-        if (!this.shapePath) {
+        if (!this._shapePath) {
             console.error("The shapePath is not defined");
             return;
         }
         if (
-            this.shapePath.left === undefined ||
-            this.shapePath.top === undefined
+            this._shapePath.left === undefined ||
+            this._shapePath.top === undefined
         ) {
             console.error("The shape does not have coordinates");
             return;
         }
 
         this.moveOffset.fromInitial = {
-            x: this.shapePath.left - this.moveOffset.initialPosition.x,
-            y: this.shapePath.top - this.moveOffset.initialPosition.y,
+            x: this._shapePath.left - this.moveOffset.initialPosition.x,
+            y: this._shapePath.top - this.moveOffset.initialPosition.y,
         };
         this.controlPoints.forEach((p) => {
             p.handleParentMove();
@@ -182,7 +188,7 @@ export class StaticMarcherShape {
      * @param e The fabric.js event object that triggered the modification.
      */
     modifiedHandler(e: fabric.IEvent) {
-        this.recreatePath(this.shapePath.path as any as VanillaPoint[]);
+        this.recreatePath(this._shapePath.path as any as VanillaPoint[]);
     }
 
     /**
@@ -221,45 +227,52 @@ export class StaticMarcherShape {
      * @returns The updated fabric.Path object representing the redrawn shape.
      */
     recreatePath(pathArg: VanillaPoint[]) {
-        if (this.shapePath && this.canvas) {
-            this.canvas.remove(this.shapePath);
+        if (this._shapePath && this.canvas) {
+            this.canvas.remove(this._shapePath);
         }
 
         const points = ShapePoint.fromArray(pathArg);
         points.forEach((p) => p.applyOffset(this.moveOffset.fromInitial));
 
-        this.shapePath = new ShapePath(points);
+        this._shapePath = new ShapePath(points);
         if (
-            this.shapePath.left === undefined ||
-            this.shapePath.top === undefined
+            this._shapePath.left === undefined ||
+            this._shapePath.top === undefined
         )
             throw new Error("The shape does not have coordinates");
 
         this.moveOffset = {
-            initialPosition: { x: this.shapePath.left, y: this.shapePath.top },
+            initialPosition: {
+                x: this._shapePath.left,
+                y: this._shapePath.top,
+            },
             fromInitial: { x: 0, y: 0 },
         };
         if (!this.canvas) throw new Error("The canvas is not defined");
-        this.canvas.add(this.shapePath);
-        this.shapePath.on("moving", this.moveHandler.bind(this));
-        this.shapePath.on("modified", this.modifiedHandler.bind(this));
+        this.canvas.add(this._shapePath);
+        this._shapePath.on("moving", this.moveHandler.bind(this));
+        this._shapePath.on("modified", this.modifiedHandler.bind(this));
 
+        this.canvas.sendCanvasMarchersToFront();
         this.bringControlPointsToFront();
-        if (this._controlEnabled) this.shapePath.enableControl();
-        else this.shapePath.disableControl();
+        if (this._controlEnabled) this._shapePath.enableControl();
+        else this._shapePath.disableControl();
 
-        return this.shapePath;
+        return this._shapePath;
     }
 
     /**
      * Destroys the StaticMarcherShape by removing the shape path and control points from the canvas.
      */
     destroy() {
-        if (this.canvas) {
-            if (this.shapePath) this.canvas.remove(this.shapePath);
-            this.controlPoints.forEach((point) => {
-                this.canvas.remove(point);
-            });
+        if (!this.canvas) {
+            console.error("Canvas is not defined");
+            return;
+        }
+        if (this._shapePath) this.canvas.remove(this._shapePath);
+        for (const point of this.controlPoints) {
+            this.canvas.remove(point);
+            if (point.outgoingLine) this.canvas.remove(point.outgoingLine);
         }
     }
 
@@ -271,12 +284,12 @@ export class StaticMarcherShape {
      * an error is thrown.
      */
     distributeMarchers() {
-        if (!this.shapePath)
+        if (!this._shapePath)
             throw new Error("No path exists to distribute marchers on");
 
         const newCoordinates = StaticMarcherShape.distributeAlongPath({
             itemIds: this.canvasMarchers.map((m) => ({ id: m.id })),
-            svgPath: this.shapePath,
+            svgPath: this._shapePath,
         });
 
         // Loop to create and place the dots along the path
@@ -290,7 +303,9 @@ export class StaticMarcherShape {
             });
             this.canvasMarchers[i].setMarcherCoords(newMarcherPage);
         }
-        this.canvas.requestRenderAll();
+        if (this.canvas) {
+            this.canvas.requestRenderAll();
+        }
     }
 
     get canvasMarchers() {
@@ -423,6 +438,37 @@ export class StaticMarcherShape {
 
         return output;
     }
+
+    /**
+     * Compares this `StaticMarcherShape` instance to another, checking if their `shapePath` properties are equal.
+     * This checks the SVG path string, not the points.
+     *
+     * @param other - The other `StaticMarcherShape` instance to compare against.
+     * @returns `true` if the `shapePath` properties are equal, `false` otherwise.
+     */
+    equals(other: StaticMarcherShape): boolean {
+        return this.shapePath.equals(other.shapePath);
+    }
+
+    /****************** GETTERS AND SETTERS ******************/
+    get shapePath(): ShapePath {
+        return this._shapePath;
+    }
+
+    setShapePathPoints(points: ShapePoint[]) {
+        const controlWasEnabled = this._controlEnabled;
+
+        this.destroy();
+        this._shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
+        this.distributeMarchers();
+        if (controlWasEnabled) {
+            this._controlEnabled = false;
+            this.enableControl();
+        } else {
+            this._controlEnabled = true;
+            this.disableControl();
+        }
+    }
 }
 
 /**
@@ -454,7 +500,7 @@ class ShapePointController extends fabric.Circle {
     /** A fabric line that leads to the outgoing point to visual the relationship */
     outgoingLine: fabric.Line | null;
 
-    canvas: OpenMarchCanvas;
+    canvas?: OpenMarchCanvas;
     left: number;
     top: number;
 
@@ -520,8 +566,10 @@ class ShapePointController extends fabric.Circle {
     }
 
     destroy() {
-        this.canvas.remove(this);
-        if (this.outgoingLine) this.canvas.remove(this.outgoingLine);
+        if (this.canvas) {
+            if (this.outgoingLine) this.canvas.remove(this.outgoingLine);
+            this.canvas.remove(this);
+        }
     }
 
     /**
@@ -750,20 +798,119 @@ export class ShapePath extends fabric.Path {
     }
 }
 
+export enum SvgCommandEnum {
+    MOVE = "M",
+    LINE = "L",
+    QUADRATIC = "Q",
+    CUBIC = "C",
+    CLOSE = "Z",
+}
+
+type Coordinate = {
+    x: number;
+    y: number;
+};
+
+interface SgvCommand {
+    readonly readableDescription: string;
+    readonly command: SvgCommandEnum;
+    readonly numberOfCoordinates: number;
+}
+
+export const SvgCommands: {
+    [key in SvgCommandEnum]: SgvCommand;
+} = {
+    [SvgCommandEnum.MOVE]: {
+        readableDescription: "Move",
+        command: SvgCommandEnum.MOVE,
+        numberOfCoordinates: 1,
+    },
+    [SvgCommandEnum.LINE]: {
+        readableDescription: "Line",
+        command: SvgCommandEnum.LINE,
+        numberOfCoordinates: 1,
+    },
+    [SvgCommandEnum.QUADRATIC]: {
+        readableDescription: "Quadratic Curve",
+        command: SvgCommandEnum.QUADRATIC,
+        numberOfCoordinates: 2,
+    },
+    [SvgCommandEnum.CUBIC]: {
+        readableDescription: "Cubic Curve",
+        command: SvgCommandEnum.CUBIC,
+        numberOfCoordinates: 6,
+    },
+    [SvgCommandEnum.CLOSE]: {
+        readableDescription: "Close",
+        command: SvgCommandEnum.CLOSE,
+        numberOfCoordinates: 0,
+    },
+};
 /**
  * Represents a single point in a shape path, with a command and coordinates.
  * The `ShapePoint` class provides methods to work with and manipulate these points.
  */
 export class ShapePoint {
-    command: string;
-    coordinates: { x: number; y: number }[];
+    command: SvgCommandEnum;
+    coordinates: Coordinate[];
 
-    private constructor(
-        command: string,
-        coordinates: { x: number; y: number }[],
-    ) {
+    private constructor(command: SvgCommandEnum, coordinates: Coordinate[]) {
         this.command = command;
         this.coordinates = coordinates;
+    }
+
+    static checkCommand(command: string): SvgCommandEnum {
+        if (
+            !Object.values(SvgCommandEnum).includes(command as SvgCommandEnum)
+        ) {
+            throw new Error(`Invalid command: ${command}`);
+        }
+        return command as SvgCommandEnum;
+    }
+
+    static checkCoordinatesWithCommand(
+        command: SvgCommandEnum,
+        coordinates: Coordinate[],
+    ) {
+        switch (command) {
+            case SvgCommandEnum.MOVE:
+            case SvgCommandEnum.LINE: {
+                const expected = 1;
+                if (coordinates.length !== expected) {
+                    throw new Error(
+                        `Invalid number of coordinates for ${command} command. Expected ${expected}, got ${coordinates.length}`,
+                    );
+                }
+                break;
+            }
+            case SvgCommandEnum.QUADRATIC: {
+                const expected = 2;
+                if (coordinates.length !== expected) {
+                    throw new Error(
+                        `Invalid number of coordinates for ${command} command. Expected ${expected}, got ${coordinates.length}`,
+                    );
+                }
+                break;
+            }
+            case SvgCommandEnum.CUBIC: {
+                const expected = 3;
+                if (coordinates.length !== expected) {
+                    throw new Error(
+                        `Invalid number of coordinates for ${command} command. Expected ${expected}, got ${coordinates.length}`,
+                    );
+                }
+                break;
+            }
+            case SvgCommandEnum.CLOSE: {
+                const expected = 0;
+                if (coordinates.length !== 0) {
+                    throw new Error(
+                        `Invalid number of coordinates for ${command} command. Expected ${expected}, got ${coordinates.length}`,
+                    );
+                }
+                break;
+            }
+        }
     }
 
     /**
@@ -796,7 +943,7 @@ export class ShapePoint {
         for (const point of array) {
             const command = point[0] as string;
             const coordinates = point.slice(1) as number[];
-            const coordPairs: { x: number; y: number }[] = [];
+            const coordPairs: Coordinate[] = [];
             for (let i = 0; i < coordinates.length; i += 2) {
                 if (i + 1 >= coordinates.length) {
                     console.warn(
@@ -807,7 +954,7 @@ export class ShapePoint {
                 coordPairs.push({ x: coordinates[i], y: coordinates[i + 1] });
             }
 
-            points.push(new ShapePoint(command, coordPairs));
+            points.push(new ShapePoint(this.checkCommand(command), coordPairs));
         }
         return points;
     }
@@ -818,7 +965,7 @@ export class ShapePoint {
      * @param offset - An object containing the x and y offsets to apply.
      * @returns The modified ShapePoint object (which is the same object).
      */
-    applyOffset(offset: { x: number; y: number }) {
+    applyOffset(offset: Coordinate) {
         for (const point of this.coordinates) {
             point.x += offset.x;
             point.y += offset.y;
@@ -864,14 +1011,22 @@ export class ShapePoint {
     }
 
     /******************** GENERATORS *********************/
+    static createShapePoint(
+        command: SvgCommandEnum,
+        coordinates: Coordinate[],
+    ): ShapePoint {
+        this.checkCoordinatesWithCommand(command, coordinates);
+        return new ShapePoint(command, coordinates);
+    }
+
     /**
      * Creates a Move command ShapePoint
      * @param x X coordinate to move to
      * @param y Y coordinate to move to
      * @returns New ShapePoint with "M" command
      */
-    static Move(x: number, y: number): ShapePoint {
-        return new ShapePoint("M", [{ x, y }]);
+    static Move(coordinate: Coordinate): ShapePoint {
+        return new ShapePoint(SvgCommandEnum.MOVE, [coordinate]);
     }
 
     /**
@@ -882,10 +1037,13 @@ export class ShapePoint {
      * @param y End point Y coordinate
      * @returns New ShapePoint with "Q" command
      */
-    static Quadratic(cx: number, cy: number, x: number, y: number): ShapePoint {
-        return new ShapePoint("Q", [
-            { x: cx, y: cy },
-            { x, y },
+    static Quadratic(
+        controlPoint: Coordinate,
+        endPoint: Coordinate,
+    ): ShapePoint {
+        return new ShapePoint(SvgCommandEnum.QUADRATIC, [
+            { x: controlPoint.x, y: controlPoint.y },
+            { x: endPoint.x, y: endPoint.y },
         ]);
     }
 
@@ -900,17 +1058,14 @@ export class ShapePoint {
      * @returns A new ShapePoint with the "C" command.
      */
     static Cubic(
-        cx1: number,
-        cy1: number,
-        cx2: number,
-        cy2: number,
-        x: number,
-        y: number,
+        controlPoint1: Coordinate,
+        controlPoint2: Coordinate,
+        endPoint: Coordinate,
     ): ShapePoint {
-        return new ShapePoint("C", [
-            { x: cx1, y: cy1 },
-            { x: cx2, y: cy2 },
-            { x, y },
+        return new ShapePoint(SvgCommandEnum.CUBIC, [
+            { x: controlPoint1.x, y: controlPoint1.y },
+            { x: controlPoint2.x, y: controlPoint2.y },
+            { x: endPoint.x, y: endPoint.y },
         ]);
     }
 
@@ -920,8 +1075,8 @@ export class ShapePoint {
      * @param y The Y coordinate of the end point.
      * @returns A new ShapePoint with the "L" command.
      */
-    static Line(x: number, y: number): ShapePoint {
-        return new ShapePoint("L", [{ x, y }]);
+    static Line(endPoint: Coordinate): ShapePoint {
+        return new ShapePoint(SvgCommandEnum.LINE, [endPoint]);
     }
 
     /**
@@ -929,7 +1084,7 @@ export class ShapePoint {
      * @returns A new ShapePoint with the "Z" command.
      */
     static Close(): ShapePoint {
-        return new ShapePoint("Z", []);
+        return new ShapePoint(SvgCommandEnum.CLOSE, []);
     }
 
     // /**

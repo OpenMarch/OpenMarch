@@ -239,7 +239,7 @@ export function createShapePages({
         };
     } catch (error: any) {
         console.error(
-            "Error updating ShapePages. Rolling back changes.",
+            "Error creating ShapePages. Rolling back changes.",
             error,
         );
         if (actionWasPerformed) {

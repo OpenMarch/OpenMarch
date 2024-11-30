@@ -1,14 +1,12 @@
+import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { create } from "zustand";
 
 interface ShapePageStoreInterface {
-    /**
-     * The map of marcher shapes. The key is the shape's ID.
-     */
     shapePages: ShapePage[];
     fetchShapePages: () => Promise<void>;
-    selectedShapePages: ShapePage[];
-    setSelectedShapePages: (shapePages: ShapePage[]) => void;
+    selectedMarcherShapes: MarcherShape[];
+    setSelectedMarcherShapes: (marcherShapes: MarcherShape[]) => void;
 }
 
 export const useShapePageStore = create<ShapePageStoreInterface>(
@@ -25,38 +23,13 @@ export const useShapePageStore = create<ShapePageStoreInterface>(
             }
             set({ shapePages: newShapePages });
 
-            // Update the selected shape page so that its values are current
-            const selectedShapePages: ShapePage[] = get().selectedShapePages;
-            const newSelectedShapePages: ShapePage[] = [];
-            if (selectedShapePages.length > 0) {
-                const updatedShapePageMap = new Map(
-                    newShapePages.map((sp) => [sp.id, sp]),
-                );
-                for (const selectedShapePage of selectedShapePages) {
-                    const newShapePage = updatedShapePageMap.get(
-                        selectedShapePage.id,
-                    );
-                    if (newShapePage) newSelectedShapePages.push(newShapePage);
-                }
-                set({ selectedShapePages: newSelectedShapePages });
-            }
+            // Refresh the selected marcher shapes
+            const selectedMarcherShapes = get().selectedMarcherShapes;
+            set({ selectedMarcherShapes: selectedMarcherShapes });
         },
-
-        selectedShapePages: [],
-        setSelectedShapePages: (shapePages) => {
-            if (shapePages.length > 0) {
-                const shapePageIds = new Set(
-                    get().shapePages.map((shapePage) => shapePage.id),
-                );
-                for (const shapePage of shapePages) {
-                    if (!shapePageIds.has(shapePage.id)) {
-                        console.error(
-                            `ShapePage with id ${shapePage.id} not found in shapePages`,
-                        );
-                    }
-                }
-            }
-            set({ selectedShapePages: shapePages });
+        selectedMarcherShapes: [],
+        setSelectedMarcherShapes: (marcherShapes) => {
+            set({ selectedMarcherShapes: marcherShapes });
         },
     }),
 );

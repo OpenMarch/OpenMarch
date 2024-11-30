@@ -4,6 +4,7 @@ import {
     ShapePath,
     ShapePoint,
     StaticMarcherShape,
+    SvgCommandEnum,
     VanillaPoint,
 } from "./StaticMarcherShape";
 
@@ -59,6 +60,10 @@ export class MarcherShape extends StaticMarcherShape {
      * and maps them to the corresponding CanvasMarcher instances on the canvas.
      */
     async refreshMarchers() {
+        if (!this.canvas) {
+            console.error("refreshMarchers: Canvas is not defined.");
+            return;
+        }
         const spmsResponse = await window.electron.getShapePageMarchers(
             this.shapePage.id,
         );
@@ -99,6 +104,73 @@ export class MarcherShape extends StaticMarcherShape {
             this.hasBeenSavedToDatabase = true;
         }
         return newPath;
+    }
+
+    updateSegment({
+        index,
+        newSvg,
+    }: {
+        index: number;
+        newSvg: SvgCommandEnum;
+    }) {
+        if (index >= this.shapePath.points.length)
+            throw new Error(
+                `Index ${index} is out of bounds for path with length ${this.shapePath.points.length}`,
+            );
+        if (index === 0)
+            throw new Error(`Cannot edit the first point of a path.`);
+
+        const segment = this.shapePath.points[index];
+        const lastCoord = segment.coordinates[segment.coordinates.length - 1];
+        const prevSegment = this.shapePath.points[index - 1];
+        const prevLastCoord =
+            prevSegment.coordinates[prevSegment.coordinates.length - 1];
+        const xDiff = lastCoord.x - prevLastCoord.x;
+        const yDiff = lastCoord.y - prevLastCoord.y;
+
+        let newSegment: ShapePoint;
+
+        switch (newSvg) {
+            case SvgCommandEnum.MOVE: {
+                newSegment = ShapePoint.Move(lastCoord);
+                break;
+            }
+            case SvgCommandEnum.LINE: {
+                newSegment = ShapePoint.Line(lastCoord);
+                break;
+            }
+            case SvgCommandEnum.QUADRATIC: {
+                const midPoint = {
+                    x: xDiff / 2 + prevLastCoord.x,
+                    y: yDiff / 2 + prevLastCoord.y,
+                };
+                newSegment = ShapePoint.Quadratic(midPoint, lastCoord);
+                break;
+            }
+            case SvgCommandEnum.CUBIC: {
+                const point1 = {
+                    x: xDiff / 3 + prevLastCoord.x,
+                    y: yDiff / 3 + prevLastCoord.y,
+                };
+                const point2 = {
+                    x: (xDiff / 3) * 2 + prevLastCoord.x,
+                    y: (yDiff / 3) * 2 + prevLastCoord.y,
+                };
+                newSegment = ShapePoint.Cubic(point1, point2, lastCoord);
+                break;
+            }
+            case SvgCommandEnum.CLOSE: {
+                newSegment = ShapePoint.Close();
+                break;
+            }
+            default:
+                throw new Error(`Invalid SVG command: ${newSvg}`);
+        }
+
+        const newPoints = [...this.shapePath.points];
+        newPoints[index] = newSegment;
+        this.setShapePathPoints(newPoints);
+        MarcherShape.updateMarcherShape(this);
     }
     /****************** DATABASE FUNCTIONS *******************/
     /**
@@ -182,21 +254,27 @@ export class MarcherShape extends StaticMarcherShape {
      * @returns - A Promise that resolves when the update is complete, or rejects with an error message.
      */
     static async updateMarcherShape(marcherShape: MarcherShape) {
-        const itemIds: { id: number }[] = marcherShape.canvasMarchers.map(
-            (cm) => {
-                return { id: cm.marcherObj.id };
-            },
-        );
-        const marcherCoordinates = MarcherShape.distributeAlongPath({
-            svgPath: marcherShape.shapePath,
-            itemIds,
-        }).map((marcherCoordinate) => {
-            return {
-                marcher_id: marcherCoordinate.id,
-                x: marcherCoordinate.x,
-                y: marcherCoordinate.y,
-            };
-        });
+        let marcherCoordinates: { marcher_id: number; x: number; y: number }[] =
+            [];
+        const canvasMarchers = marcherShape.canvasMarchers;
+
+        if (!canvasMarchers || canvasMarchers.length > 0) {
+            const itemIds: { id: number }[] = marcherShape.canvasMarchers.map(
+                (cm) => {
+                    return { id: cm.marcherObj.id };
+                },
+            );
+            marcherCoordinates = MarcherShape.distributeAlongPath({
+                svgPath: marcherShape.shapePath,
+                itemIds,
+            }).map((marcherCoordinate) => {
+                return {
+                    marcher_id: marcherCoordinate.id,
+                    x: marcherCoordinate.x,
+                    y: marcherCoordinate.y,
+                };
+            });
+        }
 
         const updateResponse = await window.electron.updateShapePages([
             {
