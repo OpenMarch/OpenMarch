@@ -14,6 +14,7 @@ import {
     SvgCommandEnum,
     SvgCommands,
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
+import { FaPlus, FaTrash } from "react-icons/fa";
 
 export default function ShapeEditor() {
     const { selectedMarcherShapes, setSelectedMarcherShapes } =
@@ -63,18 +64,19 @@ export default function ShapeEditor() {
                         </p>
                     )}
                 </div>
-                <Form.Field
-                    name="section"
-                    className="flex items-center justify-between"
-                >
-                    <Form.Label className="text-body text-text/80">
-                        Segments
-                    </Form.Label>
+                {marcherShape.shapePath.points.map(
+                    (point, index) =>
+                        index > 0 && ( // do not render the first shape (move)
+                            <Form.Field
+                                key={index}
+                                name="section"
+                                className="flex items-center justify-between"
+                            >
+                                <Form.Label className="text-body text-text/80">
+                                    Segment {index}
+                                </Form.Label>
 
-                    {marcherShape.shapePath.points.map(
-                        (point, index) =>
-                            index > 0 && ( // do not render the first shape (move)
-                                <Form.Control asChild key={index}>
+                                <Form.Control asChild>
                                     <Select
                                         required
                                         value={
@@ -110,15 +112,33 @@ export default function ShapeEditor() {
                                         </SelectContent>
                                     </Select>
                                 </Form.Control>
-                            ),
-                    )}
-                    <Form.Message
-                        match={"valueMissing"}
-                        className="text-sub leading-none text-red"
-                    >
-                        Please enter a value.
-                    </Form.Message>
-                </Form.Field>
+                                <Form.Message
+                                    match={"valueMissing"}
+                                    className="text-sub leading-none text-red"
+                                >
+                                    Please enter a value.
+                                </Form.Message>
+                            </Form.Field>
+                        ),
+                )}
+                <Button
+                    onClick={() => {
+                        marcherShape.addSegment();
+                    }}
+                    type="button"
+                >
+                    <FaPlus />
+                </Button>
+                <Button
+                    onClick={() => {
+                        marcherShape.deleteSegment(
+                            marcherShape.shapePath.points.length - 1,
+                        );
+                    }}
+                    type="button"
+                >
+                    <FaTrash />
+                </Button>
                 {/* <Form.Field
                     name="Drill Prefix"
                     className="flex items-center justify-between"

@@ -106,6 +106,62 @@ export class MarcherShape extends StaticMarcherShape {
         return newPath;
     }
 
+    /**
+     * Adds a new segment to the shape path, determining the direction of the new segment based on the existing path.
+     */
+    addSegment() {
+        // Figure out if its pointing left or right
+        let secondToLastCoord: { x: number; y: number };
+        const lastPoint =
+            this.shapePath.points[this.shapePath.points.length - 1];
+        const lastCoord =
+            lastPoint.coordinates[lastPoint.coordinates.length - 1];
+        if (lastPoint.coordinates.length > 1) {
+            secondToLastCoord =
+                lastPoint.coordinates[lastPoint.coordinates.length - 2];
+        } else if (this.shapePath.points.length >= 2) {
+            const secondToLastPoint =
+                this.shapePath.points[this.shapePath.points.length - 2];
+            secondToLastCoord =
+                secondToLastPoint.coordinates[
+                    secondToLastPoint.coordinates.length - 1
+                ];
+        } else {
+            secondToLastCoord = { x: 0, y: 0 };
+        }
+        const isPointingRight = secondToLastCoord.x <= lastCoord.x;
+
+        const newCoordinateOffset = isPointingRight
+            ? { x: 250, y: 0 }
+            : { x: -250, y: 0 };
+        const newPoint = ShapePoint.Line({
+            x: lastCoord.x + newCoordinateOffset.x,
+            y: lastCoord.y + newCoordinateOffset.y,
+        });
+
+        this.setShapePathPoints([...this.shapePath.points, newPoint]);
+        MarcherShape.updateMarcherShape(this);
+    }
+
+    /**
+     * Deletes a segment from the shape path at the specified index.
+     *
+     * @param index - The index of the segment to delete.
+     */
+    deleteSegment(index: number) {
+        this.setShapePathPoints(
+            this.shapePath.points.filter((_, i) => i !== index),
+        );
+        MarcherShape.updateMarcherShape(this);
+    }
+
+    /**
+     * Updates a segment of the shape path with a new SVG command.
+     *
+     * @param index - The index of the segment to update.
+     * @param newSvg - The new SVG command to apply to the segment.
+     * @throws {Error} If the index is out of bounds or if the first point of the path is being edited.
+     */
     updateSegment({
         index,
         newSvg,
