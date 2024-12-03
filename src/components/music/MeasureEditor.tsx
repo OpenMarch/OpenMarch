@@ -3,6 +3,8 @@ import Measure from "@/global/classes/Measure";
 import TimeSignature from "@/global/classes/TimeSignature";
 import { useMeasureStore } from "@/stores/MeasureStore";
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { Info } from "@phosphor-icons/react";
 import {
     Select,
     SelectItem,
@@ -22,6 +24,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "../ui/AlertDialog";
+import { TooltipContents } from "../ui/Tooltip";
 
 export default function MeasureEditor() {
     const [selectedMeasure, setSelectedMeasure] = useState<Measure>();
@@ -121,6 +124,19 @@ export default function MeasureEditor() {
                 <div className="flex items-center justify-between">
                     <h5 className="text-h5 leading-none">Measures</h5>
                     <div className="flex gap-8">
+                        <Tooltip.Root>
+                            <Tooltip.Trigger>
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div className="flex gap-8">
+                                    If you're having trouble getting the tempo
+                                    to line up, try importing a musicXML with
+                                    just one part and no notes. Avoid
+                                    accelerandos and ritardandos
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
                         <Button size="compact" variant="secondary">
                             <RegisteredActionButton
                                 registeredAction={

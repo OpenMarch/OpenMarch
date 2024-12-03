@@ -48,15 +48,16 @@ export default function ShapeEditor() {
                 id={`${marcherShape.shapePage.id}-shapeForm`}
                 className="flex flex-col gap-2"
             >
-                <div className="max-h-64 overflow-y-auto">
-                    {marcherShape.canvasMarchers.length > 0 && (
-                        <p className="">
+                {marcherShape.canvasMarchers.length > 0 && (
+                    <div className="">
+                        {marcherShape.canvasMarchers.length} Marchers:{" "}
+                        <p className="max-h-64 overflow-y-auto text-sub">
                             {marcherShape.canvasMarchers
                                 .map((cm) => cm.marcherObj.drill_number)
                                 .join(", ")}
                         </p>
-                    )}
-                </div>
+                    </div>
+                )}
                 {marcherShape.shapePath.points.map(
                     (point, index) =>
                         index > 0 && ( // do not render the first shape (move)
