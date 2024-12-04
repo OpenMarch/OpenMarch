@@ -71,6 +71,7 @@ describe("ShapePageTable CRUD Operations", () => {
                 page_id: 0,
                 svg_path: "M 0 0 L 100 100",
                 notes: "Test shape page",
+                marcher_coordinates: [],
             },
         ];
 
@@ -83,8 +84,18 @@ describe("ShapePageTable CRUD Operations", () => {
 
     it("should retrieve all shape pages", () => {
         const newShapePages = [
-            { shape_id: 1, page_id: 0, svg_path: "M 0 0 L 100 100" },
-            { shape_id: 2, page_id: 0, svg_path: "M 50 50 L 150 150" },
+            {
+                shape_id: 1,
+                page_id: 0,
+                svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
+            },
+            {
+                shape_id: 2,
+                page_id: 0,
+                svg_path: "M 50 50 L 150 150",
+                marcher_coordinates: [],
+            },
         ];
         createShapePages({ db, args: newShapePages });
 
@@ -97,7 +108,12 @@ describe("ShapePageTable CRUD Operations", () => {
 
     it("should update existing shape pages", () => {
         const newShapePage = [
-            { shape_id: 1, page_id: 0, svg_path: "M 0 0 L 100 100" },
+            {
+                shape_id: 1,
+                page_id: 0,
+                svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
+            },
         ];
         const created = createShapePages({ db, args: newShapePage });
         expect(created.success).toBeTruthy();
@@ -119,7 +135,12 @@ describe("ShapePageTable CRUD Operations", () => {
 
     it("should delete shape pages", () => {
         const newShapePage = [
-            { shape_id: 1, page_id: 0, svg_path: "M 0 0 L 100 100" },
+            {
+                shape_id: 1,
+                page_id: 0,
+                svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
+            },
         ];
         const created = createShapePages({ db, args: newShapePage });
 
@@ -141,6 +162,7 @@ describe("ShapePageTable CRUD Operations", () => {
                 shape_id: 1,
                 page_id: 0,
                 svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
             },
         ];
         createShapePages({ db, args: newShapePage });
@@ -151,10 +173,30 @@ describe("ShapePageTable CRUD Operations", () => {
 
     it("should delete shape pages when the shape is deleted", () => {
         const newShapePages = [
-            { shape_id: 1, page_id: 0, svg_path: "M 0 0 L 100 100" },
-            { shape_id: 1, page_id: 1, svg_path: "M 0 0 L 100 100" },
-            { shape_id: 2, page_id: 0, svg_path: "M 50 50 L 150 150" },
-            { shape_id: 2, page_id: 1, svg_path: "M 50 50 L 150 150" },
+            {
+                shape_id: 1,
+                page_id: 0,
+                svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
+            },
+            {
+                shape_id: 1,
+                page_id: 1,
+                svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
+            },
+            {
+                shape_id: 2,
+                page_id: 0,
+                svg_path: "M 50 50 L 150 150",
+                marcher_coordinates: [],
+            },
+            {
+                shape_id: 2,
+                page_id: 1,
+                svg_path: "M 50 50 L 150 150",
+                marcher_coordinates: [],
+            },
         ];
         expect(createShapePages({ db, args: newShapePages }).success).toBe(
             true,
@@ -167,10 +209,30 @@ describe("ShapePageTable CRUD Operations", () => {
 
     it("should delete shape pages when the page is deleted", () => {
         const newShapePages = [
-            { shape_id: 1, page_id: 0, svg_path: "M 0 0 L 100 100" },
-            { shape_id: 1, page_id: 1, svg_path: "M 0 0 L 100 100" },
-            { shape_id: 2, page_id: 0, svg_path: "M 50 50 L 150 150" },
-            { shape_id: 2, page_id: 1, svg_path: "M 50 50 L 150 150" },
+            {
+                shape_id: 1,
+                page_id: 0,
+                svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
+            },
+            {
+                shape_id: 1,
+                page_id: 1,
+                svg_path: "M 0 0 L 100 100",
+                marcher_coordinates: [],
+            },
+            {
+                shape_id: 2,
+                page_id: 0,
+                svg_path: "M 50 50 L 150 150",
+                marcher_coordinates: [],
+            },
+            {
+                shape_id: 2,
+                page_id: 1,
+                svg_path: "M 50 50 L 150 150",
+                marcher_coordinates: [],
+            },
         ];
         expect(createShapePages({ db, args: newShapePages }).success).toBe(
             true,
