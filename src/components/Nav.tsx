@@ -56,7 +56,7 @@ export default function Nav() {
                             Discord
                         </Button>
                     </a>
-                    <a href="https://www.patreon.com/openmarch/membership">
+                    <a href="https://www.patreon.com/openmarch">
                         <Button
                             variant="secondary"
                             size="compact"
@@ -110,7 +110,7 @@ export default function Nav() {
                     Discord
                 </a>
                 <a
-                    href="https://www.patreon.com/openmarch/membership"
+                    href="https://www.patreon.com/openmarch"
                     className="flex items-center gap-8 text-h4 text-text"
                 >
                     Donate
