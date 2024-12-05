@@ -30,10 +30,11 @@ export default function Nav() {
                     >
                         Blog
                     </a>
-                    <a href="/download">
-                        <Button variant="primary" size="compact">
-                            Download
-                        </Button>
+                    <a
+                        href="/about"
+                        className="text-body text-text duration-150 ease-out hover:text-accent"
+                    >
+                        About
                     </a>
                     <a href="https://github.com/OpenMarch/OpenMarch">
                         <Button
@@ -53,6 +54,20 @@ export default function Nav() {
                         >
                             <LogoDiscord />
                             Discord
+                        </Button>
+                    </a>
+                    <a href="https://www.patreon.com/openmarch/membership">
+                        <Button
+                            variant="secondary"
+                            size="compact"
+                            className="items-center gap-6"
+                        >
+                            Donate
+                        </Button>
+                    </a>
+                    <a href="/download">
+                        <Button variant="primary" size="compact">
+                            Download
                         </Button>
                     </a>
                 </div>
@@ -80,9 +95,6 @@ export default function Nav() {
                 <a href="/blog" className="text-h4 text-text">
                     Blog
                 </a>
-                <a href="/download" className="text-h4 text-text">
-                    Download
-                </a>
                 <a
                     href="https://github.com/OpenMarch/OpenMarch"
                     className="flex items-center gap-8 text-h4 text-text"
@@ -96,6 +108,15 @@ export default function Nav() {
                 >
                     <LogoDiscord />
                     Discord
+                </a>
+                <a
+                    href="https://www.patreon.com/openmarch/membership"
+                    className="flex items-center gap-8 text-h4 text-text"
+                >
+                    Donate
+                </a>
+                <a href="/download" className="text-h4 text-text">
+                    Download
                 </a>
             </div>
         </nav>

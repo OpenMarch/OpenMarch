@@ -26,6 +26,8 @@ export default defineConfig({
             social: {
                 discord: "https://discord.gg/eTsQ98uZzq",
                 github: "https://github.com/OpenMarch/OpenMarch",
+                patreon: "https://www.patreon.com/c/openmarch/membership",
+                youtube: "https://www.youtube.com/@OpenMarchApp",
             },
             editLink: {
                 baseUrl: "https://github.com/OpenMarch/website/tree/main/",
