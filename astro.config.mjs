@@ -15,7 +15,7 @@ import starlight from "@astrojs/starlight";
 export default defineConfig({
     integrations: [
         react(),
-        tailwind(),
+        tailwind({applyBaseStyles: false}),
         starlight({
             title: "OpenMarch",
             logo: {
