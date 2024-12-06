@@ -178,6 +178,26 @@ type Blog = CollectionEntry<"blog">;
             </div>
         </section>
         <section
+            id="donate"
+            class="flex justify-between gap-24 rounded-6 border border-accent px-96 py-48 max-[1000px]:p-32 max-[700px]:flex-col"
+        >
+            <div class="flex-col gap-16">
+                <h1 class="text-h1">Donate</h1>
+                <p class="text-left text-body leading-[150%]">
+                    Subscribe on Patreon to help us keep this app free &
+                    accessible, and support the team. Your help is appreciated!
+                </p>
+            </div>
+            <div
+                class="flex flex-wrap justify-end gap-24 max-[700px]:justify-start"
+            >
+                <LinkButton
+                    href="https://www.patreon.com/openmarch"
+                    label="Patreon"
+                />
+            </div>
+        </section>
+        <section
             id="contribute"
             class="flex justify-between gap-24 rounded-6 border border-accent px-96 py-48 max-[1000px]:p-32 max-[700px]:flex-col"
         >
@@ -189,7 +209,7 @@ type Blog = CollectionEntry<"blog">;
                     We need help building this app. If you’re able to help,
                     please take a look at the contributing docs. <br />
                     <strong>If you’re a drill writer</strong>, please test out
-                    the app, and give feedback!
+                    the app, and give feedback in Discord or GitHub!
                 </p>
             </div>
             <div
@@ -198,6 +218,10 @@ type Blog = CollectionEntry<"blog">;
                 <LinkButton
                     href="https://github.com/OpenMarch"
                     label="GitHub"
+                />
+                <LinkButton
+                    href="https://discord.gg/eTsQ98uZzq"
+                    label="Discord"
                 />
             </div>
         </section>
