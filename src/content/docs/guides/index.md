@@ -8,7 +8,7 @@ Documentation is coming for the more complicated features.
 
 ## Field & Display
 
-- Support for multiple [field types]():
+- Support for multiple field types:
   - High School Football
   - College Football
   - Professional Football
