@@ -565,7 +565,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const fieldArray: fabric.Object[] = [];
         const fieldWidth = this.fieldProperties.width;
         const fieldHeight = this.fieldProperties.height;
-        const pixelsPerStep = FieldProperties.PIXELS_PER_STEP;
+        const pixelsPerStep = this.fieldProperties.pixelsPerStep;
         const centerFrontPoint = this.fieldProperties.centerFrontPoint;
 
         // white background
@@ -589,7 +589,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             };
             // X
             for (
-                let i = centerFrontPoint.xPixels + pixelsPerStep;
+                let i = centerFrontPoint.xPixels;
                 i < fieldWidth;
                 i += pixelsPerStep
             )

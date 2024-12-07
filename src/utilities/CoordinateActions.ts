@@ -18,12 +18,12 @@ import MarcherPage, {
  */
 export function checkMarcherPagesAreSamePage(
     marcherPages: MarcherPage[],
-    printError = true
+    printError = true,
 ): boolean {
     if (marcherPages.length === 0) return false;
     const page_id = marcherPages[0].page_id;
     const areSamePage = marcherPages.every(
-        (marcherPage) => marcherPage.page_id === page_id
+        (marcherPage) => marcherPage.page_id === page_id,
     );
     if (!areSamePage && printError) {
         console.error("MarcherPages are not all on the same page.");
@@ -58,7 +58,7 @@ export function getRoundCoordinates({
     yAxis: boolean;
 }): ModifiedMarcherPageArgs[] {
     const changes: ModifiedMarcherPageArgs[] = [];
-    const stepsPerPixel = 1 / FieldProperties.getPixelsPerStep();
+    const stepsPerPixel = 1 / fieldProperties.pixelsPerStep;
     const absoluteDenom = 10e2; // round to 3 decimal places to prevent floating point errors
     for (const marcherPage of marcherPages) {
         let newX = marcherPage.x;
@@ -113,7 +113,7 @@ export function alignVertically({
 
     const sumY = marcherPages.reduce(
         (sum, marcherPage) => sum + marcherPage.y,
-        0
+        0,
     );
     const averageY = sumY / marcherPages.length;
 
@@ -121,7 +121,7 @@ export function alignVertically({
         ...marcherPages.map((marcherPage) => ({
             ...marcherPage,
             y: averageY,
-        }))
+        })),
     );
 
     return changes;
@@ -143,7 +143,7 @@ export function alignHorizontally({
 
     const sumX = marcherPages.reduce(
         (sum, marcherPage) => sum + marcherPage.x,
-        0
+        0,
     );
     const averageX = sumX / marcherPages.length;
 
@@ -151,7 +151,7 @@ export function alignHorizontally({
         ...marcherPages.map((marcherPage) => ({
             ...marcherPage,
             x: averageX,
-        }))
+        })),
     );
 
     return changes;
@@ -168,9 +168,11 @@ export function alignHorizontally({
 export function evenlyDistributeHorizontally({
     marcherPages,
     sortingThreshold = 0.1,
+    fieldProperties,
 }: {
     marcherPages: MarcherPage[];
     sortingThreshold?: number;
+    fieldProperties: FieldProperties;
 }): ModifiedMarcherPageArgs[] {
     // If there are less than 2 marcherPages, there is nothing to distribute.
     if (marcherPages.length <= 2) return [];
@@ -180,10 +182,10 @@ export function evenlyDistributeHorizontally({
 
     // Find the direction of the slope of the marchers
     const marcherWithSmallestX = marcherPages.reduce((min, marcherPage) =>
-        marcherPage.x < min.x ? marcherPage : min
+        marcherPage.x < min.x ? marcherPage : min,
     );
     const marcherWithLargestX = marcherPages.reduce((max, marcherPage) =>
-        marcherPage.x > max.x ? marcherPage : max
+        marcherPage.x > max.x ? marcherPage : max,
     );
     const slopeDirection =
         marcherWithSmallestX.y < marcherWithLargestX.y ? 1 : -1;
@@ -192,7 +194,7 @@ export function evenlyDistributeHorizontally({
         // If the X difference is less than the threshold, sort by Y coordinate. Otherwise, sort by X coordinate.
         if (
             Math.abs(a.x - b.x) <
-            FieldProperties.getPixelsPerStep() * sortingThreshold
+            fieldProperties.pixelsPerStep * sortingThreshold
         )
             // If the slope is positive, sort by Y coordinate in ascending order. Otherwise, sort by Y coordinate in descending order.
             return slopeDirection > 0 ? a.y - b.y : b.y - a.y;
@@ -209,7 +211,7 @@ export function evenlyDistributeHorizontally({
         ...sortedMarcherPages.map((marcherPage, index) => ({
             ...marcherPage,
             x: firstX + index * spaceBetween,
-        }))
+        })),
     );
 
     return changes;
@@ -226,9 +228,11 @@ export function evenlyDistributeHorizontally({
 export function evenlyDistributeVertically({
     marcherPages,
     sortingThreshold = 0.1,
+    fieldProperties,
 }: {
     marcherPages: MarcherPage[];
     sortingThreshold?: number;
+    fieldProperties: FieldProperties;
 }): ModifiedMarcherPageArgs[] {
     // If there are less than 2 marcherPages, there is nothing to distribute.
     if (marcherPages.length <= 2) return [];
@@ -238,10 +242,10 @@ export function evenlyDistributeVertically({
 
     // Find the direction of the slope of the marchers
     const marcherWithSmallestY = marcherPages.reduce((min, marcherPage) =>
-        marcherPage.y < min.y ? marcherPage : min
+        marcherPage.y < min.y ? marcherPage : min,
     );
     const marcherWithLargestY = marcherPages.reduce((max, marcherPage) =>
-        marcherPage.y > max.y ? marcherPage : max
+        marcherPage.y > max.y ? marcherPage : max,
     );
     const slopeDirection =
         marcherWithSmallestY.x < marcherWithLargestY.x ? 1 : -1;
@@ -250,7 +254,7 @@ export function evenlyDistributeVertically({
         // If the Y difference is less than the threshold, sort by X coordinate. Otherwise, sort by Y coordinate.
         if (
             Math.abs(a.y - b.y) <
-            FieldProperties.getPixelsPerStep() * sortingThreshold
+            fieldProperties.pixelsPerStep * sortingThreshold
         )
             // If the slope is positive, sort by X coordinate in ascending order. Otherwise, sort by X coordinate in descending order.
             return slopeDirection > 0 ? a.x - b.x : b.x - a.x;
@@ -268,7 +272,7 @@ export function evenlyDistributeVertically({
         ...sortedMarcherPages.map((marcherPage, index) => ({
             ...marcherPage,
             y: firstY + index * spaceBetween,
-        }))
+        })),
     );
 
     return changes;

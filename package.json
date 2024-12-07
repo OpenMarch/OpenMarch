@@ -1,7 +1,7 @@
 {
     "name": "openmarch",
     "productName": "OpenMarch",
-    "version": "0.0.5a",
+    "version": "0.0.5b",
     "main": "dist-electron/main/index.js",
     "description": "OpenMarch is a free and open-source drill-designing software.",
     "author": "OpenMarch LLC",

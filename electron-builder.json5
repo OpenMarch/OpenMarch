@@ -4,7 +4,7 @@
 {
     appId: "com.openmarch.app",
     productName: "OpenMarch",
-    buildVersion: "0.0.5a",
+    buildVersion: "0.0.5b",
     asar: true,
     directories: {
         output: "release/${buildVersion}",
