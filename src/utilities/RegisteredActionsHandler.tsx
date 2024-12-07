@@ -609,6 +609,7 @@ function RegisteredActionsHandler() {
                     const distributedCoords =
                         CoordinateActions.evenlyDistributeVertically({
                             marcherPages: getSelectedMarcherPages(),
+                            fieldProperties,
                         });
                     MarcherPage.updateMarcherPages(distributedCoords);
                     break;
@@ -617,6 +618,7 @@ function RegisteredActionsHandler() {
                     const distributedCoords =
                         CoordinateActions.evenlyDistributeHorizontally({
                             marcherPages: getSelectedMarcherPages(),
+                            fieldProperties,
                         });
                     MarcherPage.updateMarcherPages(distributedCoords);
                     break;

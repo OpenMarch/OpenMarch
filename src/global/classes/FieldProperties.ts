@@ -3,6 +3,12 @@ interface FieldPropertyArgs {
     xCheckpoints: Checkpoint[];
     yCheckpoints: Checkpoint[];
     yardNumberCoordinates?: YardNumberCoordinates;
+    pixelsPerStep: PixelsPerStep;
+}
+
+export enum PixelsPerStep {
+    EIGHT_TO_FIVE = 12,
+    SIX_TO_FIVE = 16,
 }
 
 /**
@@ -15,7 +21,6 @@ interface FieldPropertyArgs {
  */
 export default class FieldProperties {
     /*********** Constants ***********/
-    static readonly PIXELS_PER_STEP: number = 10;
     static readonly GRID_STROKE_WIDTH = 1;
 
     /*********** Attributes ***********/
@@ -36,6 +41,10 @@ export default class FieldProperties {
      * Note that Y trends positive towards the front of the field (bottom on the canvas).
      */
     readonly yCheckpoints: Checkpoint[];
+    /**
+     * The number of pixels per step.
+     */
+    readonly pixelsPerStep: PixelsPerStep;
 
     /** The name of the FieldProperties. E.g. "High School Football Field" or "Custom Gym Floor" */
     readonly name: string;
@@ -51,47 +60,41 @@ export default class FieldProperties {
         xCheckpoints,
         yCheckpoints,
         yardNumberCoordinates,
+        pixelsPerStep,
     }: FieldPropertyArgs) {
         this.name = name;
         this.xCheckpoints = xCheckpoints;
         this.yCheckpoints = yCheckpoints;
         this.yardNumberCoordinates = yardNumberCoordinates;
+        this.pixelsPerStep = pixelsPerStep;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>
                 cur.stepsFromCenterFront < min ? cur.stepsFromCenterFront : min,
-            0
+            0,
         );
         const maxX = this.xCheckpoints.reduce(
             (max, cur) =>
                 cur.stepsFromCenterFront > max ? cur.stepsFromCenterFront : max,
-            0
+            0,
         );
         const minY = this.yCheckpoints.reduce(
             (min, cur) =>
                 cur.stepsFromCenterFront < min ? cur.stepsFromCenterFront : min,
-            0
+            0,
         );
         const maxY = this.yCheckpoints.reduce(
             (max, cur) =>
                 cur.stepsFromCenterFront > max ? cur.stepsFromCenterFront : max,
-            0
+            0,
         );
-        this.width = (maxX - minX) * FieldProperties.PIXELS_PER_STEP;
-        this.height = (maxY - minY) * FieldProperties.PIXELS_PER_STEP;
+        this.width = (maxX - minX) * this.pixelsPerStep;
+        this.height = (maxY - minY) * this.pixelsPerStep;
 
         this.centerFrontPoint = {
             xPixels: this.width / 2,
             yPixels: this.height,
         };
-    }
-
-    static getPixelsPerStep(): number {
-        return FieldProperties.PIXELS_PER_STEP;
-    }
-
-    static getStepsPerPixel(): number {
-        return 1 / FieldProperties.PIXELS_PER_STEP;
     }
 }
 

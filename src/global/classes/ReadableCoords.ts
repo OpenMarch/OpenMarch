@@ -18,9 +18,9 @@ export enum Y_DESCRIPTION {
  * I.e. "5 steps outside the 40 yard line, 3 steps in front of the front hash."
  */
 export class ReadableCoords {
-    /** The properties of the field the marcher is on. This must be defined to create ReadableCoords
-     * This is not something that should be changed often. It should be set at the creation of a show and not changed.
-     *  */
+    /**
+     * The properties of the field the marcher is on. This must be defined to create ReadableCoords
+     */
     private static _fieldProperties: FieldProperties;
 
     /* ----------- Constants ----------- */
@@ -93,7 +93,7 @@ export class ReadableCoords {
      */
     static fromMarcherPage(
         marcherPage: MarcherPage,
-        roundingDenominator = 100
+        roundingDenominator = 100,
     ) {
         return new ReadableCoords({
             x: marcherPage.x,
@@ -104,7 +104,6 @@ export class ReadableCoords {
 
     /**
      * Sets the field properties for the ReadableCoords class. This is necessary to create ReadableCoords.
-     * This is not something that should be changed often. It should be set at the creation of a show and not changed.
      *
      * @param _fieldProperties The properties of the field the marcher is on. This must be defined to create ReadableCoords
      */
@@ -130,11 +129,11 @@ export class ReadableCoords {
     private parseCanvasCoords(x: number, y: number): ReadableCoords {
         if (!ReadableCoords._fieldProperties)
             throw new Error(
-                "Field properties must be defined to create ReadableCoords"
+                "Field properties must be defined to create ReadableCoords",
             );
         if (!this.roundingDenominator)
             throw new Error(
-                "roundingDenominator must be defined to create ReadableCoords"
+                "roundingDenominator must be defined to create ReadableCoords",
             );
         if (this.roundingDenominator <= 0)
             throw new Error("roundingDenominator must be greater than 0");
@@ -145,10 +144,10 @@ export class ReadableCoords {
         const stepsFromCenterFront = {
             x:
                 (x - props.centerFrontPoint.xPixels) /
-                FieldProperties.PIXELS_PER_STEP, // X trends positive towards side 2 (right on the canvas)
+                ReadableCoords._fieldProperties.pixelsPerStep, // X trends positive towards side 2 (right on the canvas)
             y:
                 (y - props.centerFrontPoint.yPixels) /
-                FieldProperties.PIXELS_PER_STEP, // Y trends positive towards the front of the field (bottom on the canvas)
+                ReadableCoords._fieldProperties.pixelsPerStep, // Y trends positive towards the front of the field (bottom on the canvas)
         };
         // Round to nearest 1/n step
         stepsFromCenterFront.x =
@@ -169,7 +168,7 @@ export class ReadableCoords {
         const xCheckpoints = props.xCheckpoints;
         output.xCheckpoint = ReadableCoords.findClosestCheckpoint(
             xStepsFromCenter,
-            xCheckpoints
+            xCheckpoints,
         );
 
         // Determine how many steps inside or outside the xCheckpoint (yard line) the marcher is
@@ -194,7 +193,7 @@ export class ReadableCoords {
         const yCheckpoints = props.yCheckpoints;
         output.yCheckpoint = ReadableCoords.findClosestCheckpoint(
             yStepsFromCenter,
-            yCheckpoints
+            yCheckpoints,
         );
 
         // Determine how many steps in front or behind of the yCheckpoint that the marcher is
@@ -215,7 +214,7 @@ export class ReadableCoords {
 
     private static findClosestCheckpoint(
         stepsFromCenterFront: number,
-        checkpoints: Checkpoint[]
+        checkpoints: Checkpoint[],
     ) {
         // Find the closest checkpoint
         const output = checkpoints.reduce((closest, current) => {
@@ -224,18 +223,18 @@ export class ReadableCoords {
                 current.useAsReference &&
                     // If the current checkpoint is closer to the marcher than the closest checkpoint
                     (Math.abs(
-                        current.stepsFromCenterFront - stepsFromCenterFront
+                        current.stepsFromCenterFront - stepsFromCenterFront,
                     ) <
                         Math.abs(
-                            closest.stepsFromCenterFront - stepsFromCenterFront
+                            closest.stepsFromCenterFront - stepsFromCenterFront,
                         ) ||
                         // Handle the case where the marcher is equidistant from two checkpoints (default to the one closer to the center/front)
                         (Math.abs(
-                            current.stepsFromCenterFront - stepsFromCenterFront
+                            current.stepsFromCenterFront - stepsFromCenterFront,
                         ) ===
                             Math.abs(
                                 closest.stepsFromCenterFront -
-                                    stepsFromCenterFront
+                                    stepsFromCenterFront,
                             ) &&
                             Math.abs(current.stepsFromCenterFront) <
                                 Math.abs(closest.stepsFromCenterFront)))
@@ -260,7 +259,7 @@ export class ReadableCoords {
     private static formatStepsString(
         steps: number,
         includeStepsString = false,
-        includeTrailingSpace = true
+        includeTrailingSpace = true,
     ) {
         if (steps === 0) return "";
         const roundedSteps = Math.round(steps * 100) / 100;

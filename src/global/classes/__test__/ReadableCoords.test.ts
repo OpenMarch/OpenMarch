@@ -1,4 +1,3 @@
-import FieldProperties from "../FieldProperties";
 import FieldPropertiesTemplates from "../FieldProperties.templates";
 import {
     ReadableCoords,
@@ -13,10 +12,10 @@ import { describe, expect, it, beforeAll } from "vitest";
  */
 function createReadableCoords(
     xStepsFromCenter: number,
-    yStepsFromCenter: number
+    yStepsFromCenter: number,
 ): ReadableCoords {
     // Mock field properties
-    const pixelsPerStep = FieldProperties.PIXELS_PER_STEP;
+    const pixelsPerStep = ReadableCoords.getFieldProperties().pixelsPerStep;
     const centerFrontPoint =
         ReadableCoords.getFieldProperties().centerFrontPoint;
     const x = centerFrontPoint.xPixels + xStepsFromCenter * pixelsPerStep;
@@ -29,7 +28,7 @@ describe("ReadableCoords", () => {
         describe("Macro tests", () => {
             beforeAll(() => {
                 ReadableCoords.setFieldProperties(
-                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
                 );
             });
             describe("On the 50 yard line, on the front sideline (center front)", () => {
@@ -39,32 +38,32 @@ describe("ReadableCoords", () => {
                 });
                 it("should parse canvas coordinates and create a ReadableCoords object", () => {
                     expect(readableCoords.xCheckpoint.name).toEqual(
-                        "50 yard line"
+                        "50 yard line",
                     );
                     expect(readableCoords.yCheckpoint.name).toEqual(
-                        "front sideline"
+                        "front sideline",
                     );
                     expect(readableCoords.xSteps).toBe(0);
                     expect(readableCoords.ySteps).toBe(0);
                     expect(readableCoords.xDescription).toEqual(
-                        X_DESCRIPTION.ON
+                        X_DESCRIPTION.ON,
                     );
                     expect(readableCoords.yDescription).toEqual(
-                        Y_DESCRIPTION.ON
+                        Y_DESCRIPTION.ON,
                     );
                     expect(readableCoords.roundingDenominator).toBe(100); // Default rounding denom
                 });
                 it("should format the ReadableCoords object toStrings", () => {
                     expect(readableCoords.toVerboseStringX()).toBe(
-                        "On 50 yard line"
+                        "On 50 yard line",
                     );
                     expect(readableCoords.toVerboseStringY()).toBe(
-                        "On front sideline"
+                        "On front sideline",
                     );
                     expect(readableCoords.toTerseStringX()).toBe("On 50");
                     expect(readableCoords.toTerseStringY()).toBe("On FSL");
                     expect(readableCoords.toString()).toBe(
-                        `${readableCoords.toVerboseStringX()} - ${readableCoords.toVerboseStringY()}`
+                        `${readableCoords.toVerboseStringX()} - ${readableCoords.toVerboseStringY()}`,
                     );
                 });
             });
@@ -76,33 +75,33 @@ describe("ReadableCoords", () => {
                 });
                 it("should parse canvas coordinates and create a ReadableCoords object", () => {
                     expect(readableCoords.xCheckpoint.name).toEqual(
-                        "35 yard line"
+                        "35 yard line",
                     );
                     expect(
-                        readableCoords.xCheckpoint.stepsFromCenterFront
+                        readableCoords.xCheckpoint.stepsFromCenterFront,
                     ).toBe(-24);
                     expect(readableCoords.yCheckpoint.name).toEqual(
-                        "front sideline"
+                        "front sideline",
                     );
                     expect(readableCoords.xSteps).toBe(1);
                     expect(readableCoords.ySteps).toBe(10);
                     expect(readableCoords.xDescription).toEqual(
-                        X_DESCRIPTION.INSIDE
+                        X_DESCRIPTION.INSIDE,
                     );
                     expect(readableCoords.yDescription).toEqual(
-                        Y_DESCRIPTION.BEHIND
+                        Y_DESCRIPTION.BEHIND,
                     );
                 });
                 it("should format the ReadableCoords object toStrings", () => {
                     expect(
                         readableCoords.toVerboseStringX({
                             includeStepsString: true,
-                        })
+                        }),
                     ).toBe("S1: 1 step inside 35 yard line");
                     expect(
                         readableCoords.toVerboseStringY({
                             includeStepsString: true,
-                        })
+                        }),
                     ).toBe("10 steps behind front sideline");
                     expect(readableCoords.toTerseStringX()).toBe("S1: 1 IN 35");
                     expect(readableCoords.toTerseStringY()).toBe("10 BE FSL");
@@ -116,32 +115,32 @@ describe("ReadableCoords", () => {
                 });
                 it("should parse canvas coordinates and create a ReadableCoords object", () => {
                     expect(readableCoords.xCheckpoint.name).toEqual(
-                        "10 yard line"
+                        "10 yard line",
                     );
                     expect(
-                        readableCoords.xCheckpoint.stepsFromCenterFront
+                        readableCoords.xCheckpoint.stepsFromCenterFront,
                     ).toBe(64);
                     expect(readableCoords.yCheckpoint.name).toEqual(
-                        "NCAA front hash"
+                        "NCAA front hash",
                     );
                     expect(readableCoords.xSteps).toBe(1.6);
                     expect(readableCoords.ySteps).toBe(2.77);
                     expect(readableCoords.xDescription).toEqual(
-                        X_DESCRIPTION.OUTSIDE
+                        X_DESCRIPTION.OUTSIDE,
                     );
                     expect(readableCoords.yDescription).toEqual(
-                        Y_DESCRIPTION.IN_FRONT_OF
+                        Y_DESCRIPTION.IN_FRONT_OF,
                     );
                 });
                 it("should format the ReadableCoords object toStrings", () => {
                     expect(readableCoords.toVerboseStringX()).toBe(
-                        "S2: 1.6 outside 10 yard line"
+                        "S2: 1.6 outside 10 yard line",
                     );
                     expect(readableCoords.toVerboseStringY()).toBe(
-                        "2.77 in front of NCAA front hash"
+                        "2.77 in front of NCAA front hash",
                     );
                     expect(readableCoords.toTerseStringX()).toBe(
-                        "S2: 1.6 OUT 10"
+                        "S2: 1.6 OUT 10",
                     );
                     expect(readableCoords.toTerseStringY()).toBe("2.77 FR FH");
                 });
@@ -154,35 +153,35 @@ describe("ReadableCoords", () => {
                 });
                 it("should parse canvas coordinates and create a ReadableCoords object", () => {
                     expect(readableCoords.xCheckpoint.name).toEqual(
-                        "0 yard line"
+                        "0 yard line",
                     );
                     expect(
-                        readableCoords.xCheckpoint.stepsFromCenterFront
+                        readableCoords.xCheckpoint.stepsFromCenterFront,
                     ).toBe(-80);
                     expect(readableCoords.yCheckpoint.name).toEqual(
-                        "grid NCAA back hash"
+                        "grid NCAA back hash",
                     );
                     expect(readableCoords.xSteps).toBe(0.08);
                     expect(readableCoords.ySteps).toBe(0.99);
                     expect(readableCoords.xDescription).toEqual(
-                        X_DESCRIPTION.INSIDE
+                        X_DESCRIPTION.INSIDE,
                     );
                     expect(readableCoords.yDescription).toEqual(
-                        Y_DESCRIPTION.BEHIND
+                        Y_DESCRIPTION.BEHIND,
                     );
                 });
                 it("should format the ReadableCoords object toStrings", () => {
                     expect(readableCoords.toVerboseStringX()).toBe(
-                        "S1: 0.08 inside 0 yard line"
+                        "S1: 0.08 inside 0 yard line",
                     );
                     expect(readableCoords.toVerboseStringY()).toBe(
-                        "0.99 behind grid NCAA back hash"
+                        "0.99 behind grid NCAA back hash",
                     );
                     expect(readableCoords.toTerseStringX()).toBe(
-                        "S1: 0.08 IN 0"
+                        "S1: 0.08 IN 0",
                     );
                     expect(readableCoords.toTerseStringY()).toBe(
-                        "0.99 BE grid:BH"
+                        "0.99 BE grid:BH",
                     );
                 });
             });
@@ -194,33 +193,33 @@ describe("ReadableCoords", () => {
                 });
                 it("should parse canvas coordinates and create a ReadableCoords object", () => {
                     expect(readableCoords.xCheckpoint.name).toEqual(
-                        "45 yard line"
+                        "45 yard line",
                     );
                     expect(
-                        readableCoords.xCheckpoint.stepsFromCenterFront
+                        readableCoords.xCheckpoint.stepsFromCenterFront,
                     ).toBe(8);
                     expect(readableCoords.yCheckpoint.name).toEqual(
-                        "grid back sideline"
+                        "grid back sideline",
                     );
                     expect(readableCoords.xSteps).toBe(0);
                     expect(readableCoords.ySteps).toBe(10);
                     expect(readableCoords.xDescription).toEqual(
-                        X_DESCRIPTION.ON
+                        X_DESCRIPTION.ON,
                     );
                     expect(readableCoords.yDescription).toEqual(
-                        Y_DESCRIPTION.IN_FRONT_OF
+                        Y_DESCRIPTION.IN_FRONT_OF,
                     );
                 });
                 it("should format the ReadableCoords object toStrings", () => {
                     expect(readableCoords.toVerboseStringX()).toBe(
-                        "S2: On 45 yard line"
+                        "S2: On 45 yard line",
                     );
                     expect(readableCoords.toVerboseStringY()).toBe(
-                        "10 in front of grid back sideline"
+                        "10 in front of grid back sideline",
                     );
                     expect(readableCoords.toTerseStringX()).toBe("S2: On 45");
                     expect(readableCoords.toTerseStringY()).toBe(
-                        "10 FR grid:BSL"
+                        "10 FR grid:BSL",
                     );
                 });
             });
@@ -229,13 +228,13 @@ describe("ReadableCoords", () => {
         describe("Micro tests and edge cases", () => {
             beforeAll(() => {
                 ReadableCoords.setFieldProperties(
-                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
                 );
             });
             it("should format number string with two decimal places", () => {
                 const readableCoords = createReadableCoords(
                     0.999789,
-                    -0.001111
+                    -0.001111,
                 );
                 expect(readableCoords.xSteps).toBe(1);
                 expect(readableCoords.ySteps).toBe(0);
@@ -247,7 +246,7 @@ describe("ReadableCoords", () => {
                 expect(readableCoords.xSteps).toBe(120);
                 expect(readableCoords.xCheckpoint.name).toBe("0 yard line");
                 expect(readableCoords.xCheckpoint.stepsFromCenterFront).toBe(
-                    80
+                    80,
                 );
                 expect(readableCoords.xDescription).toBe(X_DESCRIPTION.OUTSIDE);
 
@@ -256,10 +255,10 @@ describe("ReadableCoords", () => {
                 expect(readableCoords2.xSteps).toBe(72);
                 expect(readableCoords2.xCheckpoint.name).toBe("0 yard line");
                 expect(readableCoords2.xCheckpoint.stepsFromCenterFront).toBe(
-                    -80
+                    -80,
                 );
                 expect(readableCoords2.xDescription).toBe(
-                    X_DESCRIPTION.OUTSIDE
+                    X_DESCRIPTION.OUTSIDE,
                 );
             });
 
@@ -270,17 +269,17 @@ describe("ReadableCoords", () => {
                 expect(readableCoords.yCheckpoint.name).toBe("front sideline");
                 expect(readableCoords.yCheckpoint.stepsFromCenterFront).toBe(0);
                 expect(readableCoords.yDescription).toBe(
-                    Y_DESCRIPTION.IN_FRONT_OF
+                    Y_DESCRIPTION.IN_FRONT_OF,
                 );
 
                 // Backfield
                 const readableCoords2 = createReadableCoords(0, -200);
                 expect(readableCoords2.ySteps).toBe(115);
                 expect(readableCoords2.yCheckpoint.name).toBe(
-                    "grid back sideline"
+                    "grid back sideline",
                 );
                 expect(readableCoords2.yCheckpoint.stepsFromCenterFront).toBe(
-                    -85
+                    -85,
                 );
                 expect(readableCoords2.yDescription).toBe(Y_DESCRIPTION.BEHIND);
             });
@@ -291,7 +290,7 @@ describe("ReadableCoords", () => {
                 expect(readableCoords.xDescription).toBe(X_DESCRIPTION.OUTSIDE);
                 expect(readableCoords.yCheckpoint.name).toBe("NCAA front hash");
                 expect(readableCoords.yDescription).toBe(
-                    Y_DESCRIPTION.IN_FRONT_OF
+                    Y_DESCRIPTION.IN_FRONT_OF,
                 );
             });
 

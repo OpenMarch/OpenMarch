@@ -1,6 +1,6 @@
-import FieldProperties from "../FieldProperties";
+import FieldProperties from "../../FieldProperties";
 import { describe, expect, it, beforeEach } from "vitest";
-import FieldPropertiesTemplates from "../FieldProperties.templates";
+import FieldPropertiesTemplates from "../../FieldProperties.templates";
 
 describe("FieldProperties.templates", () => {
     describe("college", () => {
@@ -12,20 +12,20 @@ describe("FieldProperties.templates", () => {
         it("should create a valid FieldProperties object for college template", () => {
             // expect(collegeFieldProperties).toBeInstanceOf(collegeFieldProperties);
             expect(collegeFieldProperties.centerFrontPoint).toEqual({
-                xPixels: 800,
-                yPixels: 853.3,
+                xPixels: 960,
+                yPixels: 1023.96,
             });
             expect(collegeFieldProperties.xCheckpoints).toHaveLength(21);
             expect(collegeFieldProperties.yCheckpoints).toHaveLength(6);
-            expect(collegeFieldProperties.width).toBe(1600);
-            expect(collegeFieldProperties.height).toBe(853.3);
+            expect(collegeFieldProperties.width).toBe(1920);
+            expect(collegeFieldProperties.height).toBe(1023.96);
         });
 
         it("should create the x checkpoints for a college football field without end zones", () => {
             const xCheckpoints = collegeFieldProperties.xCheckpoints;
             expect(xCheckpoints).toHaveLength(21);
             const test50YardLine = xCheckpoints.find(
-                (checkpoint) => checkpoint.name === "50 yard line"
+                (checkpoint) => checkpoint.name === "50 yard line",
             );
             expect(test50YardLine).toEqual({
                 name: "50 yard line",
@@ -36,7 +36,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "50",
             });
             const test40YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -16
+                (checkpoint) => checkpoint.stepsFromCenterFront === -16,
             );
             expect(test40YardLineS1).toEqual({
                 name: "40 yard line",
@@ -47,7 +47,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "40",
             });
             const test40YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 16
+                (checkpoint) => checkpoint.stepsFromCenterFront === 16,
             );
             expect(test40YardLineS2).toEqual({
                 name: "40 yard line",
@@ -58,7 +58,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "40",
             });
             const test5YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -72
+                (checkpoint) => checkpoint.stepsFromCenterFront === -72,
             );
             expect(test5YardLineS1).toEqual({
                 name: "5 yard line",
@@ -69,7 +69,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test5YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 72
+                (checkpoint) => checkpoint.stepsFromCenterFront === 72,
             );
             expect(test5YardLineS2).toEqual({
                 name: "5 yard line",
@@ -80,7 +80,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test0YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -80
+                (checkpoint) => checkpoint.stepsFromCenterFront === -80,
             );
             expect(test0YardLineS1).toEqual({
                 name: "0 yard line",
@@ -91,7 +91,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test0YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 80
+                (checkpoint) => checkpoint.stepsFromCenterFront === 80,
             );
             expect(test0YardLineS2).toEqual({
                 name: "0 yard line",
@@ -113,7 +113,8 @@ describe("FieldProperties.templates", () => {
 
                 const testYardLine = xCheckpoints.find(
                     (checkpoint) =>
-                        checkpoint.stepsFromCenterFront === stepsFromCenterFront
+                        checkpoint.stepsFromCenterFront ===
+                        stepsFromCenterFront,
                 );
                 expect(testYardLine).toEqual({
                     name: `${curYardLine} yard line`,
@@ -132,7 +133,7 @@ describe("FieldProperties.templates", () => {
             const xCheckpoints = hsWithEndZones.xCheckpoints;
             expect(xCheckpoints).toHaveLength(23);
             const test50YardLine = xCheckpoints.find(
-                (checkpoint) => checkpoint.name === "50 yard line"
+                (checkpoint) => checkpoint.name === "50 yard line",
             );
             expect(test50YardLine).toBeDefined();
             expect(test50YardLine).toEqual({
@@ -144,7 +145,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "50",
             });
             const test40YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -16
+                (checkpoint) => checkpoint.stepsFromCenterFront === -16,
             );
             expect(test40YardLineS1).toBeDefined();
             expect(test40YardLineS1).toEqual({
@@ -156,7 +157,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "40",
             });
             const test40YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 16
+                (checkpoint) => checkpoint.stepsFromCenterFront === 16,
             );
             expect(test40YardLineS2).toBeDefined();
             expect(test40YardLineS2).toEqual({
@@ -168,7 +169,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "40",
             });
             const test5YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -72
+                (checkpoint) => checkpoint.stepsFromCenterFront === -72,
             );
             expect(test5YardLineS1).toBeDefined();
             expect(test5YardLineS1).toEqual({
@@ -180,7 +181,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test5YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 72
+                (checkpoint) => checkpoint.stepsFromCenterFront === 72,
             );
             expect(test5YardLineS2).toBeDefined();
             expect(test5YardLineS2).toEqual({
@@ -192,7 +193,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test0YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -80
+                (checkpoint) => checkpoint.stepsFromCenterFront === -80,
             );
             expect(test0YardLineS1).toBeDefined();
             expect(test0YardLineS1).toEqual({
@@ -204,7 +205,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test0YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 80
+                (checkpoint) => checkpoint.stepsFromCenterFront === 80,
             );
             expect(test0YardLineS2).toBeDefined();
             expect(test0YardLineS2).toEqual({
@@ -216,7 +217,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const endZoneS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -96
+                (checkpoint) => checkpoint.stepsFromCenterFront === -96,
             );
             expect(endZoneS1).toBeDefined();
             expect(endZoneS1).toEqual({
@@ -228,7 +229,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const endZoneS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 96
+                (checkpoint) => checkpoint.stepsFromCenterFront === 96,
             );
             expect(endZoneS2).toBeDefined();
             expect(endZoneS2).toEqual({
@@ -245,7 +246,7 @@ describe("FieldProperties.templates", () => {
             const yCheckpoints = collegeFieldProperties.yCheckpoints;
             expect(yCheckpoints).toHaveLength(6);
             const testFrontSideline = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "front sideline"
+                (checkpoint) => checkpoint.name === "front sideline",
             );
             expect(testFrontSideline).toBeDefined();
             expect(testFrontSideline).toEqual({
@@ -257,7 +258,7 @@ describe("FieldProperties.templates", () => {
                 visible: false,
             });
             const testFrontHash = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "NCAA front hash"
+                (checkpoint) => checkpoint.name === "NCAA front hash",
             );
             expect(testFrontHash).toBeDefined();
             expect(testFrontHash).toEqual({
@@ -268,7 +269,7 @@ describe("FieldProperties.templates", () => {
                 useAsReference: true,
             });
             const testGridBackHash = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "grid NCAA back hash"
+                (checkpoint) => checkpoint.name === "grid NCAA back hash",
             );
             expect(testGridBackHash).toBeDefined();
             expect(testGridBackHash).toEqual({
@@ -279,7 +280,7 @@ describe("FieldProperties.templates", () => {
                 useAsReference: true,
             });
             const testRealBackHash = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "real NCAA back hash"
+                (checkpoint) => checkpoint.name === "real NCAA back hash",
             );
             expect(testRealBackHash).toBeDefined();
             expect(testRealBackHash).toEqual({
@@ -290,7 +291,7 @@ describe("FieldProperties.templates", () => {
                 useAsReference: false,
             });
             const testGridBackSideline = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "grid back sideline"
+                (checkpoint) => checkpoint.name === "grid back sideline",
             );
             expect(testGridBackSideline).toBeDefined();
             expect(testGridBackSideline).toEqual({
@@ -302,7 +303,7 @@ describe("FieldProperties.templates", () => {
                 visible: false,
             });
             const testRealBackSideline = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "real back sideline"
+                (checkpoint) => checkpoint.name === "real back sideline",
             );
             expect(testRealBackSideline).toBeDefined();
             expect(testRealBackSideline).toEqual({
@@ -334,20 +335,20 @@ describe("FieldProperties.templates", () => {
         it("should create a valid FieldProperties object for high school template", () => {
             // expect(highSchoolFieldProperties).toBeInstanceOf(highSchoolFieldProperties);
             expect(highSchoolFieldProperties.centerFrontPoint).toEqual({
-                xPixels: 800,
-                yPixels: 853.3,
+                xPixels: 960,
+                yPixels: 1023.96,
             });
             expect(highSchoolFieldProperties.xCheckpoints).toHaveLength(21);
             expect(highSchoolFieldProperties.yCheckpoints).toHaveLength(5);
-            expect(highSchoolFieldProperties.width).toBe(1600);
-            expect(highSchoolFieldProperties.height).toBe(853.3);
+            expect(highSchoolFieldProperties.width).toBe(1920);
+            expect(highSchoolFieldProperties.height).toBe(1023.96);
         });
 
         it("should create the x checkpoints for an high school football field", () => {
             const xCheckpoints = highSchoolFieldProperties.xCheckpoints;
             expect(xCheckpoints).toHaveLength(21);
             const test50YardLine = xCheckpoints.find(
-                (checkpoint) => checkpoint.name === "50 yard line"
+                (checkpoint) => checkpoint.name === "50 yard line",
             );
             expect(test50YardLine).toEqual({
                 name: "50 yard line",
@@ -358,7 +359,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "50",
             });
             const test40YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -16
+                (checkpoint) => checkpoint.stepsFromCenterFront === -16,
             );
             expect(test40YardLineS1).toEqual({
                 name: "40 yard line",
@@ -369,7 +370,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "40",
             });
             const test40YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 16
+                (checkpoint) => checkpoint.stepsFromCenterFront === 16,
             );
             expect(test40YardLineS2).toEqual({
                 name: "40 yard line",
@@ -380,7 +381,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: "40",
             });
             const test5YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -72
+                (checkpoint) => checkpoint.stepsFromCenterFront === -72,
             );
             expect(test5YardLineS1).toEqual({
                 name: "5 yard line",
@@ -391,7 +392,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test5YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 72
+                (checkpoint) => checkpoint.stepsFromCenterFront === 72,
             );
             expect(test5YardLineS2).toEqual({
                 name: "5 yard line",
@@ -402,7 +403,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test0YardLineS1 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === -80
+                (checkpoint) => checkpoint.stepsFromCenterFront === -80,
             );
             expect(test0YardLineS1).toEqual({
                 name: "0 yard line",
@@ -413,7 +414,7 @@ describe("FieldProperties.templates", () => {
                 fieldLabel: undefined,
             });
             const test0YardLineS2 = xCheckpoints.find(
-                (checkpoint) => checkpoint.stepsFromCenterFront === 80
+                (checkpoint) => checkpoint.stepsFromCenterFront === 80,
             );
             expect(test0YardLineS2).toEqual({
                 name: "0 yard line",
@@ -435,7 +436,8 @@ describe("FieldProperties.templates", () => {
 
                 const testYardLine = xCheckpoints.find(
                     (checkpoint) =>
-                        checkpoint.stepsFromCenterFront === stepsFromCenterFront
+                        checkpoint.stepsFromCenterFront ===
+                        stepsFromCenterFront,
                 );
                 expect(testYardLine).toEqual({
                     name: `${curYardLine} yard line`,
@@ -452,7 +454,7 @@ describe("FieldProperties.templates", () => {
             const yCheckpoints = highSchoolFieldProperties.yCheckpoints;
             expect(yCheckpoints).toHaveLength(5);
             const testFrontSideline = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "front sideline"
+                (checkpoint) => checkpoint.name === "front sideline",
             );
             expect(testFrontSideline).toBeDefined();
             expect(testFrontSideline).toEqual({
@@ -464,7 +466,7 @@ describe("FieldProperties.templates", () => {
                 visible: false,
             });
             const testFrontHash = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "HS front hash"
+                (checkpoint) => checkpoint.name === "HS front hash",
             );
             expect(testFrontHash).toBeDefined();
             expect(testFrontHash).toEqual({
@@ -475,7 +477,7 @@ describe("FieldProperties.templates", () => {
                 useAsReference: true,
             });
             const testBackHash = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "HS back hash"
+                (checkpoint) => checkpoint.name === "HS back hash",
             );
             expect(testBackHash).toBeDefined();
             expect(testBackHash).toEqual({
@@ -486,7 +488,7 @@ describe("FieldProperties.templates", () => {
                 useAsReference: true,
             });
             const testGridBackSideline = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "grid back sideline"
+                (checkpoint) => checkpoint.name === "grid back sideline",
             );
             expect(testGridBackSideline).toBeDefined();
             expect(testGridBackSideline).toEqual({
@@ -498,7 +500,7 @@ describe("FieldProperties.templates", () => {
                 visible: false,
             });
             const testRealBackSideline = yCheckpoints.find(
-                (checkpoint) => checkpoint.name === "real back sideline"
+                (checkpoint) => checkpoint.name === "real back sideline",
             );
             expect(testRealBackSideline).toBeDefined();
             expect(testRealBackSideline).toEqual({

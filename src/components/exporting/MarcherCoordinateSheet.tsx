@@ -61,7 +61,7 @@ export default function MarcherCoordinateSheet({
             return;
         }
         const pixelsPerStep = fieldProperties
-            ? FieldProperties.PIXELS_PER_STEP
+            ? fieldProperties.pixelsPerStep
             : 0;
         if (example && fieldProperties) {
             setMarcherToUse(
