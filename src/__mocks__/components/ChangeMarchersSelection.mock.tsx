@@ -27,13 +27,13 @@ export function ChangeMarchersSelection() {
                             type="checkbox"
                             checked={selectedMarchers.some(
                                 (selectedMarcher) =>
-                                    selectedMarcher.id === marcher.id
+                                    selectedMarcher.id === marcher.id,
                             )}
                             onChange={() => {
                                 if (
                                     selectedMarchers.some(
                                         (selectedMarcher) =>
-                                            selectedMarcher.id === marcher.id
+                                            selectedMarcher.id === marcher.id,
                                     )
                                 ) {
                                     // If the marcher is already selected, unselect it
@@ -41,8 +41,8 @@ export function ChangeMarchersSelection() {
                                         selectedMarchers.filter(
                                             (selectedMarcher) =>
                                                 selectedMarcher.id !==
-                                                marcher.id
-                                        )
+                                                marcher.id,
+                                        ),
                                     );
                                 } else {
                                     // If the marcher is not selected, select it

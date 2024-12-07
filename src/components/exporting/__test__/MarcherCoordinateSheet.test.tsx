@@ -25,7 +25,7 @@ describe("StaticMarcherCoordinateSheet", () => {
                 fieldProperties={mockFieldProperties}
                 marcherPages={mockMarcherPages}
                 pages={mockPages}
-            />
+            />,
         );
     });
 
@@ -37,14 +37,14 @@ describe("StaticMarcherCoordinateSheet", () => {
                     marcherPages={mockMarcherPages}
                     fieldProperties={undefined as unknown as FieldProperties}
                     pages={mockPages}
-                />
+                />,
             );
 
             expect(
-                screen.findByText("Error exporting coordinate sheet")
+                screen.findByText("Error exporting coordinate sheet"),
             ).toBeTruthy();
             expect(
-                screen.findByText("No field properties provided")
+                screen.findByText("No field properties provided"),
             ).toBeTruthy();
         });
 
@@ -55,11 +55,11 @@ describe("StaticMarcherCoordinateSheet", () => {
                     fieldProperties={mockFieldProperties}
                     marcherPages={mockMarcherPages}
                     pages={mockPages}
-                />
+                />,
             );
 
             expect(
-                screen.findByText("Error exporting coordinate sheet")
+                screen.findByText("Error exporting coordinate sheet"),
             ).toBeTruthy();
             expect(screen.findByText("No marcher provided")).toBeTruthy();
         });
@@ -71,11 +71,11 @@ describe("StaticMarcherCoordinateSheet", () => {
                     pages={[]}
                     fieldProperties={mockFieldProperties}
                     marcherPages={mockMarcherPages}
-                />
+                />,
             );
 
             expect(
-                screen.findByText("Error exporting coordinate sheet")
+                screen.findByText("Error exporting coordinate sheet"),
             ).toBeTruthy();
             expect(screen.findByText("No pages provided")).toBeTruthy();
         });
@@ -87,11 +87,11 @@ describe("StaticMarcherCoordinateSheet", () => {
                     fieldProperties={mockFieldProperties}
                     pages={mockPages}
                     marcherPages={[]}
-                />
+                />,
             );
 
             expect(
-                screen.findByText("Error exporting coordinate sheet")
+                screen.findByText("Error exporting coordinate sheet"),
             ).toBeTruthy();
             expect(screen.findByText("No marcher pages provided")).toBeTruthy();
         });
@@ -103,14 +103,14 @@ describe("StaticMarcherCoordinateSheet", () => {
                     fieldProperties={undefined as unknown as FieldProperties}
                     pages={[]}
                     marcherPages={[]}
-                />
+                />,
             );
 
             expect(
-                screen.findByText("Error exporting coordinate sheet")
+                screen.findByText("Error exporting coordinate sheet"),
             ).toBeTruthy();
             expect(
-                screen.findByText("No field properties provided")
+                screen.findByText("No field properties provided"),
             ).toBeTruthy();
             expect(screen.findByText("No marcher provided")).toBeTruthy();
             expect(screen.findByText("No pages provided")).toBeTruthy();
@@ -127,18 +127,18 @@ describe("StaticMarcherCoordinateSheet", () => {
                     fieldProperties={mockFieldProperties}
                     marcherPages={mockMarcherPages}
                     pages={mockPages}
-                />
+                />,
             );
 
             expect(screen.getByLabelText("marcher header")).toBeTruthy();
             expect(
-                screen.getByLabelText("marcher drill number").textContent
+                screen.getByLabelText("marcher drill number").textContent,
             ).toEqual(mockMarcher.drill_number);
             expect(screen.getByLabelText("marcher name").textContent).toEqual(
-                mockMarcher.name
+                mockMarcher.name,
             );
             expect(
-                screen.getByLabelText("marcher section").textContent
+                screen.getByLabelText("marcher section").textContent,
             ).toEqual(mockMarcher.section);
         });
 
@@ -150,18 +150,18 @@ describe("StaticMarcherCoordinateSheet", () => {
                     fieldProperties={mockFieldProperties}
                     marcherPages={mockMarcherPages}
                     pages={mockPages}
-                />
+                />,
             );
 
             expect(screen.getByLabelText("marcher header")).toBeTruthy();
             expect(
-                screen.getByLabelText("marcher drill number").textContent
+                screen.getByLabelText("marcher drill number").textContent,
             ).toEqual(mockMarcher.drill_number);
             expect(screen.getByLabelText("marcher name").textContent).toEqual(
-                mockMarcher.name
+                mockMarcher.name,
             );
             expect(
-                screen.getByLabelText("marcher section").textContent
+                screen.getByLabelText("marcher section").textContent,
             ).toEqual(mockMarcher.section);
         });
     });

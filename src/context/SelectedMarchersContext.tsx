@@ -30,7 +30,7 @@ export function SelectedMarchersProvider({
     useEffect(() => {
         if (selectedMarchers)
             window.electron.sendSelectedMarchers(
-                selectedMarchers.map((m) => m.id)
+                selectedMarchers.map((m) => m.id),
             );
     }, [selectedMarchers]);
 
@@ -38,7 +38,7 @@ export function SelectedMarchersProvider({
     useEffect(() => {
         if (selectedMarchers) {
             const newSelectedMarchers = selectedMarchers.filter((marcher) =>
-                marchers.some((m) => m.id === marcher.id)
+                marchers.some((m) => m.id === marcher.id),
             );
             setSelectedMarchers(newSelectedMarchers);
         }

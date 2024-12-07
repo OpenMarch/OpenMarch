@@ -5,11 +5,11 @@ import { describe, expect, it, vi } from "vitest";
 // import TimeSignature from '@/global/classes/TimeSignature';
 // import BeatUnit from '@/global/classes/BeatUnit';
 
-vi.mock('@/global/classes/Measure');
+vi.mock("@/global/classes/Measure");
 
 // TODO - These aren't working for some reason, don't know why. Is this worth testing?
-describe('measureStore', () => {
-    it('Not yet implemented', async () => {
+describe("measureStore", () => {
+    it("Not yet implemented", async () => {
         expect(true).toBe(true);
     });
     // afterEach(async () => {

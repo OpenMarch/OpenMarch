@@ -67,11 +67,10 @@ export default class MarcherPage {
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updateMarcherPages(
-        modifiedMarcherPages: ModifiedMarcherPageArgs[]
+        modifiedMarcherPages: ModifiedMarcherPageArgs[],
     ): Promise<DatabaseResponse<MarcherPage>> {
-        const response = await window.electron.updateMarcherPages(
-            modifiedMarcherPages
-        );
+        const response =
+            await window.electron.updateMarcherPages(modifiedMarcherPages);
         // fetch the MarcherPages to update the store
         this.checkForFetchMarcherPages();
         this.fetchMarcherPages();
@@ -84,7 +83,7 @@ export default class MarcherPage {
     static checkForFetchMarcherPages() {
         if (!this.fetchMarcherPages)
             console.error(
-                "fetchMarcherPages is not defined. The UI will not update properly."
+                "fetchMarcherPages is not defined. The UI will not update properly.",
             );
     }
 
@@ -97,10 +96,10 @@ export default class MarcherPage {
      */
     static filterByPageId(
         marcherPages: MarcherPage[],
-        page_id: number
+        page_id: number,
     ): MarcherPage[] {
         return marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === page_id
+            (marcherPage) => marcherPage.page_id === page_id,
         );
     }
 
@@ -113,10 +112,10 @@ export default class MarcherPage {
      */
     static filterByMarcherId(
         marcherPages: MarcherPage[],
-        marcher_id: number
+        marcher_id: number,
     ): MarcherPage[] {
         return marcherPages.filter(
-            (marcherPage) => marcherPage.marcher_id === marcher_id
+            (marcherPage) => marcherPage.marcher_id === marcher_id,
         );
     }
 }

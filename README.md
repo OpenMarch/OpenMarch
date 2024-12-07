@@ -83,7 +83,7 @@ vision of simple, fast, and free drill designing software for band programs and 
 
 ### Onboarding
 
-Look at the [wiki](https://github.com/OpenMarch/OpenMarch/wiki) and [Onbaording for Developers](https://github.com/OpenMarch/OpenMarch/wiki/Onboarding-for-Developers)
+Look at the [wiki](https://github.com/OpenMarch/OpenMarch/wiki) and [Onboarding for Developers](https://github.com/OpenMarch/OpenMarch/wiki/Onboarding-for-Developers)
 
 ## OpenMarch for users and drill designers
 

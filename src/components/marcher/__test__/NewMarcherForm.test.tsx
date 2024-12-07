@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import NewMarcherForm from "../NewMarcherForm";
 import { Marcher } from "@/global/classes/Marcher";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ describe.todo("NewMarcherForm", () => {
     ];
 
     // When this is present, should create trumpets 2, then 4, then 5 + n etc.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const mockExistingMarchers = [
         new Marcher({
             id: 1,
@@ -116,12 +117,6 @@ describe.todo("NewMarcherForm", () => {
             data: [{ drill_number: "A3" }, { drill_number: "A4" }],
             error: "Some error",
         });
-        const createMarchersSpy = vi
-            .spyOn(Marcher, "createMarchers")
-            .mockResolvedValue({
-                success: true,
-                data: [mockNewMarchers[1]],
-            });
 
         render(<NewMarcherForm />);
 

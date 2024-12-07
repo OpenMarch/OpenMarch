@@ -97,7 +97,7 @@ describe("uiSettings Store", () => {
         // Expect that changing lockY to true will also change lockX to false
         expectedSettings.lockY = true;
         act(() =>
-            result.current.setUiSettings({ ...expectedSettings }, "lockY")
+            result.current.setUiSettings({ ...expectedSettings }, "lockY"),
         );
         expectedSettings.lockX = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
@@ -105,7 +105,7 @@ describe("uiSettings Store", () => {
         // Expect that changing lockX to true will also change lockY to false
         expectedSettings.lockX = true;
         act(() =>
-            result.current.setUiSettings({ ...expectedSettings }, "lockX")
+            result.current.setUiSettings({ ...expectedSettings }, "lockX"),
         );
         expectedSettings.lockY = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
@@ -114,7 +114,7 @@ describe("uiSettings Store", () => {
         expectedSettings.lockX = true;
         expectedSettings.lockY = true;
         act(() =>
-            result.current.setUiSettings({ ...expectedSettings }, "lockX")
+            result.current.setUiSettings({ ...expectedSettings }, "lockX"),
         );
         expectedSettings.lockY = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
@@ -123,7 +123,7 @@ describe("uiSettings Store", () => {
         expectedSettings.lockX = true;
         expectedSettings.lockY = true;
         act(() =>
-            result.current.setUiSettings({ ...expectedSettings }, "lockY")
+            result.current.setUiSettings({ ...expectedSettings }, "lockY"),
         );
         expectedSettings.lockX = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);

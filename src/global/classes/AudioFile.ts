@@ -22,7 +22,7 @@ export default class AudioFile {
         this.data = data;
         this.path = path;
         // TODO split this to just be the last string of the file
-        this.nickname = nickname || path.replace(/^.*[\\/]/, '');
+        this.nickname = nickname || path.replace(/^.*[\\/]/, "");
         this.selected = selected;
     }
 
@@ -33,7 +33,7 @@ export default class AudioFile {
      * @returns An array of AudioFile objects without the audio data.
      */
     public static async getAudioFilesDetails(): Promise<AudioFile[]> {
-        const dbResponse = await window.electron.getAudioFilesDetails()
+        const dbResponse = await window.electron.getAudioFilesDetails();
         return dbResponse.map((audioFileData) => new AudioFile(audioFileData));
     }
 
@@ -43,7 +43,9 @@ export default class AudioFile {
      * @param audioFileId The id of the audio file to select
      * @returns The newly selected audio file including the audio data
      */
-    public static setSelectedAudioFile(audioFileId: number): Promise<AudioFile> {
+    public static setSelectedAudioFile(
+        audioFileId: number,
+    ): Promise<AudioFile> {
         return window.electron.setSelectedAudioFile(audioFileId);
     }
 
@@ -60,6 +62,6 @@ export default class AudioFile {
  */
 export interface ModifiedAudioFileArgs {
     /** The id of the audio file to modify  */
-    id: number,
-    nickname: string
+    id: number;
+    nickname: string;
 }

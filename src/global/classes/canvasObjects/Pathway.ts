@@ -42,7 +42,7 @@ export class Pathway extends fabric.Line {
                 strokeWidth,
                 strokeDashArray: dashed ? [5, 3] : [],
                 ...NoControls,
-            }
+            },
         );
         this.marcherId = marcherId;
     }

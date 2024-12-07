@@ -6,17 +6,21 @@ interface TinyFormButtonsProps {
     handleCancel: () => void;
 }
 
-export default function TinyFormButtons({ isEditing, setIsEditing, handleCancel }: TinyFormButtonsProps) {
+export default function TinyFormButtons({
+    isEditing,
+    setIsEditing,
+    handleCancel,
+}: TinyFormButtonsProps) {
     return (
         <div className="edit-form-button-container">
-            {!isEditing ?
-                < button
+            {!isEditing ? (
+                <button
                     onClick={() => setIsEditing(!isEditing)}
                     className="text-sm btn-secondary"
                 >
                     <FaEdit />
                 </button>
-                :
+            ) : (
                 <>
                     <button // Cancel button
                         className="text-sm btn-secondary"
@@ -31,7 +35,7 @@ export default function TinyFormButtons({ isEditing, setIsEditing, handleCancel 
                         <FaCheck />
                     </button>
                 </>
-            }
+            )}
         </div>
     );
 }

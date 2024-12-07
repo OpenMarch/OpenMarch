@@ -15,7 +15,7 @@ type SelectedPageContextProps = {
 };
 
 const SelectedPageContext = createContext<SelectedPageContextProps | undefined>(
-    undefined
+    undefined,
 );
 
 export function SelectedPageProvider({ children }: { children: ReactNode }) {
@@ -31,7 +31,7 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (selectedPage)
             setSelectedPage(
-                pages.find((page) => page.id === selectedPage.id) || null
+                pages.find((page) => page.id === selectedPage.id) || null,
             );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pages]);

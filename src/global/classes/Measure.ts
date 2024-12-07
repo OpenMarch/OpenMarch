@@ -2,7 +2,6 @@ import xml2abcInterpreter from "@/utilities/xml2abc-js/xml2abcInterpreter";
 import BeatUnit from "./BeatUnit";
 import TimeSignature from "./TimeSignature";
 
-
 /**
  * A Measure represents a measure in the music is used in conjunction with Page objects to define a show's length.
  *
@@ -34,15 +33,24 @@ export default class Measure {
      */
     static fetchMeasures: () => Promise<void>;
 
-    constructor({ number, rehearsalMark = null, timeSignature, tempo, beatUnit, notes = null }:
-        {
-            number: number; rehearsalMark?: string | null; timeSignature: TimeSignature;
-            beatUnit: BeatUnit, tempo: number; notes?: string | null;
-        }) {
+    constructor({
+        number,
+        rehearsalMark = null,
+        timeSignature,
+        tempo,
+        beatUnit,
+        notes = null,
+    }: {
+        number: number;
+        rehearsalMark?: string | null;
+        timeSignature: TimeSignature;
+        beatUnit: BeatUnit;
+        tempo: number;
+        notes?: string | null;
+    }) {
         if (!Number.isInteger(number))
-            throw new Error("Measure number must be an integer.")
-        if (tempo <= 0)
-            throw new Error("Tempo must be > 0")
+            throw new Error("Measure number must be an integer.");
+        if (tempo <= 0) throw new Error("Tempo must be > 0");
 
         this.number = number;
         this.rehearsalMark = rehearsalMark;
@@ -77,18 +85,30 @@ export default class Measure {
      * @param existingMeasures - The existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async insertMeasure(args: { newMeasure: Measure; existingMeasures?: Measure[]; }) {
+    static async insertMeasure(args: {
+        newMeasure: Measure;
+        existingMeasures?: Measure[];
+    }) {
         // console.debug("INSERT MEASURES\nArguments:\n", args);
 
-        const existingMeasuresCopy = args.existingMeasures ? [...args.existingMeasures] : await Measure.getMeasures();
-        const indexOfPreviousMeasure = existingMeasuresCopy.findIndex(measure => measure.number === args.newMeasure.number);
+        const existingMeasuresCopy = args.existingMeasures
+            ? [...args.existingMeasures]
+            : await Measure.getMeasures();
+        const indexOfPreviousMeasure = existingMeasuresCopy.findIndex(
+            (measure) => measure.number === args.newMeasure.number,
+        );
         if (indexOfPreviousMeasure > -1) {
-            existingMeasuresCopy.splice(indexOfPreviousMeasure, 0, args.newMeasure);
+            existingMeasuresCopy.splice(
+                indexOfPreviousMeasure,
+                0,
+                args.newMeasure,
+            );
         } else {
             existingMeasuresCopy.push(args.newMeasure);
         }
         const abcString = Measure.toAbcString(existingMeasuresCopy);
-        const response = await window.electron.updateMeasureAbcString(abcString);
+        const response =
+            await window.electron.updateMeasureAbcString(abcString);
         // fetch the measures to update the store
         this.checkForFetchMeasures();
         this.fetchMeasures();
@@ -105,18 +125,28 @@ export default class Measure {
      * @param existingMeasures - The existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
-    static async updateMeasure(args: { modifiedMeasure: Measure; existingMeasures?: Measure[]; }) {
+    static async updateMeasure(args: {
+        modifiedMeasure: Measure;
+        existingMeasures?: Measure[];
+    }) {
         // console.debug("UPDATE MEASURES\nArguments:\n", args);
 
-        const existingMeasuresCopy = args.existingMeasures ? [...args.existingMeasures] : await Measure.getMeasures();
-        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === args.modifiedMeasure.number);
+        const existingMeasuresCopy = args.existingMeasures
+            ? [...args.existingMeasures]
+            : await Measure.getMeasures();
+        const indexOfMeasure = existingMeasuresCopy.findIndex(
+            (measure) => measure.number === args.modifiedMeasure.number,
+        );
 
         if (indexOfMeasure < 0)
-            throw new Error(`Measure ${args.modifiedMeasure.number} not found in existing measures.`);
+            throw new Error(
+                `Measure ${args.modifiedMeasure.number} not found in existing measures.`,
+            );
 
         existingMeasuresCopy[indexOfMeasure] = args.modifiedMeasure;
         const newAbcString = Measure.toAbcString(existingMeasuresCopy);
-        const response = await window.electron.updateMeasureAbcString(newAbcString);
+        const response =
+            await window.electron.updateMeasureAbcString(newAbcString);
 
         // fetch the measures to update the store
         this.checkForFetchMeasures();
@@ -131,18 +161,28 @@ export default class Measure {
      * @param existingMeasures the existing measures. Provide this to save on computation time, if not provided the function will fetch and parse the measures from the database.
      * @returns
      */
-    static async deleteMeasure(args: { measureNumber: number; existingMeasures?: Measure[]; }) {
+    static async deleteMeasure(args: {
+        measureNumber: number;
+        existingMeasures?: Measure[];
+    }) {
         // console.debug("DELETE MEASURES\nArguments:\n", args);
 
-        const existingMeasuresCopy = args.existingMeasures ? [...args.existingMeasures] : await Measure.getMeasures();
-        const indexOfMeasure = existingMeasuresCopy.findIndex(measure => measure.number === args.measureNumber);
+        const existingMeasuresCopy = args.existingMeasures
+            ? [...args.existingMeasures]
+            : await Measure.getMeasures();
+        const indexOfMeasure = existingMeasuresCopy.findIndex(
+            (measure) => measure.number === args.measureNumber,
+        );
 
         if (indexOfMeasure < 0)
-            throw new Error(`Measure ${args.measureNumber} not found in existing measures.`);
+            throw new Error(
+                `Measure ${args.measureNumber} not found in existing measures.`,
+            );
 
         existingMeasuresCopy.splice(indexOfMeasure, 1);
         const abcString = Measure.toAbcString(existingMeasuresCopy);
-        const response = await window.electron.updateMeasureAbcString(abcString);
+        const response =
+            await window.electron.updateMeasureAbcString(abcString);
         // fetch the measures to update the store
         this.checkForFetchMeasures();
         this.fetchMeasures();
@@ -154,7 +194,9 @@ export default class Measure {
      */
     static checkForFetchMeasures() {
         if (!this.fetchMeasures)
-            console.error("fetchMeasures is not defined. The UI will not update properly.");
+            console.error(
+                "fetchMeasures is not defined. The UI will not update properly.",
+            );
     }
 
     /**
@@ -165,7 +207,8 @@ export default class Measure {
      */
     static async updateWithXml(xml: string) {
         const abcString = xml2abcInterpreter(xml);
-        const response = await window.electron.updateMeasureAbcString(abcString);
+        const response =
+            await window.electron.updateMeasureAbcString(abcString);
         Measure.checkForFetchMeasures();
         Measure.fetchMeasures();
         return response;
@@ -179,13 +222,15 @@ export default class Measure {
      * @returns If this measure is equal to the other measure.
      */
     equals(other: Measure): boolean {
-        return this.number === other.number
-            && this.rehearsalMark === other.rehearsalMark
-            && this.timeSignature.equals(other.timeSignature)
-            && this.tempo === other.tempo
-            && this.beatUnit.equals(other.beatUnit)
-            && this.duration === other.duration
-            && this.notes === other.notes;
+        return (
+            this.number === other.number &&
+            this.rehearsalMark === other.rehearsalMark &&
+            this.timeSignature.equals(other.timeSignature) &&
+            this.tempo === other.tempo &&
+            this.beatUnit.equals(other.beatUnit) &&
+            this.duration === other.duration &&
+            this.notes === other.notes
+        );
     }
 
     /**
@@ -207,7 +252,10 @@ export default class Measure {
      * 6/8, EIGHTH has 6 big beats.
      */
     getBigBeats(): number {
-        return this.timeSignature.numerator / (this.timeSignature.denominator * this.beatUnit.value);
+        return (
+            this.timeSignature.numerator /
+            (this.timeSignature.denominator * this.beatUnit.value)
+        );
     }
 
     /*********************** PRIVATE INSTANCE METHODS ***********************/
@@ -223,7 +271,8 @@ export default class Measure {
     private calculateDuration() {
         const beatsPerMeasure = this.timeSignature.numerator;
         // The ratio of the measure's beat unit to the pulse's beat unit
-        const tempoRatio = (1 / this.timeSignature.denominator) / this.beatUnit.value;
+        const tempoRatio =
+            1 / this.timeSignature.denominator / this.beatUnit.value;
         // The duration of one beat in seconds
         const tempoBeatDuration = 60 / this.tempo;
         return tempoRatio * beatsPerMeasure * tempoBeatDuration;
@@ -237,15 +286,15 @@ export default class Measure {
      * @returns The abc string.
      */
     private static toAbcString(measures: Measure[]) {
-        if (measures.length === 0) return '';
+        if (measures.length === 0) return "";
 
-        let output = 'X:1\n';
+        let output = "X:1\n";
         // Time Signature
         output += `M:${measures[0].timeSignature.toString()}\n`;
         // Tempo
         output += `Q:${measures[0].beatUnit.toFractionString()}=${measures[0].tempo}\n`;
         // Voice placeholder
-        output += 'V:1 baritone\nV:1\n';
+        output += "V:1 baritone\nV:1\n";
 
         // First measure
         let previousMeasure;
@@ -264,24 +313,30 @@ export default class Measure {
      * @returns The abc string for the measure.
      */
     private toMeasureAbcString(previousMeasure?: Measure) {
-        let output = '';
+        let output = "";
         // Rehearsal mark
-        if (this.rehearsalMark)
-            output += `"^${this.rehearsalMark}" `;
+        if (this.rehearsalMark) output += `"^${this.rehearsalMark}" `;
 
         // Time signature
-        if (previousMeasure && !this.timeSignature.equals(previousMeasure.timeSignature))
+        if (
+            previousMeasure &&
+            !this.timeSignature.equals(previousMeasure.timeSignature)
+        )
             output += `[M:${this.timeSignature.toString()}] `;
 
         // Tempo
-        if (previousMeasure && (this.tempo !== previousMeasure.tempo || !this.beatUnit.equals(previousMeasure.beatUnit)))
+        if (
+            previousMeasure &&
+            (this.tempo !== previousMeasure.tempo ||
+                !this.beatUnit.equals(previousMeasure.beatUnit))
+        )
             output += `[Q:${this.beatUnit.toFractionString()}=${this.tempo}] `;
 
         // Beats
         output += `z${this.getBigBeats()} `;
 
         // barline
-        output += '| ';
+        output += "| ";
 
         return output;
     }
@@ -299,25 +354,27 @@ export default class Measure {
      * @returns An array of Measure objects
      */
     static abcToMeasures(abcString: string, testing = false): Measure[] {
-
-        if (!abcString || abcString.length === 0)
-            return [];
-        if (abcString.indexOf('V:1') < 0) {
+        if (!abcString || abcString.length === 0) return [];
+        if (abcString.indexOf("V:1") < 0) {
             // V:1 means voice 1, which is what we're looking for
             if (!testing)
-                console.error('No measures found in abcString. No V:1 found.')
+                console.error("No measures found in abcString. No V:1 found.");
             return [];
         }
 
-        const abcHeader = abcString.substring(0, abcString.indexOf('V:1'));
+        const abcHeader = abcString.substring(0, abcString.indexOf("V:1"));
         let currentTimeSignature = Measure.parseTimeSignature(abcHeader);
         if (!currentTimeSignature) {
-            console.error('No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4.');
-            currentTimeSignature = TimeSignature.fromString('4/4');
+            console.error(
+                "No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4.",
+            );
+            currentTimeSignature = TimeSignature.fromString("4/4");
         }
         let currentTempo = Measure.parseTempo(abcHeader);
         if (!currentTempo) {
-            console.error('No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4. To fix this, add a tempo in the first measure.');
+            console.error(
+                "No time signature found in abcString header. This may (and very likely will) lead to a misalignment in pages and music. Defaulting to 4/4. To fix this, add a tempo in the first measure.",
+            );
             currentTempo = { bpm: 120, beatUnit: BeatUnit.QUARTER };
         }
 
@@ -325,32 +382,37 @@ export default class Measure {
         let newAbcString = abcString;
 
         // only get the first voice
-        while (newAbcString.includes('V:1')) {
-            newAbcString = newAbcString.substring(newAbcString.indexOf('V:1') + 4);
+        while (newAbcString.includes("V:1")) {
+            newAbcString = newAbcString.substring(
+                newAbcString.indexOf("V:1") + 4,
+            );
         }
         // Remove any following voices
-        const nextVoiceIndex = newAbcString.indexOf('V:');
+        const nextVoiceIndex = newAbcString.indexOf("V:");
         if (nextVoiceIndex > 0)
             newAbcString = newAbcString.substring(0, nextVoiceIndex);
 
         // make each bar a new line. We don't care about what type of barline it is
-        const multiBarlines = new Set(['|]', '[|', '||', '|:', ':|', '::']);
+        const multiBarlines = new Set(["|]", "[|", "||", "|:", ":|", "::"]);
         for (const barline of multiBarlines) {
             while (newAbcString.includes(barline)) {
-                newAbcString = newAbcString.replace(barline, '\n');
+                newAbcString = newAbcString.replace(barline, "\n");
             }
         }
         // Single barline is after so that it doesn't replace the multi-barlines
-        const singleBarline = '|';
+        const singleBarline = "|";
         while (newAbcString.includes(singleBarline)) {
-            newAbcString = newAbcString.replace(singleBarline, '\n');
+            newAbcString = newAbcString.replace(singleBarline, "\n");
         }
 
-        const measureStrings = newAbcString.split('\n');
+        const measureStrings = newAbcString.split("\n");
 
         // Remove all comments (text that starts with %)
         for (let i = 0; i < measureStrings.length; i++) {
-            if (measureStrings[i].trim()[0] === '%' || measureStrings[i].trim() === '') {
+            if (
+                measureStrings[i].trim()[0] === "%" ||
+                measureStrings[i].trim() === ""
+            ) {
                 measureStrings.splice(i, 1);
                 i--;
             }
@@ -371,12 +433,14 @@ export default class Measure {
             }
 
             if (currentTimeSignature && currentTempo) {
-                output.push(new Measure({
-                    number: output.length + 1,
-                    timeSignature: currentTimeSignature,
-                    tempo: currentTempo.bpm,
-                    beatUnit: currentTempo.beatUnit,
-                }));
+                output.push(
+                    new Measure({
+                        number: output.length + 1,
+                        timeSignature: currentTimeSignature,
+                        tempo: currentTempo.bpm,
+                        beatUnit: currentTempo.beatUnit,
+                    }),
+                );
             }
         }
 
@@ -389,14 +453,15 @@ export default class Measure {
      * @param abcString The abc string to parse the time signature from (e.g. "M:4/4")
      * @returns TimeSignature object representing the time signature
      */
-    private static parseTimeSignature(abcString: string): TimeSignature | undefined {
-        if (!abcString.includes('M:'))
-            return; // no time signature found, don't print an error
+    private static parseTimeSignature(
+        abcString: string,
+    ): TimeSignature | undefined {
+        if (!abcString.includes("M:")) return; // no time signature found, don't print an error
 
         const timeSignatureRegex = /M:(\d+)\/(\d+)/;
         const timeSignatureMatch = abcString.match(timeSignatureRegex);
         if (!timeSignatureMatch) {
-            console.error('No time signature found in abcString');
+            console.error("No time signature found in abcString");
             return;
         }
         const timeSignatureString = `${parseInt(timeSignatureMatch[1], 10)}/${parseInt(timeSignatureMatch[2], 10)}`;
@@ -409,14 +474,15 @@ export default class Measure {
      * @param abcString The abc string to parse the tempo from (e.g. "Q:1/4=100")
      * @returns { bpm: number, beatUnit: BeatUnit} | undefined The tempo as a bpm and beat unit object
      */
-    private static parseTempo(abcString: string): { bpm: number, beatUnit: BeatUnit } | undefined {
-        if (!abcString.includes('Q:'))
-            return; // no tempo found, don't print an error
+    private static parseTempo(
+        abcString: string,
+    ): { bpm: number; beatUnit: BeatUnit } | undefined {
+        if (!abcString.includes("Q:")) return; // no tempo found, don't print an error
 
         const tempoRegex = /Q:(\d+)\/(\d+)=(\d+)/;
         const tempoMatch = abcString.match(tempoRegex);
         if (!tempoMatch) {
-            console.error('No tempo found in abcString');
+            console.error("No tempo found in abcString");
             return;
         }
         const beatUnitString = `${parseInt(tempoMatch[1], 10)}/${parseInt(tempoMatch[2], 10)}`;
