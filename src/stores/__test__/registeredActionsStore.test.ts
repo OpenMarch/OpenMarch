@@ -13,14 +13,14 @@ describe("registeredActionsStoreCreator", () => {
     it("should add a registered action and button reference to the store", () => {
         const { result } = renderHook(() => useRegisteredActionsStore());
         const button = document.body.appendChild(
-            document.createElement("button")
+            document.createElement("button"),
         );
 
         const registeredAction = RegisteredActionsEnum.nextPage;
         const buttonRef = { current: button };
 
         act(() =>
-            result.current.linkRegisteredAction(registeredAction, buttonRef)
+            result.current.linkRegisteredAction(registeredAction, buttonRef),
         );
 
         expect(result.current.registeredButtonActions).toEqual([
@@ -30,7 +30,7 @@ describe("registeredActionsStoreCreator", () => {
         // cleanup
         document.body.removeChild(button);
         act(() =>
-            result.current.removeRegisteredAction(registeredAction, buttonRef)
+            result.current.removeRegisteredAction(registeredAction, buttonRef),
         );
     });
 
@@ -39,21 +39,21 @@ describe("registeredActionsStoreCreator", () => {
 
         const registeredAction1 = RegisteredActionsEnum.nextPage;
         const button1 = document.body.appendChild(
-            document.createElement("button")
+            document.createElement("button"),
         );
         const buttonRef1 = { current: document.createElement("button") };
 
         const registeredAction2 = RegisteredActionsEnum.lockX;
         const button2 = document.body.appendChild(
-            document.createElement("button")
+            document.createElement("button"),
         );
         const buttonRef2 = { current: document.createElement("button") };
 
         act(() =>
-            result.current.linkRegisteredAction(registeredAction1, buttonRef1)
+            result.current.linkRegisteredAction(registeredAction1, buttonRef1),
         );
         act(() =>
-            result.current.linkRegisteredAction(registeredAction2, buttonRef2)
+            result.current.linkRegisteredAction(registeredAction2, buttonRef2),
         );
 
         expect(result.current.registeredButtonActions).toEqual([
@@ -65,10 +65,16 @@ describe("registeredActionsStoreCreator", () => {
         document.body.removeChild(button1);
         document.body.removeChild(button2);
         act(() =>
-            result.current.removeRegisteredAction(registeredAction1, buttonRef1)
+            result.current.removeRegisteredAction(
+                registeredAction1,
+                buttonRef1,
+            ),
         );
         act(() =>
-            result.current.removeRegisteredAction(registeredAction2, buttonRef2)
+            result.current.removeRegisteredAction(
+                registeredAction2,
+                buttonRef2,
+            ),
         );
     });
 });

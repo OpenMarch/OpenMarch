@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { renderHook, act } from "@testing-library/react";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { useShapePageStore } from "../ShapePageStore";
+/* eslint-enable */
 
 describe.todo("shapePageStore", () => {
     // afterEach(async () => {

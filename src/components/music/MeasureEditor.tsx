@@ -130,9 +130,9 @@ export default function MeasureEditor() {
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16">
                                 <div className="flex gap-8">
-                                    If you're having trouble getting the tempo
-                                    to line up, try importing a musicXML with
-                                    just one part and no notes. Avoid
+                                    If you&apos;re having trouble getting the
+                                    tempo to line up, try importing a musicXML
+                                    with just one part and no notes. Avoid
                                     accelerandos and ritardandos
                                 </div>
                             </TooltipContents>

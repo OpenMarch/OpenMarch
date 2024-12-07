@@ -38,7 +38,7 @@ export default class StaticCanvasMarcher extends fabric.Group {
                     ...NoControls,
                 }),
             ],
-            NoControls
+            NoControls,
         );
         this.marcherId = marcherPage.marcher_id;
     }

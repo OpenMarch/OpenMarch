@@ -32,7 +32,7 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
             // Set the field properties for the ReadableCoords class
             ReadableCoords.setFieldProperties(fieldProperties);
         },
-        []
+        [],
     );
 
     // Fetch the field properties from the main process and set the state

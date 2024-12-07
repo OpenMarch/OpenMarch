@@ -9,8 +9,15 @@ class Section {
     /** The prefix of the drill number for this section E.g. "B" for Baritone */
     readonly prefix: string;
 
-    constructor({ name, family, prefix }:
-        { name: string; family: SectionFamily; prefix: string; }) {
+    constructor({
+        name,
+        family,
+        prefix,
+    }: {
+        name: string;
+        family: SectionFamily;
+        prefix: string;
+    }) {
         this.name = name;
         this.family = family;
         this.scoreOrder = Section.currentScoreOrder++;
@@ -35,9 +42,8 @@ class Section {
         if (familyComparison !== 0)
             // If the families are different, return the family comparison, ignoring the Section's score order
             return familyComparison;
-        else
-            // If the families are the same, return the Section's score order comparison
-            return this.scoreOrder - otherSection.scoreOrder;
+        // If the families are the same, return the Section's score order comparison
+        else return this.scoreOrder - otherSection.scoreOrder;
     }
 }
 
@@ -82,7 +88,7 @@ const FAMILIES: { [key: string]: SectionFamily } = {
     Guard: new SectionFamily("Guard"),
     Other: new SectionFamily("Other"),
     Pit: new SectionFamily("Pit"),
-}
+};
 
 /**
  * A list of all sections defined in OpenMarch. The score order of these sections is the order they are
@@ -91,38 +97,154 @@ const FAMILIES: { [key: string]: SectionFamily } = {
  * The order of sections is the family order (defined in the SectionFamily enum), then the score order.
  */
 export const SECTIONS: { [key: string]: Section } = {
-    Piccolo: new Section({ family: FAMILIES.Woodwind, name: "Piccolo", prefix: "P" }),
-    Flute: new Section({ family: FAMILIES.Woodwind, name: "Flute", prefix: "F" }),
-    Clarinet: new Section({ family: FAMILIES.Woodwind, name: "Clarinet", prefix: "C" }),
-    BassClarinet: new Section({ family: FAMILIES.Woodwind, name: "Bass Clarinet", prefix: "BC" }),
-    SopranoSax: new Section({ family: FAMILIES.Woodwind, name: "Soprano Sax", prefix: "SS" }),
-    AltoSax: new Section({ family: FAMILIES.Woodwind, name: "Alto Sax", prefix: "A" }),
-    TenorSax: new Section({ family: FAMILIES.Woodwind, name: "Tenor Sax", prefix: "N" }),
-    BariSax: new Section({ family: FAMILIES.Woodwind, name: "Bari Sax", prefix: "I" }),
-    Trumpet: new Section({ family: FAMILIES.Brass, name: "Trumpet", prefix: "T" }),
-    Mellophone: new Section({ family: FAMILIES.Brass, name: "Mellophone", prefix: "M" }),
-    Trombone: new Section({ family: FAMILIES.Brass, name: "Trombone", prefix: "O" }),
-    BassTrombone: new Section({ family: FAMILIES.Brass, name: "Bass Trombone", prefix: "BO" }),
-    Baritone: new Section({ family: FAMILIES.Brass, name: "Baritone", prefix: "B" }),
-    Euphonium: new Section({ family: FAMILIES.Brass, name: "Euphonium", prefix: "E" }),
+    Piccolo: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Piccolo",
+        prefix: "P",
+    }),
+    Flute: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Flute",
+        prefix: "F",
+    }),
+    Clarinet: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Clarinet",
+        prefix: "C",
+    }),
+    BassClarinet: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Bass Clarinet",
+        prefix: "BC",
+    }),
+    SopranoSax: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Soprano Sax",
+        prefix: "SS",
+    }),
+    AltoSax: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Alto Sax",
+        prefix: "A",
+    }),
+    TenorSax: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Tenor Sax",
+        prefix: "N",
+    }),
+    BariSax: new Section({
+        family: FAMILIES.Woodwind,
+        name: "Bari Sax",
+        prefix: "I",
+    }),
+    Trumpet: new Section({
+        family: FAMILIES.Brass,
+        name: "Trumpet",
+        prefix: "T",
+    }),
+    Mellophone: new Section({
+        family: FAMILIES.Brass,
+        name: "Mellophone",
+        prefix: "M",
+    }),
+    Trombone: new Section({
+        family: FAMILIES.Brass,
+        name: "Trombone",
+        prefix: "O",
+    }),
+    BassTrombone: new Section({
+        family: FAMILIES.Brass,
+        name: "Bass Trombone",
+        prefix: "BO",
+    }),
+    Baritone: new Section({
+        family: FAMILIES.Brass,
+        name: "Baritone",
+        prefix: "B",
+    }),
+    Euphonium: new Section({
+        family: FAMILIES.Brass,
+        name: "Euphonium",
+        prefix: "E",
+    }),
     Tuba: new Section({ family: FAMILIES.Brass, name: "Tuba", prefix: "U" }),
-    Snare: new Section({ family: FAMILIES.Battery, name: "Snare", prefix: "S" }),
-    Tenors: new Section({ family: FAMILIES.Battery, name: "Tenors", prefix: "Q" }),
-    BassDrum: new Section({ family: FAMILIES.Battery, name: "Bass Drum", prefix: "D" }),
-    Cymbals: new Section({ family: FAMILIES.Battery, name: "Cymbals", prefix: "C" }),
-    FlubDrum: new Section({ family: FAMILIES.Battery, name: "Flub Drum", prefix: "L" }),
-    ColorGuard: new Section({ family: FAMILIES.Guard, name: "Color Guard", prefix: "G" }),
+    Snare: new Section({
+        family: FAMILIES.Battery,
+        name: "Snare",
+        prefix: "S",
+    }),
+    Tenors: new Section({
+        family: FAMILIES.Battery,
+        name: "Tenors",
+        prefix: "Q",
+    }),
+    BassDrum: new Section({
+        family: FAMILIES.Battery,
+        name: "Bass Drum",
+        prefix: "D",
+    }),
+    Cymbals: new Section({
+        family: FAMILIES.Battery,
+        name: "Cymbals",
+        prefix: "C",
+    }),
+    FlubDrum: new Section({
+        family: FAMILIES.Battery,
+        name: "Flub Drum",
+        prefix: "L",
+    }),
+    ColorGuard: new Section({
+        family: FAMILIES.Guard,
+        name: "Color Guard",
+        prefix: "G",
+    }),
     Rifle: new Section({ family: FAMILIES.Guard, name: "Rifle", prefix: "R" }),
     Flag: new Section({ family: FAMILIES.Guard, name: "Flag", prefix: "FL" }),
-    Dancer: new Section({ family: FAMILIES.Guard, name: "Dancer", prefix: "DN" }),
-    Twirler: new Section({ family: FAMILIES.Guard, name: "Twirler", prefix: "TW" }),
-    Soloist: new Section({ family: FAMILIES.Other, name: "Soloist", prefix: "SL" }),
-    Marimba: new Section({ family: FAMILIES.Pit, name: "Marimba", prefix: "MR" }),
-    Vibraphone: new Section({ family: FAMILIES.Pit, name: "Vibraphone", prefix: "VB" }),
-    Xylophone: new Section({ family: FAMILIES.Pit, name: "Xylophone", prefix: "X" }),
-    AuxPercussion: new Section({ family: FAMILIES.Pit, name: "Aux Percussion", prefix: "AX" }),
-    Synthesizer: new Section({ family: FAMILIES.Pit, name: "Synthesizer", prefix: "SY" }),
-    DrumMajor: new Section({ family: FAMILIES.Other, name: "Drum Major", prefix: "DM" }),
+    Dancer: new Section({
+        family: FAMILIES.Guard,
+        name: "Dancer",
+        prefix: "DN",
+    }),
+    Twirler: new Section({
+        family: FAMILIES.Guard,
+        name: "Twirler",
+        prefix: "TW",
+    }),
+    Soloist: new Section({
+        family: FAMILIES.Other,
+        name: "Soloist",
+        prefix: "SL",
+    }),
+    Marimba: new Section({
+        family: FAMILIES.Pit,
+        name: "Marimba",
+        prefix: "MR",
+    }),
+    Vibraphone: new Section({
+        family: FAMILIES.Pit,
+        name: "Vibraphone",
+        prefix: "VB",
+    }),
+    Xylophone: new Section({
+        family: FAMILIES.Pit,
+        name: "Xylophone",
+        prefix: "X",
+    }),
+    AuxPercussion: new Section({
+        family: FAMILIES.Pit,
+        name: "Aux Percussion",
+        prefix: "AX",
+    }),
+    Synthesizer: new Section({
+        family: FAMILIES.Pit,
+        name: "Synthesizer",
+        prefix: "SY",
+    }),
+    DrumMajor: new Section({
+        family: FAMILIES.Other,
+        name: "Drum Major",
+        prefix: "DM",
+    }),
     Other: new Section({ family: FAMILIES.Other, name: "Other", prefix: "OT" }),
 } as const;
 
@@ -139,7 +261,7 @@ export const SECTIONS: { [key: string]: Section } = {
  */
 export function getSectionObjectByName(name: string): Section {
     const section =
-        Object.values(SECTIONS).find(section => section.name === name)
-        || SECTIONS.Other;
+        Object.values(SECTIONS).find((section) => section.name === name) ||
+        SECTIONS.Other;
     return section;
 }

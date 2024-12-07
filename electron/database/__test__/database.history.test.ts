@@ -26,12 +26,12 @@ describe("History Tables and Triggers", () => {
             // Check if the undo, redo, and history stats tables were created
             const tables = db
                 .prepare(
-                    `SELECT name FROM sqlite_master WHERE type='table' AND name IN (?, ?, ?);`
+                    `SELECT name FROM sqlite_master WHERE type='table' AND name IN (?, ?, ?);`,
                 )
                 .all(
                     Constants.UndoHistoryTableName,
                     Constants.RedoHistoryTableName,
-                    Constants.HistoryStatsTableName
+                    Constants.HistoryStatsTableName,
                 );
 
             expect(tables.length).toBe(3); // All three tables should be created
@@ -40,7 +40,7 @@ describe("History Tables and Triggers", () => {
         it("should create the triggers for a given table", () => {
             // Create a test table to attach triggers to
             db.prepare(
-                "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
             ).run();
 
             // Create the undo triggers for the test table
@@ -49,7 +49,7 @@ describe("History Tables and Triggers", () => {
             // Check if the triggers were created
             const triggers = db
                 .prepare(
-                    `SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name = 'test_table';`
+                    `SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name = 'test_table';`,
                 )
                 .all();
 
@@ -60,7 +60,7 @@ describe("History Tables and Triggers", () => {
             const allUndoRowsByGroup = () =>
                 db
                     .prepare(
-                        `SELECT * FROM ${Constants.UndoHistoryTableName} GROUP BY "history_group";`
+                        `SELECT * FROM ${Constants.UndoHistoryTableName} GROUP BY "history_group";`,
                     )
                     .all() as HistoryRow[];
             const allUndoRows = () =>
@@ -72,7 +72,7 @@ describe("History Tables and Triggers", () => {
                 it("should do nothing if there are no changes to undo", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -89,7 +89,7 @@ describe("History Tables and Triggers", () => {
                 it("should do nothing if it runs out of changes to undo", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -101,7 +101,7 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("test value");
                     incrementUndoGroup(db);
                     expect(undoRows().length).toBe(1);
@@ -120,7 +120,7 @@ describe("History Tables and Triggers", () => {
                 it("should execute an undo correctly from an insert action", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -128,12 +128,12 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("test value");
 
                     // Simulate an action that will be logged in the undo history
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("another value");
 
                     // Execute the undo action
@@ -154,7 +154,7 @@ describe("History Tables and Triggers", () => {
                     // Create history tables and test table
                     createHistoryTables(db);
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -163,10 +163,10 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table in three groups
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g1-0 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g1-1 - test value");
                     incrementUndoGroup(db);
                     const groupOneObjects = db
@@ -174,7 +174,7 @@ describe("History Tables and Triggers", () => {
                         .all("g1%") as Row[];
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g2-0 - test value");
                     incrementUndoGroup(db);
                     const groupTwoObjects = db
@@ -182,13 +182,13 @@ describe("History Tables and Triggers", () => {
                         .all("g2%") as Row[];
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-0 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-1 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-2 - test value");
                     incrementUndoGroup(db);
                     const groupThreeObjects = db
@@ -213,7 +213,7 @@ describe("History Tables and Triggers", () => {
                         'DELETE FROM "test_table" WHERE rowid=4',
                     ]);
                     expect(response.tableNames).toEqual(
-                        new Set(["test_table"])
+                        new Set(["test_table"]),
                     );
                     expect(response.error).toBeUndefined();
 
@@ -235,14 +235,14 @@ describe("History Tables and Triggers", () => {
                 it("should execute an undo correctly from an update action", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     const currentValue = () =>
                         (
                             db
                                 .prepare(
-                                    "SELECT test_value FROM test_table WHERE id = 1;"
+                                    "SELECT test_value FROM test_table WHERE id = 1;",
                                 )
                                 .get() as {
                                 test_value: string;
@@ -254,21 +254,21 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("test value");
                     expect(currentValue()).toBe("test value");
                     incrementUndoGroup(db);
 
                     // Update the value in the test table
                     db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;"
+                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
                     ).run("updated value");
                     expect(currentValue()).toBe("updated value"); // The value should be updated
                     incrementUndoGroup(db);
 
                     // Simulate an action that will be logged in the undo history
                     db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;"
+                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
                     ).run("another updated value");
                     expect(currentValue()).toBe("another updated value"); // The value should be updated
                     incrementUndoGroup(db);
@@ -291,7 +291,7 @@ describe("History Tables and Triggers", () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -300,24 +300,24 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-0 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-1 - initial value");
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g2-0 - initial value");
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-0 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-1 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-2 - initial value");
                     incrementUndoGroup(db);
 
@@ -327,41 +327,41 @@ describe("History Tables and Triggers", () => {
                     // group 1
                     db.prepare(updateSql).run(
                         "g1-0 - updated value",
-                        "g1-0 - initial value"
+                        "g1-0 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g1-1 - updated value",
-                        "g1-1 - initial value"
+                        "g1-1 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 2
                     db.prepare(updateSql).run(
                         "g2-0 - updated value",
-                        "g2-0 - initial value"
+                        "g2-0 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 3
                     db.prepare(updateSql).run(
                         "g3-0 - updated value",
-                        "g3-0 - initial value"
+                        "g3-0 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g3-1 - updated value",
-                        "g3-1 - initial value"
+                        "g3-1 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g3-2 - updated value",
-                        "g3-2 - initial value"
+                        "g3-2 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 1 (again)
                     db.prepare(updateSql).run(
                         "g1-0 - second updated value",
-                        "g1-0 - updated value"
+                        "g1-0 - updated value",
                     );
                     db.prepare(updateSql).run(
                         "g1-1 - second updated value",
-                        "g1-1 - updated value"
+                        "g1-1 - updated value",
                     );
 
                     const allRows = () =>
@@ -386,7 +386,7 @@ describe("History Tables and Triggers", () => {
                         'UPDATE "test_table" SET "id"=1,"test_value"=\'g1-0 - updated value\' WHERE rowid=1',
                     ]);
                     expect(response.tableNames).toEqual(
-                        new Set(["test_table"])
+                        new Set(["test_table"]),
                     );
                     expect(response.error).toBeUndefined();
 
@@ -445,7 +445,7 @@ describe("History Tables and Triggers", () => {
                 it("should execute an undo correctly from a delete action", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     const currentValue = () => {
@@ -453,7 +453,7 @@ describe("History Tables and Triggers", () => {
                             return (
                                 db
                                     .prepare(
-                                        "SELECT test_value FROM test_table WHERE id = 1;"
+                                        "SELECT test_value FROM test_table WHERE id = 1;",
                                     )
                                     .get() as {
                                     test_value: string;
@@ -469,7 +469,7 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("test value");
                     expect(currentValue()).toBe("test value");
                     incrementUndoGroup(db);
@@ -492,7 +492,7 @@ describe("History Tables and Triggers", () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -501,24 +501,24 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-0");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-1");
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g2-0");
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-0");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-1");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-2");
                     incrementUndoGroup(db);
 
@@ -553,7 +553,7 @@ describe("History Tables and Triggers", () => {
                         'INSERT INTO "test_table" ("id","test_value") VALUES (4,\'g3-0\')',
                     ]);
                     expect(response.tableNames).toEqual(
-                        new Set(["test_table"])
+                        new Set(["test_table"]),
                     );
                     expect(response.error).toBeUndefined();
 
@@ -596,7 +596,7 @@ describe("History Tables and Triggers", () => {
             const allRedoRowsByGroup = () =>
                 db
                     .prepare(
-                        `SELECT * FROM ${Constants.RedoHistoryTableName} GROUP BY "history_group";`
+                        `SELECT * FROM ${Constants.RedoHistoryTableName} GROUP BY "history_group";`,
                     )
                     .all() as HistoryRow[];
             const allRedoRows = () =>
@@ -608,7 +608,7 @@ describe("History Tables and Triggers", () => {
                 it("should do nothing if there are no changes to redo", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -623,7 +623,7 @@ describe("History Tables and Triggers", () => {
                 it("should do nothing if it runs out of changes to redo", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -633,7 +633,7 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("test value");
                     // Execute an undo action to add a change to the redo history
                     performUndo(db);
@@ -654,7 +654,7 @@ describe("History Tables and Triggers", () => {
                     type Row = { id: number; value: string };
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -662,13 +662,13 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("test value");
                     incrementUndoGroup(db);
 
                     // Simulate an action that will be logged in the undo history
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("another value");
 
                     const allRows = () =>
@@ -696,7 +696,7 @@ describe("History Tables and Triggers", () => {
                     // Create history tables and test table
                     createHistoryTables(db);
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -705,10 +705,10 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table in three groups
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g1-0 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g1-1 - test value");
                     incrementUndoGroup(db);
                     const groupOneObjects = db
@@ -716,7 +716,7 @@ describe("History Tables and Triggers", () => {
                         .all("g1%") as Row[];
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g2-0 - test value");
                     incrementUndoGroup(db);
                     const groupTwoObjects = db
@@ -724,13 +724,13 @@ describe("History Tables and Triggers", () => {
                         .all("g2%") as Row[];
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-0 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-1 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-2 - test value");
                     incrementUndoGroup(db);
                     const groupThreeObjects = db
@@ -779,7 +779,7 @@ describe("History Tables and Triggers", () => {
                 it("should have no redo operations after inserting a new undo entry after INSERT", () => {
                     createHistoryTables(db);
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -788,26 +788,26 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table in three groups
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g1-0 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g1-1 - test value");
                     incrementUndoGroup(db);
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g2-0 - test value");
                     incrementUndoGroup(db);
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-0 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-1 - test value");
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g3-2 - test value");
                     incrementUndoGroup(db);
 
@@ -820,7 +820,7 @@ describe("History Tables and Triggers", () => {
 
                     // Do another action to clear the redo stack
                     db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);"
+                        "INSERT INTO test_table (value) VALUES (?);",
                     ).run("g1-0 - another value");
 
                     expect(allRedoRowsByGroup().length).toBe(0);
@@ -831,14 +831,14 @@ describe("History Tables and Triggers", () => {
                 it("should execute an undo correctly from an update action", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     const currentValue = () =>
                         (
                             db
                                 .prepare(
-                                    "SELECT test_value FROM test_table WHERE id = 1;"
+                                    "SELECT test_value FROM test_table WHERE id = 1;",
                                 )
                                 .get() as {
                                 test_value: string;
@@ -850,17 +850,17 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("test value");
                     incrementUndoGroup(db);
 
                     // Update the values in the test table
                     db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;"
+                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
                     ).run("updated value");
                     incrementUndoGroup(db);
                     db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;"
+                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
                     ).run("another updated value");
                     incrementUndoGroup(db);
 
@@ -883,7 +883,7 @@ describe("History Tables and Triggers", () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -892,24 +892,24 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-0 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-1 - initial value");
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g2-0 - initial value");
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-0 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-1 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-2 - initial value");
                     incrementUndoGroup(db);
 
@@ -919,41 +919,41 @@ describe("History Tables and Triggers", () => {
                     // group 1
                     db.prepare(updateSql).run(
                         "g1-0 - updated value",
-                        "g1-0 - initial value"
+                        "g1-0 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g1-1 - updated value",
-                        "g1-1 - initial value"
+                        "g1-1 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 2
                     db.prepare(updateSql).run(
                         "g2-0 - updated value",
-                        "g2-0 - initial value"
+                        "g2-0 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 3
                     db.prepare(updateSql).run(
                         "g3-0 - updated value",
-                        "g3-0 - initial value"
+                        "g3-0 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g3-1 - updated value",
-                        "g3-1 - initial value"
+                        "g3-1 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g3-2 - updated value",
-                        "g3-2 - initial value"
+                        "g3-2 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 1 (again)
                     db.prepare(updateSql).run(
                         "g1-0 - second updated value",
-                        "g1-0 - updated value"
+                        "g1-0 - updated value",
                     );
                     db.prepare(updateSql).run(
                         "g1-1 - second updated value",
-                        "g1-1 - updated value"
+                        "g1-1 - updated value",
                     );
 
                     const allRows = () =>
@@ -1029,7 +1029,7 @@ describe("History Tables and Triggers", () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -1038,24 +1038,24 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-0 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-1 - initial value");
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g2-0 - initial value");
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-0 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-1 - initial value");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-2 - initial value");
                     incrementUndoGroup(db);
 
@@ -1065,41 +1065,41 @@ describe("History Tables and Triggers", () => {
                     // group 1
                     db.prepare(updateSql).run(
                         "g1-0 - updated value",
-                        "g1-0 - initial value"
+                        "g1-0 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g1-1 - updated value",
-                        "g1-1 - initial value"
+                        "g1-1 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 2
                     db.prepare(updateSql).run(
                         "g2-0 - updated value",
-                        "g2-0 - initial value"
+                        "g2-0 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 3
                     db.prepare(updateSql).run(
                         "g3-0 - updated value",
-                        "g3-0 - initial value"
+                        "g3-0 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g3-1 - updated value",
-                        "g3-1 - initial value"
+                        "g3-1 - initial value",
                     );
                     db.prepare(updateSql).run(
                         "g3-2 - updated value",
-                        "g3-2 - initial value"
+                        "g3-2 - initial value",
                     );
                     incrementUndoGroup(db);
                     // group 1 (again)
                     db.prepare(updateSql).run(
                         "g1-0 - second updated value",
-                        "g1-0 - updated value"
+                        "g1-0 - updated value",
                     );
                     db.prepare(updateSql).run(
                         "g1-1 - second updated value",
-                        "g1-1 - updated value"
+                        "g1-1 - updated value",
                     );
 
                     const allRows = () =>
@@ -1126,7 +1126,7 @@ describe("History Tables and Triggers", () => {
 
                     // Do another action to clear the redo stack
                     db.prepare(
-                        "UPDATE test_table SET test_value = (?) WHERE id = 1;"
+                        "UPDATE test_table SET test_value = (?) WHERE id = 1;",
                     ).run("updated value!");
                     expect(allRedoRowsByGroup().length).toBe(0);
                 });
@@ -1136,7 +1136,7 @@ describe("History Tables and Triggers", () => {
                 it("should execute an undo correctly from a delete action", () => {
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     const currentValue = () => {
@@ -1144,7 +1144,7 @@ describe("History Tables and Triggers", () => {
                             return (
                                 db
                                     .prepare(
-                                        "SELECT test_value FROM test_table WHERE id = 1;"
+                                        "SELECT test_value FROM test_table WHERE id = 1;",
                                     )
                                     .get() as {
                                     test_value: string;
@@ -1160,7 +1160,7 @@ describe("History Tables and Triggers", () => {
 
                     // Insert a value into the test table
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("test value");
                     incrementUndoGroup(db);
 
@@ -1184,7 +1184,7 @@ describe("History Tables and Triggers", () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -1193,24 +1193,24 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-0");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-1");
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g2-0");
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-0");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-1");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-2");
                     incrementUndoGroup(db);
 
@@ -1279,7 +1279,7 @@ describe("History Tables and Triggers", () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
                     db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);"
+                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     ).run();
 
                     // Create undo triggers for the test table
@@ -1288,24 +1288,24 @@ describe("History Tables and Triggers", () => {
                     // Insert a value into the test table
                     // group 1
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-0");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g1-1");
                     // group 2
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g2-0");
                     // group 3
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-0");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-1");
                     db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);"
+                        "INSERT INTO test_table (test_value) VALUES (?);",
                     ).run("g3-2");
                     incrementUndoGroup(db);
 
@@ -1381,28 +1381,28 @@ describe("History Tables and Triggers", () => {
 
             // Insert user data
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("John Doe", 30, "john@example.com");
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Jane Doe", 25, "jane@example.com");
             incrementUndoGroup(db);
 
             // Insert orders linked to users
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(1, "Laptop", 1, 1000.0);
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(2, "Phone", 2, 500.0);
             incrementUndoGroup(db);
 
             // Insert payments linked to orders
             db.prepare(
-                "INSERT INTO payments (order_id, amount, payment_date) VALUES (?, ?, ?)"
+                "INSERT INTO payments (order_id, amount, payment_date) VALUES (?, ?, ?)",
             ).run(1, 1000.0, "2024-10-08");
             db.prepare(
-                "INSERT INTO payments (order_id, amount, payment_date) VALUES (?, ?, ?)"
+                "INSERT INTO payments (order_id, amount, payment_date) VALUES (?, ?, ?)",
             ).run(2, 500.0, "2024-10-09");
             incrementUndoGroup(db);
 
@@ -1437,25 +1437,25 @@ describe("History Tables and Triggers", () => {
 
             // Insert initial users
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Alice", 28, "alice@example.com");
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Bob", 35, "bob@example.com");
             incrementUndoGroup(db);
 
             // Insert orders with complex WHERE clauses
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(1, "Tablet", 2, 600.0);
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(2, "Monitor", 1, 300.0);
             incrementUndoGroup(db);
 
             // Perform an update with WHERE
             db.prepare("UPDATE users SET age = age + 1 WHERE name = ?").run(
-                "Alice"
+                "Alice",
             );
             incrementUndoGroup(db);
 
@@ -1483,18 +1483,18 @@ describe("History Tables and Triggers", () => {
 
             // Insert several users and orders interleaved with undo/redo
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Chris", 40, "chris@example.com");
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Diana", 22, "diana@example.com");
             incrementUndoGroup(db);
 
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(1, "Desk", 1, 150.0);
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(2, "Chair", 2, 200.0);
             incrementUndoGroup(db);
 
@@ -1509,7 +1509,7 @@ describe("History Tables and Triggers", () => {
             performUndo(db);
 
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Eve", 32, "eve@example.com");
             incrementUndoGroup(db);
 
@@ -1529,25 +1529,25 @@ describe("History Tables and Triggers", () => {
 
             // Insert users and orders
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Frank", 33, "frank@example.com");
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Grace", 29, "grace@example.com");
             incrementUndoGroup(db);
 
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(1, "Headphones", 1, 100.0);
             db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)"
+                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
             ).run(2, "Keyboard", 1, 120.0);
             incrementUndoGroup(db);
 
             // Update and delete data
             db.prepare("UPDATE users SET email = ? WHERE name = ?").run(
                 "frank_updated@example.com",
-                "Frank"
+                "Frank",
             );
             db.prepare("DELETE FROM orders WHERE id = 2");
             incrementUndoGroup(db);
@@ -1572,7 +1572,7 @@ describe("History Tables and Triggers", () => {
             (
                 db
                     .prepare(
-                        `SELECT group_limit FROM ${Constants.HistoryStatsTableName}`
+                        `SELECT group_limit FROM ${Constants.HistoryStatsTableName}`,
                     )
                     .get() as HistoryStatsRow | undefined
             )?.group_limit;
@@ -1581,30 +1581,30 @@ describe("History Tables and Triggers", () => {
             (
                 db
                     .prepare(
-                        `SELECT * FROM ${Constants.UndoHistoryTableName} GROUP BY "history_group" ORDER BY "history_group" ASC`
+                        `SELECT * FROM ${Constants.UndoHistoryTableName} GROUP BY "history_group" ORDER BY "history_group" ASC`,
                     )
                     .all() as HistoryTableRow[]
             ).map((row) => row.history_group);
         it("removes the oldest undo group when the undo limit of 100 is reached", () => {
             createHistoryTables(db);
             db.prepare(
-                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);"
+                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();
             createUndoTriggers(db, "users");
 
             // set the limit to 100
             db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`
+                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`,
             ).run();
             expect(groupLimit()).toBe(100);
 
             for (let i = 0; i < 99; i++) {
                 // Insert users and orders
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Harry_${100 / i}`, i, `email${100 - i}@jeff.com`);
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}@josie.com`);
                 incrementUndoGroup(db);
             }
@@ -1614,7 +1614,7 @@ describe("History Tables and Triggers", () => {
 
             // Insert one more group
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Harry_100", 100, "email@jeff100.com");
             incrementUndoGroup(db);
             expect(undoGroups().length).toBe(100);
@@ -1623,7 +1623,7 @@ describe("History Tables and Triggers", () => {
 
             // Insert another group
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Harry_101", 101, "email@jeff101.com");
             incrementUndoGroup(db);
             expect(undoGroups().length).toBe(100);
@@ -1633,7 +1633,7 @@ describe("History Tables and Triggers", () => {
             // insert 50 more groups
             for (let i = 102; i < 152; i++) {
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Harry_${i}`, i, `email${100 - i}@jeff.com`);
                 incrementUndoGroup(db);
             }
@@ -1648,23 +1648,23 @@ describe("History Tables and Triggers", () => {
         it("removes the oldest undo group when the undo limit of 2000 is reached", () => {
             createHistoryTables(db);
             db.prepare(
-                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);"
+                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();
             createUndoTriggers(db, "users");
 
             // set the limit to 2000
             db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 2000`
+                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 2000`,
             ).run();
             expect(groupLimit()).toBe(2000);
 
             for (let i = 0; i < 1999; i++) {
                 // Insert users and orders
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Harry_${2000 / i}`, i, `email${2000 - i}@jeff.com`);
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Josie_${2000 / i}`, i + 50, `email${200 - i}@josie.com`);
                 incrementUndoGroup(db);
             }
@@ -1674,7 +1674,7 @@ describe("History Tables and Triggers", () => {
 
             // Insert one more group
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Harry_2000", 2000, "email@jeff2000.com");
             incrementUndoGroup(db);
             expect(undoGroups().length).toBe(2000);
@@ -1683,7 +1683,7 @@ describe("History Tables and Triggers", () => {
 
             // Insert another group
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run("Harry_101", 101, "email@jeff101.com");
             incrementUndoGroup(db);
             expect(undoGroups().length).toBe(2000);
@@ -1693,7 +1693,7 @@ describe("History Tables and Triggers", () => {
             // insert 50 more groups
             for (let i = 102; i < 152; i++) {
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Harry_${i}`, i, `email${2000 - i}@jeff.com`);
                 incrementUndoGroup(db);
             }
@@ -1708,35 +1708,35 @@ describe("History Tables and Triggers", () => {
         it("adds more undo groups when the limit is increased", () => {
             createHistoryTables(db);
             db.prepare(
-                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);"
+                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();
             createUndoTriggers(db, "users");
 
             // set the limit to 100
             db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`
+                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`,
             ).run();
             expect(groupLimit()).toBe(100);
 
             for (let i = 0; i < 150; i++) {
                 // Insert users and orders
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Harry_${100 / i}`, i, `email${100 - i}`);
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}`);
                 incrementUndoGroup(db);
             }
             expect(undoGroups().length).toBe(100);
             let expectedGroups = Array.from(Array(100).keys()).map(
-                (i) => i + 50
+                (i) => i + 50,
             );
             expect(undoGroups()).toEqual(expectedGroups);
 
             // set the limit to 200
             db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`
+                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`,
             ).run();
             expect(groupLimit()).toBe(200);
             expect(undoGroups().length).toBe(100);
@@ -1744,10 +1744,10 @@ describe("History Tables and Triggers", () => {
             for (let i = 150; i < 300; i++) {
                 // Insert users and orders
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Harry_${100 / i}`, i, `email${100 - i}`);
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}`);
                 incrementUndoGroup(db);
             }
@@ -1762,42 +1762,42 @@ describe("History Tables and Triggers", () => {
         it("removes groups when the limit is decreased", () => {
             createHistoryTables(db);
             db.prepare(
-                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);"
+                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();
             createUndoTriggers(db, "users");
 
             // set the limit to 200
             db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`
+                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`,
             ).run();
             expect(groupLimit()).toBe(200);
 
             for (let i = 0; i < 250; i++) {
                 // Insert users and orders
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Harry_${100 / i}`, i, `email${100 - i}`);
                 db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
                 ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}`);
                 incrementUndoGroup(db);
             }
             expect(undoGroups().length).toBe(200);
             let expectedGroups = Array.from(Array(200).keys()).map(
-                (i) => i + 50
+                (i) => i + 50,
             );
             expect(undoGroups()).toEqual(expectedGroups);
 
             // set the limit to 100
             db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 50`
+                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 50`,
             ).run();
             expect(groupLimit()).toBe(50);
             // Should not change until next group increment
             expect(undoGroups().length).toBe(200);
 
             db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)"
+                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
             ).run(`Harry_last`, 1234, `email_last`);
             incrementUndoGroup(db);
             expect(undoGroups().length).toBe(50);
@@ -1830,30 +1830,30 @@ describe("History Tables and Triggers", () => {
 
             // Insert into reserved_words_test
             db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
             ).run("Group1", "Select1", "From1");
             db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
             ).run("Group2", "Select2", "From2");
             incrementUndoGroup(db);
 
             // Insert into special_characters_test
             db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)"
+                "INSERT INTO special_characters_test (description) VALUES (?)",
             ).run(
-                "\"Double quote\", 'Single quote', (Parentheses), [Brackets]"
+                "\"Double quote\", 'Single quote', (Parentheses), [Brackets]",
             );
             db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)"
+                "INSERT INTO special_characters_test (description) VALUES (?)",
             ).run("Escape \\ backslash");
             incrementUndoGroup(db);
 
             // Perform DELETE operations
             db.prepare(
-                'DELETE FROM reserved_words_test WHERE "order" = 2'
+                'DELETE FROM reserved_words_test WHERE "order" = 2',
             ).run();
             db.prepare(
-                "DELETE FROM special_characters_test WHERE id = 2"
+                "DELETE FROM special_characters_test WHERE id = 2",
             ).run();
             incrementUndoGroup(db);
 
@@ -1884,21 +1884,21 @@ describe("History Tables and Triggers", () => {
 
             // Insert into both tables
             db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
             ).run("Group1", "Select1", "From1");
             db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)"
+                "INSERT INTO special_characters_test (description) VALUES (?)",
             ).run(
-                '"Complex value (with) {all} kinds [of] special characters!"'
+                '"Complex value (with) {all} kinds [of] special characters!"',
             );
             incrementUndoGroup(db);
 
             // Perform updates and DELETEs
             db.prepare(
-                'UPDATE reserved_words_test SET "group" = ? WHERE "order" = 1'
+                'UPDATE reserved_words_test SET "group" = ? WHERE "order" = 1',
             ).run("UpdatedGroup");
             db.prepare(
-                "DELETE FROM special_characters_test WHERE id = 1"
+                "DELETE FROM special_characters_test WHERE id = 1",
             ).run();
             incrementUndoGroup(db);
 
@@ -1907,27 +1907,27 @@ describe("History Tables and Triggers", () => {
             expect(response.success).toBe(true);
             expect(response.error).toBeUndefined();
             expect(response.tableNames).toEqual(
-                new Set(["reserved_words_test", "special_characters_test"])
+                new Set(["reserved_words_test", "special_characters_test"]),
             );
             let reservedResult = db
                 .prepare(
-                    'SELECT "group" FROM reserved_words_test WHERE "order" = 1'
+                    'SELECT "group" FROM reserved_words_test WHERE "order" = 1',
                 )
                 .get() as any;
             let specialResult = db
                 .prepare(
-                    "SELECT description FROM special_characters_test WHERE id = 1"
+                    "SELECT description FROM special_characters_test WHERE id = 1",
                 )
                 .get() as any;
             expect(reservedResult.group).toBe("Group1");
             expect(specialResult.description).toBe(
-                '"Complex value (with) {all} kinds [of] special characters!"'
+                '"Complex value (with) {all} kinds [of] special characters!"',
             );
 
             performRedo(db); // Redo DELETE and update
             reservedResult = db
                 .prepare(
-                    'SELECT "group" FROM reserved_words_test WHERE "order" = 1'
+                    'SELECT "group" FROM reserved_words_test WHERE "order" = 1',
                 )
                 .get();
             specialResult = db
@@ -1942,25 +1942,25 @@ describe("History Tables and Triggers", () => {
 
             // Insert several rows into both tables
             db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
             ).run("GroupA", "SelectA", "FromA");
             db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)'
+                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
             ).run("GroupB", "SelectB", "FromB");
             db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)"
+                "INSERT INTO special_characters_test (description) VALUES (?)",
             ).run('Some "special" (value)');
             db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)"
+                "INSERT INTO special_characters_test (description) VALUES (?)",
             ).run('Another "complex" [test] (entry)');
             incrementUndoGroup(db);
 
             // Perform random DELETEs
             db.prepare(
-                'DELETE FROM reserved_words_test WHERE "order" = 1'
+                'DELETE FROM reserved_words_test WHERE "order" = 1',
             ).run();
             db.prepare(
-                "DELETE FROM special_characters_test WHERE id = 2"
+                "DELETE FROM special_characters_test WHERE id = 2",
             ).run();
             incrementUndoGroup(db);
 

@@ -1,18 +1,22 @@
 import BeatUnit from "./BeatUnit";
 
-
 /**
  * A class representing a time signature ensuring valid numerator and denominator.
  */
 class TimeSignature {
     readonly numerator: number;
     static readonly validDenominators = [1, 2, 4, 8, 16, 32, 64] as const;
-    readonly denominator: typeof TimeSignature.validDenominators[number];
+    readonly denominator: (typeof TimeSignature.validDenominators)[number];
 
-    constructor(timeSignature: { numerator: number, denominator: typeof TimeSignature.validDenominators[number] }) {
+    constructor(timeSignature: {
+        numerator: number;
+        denominator: (typeof TimeSignature.validDenominators)[number];
+    }) {
         const numerator = timeSignature.numerator;
         if (numerator <= 0 || !Number.isInteger(numerator))
-            throw new Error("Invalid time signature numerator. Must be a positive integer.");
+            throw new Error(
+                "Invalid time signature numerator. Must be a positive integer.",
+            );
         this.numerator = timeSignature.numerator;
         this.denominator = timeSignature.denominator;
     }
@@ -26,14 +30,21 @@ class TimeSignature {
     static fromString(timeSignature: string): TimeSignature {
         const split = timeSignature.split("/");
         if (split.length !== 2)
-            throw new Error("Invalid time signature string. Must be in the form of '4/4'");
+            throw new Error(
+                "Invalid time signature string. Must be in the form of '4/4'",
+            );
         const numerator = parseInt(split[0]);
         const denominator = parseInt(split[1]);
         const validDenominators = [1, 2, 4, 8, 16, 32, 64];
         if (!validDenominators.includes(denominator))
-            throw new Error("Invalid time signature denominator. Must be 1, 2, 4, 8, 16, 32, or 64");
+            throw new Error(
+                "Invalid time signature denominator. Must be 1, 2, 4, 8, 16, 32, or 64",
+            );
 
-        return new TimeSignature({ numerator, denominator: denominator as 1 | 2 | 4 | 8 | 16 | 32 | 64 });
+        return new TimeSignature({
+            numerator,
+            denominator: denominator as 1 | 2 | 4 | 8 | 16 | 32 | 64,
+        });
     }
 
     /**
@@ -41,7 +52,10 @@ class TimeSignature {
      * @returns true if the other TimeSignature is equal to this TimeSignature.
      */
     equals(other: TimeSignature): boolean {
-        return this.numerator === other.numerator && this.denominator === other.denominator;
+        return (
+            this.numerator === other.numerator &&
+            this.denominator === other.denominator
+        );
     }
 
     /**

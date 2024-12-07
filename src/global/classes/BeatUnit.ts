@@ -35,7 +35,7 @@ class BeatUnit {
         BeatUnit.SIXTEENTH,
         BeatUnit.DOTTED_SIXTEENTH,
         BeatUnit.THIRTY_SECOND,
-        BeatUnit.SIXTY_FOURTH
+        BeatUnit.SIXTY_FOURTH,
     ];
 
     /**
@@ -52,18 +52,30 @@ class BeatUnit {
      */
     toFractionString() {
         switch (this.name) {
-            case "WHOLE": return '1/1';
-            case "HALF": return '1/2';
-            case "DOTTED HALF": return '3/4';
-            case "QUARTER": return '1/4';
-            case "DOTTED QUARTER": return '3/8';
-            case "EIGHTH": return '1/8';
-            case "DOTTED_EIGHTH": return '3/16';
-            case "SIXTEENTH": return '1/16';
-            case "DOTTED_SIXTEENTH": return '3/32';
-            case "THIRTY_SECOND": return '1/32';
-            case "SIXTY_FOURTH": return '1/64';
-            default: throw new Error(`Invalid beat unit name: ${this.name}`);
+            case "WHOLE":
+                return "1/1";
+            case "HALF":
+                return "1/2";
+            case "DOTTED HALF":
+                return "3/4";
+            case "QUARTER":
+                return "1/4";
+            case "DOTTED QUARTER":
+                return "3/8";
+            case "EIGHTH":
+                return "1/8";
+            case "DOTTED_EIGHTH":
+                return "3/16";
+            case "SIXTEENTH":
+                return "1/16";
+            case "DOTTED_SIXTEENTH":
+                return "3/32";
+            case "THIRTY_SECOND":
+                return "1/32";
+            case "SIXTY_FOURTH":
+                return "1/64";
+            default:
+                throw new Error(`Invalid beat unit name: ${this.name}`);
         }
     }
 
@@ -82,18 +94,30 @@ class BeatUnit {
      */
     static fromName(name: string): BeatUnit {
         switch (name) {
-            case "WHOLE": return BeatUnit.WHOLE;
-            case "HALF": return BeatUnit.HALF;
-            case "DOTTED HALF": return BeatUnit.DOTTED_HALF;
-            case "QUARTER": return BeatUnit.QUARTER;
-            case "DOTTED QUARTER": return BeatUnit.DOTTED_QUARTER;
-            case "EIGHTH": return BeatUnit.EIGHTH;
-            case "DOTTED_EIGHTH": return BeatUnit.DOTTED_EIGHTH;
-            case "SIXTEENTH": return BeatUnit.SIXTEENTH;
-            case "DOTTED_SIXTEENTH": return BeatUnit.DOTTED_SIXTEENTH;
-            case "THIRTY_SECOND": return BeatUnit.THIRTY_SECOND;
-            case "SIXTY_FOURTH": return BeatUnit.SIXTY_FOURTH;
-            default: throw new Error(`Invalid beat unit name: ${name}`);
+            case "WHOLE":
+                return BeatUnit.WHOLE;
+            case "HALF":
+                return BeatUnit.HALF;
+            case "DOTTED HALF":
+                return BeatUnit.DOTTED_HALF;
+            case "QUARTER":
+                return BeatUnit.QUARTER;
+            case "DOTTED QUARTER":
+                return BeatUnit.DOTTED_QUARTER;
+            case "EIGHTH":
+                return BeatUnit.EIGHTH;
+            case "DOTTED_EIGHTH":
+                return BeatUnit.DOTTED_EIGHTH;
+            case "SIXTEENTH":
+                return BeatUnit.SIXTEENTH;
+            case "DOTTED_SIXTEENTH":
+                return BeatUnit.DOTTED_SIXTEENTH;
+            case "THIRTY_SECOND":
+                return BeatUnit.THIRTY_SECOND;
+            case "SIXTY_FOURTH":
+                return BeatUnit.SIXTY_FOURTH;
+            default:
+                throw new Error(`Invalid beat unit name: ${name}`);
         }
     }
 
@@ -103,24 +127,37 @@ class BeatUnit {
      */
     static fromString(beatUnitString: string): BeatUnit {
         let value = 0;
-        if (beatUnitString.includes('/'))
-            value = parseInt(beatUnitString.split('/')[0]) / parseInt(beatUnitString.split('/')[1]);
-        else
-            value = parseInt(beatUnitString);
+        if (beatUnitString.includes("/"))
+            value =
+                parseInt(beatUnitString.split("/")[0]) /
+                parseInt(beatUnitString.split("/")[1]);
+        else value = parseInt(beatUnitString);
 
         switch (value) {
-            case 1: return BeatUnit.WHOLE;
-            case 1 / 2: return BeatUnit.HALF;
-            case 3 / 4: return BeatUnit.DOTTED_HALF;
-            case 1 / 4: return BeatUnit.QUARTER;
-            case 3 / 8: return BeatUnit.DOTTED_QUARTER;
-            case 1 / 8: return BeatUnit.EIGHTH;
-            case 3 / 16: return BeatUnit.DOTTED_EIGHTH;
-            case 1 / 16: return BeatUnit.SIXTEENTH;
-            case 3 / 32: return BeatUnit.DOTTED_SIXTEENTH;
-            case 1 / 32: return BeatUnit.THIRTY_SECOND;
-            case 1 / 64: return BeatUnit.SIXTY_FOURTH;
-            default: throw new Error(`Invalid beat unit string: ${beatUnitString}`);
+            case 1:
+                return BeatUnit.WHOLE;
+            case 1 / 2:
+                return BeatUnit.HALF;
+            case 3 / 4:
+                return BeatUnit.DOTTED_HALF;
+            case 1 / 4:
+                return BeatUnit.QUARTER;
+            case 3 / 8:
+                return BeatUnit.DOTTED_QUARTER;
+            case 1 / 8:
+                return BeatUnit.EIGHTH;
+            case 3 / 16:
+                return BeatUnit.DOTTED_EIGHTH;
+            case 1 / 16:
+                return BeatUnit.SIXTEENTH;
+            case 3 / 32:
+                return BeatUnit.DOTTED_SIXTEENTH;
+            case 1 / 32:
+                return BeatUnit.THIRTY_SECOND;
+            case 1 / 64:
+                return BeatUnit.SIXTY_FOURTH;
+            default:
+                throw new Error(`Invalid beat unit string: ${beatUnitString}`);
         }
     }
 }

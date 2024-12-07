@@ -17,7 +17,7 @@ interface AlignmentEventStoreInterface extends AlignmentEventState {
     setAlignmentEvent: (alignmentEvent: AlignmentEvent) => void;
     setAlignmentEventMarchers: (alignmentEventMarchers: Marcher[]) => void;
     setAlignmentEventNewMarcherPages: (
-        alignmentEventNewMarcherPages: MarcherPage[]
+        alignmentEventNewMarcherPages: MarcherPage[],
     ) => void;
 }
 
@@ -62,9 +62,9 @@ export const useAlignmentEventStore = create<AlignmentEventStoreInterface>(
          * @param alignmentEventNewMarcherPages
          */
         setAlignmentEventNewMarcherPages: (
-            alignmentEventNewMarcherPages: MarcherPage[]
+            alignmentEventNewMarcherPages: MarcherPage[],
         ) => {
             set({ alignmentEventNewMarcherPages });
         },
-    })
+    }),
 );

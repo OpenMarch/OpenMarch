@@ -30,21 +30,21 @@ export interface ListFormProps {
      */
     isEditingStateProp?: [
         boolean,
-        React.Dispatch<React.SetStateAction<boolean>>
+        React.Dispatch<React.SetStateAction<boolean>>,
     ];
     /**
      * React state to trigger a submit of the list form from a parent component.
      */
     submitActivatorStateProp?: [
         boolean,
-        React.Dispatch<React.SetStateAction<boolean>>
+        React.Dispatch<React.SetStateAction<boolean>>,
     ];
     /**
      * React state to trigger a cancel of the editing in a list form from a parent component.
      */
     cancelActivatorStateProp?: [
         boolean,
-        React.Dispatch<React.SetStateAction<boolean>>
+        React.Dispatch<React.SetStateAction<boolean>>,
     ];
 }
 

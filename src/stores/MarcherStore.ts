@@ -17,10 +17,10 @@ export const useMarcherStore = create<MarcherStoreInterface>((set) => ({
     fetchMarchers: async () => {
         const receivedMarchers = await Marcher.getMarchers();
         const sortedMarchers = receivedMarchers.sort((a, b) =>
-            Marcher.compare(a, b)
+            Marcher.compare(a, b),
         );
         const marcherObjects = sortedMarchers.map(
-            (marcher) => new Marcher(marcher)
+            (marcher) => new Marcher(marcher),
         );
         set({ marchers: marcherObjects });
     },

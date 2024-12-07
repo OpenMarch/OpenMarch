@@ -7,7 +7,7 @@
 import xml2abcInterpreter from "../xml2abcInterpreter";
 import { describe, expect, it } from "vitest";
 
-
+/* spell-checker: disable */
 const expectedAbc = `X:1
 T:The Cadets 2016 "Awakening"
 %%scale 0.83
@@ -60,7 +60,7 @@ V:1
 [K:Eb][M:4/4] z8 | z8 | z8 |[K:Bb] z8 | z8 | z8 |[K:G] z8 | z8 |[K:C#] z8 | z8 |[Q:1/4=80] z8 | %431
  z8 ||[K:C][Q:1/4=76] z8 | z8 |[K:B] z8 |[K:C#] z8 |[K:F] z8 | z8 | z8 | z8 | z8 | z8 | z8 | z8 | %444
  z8 | z8 |] %446
-`
+`;
 
 const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
@@ -6397,11 +6397,11 @@ const xmlString = `<?xml version="1.0" encoding="UTF-8"?>
       </measure>
     </part>
   </score-partwise>
- `
+ `;
 
-describe('xml2abcInterpreter', () => {
-  it('should return abc string', () => {
-    const abcString = xml2abcInterpreter(xmlString);
-    expect(abcString).toBe(expectedAbc);
-  })
-})
+describe("xml2abcInterpreter", () => {
+    it("should return abc string", () => {
+        const abcString = xml2abcInterpreter(xmlString);
+        expect(abcString).toBe(expectedAbc);
+    });
+});
