@@ -37,7 +37,7 @@ export default class FieldProperties {
     readonly xCheckpoints: Checkpoint[];
     /**
      * An array of objects with the name of the Y checkpoint and the number of Y steps from the center.
-     * The front hash on a college field would be { "front hash": 80 } (assuming the orgin )
+     * The front hash on a college field would be { "front hash": 80 } (assuming the origin )
      * Note that Y trends positive towards the front of the field (bottom on the canvas).
      */
     readonly yCheckpoints: Checkpoint[];

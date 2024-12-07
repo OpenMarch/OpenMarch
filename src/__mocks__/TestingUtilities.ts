@@ -15,7 +15,7 @@ export function createMarcherPages(
     marchers: Marcher[],
     pages: Page[],
     defaultX = 0,
-    defaultY = 0
+    defaultY = 0,
 ): MarcherPage[] {
     const marcherPages: MarcherPage[] = [];
     let currentId = 1;

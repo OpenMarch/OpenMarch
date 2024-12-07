@@ -48,7 +48,8 @@ export default class DefaultListeners implements CanvasListeners {
         ) {
             const mouseDistance = Math.sqrt(
                 (fabricEvent.e.clientX - this.canvas.selectDragStart.x) ** 2 +
-                    (fabricEvent.e.clientY - this.canvas.selectDragStart.y) ** 2
+                    (fabricEvent.e.clientY - this.canvas.selectDragStart.y) **
+                        2,
             );
             // Check if the mouse has moved more than the threshold
             if (mouseDistance < this.canvas.DISTANCE_THRESHOLD) {
@@ -106,7 +107,7 @@ export default class DefaultListeners implements CanvasListeners {
             const vpt = this.canvas.viewportTransform;
             if (!vpt) {
                 console.error(
-                    "Viewport transform not set - handleMouseMove: Canvas.tsx"
+                    "Viewport transform not set - handleMouseMove: Canvas.tsx",
                 );
                 return;
             }
@@ -126,7 +127,7 @@ export default class DefaultListeners implements CanvasListeners {
     handleMouseUp(fabricEvent: fabric.IEvent<MouseEvent>) {
         if (!this.canvas.viewportTransform) {
             console.error(
-                "Viewport transform is not set. This will cause issues with panning around the canvas."
+                "Viewport transform is not set. This will cause issues with panning around the canvas.",
             );
             return;
         }

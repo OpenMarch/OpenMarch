@@ -31,7 +31,7 @@ describe("DefaultListeners", () => {
             allMarchers: mockMarchers,
             currentMarcherPages: MarcherPage.filterByPageId(
                 mockMarcherPages,
-                selectedPage.id
+                selectedPage.id,
             ),
         });
         listeners = new DefaultListeners({ canvas });
@@ -157,7 +157,7 @@ describe("DefaultListeners", () => {
 
     describe("handleObjectModified", () => {
         it.todo(
-            "should not update the marcher if the mouse was clicked and not dragged"
+            "should not update the marcher if the mouse was clicked and not dragged",
         );
         it.todo("should update the marcher if the mouse was dragged");
     });
@@ -183,7 +183,7 @@ describe("DefaultListeners", () => {
         it("should set the dragStart time and coordinates when selecting a multiple marchers", () => {
             const before = Date.now();
             const activeSelection = new fabric.ActiveSelection(
-                canvas.getCanvasMarchers()
+                canvas.getCanvasMarchers(),
             );
             const fabricEvent: fabric.IEvent<MouseEvent> = {
                 e: new MouseEvent("mousedown", { clientX: 123, clientY: 321 }),
@@ -253,13 +253,13 @@ describe("DefaultListeners", () => {
 
             const setViewportTransformSpy = vi.spyOn(
                 canvas,
-                "setViewportTransform"
+                "setViewportTransform",
             );
 
             listeners.handleMouseUp(fabricEvent);
 
             expect(setViewportTransformSpy).toHaveBeenCalledWith(
-                canvas.viewportTransform
+                canvas.viewportTransform,
             );
         });
     });

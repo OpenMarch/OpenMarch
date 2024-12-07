@@ -1,12 +1,14 @@
-import { ReactNode, createContext, useContext, useState } from 'react';
+import { ReactNode, createContext, useContext, useState } from "react";
 
 // Define the type for the context value
 type IsPlayingContextProps = {
-    isPlaying: boolean,
-    setIsPlaying: (isPlaying: boolean) => void
+    isPlaying: boolean;
+    setIsPlaying: (isPlaying: boolean) => void;
 };
 
-const IsPlayingContext = createContext<IsPlayingContextProps | undefined>(undefined);
+const IsPlayingContext = createContext<IsPlayingContextProps | undefined>(
+    undefined,
+);
 
 export function IsPlayingProvider({ children }: { children: ReactNode }) {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -14,7 +16,7 @@ export function IsPlayingProvider({ children }: { children: ReactNode }) {
     // Create the context value object
     const contextValue: IsPlayingContextProps = {
         isPlaying,
-        setIsPlaying
+        setIsPlaying,
     };
 
     return (

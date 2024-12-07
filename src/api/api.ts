@@ -3,8 +3,8 @@
  * @returns Response data from the server.
  */
 export async function launchLoadFileDialogue() {
-  const response = await window.electron.databaseLoad();
-  return response;
+    const response = await window.electron.databaseLoad();
+    return response;
 }
 
 /**
@@ -12,27 +12,26 @@ export async function launchLoadFileDialogue() {
  * @returns Response data from the server.
  */
 export async function launchSaveFileDialogue() {
-  const response = await window.electron.databaseSave();
-  return response;
+    const response = await window.electron.databaseSave();
+    return response;
 }
-
 
 /**
  * Launches a file dialogue to create a new OpenMarch .dots file.
  * @returns Response data from the server.
  */
 export async function launchNewFileDialogue() {
-  const response = await window.electron.databaseCreate();
-  return response;
+    const response = await window.electron.databaseCreate();
+    return response;
 }
 
 /**
  * Performs an undo action by popping the last action off the history stack.
  * @returns Response data from the server.
-*/
+ */
 export async function performUndo() {
-  const response = await window.electron.undo();
-  return response;
+    const response = await window.electron.undo();
+    return response;
 }
 
 /**
@@ -41,6 +40,6 @@ export async function performUndo() {
  * @returns Response data from the server.
  */
 export async function performRedo() {
-  const response = await window.electron.redo();
-  return response;
+    const response = await window.electron.redo();
+    return response;
 }

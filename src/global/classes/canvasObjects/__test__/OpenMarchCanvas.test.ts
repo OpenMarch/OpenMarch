@@ -30,7 +30,7 @@ describe("OpenMarchCanvas", () => {
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 ),
             });
             const canvasMarchers = canvas.getCanvasMarchers();
@@ -38,14 +38,14 @@ describe("OpenMarchCanvas", () => {
             for (const marcher of mockMarchers) {
                 const canvasMarcher = canvasMarchers.find(
                     (canvasMarcher) =>
-                        canvasMarcher.marcherObj.id === marcher.id
+                        canvasMarcher.marcherObj.id === marcher.id,
                 );
                 expect(canvasMarcher).toBeDefined();
                 if (!canvasMarcher) return;
                 const marcherPage = mockMarcherPages.find(
                     (marcherPage) =>
                         marcherPage.marcher_id === marcher.id &&
-                        marcherPage.page_id === selectedPage.id
+                        marcherPage.page_id === selectedPage.id,
                 );
                 expect(marcherPage).toBeDefined();
                 if (!marcherPage) return;
@@ -59,11 +59,11 @@ describe("OpenMarchCanvas", () => {
     describe("refreshMarchers", () => {
         it.todo(
             "Leaves the canvasMarchers alone on refresh when unchanged",
-            () => {}
+            () => {},
         );
         it.todo(
             "Restores the canvasMarchers to their original position on refresh when changed",
-            () => {}
+            () => {},
         );
     });
 
@@ -83,7 +83,7 @@ describe("OpenMarchCanvas", () => {
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 ),
             });
 
@@ -114,7 +114,7 @@ describe("OpenMarchCanvas", () => {
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 ),
             });
 
@@ -160,7 +160,7 @@ describe("OpenMarchCanvas", () => {
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
-                    selectedPage.id
+                    selectedPage.id,
                 ),
             });
 

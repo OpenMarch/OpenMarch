@@ -49,11 +49,11 @@ describe("AlignmentEvent Store", () => {
 
         act(() =>
             result.current.setAlignmentEventNewMarcherPages(
-                expectedMarcherPages
-            )
+                expectedMarcherPages,
+            ),
         );
         expect(result.current.alignmentEventNewMarcherPages).toEqual(
-            expectedMarcherPages
+            expectedMarcherPages,
         );
         act(() => result.current.setAlignmentEventNewMarcherPages([]));
         expect(result.current.alignmentEventNewMarcherPages).toEqual([]);

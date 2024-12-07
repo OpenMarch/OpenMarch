@@ -149,7 +149,7 @@ export default class LineListeners
         if (this.canvas.eventMarchers.length < 2) {
             console.error(
                 `Cannot create a marcherLine of < 2 marchers. Only found ${this.canvas.eventMarchers.length}`,
-                this.canvas.eventMarchers
+                this.canvas.eventMarchers,
             );
             return;
         }
@@ -220,21 +220,21 @@ export default class LineListeners
             dashed: true,
         });
         this._pathways = new Map<number, Pathway>(
-            createdPathways.map((pathway) => [pathway.marcherId, pathway])
+            createdPathways.map((pathway) => [pathway.marcherId, pathway]),
         );
 
         const createdStaticMarchers = this.canvas.renderStaticMarchers({
             color: CanvasColors.TEMP_PATH,
             intendedMarcherPages: offsetNewDots,
             allMarchers: this.canvas.eventMarchers.map(
-                (canvasMarcher) => canvasMarcher.marcherObj
+                (canvasMarcher) => canvasMarcher.marcherObj,
             ),
         });
         this._staticMarchers = new Map<number, fabric.Object>(
             createdStaticMarchers.map((staticMarcher) => [
                 staticMarcher.marcherId || -1,
                 staticMarcher,
-            ])
+            ]),
         );
 
         this.canvas.sendCanvasMarchersToFront();

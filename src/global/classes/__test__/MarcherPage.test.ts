@@ -68,14 +68,13 @@ describe("MarcherPage", () => {
 
         const checkForFetchMarcherPagesSpy = vi.spyOn(
             MarcherPage,
-            "checkForFetchMarcherPages"
+            "checkForFetchMarcherPages",
         );
         const fetchMarcherPagesSpy = vi.spyOn(MarcherPage, "fetchMarcherPages");
 
         const updatePagesSpy = vi.spyOn(MarcherPage, "updateMarcherPages");
-        const response = await MarcherPage.updateMarcherPages(
-            modifiedMarcherPages
-        );
+        const response =
+            await MarcherPage.updateMarcherPages(modifiedMarcherPages);
 
         expect(response).toEqual(mockResponse);
         expect(updatePagesSpy).toHaveBeenCalledWith(modifiedMarcherPages);

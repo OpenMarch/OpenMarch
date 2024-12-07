@@ -30,7 +30,7 @@ describe("Canvas", () => {
                         </SelectedAudioFileProvider>
                     </SelectedMarchersProvider>
                 </SelectedPageProvider>
-            </IsPlayingProvider>
+            </IsPlayingProvider>,
         );
     };
 

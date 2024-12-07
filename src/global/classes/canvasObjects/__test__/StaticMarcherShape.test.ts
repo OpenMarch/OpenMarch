@@ -5,6 +5,7 @@ import FieldPropertiesTemplates from "../../FieldProperties.templates";
 import { falsyUiSettings } from "@/components/canvas/__test__/MocksForCanvas";
 
 describe.todo("StaticMarcherShape", () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let canvas: OpenMarchCanvas;
     const mockFieldProperties =
         FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;

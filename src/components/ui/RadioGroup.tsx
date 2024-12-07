@@ -34,7 +34,7 @@ export const RadioGroupItem = ({
                 value={value}
                 {...props}
             >
-                <RadixRadioGroup.Indicator className="after:size-14 relative flex size-full items-center justify-center after:block after:rounded-full after:bg-black after:content-['']" />
+                <RadixRadioGroup.Indicator className="relative flex size-full items-center justify-center after:block after:size-14 after:rounded-full after:bg-black after:content-['']" />
             </RadixRadioGroup.Item>
             <label className="text-body leading-none text-text" htmlFor={value}>
                 {children}

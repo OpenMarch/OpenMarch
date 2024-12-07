@@ -7,7 +7,7 @@ interface UiSettingsStoreState {
 interface UiSettingsStoreActions {
     setUiSettings: (
         uiSettings: Interfaces.UiSettings,
-        type?: keyof Interfaces.UiSettings
+        type?: keyof Interfaces.UiSettings,
     ) => void;
 }
 interface UiSettingsStoreInterface

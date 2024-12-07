@@ -30,18 +30,18 @@ function validatePageRows(pageRows: HTMLElement[], expectedPages: Page[]) {
         const pageRow = pageRows[i];
         const page = sortedExpectedPages[i];
         expect(within(pageRow).getByTitle("Page name").textContent).toBe(
-            page.name
+            page.name,
         );
         const counts = parseInt(
             within(pageRow).getByTitle("Page counts").textContent?.trim() ||
-                "-1"
+                "-1",
         );
         expect(counts).toBe(i === 0 ? 0 : page.counts);
     }
 }
 
 function createModifiedPages(
-    changes: { pageId: number; newCounts?: number }[]
+    changes: { pageId: number; newCounts?: number }[],
 ) {
     return changes.map((change) => {
         return { id: change.pageId, counts: change.newCounts?.toString() };
@@ -109,13 +109,13 @@ describe("PageList", () => {
         async function editPage(
             getAllByTitle: (
                 id: Matcher,
-                options?: MatcherOptions | undefined
+                options?: MatcherOptions | undefined,
             ) => HTMLElement[],
             getAllByRole: (
                 role: ByRoleMatcher,
-                options?: ByRoleOptions | undefined
+                options?: ByRoleOptions | undefined,
             ) => HTMLElement[],
-            changes: { pageId: number; newCounts?: number; oldPage: Page }[]
+            changes: { pageId: number; newCounts?: number; oldPage: Page }[],
         ) {
             // Set the list to editing mode
             const editButton = getAllByRole("button", { name: /edit/i })[0];
@@ -129,12 +129,13 @@ describe("PageList", () => {
                 const pageRows = getAllByTitle("Page row");
                 const pageRow = pageRows.find(
                     (row) =>
-                        parseInt(row.getAttribute("data-id")!) === change.pageId
+                        parseInt(row.getAttribute("data-id")!) ===
+                        change.pageId,
                 );
                 expect(pageRow).toBeDefined();
                 if (!pageRow)
                     throw new Error(
-                        "No row found for page id " + change.pageId
+                        "No row found for page id " + change.pageId,
                     );
 
                 // validate that the first page's name is not the same as the new name
@@ -147,7 +148,7 @@ describe("PageList", () => {
                     act(() =>
                         fireEvent.change(countsInput, {
                             target: { value: change.newCounts },
-                        })
+                        }),
                     );
                 }
             });
@@ -162,21 +163,21 @@ describe("PageList", () => {
             updatePageResults.forEach(
                 (updatePageResult: { id: number; counts: number }) => {
                     const correspondingChange = changes.find(
-                        (change) => change.pageId === updatePageResult.id
+                        (change) => change.pageId === updatePageResult.id,
                     );
                     expect(correspondingChange).toBeDefined();
                     if (!correspondingChange)
                         throw new Error(
                             "No corresponding change found for page id " +
-                                updatePageResult.id
+                                updatePageResult.id,
                         );
                     expect(updatePageResult.id).toBe(
-                        correspondingChange?.pageId
+                        correspondingChange?.pageId,
                     );
                     expect(updatePageResult.counts).toEqual(
-                        correspondingChange.newCounts?.toString() || undefined
+                        correspondingChange.newCounts?.toString() || undefined,
                     );
-                }
+                },
             );
         }
 
@@ -188,7 +189,7 @@ describe("PageList", () => {
             await editPage(getAllByTitle, getAllByRole, changes);
 
             expect(updatePagesSpy).toHaveBeenCalledWith(
-                createModifiedPages(changes)
+                createModifiedPages(changes),
             );
         });
 
@@ -201,7 +202,7 @@ describe("PageList", () => {
             ];
             await editPage(getAllByTitle, getAllByRole, changes);
             expect(updatePagesSpy).toHaveBeenCalledWith(
-                createModifiedPages(changes)
+                createModifiedPages(changes),
             );
         });
     });
