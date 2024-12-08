@@ -1,0 +1,196 @@
+---
+import * as Logos from "@/components/Logos";
+import Layout from "@/layouts/Layout.astro";
+import { Image } from "astro:assets";
+---
+
+<Layout title="Alex Dumouchelle - Founder & Lead Developer">
+    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
+        <section
+            id="download"
+            class="relative flex h-fit w-full min-w-0 flex-col items-center gap-32"
+        >
+            <div class="grid grid-cols-6 gap-32 max-[1000px]:grid-cols-1">
+                <div
+                    class="col-span-4 flex h-[50vh] min-h-0 w-full flex-col items-start justify-center px-64 max-[1000px]:col-span-1 max-[1000px]:p-32"
+                >
+                    <h1 class="text-left text-[96px] max-[700px]:text-h1">
+                        Alex Dumouchelle
+                    </h1>
+                    <p class="max-[500px]:text-p text-left text-[36px]">
+                        Founder and lead developer of OpenMarch
+                    </p>
+                    <div class="pt-16">
+                        <a
+                            class="max-[300px]:text-p text-secondary text-left text-[24px] hover:underline"
+                            href="mailto:alexdumo@openmarch.com"
+                        >
+                            alexdumo@openmarch.com
+                        </a>
+                        <div class="flex gap-16 pt-8">
+                            <a href="https://www.linkedin.com/in/AlexDumo/">
+                                <Logos.LogoLinkedIn width="32" height="32" />
+                            </a>
+                            <a href="https://github.com/AlexDumo">
+                                <Logos.LogoGitHub width="30" height="30" />
+                            </a>
+                            <a
+                                href="https://www.youtube.com/@alexdumouchelle3744"
+                            >
+                                <Logos.LogoYouTube width="34" height="34" />
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <Image
+                    src={"/alexdumo/tenor-grad.jpg"}
+                    alt={"Alex Dumouchelle photo"}
+                    class="col-span-2 mt-32 aspect-square w-full rounded-6 border border-stroke object-cover max-[1000px]:col-span-1"
+                    width={200}
+                    height={400}
+                />
+            </div>
+            <div
+                class="flex h-fit w-full flex-col gap-64 rounded-6 border border-stroke bg-fg-1 px-128 py-128 max-[1000px]:p-32 xl:px-256"
+            >
+                <div class="flex h-fit w-full flex-col gap-32">
+                    <h2 class="text-h2">About Alex</h2>
+                    <p class="leading-loose text-text">
+                        In his performing years, Alex was highly decorated in
+                        the marching arts starting his career at Jersey Surf in
+                        2018 and performed with The Cadets from 2019 to 2022 as
+                        a soloist. An alumni of James Madison University, Alex
+                        lead the Marching Royal Dukes as a drum major and tuba
+                        section leader. In the classroom, Alex earned his
+                        Bachelors in Computer Science and Independent Scholars
+                        while being a brother of Phi Mu Alpha, maintaining
+                        multiple music minors, and performing in several
+                        ensembles such as the JMU Chorale and JMU Brass Band.
+                    </p>
+                    <p class="leading-loose text-text">
+                        After graduating, Alex immediately began teaching local
+                        marching bands and joined the brass team at Jersey Surf.
+                        He currently works at Accenture Federal Services as a
+                        senior software analyst specializing in machine learning
+                        and computer vision.
+                    </p>
+                </div>
+                <div
+                    class="my-16 grid grid-cols-6 gap-32 max-[1000px]:grid-cols-1"
+                >
+                    <Image
+                        src={"/alexdumo/cadet-grad.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-4 row-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/surf.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-2 w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/jmu-bb.jpeg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-2 w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                </div>
+                <div class="flex h-fit w-full flex-col gap-32">
+                    <h2 class="text-h2">Why OpenMarch?</h2>
+                    <p class="leading-loose text-text">
+                        The hope is not to be the be all and end all of drill
+                        writing, but we want to make it way easier. Musescore
+                        has done amazing things for the composition community,
+                        yet Dorico and Sibelius still exist. Professionals will
+                        always want the premium features and OpenMarch will be
+                        for those who are fine with a simple but fast tool. Many
+                        young designers and band directors of smaller groups
+                        don&apos;t need all of the professional features. They
+                        don&apos;t need advanced 3D rendering and they
+                        don&apos;t need support for thousands of objects. They
+                        just want to design.
+                    </p>
+                    <p class="leading-loose text-text">
+                        I wake up every day and spend hours of my free time in
+                        between my job and teaching with the hope that OpenMarch
+                        will make the marching arts world healthier. Everyone is
+                        money strapped, but the activity is alive and well from
+                        the passion of the performers and educators. If a
+                        student wants to explore their passion for drill
+                        writing, or a band director wants to write drill for
+                        their own band, there should be an accessible tool to do
+                        so.
+                    </p>
+                    <p class="leading-loose text-text">
+                        I have been overjoyed with how quick people have stepped
+                        up to help get this mission accomplished. The community
+                        feedback has already been astounding and filled with
+                        support.
+                    </p>
+                </div>
+                <div
+                    class="my-16 grid grid-cols-6 gap-32 max-[1000px]:grid-cols-1"
+                >
+                    <Image
+                        src={"/alexdumo/march.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/ron.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/2022-retreat.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-2 row-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/jmu-mrd.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-4 row-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/gas.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/cadet-2021.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-3 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/alexdumo/lhs.jpg"}
+                        alt={"Alex Dumouchelle photo"}
+                        class="col-span-3 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
+                        width={200}
+                        height={400}
+                    />
+                </div>
+            </div>
+            <div
+                class="absolute left-1/2 top-0 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px]"
+            >
+            </div>
+        </section>
+    </div>
+</Layout>

@@ -1,4 +1,5 @@
 ---
+import { Button } from "@/components/ui/Button";
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
 ---
@@ -19,27 +20,62 @@ import { Image } from "astro:assets";
             <div
                 class="flex h-fit w-full flex-col gap-64 rounded-6 border border-stroke bg-fg-1 px-128 py-128 max-[1000px]:p-32 xl:px-256"
             >
-                <h1 class="text-h1">About</h1>
-                <p class="leading-loose text-text">
-                    OpenMarch is an open source drill writing software built on
-                    web app frameworks. Our goal is to be a free and easy drill
-                    writing solution for marching bands, indoor programs, and
-                    applicable performing ensembles. OpenMarch hopes to be
-                    enough for 90% of ensembles with reasonable design needs. We
-                    want to make drill writing effortless. OpenMarch is designed
-                    with three principles: stay free, stay fast, and stay
-                    simple. There may never be a day where OpenMarch has support
-                    for a 3D rendered marching band of 900 with live video feed
-                    jumbotron props. OpenMarch's current (and really only) focus
-                    is on the drill-writing experience. We hope you like our
-                    software.
-                </p>
-                <h1 class="text-h1">Team</h1>
+                <h1 class="text-h1">Our Mission</h1>
+                <div class="flex h-fit w-full flex-col gap-16">
+                    <p class="leading-loose text-text">
+                        OpenMarch is an open source drill writing software built
+                        on web app frameworks. Our goal is to be a free and easy
+                        drill writing solution for marching bands, indoor
+                        programs, and applicable performing ensembles. OpenMarch
+                        hopes to be enough for 90% of ensembles with reasonable
+                        design needs. We want to make drill writing effortless.
+                        OpenMarch is designed with three principles: stay free,
+                        stay fast, and stay simple.
+                    </p>
+                    <p class="leading-loose text-text">
+                        OpenMarch is designed with three principles:
+                    </p>
+                    <ul class="list-disc pl-32 leading-loose text-text">
+                        <li>
+                            <strong>Stay free</strong> - All of the technologies
+                            OpenMarch uses have been intentionally chosen to minimize
+                            operation costs. This ensures that OpenMarch remains
+                            accessible to everyone, regardless of their financial
+                            situation.
+                        </li>
+                        <li>
+                            <strong>Stay fast</strong> - OpenMarch is built with
+                            performance in mind. We want to ensure that the software
+                            runs smoothly on any device, making the drill writing
+                            process efficient and enjoyable.
+                        </li>
+                        <li>
+                            <strong>Stay simple</strong> - We focus on providing
+                            essential features without unnecessary complexity. Our
+                            interface is intuitive and easy to use, allowing you
+                            to create drill without a steep learning curve.
+                        </li>
+                    </ul>
+
+                    <p class="leading-loose text-text">
+                        There may never be a day where OpenMarch has support for
+                        a 3D rendered marching band of 900 with live video feed
+                        jumbotron props. OpenMarch's current (and really only)
+                        focus is on the drill-writing experience. We hope you
+                        like our software.
+                    </p>
+                </div>
+                <h1 class="text-h1">The Team</h1>
                 <div class="grid grid-cols-3 gap-32 max-[920px]:grid-cols-1">
                     <div class="flex flex-col gap-16">
                         <h2 class="text-h2">Alex Dumouchelle</h2>
-                        <p>alexdumo@openmarch.com</p>
                         <h4 class="text-h4">Founder & lead developer</h4>
+
+                        <a href="../alexdumo">
+                            <Button variant="primary" size="compact">
+                                More about Alex
+                            </Button>
+                        </a>
                     </div>
                     <div class="flex flex-col gap-16">
                         <h2 class="text-h2">Ben</h2>
