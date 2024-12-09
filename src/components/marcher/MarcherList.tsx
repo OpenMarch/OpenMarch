@@ -229,17 +229,24 @@ export default function MarcherList({
                             </div>
                             {localMarchers.map((marcher) => (
                                 <div
+                                    data-testid={`marcher row`}
                                     id={`${marcher.drill_number} marcher row`}
                                     key={marcher.id_for_html}
                                     className="flex items-center gap-4"
                                 >
-                                    <div className="w-[13%]">
+                                    <div
+                                        className="w-[13%]"
+                                        data-testid="marcher-drill-number"
+                                    >
                                         <p className="font-mono text-body text-text">
                                             {marcher.drill_prefix +
                                                 marcher.drill_order}
                                         </p>
                                     </div>
-                                    <div className="w-[45%]">
+                                    <div
+                                        className="w-[45%]"
+                                        data-testid="marcher section"
+                                    >
                                         {isEditing ? (
                                             <Select
                                                 defaultValue={marcher.section}
@@ -281,7 +288,10 @@ export default function MarcherList({
                                                 </SelectContent>
                                             </Select>
                                         ) : (
-                                            <p className="text-body text-text">
+                                            <p
+                                                className="text-body text-text"
+                                                data-testid="marcher-section"
+                                            >
                                                 {marcher.section}
                                             </p>
                                         )}
@@ -308,7 +318,10 @@ export default function MarcherList({
                                                 }
                                             />
                                         ) : (
-                                            <p className="text-body text-text">
+                                            <p
+                                                className="text-body text-text"
+                                                data-testid="marcher-name"
+                                            >
                                                 {marcher.name}
                                             </p>
                                         )}

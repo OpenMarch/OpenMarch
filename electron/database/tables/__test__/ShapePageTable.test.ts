@@ -16,7 +16,9 @@ import { createMarcherPageTable } from "../MarcherPageTable";
 import { createMarcherTable } from "../MarcherTable";
 import { createShapePageMarcherTable } from "../ShapePageMarcherTable";
 
-describe("ShapePageTable CRUD Operations", () => {
+// TODO - fix these tests. new Database() is failing due to an issue with better_sqlite3.node being compiled with a different node version
+// https://github.com/OpenMarch/OpenMarch/issues/253
+describe.skip("ShapePageTable CRUD Operations", () => {
     let db: Database.Database;
 
     beforeEach(() => {
@@ -38,7 +40,7 @@ describe("ShapePageTable CRUD Operations", () => {
     });
 
     afterEach(() => {
-        db.close();
+        db?.close();
     });
 
     it("should create the shape_pages table", () => {

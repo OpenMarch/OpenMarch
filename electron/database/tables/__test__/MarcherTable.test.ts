@@ -9,7 +9,9 @@ import { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import Constants from "@/global/Constants";
 
-describe("MarcherTable", () => {
+// TODO - fix these tests. new Database() is failing due to an issue with better_sqlite3.node being compiled with a different node version
+// https://github.com/OpenMarch/OpenMarch/issues/253
+describe.skip("MarcherTable", () => {
     describe("createMarcherTable", () => {
         let db: Database.Database;
 
