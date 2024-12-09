@@ -210,12 +210,15 @@ function PageList({
                         </div>
                         {localPages.map((page) => (
                             <div
-                                id="Page row"
+                                data-testid="page-row"
                                 key={page.id}
                                 className="flex items-center gap-4"
                             >
                                 <div className="w-1/3">
-                                    <p className="font-mono text-body text-text">
+                                    <p
+                                        className="font-mono text-body text-text"
+                                        data-testid="page-name"
+                                    >
                                         {page.name}
                                     </p>
                                 </div>
@@ -244,7 +247,10 @@ function PageList({
                                             }
                                         />
                                     ) : (
-                                        <p className="text-body text-text">
+                                        <p
+                                            className="text-body text-text"
+                                            data-testid="page-counts"
+                                        >
                                             {page.counts}
                                         </p>
                                     )}
