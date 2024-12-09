@@ -1,0 +1,65 @@
+# This workflow runs checks for PRs
+
+name: PR Automated Checks
+
+# Runs when a pull request is opened, synchronized, or re-opened.
+# https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request
+on:
+    pull_request:
+        branches: [main, develop]
+
+# Jobs for this workflow. By default, jobs are run in parallel.
+# https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobs
+jobs:
+    # Run es-lint
+    lint:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                node-version: [18]
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install canvas dependencies
+              run: sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+            - name: Install project dependencies
+              run: npm ci
+            - name: Lint
+              run: npm run lint
+
+    # Run prettier
+    format:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install canvas dependencies
+              run: sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+            - name: Install project dependencies
+              run: npm ci
+            - name: Format
+              run: npm run prettier
+
+    # Spellcheck
+    spellcheck:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install canvas dependencies
+              run: sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+            - name: Install project dependencies
+              run: npm ci
+            - name: Spellcheck
+              run: npm run spellcheck
+
+    # Test
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install canvas dependencies
+              run: sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+            - name: Install project dependencies
+              run: npm ci
+            - name: Test Prepare
+              run: npm run test:prepare
+            - name: Test
+              run: npm run test:run
