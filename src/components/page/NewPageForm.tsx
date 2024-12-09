@@ -237,7 +237,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     </Form.Label>
                     <Form.Control asChild>
                         <Select
-                            aria-label="Select the previous page"
                             onValueChange={handlePreviousPageChange}
                             value={previousPage?.id.toString() || "-1"}
                         >
@@ -276,23 +275,25 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                         >
                             Counts
                         </Form.Label>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger>
-                                <Info size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <TooltipContents className="p-16">
-                                <div className="flex gap-8">
-                                    <ArrowLeft size={18} />
-                                    <ArrowRight size={18} />
-                                    to increment by 4.
-                                </div>
-                                <div className="flex gap-8">
-                                    <ArrowUp size={18} />
-                                    <ArrowDown size={18} />
-                                    to increment by 1.
-                                </div>
-                            </TooltipContents>
-                        </Tooltip.Root>
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger>
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16">
+                                    <div className="flex gap-8">
+                                        <ArrowLeft size={18} />
+                                        <ArrowRight size={18} />
+                                        to increment by 4.
+                                    </div>
+                                    <div className="flex gap-8">
+                                        <ArrowUp size={18} />
+                                        <ArrowDown size={18} />
+                                        to increment by 1.
+                                    </div>
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
                     </div>
                     <Form.Control asChild>
                         <Input
@@ -334,17 +335,19 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                         >
                             Subset
                         </Form.Label>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger>
-                                <Info size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <TooltipContents className="p-16">
-                                <code className="text-text3 rounded-6 border border-stroke p-4 font-mono">
-                                    S
-                                </code>{" "}
-                                to toggle subset.
-                            </TooltipContents>
-                        </Tooltip.Root>
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger>
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16">
+                                    <code className="text-text3 rounded-6 border border-stroke p-4 font-mono">
+                                        S
+                                    </code>{" "}
+                                    to toggle subset.
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
                     </div>
                     <Checkbox
                         id="subsetForm"
@@ -361,6 +364,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
             </div>
             <Button
                 type="submit"
+                data-testid="page-form-submit"
                 aria-label="create page button"
                 className="w-full"
                 disabled={disabledProp}

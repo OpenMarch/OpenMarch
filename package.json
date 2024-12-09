@@ -16,6 +16,7 @@
         "dev": "eslint . && vite",
         "app:prepare": "node_modules/.bin/electron-rebuild -f -w better-sqlite3 && vite",
         "build": "tsc && vite build && electron-builder -mwl ",
+        "clean": "rm -rf node_modules dist-electron release",
         "preview": "vite preview",
         "pree2e": "vite build --mode=test",
         "e2e": "playwright test",
@@ -27,8 +28,8 @@
         "prettier-fix": "prettier --write .",
         "spellcheck": "cspell 'src/**' '*.md'",
         "test": "eslint . && vitest",
-        "test:prepare": "npm rebuild better-sqlite3 && vitest",
-        "test:watch": "eslint . && vitest --watch",
+        "test:prepare": "npm rebuild better-sqlite3",
+        "test:run": "vitest run",
         "test:coverage": "eslint . && vitest --coverage",
         "test:clearCache": "vitest --clearCache"
     },

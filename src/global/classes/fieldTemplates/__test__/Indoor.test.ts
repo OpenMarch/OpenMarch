@@ -17,6 +17,7 @@ describe("createIndoorXCheckpoints", () => {
             terseName: "A",
             stepsFromCenterFront: -2,
             useAsReference: true,
+            visible: false,
         });
         expect(checkpoints[1]).toEqual({
             name: "Line B",
@@ -24,6 +25,7 @@ describe("createIndoorXCheckpoints", () => {
             terseName: "B",
             stepsFromCenterFront: 2,
             useAsReference: true,
+            visible: false,
         });
     });
 
@@ -68,18 +70,20 @@ describe("createIndoorYCheckpoints", () => {
         const checkpoints = createIndoorYCheckpoints({ ySteps: 4 });
         expect(checkpoints).toHaveLength(2);
         expect(checkpoints[0]).toEqual({
+            name: "Line 0",
+            axis: "y",
+            terseName: "0",
+            stepsFromCenterFront: 0,
+            useAsReference: true,
+            visible: false,
+        });
+        expect(checkpoints[1]).toEqual({
             name: "Line 1",
             axis: "y",
             terseName: "1",
-            stepsFromCenterFront: 0,
-            useAsReference: true,
-        });
-        expect(checkpoints[1]).toEqual({
-            name: "Line 2",
-            axis: "y",
-            terseName: "2",
             stepsFromCenterFront: -4,
             useAsReference: true,
+            visible: false,
         });
     });
 
@@ -89,7 +93,7 @@ describe("createIndoorYCheckpoints", () => {
         expect(checkpoints.map((c) => c.stepsFromCenterFront)).toEqual([
             0, -4, -8,
         ]);
-        expect(checkpoints.map((c) => c.terseName)).toEqual(["1", "2", "3"]);
+        expect(checkpoints.map((c) => c.terseName)).toEqual(["0", "1", "2"]);
     });
 
     it("should create correct checkpoints for 16 steps", () => {
@@ -99,11 +103,11 @@ describe("createIndoorYCheckpoints", () => {
             0, -4, -8, -12, -16,
         ]);
         expect(checkpoints.map((c) => c.name)).toEqual([
+            "Line 0",
             "Line 1",
             "Line 2",
             "Line 3",
             "Line 4",
-            "Line 5",
         ]);
     });
 

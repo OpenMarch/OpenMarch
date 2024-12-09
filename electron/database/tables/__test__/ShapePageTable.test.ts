@@ -38,7 +38,7 @@ describe("ShapePageTable CRUD Operations", () => {
     });
 
     afterEach(() => {
-        db.close();
+        db?.close();
     });
 
     it("should create the shape_pages table", () => {
@@ -123,6 +123,7 @@ describe("ShapePageTable CRUD Operations", () => {
                 id: created.data[0].id,
                 svg_path: "M 200 200 L 300 300",
                 notes: "Updated notes",
+                marcher_coordinates: [],
             },
         ];
 
@@ -204,7 +205,20 @@ describe("ShapePageTable CRUD Operations", () => {
         expect(deleteShapes({ db, ids: new Set([1]) }).success).toBeTruthy();
 
         const remaining = getShapePages({ db }).data;
-        expect(remaining).toMatchObject([newShapePages[2], newShapePages[3]]);
+
+        const expectedShapePages = [
+            {
+                shape_id: 2,
+                page_id: 0,
+                svg_path: "M 50 50 L 150 150",
+            },
+            {
+                shape_id: 2,
+                page_id: 1,
+                svg_path: "M 50 50 L 150 150",
+            },
+        ];
+        expect(remaining).toMatchObject(expectedShapePages);
     });
 
     it("should delete shape pages when the page is deleted", () => {
@@ -238,7 +252,21 @@ describe("ShapePageTable CRUD Operations", () => {
             true,
         );
         expect(deletePages({ db, pageIds: new Set([1]) }).success).toBeTruthy();
+
         const remaining = getShapePages({ db }).data;
-        expect(remaining).toMatchObject([newShapePages[0], newShapePages[2]]);
+
+        const expected = [
+            {
+                shape_id: 1,
+                page_id: 0,
+                svg_path: "M 0 0 L 100 100",
+            },
+            {
+                shape_id: 2,
+                page_id: 0,
+                svg_path: "M 50 50 L 150 150",
+            },
+        ];
+        expect(remaining).toMatchObject(expected);
     });
 });

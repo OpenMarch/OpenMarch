@@ -37,10 +37,22 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
         createMarchers({ db, newMarchers: DbMocks.NewMarchers });
         createShapes({ db, args: DbMocks.NewShapes });
         createShapePages({ db, args: DbMocks.NewShapePages });
+
+        // Delete SPMs that are created by the above
+        const getSpmsResult = getShapePageMarchers({
+            db,
+        });
+        expect(getSpmsResult.success).toBe(true);
+
+        const deleteResult = deleteShapePageMarchers({
+            db,
+            ids: new Set(getSpmsResult.data.map((spm) => spm.id)),
+        });
+        expect(deleteResult.success).toBe(true);
     });
 
     afterEach(() => {
-        db.close();
+        db?.close();
     });
 
     describe("CreateShapePageMarchers", () => {
@@ -477,7 +489,11 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 { shape_page_id: 1, marcher_id: 3, position_order: 3 },
                 { shape_page_id: 1, marcher_id: 4, position_order: 4 },
             ];
-            createShapePageMarchers({ db, args: initialSPMs });
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
 
             const result = deleteShapePageMarchers({
                 db,
