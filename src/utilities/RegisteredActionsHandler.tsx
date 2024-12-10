@@ -340,7 +340,7 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "Enter", shift: true }),
     }),
     createMarcherShape: new RegisteredAction({
-        desc: "Creates a new shape that can be edited across pages",
+        desc: "Creates a new shape with lines or curves that can be edited across pages",
         enumString: "createMarcherShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
     }),

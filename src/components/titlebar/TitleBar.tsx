@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 export default function TitleBar({ noControls }: { noControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
 
-    const [dbPath, setDbPath] = useState("");
+    const [dbPath, setDbPath] = useState<string>("");
 
     useEffect(() => {
         const fetchDbPath = async () => {
@@ -14,7 +14,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                 const path = await window.electron.databaseGetPath();
                 setDbPath(path);
             } catch (error) {
-                setDbPath("Failed to fetch database path");
+                setDbPath("Failed to fetch dbPath");
                 console.error("Error fetching database path:", error);
             }
         };
@@ -48,8 +48,8 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                     </>
                 )}
             </div>
-            <p className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-sub">
-                {dbPath}
+            <p className="absolute left-1/2 top-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center text-sub">
+                {dbPath.split("/").pop()}
             </p>
             {!isMacOS && (
                 <div className="titlebar-button flex">

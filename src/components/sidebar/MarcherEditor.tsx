@@ -103,7 +103,7 @@ function MarcherEditor() {
                                         RegisteredActionsObjects.alignmentEventLine
                                     }
                                 >
-                                    <Button className="w-full">
+                                    <Button size="compact" className="w-full">
                                         Create Line
                                     </Button>
                                 </RegisteredActionButton>
