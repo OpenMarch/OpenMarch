@@ -40,9 +40,11 @@ export default function FieldPropertiesSettings() {
 
     return (
         <div className="flex flex-col gap-16">
-            <h5 className="col-span-full h-fit text-h5">Field Properties</h5>
-            <div className="grid grid-cols-2 gap-x-0 gap-y-16">
-                <div className="flex w-full items-center gap-12">
+            <div className="flex flex-col gap-16 px-12">
+                <div className="flex w-full items-center justify-between gap-16">
+                    <label htmlFor="gridLines" className="text-body">
+                        Show grid lines
+                    </label>
                     <Checkbox
                         id="gridLines"
                         checked={uiSettings.gridLines}
@@ -53,11 +55,11 @@ export default function FieldPropertiesSettings() {
                             })
                         }
                     />
-                    <label htmlFor="gridLines" className="text-body">
-                        Show grid lines
-                    </label>
                 </div>
-                <div className="flex w-full items-center gap-12">
+                <div className="flex w-full items-center justify-between gap-16">
+                    <label htmlFor="halfLines" className="text-body">
+                        Show half lines
+                    </label>
                     <Checkbox
                         id="halfLines"
                         checked={uiSettings.halfLines}
@@ -68,11 +70,8 @@ export default function FieldPropertiesSettings() {
                             })
                         }
                     />
-                    <label htmlFor="halfLines" className="text-body">
-                        Show half lines
-                    </label>
                 </div>
-                <div className="col-span-full flex items-center justify-between gap-16">
+                <div className="flex w-full items-center justify-between gap-16">
                     <p className="text-body">Field type</p>
                     <div className="flex gap-8">
                         <Select
@@ -97,17 +96,16 @@ export default function FieldPropertiesSettings() {
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-                        <Button
-                            className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
-                            onClick={applyChanges}
-                        >
-                            Apply Field Type
-                        </Button>
                     </div>
                 </div>
+                <Button
+                    className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
+                    onClick={applyChanges}
+                >
+                    Apply Field Type
+                </Button>
             </div>
             <div
-                className="col-span-full"
                 hidden={
                     fieldProperties?.name === currentTemplate?.name ||
                     (fieldProperties?.width === currentTemplate?.width &&
@@ -119,10 +117,9 @@ export default function FieldPropertiesSettings() {
                 }
             >
                 <DangerNote>
-                    Changing to this field type of a different size will lead to
-                    different marcher coordinates on the new field type.
-                    Coordinates on your original field type will be unaffected
-                    if you switch back before making any changes.
+                    Marchers will not move to the new field type size, they will
+                    stay where they are on the canvas. They will stay there if
+                    you change back the field type.
                 </DangerNote>
             </div>
         </div>

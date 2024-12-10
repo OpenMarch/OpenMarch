@@ -4,6 +4,7 @@ import UiSettingsToolbar from "./sections/UiSettingsToolbar";
 import AlignmentToolbar from "./sections/AlignmentToolbar";
 import PagesModal from "@/components/page/PagesModal";
 import MusicModal from "@/components/music/MusicModal";
+import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
@@ -15,6 +16,7 @@ function Topbar() {
                 <MarchersModal />
                 <PagesModal />
                 <MusicModal />
+                <FieldModal />
             </ToolbarSection>
             <UiSettingsToolbar />
             <AlignmentToolbar />

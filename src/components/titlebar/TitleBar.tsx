@@ -49,7 +49,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                 )}
             </div>
             <p className="absolute left-1/2 top-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center text-sub">
-                {dbPath.split("/").pop()}
+                {dbPath}
             </p>
             {!isMacOS && (
                 <div className="titlebar-button flex">
