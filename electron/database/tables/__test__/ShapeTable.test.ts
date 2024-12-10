@@ -19,7 +19,7 @@ describe("MarcherShapeTable", () => {
     });
 
     afterEach(() => {
-        db.close();
+        db?.close();
     });
 
     describe("createShapeTable", () => {
