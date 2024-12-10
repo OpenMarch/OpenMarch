@@ -8,6 +8,7 @@ import { applicationMenu } from "./application-menu";
 import { generatePDF } from "./export-coordinates";
 import { update } from "./update";
 import AudioFile from "@/global/classes/AudioFile";
+import { parseMxl } from "../mxl/MxlUtil";
 // const xml2abc = require('../xml2abc-js/xml2abc.js')
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');
@@ -466,15 +467,15 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
     const dialogueResponse = await dialog.showOpenDialog(win, {
         filters: [
             {
-                name: "MusicXML File (uncompressed)",
-                extensions: [/**'mxl',**/ "musicxml", "xml"],
+                name: "MusicXML File",
+                extensions: ["mxl", "musicxml", "xml"],
             },
             { name: "All Files", extensions: ["*"] },
         ],
     });
 
     if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
-        console.error("Operation was cancelled or no audio file was provided");
+        console.error("Operation was cancelled or no file was provided");
         return;
     }
 
@@ -483,7 +484,7 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
 
     let xmlString;
     if (filePath.endsWith(".mxl")) {
-        console.error("compressed MusicXML not supported yet");
+        xmlString = parseMxl(filePath);
     } else {
         xmlString = fs.readFileSync(filePath, "utf8");
     }
