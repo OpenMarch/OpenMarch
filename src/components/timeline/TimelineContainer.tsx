@@ -20,7 +20,7 @@ export default function TimelineContainer() {
     return (
         <div
             id="timeline"
-            className="relative flex h-[10rem] min-h-0 min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
+            className="relative flex h-[10rem] min-h-0 w-full min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
         >
             <div
                 className="fixed bottom-0 right-0 m-16 flex gap-6 drop-shadow-md"
@@ -91,7 +91,7 @@ export default function TimelineContainer() {
                             >
                                 {/* ------ PAGES ------ */}
                                 <div
-                                    className={`ml-6 flex h-full items-center justify-end rounded-6 border bg-fg-2 px-10 py-4 text-body text-text ${
+                                    className={`ml-6 flex h-full items-center justify-end rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
                                         !isPlaying && "cursor-pointer"
                                     } ${
                                         page.id === selectedPage?.id
@@ -120,7 +120,7 @@ export default function TimelineContainer() {
                     })}
                 </div>
                 <div
-                    className="row-span-2 h-full min-h-0 pl-[31px]"
+                    className="row-span-2 h-full min-h-0 whitespace-nowrap pl-[31px]"
                     id="counts measures"
                 >
                     {measures.map((measure, index) => {
@@ -147,7 +147,7 @@ export default function TimelineContainer() {
                                         ),
                                     }}
                                 >
-                                    <div className="col-span-full flex h-full items-center justify-start rounded-6 border border-stroke bg-fg-2 px-10 py-4 text-body leading-none">
+                                    <div className="col-span-full flex h-full items-center justify-start rounded-6 border border-stroke bg-fg-2 px-8 py-4 text-body leading-none">
                                         {measure.number}
                                     </div>
                                     {Array.from(
@@ -155,7 +155,7 @@ export default function TimelineContainer() {
                                         (_, i) => (
                                             <div
                                                 key={i}
-                                                className="col-span-1 h-full w-full select-none self-center rounded-full border-[1.5px] border-text/25"
+                                                className="col-span-1 h-full w-full select-none self-center rounded-[12px] border-[1.5px] border-text/25"
                                                 // style={{ width: `${width / page.counts}` }}
                                             />
                                         ),

@@ -43,7 +43,7 @@ export default function FieldPropertiesSettings() {
             <div className="flex flex-col gap-16 px-12">
                 <div className="flex w-full items-center justify-between gap-16">
                     <label htmlFor="gridLines" className="text-body">
-                        Show grid lines
+                        Grid lines
                     </label>
                     <Checkbox
                         id="gridLines"
@@ -58,7 +58,7 @@ export default function FieldPropertiesSettings() {
                 </div>
                 <div className="flex w-full items-center justify-between gap-16">
                     <label htmlFor="halfLines" className="text-body">
-                        Show half lines
+                        Half lines
                     </label>
                     <Checkbox
                         id="halfLines"
@@ -72,7 +72,7 @@ export default function FieldPropertiesSettings() {
                     />
                 </div>
                 <div className="flex w-full items-center justify-between gap-16">
-                    <p className="text-body">Field type</p>
+                    <p className="text-body">Type</p>
                     <div className="flex gap-8">
                         <Select
                             onValueChange={handleFieldTypeChange}
@@ -118,8 +118,8 @@ export default function FieldPropertiesSettings() {
             >
                 <DangerNote>
                     Marchers will not move to the new field type size, they will
-                    stay where they are on the canvas. They will stay there if
-                    you change back the field type.
+                    stay where they are on the canvas. You can always change
+                    back the field type.
                 </DangerNote>
             </div>
         </div>

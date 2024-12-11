@@ -3,7 +3,7 @@ import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { X } from "@phosphor-icons/react";
 import FieldProperties from "./FieldProperties";
 
-export default function PagesModal() {
+export default function FieldModal() {
     return (
         <SidebarModalLauncher
             contents={<FieldPropertiesContents />}
