@@ -35,6 +35,10 @@ export default defineConfig(({ command }) => {
                     },
                 },
             },
+            coverage: {
+                reporter: ["text", "json", "json-summary", "html"],
+                reportOnFailure: true,
+            },
         },
         plugins: [
             react(),
