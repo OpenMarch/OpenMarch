@@ -9,6 +9,14 @@ import TimeSignature from "./TimeSignature";
  * While this makes updating the database a bit more cumbersome, it allows for easy parsing of the measures.
  */
 export default class Measure {
+    static readonly defaultMeasures = `X:1
+Q:1/4=120
+M:4/4
+V:1 baritone
+V:1
+z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
+`;
+
     /** INTEGER - The number of the measure in the piece */
     readonly number: number;
     /** The rehearsal mark of the measure. E.g. "A" or "12" (for measure 12) */
