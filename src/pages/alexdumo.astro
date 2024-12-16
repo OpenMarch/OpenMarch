@@ -10,19 +10,23 @@ import { Image } from "astro:assets";
             id="download"
             class="relative flex h-fit w-full min-w-0 flex-col items-center gap-32"
         >
-            <div class="grid grid-cols-6 gap-32 max-[1000px]:grid-cols-1">
+            <div class="grid grid-cols-6 max-[1200px]:grid-cols-1">
                 <div
-                    class="col-span-4 flex h-[50vh] min-h-0 w-full flex-col items-start justify-center px-64 max-[1000px]:col-span-1 max-[1000px]:p-32"
+                    class="col-span-4 flex h-[50vh] min-h-0 w-full flex-col items-start justify-center px-64 max-[1200px]:col-span-1 max-[1200px]:p-32 max-[700px]:h-[35vh] max-[700px]:p-8"
                 >
-                    <h1 class="text-left text-[96px] max-[700px]:text-h1">
+                    <h1
+                        class="text-left text-[96px] max-[700px]:text-h1 max-[400px]:text-[32px]"
+                    >
                         Alex Dumouchelle
                     </h1>
-                    <p class="max-[500px]:text-p text-left text-[36px]">
+                    <p
+                        class="max-[500px]:text-p text-left text-[36px] max-[700px]:text-[24px] max-[400px]:text-[20px]"
+                    >
                         Founder and lead developer of OpenMarch
                     </p>
-                    <div class="pt-16">
+                    <div class="pt-16 max-[400px]:pt-8">
                         <a
-                            class="max-[300px]:text-p text-secondary text-left text-[24px] hover:underline"
+                            class="max-[300px]:text-p text-secondary text-left text-[24px] hover:underline max-[700px]:text-[16px] max-[400px]:text-[16px]"
                             href="mailto:alexdumo@openmarch.com"
                         >
                             alexdumo@openmarch.com
@@ -81,8 +85,6 @@ import { Image } from "astro:assets";
                     class="my-16 grid grid-cols-6 gap-32 max-[1000px]:grid-cols-1"
                 >
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/cadet-grad.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-4 row-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -90,8 +92,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/surf.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-2 w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -99,8 +99,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/jmu-bb.jpeg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-2 w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -145,8 +143,6 @@ import { Image } from "astro:assets";
                     class="my-16 grid grid-cols-6 gap-32 max-[1000px]:grid-cols-1"
                 >
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/march.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -154,8 +150,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/ron.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -163,8 +157,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/2022-retreat.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-2 row-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -172,8 +164,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/jmu-mrd.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-4 row-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -181,8 +171,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/gas.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-2 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -190,8 +178,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/cadet-2021.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-3 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
@@ -199,8 +185,6 @@ import { Image } from "astro:assets";
                         height={400}
                     />
                     <Image
-                        quality={75}
-                        format="webp"
                         src={"/alexdumo/lhs.jpg"}
                         alt={"Alex Dumouchelle photo"}
                         class="col-span-3 h-full w-full rounded-6 border border-stroke object-cover max-[500px]:col-span-1"
