@@ -13,6 +13,9 @@ import { parseMxl } from "../mxl/MxlUtil";
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');
 
+// Modify this when the database is updated
+import * as DatabaseVersion from "../database/versions/v2";
+
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -106,6 +109,10 @@ async function createWindow(title?: string) {
 app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
+
+    const dbVersion = new DatabaseVersion.default(DatabaseServices.connect);
+    dbVersion.migrateToThisVersion();
+
     Menu.setApplicationMenu(applicationMenu);
     const previousPath = store.get("databasePath") as string;
     if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
@@ -290,7 +297,10 @@ export async function newFile() {
             if (path.canceled || !path.filePath) return;
 
             setActiveDb(path.filePath, true);
-            DatabaseServices.initDatabase();
+            const dbVersion = new DatabaseVersion.default(
+                DatabaseServices.connect,
+            );
+            dbVersion.createTables();
             win?.webContents.reload();
 
             return 200;

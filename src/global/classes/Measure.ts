@@ -1,4 +1,4 @@
-import xml2abcInterpreter from "@/utilities/xml2abc-js/xml2abcInterpreter";
+import xml2abcInterpreter from "../../utilities/xml2abc-js/xml2abcInterpreter";
 import BeatUnit from "./BeatUnit";
 import TimeSignature from "./TimeSignature";
 

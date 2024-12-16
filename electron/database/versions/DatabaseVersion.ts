@@ -2,7 +2,12 @@ import Database from "better-sqlite3";
 import { createUndoTriggers } from "../database.history";
 
 export default abstract class DatabaseVersion {
-    public static readonly VERSION = 1;
+    abstract readonly VERSION: number;
+
+    get version() {
+        return this.VERSION;
+    }
+
     databaseConnector: () => Database.Database;
 
     constructor(databaseConnector: () => Database.Database) {
@@ -48,11 +53,21 @@ export default abstract class DatabaseVersion {
     }
 
     /**
-     * Migrates the database from the previous version to the current version.
-     * This method should be implemented by concrete subclasses of `DatabaseVersion`
-     * to handle any necessary database schema changes or data migrations.
+     * Wraps a database migration function and logs the start and end of the migration process.
+     * @param func - The database migration function to execute.
      */
-    abstract migrateFromPreviousVersion(): void;
+    protected migrationWrapper(func: () => void) {
+        const currentVersion = this.databaseConnector().pragma("user_version", {
+            simple: true,
+        }) as number;
+        console.log(
+            `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
+        );
+        func();
+        console.log(
+            `================= END MIGRATION: ${currentVersion} -> ${this.version} ================\n`,
+        );
+    }
 
     /**
      * Retrieves the version of the database.
@@ -68,6 +83,51 @@ export default abstract class DatabaseVersion {
             throw new Error("Failed to get the version of the database.");
         }
         return version;
+    }
+
+    /**
+     * Checks if the current version of the database is the same as the version of this class.
+     * @param db - An optional database instance to use for checking the version. If not provided, the default database connector will be used.
+     * @returns `true` if the current database version matches the version of this class, `false` otherwise.
+     * @throws {Error} If the database connection fails or the database version cannot be retrieved.
+     */
+    isThisVersion(db?: Database.Database): boolean {
+        const dbToUse = db ? db : this.databaseConnector();
+        if (!dbToUse) throw new Error("Failed to connect to database.");
+        console.log(
+            "\n==================== VERSION CHECK ====================",
+        );
+        const currentVersion = DatabaseVersion.getVersion(dbToUse);
+
+        console.log(
+            `CHECKING DATABASE VERSION:\n\tcurrent -> ${currentVersion}\n\ttarget -> ${this.version}`,
+        );
+
+        if (currentVersion === undefined) {
+            throw new Error("Failed to get the version of the database.");
+        }
+
+        if (currentVersion > this.version) {
+            throw new Error(
+                `Database version is higher than the version of this class. Make sure that you are using the highest database version. The database .dots file version is ${currentVersion}, the app thinks the highest version is ${this.version}`,
+            );
+        }
+        console.log("================= END VERSION CHECK =================\n");
+
+        return currentVersion === this.version;
+    }
+
+    /**
+     * Migrates the database from the previous version to the current version.
+     * This method should be implemented by concrete subclasses of `DatabaseVersion`
+     * to handle any necessary database schema changes or data migrations.
+     *
+     * This checks if the current version of the database is the same as the version of this class.
+     */
+    migrateToThisVersion(db?: Database.Database): void {
+        throw new Error(
+            `Reached the end of the migration chain, cannot migrate. Database version is ${this.version}`,
+        );
     }
 
     /**

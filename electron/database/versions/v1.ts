@@ -1,17 +1,14 @@
 import { createHistoryTables, createUndoTriggers } from "../database.history";
 import DatabaseVersion from "./DatabaseVersion";
 import Constants from "../../../src/global/Constants";
-import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import Database from "better-sqlite3";
-import FieldProperties from "@/global/classes/FieldProperties";
-import Measure from "@/global/classes/Measure";
+import Measure from "../../../src/global/classes/Measure";
+import type FieldProperties from "../../../src/global/classes/FieldProperties";
+import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
+import { FIRST_PAGE_ID } from "../tables/PageTable";
 
 export default class v1 extends DatabaseVersion {
-    public static readonly VERSION = 1;
-
-    public migrateFromPreviousVersion(): Promise<void> {
-        return Promise.resolve();
-    }
+    readonly VERSION: number = 1;
 
     createTables() {
         const db = this.databaseConnector();
@@ -54,9 +51,10 @@ export default class v1 extends DatabaseVersion {
     }
 
     protected createPageTable(db: Database.Database) {
-        this.createTable({
-            schema: `
-            CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
+        try {
+            db.prepare(
+                `
+                CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
                 "id"	            INTEGER PRIMARY KEY,
                 "is_subset"	        INTEGER NOT NULL DEFAULT 0 CHECK (is_subset IN (0, 1)),
                 "notes"	            TEXT,
@@ -65,11 +63,23 @@ export default class v1 extends DatabaseVersion {
                 "updated_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "next_page_id"	    INTEGER,
                 FOREIGN KEY ("next_page_id") REFERENCES "${Constants.PageTableName}" ("id")
-            );
+                );
             `,
-            tableName: Constants.PageTableName,
-            db,
-        });
+            ).run();
+
+            // Create page 1 with 0 counts. Page 1 should always exist
+            // It is safe to assume there are no marchers in the database at this point, so MarcherPages do not need to be created
+            db.prepare(
+                `INSERT INTO ${Constants.PageTableName} ("counts", "id") VALUES (0, ${FIRST_PAGE_ID})`,
+            ).run();
+
+            // Make the undo triggers after so the creation of the first page cannot be undone
+            createUndoTriggers(db, Constants.PageTableName);
+
+            return { success: true, data: Constants.PageTableName };
+        } catch (error: any) {
+            throw new Error(`Failed to create page table: ${error}`);
+        }
     }
 
     protected createMarcherPageTable(db: Database.Database) {
@@ -86,7 +96,8 @@ export default class v1 extends DatabaseVersion {
                 "updated_at"    TEXT NOT NULL,
                 "notes"         TEXT,
                 FOREIGN KEY ("marcher_id") REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-                FOREIGN KEY ("page_id") REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
+                FOREIGN KEY ("page_id") REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
+                UNIQUE ("marcher_id", "page_id")
             );
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
             CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
@@ -198,7 +209,7 @@ export default class v1 extends DatabaseVersion {
                 "notes"         TEXT
             );
             `,
-            tableName: Constants.AudioFilesTableName,
+            tableName: Constants.ShapeTableName,
             db,
         });
     }
@@ -218,7 +229,7 @@ export default class v1 extends DatabaseVersion {
                 UNIQUE (shape_id, page_id)
             );
             `,
-            tableName: Constants.AudioFilesTableName,
+            tableName: Constants.ShapePageTableName,
             db,
         });
     }
@@ -241,7 +252,7 @@ export default class v1 extends DatabaseVersion {
             CREATE INDEX "idx-spm-shape_page_id" ON "${Constants.ShapePageMarcherTableName}" (shape_page_id);
             CREATE INDEX "idx-spm-marcher_id" ON "${Constants.ShapePageMarcherTableName}" (marcher_id);
             `,
-            tableName: Constants.AudioFilesTableName,
+            tableName: Constants.ShapePageMarcherTableName,
             db,
         });
     }
