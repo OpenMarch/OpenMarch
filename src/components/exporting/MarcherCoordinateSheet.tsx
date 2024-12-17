@@ -162,10 +162,12 @@ interface StaticCoordinateSheetProps {
     marcherPages: MarcherPage[];
     fieldProperties: FieldProperties;
     includeMeasures?: boolean;
+
     /**
      * The denominator to round to. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
      */
     roundingDenominator?: number;
+
     /**
      * True if the coordinate strings should be terse. False if they should be verbose.
      * Default is false.
@@ -175,6 +177,7 @@ interface StaticCoordinateSheetProps {
      * Y: "5 BFSL" vs "5 steps behind front sideline.
      */
     terse?: boolean;
+
     /**
      * Whether to use X/Y as header rather than "Side to Side" and "Front to Back".
      */
