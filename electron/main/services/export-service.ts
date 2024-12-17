@@ -1,6 +1,5 @@
 import { dialog, BrowserWindow, app } from "electron";
 import * as path from "path";
-import puppeteer from "puppeteer";
 import * as fs from "fs";
 import sanitize from "sanitize-filename";
 
@@ -12,10 +11,17 @@ interface ExportSheet {
 
 export class PDFExportService {
     private static async generateSinglePDF(pages: string[]) {
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+        return new Promise<Buffer>((resolve, reject) => {
+            const win = new BrowserWindow({
+                width: 1200,
+                height: 800,
+                show: false,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false,
+                },
+            });
 
-        try {
             // Group pages into sets of four
             const groupedPages = [];
             for (let i = 0; i < pages.length; i += 4) {
@@ -26,122 +32,156 @@ export class PDFExportService {
             const combinedHtml = groupedPages
                 .map(
                     (group, index) => `
-                <div class="grid-container">
-                    ${group
-                        .map(
-                            (pageContent) => `
-                        <div class="grid-item">
-                            <div class="page-content">${pageContent}</div>
-                        </div>
-                    `,
-                        )
-                        .join("")}
+          <div class="grid-container">
+            ${group
+                .map(
+                    (pageContent) => `
+                <div class="grid-item">
+                  <div class="page-content">${pageContent}</div>
                 </div>
-                ${index < groupedPages.length - 1 ? '<div style="page-break-after: always;"></div>' : ""}
-            `,
+              `,
+                )
+                .join("")}
+          </div>
+          ${index < groupedPages.length - 1 ? '<div style="page-break-after: always;"></div>' : ""}
+        `,
                 )
                 .join("");
 
-            // Set the content with a single grid layout for each group
-            await page.setContent(
-                `
-                <html>
-                <head>
-                    <style>
-                        .grid-container {
-                            display: grid;
-                            grid-template-columns: 1fr 1fr;
-                            grid-template-rows: 1fr 1fr;
-                            gap: 20px;
-                            width: 100%;
-                            height: 100%;
-                            box-sizing: border-box;
-                            padding: 20px;
-                        }
-                        .grid-item {
-                            width: 100%;
-                            height: 100%;
-                            overflow: hidden;
-                            box-sizing: border-box;
-                            border: 1px solid #000;
-                            padding: 10px;
-                        }
-                        .page-content {
-                            transform: scale(0.5);
-                            transform-origin: top left;
-                            width: 200%;
-                            height: 200%;
-                        }
-                    </style>
-                </head>
-                <body>${combinedHtml}</body>
-                </html>
-            `,
-                { waitUntil: "load" },
+            const htmlContent = `
+        <html>
+          <head>
+            <style>
+              @media print {
+                body { margin: 0; }
+                .grid-container {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  grid-template-rows: 1fr 1fr;
+                  gap: 20px;
+                  width: 100%;
+                  height: 100%;
+                  box-sizing: border-box;
+                  padding: 20px;
+                  break-inside: avoid;
+                }
+                .grid-item {
+                  width: 100%;
+                  height: 100%;
+                  overflow: hidden;
+                  box-sizing: border-box;
+                  border: 1px solid #000;
+                  padding: 10px;
+                }
+                .page-content {
+                  transform: scale(0.5);
+                  transform-origin: top left;
+                  width: 200%;
+                  height: 200%;
+                }
+              }
+            </style>
+          </head>
+          <body>${combinedHtml}</body>
+        </html>
+      `;
+
+            win.loadURL(
+                `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`,
             );
 
-            const pdfBuffer = await page.pdf({
-                printBackground: true,
-                format: "letter",
-                margin: {
-                    top: "0cm",
-                    right: "0cm",
-                    bottom: "0cm",
-                    left: "0cm",
-                },
+            win.webContents.on("did-finish-load", () => {
+                win.webContents
+                    .printToPDF({
+                        margins: {
+                            marginType: "custom",
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                        },
+                        pageSize: "Letter",
+                        printBackground: true,
+                    })
+                    .then((data) => {
+                        win.close();
+                        resolve(data);
+                    })
+                    .catch((error) => {
+                        win.close();
+                        reject(error);
+                    });
             });
-            return pdfBuffer;
-        } finally {
-            await browser.close();
-        }
+        });
     }
 
     private static async generateSeparatePDFs(
         sheets: ExportSheet[],
         outputPath: string,
     ) {
-        const browser = await puppeteer.launch();
+        const sectionMap = new Map<string, ExportSheet[]>();
 
-        try {
-            const sectionMap = new Map<string, ExportSheet[]>();
-            sheets.forEach((sheet) => {
-                const section = sheet.section || "Other";
-                if (!sectionMap.has(section)) {
-                    sectionMap.set(section, []);
-                }
-                sectionMap.get(section)!.push(sheet);
-            });
+        sheets.forEach((sheet) => {
+            const section = sheet.section || "Other";
+            if (!sectionMap.has(section)) {
+                sectionMap.set(section, []);
+            }
+            sectionMap.get(section)!.push(sheet);
+        });
 
-            for (const [section, sectionSheets] of sectionMap) {
-                const sectionDir = path.join(outputPath, sanitize(section));
-                await fs.promises.mkdir(sectionDir, { recursive: true });
+        for (const [section, sectionSheets] of sectionMap) {
+            const sectionDir = path.join(outputPath, sanitize(section));
+            await fs.promises.mkdir(sectionDir, { recursive: true });
 
-                for (const sheet of sectionSheets) {
-                    const page = await browser.newPage();
-                    await page.setContent(sheet.renderedPage);
-
-                    const filePath = path.join(
-                        sectionDir,
-                        `${sanitize(sheet.name)}.pdf`,
-                    );
-
-                    await page.pdf({
-                        path: filePath,
-                        format: "letter",
-                        printBackground: true,
-                        margin: {
-                            top: "1cm",
-                            right: "1cm",
-                            bottom: "1cm",
-                            left: "1cm",
+            for (const sheet of sectionSheets) {
+                await new Promise<void>((resolve) => {
+                    const win = new BrowserWindow({
+                        width: 1200,
+                        height: 800,
+                        show: false,
+                        webPreferences: {
+                            nodeIntegration: true,
+                            contextIsolation: false,
                         },
                     });
 
-                    await page.close();
-                }
+                    win.loadURL(
+                        `data:text/html;charset=utf-8,${encodeURIComponent(sheet.renderedPage)}`,
+                    );
+
+                    win.webContents.on("did-finish-load", () => {
+                        const filePath = path.join(
+                            sectionDir,
+                            `${sanitize(sheet.name)}.pdf`,
+                        );
+
+                        win.webContents
+                            .printToPDF({
+                                margins: {
+                                    marginType: "custom",
+                                    top: 0,
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                },
+                                pageSize: "Letter",
+                                printBackground: true,
+                            })
+                            .then(async (data) => {
+                                const blob = new Blob([data], {
+                                    type: "application/pdf",
+                                });
+                                const arrayBuffer = await blob.arrayBuffer();
+                                await fs.promises.writeFile(
+                                    filePath,
+                                    new Uint8Array(arrayBuffer),
+                                );
+                                win.close();
+                                resolve();
+                            });
+                    });
+                });
             }
-        } finally {
-            await browser.close();
         }
     }
 
@@ -164,7 +204,6 @@ export class PDFExportService {
                 if (result.canceled || !result.filePath) {
                     throw new Error("Export cancelled");
                 }
-
                 await this.generateSeparatePDFs(sheets, result.filePath);
             } else {
                 const pdfBuffer = await this.generateSinglePDF(
@@ -178,7 +217,7 @@ export class PDFExportService {
                     properties: ["showOverwriteConfirmation"],
                 });
 
-                if (result.filePath) {
+                if (!result.canceled && result.filePath) {
                     await fs.promises.writeFile(result.filePath, pdfBuffer);
                 }
             }
@@ -199,7 +238,7 @@ export class PDFExportService {
             : "untitled";
         return path.join(
             app.getPath("documents"),
-            `${date}-${currentFileName}-coordinate-sheets`,
+            `${currentFileName}-${date}-coordinate-sheets`,
         );
     }
 }

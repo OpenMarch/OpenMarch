@@ -176,6 +176,10 @@ const APP_API = {
         }) => ipcRenderer.invoke("export:pdf", params),
     },
 
+    buffer: {
+        from: (data: any) => Buffer.from(data),
+    },
+
     // History
     /** Activates on undo or redo. */
     onHistoryAction: (callback: (args: DbServices.HistoryResponse) => void) =>
