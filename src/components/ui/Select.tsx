@@ -36,6 +36,7 @@ export const SelectTriggerButton = ({
         </RadixSelect.Trigger>
     );
 };
+
 export const SelectTriggerText = ({
     label,
     className,
@@ -44,7 +45,7 @@ export const SelectTriggerText = ({
         <RadixSelect.Trigger
             className={twMerge(
                 clsx(
-                    "flex h-fit w-fit items-center gap-4 p-0 text-body leading-none text-text outline-1 duration-150 ease-out enabled:hover:text-accent data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "flex h-fit w-fit items-center justify-center gap-4 p-0 text-body leading-none text-text outline-1 duration-150 ease-out enabled:hover:text-accent data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -54,6 +55,25 @@ export const SelectTriggerText = ({
             <RadixSelect.Icon>
                 <CaretDown size={18} />
             </RadixSelect.Icon>
+        </RadixSelect.Trigger>
+    );
+};
+
+export const SelectTriggerCompact = ({
+    label,
+    className,
+}: RadixSelectTriggerProps & { label: string }) => {
+    return (
+        <RadixSelect.Trigger
+            className={twMerge(
+                clsx(
+                    "flex h-[1.625rem] min-h-0 w-fit min-w-0 items-center justify-center rounded-6 border border-stroke bg-fg-2 px-8 py-[4px] text-body text-text placeholder-text/50 placeholder:text-body focus:border-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                    className,
+                ),
+            )}
+            aria-label={label}
+        >
+            <RadixSelect.Value placeholder={label} />
         </RadixSelect.Trigger>
     );
 };

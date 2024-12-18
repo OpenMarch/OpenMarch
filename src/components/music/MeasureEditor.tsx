@@ -202,6 +202,7 @@ export default function MeasureEditor() {
                                             min={1}
                                             required
                                             step={1}
+                                            className="w-[2rem] min-w-0"
                                             value={timeSignatureNumerator}
                                             onChange={(e) =>
                                                 setTimeSignatureNumerator(

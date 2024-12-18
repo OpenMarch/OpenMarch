@@ -8,7 +8,7 @@ import {
     SelectItem,
     Select,
     SelectContent,
-    SelectTriggerButton,
+    SelectTriggerCompact,
 } from "../ui/Select";
 import {
     secondSegmentSvgCommands,
@@ -17,7 +17,7 @@ import {
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
 import { Trash } from "@phosphor-icons/react";
 import { TooltipContents } from "../ui/Tooltip";
-import { Tooltip, TooltipTrigger } from "@radix-ui/react-tooltip";
+import * as Tooltip from "@radix-ui/react-tooltip";
 
 export default function ShapeEditor() {
     const { selectedMarcherShapes } = useShapePageStore()!;
@@ -84,7 +84,7 @@ export default function ShapeEditor() {
                                                 })
                                             }
                                         >
-                                            <SelectTriggerButton
+                                            <SelectTriggerCompact
                                                 label={"Type"}
                                             />
                                             <SelectContent>
@@ -122,12 +122,13 @@ export default function ShapeEditor() {
                             }}
                             type="button"
                             size="compact"
-                            variant="secondary"
+                            variant="primary"
                         >
-                            Add Segment
+                            Add
                         </Button>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
+
+                        <Tooltip.Root delayDuration={600}>
+                            <Tooltip.Trigger>
                                 <Button
                                     onClick={() => {
                                         marcherShape.deleteSegment(
@@ -142,18 +143,21 @@ export default function ShapeEditor() {
                                 >
                                     <Trash size={18} />
                                 </Button>
-                            </TooltipTrigger>
-                            <TooltipContents>
-                                Delete the last segment in the list
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div className="flex gap-8">
+                                    Delete the last segment in the list
+                                </div>
                             </TooltipContents>
-                        </Tooltip>
+                        </Tooltip.Root>
                     </div>
                 </div>
                 <div className="flex flex-col gap-8">
-                    <h5 className="text-h5">Marchers</h5>
+                    <h5 className="text-h5">
+                        {marcherShape.canvasMarchers.length} Marchers
+                    </h5>
                     {marcherShape.canvasMarchers.length > 0 && (
                         <p className="max-h-64 overflow-y-auto text-sub">
-                            {marcherShape.canvasMarchers.length} Marchers:{" "}
                             {marcherShape.canvasMarchers
                                 .map((cm) => cm.marcherObj.drill_number)
                                 .join(", ")}
