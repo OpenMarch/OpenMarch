@@ -10,7 +10,7 @@ import {
 import * as History from "../../database.history";
 import Constants from "@/global/Constants";
 import { createPages, createPageTable, deletePages } from "../PageTable";
-import * as DbMocks from "./DatabaseMocks";
+import * as DbMocks from "../../__test__/DatabaseMocks";
 import { createShapes, createShapeTable, deleteShapes } from "../ShapeTable";
 import { createMarcherPageTable } from "../MarcherPageTable";
 import { createMarcherTable } from "../MarcherTable";

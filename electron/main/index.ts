@@ -14,7 +14,7 @@ import { parseMxl } from "../mxl/MxlUtil";
 // const $ = require('jquery');
 
 // Modify this when the database is updated
-import * as DatabaseVersion from "../database/versions/v2";
+import * as DatabaseMigrator from "../database/versions/v3";
 
 // The built directory structure
 //
@@ -61,8 +61,8 @@ async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
-        minWidth: 1400,
-        minHeight: 800,
+        minWidth: 1000,
+        minHeight: 400,
         autoHideMenuBar: true,
         frame: false,
         trafficLightPosition: { x: 24, y: 7 },
@@ -110,7 +110,7 @@ app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
 
-    const dbVersion = new DatabaseVersion.default(DatabaseServices.connect);
+    const dbVersion = new DatabaseMigrator.default(DatabaseServices.connect);
     dbVersion.migrateToThisVersion();
 
     Menu.setApplicationMenu(applicationMenu);
@@ -297,7 +297,7 @@ export async function newFile() {
             if (path.canceled || !path.filePath) return;
 
             setActiveDb(path.filePath, true);
-            const dbVersion = new DatabaseVersion.default(
+            const dbVersion = new DatabaseMigrator.default(
                 DatabaseServices.connect,
             );
             dbVersion.createTables();

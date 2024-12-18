@@ -1,13 +1,19 @@
 import Database from "better-sqlite3";
 import { createUndoTriggers } from "../database.history";
 
-export default abstract class DatabaseVersion {
-    abstract readonly VERSION: number;
-
-    get version() {
-        return this.VERSION;
+export default abstract class DatabaseMigrator {
+    /**
+     * Gets the version of the database.
+     * @returns The version of the database, or -1 if the version is not set.
+     */
+    get version(): number {
+        return -1;
     }
 
+    /**
+     * A function that returns a database connection.
+     * @returns {Database.Database} The database connection.
+     */
     databaseConnector: () => Database.Database;
 
     constructor(databaseConnector: () => Database.Database) {
@@ -16,7 +22,7 @@ export default abstract class DatabaseVersion {
 
     /**
      * Creates the necessary database tables for this version of the database.
-     * This method should be implemented by concrete subclasses of `DatabaseVersion`
+     * This method should be implemented by concrete subclasses of `DatabaseMigrator`
      * to handle the creation of tables specific to that database version.
      */
     abstract createTables(): void;
@@ -53,21 +59,26 @@ export default abstract class DatabaseVersion {
     }
 
     /**
-     * Wraps a database migration function and logs the start and end of the migration process.
-     * @param func - The database migration function to execute.
+     * Sets the "user_version" pragma of the database to the version of this class.
+     * This is used to store the current version of the database.
+     * @param db - The database instance to set the pragma on.
      */
-    protected migrationWrapper(func: () => void) {
-        const currentVersion = this.databaseConnector().pragma("user_version", {
-            simple: true,
-        }) as number;
-        console.log(
-            `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
-        );
-        func();
-        console.log(
-            `================= END MIGRATION: ${currentVersion} -> ${this.version} ================\n`,
-        );
+    protected setPragmaToThisVersion(db: Database.Database) {
+        db.pragma("user_version = " + this.version);
     }
+
+    /**
+     * Wraps the migration function with additional logic to handle the migration process.
+     * This method should be implemented by concrete subclasses of `DatabaseMigrator`
+     * to handle the migration of the database to the specific version.
+     *
+     * @param superVersion - The version of the database that the migration is being applied to. Call super.version()
+     * @param func - The migration function to be executed.
+     */
+    protected abstract migrationWrapper(
+        superVersion: number,
+        func: () => void,
+    ): void;
 
     /**
      * Retrieves the version of the database.
@@ -97,7 +108,7 @@ export default abstract class DatabaseVersion {
         console.log(
             "\n==================== VERSION CHECK ====================",
         );
-        const currentVersion = DatabaseVersion.getVersion(dbToUse);
+        const currentVersion = DatabaseMigrator.getVersion(dbToUse);
 
         console.log(
             `CHECKING DATABASE VERSION:\n\tcurrent -> ${currentVersion}\n\ttarget -> ${this.version}`,
@@ -119,7 +130,7 @@ export default abstract class DatabaseVersion {
 
     /**
      * Migrates the database from the previous version to the current version.
-     * This method should be implemented by concrete subclasses of `DatabaseVersion`
+     * This method should be implemented by concrete subclasses of `DatabaseMigrator`
      * to handle any necessary database schema changes or data migrations.
      *
      * This checks if the current version of the database is the same as the version of this class.

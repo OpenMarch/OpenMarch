@@ -1,5 +1,5 @@
 import { createHistoryTables, createUndoTriggers } from "../database.history";
-import DatabaseVersion from "./DatabaseVersion";
+import DatabaseMigrator from "./DatabaseMigrator";
 import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import Measure from "../../../src/global/classes/Measure";
@@ -7,8 +7,10 @@ import type FieldProperties from "../../../src/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
 import { FIRST_PAGE_ID } from "../tables/PageTable";
 
-export default class v1 extends DatabaseVersion {
-    readonly VERSION: number = 1;
+export default class v1 extends DatabaseMigrator {
+    get version() {
+        return 1;
+    }
 
     createTables() {
         const db = this.databaseConnector();
@@ -26,7 +28,32 @@ export default class v1 extends DatabaseVersion {
         this.createShapePageTable(db);
         this.createShapePageMarcherTable(db);
         console.log("\nDatabase created successfully.");
-        db.close();
+    }
+
+    protected migrationWrapper(superVersion: number, func: () => void) {
+        const db = this.databaseConnector();
+        const currentVersion = db.pragma("user_version", {
+            simple: true,
+        }) as number;
+        console.log(
+            `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
+        );
+        console.log("Migrating database to newer version...");
+        if (currentVersion !== superVersion) {
+            console.log(
+                `DATABASE MIGRATOR V-${this.version}: The database's version is not the immediate previous one, which would be ${superVersion}. Continuing down the migration chain...`,
+                `Database version: ${currentVersion}`,
+            );
+            super.migrateToThisVersion(db);
+        }
+        func();
+        this.setPragmaToThisVersion(db);
+        console.log(
+            `Database migrated from version ${superVersion} to ${this.version} successfully.`,
+        );
+        console.log(
+            `================= END MIGRATION: ${currentVersion} -> ${this.version} ================\n`,
+        );
     }
 
     protected createMarcherTable(db: Database.Database) {

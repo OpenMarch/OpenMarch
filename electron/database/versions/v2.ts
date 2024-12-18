@@ -4,41 +4,38 @@ import Database from "better-sqlite3";
 import v1 from "./v1";
 
 export default class v2 extends v1 {
-    readonly VERSION: number = 2;
+    get version() {
+        return 2;
+    }
 
     migrateToThisVersion(db?: Database.Database): void {
         const dbToUse = db ? db : this.databaseConnector();
         if (!dbToUse) throw new Error("Failed to connect to database.");
 
         if (!this.isThisVersion(dbToUse)) {
-            this.migrationWrapper(() => {
-                const shapeTableExists = dbToUse
-                    .prepare(
-                        `SELECT name FROM sqlite_master WHERE type='table' AND name='${Constants.ShapeTableName}'`,
-                    )
-                    .get();
+            // Check if the shape table exists, since we weren't keeping track of versions
+            const shapeTableExists = dbToUse
+                .prepare(
+                    `SELECT name FROM sqlite_master WHERE type='table' AND name='${Constants.ShapeTableName}'`,
+                )
+                .get();
 
-                if (shapeTableExists) {
-                    console.log(
-                        "Shape table exists, meaning this is really version 2. Skipping migration and setting version",
-                    );
-                    dbToUse.pragma("user_version = " + this.version);
-                    db && dbToUse.close();
-                    return;
-                }
+            if (shapeTableExists) {
+                console.log(
+                    "Shape table exists, meaning this is really version 2. Skipping migration and setting version",
+                );
+                dbToUse.pragma("user_version = " + this.version);
+                return;
+            }
+            this.migrationWrapper(super.version, () => {
                 console.log("Migrating database to newer version...");
-
                 this.createShapeTable(dbToUse);
                 this.createShapePageTable(dbToUse);
                 this.createShapePageMarcherTable(dbToUse);
-                console.log(
-                    `\nDatabase migrated from version ${super.version} to ${this.version} successfully.`,
-                );
             });
         } else {
             console.log("Database version is up-to-date. Not migrating");
         }
-        db && dbToUse.close();
     }
 
     createTables() {
@@ -58,7 +55,6 @@ export default class v2 extends v1 {
         this.createShapePageTable(db);
         this.createShapePageMarcherTable(db);
         console.log("\nDatabase created successfully.");
-        db.close();
     }
 
     protected createShapeTable(db: Database.Database) {
