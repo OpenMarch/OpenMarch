@@ -52,8 +52,6 @@ const IndoorTemplates = {
     }),
 } as const;
 
-console.log(IndoorTemplates);
-
 export default IndoorTemplates;
 
 /**

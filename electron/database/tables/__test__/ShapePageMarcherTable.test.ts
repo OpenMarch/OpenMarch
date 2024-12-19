@@ -12,7 +12,7 @@ import {
     updateShapePageMarchers,
 } from "../ShapePageMarcherTable";
 import { createMarchers, createMarcherTable } from "../MarcherTable";
-import * as DbMocks from "./DatabaseMocks";
+import * as DbMocks from "../../__test__/DatabaseMocks";
 import {
     createShapePages,
     createShapePageTable,

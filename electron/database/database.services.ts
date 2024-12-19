@@ -530,14 +530,12 @@ export function performHistoryAction(
  * @param db
  * @returns
  */
-export async function getFieldProperties(
-    db?: Database.Database,
-): Promise<FieldProperties> {
+export function getFieldProperties(db?: Database.Database): FieldProperties {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(
         `SELECT * FROM ${Constants.FieldPropertiesTableName}`,
     );
-    const result = await stmt.get({});
+    const result = stmt.get({});
     const jsonData = (result as any).json_data;
     const fieldProperties = JSON.parse(jsonData) as FieldProperties;
     if (!db) dbToUse.close();
@@ -550,20 +548,21 @@ export async function getFieldProperties(
  * @param fieldProperties The new field properties
  * @returns {success: boolean, result?: FieldProperties, error?: string}
  */
-export async function updateFieldProperties(
+export function updateFieldProperties(
     fieldProperties: FieldProperties,
-): Promise<LegacyDatabaseResponse<FieldProperties>> {
-    const db = connect();
+    db?: Database.Database,
+): LegacyDatabaseResponse<FieldProperties> {
+    const dbToUse = db || connect();
     let output: LegacyDatabaseResponse<FieldProperties> = { success: true };
 
     try {
-        const stmt = db.prepare(`
+        const stmt = dbToUse.prepare(`
             UPDATE ${Constants.FieldPropertiesTableName}
             SET json_data = @json_data
             WHERE id = 1
         `);
         stmt.run({ json_data: JSON.stringify(fieldProperties) });
-        const newFieldProperties = await getFieldProperties(db);
+        const newFieldProperties = getFieldProperties(dbToUse);
         output = { success: true, result: newFieldProperties };
     } catch (error: any) {
         console.error(error);
@@ -572,8 +571,8 @@ export async function updateFieldProperties(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
-        History.incrementUndoGroup(db);
-        db.close();
+        History.incrementUndoGroup(dbToUse);
+        if (!db) dbToUse.close();
     }
     return output;
 }
