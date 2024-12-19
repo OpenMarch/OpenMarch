@@ -302,4 +302,46 @@ describe("Database v3 Migration Tests", () => {
             expect(db.pragma("user_version", { simple: true })).toBe(3);
         });
     });
+    describe("Be able to migrate from v0 to v3", () => {
+        function createTestData(db: Database.Database) {
+            createMarchers({
+                db,
+                newMarchers: [NewMarchers[0], NewMarchers[1], NewMarchers[2]],
+            });
+            createPages({
+                db,
+                newPages: [NewPages[0], NewPages[1], NewPages[2]],
+            });
+        }
+
+        beforeEach(() => {
+            db = new Database(":memory:");
+            db.pragma("foreign_keys = ON");
+            const v1Migration = new v1(() => db);
+            v1Migration.createTables();
+            v3Migration = new v3(() => db);
+            createTestData(db);
+            // Setup v1 database structure
+            db.pragma("user_version = 0");
+
+            const result = db
+                .prepare(`SELECT * FROM ${Constants.FieldPropertiesTableName}`)
+                .get({}) as { json_data: string };
+            const jsonData = result.json_data;
+            const fieldProperties = JSON.parse(jsonData) as FieldProperties;
+            const { pixelsPerStep, ...rest } = fieldProperties;
+            const stmt = db.prepare(`
+                                UPDATE ${Constants.FieldPropertiesTableName}
+                                SET json_data = @json_data
+                                WHERE id = 1
+                            `);
+            stmt.run({ json_data: JSON.stringify(rest) });
+        });
+
+        it("ensure it goes from 0 to 3", () => {
+            expect(db.pragma("user_version", { simple: true })).toBe(0);
+            v3Migration.migrateToThisVersion();
+            expect(db.pragma("user_version", { simple: true })).toBe(3);
+        });
+    });
 });

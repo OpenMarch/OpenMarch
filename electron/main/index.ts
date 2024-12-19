@@ -110,9 +110,6 @@ app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
 
-    const dbVersion = new DatabaseMigrator.default(DatabaseServices.connect);
-    dbVersion.migrateToThisVersion();
-
     Menu.setApplicationMenu(applicationMenu);
     const previousPath = store.get("databasePath") as string;
     if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
@@ -538,7 +535,11 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  */
 function setActiveDb(path: string, isNewFile = false) {
     DatabaseServices.setDbPath(path, isNewFile);
+
     win?.setTitle("OpenMarch - " + path);
+    const migrator = new DatabaseMigrator.default(DatabaseServices.connect);
+    migrator.migrateToThisVersion();
+
     !isNewFile && win?.webContents.reload();
     store.set("databasePath", path); // Save current db path
 }

@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import { createUndoTriggers } from "../database.history";
+import Constants from "../../../src/global/Constants";
 
 export default abstract class DatabaseMigrator {
     /**
@@ -71,7 +72,7 @@ export default abstract class DatabaseMigrator {
      *
      * @param func - The migration function to be executed.
      */
-    migrationWrapper(func: () => void) {
+    migrationWrapper(func: () => void, clearHistory: boolean = true) {
         const superMigrator = new (Object.getPrototypeOf(this.constructor))(
             this.databaseConnector,
         );
@@ -83,7 +84,13 @@ export default abstract class DatabaseMigrator {
             `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
         );
         console.log("Migrating database to newer version...");
-        if (currentVersion !== superMigrator.version) {
+        console.log(
+            `currentVersion: ${currentVersion}, this.version: ${this.version}, superMigrator.version: ${superMigrator.version}`,
+        );
+        if (
+            currentVersion !== superMigrator.version &&
+            !(currentVersion === 0 && this.version === 2) // This is a special case for the initial migration
+        ) {
             console.log(
                 `DATABASE MIGRATOR V-${this.version}: The database's version is not the immediate previous one, which would be ${superMigrator.version}. Continuing down the migration chain...`,
                 `Database version: ${currentVersion}`,
@@ -92,6 +99,12 @@ export default abstract class DatabaseMigrator {
         }
         func();
         this.setPragmaToThisVersion(db);
+
+        if (clearHistory) {
+            console.log("Clearing history...");
+            this.clearHistory(db);
+        }
+
         console.log(
             `Database migrated from version ${superMigrator.version} to ${this.version} successfully.`,
         );
@@ -115,13 +128,13 @@ export default abstract class DatabaseMigrator {
      * @throws {Error} If the version of the database could not be retrieved.
      */
     static getVersion(database: Database.Database): number {
-        const version = database.pragma("user_version", {
-            simple: true,
-        }) as number;
-        if (version === undefined) {
+        const response = database.prepare("PRAGMA user_version").get() as {
+            user_version: number;
+        };
+        if (response === undefined) {
             throw new Error("Failed to get the version of the database.");
         }
-        return version;
+        return response.user_version;
     }
 
     /**
@@ -175,5 +188,17 @@ export default abstract class DatabaseMigrator {
         throw new Error(
             `Reached the end of the migration chain. Version ${version} is not supported.`,
         );
+    }
+
+    /**
+     * Clears the undo and redo history tables in the database.
+     * @param db - An optional Database instance to use. If not provided, the method will use the database connector provided by the class.
+     * @throws {Error} If the database connection fails.
+     */
+    clearHistory(db?: Database.Database): void {
+        const dbToUse = db ? db : this.databaseConnector();
+        if (!dbToUse) throw new Error("Failed to connect to database.");
+        dbToUse.prepare(`DELETE FROM ${Constants.UndoHistoryTableName}`).run();
+        dbToUse.prepare(`DELETE FROM ${Constants.RedoHistoryTableName}`).run();
     }
 }
