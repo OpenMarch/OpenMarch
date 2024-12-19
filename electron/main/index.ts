@@ -535,9 +535,44 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  */
 function setActiveDb(path: string, isNewFile = false) {
     DatabaseServices.setDbPath(path, isNewFile);
-
     win?.setTitle("OpenMarch - " + path);
+
     const migrator = new DatabaseMigrator.default(DatabaseServices.connect);
+    const db = DatabaseServices.connect();
+    if (!db) {
+        console.error("Error connecting to database");
+        return;
+    }
+    DatabaseMigrator.default.getVersion(db);
+    // Create backup before migration
+    if (DatabaseMigrator.default.getVersion(db) !== migrator.version) {
+        const backupDir = join(app.getPath("userData"), "backups");
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir);
+        }
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const originalName = path.split(/[\\/]/).pop();
+        const backupPath = join(
+            backupDir,
+            `backup_${timestamp}_${originalName}`,
+        );
+        console.log("Creating backup of database in " + backupPath);
+        fs.copyFileSync(path, backupPath);
+
+        console.log("Deleting backups older than 30 days");
+        // Delete backups older than 30 days
+        const files = fs.readdirSync(backupDir);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        files.forEach((file) => {
+            const filePath = join(backupDir, file);
+            const stats = fs.statSync(filePath);
+            if (stats.birthtime < thirtyDaysAgo) {
+                fs.unlinkSync(filePath);
+            }
+        });
+    }
     migrator.migrateToThisVersion();
 
     !isNewFile && win?.webContents.reload();
