@@ -27,7 +27,7 @@
         "prettier": "prettier --check .",
         "prettier-fix": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
-        "test": "eslint . && vitest electron/database/versions/__test__/v3.test.ts",
+        "test": "eslint . && vitest",
         "test:prepare": "npm rebuild better-sqlite3",
         "test:run": "vitest run",
         "test:coverage": "npm run test:run -- --coverage",
