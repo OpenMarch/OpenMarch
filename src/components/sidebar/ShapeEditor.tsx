@@ -15,7 +15,7 @@ import {
     SvgCommandEnum,
     SvgCommands,
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
-import { Trash } from "@phosphor-icons/react";
+import { Plus, Trash } from "@phosphor-icons/react";
 
 export default function ShapeEditor() {
     const { selectedMarcherShapes } = useShapePageStore()!;
@@ -49,7 +49,7 @@ export default function ShapeEditor() {
                 id={`${marcherShape.shapePage.id}-shapeForm`}
                 className="flex flex-col gap-12"
             >
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-12">
                     <h5 className="text-h5">Segments</h5>
                     {marcherShape.shapePath.points.map(
                         (point, index) =>
@@ -122,7 +122,7 @@ export default function ShapeEditor() {
                             size="compact"
                             variant="primary"
                         >
-                            Add
+                            <Plus size={20} /> Add
                         </Button>
 
                         <Button
@@ -137,7 +137,7 @@ export default function ShapeEditor() {
                             content="icon"
                             variant="red"
                         >
-                            <Trash size={18} />
+                            <Trash size={20} />
                         </Button>
                     </div>
                 </div>
@@ -146,7 +146,7 @@ export default function ShapeEditor() {
                         {marcherShape.canvasMarchers.length} Marchers
                     </h5>
                     {marcherShape.canvasMarchers.length > 0 && (
-                        <p className="max-h-64 overflow-y-auto text-sub">
+                        <p className="max-h-64 overflow-y-auto font-mono text-sub text-text/80">
                             {marcherShape.canvasMarchers
                                 .map((cm) => cm.marcherObj.drill_number)
                                 .join(", ")}

@@ -95,10 +95,10 @@ function MarcherEditor() {
                         // Multiple marchers selected
                         <SidebarCollapsible
                             defaultOpen
-                            title={`Marchers (${selectedMarchers.length})`}
+                            title={`${selectedMarchers.length} Marchers`}
                             className="mt-12 flex flex-col gap-16"
                         >
-                            <p className="w-full px-6">
+                            <p className="w-full px-6 font-mono text-sub text-text/80">
                                 {selectedMarchers
                                     .map((marcher) => marcher.drill_number)
                                     .join(", ")}

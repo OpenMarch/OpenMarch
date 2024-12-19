@@ -12,15 +12,30 @@ export default function ShapeEditorToolbar() {
             <ToolbarSection>
                 <div className="flex items-center gap-6">
                     <Shapes size={24} />
-                    <p className="text-body text-text">Shapes</p>
+                    <h5 className="text-h5">Shape</h5>
                 </div>
                 <div className="h-full w-[1px] bg-stroke" />
                 <RegisteredActionButton
                     registeredAction={
-                        RegisteredActionsObjects.deleteMarcherShape
+                        RegisteredActionsObjects.applySelectedMarchersShapesToPreviousPage
                     }
                 >
-                    Delete shape
+                    Apply to prev page
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={
+                        RegisteredActionsObjects.applySelectedMarchersShapesToNextPage
+                    }
+                >
+                    Apply to next page
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={
+                        RegisteredActionsObjects.deleteMarcherShape
+                    }
+                    className="hover:text-red"
+                >
+                    Delete
                 </RegisteredActionButton>
             </ToolbarSection>
         )

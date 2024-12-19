@@ -17,6 +17,7 @@ import Measure from "@/global/classes/Measure";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
+import { ShapePoint } from "@/global/classes/canvasObjects/StaticMarcherShape";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -42,6 +43,8 @@ export enum RegisteredActionsEnum {
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
     setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
+    applySelectedMarchersShapesToPreviousPage = "applySelectedMarchersShapesToPreviousPage",
+    applySelectedMarchersShapesToNextPage = "applySelectedMarchersShapesToNextPage",
 
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
@@ -276,6 +279,16 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true }),
         enumString: "setSelectedMarchersToPreviousPage",
     }),
+    applySelectedMarchersShapesToPreviousPage: new RegisteredAction({
+        desc: "Set selected marcher(s) coordinates to previous page",
+        keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
+        enumString: "applySelectedMarchersShapesToPreviousPage",
+    }),
+    applySelectedMarchersShapesToNextPage: new RegisteredAction({
+        desc: "Set selected marcher(s) coordinates to previous page",
+        keyboardShortcut: new KeyboardShortcut({ key: "m", shift: true }),
+        enumString: "applySelectedMarchersShapesToNextPage",
+    }),
 
     // Alignment
     snapToNearestWhole: new RegisteredAction({
@@ -287,7 +300,7 @@ export const RegisteredActionsObjects: {
         desc: "Lock X axis",
         toggleOnStr: "Lock X movement",
         toggleOffStr: "Enable X movement",
-        keyboardShortcut: new KeyboardShortcut({ key: "z" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "y" }),
         enumString: "lockX",
     }),
     lockY: new RegisteredAction({
@@ -571,6 +584,70 @@ function RegisteredActionsHandler() {
                     }
                     break;
                 }
+                case RegisteredActionsEnum.applySelectedMarchersShapesToPreviousPage: {
+                    const previousPage = selectedPage.getPreviousPage(pages);
+
+                    if (previousPage) {
+                        for (const shape of selectedMarcherShapes) {
+                            // Get marcher IDs from the current shape
+                            const marcherIds = shape.canvasMarchers.map(
+                                (marcher) => marcher.marcherObj.id,
+                            );
+
+                            // We can use the first and last points from the shape's path
+                            const svgPath = shape.shapePath.toString();
+                            const points = ShapePoint.fromString(svgPath);
+                            const firstPoint = points[0].coordinates[0];
+                            const lastPoint =
+                                points[points.length - 1].coordinates[
+                                    points[points.length - 1].coordinates
+                                        .length - 1
+                                ];
+
+                            MarcherShape.createMarcherShape({
+                                marcherIds,
+                                start: { x: firstPoint.x, y: firstPoint.y },
+                                end: { x: lastPoint.x, y: lastPoint.y },
+                                pageId: previousPage.id,
+                            });
+                        }
+
+                        MarcherShape.fetchShapePages();
+                    }
+                    break;
+                }
+                case RegisteredActionsEnum.applySelectedMarchersShapesToNextPage: {
+                    const nextPage = selectedPage.getNextPage(pages);
+
+                    if (nextPage) {
+                        for (const shape of selectedMarcherShapes) {
+                            // Get marcher IDs from the current shape
+                            const marcherIds = shape.canvasMarchers.map(
+                                (marcher) => marcher.marcherObj.id,
+                            );
+
+                            // We can use the first and last points from the shape's path
+                            const svgPath = shape.shapePath.toString();
+                            const points = ShapePoint.fromString(svgPath);
+                            const firstPoint = points[0].coordinates[0];
+                            const lastPoint =
+                                points[points.length - 1].coordinates[
+                                    points[points.length - 1].coordinates
+                                        .length - 1
+                                ];
+
+                            MarcherShape.createMarcherShape({
+                                marcherIds,
+                                start: { x: firstPoint.x, y: firstPoint.y },
+                                end: { x: lastPoint.x, y: lastPoint.y },
+                                pageId: nextPage.id,
+                            });
+                        }
+
+                        MarcherShape.fetchShapePages();
+                    }
+                    break;
+                }
 
                 /****************** Alignment ******************/
                 case RegisteredActionsEnum.snapToNearestWhole: {
@@ -732,6 +809,7 @@ function RegisteredActionsHandler() {
             pages,
             resetAlignmentEvent,
             selectedMarchers,
+            selectedMarcherShapes,
             selectedPage,
             setAlignmentEvent,
             setAlignmentEventMarchers,

@@ -5,7 +5,7 @@ import { twMerge } from "tailwind-merge";
 
 const variants = cva(
     [
-        "text-body w-fit flex justify-center items-center rounded-full border border-stroke min-h-0 focus-visible:outline-none",
+        "text-body w-fit flex gap-4 justify-center items-center rounded-full border border-stroke min-h-0 focus-visible:outline-none",
         "enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out",
         "disabled:cursor-not-allowed disabled:opacity-50",
     ],
@@ -44,7 +44,7 @@ const variants = cva(
             {
                 size: "compact",
                 content: "icon",
-                className: ["p-[3px] size-[1.5rem]"],
+                className: ["p-[4px] size-[1.625rem]"],
             },
         ],
         defaultVariants: {

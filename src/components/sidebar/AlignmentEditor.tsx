@@ -51,7 +51,7 @@ export default function AlignmentEditor() {
                         </Button>
                     </RegisteredActionButton>
                 </div>
-                <p className="text-sub text-text/80">
+                <p className="font-mono text-sub text-text/80">
                     Marchers{" "}
                     {alignmentEventMarchers
                         .map((marcher) => marcher.drill_number)

@@ -23,7 +23,7 @@ export default function UiSettingsToolbar() {
                     uiSettings.previousPaths ? "text-accent" : "text-text"
                 }
             >
-                Prev Paths
+                Prev paths
             </RegisteredActionButton>
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.toggleNextPagePaths}
@@ -36,7 +36,7 @@ export default function UiSettingsToolbar() {
                 }
                 className={uiSettings.nextPaths ? "text-accent" : "text-text"}
             >
-                Next Paths
+                Next paths
             </RegisteredActionButton>
         </ToolbarSection>
     );

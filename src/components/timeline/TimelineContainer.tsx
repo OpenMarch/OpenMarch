@@ -2,6 +2,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMeasureStore } from "@/stores/MeasureStore";
 import { usePageStore } from "@/stores/PageStore";
+import { useShapePageStore } from "@/stores/ShapePageStore";
 import React from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 
@@ -10,6 +11,7 @@ export default function TimelineContainer() {
     const { measures } = useMeasureStore()!;
     const { pages } = usePageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { setSelectedMarcherShapes } = useShapePageStore()!;
     const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
 
     // Rerender the timeline when the measures or pages change
@@ -20,7 +22,7 @@ export default function TimelineContainer() {
     return (
         <div
             id="timeline"
-            className="relative flex h-[10rem] min-h-0 w-full min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
+            className="relative flex h-[8rem] min-h-[8rem] w-full min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
         >
             <div
                 className="fixed bottom-0 right-0 m-16 flex gap-6 drop-shadow-md"
@@ -71,7 +73,10 @@ export default function TimelineContainer() {
                                               : ""
                                       }`
                             }`}
-                            onClick={() => setSelectedPage(pages[0])}
+                            onClick={() => {
+                                setSelectedPage(pages[0]);
+                                setSelectedMarcherShapes([]);
+                            }}
                             title="First page"
                             aria-label="First page"
                         >
@@ -109,6 +114,7 @@ export default function TimelineContainer() {
                                     }`}
                                     onClick={() => {
                                         if (!isPlaying) setSelectedPage(page);
+                                        setSelectedMarcherShapes([]);
                                     }}
                                 >
                                     <div className="rig static">
