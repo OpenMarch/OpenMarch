@@ -59,6 +59,7 @@ export enum RegisteredActionsEnum {
     // Cursor Mode
     applyQuickShape = "applyQuickShape",
     createMarcherShape = "createMarcherShape",
+    deleteMarcherShape = "deleteMarcherShape",
     cancelAlignmentUpdates = "cancelAlignmentUpdates",
     alignmentEventDefault = "alignmentEventDefault",
     alignmentEventLine = "alignmentEventLine",
@@ -344,6 +345,11 @@ export const RegisteredActionsObjects: {
         enumString: "createMarcherShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
     }),
+    deleteMarcherShape: new RegisteredAction({
+        desc: "Deletes the current selected shapes",
+        enumString: "deleteMarcherShape",
+        keyboardShortcut: new KeyboardShortcut({ key: "Delete" }),
+    }),
     cancelAlignmentUpdates: new RegisteredAction({
         desc: "Cancel updates to marchers",
         enumString: "cancelAlignmentUpdates",
@@ -385,7 +391,8 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { selectedMarcherShapes, setSelectedMarcherShapes } =
+        useShapePageStore()!;
     const {
         resetAlignmentEvent,
         setAlignmentEvent,
@@ -672,6 +679,16 @@ function RegisteredActionsHandler() {
                         end: lastMarcherPage,
                         pageId: selectedPage.id,
                     });
+                    resetAlignmentEvent();
+                    break;
+                }
+                case RegisteredActionsEnum.deleteMarcherShape: {
+                    for (const shape of selectedMarcherShapes) {
+                        MarcherShape.deleteMarcherShape(shape);
+                    }
+
+                    setSelectedMarcherShapes([]);
+
                     resetAlignmentEvent();
                     break;
                 }

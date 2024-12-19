@@ -16,8 +16,6 @@ import {
     SvgCommands,
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
 import { Trash } from "@phosphor-icons/react";
-import { TooltipContents } from "../ui/Tooltip";
-import * as Tooltip from "@radix-ui/react-tooltip";
 
 export default function ShapeEditor() {
     const { selectedMarcherShapes } = useShapePageStore()!;
@@ -62,7 +60,7 @@ export default function ShapeEditor() {
                                     className="flex items-center justify-between"
                                 >
                                     <Form.Label className="text-body text-text/80">
-                                        {index}
+                                        Segment {index}
                                     </Form.Label>
 
                                     <Form.Control asChild>
@@ -127,29 +125,20 @@ export default function ShapeEditor() {
                             Add
                         </Button>
 
-                        <Tooltip.Root delayDuration={600}>
-                            <Tooltip.Trigger>
-                                <Button
-                                    onClick={() => {
-                                        marcherShape.deleteSegment(
-                                            marcherShape.shapePath.points
-                                                .length - 1,
-                                        );
-                                    }}
-                                    className="min-h-0"
-                                    type="button"
-                                    size="compact"
-                                    variant="red"
-                                >
-                                    <Trash size={18} />
-                                </Button>
-                            </Tooltip.Trigger>
-                            <TooltipContents className="p-16">
-                                <div className="flex gap-8">
-                                    Delete the last segment in the list
-                                </div>
-                            </TooltipContents>
-                        </Tooltip.Root>
+                        <Button
+                            onClick={() => {
+                                marcherShape.deleteSegment(
+                                    marcherShape.shapePath.points.length - 1,
+                                );
+                            }}
+                            className="min-h-0"
+                            type="button"
+                            size="compact"
+                            content="icon"
+                            variant="red"
+                        >
+                            <Trash size={18} />
+                        </Button>
                     </div>
                 </div>
                 <div className="flex flex-col gap-8">
@@ -179,7 +168,7 @@ export default function ShapeEditor() {
                     return (
                         <div
                             key={marcherShape.shapePage.id}
-                            className="flex flex-col gap-2"
+                            className="flex flex-col gap-12"
                         >
                             {singleShapeEditor(marcherShape)}
                         </div>

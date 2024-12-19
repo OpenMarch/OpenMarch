@@ -5,7 +5,7 @@ import ShapeEditor from "./ShapeEditor";
 
 function Sidebar() {
     return (
-        <div className="flex w-[20rem] min-w-0 flex-col gap-48 rounded-6 border border-stroke bg-fg-1 p-12">
+        <div className="flex w-[20rem] min-w-0 flex-col gap-48 overflow-y-scroll rounded-6 border border-stroke bg-fg-1 p-12">
             <PageEditor />
             <MarcherEditor />
             <ShapeEditor />

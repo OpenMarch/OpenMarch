@@ -1,30 +1,28 @@
 import PlaybackControls from "./sections/PlaybackControls";
 import UiSettingsToolbar from "./sections/UiSettingsToolbar";
-// import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
 import AlignmentToolbar from "./sections/AlignmentToolbar";
 import PagesModal from "@/components/page/PagesModal";
 import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
+import ShapeEditorToolbar from "./toolbars/ShapeEditorToolbar";
 
 function Topbar() {
     return (
         <div className="flex w-full flex-wrap gap-8">
-            <PlaybackControls />
-            <ToolbarSection>
-                <MarchersModal />
-                <PagesModal />
-                <MusicModal />
-                <FieldModal />
-            </ToolbarSection>
-            <UiSettingsToolbar />
-            <AlignmentToolbar />
-            {/* maybe just have this in the menubar (file > export)
+            <div className="flex w-full flex-wrap gap-8">
+                <PlaybackControls />
                 <ToolbarSection>
-                    <ExportCoordinatesModal />
+                    <MarchersModal />
+                    <PagesModal />
+                    <MusicModal />
+                    <FieldModal />
                 </ToolbarSection>
-             */}
+                <UiSettingsToolbar />
+                <AlignmentToolbar />
+            </div>
+            <ShapeEditorToolbar />
         </div>
     );
 }
