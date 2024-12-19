@@ -12,11 +12,16 @@ export default class v1 extends DatabaseMigrator {
         return 1;
     }
 
-    createTables() {
+    get superVersion() {
+        return super.version;
+    }
+
+    createTables(version = this.version) {
         const db = this.databaseConnector();
         if (!db) throw new Error("Failed to connect to database.");
         console.log(db);
         console.log("Creating database...");
+        db.pragma("user_version = " + version);
         createHistoryTables(db);
         this.createMarcherTable(db);
         this.createPageTable(db);
@@ -24,39 +29,10 @@ export default class v1 extends DatabaseMigrator {
         this.createFieldPropertiesTable(db);
         this.createMeasureTable(db);
         this.createAudioFilesTable(db);
-        this.createShapeTable(db);
-        this.createShapePageTable(db);
-        this.createShapePageMarcherTable(db);
         console.log("\nDatabase created successfully.");
     }
 
-    protected migrationWrapper(superVersion: number, func: () => void) {
-        const db = this.databaseConnector();
-        const currentVersion = db.pragma("user_version", {
-            simple: true,
-        }) as number;
-        console.log(
-            `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
-        );
-        console.log("Migrating database to newer version...");
-        if (currentVersion !== superVersion) {
-            console.log(
-                `DATABASE MIGRATOR V-${this.version}: The database's version is not the immediate previous one, which would be ${superVersion}. Continuing down the migration chain...`,
-                `Database version: ${currentVersion}`,
-            );
-            super.migrateToThisVersion(db);
-        }
-        func();
-        this.setPragmaToThisVersion(db);
-        console.log(
-            `Database migrated from version ${superVersion} to ${this.version} successfully.`,
-        );
-        console.log(
-            `================= END MIGRATION: ${currentVersion} -> ${this.version} ================\n`,
-        );
-    }
-
-    protected createMarcherTable(db: Database.Database) {
+    createMarcherTable(db: Database.Database) {
         this.createTable({
             schema: `
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
@@ -77,7 +53,7 @@ export default class v1 extends DatabaseMigrator {
         });
     }
 
-    protected createPageTable(db: Database.Database) {
+    createPageTable(db: Database.Database) {
         try {
             db.prepare(
                 `
@@ -109,7 +85,7 @@ export default class v1 extends DatabaseMigrator {
         }
     }
 
-    protected createMarcherPageTable(db: Database.Database) {
+    createMarcherPageTable(db: Database.Database) {
         this.createTable({
             schema: `
             CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
@@ -134,7 +110,7 @@ export default class v1 extends DatabaseMigrator {
         });
     }
 
-    protected createFieldPropertiesTable(
+    createFieldPropertiesTable(
         db: Database.Database,
         fieldProperties: FieldProperties = FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
     ) {
@@ -171,7 +147,7 @@ export default class v1 extends DatabaseMigrator {
      *
      * @param db Database object to use
      */
-    protected createMeasureTable(db: Database.Database) {
+    createMeasureTable(db: Database.Database) {
         try {
             db.exec(`
                 CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
@@ -208,7 +184,7 @@ export default class v1 extends DatabaseMigrator {
         }
     }
 
-    protected createAudioFilesTable(db: Database.Database) {
+    createAudioFilesTable(db: Database.Database) {
         this.createTable({
             schema: `
             CREATE TABLE IF NOT EXISTS "${Constants.AudioFilesTableName}" (
@@ -222,64 +198,6 @@ export default class v1 extends DatabaseMigrator {
             );
             `,
             tableName: Constants.AudioFilesTableName,
-            db,
-        });
-    }
-    protected createShapeTable(db: Database.Database) {
-        this.createTable({
-            schema: `
-            CREATE TABLE IF NOT EXISTS "${Constants.ShapeTableName}" (
-                "id"            INTEGER PRIMARY KEY,
-                "name"          TEXT,
-                "created_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updated_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "notes"         TEXT
-            );
-            `,
-            tableName: Constants.ShapeTableName,
-            db,
-        });
-    }
-    protected createShapePageTable(db: Database.Database) {
-        this.createTable({
-            schema: `
-            CREATE TABLE IF NOT EXISTS "${Constants.ShapePageTableName}" (
-                "id"            INTEGER PRIMARY KEY,
-                "shape_id"      INTEGER NOT NULL,
-                "page_id"       INTEGER NOT NULL,
-                "svg_path"      TEXT NOT NULL,
-                "created_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updated_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "notes"         TEXT,
-                FOREIGN KEY (shape_id) REFERENCES "${Constants.ShapeTableName}" ("id") ON DELETE CASCADE,
-                FOREIGN KEY (page_id) REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE,
-                UNIQUE (shape_id, page_id)
-            );
-            `,
-            tableName: Constants.ShapePageTableName,
-            db,
-        });
-    }
-    protected createShapePageMarcherTable(db: Database.Database) {
-        this.createTable({
-            schema: `
-            CREATE TABLE IF NOT EXISTS "${Constants.ShapePageMarcherTableName}" (
-                "id"                INTEGER PRIMARY KEY,
-                "shape_page_id"     INTEGER NOT NULL REFERENCES "${Constants.ShapePageTableName}" ("id"),
-                "marcher_id"        INTEGER NOT NULL REFERENCES "${Constants.MarcherTableName}" ("id"),
-                "position_order"    INTEGER,
-                "created_at"        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updated_at"        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "notes"             TEXT,
-                FOREIGN KEY (shape_page_id) REFERENCES "${Constants.ShapePageTableName}" ("id") ON DELETE CASCADE,
-                FOREIGN KEY (marcher_id) REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE,
-                UNIQUE (shape_page_id, position_order),
-                UNIQUE (shape_page_id, marcher_id)
-            );
-            CREATE INDEX "idx-spm-shape_page_id" ON "${Constants.ShapePageMarcherTableName}" (shape_page_id);
-            CREATE INDEX "idx-spm-marcher_id" ON "${Constants.ShapePageMarcherTableName}" (marcher_id);
-            `,
-            tableName: Constants.ShapePageMarcherTableName,
             db,
         });
     }

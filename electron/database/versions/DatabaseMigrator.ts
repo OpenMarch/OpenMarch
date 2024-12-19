@@ -25,7 +25,7 @@ export default abstract class DatabaseMigrator {
      * This method should be implemented by concrete subclasses of `DatabaseMigrator`
      * to handle the creation of tables specific to that database version.
      */
-    abstract createTables(): void;
+    abstract createTables(version?: number): void;
 
     /**
      * Creates a database table with the specified schema and optionally creates undo triggers for the table.
@@ -59,6 +59,48 @@ export default abstract class DatabaseMigrator {
     }
 
     /**
+     * Wraps the migration function with additional logic to handle the migration process.
+     * This method is responsible for:
+     * - Creating a new instance of the parent `DatabaseMigrator` class
+     * - Retrieving the current database version
+     * - Logging the migration process
+     * - Checking if the database version is not the immediate previous version, and if so, recursively migrating to the previous version
+     * - Executing the provided migration function
+     * - Setting the database version pragma to the current version
+     * - Logging the successful migration
+     *
+     * @param func - The migration function to be executed.
+     */
+    migrationWrapper(func: () => void) {
+        const superMigrator = new (Object.getPrototypeOf(this.constructor))(
+            this.databaseConnector,
+        );
+        const db = this.databaseConnector();
+        const currentVersion = db.pragma("user_version", {
+            simple: true,
+        }) as number;
+        console.log(
+            `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
+        );
+        console.log("Migrating database to newer version...");
+        if (currentVersion !== superMigrator.version) {
+            console.log(
+                `DATABASE MIGRATOR V-${this.version}: The database's version is not the immediate previous one, which would be ${superMigrator.version}. Continuing down the migration chain...`,
+                `Database version: ${currentVersion}`,
+            );
+            superMigrator.migrateToThisVersion(db);
+        }
+        func();
+        this.setPragmaToThisVersion(db);
+        console.log(
+            `Database migrated from version ${superMigrator.version} to ${this.version} successfully.`,
+        );
+        console.log(
+            `================= END MIGRATION: ${currentVersion} -> ${this.version} ================\n`,
+        );
+    }
+
+    /**
      * Sets the "user_version" pragma of the database to the version of this class.
      * This is used to store the current version of the database.
      * @param db - The database instance to set the pragma on.
@@ -66,20 +108,6 @@ export default abstract class DatabaseMigrator {
     protected setPragmaToThisVersion(db: Database.Database) {
         db.pragma("user_version = " + this.version);
     }
-
-    /**
-     * Wraps the migration function with additional logic to handle the migration process.
-     * This method should be implemented by concrete subclasses of `DatabaseMigrator`
-     * to handle the migration of the database to the specific version.
-     *
-     * @param superVersion - The version of the database that the migration is being applied to. Call super.version()
-     * @param func - The migration function to be executed.
-     */
-    protected abstract migrationWrapper(
-        superVersion: number,
-        func: () => void,
-    ): void;
-
     /**
      * Retrieves the version of the database.
      * @param database - The database instance to retrieve the version from.
@@ -105,9 +133,7 @@ export default abstract class DatabaseMigrator {
     isThisVersion(db?: Database.Database): boolean {
         const dbToUse = db ? db : this.databaseConnector();
         if (!dbToUse) throw new Error("Failed to connect to database.");
-        console.log(
-            "\n==================== VERSION CHECK ====================",
-        );
+        console.log("------> VERSION CHECK <------");
         const currentVersion = DatabaseMigrator.getVersion(dbToUse);
 
         console.log(
@@ -123,7 +149,7 @@ export default abstract class DatabaseMigrator {
                 `Database version is higher than the version of this class. Make sure that you are using the highest database version. The database .dots file version is ${currentVersion}, the app thinks the highest version is ${this.version}`,
             );
         }
-        console.log("================= END VERSION CHECK =================\n");
+        console.log("------> END VERSION CHECK <------");
 
         return currentVersion === this.version;
     }

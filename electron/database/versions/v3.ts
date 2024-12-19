@@ -22,8 +22,7 @@ export default class v3 extends v2 {
         if (!dbToUse) throw new Error("Failed to connect to database.");
 
         if (!this.isThisVersion(dbToUse)) {
-            this.migrationWrapper(super.version, () => {
-                console.log("Migrating database to newer version...");
+            this.migrationWrapper(() => {
                 // check if pixelsPerStep is in FieldProperties json object
                 const result = dbToUse
                     .prepare(
@@ -36,7 +35,7 @@ export default class v3 extends v2 {
                 // Update the field properties to have the correct pixelsPerStep
                 if (fieldProperties.pixelsPerStep === undefined) {
                     console.log(
-                        "Updating pixelsPerStep in FieldProperties to 12 from 10",
+                        "Updating pixelsPerStep in FieldProperties from 10 to 12",
                     );
                     const newFieldProperties = new FieldProperties({
                         name: fieldProperties.name,
@@ -66,6 +65,7 @@ export default class v3 extends v2 {
                         .run();
 
                     // Scale every shapePage to to go from 10 pixels per step to 12
+                    console.log("Scaling all shape pages by 1.2x");
                     const shapePages = dbToUse
                         .prepare(
                             `SELECT id, svg_path FROM ${Constants.ShapePageTableName}`,
@@ -97,6 +97,6 @@ export default class v3 extends v2 {
     }
 
     createTables() {
-        super.createTables();
+        super.createTables(this.version);
     }
 }

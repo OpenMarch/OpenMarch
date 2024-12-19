@@ -27,8 +27,7 @@ export default class v2 extends v1 {
                 dbToUse.pragma("user_version = " + this.version);
                 return;
             }
-            this.migrationWrapper(super.version, () => {
-                console.log("Migrating database to newer version...");
+            this.migrationWrapper(() => {
                 this.createShapeTable(dbToUse);
                 this.createShapePageTable(dbToUse);
                 this.createShapePageMarcherTable(dbToUse);
@@ -38,11 +37,11 @@ export default class v2 extends v1 {
         }
     }
 
-    createTables() {
+    createTables(version = this.version) {
         const db = this.databaseConnector();
         if (!db) throw new Error("Failed to connect to database.");
         console.log(db);
-        db.pragma("user_version = " + this.version);
+        db.pragma("user_version = " + version);
         console.log("Creating database...");
         createHistoryTables(db);
         super.createMarcherTable(db);
@@ -57,7 +56,7 @@ export default class v2 extends v1 {
         console.log("\nDatabase created successfully.");
     }
 
-    protected createShapeTable(db: Database.Database) {
+    createShapeTable(db: Database.Database) {
         this.createTable({
             schema: `
             CREATE TABLE IF NOT EXISTS "${Constants.ShapeTableName}" (
@@ -72,7 +71,7 @@ export default class v2 extends v1 {
             db,
         });
     }
-    protected createShapePageTable(db: Database.Database) {
+    createShapePageTable(db: Database.Database) {
         this.createTable({
             schema: `
             CREATE TABLE IF NOT EXISTS "${Constants.ShapePageTableName}" (
@@ -92,7 +91,7 @@ export default class v2 extends v1 {
             db,
         });
     }
-    protected createShapePageMarcherTable(db: Database.Database) {
+    createShapePageMarcherTable(db: Database.Database) {
         this.createTable({
             schema: `
             CREATE TABLE IF NOT EXISTS "${Constants.ShapePageMarcherTableName}" (
