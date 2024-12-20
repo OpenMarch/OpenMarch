@@ -89,14 +89,14 @@ export default function UiSettingsToolbar() {
                         RegisteredActionsObjects.setAllMarchersToPreviousPage
                     }
                 >
-                    Set all to prev
+                    Set all from prev pg
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.setSelectedMarchersToPreviousPage
                     }
                 >
-                    Set selected to prev
+                    Set selected from prev pg
                 </RegisteredActionButton>
             </ToolbarSection>
         </>

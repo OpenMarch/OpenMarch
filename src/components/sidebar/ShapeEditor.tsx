@@ -136,6 +136,9 @@ export default function ShapeEditor() {
                             size="compact"
                             content="icon"
                             variant="red"
+                            disabled={
+                                marcherShape.shapePath.points.length === 2
+                            }
                         >
                             <Trash size={20} />
                         </Button>

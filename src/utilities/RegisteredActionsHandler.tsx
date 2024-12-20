@@ -17,7 +17,6 @@ import Measure from "@/global/classes/Measure";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { ShapePoint } from "@/global/classes/canvasObjects/StaticMarcherShape";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -586,66 +585,32 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.applySelectedMarchersShapesToPreviousPage: {
                     const previousPage = selectedPage.getPreviousPage(pages);
+                    if (!previousPage || selectedMarcherShapes.length === 0)
+                        break;
 
-                    if (previousPage) {
-                        for (const shape of selectedMarcherShapes) {
-                            // Get marcher IDs from the current shape
-                            const marcherIds = shape.canvasMarchers.map(
-                                (marcher) => marcher.marcherObj.id,
-                            );
-
-                            // We can use the first and last points from the shape's path
-                            const svgPath = shape.shapePath.toString();
-                            const points = ShapePoint.fromString(svgPath);
-                            const firstPoint = points[0].coordinates[0];
-                            const lastPoint =
-                                points[points.length - 1].coordinates[
-                                    points[points.length - 1].coordinates
-                                        .length - 1
-                                ];
-
-                            MarcherShape.createMarcherShape({
-                                marcherIds,
-                                start: { x: firstPoint.x, y: firstPoint.y },
-                                end: { x: lastPoint.x, y: lastPoint.y },
-                                pageId: previousPage.id,
-                            });
-                        }
-
-                        MarcherShape.fetchShapePages();
-                    }
+                    selectedMarcherShapes.forEach((shape) => {
+                        MarcherShape.copyShapeToPage(
+                            shape,
+                            selectedPage,
+                            previousPage,
+                            marcherPages,
+                        );
+                    });
                     break;
                 }
+
                 case RegisteredActionsEnum.applySelectedMarchersShapesToNextPage: {
                     const nextPage = selectedPage.getNextPage(pages);
+                    if (!nextPage || selectedMarcherShapes.length === 0) break;
 
-                    if (nextPage) {
-                        for (const shape of selectedMarcherShapes) {
-                            // Get marcher IDs from the current shape
-                            const marcherIds = shape.canvasMarchers.map(
-                                (marcher) => marcher.marcherObj.id,
-                            );
-
-                            // We can use the first and last points from the shape's path
-                            const svgPath = shape.shapePath.toString();
-                            const points = ShapePoint.fromString(svgPath);
-                            const firstPoint = points[0].coordinates[0];
-                            const lastPoint =
-                                points[points.length - 1].coordinates[
-                                    points[points.length - 1].coordinates
-                                        .length - 1
-                                ];
-
-                            MarcherShape.createMarcherShape({
-                                marcherIds,
-                                start: { x: firstPoint.x, y: firstPoint.y },
-                                end: { x: lastPoint.x, y: lastPoint.y },
-                                pageId: nextPage.id,
-                            });
-                        }
-
-                        MarcherShape.fetchShapePages();
-                    }
+                    selectedMarcherShapes.forEach((shape) => {
+                        MarcherShape.copyShapeToPage(
+                            shape,
+                            selectedPage,
+                            nextPage,
+                            marcherPages,
+                        );
+                    });
                     break;
                 }
 

@@ -11,17 +11,15 @@ import ShapeEditorToolbar from "./toolbars/ShapeEditorToolbar";
 function Topbar() {
     return (
         <div className="flex w-full flex-wrap gap-8">
-            <div className="flex w-full flex-wrap gap-8">
-                <PlaybackControls />
-                <ToolbarSection>
-                    <MarchersModal />
-                    <PagesModal />
-                    <MusicModal />
-                    <FieldModal />
-                </ToolbarSection>
-                <UiSettingsToolbar />
-                <AlignmentToolbar />
-            </div>
+            <PlaybackControls />
+            <ToolbarSection>
+                <MarchersModal />
+                <PagesModal />
+                <MusicModal />
+                <FieldModal />
+            </ToolbarSection>
+            <UiSettingsToolbar />
+            <AlignmentToolbar />
             <ShapeEditorToolbar />
         </div>
     );

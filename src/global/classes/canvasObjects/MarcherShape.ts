@@ -7,6 +7,8 @@ import {
     SvgCommandEnum,
     VanillaPoint,
 } from "./StaticMarcherShape";
+import MarcherPage from "@/global/classes/MarcherPage";
+import Page from "@/global/classes/Page";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -234,6 +236,7 @@ export class MarcherShape extends StaticMarcherShape {
         this.setShapePathPoints(newPoints);
         MarcherShape.updateMarcherShape(this);
     }
+
     /****************** DATABASE FUNCTIONS *******************/
     /**
      * Fetches all of the ShapePages from the database.
@@ -270,14 +273,21 @@ export class MarcherShape extends StaticMarcherShape {
         marcherIds,
         start,
         end,
+        points,
     }: {
         pageId: number;
         marcherIds: number[];
         start: { x: number; y: number };
         end: { x: number; y: number };
+        points?: ShapePoint[];
     }) {
         try {
-            const svgPath = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+            // If points are provided, use them to create the SVG path
+            // Otherwise, fall back to creating a simple line
+            const svgPath = points
+                ? new ShapePath(points).toString()
+                : `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+
             const itemIds: { id: number }[] = marcherIds.map((id) => {
                 return { id };
             });
@@ -351,6 +361,83 @@ export class MarcherShape extends StaticMarcherShape {
             );
         this.checkForFetchShapePages();
         this.fetchShapePages();
+    }
+
+    /**
+     * Copies a shape to a page.
+     *
+     * @param shape - The shape to copy.
+     * @param fromPage - The page to copy the shape from.
+     * @param toPage - The page to copy the shape to.
+     * @param marcherPages - The marcher pages to copy the shape to.
+     * @returns A Promise that resolves when the copy is complete, or rejects with an error message.
+     */
+    static async copyShapeToPage(
+        shape: MarcherShape,
+        fromPage: Page,
+        toPage: Page,
+        marcherPages: MarcherPage[],
+    ) {
+        try {
+            const marcherIds = shape.canvasMarchers.map(
+                (cm) => cm.marcherObj.id,
+            );
+
+            // Get marcher pages for target page
+            const targetMarcherPages = marcherPages.filter(
+                (mp) =>
+                    mp.page_id === toPage.id &&
+                    marcherIds.includes(mp.marcher_id),
+            );
+
+            // Get marcher pages for source page
+            const sourceMarcherPages = marcherPages.filter(
+                (mp) =>
+                    mp.page_id === fromPage.id &&
+                    marcherIds.includes(mp.marcher_id),
+            );
+
+            if (targetMarcherPages.length === marcherIds.length) {
+                // Get existing shapes on target page with these marchers
+                const existingShapesResponse =
+                    await window.electron.getShapePageMarchers(toPage.id);
+                if (existingShapesResponse.success) {
+                    const existingShapePageIds = new Set(
+                        existingShapesResponse.data
+                            .filter((spm) =>
+                                marcherIds.includes(spm.marcher_id),
+                            )
+                            .map((spm) => spm.shape_page_id),
+                    );
+
+                    // Delete existing shapes that have any of our marchers
+                    for (const shapePageId of existingShapePageIds) {
+                        await window.electron.deleteShapePages(
+                            new Set([shapePageId]),
+                        );
+                    }
+                }
+
+                // Create new shape
+                MarcherShape.createMarcherShape({
+                    pageId: toPage.id,
+                    marcherIds: marcherIds,
+                    start: targetMarcherPages[0],
+                    end: targetMarcherPages[targetMarcherPages.length - 1],
+                    points: shape.shapePath.points,
+                });
+
+                // Update marcher coordinates on target page
+                const updates = targetMarcherPages.map((mp, idx) => ({
+                    ...mp,
+                    x: sourceMarcherPages[idx].x,
+                    y: sourceMarcherPages[idx].y,
+                }));
+                MarcherPage.updateMarcherPages(updates);
+            }
+        } catch (error) {
+            console.error(`Failed to copy shape to ${toPage.id}:`, error);
+        }
     }
 
     /**

@@ -636,7 +636,6 @@ export default function Canvas({
             {pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
-                // If there are no marchers or pages, display a loader
                 <div className="flex h-full w-full items-center justify-center">
                     <CircleNotch size={32} className="animate-spin text-text" />
                 </div>
