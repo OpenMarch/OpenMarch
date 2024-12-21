@@ -125,7 +125,7 @@ export default function MeasureEditor() {
                     <h5 className="text-h5 leading-none">Measures</h5>
                     <div className="flex gap-8">
                         <Tooltip.Root>
-                            <Tooltip.Trigger>
+                            <Tooltip.Trigger asChild>
                                 <Info size={18} className="text-text/60" />
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16">
@@ -330,7 +330,7 @@ export default function MeasureEditor() {
                             </Button>
                         </div>
                         <AlertDialog>
-                            <AlertDialogTrigger>
+                            <AlertDialogTrigger asChild>
                                 <Button
                                     disabled={!selectedMeasure}
                                     variant="red"

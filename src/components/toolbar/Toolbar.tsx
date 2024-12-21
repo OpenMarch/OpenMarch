@@ -8,7 +8,7 @@ import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import ShapeEditorToolbar from "./toolbars/ShapeEditorToolbar";
 
-function Topbar() {
+export default function Topbar() {
     return (
         <div className="flex w-full flex-wrap gap-8">
             <PlaybackControls />
@@ -24,5 +24,3 @@ function Topbar() {
         </div>
     );
 }
-
-export default Topbar;

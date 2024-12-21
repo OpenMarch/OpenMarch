@@ -54,63 +54,49 @@ export default function ShapeEditor() {
                     {marcherShape.shapePath.points.map(
                         (point, index) =>
                             index > 0 && ( // do not render the first shape (move)
-                                <Form.Field
+                                <div
                                     key={index}
-                                    name="section"
                                     className="flex items-center justify-between"
                                 >
-                                    <Form.Label className="text-body text-text/80">
+                                    <p className="text-body text-text/80">
                                         Segment {index}
-                                    </Form.Label>
-
-                                    <Form.Control asChild>
-                                        <Select
-                                            required
-                                            value={
-                                                SvgCommands[point.command]
-                                                    .command
-                                            }
-                                            onValueChange={(
-                                                newSvg: SvgCommandEnum,
-                                            ) =>
-                                                updateSegment({
-                                                    shapePageId:
-                                                        marcherShape.shapePage
-                                                            .id,
-                                                    index,
-                                                    newSvg,
-                                                })
-                                            }
-                                        >
-                                            <SelectTriggerCompact
-                                                label={"Type"}
-                                            />
-                                            <SelectContent>
-                                                {(index > 1
-                                                    ? Object.values(SvgCommands)
-                                                    : secondSegmentSvgCommands
-                                                ).map((cmd) => {
-                                                    return (
-                                                        <SelectItem
-                                                            key={cmd.command}
-                                                            value={cmd.command}
-                                                        >
-                                                            {
-                                                                cmd.readableDescription
-                                                            }
-                                                        </SelectItem>
-                                                    );
-                                                })}
-                                            </SelectContent>
-                                        </Select>
-                                    </Form.Control>
-                                    <Form.Message
-                                        match={"valueMissing"}
-                                        className="text-sub leading-none text-red"
+                                    </p>
+                                    <Select
+                                        required
+                                        value={
+                                            SvgCommands[point.command].command
+                                        }
+                                        onValueChange={(
+                                            newSvg: SvgCommandEnum,
+                                        ) =>
+                                            updateSegment({
+                                                shapePageId:
+                                                    marcherShape.shapePage.id,
+                                                index,
+                                                newSvg,
+                                            })
+                                        }
                                     >
-                                        Please enter a value.
-                                    </Form.Message>
-                                </Form.Field>
+                                        <SelectTriggerCompact label={"Type"} />
+                                        <SelectContent>
+                                            {(index > 1
+                                                ? Object.values(SvgCommands)
+                                                : secondSegmentSvgCommands
+                                            ).map((cmd) => {
+                                                return (
+                                                    <SelectItem
+                                                        key={cmd.command}
+                                                        value={cmd.command}
+                                                    >
+                                                        {
+                                                            cmd.readableDescription
+                                                        }
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             ),
                     )}
                     <div className="flex flex-wrap gap-8">

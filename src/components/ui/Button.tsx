@@ -64,16 +64,20 @@ export interface ButtonProps
     size?: "default" | "compact";
     content?: "text" | "icon";
 }
-export function Button({
-    children,
-    variant,
-    size,
-    content,
-    className,
-    ...props
-}: ButtonProps) {
-    return (
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+    (
+        {
+            children,
+            variant = "primary",
+            size = "default",
+            content = "text",
+            className,
+            ...props
+        },
+        ref,
+    ) => (
         <button
+            ref={ref}
             className={twMerge(
                 clsx(variants({ variant, size, content }), className),
             )}
@@ -81,5 +85,5 @@ export function Button({
         >
             {children}
         </button>
-    );
-}
+    ),
+);

@@ -19,6 +19,7 @@ export default function ShapeEditorToolbar() {
                     registeredAction={
                         RegisteredActionsObjects.applySelectedMarchersShapesToPreviousPage
                     }
+                    className="outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     Apply to prev page
                 </RegisteredActionButton>
@@ -26,6 +27,7 @@ export default function ShapeEditorToolbar() {
                     registeredAction={
                         RegisteredActionsObjects.applySelectedMarchersShapesToNextPage
                     }
+                    className="outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     Apply to next page
                 </RegisteredActionButton>
@@ -33,7 +35,7 @@ export default function ShapeEditorToolbar() {
                     registeredAction={
                         RegisteredActionsObjects.deleteMarcherShape
                     }
-                    className="hover:text-red"
+                    className="outline-none duration-150 ease-out hover:text-red focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     Delete
                 </RegisteredActionButton>

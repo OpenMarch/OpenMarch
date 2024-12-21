@@ -411,11 +411,13 @@ export class MarcherShape extends StaticMarcherShape {
                     );
 
                     // Delete existing shapes that have any of our marchers
-                    for (const shapePageId of existingShapePageIds) {
-                        await window.electron.deleteShapePages(
-                            new Set([shapePageId]),
-                        );
-                    }
+                    await window.electron.deleteShapePages(
+                        existingShapePageIds,
+                    );
+                } else {
+                    console.error(
+                        `Error fetching existing shapes to copy over: ${existingShapesResponse.error}`,
+                    );
                 }
 
                 // Create new shape
