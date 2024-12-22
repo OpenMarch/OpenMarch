@@ -58,3 +58,12 @@ jobs:
                   DEBUG: "electron-builder"
                   API_KEY_ID: ${{ secrets.api_key_id }}
                   API_KEY_ISSUER_ID: ${{ secrets.api_key_issuer_id }}
+            - name: Check for notarization-error.log
+              if: failure()
+              run: |
+                  if [ -f notarization-error.log ]; then
+                    echo "Notarization log found:"
+                    cat notarization-error.log
+                  else
+                    echo "Notarization log not found."
+                  fi
