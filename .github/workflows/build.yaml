@@ -22,10 +22,13 @@ jobs:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            - name: Install Node.js, NPM and Yarn
+            - name: Install Node.js, NPM
               uses: actions/setup-node@v1
               with:
                   node-version: 18
+
+            - name: Install npm build dependencies
+              run: npm i --no-save electron-builder electron-builder-notarize
 
             - name: Install canvas dependencies (Ubuntu)
               if: startsWith(matrix.os, 'ubuntu')
@@ -56,12 +59,9 @@ jobs:
                   # If the commit is tagged with a version (e.g. "v1.0.0"),
                   # release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-                  mac_certs: ${{ secrets.mac_certs }}
-                  mac_certs_password: ${{ secrets.mac_certs_password }}
               env:
                   DEBUG: "electron-builder"
-                  API_KEY_ID: ${{ secrets.api_key_id }}
-                  API_KEY_ISSUER_ID: ${{ secrets.api_key_issuer_id }}
+
             - name: Check for notarization-error.log
               if: failure()
               run: |

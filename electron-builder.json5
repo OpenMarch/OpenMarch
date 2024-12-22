@@ -10,6 +10,7 @@
         output: "release/${buildVersion}",
     },
     files: ["dist-electron", "dist"],
+    afterSign: "electron-builder-notarize",
     mac: {
         artifactName: "${productName}_${buildVersion}.${ext}",
         target: [
@@ -18,7 +19,9 @@
                 arch: "universal",
             },
         ],
-        notarize: true,
+        notarize: false,
+        hardenedRuntime: true,
+        entitlements: "./build/entitlements.mac.plist",
     },
     win: {
         target: [
