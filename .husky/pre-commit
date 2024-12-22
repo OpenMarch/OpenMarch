@@ -1,1 +1,5 @@
-npx --no-install lint-staged
+# This should only print or be visible if the pre-commit hooks fail.
+echo "Running pre-commit checks. Check the output of this command for more information."
+npx --no-install lint-staged || (echo "❌ Linting failed. Please fix the issues and try again." && exit 1)
+npm run build || (echo "❌ Building failed. Please check the output of 'npm run build' to check the errors." && exit 1)
+echo "✅ Pre-commit checks passed."
