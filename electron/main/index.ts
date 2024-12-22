@@ -543,37 +543,40 @@ function setActiveDb(path: string, isNewFile = false) {
         console.error("Error connecting to database");
         return;
     }
-    DatabaseMigrator.default.getVersion(db);
-    // Create backup before migration
-    if (DatabaseMigrator.default.getVersion(db) !== migrator.version) {
-        const backupDir = join(app.getPath("userData"), "backups");
-        if (!fs.existsSync(backupDir)) {
-            fs.mkdirSync(backupDir);
-        }
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const originalName = path.split(/[\\/]/).pop();
-        const backupPath = join(
-            backupDir,
-            `backup_${timestamp}_${originalName}`,
-        );
-        console.log("Creating backup of database in " + backupPath);
-        fs.copyFileSync(path, backupPath);
-
-        console.log("Deleting backups older than 30 days");
-        // Delete backups older than 30 days
-        const files = fs.readdirSync(backupDir);
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        files.forEach((file) => {
-            const filePath = join(backupDir, file);
-            const stats = fs.statSync(filePath);
-            if (stats.birthtime < thirtyDaysAgo) {
-                fs.unlinkSync(filePath);
+    if (!isNewFile) {
+        console.log("Checking database version to see if migration is needed");
+        DatabaseMigrator.default.getVersion(db);
+        // Create backup before migration
+        if (DatabaseMigrator.default.getVersion(db) !== migrator.version) {
+            const backupDir = join(app.getPath("userData"), "backups");
+            if (!fs.existsSync(backupDir)) {
+                fs.mkdirSync(backupDir);
             }
-        });
-    }
-    migrator.migrateToThisVersion();
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const originalName = path.split(/[\\/]/).pop();
+            const backupPath = join(
+                backupDir,
+                `backup_${timestamp}_${originalName}`,
+            );
+            console.log("Creating backup of database in " + backupPath);
+            fs.copyFileSync(path, backupPath);
+
+            console.log("Deleting backups older than 30 days");
+            // Delete backups older than 30 days
+            const files = fs.readdirSync(backupDir);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            files.forEach((file) => {
+                const filePath = join(backupDir, file);
+                const stats = fs.statSync(filePath);
+                if (stats.birthtime < thirtyDaysAgo) {
+                    fs.unlinkSync(filePath);
+                }
+            });
+        }
+        migrator.migrateToThisVersion();
+    } else console.log(`Creating new database at ${path}`);
 
     !isNewFile && win?.webContents.reload();
     store.set("databasePath", path); // Save current db path
