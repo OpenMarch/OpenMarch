@@ -13,7 +13,10 @@ jobs:
 
         strategy:
             matrix:
-                os: [macos-latest, ubuntu-latest, windows-latest]
+                os:
+                    - macos-latest
+                    - ubuntu-latest
+                    # - windows-latest # Skip windows for now to figure out canvas dependencies
 
         steps:
             - name: Check out Git repository
