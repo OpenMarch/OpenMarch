@@ -28,7 +28,7 @@
     "scripts": {
         "dev": "eslint . && vite",
         "app:prepare": "node_modules/.bin/electron-rebuild -f -w better-sqlite3 && vite",
-        "build": "tsc && vite build && electron-builder -mwl ",
+        "build": "tsc && vite build",
         "clean": "rm -rf node_modules dist-electron release",
         "preview": "vite preview",
         "pree2e": "vite build --mode=test",
