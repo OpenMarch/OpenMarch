@@ -29,10 +29,7 @@ jobs:
             - name: Install Node.js, NPM
               uses: actions/setup-node@v1
               with:
-                  node-version: 18
-
-            - name: Install npm build dependencies
-              run: npm i --no-save electron-builder electron-builder-notarize
+                  node-version: 22
 
             - name: Install canvas dependencies (Ubuntu)
               if: startsWith(matrix.os, 'ubuntu')
@@ -44,10 +41,12 @@ jobs:
               run: |
                   mkdir -p ~/private_keys/
                   echo '${{ secrets.api_key }}' > ~/private_keys/AuthKey_${{ secrets.api_key_id }}.p8
-            - name: Install Xcode Tools
-              if: startsWith(matrix.os, 'macos')
-              run: |
-                  sudo xcodebuild -license accept
+
+            # - name: Install Xcode Tools
+            #   if: startsWith(matrix.os, 'macos')
+            #   run: |
+            #       xcode-select --install
+            #       sudo xcodebuild -license accept
 
             - name: Build/release Electron app
               uses: samuelmeuli/action-electron-builder@v1.6.0
