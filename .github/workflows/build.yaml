@@ -24,6 +24,16 @@ jobs:
               with:
                   node-version: 18
 
+            - name: Install canvas dependencies (Ubuntu)
+              if: startsWith(matrix.os, 'ubuntu')
+              run: sudo apt-get install install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
+            - name: Install canvas dependencies (macOS)
+              if: startsWith(matrix.os, 'macos')
+              run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman
+
+            # Windows doesn't need additional dependencies
+
             - name: Prepare for app notarization
               if: startsWith(matrix.os, 'macos')
               # Import Apple API key for app notarization on macOS
