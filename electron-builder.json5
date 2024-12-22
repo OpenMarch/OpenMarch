@@ -14,7 +14,7 @@
         artifactName: "${productName}_${buildVersion}.${ext}",
         target: [
             {
-                target: "dmg",
+                target: "default",
                 arch: "universal",
             },
         ],

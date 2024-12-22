@@ -4,13 +4,26 @@
     "version": "0.0.5b",
     "main": "dist-electron/main/index.js",
     "description": "OpenMarch is a free and open-source drill-designing software.",
-    "author": "OpenMarch LLC",
+    "author": "Alex Dumouchelle <alexdumo@openmarch.com> (https://openmarch.com/alexdumo)",
     "license": "GPL-3.0",
     "private": true,
+    "homepage": "https://openmarch.com",
+    "funding": {
+        "type": "patreon",
+        "url": "https://www.patreon.com/c/openmarch"
+    },
+    "bugs": {
+        "url": "https://github.com/OpenMarch/OpenMarch/issues",
+        "email": "dev@openmarch.com"
+    },
     "debug": {
         "env": {
             "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777/"
         }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenMarch/OpenMarch.git"
     },
     "scripts": {
         "dev": "eslint . && vite",
@@ -85,6 +98,7 @@
         "cspell": "^8.16.1",
         "electron": "^29.3.3",
         "electron-builder": "^24.6.3",
+        "electron-builder-notarize": "^1.5.2",
         "eslint": "^8.56.0",
         "eslint-config-react-app": "^7.0.1",
         "eslint-plugin-react": "^7.33.2",
@@ -100,6 +114,12 @@
         "vite-plugin-electron": "^0.15.5",
         "vite-plugin-electron-renderer": "^0.14.5",
         "vitest": "^2.0.5"
+    },
+    "build": {
+        "afterSign": "electron-builder-notarize",
+        "mac": {
+            "hardenedRuntime": true
+        }
     },
     "engines": {
         "node": ">18.0.0"
