@@ -1,7 +1,7 @@
 {
     "name": "openmarch",
     "productName": "OpenMarch",
-    "version": "0.0.5b",
+    "version": "0.0.5",
     "main": "dist-electron/main/index.js",
     "description": "OpenMarch is a free and open-source drill-designing software.",
     "author": "Alex Dumouchelle <alexdumo@openmarch.com> (https://openmarch.com/alexdumo)",
@@ -118,7 +118,8 @@
         "afterSign": "electron-builder-notarize",
         "mac": {
             "hardenedRuntime": true
-        }
+        },
+        "appId": "com.openmarch.app"
     },
     "engines": {
         "node": ">18.0.0"
