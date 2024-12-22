@@ -10,7 +10,7 @@
         output: "release/${buildVersion}",
     },
     files: ["dist-electron", "dist"],
-    afterSign: "electron-builder-notarize",
+    afterSign: "./build/notarize.js",
     mac: {
         artifactName: "${productName}_${buildVersion}.${ext}",
         target: [

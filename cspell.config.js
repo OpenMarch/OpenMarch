@@ -12,6 +12,7 @@ module.exports = {
         "measurenb",
         "musicxml",
         "multiselection",
+        "notarytool",
         "pagewidth",
         "Rcoords",
         "ritardandos",
