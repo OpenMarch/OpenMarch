@@ -61,10 +61,9 @@ jobs:
                   mac_certs: ${{ secrets.mac_certs }}
                   mac_certs_password: ${{ secrets.mac_certs_password }}
               env:
-                  DEBUG: "electron-builder"
-                  APPLE_API_KEY: ~/private_keys/apple_api_key.p8
+                  APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
                   APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
-                  APPLE_API_KEY_ISSUER: ${{ secrets.apple_api_key_issuer }}
+                  APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
 
             - name: Check for notarization-error.log
               if: failure()
