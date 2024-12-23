@@ -36,7 +36,7 @@ export default async function notarizing(context) {
 
     // Create a temporary file to hold the API key
     const tempKeyPath = path.join(__dirname, "apple_api_key.p8");
-    fs.writeFileSync(tempKeyPath, process.env.APPLE_API_KEY, {
+    fs.writeFileSync(tempKeyPath, appleApiKey, {
         encoding: "utf8",
     });
 
@@ -44,7 +44,7 @@ export default async function notarizing(context) {
         await notarize({
             tool: "notarytool",
             appPath: `${appOutDir}/${appName}.app`,
-            appleApiKey, // Absolute path to API key (e.g. `/path/to/AuthKey_X0X0X0X0X0.p8`)
+            appleApiKey: tempKeyPath, // Absolute path to API key (e.g. `/path/to/AuthKey_X0X0X0X0X0.p8`)
             appleApiIssuer, // Issuer ID (e.g. `d5631714-a680-4b4b-8156-b4ed624c0845`)
             appleApiKeyId, // Key ID (e.g. `X0X0X0X0X0`)
         });
