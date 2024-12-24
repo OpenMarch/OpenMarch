@@ -5,7 +5,6 @@ on:
         branches:
             - main
             - master
-            - updater
 
 jobs:
     release:
@@ -15,7 +14,7 @@ jobs:
             matrix:
                 os:
                     - macos-latest
-                    # - ubuntu-latest
+                    - ubuntu-latest
                     # - windows-latest # Skip windows for now to figure out canvas dependencies
 
         steps:
@@ -37,16 +36,9 @@ jobs:
 
             - name: Prepare for app notarization
               if: startsWith(matrix.os, 'macos')
-              # Import Apple API key for app notarization on macOS
               run: |
                   mkdir -p ~/private_keys/
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
-
-            # - name: Install Xcode Tools
-            #   if: startsWith(matrix.os, 'macos')
-            #   run: |
-            #       xcode-select --install
-            #       sudo xcodebuild -license accept
 
             - name: Build/release Electron app
               uses: samuelmeuli/action-electron-builder@v1.6.0
@@ -60,17 +52,7 @@ jobs:
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   mac_certs: ${{ secrets.mac_certs }}
                   mac_certs_password: ${{ secrets.mac_certs_password }}
-              env:
-                  APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
-                  APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
-                  APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
-
-            - name: Check for notarization-error.log
-              if: failure()
-              run: |
-                  if [ -f notarization-error.log ]; then
-                    echo "Notarization log found:"
-                    cat notarization-error.log
-                  else
-                    echo "Notarization log not found."
-                  fi
+              # env:
+              #     APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
+              #     APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
+              #     APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
