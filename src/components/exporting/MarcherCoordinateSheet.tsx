@@ -7,6 +7,9 @@ import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import Measure from "@/global/classes/Measure";
+import TimeSignature from "@/global/classes/TimeSignature";
+import BeatUnit from "@/global/classes/BeatUnit";
 // import "./MarcherCoordinateSheet.css";
 
 // TODO, this is broken right now, fix this
@@ -73,7 +76,7 @@ export default function MarcherCoordinateSheet({
                     drill_order: 1,
                 }),
             );
-            setPagesToUse([
+            const pages = [
                 new Page({
                     id: 1,
                     name: "1",
@@ -85,7 +88,7 @@ export default function MarcherCoordinateSheet({
                 new Page({
                     id: 2,
                     name: "2",
-                    counts: 16,
+                    counts: 15,
                     order: 2,
                     nextPageId: 3,
                     previousPageId: 1,
@@ -98,7 +101,19 @@ export default function MarcherCoordinateSheet({
                     nextPageId: null,
                     previousPageId: 2,
                 }),
-            ]);
+            ];
+            const measures = Array.from(
+                { length: 8 },
+                (_, i) =>
+                    new Measure({
+                        number: i + 1,
+                        timeSignature: TimeSignature.fromString("4/4"),
+                        beatUnit: BeatUnit.QUARTER,
+                        tempo: 120,
+                    }),
+            );
+            Page.alignWithMeasures(pages, measures);
+            setPagesToUse(Page.alignWithMeasures(pages, measures));
             setMarcherPagesToUse([
                 {
                     id: 1,
@@ -429,7 +444,7 @@ export function StaticMarcherCoordinateSheet({
                                                         width: "10%",
                                                     }}
                                                 >
-                                                    N/A
+                                                    {page.measureRangeString()}
                                                 </td>
                                             )}
                                             <td
