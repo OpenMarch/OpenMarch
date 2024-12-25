@@ -224,7 +224,7 @@ function ExportModalContents() {
 
                     <Tooltip.TooltipProvider>
                         <Tooltip.Root>
-                            <Tooltip.Trigger>
+                            <Tooltip.Trigger type="button">
                                 <Info size={18} className="text-text/60" />
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16">
