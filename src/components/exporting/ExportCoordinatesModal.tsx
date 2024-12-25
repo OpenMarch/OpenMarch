@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import MarcherCoordinateSheet, {
     StaticMarcherCoordinateSheet,
 } from "./MarcherCoordinateSheet";
@@ -14,51 +14,108 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../ui/Dialog";
-import { ArrowSquareOut } from "@phosphor-icons/react";
+import { ArrowSquareOut, Info } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "../ui/Tooltip";
 import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/Checkbox";
 import * as Form from "@radix-ui/react-form";
 import { Input } from "../ui/Input";
+import { toast } from "react-toastify";
 
 function ExportModalContents() {
     const [isTerse, setIsTerse] = useState(false);
     const [includeMeasures, setIncludeMeasures] = useState(true);
     const [useXY, setUseXY] = useState(false);
     const [roundingDenominator, setRoundingDenominator] = useState(4);
+    const [organizeBySection, setOrganizeBySection] = useState(false);
     const { marchers } = useMarcherStore()!;
     const { pages } = usePageStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { fieldProperties } = useFieldProperties()!;
     const [isLoading, setIsLoading] = useState(false);
+    const [, setProgress] = useState(0);
 
-    const handleExport = useCallback(() => {
-        if (!fieldProperties)
-            throw new Error("Field properties not found in context");
+    // Debug logging
+    useEffect(() => {
+        console.log("Marchers:", marchers);
+        console.log(
+            "Detailed Marcher Info:",
+            marchers.map((m) => ({
+                name: m.name,
+                section: m.section,
+                id: m.id,
+            })),
+        );
+    }, [marchers]);
 
-        const coordinateSheets: string[] = [];
-        marchers.forEach((marcher) => {
-            console.log("marcher", marcher);
-            coordinateSheets.push(
-                ReactDOMServer.renderToString(
+    useEffect(() => {
+        if (isLoading) {
+            const interval = setInterval(() => {
+                setProgress((prevProgress) => {
+                    if (prevProgress >= 100) {
+                        clearInterval(interval);
+                        setIsLoading(false);
+                        toast.success("Export complete!");
+                        return 100;
+                    }
+                    return prevProgress + 10;
+                });
+            }, 500);
+        }
+    }, [isLoading]);
+
+    const handleExport = useCallback(async () => {
+        setIsLoading(true);
+        setProgress(0);
+
+        if (!fieldProperties) {
+            toast.error("Field properties are required for export");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const processedMarchers = marchers.map((marcher, index) => ({
+                ...marcher,
+                name: marcher.name || `${marcher.section} ${index + 1}`,
+            }));
+
+            const coordinateSheets = processedMarchers.map((marcher) => ({
+                name: marcher.name,
+                drillNumber: marcher.drill_number,
+                section: marcher.section || "Unsorted",
+                renderedPage: ReactDOMServer.renderToString(
                     <StaticMarcherCoordinateSheet
                         marcher={marcher}
                         pages={pages}
                         marcherPages={marcherPages}
+                        fieldProperties={fieldProperties}
                         includeMeasures={includeMeasures}
                         terse={isTerse}
                         useXY={useXY}
-                        fieldProperties={fieldProperties}
                         roundingDenominator={roundingDenominator}
                     />,
                 ),
+            }));
+
+            const result = await window.electron.export.pdf({
+                sheets: coordinateSheets,
+                organizeBySection,
+            });
+
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error("Export failed:", error);
+            toast.error(
+                `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
-        });
-        setIsLoading(true);
-        window.electron
-            .sendExportIndividualCoordinateSheets(coordinateSheets)
-            .then(() => setIsLoading(false));
+        } finally {
+            setIsLoading(false);
+            setProgress(100);
+        }
     }, [
         fieldProperties,
         marchers,
@@ -68,6 +125,7 @@ function ExportModalContents() {
         isTerse,
         useXY,
         roundingDenominator,
+        organizeBySection,
     ]);
 
     return (
@@ -86,7 +144,8 @@ function ExportModalContents() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        Include measures
+                        {" "}
+                        Include measures{" "}
                     </Form.Label>
                 </Form.Field>
                 <Form.Field
@@ -102,7 +161,8 @@ function ExportModalContents() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        Abbreviate coordinate descriptions
+                        {" "}
+                        Abbreviate coordinate descriptions{" "}
                     </Form.Label>
                 </Form.Field>
                 <Form.Field
@@ -118,7 +178,8 @@ function ExportModalContents() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        Use X/Y headers
+                        {" "}
+                        Use X/Y headers{" "}
                     </Form.Label>
                 </Form.Field>
                 <Form.Field
@@ -126,7 +187,8 @@ function ExportModalContents() {
                     className="flex w-full items-center justify-between gap-12"
                 >
                     <Form.Label className="text-body">
-                        Rounding denominator:
+                        {" "}
+                        Rounding denominator:{" "}
                     </Form.Label>
                     <Form.Control asChild className="w-[6rem]">
                         <Input
@@ -143,13 +205,50 @@ function ExportModalContents() {
                         />
                     </Form.Control>
                 </Form.Field>
+                <Form.Field
+                    name="organizeBySection"
+                    className="flex w-full items-center gap-12"
+                >
+                    <Form.Control asChild>
+                        <Checkbox
+                            checked={organizeBySection}
+                            onCheckedChange={(checked: boolean) =>
+                                setOrganizeBySection(checked)
+                            }
+                        />
+                    </Form.Control>
+                    <Form.Label className="text-body">
+                        {" "}
+                        Organize by Section{" "}
+                    </Form.Label>
+
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div>
+                                    Create PDF files for each individual marcher
+                                    organized in folders by section.
+                                </div>
+                                <div>
+                                    If this is not checked, one large PDF file
+                                    will be created with every coordinate sheet
+                                    in score order.
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
+                </Form.Field>
             </Form.Root>
+
+            {/* Preview Section */}
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
                     <h5 className="text-h5">Preview</h5>
                     <p className="text-sub text-text/75">
-                        {"4 -> 1/4 = nearest quarter step"}
-                        {" | "}
+                        {"4 -> 1/4 = nearest quarter step"} {" | "}{" "}
                         {"10 -> 1/10 = nearest tenth step"}
                     </p>
                 </div>
@@ -165,17 +264,20 @@ function ExportModalContents() {
                     </div>
                 </div>
             </div>
+
+            {/* Export Button */}
             <div className="flex w-full justify-end gap-8">
                 <Button
                     size="compact"
                     onClick={handleExport}
-                    disabled={isLoading}
+                    disabled={isLoading || marchers.length === 0}
                 >
                     {isLoading ? "Exporting... Please wait" : "Export"}
                 </Button>
                 <DialogClose>
                     <Button size="compact" variant="secondary">
-                        Cancel
+                        {" "}
+                        Cancel{" "}
                     </Button>
                 </DialogClose>
             </div>
@@ -186,6 +288,7 @@ function ExportModalContents() {
 export default function ExportCoordinatesModal() {
     return (
         <Dialog>
+            {/* Tooltip Setup */}
             <Tooltip.Root>
                 <Tooltip.Trigger asChild>
                     <DialogTrigger className="cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50">
@@ -193,9 +296,12 @@ export default function ExportCoordinatesModal() {
                     </DialogTrigger>
                 </Tooltip.Trigger>
                 <TooltipContents>
-                    Export individual coordinate sheets for marchers
+                    {" "}
+                    Export individual coordinate sheets for marchers{" "}
                 </TooltipContents>
             </Tooltip.Root>
+
+            {/* Dialog Setup */}
             <DialogContent className="w-[48rem]">
                 <DialogTitle>Export Individual Coordinate Sheets</DialogTitle>
                 <ExportModalContents />
