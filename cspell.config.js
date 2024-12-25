@@ -24,6 +24,7 @@ module.exports = {
         "Tribbiani",
         "Uncurried",
         "unmaximize",
+        "viewbox",
         "Vree",
         "Zingali",
     ],

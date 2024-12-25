@@ -14,7 +14,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../ui/Dialog";
-import { ArrowSquareOut } from "@phosphor-icons/react";
+import { ArrowSquareOut, Info } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "../ui/Tooltip";
 import { Button } from "../ui/Button";
@@ -78,11 +78,12 @@ function ExportModalContents() {
         try {
             const processedMarchers = marchers.map((marcher, index) => ({
                 ...marcher,
-                name: marcher.name || `Marcher-${marcher.id || index + 1}`,
+                name: marcher.name || `${marcher.section} ${index + 1}`,
             }));
 
             const coordinateSheets = processedMarchers.map((marcher) => ({
                 name: marcher.name,
+                drillNumber: marcher.drill_number,
                 section: marcher.section || "Unsorted",
                 renderedPage: ReactDOMServer.renderToString(
                     <StaticMarcherCoordinateSheet
@@ -220,6 +221,25 @@ function ExportModalContents() {
                         {" "}
                         Organize by Section{" "}
                     </Form.Label>
+
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger>
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div>
+                                    Create PDF files for each individual marcher
+                                    organized in folders by section.
+                                </div>
+                                <div>
+                                    If this is not checked, one large PDF file
+                                    will be created with every coordinate sheet
+                                    in score order.
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
                 </Form.Field>
             </Form.Root>
 
