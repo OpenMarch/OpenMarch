@@ -100,8 +100,8 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        setContent(<PageListContents />);
         event.preventDefault();
+        setContent(<PageListContents />);
         if (counts && quantity) {
             const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
@@ -277,7 +277,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                         </Form.Label>
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
-                                <Tooltip.Trigger>
+                                <Tooltip.Trigger type="button">
                                     <Info size={18} className="text-text/60" />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16">
@@ -337,7 +337,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                         </Form.Label>
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
-                                <Tooltip.Trigger>
+                                <Tooltip.Trigger type="button">
                                     <Info size={18} className="text-text/60" />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16">

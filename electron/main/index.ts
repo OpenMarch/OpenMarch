@@ -5,7 +5,7 @@ import { release } from "node:os";
 import { join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
-import { generatePDF } from "./export-coordinates";
+import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
 import AudioFile from "@/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
@@ -128,7 +128,6 @@ app.whenReady().then(async () => {
     ipcMain.handle("database:create", async () => newFile());
     ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
     ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
-
     ipcMain.handle("audio:insert", async () => insertAudioFile());
     ipcMain.handle("measure:insert", async () =>
         launchImportMusicXmlFileDialogue(),
@@ -162,12 +161,21 @@ function initGetters() {
         store.set("lockY", lockY as boolean);
     });
 
-    // Export Individual Coordinate Sheets
-    ipcMain.on(
-        "send:exportIndividual",
-        async (_, coordinateSheets: string[]) =>
-            await generatePDF(coordinateSheets),
-    );
+    // Exports
+    ipcMain.handle("export:pdf", async (_, params) => {
+        return await PDFExportService.export(
+            params.sheets,
+            params.organizeBySection,
+        );
+    });
+
+    // Export Full Charts
+    // ipcMain.handle(
+
+    //    "send:exportCanvas",
+    //   async (_, dataUrl: string) =>
+    //       await exportCanvas(dataUrl)
+    //);
 }
 
 app.on("window-all-closed", () => {
@@ -179,6 +187,7 @@ app.on("open-file", (event, path) => {
     event.preventDefault();
     setActiveDb(path);
 });
+
 // Handle instances where the app is already running and a file is opened
 // const gotTheLock = app.requestSingleInstanceLock();
 // if (!gotTheLock) {
