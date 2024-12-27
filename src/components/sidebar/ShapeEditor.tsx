@@ -18,7 +18,8 @@ import {
 import { Plus, Trash } from "@phosphor-icons/react";
 
 export default function ShapeEditor() {
-    const { selectedMarcherShapes } = useShapePageStore()!;
+    const { selectedMarcherShapes, setSelectedMarcherShapes } =
+        useShapePageStore()!;
 
     const updateSegment = useCallback(
         ({
@@ -41,6 +42,18 @@ export default function ShapeEditor() {
             marcherShape.updateSegment({ index, newSvg });
         },
         [selectedMarcherShapes],
+    );
+
+    const handleDeleteShape = useCallback(
+        (marcherShape: MarcherShape) => {
+            MarcherShape.deleteShapePage(marcherShape.shapePage.id);
+            setSelectedMarcherShapes(
+                selectedMarcherShapes.filter(
+                    (shape) => shape.shapePage.id !== marcherShape.shapePage.id,
+                ),
+            );
+        },
+        [selectedMarcherShapes, setSelectedMarcherShapes],
     );
 
     const singleShapeEditor = (marcherShape: MarcherShape) => {
@@ -107,6 +120,7 @@ export default function ShapeEditor() {
                             type="button"
                             size="compact"
                             variant="primary"
+                            tooltipText="Add segment to shape"
                         >
                             <Plus size={20} /> Add
                         </Button>
@@ -125,8 +139,23 @@ export default function ShapeEditor() {
                             disabled={
                                 marcherShape.shapePath.points.length === 2
                             }
+                            tooltipText="Delete last segment"
                         >
                             <Trash size={20} />
+                        </Button>
+                        <div className="flex-grow" />
+                        <Button
+                            onClick={() => {
+                                handleDeleteShape(marcherShape);
+                            }}
+                            className="min-h-0 w-fit"
+                            type="button"
+                            size="compact"
+                            content="icon"
+                            variant="red"
+                            tooltipText="Delete this shape for this page. Will not move marchers from their current position"
+                        >
+                            Un-group
                         </Button>
                     </div>
                 </div>

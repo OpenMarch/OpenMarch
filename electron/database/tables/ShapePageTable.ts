@@ -6,7 +6,7 @@ import * as History from "../database.history";
 import { createShapePageMarchers } from "./ShapePageMarcherTable";
 import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
 import { updateMarcherPages } from "./MarcherPageTable";
-import { createShapes } from "./ShapeTable";
+import { createShapes, Shape } from "./ShapeTable";
 
 export interface ShapePage {
     id: number;
@@ -379,9 +379,45 @@ export function deleteShapePages({
     db: Database.Database;
     ids: Set<number>;
 }): DatabaseResponse<ShapePage[]> {
-    return DbActions.deleteItems<ShapePage>({
+    console.log("\n=========== start deleteShapePages ===========");
+    History.incrementUndoGroup(db);
+    const response = DbActions.deleteItems<ShapePage>({
         db,
         tableName: Constants.ShapePageTableName,
         ids,
+        useNextUndoGroup: false,
+        printHeaders: false,
     });
+
+    // Check if the shape that belonged to the deleted shapePage still has any shapePages referencing it
+    const shapeIds = response.data.map((sp) => sp.shape_id);
+    const allShapePages = getShapePages({ db }).data;
+    const shapeIdsWithShapePages = new Set(
+        allShapePages.map((sp) => sp.shape_id),
+    );
+    const shapeIdsWithNoShapePages = shapeIds.filter(
+        (shapeId) => !shapeIdsWithShapePages.has(shapeId),
+    );
+
+    console.log(
+        "Shape has no more shapePages referencing it. Deleting shape with ids:",
+        shapeIdsWithNoShapePages,
+    );
+    const deleteShapeResponse = DbActions.deleteItems<Shape>({
+        db,
+        tableName: Constants.ShapeTableName,
+        ids: new Set(shapeIdsWithNoShapePages),
+        useNextUndoGroup: false,
+        printHeaders: false,
+    });
+
+    if (!deleteShapeResponse.success) {
+        console.error(
+            "Error deleting shapes with no shapePages referencing them:",
+            deleteShapeResponse.error,
+        );
+    }
+    console.log("=========== end deleteShapePages ===========\n");
+
+    return response;
 }

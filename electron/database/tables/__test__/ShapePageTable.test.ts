@@ -123,6 +123,7 @@ describe("ShapePageTable CRUD Operations", () => {
                 id: created.data[0].id,
                 svg_path: "M 200 200 L 300 300",
                 notes: "Updated notes",
+                marcher_coordinates: [],
             },
         ];
 
@@ -204,7 +205,18 @@ describe("ShapePageTable CRUD Operations", () => {
         expect(deleteShapes({ db, ids: new Set([1]) }).success).toBeTruthy();
 
         const remaining = getShapePages({ db }).data;
-        expect(remaining).toMatchObject([newShapePages[2], newShapePages[3]]);
+        expect(remaining).toMatchObject([
+            {
+                shape_id: 2,
+                page_id: 0,
+                svg_path: "M 50 50 L 150 150",
+            },
+            {
+                shape_id: 2,
+                page_id: 1,
+                svg_path: "M 50 50 L 150 150",
+            },
+        ]);
     });
 
     it("should delete shape pages when the page is deleted", () => {
@@ -239,6 +251,136 @@ describe("ShapePageTable CRUD Operations", () => {
         );
         expect(deletePages({ db, pageIds: new Set([1]) }).success).toBeTruthy();
         const remaining = getShapePages({ db }).data;
-        expect(remaining).toMatchObject([newShapePages[0], newShapePages[2]]);
+        expect(remaining).toMatchObject([
+            {
+                shape_id: 1,
+                page_id: 0,
+                svg_path: "M 0 0 L 100 100",
+            },
+            {
+                shape_id: 2,
+                page_id: 0,
+                svg_path: "M 50 50 L 150 150",
+            },
+        ]);
+    });
+    describe("ShapePageTable Cascade Delete Operations", () => {
+        let db: Database.Database;
+
+        beforeEach(() => {
+            db = new Database(":memory:");
+            History.createHistoryTables(db);
+            createShapePageTable(db);
+            createPageTable(db);
+            createShapeTable(db);
+            createMarcherPageTable(db);
+            createShapePageMarcherTable(db);
+            createMarcherTable(db);
+            expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
+                true,
+            );
+            expect(
+                createPages({ db, newPages: DbMocks.NewPages }).success,
+            ).toBe(true);
+        });
+
+        afterEach(() => {
+            db.close();
+        });
+
+        it("should automatically delete shape when its last shapePage is deleted", () => {
+            const newShapePages = [
+                {
+                    shape_id: 1,
+                    page_id: 0,
+                    svg_path: "M 0 0 L 100 100",
+                    marcher_coordinates: [],
+                },
+            ];
+            const created = createShapePages({ db, args: newShapePages });
+            expect(created.success).toBeTruthy();
+
+            const result = deleteShapePages({
+                db,
+                ids: new Set([created.data[0].id]),
+            });
+
+            expect(result.success).toBe(true);
+            const shapes = db
+                .prepare("SELECT * FROM shapes WHERE id = 1")
+                .all();
+            expect(shapes.length).toBe(0);
+        });
+
+        it("should not delete shape when it still has other shapePages after deletion", () => {
+            const newShapePages = [
+                {
+                    shape_id: 1,
+                    page_id: 0,
+                    svg_path: "M 0 0 L 100 100",
+                    marcher_coordinates: [],
+                },
+                {
+                    shape_id: 1,
+                    page_id: 1,
+                    svg_path: "M 200 200 L 300 300",
+                    marcher_coordinates: [],
+                },
+            ];
+            const created = createShapePages({ db, args: newShapePages });
+            expect(created.success).toBeTruthy();
+
+            const result = deleteShapePages({
+                db,
+                ids: new Set([created.data[0].id]),
+            });
+
+            expect(result.success).toBe(true);
+            const shapes = db
+                .prepare("SELECT * FROM shapes WHERE id = 1")
+                .all();
+            expect(shapes.length).toBe(1);
+        });
+
+        it("should handle deletion of multiple shapePages with shape cascade", () => {
+            const newShapePages = [
+                {
+                    shape_id: 1,
+                    page_id: 0,
+                    svg_path: "M 0 0 L 100 100",
+                    marcher_coordinates: [],
+                },
+                {
+                    shape_id: 2,
+                    page_id: 0,
+                    svg_path: "M 200 200 L 300 300",
+                    marcher_coordinates: [],
+                },
+            ];
+            const created = createShapePages({ db, args: newShapePages });
+            expect(created.success).toBeTruthy();
+
+            let shapes = db.prepare("SELECT * FROM shapes").all();
+            expect(shapes.length).toBe(4);
+
+            const result = deleteShapePages({
+                db,
+                ids: new Set([created.data[0].id, created.data[1].id]),
+            });
+
+            expect(result.success).toBe(true);
+            shapes = db.prepare("SELECT * FROM shapes").all();
+            expect(shapes.length).toBe(2);
+        });
+
+        it("should handle empty set of ids for deletion", () => {
+            const result = deleteShapePages({
+                db,
+                ids: new Set(),
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data.length).toBe(0);
+        });
     });
 });

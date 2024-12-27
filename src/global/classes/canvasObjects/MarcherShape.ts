@@ -458,4 +458,16 @@ export class MarcherShape extends StaticMarcherShape {
         this.checkForFetchShapePages();
         this.fetchShapePages();
     }
+
+    static async deleteShapePage(shapePageId: number) {
+        const deleteResponse = await window.electron.deleteShapePages(
+            new Set([shapePageId]),
+        );
+        if (!deleteResponse.success)
+            console.error(
+                `Error deleting StaticMarcherShape - ${deleteResponse.error}`,
+            );
+        this.checkForFetchShapePages();
+        this.fetchShapePages();
+    }
 }
