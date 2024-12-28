@@ -15,6 +15,8 @@ import {
     SelectItem,
     SelectTriggerCompact,
 } from "../ui/Select";
+import { useShapePageStore } from "@/stores/ShapePageStore";
+import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -22,6 +24,10 @@ function MarcherEditor() {
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { fieldProperties } = useFieldProperties()!;
+    const { shapePages } = useShapePageStore()!;
+    const [spmsForThisPage, setSpmsForThisPage] = useState<ShapePageMarcher[]>(
+        [],
+    );
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +47,39 @@ function MarcherEditor() {
         // const yardLine = form[yardLineId].value;
         // const fieldSide = form[fieldSideId].value;
     };
+
+    useEffect(() => {
+        const shapePageIds = new Set<number>();
+        for (const shapePage of shapePages) {
+            if (shapePage.page_id === selectedPage?.id) {
+                shapePageIds.add(shapePage.id);
+            }
+        }
+
+        window.electron.getShapePageMarchers().then((response) => {
+            if (response.success) {
+                const spmsForThisPage = response.data.filter((spm) =>
+                    shapePageIds.has(spm.shape_page_id),
+                );
+                setSpmsForThisPage(spmsForThisPage);
+            } else {
+                console.error(response.error);
+            }
+        });
+    }, [selectedPage, shapePages]);
+
+    const createLineIsVisible = useCallback(() => {
+        const marcherIdsWithShapes = new Set<number>(
+            spmsForThisPage.map((spm) => spm.marcher_id),
+        );
+        const selectedMarcherIds = selectedMarchers.map(
+            (marcher) => marcher.id,
+        );
+
+        return !selectedMarcherIds.some((marcherId) =>
+            marcherIdsWithShapes.has(marcherId),
+        );
+    }, [selectedMarchers, spmsForThisPage]);
 
     useEffect(() => {
         setRCoords(undefined);
@@ -103,18 +142,22 @@ function MarcherEditor() {
                                     .map((marcher) => marcher.drill_number)
                                     .join(", ")}
                             </p>
-                            {selectedMarchers.length >= 3 && (
-                                <RegisteredActionButton
-                                    className="btn-secondary"
-                                    registeredAction={
-                                        RegisteredActionsObjects.alignmentEventLine
-                                    }
-                                >
-                                    <Button size="compact" className="w-full">
-                                        Create Line
-                                    </Button>
-                                </RegisteredActionButton>
-                            )}
+                            {selectedMarchers.length >= 3 &&
+                                createLineIsVisible() && (
+                                    <RegisteredActionButton
+                                        className="btn-secondary"
+                                        registeredAction={
+                                            RegisteredActionsObjects.alignmentEventLine
+                                        }
+                                    >
+                                        <Button
+                                            size="compact"
+                                            className="w-full"
+                                        >
+                                            Create Line
+                                        </Button>
+                                    </RegisteredActionButton>
+                                )}
                         </SidebarCollapsible>
                     ) : (
                         // One marcher selected

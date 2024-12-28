@@ -2,6 +2,7 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import * as History from "../database.history";
+import { ShapePage } from "./ShapePageTable";
 
 /**
  * A Shape can have many ShapePages to signify its existence on multiple pages.
@@ -69,28 +70,37 @@ export function createShapePageMarcherTable(db: Database.Database) {
  * Retrieves all shapePageMarchers from the database or filters by shapePageId.
  *
  * @param db The database instance
- * @param shapePageId The shapePageId to filter by. If undefined, all shapePageMarchers are returned
+ * @param shapePageId The shapePageId to filter by. If undefined, SPMs with all page_ids are returned
+ * @param marcherIds The marcherIds to filter by.  If undefined, SPMs with all marcher_ids are returned
  * @returns DatabaseResponse containing an array of ShapePageMarcher objects
  */
 export function getShapePageMarchers({
     db,
     shapePageId,
+    marcherIds,
 }: {
     db: Database.Database;
     shapePageId?: number;
+    marcherIds?: Set<number>;
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
+    let response: DbActions.DatabaseResponse<ShapePageMarcher[]>;
     if (shapePageId !== undefined)
-        return DbActions.getItemsByColValue<ShapePageMarcher>({
+        response = DbActions.getItemsByColValue<ShapePageMarcher>({
             db,
             tableName: Constants.ShapePageMarcherTableName,
             col: "shape_page_id",
             value: shapePageId,
         });
     else
-        return DbActions.getAllItems<ShapePageMarcher>({
+        response = DbActions.getAllItems<ShapePageMarcher>({
             db,
             tableName: Constants.ShapePageMarcherTableName,
         });
+
+    let outputData = response.data;
+    if (marcherIds)
+        outputData = outputData.filter((spm) => marcherIds.has(spm.marcher_id));
+    return { ...response, data: outputData };
 }
 
 export function getSpmByMarcherPage({
@@ -318,6 +328,49 @@ export function createShapePageMarchers({
                 });
                 actionWasPerformed = true;
             }
+
+            const shapePage = DbActions.getItem<ShapePage>({
+                db,
+                tableName: Constants.ShapePageTableName,
+                id: newItem.shape_page_id,
+            });
+            if (!shapePage.success)
+                throw new Error(shapePage.error?.message ?? "");
+            if (!shapePage.data)
+                throw new Error(
+                    `ShapePage for this SPM not found: id ${newItem.shape_page_id}`,
+                );
+
+            const shapePagesForThisPage =
+                DbActions.getItemsByColValue<ShapePage>({
+                    db,
+                    tableName: Constants.ShapePageTableName,
+                    col: "page_id",
+                    value: shapePage.data.page_id,
+                });
+            const shapePageIds = new Set(
+                shapePagesForThisPage.data.map((sp) => sp.id),
+            );
+
+            const shapePageMarchersForThisMarcher =
+                DbActions.getItemsByColValue<ShapePageMarcher>({
+                    db,
+                    tableName: Constants.ShapePageMarcherTableName,
+                    col: "marcher_id",
+                    value: newItem.marcher_id,
+                });
+
+            const marcherAndPageCombinationExists =
+                shapePageMarchersForThisMarcher.data.some((spm) =>
+                    shapePageIds.has(spm.shape_page_id),
+                );
+
+            if (marcherAndPageCombinationExists) {
+                throw new Error(
+                    `ShapePageMarcher with marcher_id ${newItem.marcher_id} and shape_page_id ${newItem.shape_page_id} already exists`,
+                );
+            }
+
             // Create the new item
             const response = DbActions.createItems<
                 ShapePageMarcher[],

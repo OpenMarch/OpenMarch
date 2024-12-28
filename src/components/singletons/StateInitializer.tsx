@@ -29,7 +29,7 @@ function StateInitializer() {
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
-    const { fetchShapePages } = useShapePageStore()!;
+    const { fetchShapePages, setSelectedMarcherShapes } = useShapePageStore()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -83,6 +83,11 @@ function StateInitializer() {
             });
         }
     }, [selectedAudioFile, setSelectedAudioFile]);
+
+    // Clear the selected marcher shapes when the page changes
+    useEffect(() => {
+        setSelectedMarcherShapes([]);
+    }, [selectedPage, setSelectedMarcherShapes]);
 
     const getMarcher = useCallback(
         (id: number) => {

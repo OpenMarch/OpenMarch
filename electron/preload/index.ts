@@ -321,10 +321,12 @@ const APP_API = {
         >,
 
     //ShapePageMarcher
-    getShapePageMarchers: (shapePageId?: number) =>
-        ipcRenderer.invoke("shape_page_marcher:getAll", shapePageId) as Promise<
-            DatabaseResponse<ShapePageMarcher[]>
-        >,
+    getShapePageMarchers: (shapePageId?: number, marcherIds?: Set<number>) =>
+        ipcRenderer.invoke(
+            "shape_page_marcher:get",
+            shapePageId,
+            marcherIds,
+        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
     createShapePageMarchers: (
         newShapePageMarcherArgs: NewShapePageMarcherArgs[],
     ) =>

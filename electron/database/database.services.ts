@@ -381,12 +381,13 @@ export function initHandlers() {
 
     // ShapePageMarcher
     ipcMain.handle(
-        "shape_page_marcher:getAll",
-        async (_, shapePageId: number) =>
+        "shape_page_marcher:get",
+        async (_, shapePageId: number, marcherIds: Set<number>) =>
             connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
                 ShapePageMarcherTable.getShapePageMarchers,
                 {
                     shapePageId,
+                    marcherIds,
                 },
             ),
     );

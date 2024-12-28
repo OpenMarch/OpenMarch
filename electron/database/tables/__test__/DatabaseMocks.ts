@@ -110,12 +110,12 @@ export const NewShapePages: NewShapePageArgs[] = [
         notes: null,
         marcher_coordinates: [
             {
-                marcher_id: 1,
+                marcher_id: 3,
                 x: 10,
                 y: 20,
             },
             {
-                marcher_id: 2,
+                marcher_id: 4,
                 x: 30,
                 y: 40,
             },
