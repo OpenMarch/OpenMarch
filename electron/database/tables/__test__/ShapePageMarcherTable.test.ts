@@ -694,7 +694,6 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
             const shapePagesResponse = getShapePages({
                 db,
             });
-            console.log("ALL SHAPE PAGES", shapePagesResponse.data);
             expect(shapePagesResponse.success).toBe(true);
 
             const shapePage0 = shapePagesResponse.data[0];
@@ -720,7 +719,6 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 db,
             });
             expect(existingSPMsResponse.success).toBe(true);
-            console.log("ALL EXISTING SPMs", existingSPMsResponse.data);
 
             // Create first ShapePageMarcher
             expect(
@@ -734,6 +732,64 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
             });
             expect(duplicateResult.success).toBe(false);
             expect(duplicateResult.error).toBeDefined();
+        });
+
+        it("should not throw an error when forced creating duplicate marcher and page combination", () => {
+            let shapePagesResponse = getShapePages({
+                db,
+            });
+            expect(shapePagesResponse.success).toBe(true);
+
+            const shapePage0 = shapePagesResponse.data[0];
+            const shapePage1 = shapePagesResponse.data[1];
+            // If this is not true, pick two ShapePages that have the same page_id
+            expect(shapePage0.page_id).toBe(shapePage1.page_id);
+
+            const newSPMs = [
+                {
+                    shape_page_id: shapePage0.id,
+                    marcher_id: 3,
+                    position_order: 1,
+                    notes: "Test notes",
+                },
+                {
+                    shape_page_id: shapePage1.id,
+                    marcher_id: 3,
+                    position_order: 2,
+                },
+            ];
+
+            const existingSPMsResponse = getShapePageMarchers({
+                db,
+            });
+            expect(existingSPMsResponse.success).toBe(true);
+
+            const shapePageToDelete = shapePage0;
+
+            // Create first ShapePageMarcher
+            expect(
+                createShapePageMarchers({ db, args: [newSPMs[0]] }).success,
+            ).toBe(true);
+
+            // Attempt to create duplicate ShapePageMarcher
+            const duplicateResult = createShapePageMarchers({
+                db,
+                args: [newSPMs[1]],
+                force: true,
+            });
+            expect(duplicateResult.success).toBe(true);
+            expect(duplicateResult.data[0]).toMatchObject(newSPMs[1]);
+
+            shapePagesResponse = getShapePages({
+                db,
+            });
+            // expect the shape page to be deleted
+            expect(shapePagesResponse.success).toBeTruthy();
+            expect(
+                shapePagesResponse.data.find(
+                    (sp) => sp.id === shapePageToDelete!.id,
+                ),
+            ).toBeUndefined();
         });
     });
 });

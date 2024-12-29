@@ -379,6 +379,18 @@ export function initHandlers() {
         ),
     );
 
+    ipcMain.handle(
+        "shape_page:copy",
+        async (_, shapePageId: number, targetPageId: number) =>
+            connectWrapper<ShapePageTable.ShapePage | null>(
+                ShapePageTable.copyShapePageToPage,
+                {
+                    shapePageId,
+                    targetPageId,
+                },
+            ),
+    );
+
     // ShapePageMarcher
     ipcMain.handle(
         "shape_page_marcher:get",

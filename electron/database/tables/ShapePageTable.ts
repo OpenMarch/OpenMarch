@@ -3,10 +3,19 @@ import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import { DatabaseResponse } from "../DatabaseActions";
 import * as History from "../database.history";
-import { createShapePageMarchers } from "./ShapePageMarcherTable";
+import {
+    createShapePageMarchers,
+    getShapePageMarchers,
+} from "./ShapePageMarcherTable";
 import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
-import { updateMarcherPages } from "./MarcherPageTable";
+import { getMarcherPages, updateMarcherPages } from "./MarcherPageTable";
 import { createShapes, Shape } from "./ShapeTable";
+
+type MarcherCoordinates = {
+    marcher_id: number;
+    x: number;
+    y: number;
+};
 
 export interface ShapePage {
     id: number;
@@ -19,11 +28,7 @@ export interface ShapePage {
 }
 
 export interface NewShapePageArgs {
-    marcher_coordinates: {
-        marcher_id: number;
-        x: number;
-        y: number;
-    }[];
+    marcher_coordinates: MarcherCoordinates[];
     shape_id?: number;
     page_id: number;
     svg_path: string;
@@ -37,11 +42,7 @@ interface ActualNewShapePageArgs {
 }
 
 export interface ModifiedShapePageArgs {
-    marcher_coordinates?: {
-        marcher_id: number;
-        x: number;
-        y: number;
-    }[];
+    marcher_coordinates?: MarcherCoordinates[];
     id: number;
     svg_path?: string;
     notes?: string | null;
@@ -99,7 +100,6 @@ export function getShapePages({
  *
  * @param db The database instance
  * @param shapePage The ShapePage for which to update the associated MarcherPages
- * @param
  * @throws Error if there is an issue retrieving the ShapePageMarchers or updating the MarcherPages
  */
 function updateChildMarcherPages({
@@ -141,14 +141,17 @@ function updateChildMarcherPages({
  *
  * @param db The database instance
  * @param args Array of NewShapePageArgs containing name and optional notes
+ * @param force If a marcher on the target page already belongs to a shape, delete that shapePage to allow the creation of the new one.
  * @returns DatabaseResponse containing the created Shape objects
  */
 export function createShapePages({
     db,
     args,
+    force = false,
 }: {
     db: Database.Database;
     args: NewShapePageArgs[];
+    force?: boolean;
 }): DatabaseResponse<ShapePage[]> {
     if (args.length === 0)
         return {
@@ -220,6 +223,7 @@ export function createShapePages({
                 db,
                 args: spmsToCreate,
                 isChildAction: true,
+                force,
             });
             if (!createSpmResponse.success)
                 throw new Error(
@@ -370,17 +374,22 @@ export function updateShapePages({
  *
  * @param db The database instance
  * @param ids Set of ShapePage IDs to delete
+ * @param isChildAction Whether the action is a child action of another action
  * @returns DatabaseResponse containing the deleted Shape objects
  */
 export function deleteShapePages({
     db,
     ids,
+    isChildAction = false,
 }: {
     db: Database.Database;
     ids: Set<number>;
+    isChildAction?: boolean;
 }): DatabaseResponse<ShapePage[]> {
-    console.log("\n=========== start deleteShapePages ===========");
-    History.incrementUndoGroup(db);
+    console.log(
+        `\n=========== start deleteShapePages ${isChildAction ? "(child action) " : ""}===========`,
+    );
+    if (!isChildAction) History.incrementUndoGroup(db);
     const response = DbActions.deleteItems<ShapePage>({
         db,
         tableName: Constants.ShapePageTableName,
@@ -417,7 +426,132 @@ export function deleteShapePages({
             deleteShapeResponse.error,
         );
     }
-    console.log("=========== end deleteShapePages ===========\n");
+    console.log(
+        `=========== end deleteShapePages ${isChildAction ? "(child action) " : ""}===========\n`,
+    );
 
     return response;
+}
+
+/**
+ * Copies a ShapePage from one page to another.
+ *
+ * @param db - The database instance.
+ * @param shapePageId - The ID of the ShapePage to be copied.
+ * @param targetPageId - The ID of the page to copy the ShapePage to.
+ * @param force - If a marcher on the target page already belongs to a shape, delete that shapePage to allow the creation of the new one.
+ * @returns A DatabaseResponse containing the newly created ShapePage, or an error if the operation failed.
+ */
+export function copyShapePageToPage({
+    db,
+    shapePageId,
+    targetPageId,
+}: {
+    db: Database.Database;
+    shapePageId: number;
+    targetPageId: number;
+}): DatabaseResponse<ShapePage | null> {
+    console.log("\n=========== start copyShapePageToPage ===========");
+    let output: DatabaseResponse<ShapePage | null>;
+    try {
+        History.incrementUndoGroup(db);
+        const shapePages = getShapePages({ db }).data;
+        const thisShapePage = shapePages.find((sp) => sp.id === shapePageId);
+        if (!thisShapePage)
+            throw new Error(`ShapePage with id ${shapePageId} not found.`);
+
+        if (thisShapePage.page_id === targetPageId)
+            throw new Error(
+                `The shapePage is already on page ${targetPageId}.`,
+            );
+
+        const targetShapePage = shapePages.find(
+            (sp) => sp.page_id === targetPageId,
+        );
+        if (targetShapePage)
+            throw new Error(
+                `ShapePage with page_id ${targetPageId} already exists.`,
+            );
+
+        const theseSPMsResponse = getShapePageMarchers({
+            db,
+            shapePageId,
+        });
+        if (!theseSPMsResponse.success)
+            throw new Error(
+                `Failed to get ShapePageMarchers for ShapePage with id ${shapePageId}: ${theseSPMsResponse.error?.message}\n`,
+            );
+
+        const theseSPMs = theseSPMsResponse.data;
+        const marcherIds = new Set(theseSPMs.map((spm) => spm.marcher_id));
+
+        const marcherPagesResponse = getMarcherPages({
+            db,
+            page_id: thisShapePage.page_id,
+        });
+        if (!marcherPagesResponse.success)
+            throw new Error(
+                `Failed to get MarcherPages for page ${thisShapePage.page_id}: ${marcherPagesResponse.error?.message}\n`,
+            );
+
+        const marcherPages = marcherPagesResponse.data.filter(
+            (mp) =>
+                marcherIds.has(mp.marcher_id) &&
+                mp.page_id === thisShapePage.page_id,
+        );
+        const theseSPMsMap = new Map(
+            theseSPMs.map((spm) => [spm.marcher_id, spm]),
+        );
+        const marcherCoordinates: MarcherCoordinates[] = marcherPages
+            .map((mp) => ({
+                marcher_id: mp.marcher_id,
+                x: mp.x,
+                y: mp.y,
+            }))
+            .sort((a, b) => {
+                const spmA = theseSPMsMap.get(a.marcher_id);
+                const spmB = theseSPMsMap.get(b.marcher_id);
+                if (!spmA || !spmB)
+                    throw new Error(
+                        `Failed to get ShapePageMarcher for marcher ${spmA ? "" : a.marcher_id} ${spmB ? "" : b.marcher_id}: ${theseSPMsResponse.error?.message}\n`,
+                    );
+                return spmA.position_order - spmB.position_order;
+            });
+
+        const newShapePage: NewShapePageArgs = {
+            shape_id: thisShapePage.shape_id,
+            page_id: targetPageId,
+            marcher_coordinates: marcherCoordinates,
+            svg_path: thisShapePage.svg_path,
+            notes: thisShapePage.notes,
+        };
+
+        const newShapePageResponse = createShapePages({
+            db,
+            args: [newShapePage],
+        });
+
+        if (!newShapePageResponse.success)
+            throw new Error(
+                `Failed to create new ShapePage: ${newShapePageResponse.error?.message}\n`,
+            );
+
+        output = {
+            success: true,
+            data: newShapePageResponse.data[0],
+        };
+    } catch (error: any) {
+        console.error("Error copying ShapePage to new page.", error);
+        output = {
+            success: false,
+            error: {
+                message: error,
+                stack: error.stack || "could not get stack",
+            },
+            data: null,
+        };
+    } finally {
+        console.log("=========== end copyShapePageToPage ===========\n");
+    }
+    return output;
 }

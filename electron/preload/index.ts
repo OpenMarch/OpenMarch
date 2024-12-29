@@ -319,6 +319,12 @@ const APP_API = {
         ipcRenderer.invoke("shape_page:delete", idsToDelete) as Promise<
             DatabaseResponse<ShapePage[]>
         >,
+    copyShapePageToPage: (shapePageId: number, targetPageId: number) =>
+        ipcRenderer.invoke(
+            "shape_page:copy",
+            shapePageId,
+            targetPageId,
+        ) as Promise<DatabaseResponse<ShapePage[]>>,
 
     //ShapePageMarcher
     getShapePageMarchers: (shapePageId?: number, marcherIds?: Set<number>) =>

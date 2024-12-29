@@ -231,7 +231,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     ?.updateWithSvg(shapePage.svg_path);
             } else {
                 this.marcherShapes.push(
-                    new MarcherShape({ canvas: this, shapePage }),
+                    new MarcherShape({
+                        canvas: this,
+                        shapePage,
+                        page: this.currentPage,
+                    }),
                 );
             }
         }
