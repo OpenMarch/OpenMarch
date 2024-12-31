@@ -282,7 +282,6 @@ export default function Canvas({
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {
         if (!canvas || activeObjectsAreGloballySelected()) return;
-
         const selectableObjects: Map<string, Selectable.ISelectable> = new Map(
             canvas
                 .getAllSelectableObjects()

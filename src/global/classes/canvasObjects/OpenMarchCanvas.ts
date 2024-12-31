@@ -1012,11 +1012,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
 
             this.setActiveObject(activeSelection);
-            this.requestRenderAll();
         } else {
             this.discardActiveObject();
         }
 
+        this.requestRenderAll();
         // is this safe? Could there be a point when this is set to false before the handler has a chance to run?
         this.handleSelectLock = false;
     };
