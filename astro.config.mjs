@@ -13,9 +13,12 @@ import starlight from "@astrojs/starlight";
 
 // https://astro.build/config
 export default defineConfig({
+    redirects: {
+        "/alexdumo": "/about/alexdumo",
+    },
     integrations: [
         react(),
-        tailwind({applyBaseStyles: false}),
+        tailwind({ applyBaseStyles: false }),
         starlight({
             title: "OpenMarch",
             logo: {

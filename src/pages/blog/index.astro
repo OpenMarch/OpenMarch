@@ -29,7 +29,7 @@ type Blog = CollectionEntry<"blog">;
                 blogs.reverse().map((blog: Blog) => (
                     <a
                         href={`/blog/${blog.slug}`}
-                        class="flex gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent max-[600px]:flex-col max-[500px]:p-16"
+                        class="grid grid-cols-2 gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent max-[600px]:flex-col max-[500px]:p-16"
                     >
                         <div class="flex w-full flex-col gap-16">
                             <h2 class="w-full text-h2">{blog.data.title}</h2>
