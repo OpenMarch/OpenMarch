@@ -12,31 +12,31 @@
     },
     "dependencies": {
         "@astrojs/check": "^0.9.4",
-        "@astrojs/mdx": "^3.1.9",
-        "@astrojs/react": "^3.6.2",
+        "@astrojs/mdx": "^4.0.3",
+        "@astrojs/react": "^4.1.2",
         "@astrojs/sitemap": "^3.2.1",
-        "@astrojs/starlight": "^0.29.2",
-        "@astrojs/tailwind": "^5.1.2",
-        "@fontsource/dm-mono": "^5.1.0",
-        "@fontsource/dm-sans": "^5.1.0",
+        "@astrojs/starlight": "^0.30.3",
+        "@astrojs/tailwind": "^5.1.4",
+        "@fontsource/dm-mono": "^5.1.1",
+        "@fontsource/dm-sans": "^5.1.1",
         "@phosphor-icons/web": "^2.1.1",
-        "@radix-ui/react-collapsible": "^1.1.1",
-        "@types/react": "^18.3.12",
-        "@types/react-dom": "^18.3.1",
-        "astro": "^4.16.13",
-        "class-variance-authority": "^0.7.0",
+        "@radix-ui/react-collapsible": "^1.1.2",
+        "@types/react": "^18.3.18",
+        "@types/react-dom": "^18.3.5",
+        "astro": "^5.1.1",
+        "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
-        "tailwind-merge": "^2.5.4",
-        "tailwindcss": "^3.4.15",
-        "typescript": "^5.6.3"
+        "tailwind-merge": "^2.6.0",
+        "tailwindcss": "^3.4.17",
+        "typescript": "^5.7.2"
     },
     "devDependencies": {
         "@tailwindcss/typography": "^0.5.15",
-        "prettier": "^3.3.3",
+        "prettier": "^3.4.2",
         "prettier-plugin-astro": "^0.14.1",
-        "prettier-plugin-tailwindcss": "^0.6.8"
+        "prettier-plugin-tailwindcss": "^0.6.9"
     },
     "prettier": {
         "plugins": [
