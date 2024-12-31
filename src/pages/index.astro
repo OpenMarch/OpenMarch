@@ -236,7 +236,11 @@ type Blog = CollectionEntry<"blog">;
             >
                 {
                     blogs
-                        .reverse()
+                        .sort(
+                            (a, b) =>
+                                new Date(b.data.date).getTime() -
+                                new Date(a.data.date).getTime(),
+                        )
                         .slice(0, 3)
                         .map((blog: Blog) => (
                             <a
@@ -258,7 +262,14 @@ type Blog = CollectionEntry<"blog">;
                                         by {blog.data.author}
                                     </p>
                                     <p class="w-full text-body leading-[150%]">
-                                        {blog.data.date}
+                                        {blog.data.date.toLocaleDateString(
+                                            "en-US",
+                                            {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                            },
+                                        )}
                                     </p>
                                 </div>
                             </a>

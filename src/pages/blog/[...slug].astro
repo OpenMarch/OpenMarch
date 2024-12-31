@@ -32,7 +32,15 @@ const { Content } = await entry.render();
             <h1 class="text-h1">{entry.data.title}</h1>
             <div class="flex gap-16">
                 <p class="text-body">{entry.data.author}</p>
-                <p class="text-body">{entry.data.date}</p>
+                <p class="text-body">
+                    {
+                        entry.data.date.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                        })
+                    }
+                </p>
             </div>
             <Prose><Content /></Prose>
         </article>
