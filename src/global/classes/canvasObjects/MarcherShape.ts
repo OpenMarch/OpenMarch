@@ -8,7 +8,6 @@ import {
     VanillaPoint,
 } from "./StaticMarcherShape";
 import MarcherPage from "@/global/classes/MarcherPage";
-import Page from "@/global/classes/Page";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -20,8 +19,8 @@ export class MarcherShape extends StaticMarcherShape {
     name?: string;
     /** Notes about this shape. Optional */
     notes?: string;
-    /** A tracker for whether the shape has been saved to the database */
-    hasBeenSavedToDatabase: boolean = false;
+    /** A tracker to check if the shape has been saved to the database */
+    dirty: boolean = false;
 
     /**
      * Fetches all of the ShapePages from the database.
@@ -41,6 +40,8 @@ export class MarcherShape extends StaticMarcherShape {
      * @param {Object} params - The parameters for constructing the `MarcherShape`.
      * @param {ShapePage} params.shapePage - The `ShapePage` associated with this `MarcherShape`.
      * @param {OpenMarchCanvas} params.canvas - The `OpenMarchCanvas` instance this `MarcherShape` is associated with.
+     * @param {Page} params.page - The `Page` associated with this `MarcherShape`. Provide this to populate the isOnNextPage and isOnPreviousPage properties.
+     * @param {Page[]} params.allShapePages - An array of all the `ShapePages` in the database. Provide this to populate the isOnNextPage and isOnPreviousPage properties.
      */
     constructor({
         shapePage,
@@ -90,21 +91,28 @@ export class MarcherShape extends StaticMarcherShape {
     }
 
     distributeMarchers() {
-        this.hasBeenSavedToDatabase = false;
         super.distributeMarchers();
+        this.dirty = true;
     }
 
     moveHandler(e: fabric.IEvent): void {
         super.moveHandler(e);
-        this.hasBeenSavedToDatabase = false;
+        this.dirty = true;
     }
 
     recreatePath(pathArg: VanillaPoint[]): ShapePath {
+        // Disable control to prevent errors from non-existent control points
+        const controlWasEnabled = this._controlEnabled;
+        if (controlWasEnabled) this.disableControl();
+
         const newPath = super.recreatePath(pathArg);
-        if (!this.hasBeenSavedToDatabase) {
+        if (this.dirty) {
             MarcherShape.updateMarcherShape(this);
-            this.hasBeenSavedToDatabase = true;
+            this.dirty = false;
         }
+
+        // Re-enable control if it was enabled before
+        if (controlWasEnabled) this.enableControl();
         return newPath;
     }
 
@@ -148,6 +156,8 @@ export class MarcherShape extends StaticMarcherShape {
         });
 
         this.setShapePathPoints([...this.shapePath.points, newPoint]);
+        // set dirty to false so that the shape is not updated twice
+        this.dirty = false;
         MarcherShape.updateMarcherShape(this);
     }
 
@@ -160,6 +170,8 @@ export class MarcherShape extends StaticMarcherShape {
         this.setShapePathPoints(
             this.shapePath.points.filter((_, i) => i !== index),
         );
+        // set dirty to false so that the shape is not updated twice
+        this.dirty = false;
         MarcherShape.updateMarcherShape(this);
     }
 
@@ -234,7 +246,18 @@ export class MarcherShape extends StaticMarcherShape {
         const newPoints = [...this.shapePath.points];
         newPoints[index] = newSegment;
         this.setShapePathPoints(newPoints);
+        // set dirty to false so that the shape is not updated twice
+        this.dirty = false;
         MarcherShape.updateMarcherShape(this);
+    }
+
+    /**
+     * Sets the current ShapePage and updates the shape with the SVG path from the ShapePage.
+     * @param shapePage - The ShapePage to set as the current shape page.
+     */
+    setShapePage(shapePage: ShapePage) {
+        this.shapePage = shapePage;
+        this.updateWithSvg(shapePage.svg_path);
     }
 
     /****************** DATABASE FUNCTIONS *******************/
@@ -330,7 +353,7 @@ export class MarcherShape extends StaticMarcherShape {
             [];
         const canvasMarchers = marcherShape.canvasMarchers;
 
-        if (!canvasMarchers || canvasMarchers.length > 0) {
+        if (canvasMarchers && canvasMarchers.length > 0) {
             const itemIds: { id: number }[] = marcherShape.canvasMarchers.map(
                 (cm) => {
                     return { id: cm.marcherObj.id };
@@ -348,98 +371,46 @@ export class MarcherShape extends StaticMarcherShape {
             });
         }
 
-        const updateResponse = await window.electron.updateShapePages([
-            {
-                id: marcherShape.shapePage.id,
-                svg_path: marcherShape.shapePath.toString(),
-                marcher_coordinates: marcherCoordinates,
-            },
-        ]);
-        if (!updateResponse.success)
-            console.error(
-                `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
-            );
+        if (!marcherShape.shapePage) {
+            // This is really only to prevent the error  that prints from the update response
+            return;
+        } else {
+            const updateResponse = await window.electron.updateShapePages([
+                {
+                    id: marcherShape.shapePage.id,
+                    svg_path: marcherShape.shapePath.toString(),
+                    marcher_coordinates: marcherCoordinates,
+                },
+            ]);
+            if (!updateResponse.success)
+                console.error(
+                    `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
+                );
+        }
         this.checkForFetchShapePages();
         this.fetchShapePages();
     }
 
     /**
-     * Copies a shape to a page.
+     * Copies a shape to another page.
      *
      * @param shape - The shape to copy.
-     * @param fromPage - The page to copy the shape from.
-     * @param toPage - The page to copy the shape to.
-     * @param marcherPages - The marcher pages to copy the shape to.
+     * @param targetPageId - The page to copy the shape to.
      * @returns A Promise that resolves when the copy is complete, or rejects with an error message.
      */
-    static async copyShapeToPage(
-        shape: MarcherShape,
-        fromPage: Page,
-        toPage: Page,
-        marcherPages: MarcherPage[],
-    ) {
-        try {
-            const marcherIds = shape.canvasMarchers.map(
-                (cm) => cm.marcherObj.id,
+    static async copyToPage(shape: MarcherShape, targetPageId: number) {
+        const response = await window.electron.copyShapePageToPage(
+            shape.shapePage.id,
+            targetPageId,
+        );
+        if (!response.success)
+            console.error(
+                `Error copying StaticMarcherShape: ${response.error?.message}\n`,
             );
-
-            // Get marcher pages for target page
-            const targetMarcherPages = marcherPages.filter(
-                (mp) =>
-                    mp.page_id === toPage.id &&
-                    marcherIds.includes(mp.marcher_id),
-            );
-
-            // Get marcher pages for source page
-            const sourceMarcherPages = marcherPages.filter(
-                (mp) =>
-                    mp.page_id === fromPage.id &&
-                    marcherIds.includes(mp.marcher_id),
-            );
-
-            if (targetMarcherPages.length === marcherIds.length) {
-                // Get existing shapes on target page with these marchers
-                const existingShapesResponse =
-                    await window.electron.getShapePageMarchers(toPage.id);
-                if (existingShapesResponse.success) {
-                    const existingShapePageIds = new Set(
-                        existingShapesResponse.data
-                            .filter((spm) =>
-                                marcherIds.includes(spm.marcher_id),
-                            )
-                            .map((spm) => spm.shape_page_id),
-                    );
-
-                    // Delete existing shapes that have any of our marchers
-                    await window.electron.deleteShapePages(
-                        existingShapePageIds,
-                    );
-                } else {
-                    console.error(
-                        `Error fetching existing shapes to copy over: ${existingShapesResponse.error}`,
-                    );
-                }
-
-                // Create new shape
-                MarcherShape.createMarcherShape({
-                    pageId: toPage.id,
-                    marcherIds: marcherIds,
-                    start: targetMarcherPages[0],
-                    end: targetMarcherPages[targetMarcherPages.length - 1],
-                    points: shape.shapePath.points,
-                });
-
-                // Update marcher coordinates on target page
-                const updates = targetMarcherPages.map((mp, idx) => ({
-                    ...mp,
-                    x: sourceMarcherPages[idx].x,
-                    y: sourceMarcherPages[idx].y,
-                }));
-                MarcherPage.updateMarcherPages(updates);
-            }
-        } catch (error) {
-            console.error(`Failed to copy shape to ${toPage.id}:`, error);
-        }
+        this.checkForFetchShapePages();
+        this.fetchShapePages();
+        MarcherPage.fetchMarcherPages();
+        return response;
     }
 
     /**
@@ -450,6 +421,18 @@ export class MarcherShape extends StaticMarcherShape {
     static async deleteMarcherShape(marcherShape: MarcherShape) {
         const deleteResponse = await window.electron.deleteShapes(
             new Set([marcherShape.shapePage.shape_id]),
+        );
+        if (!deleteResponse.success)
+            console.error(
+                `Error deleting StaticMarcherShape - ${deleteResponse.error}`,
+            );
+        this.checkForFetchShapePages();
+        this.fetchShapePages();
+    }
+
+    static async deleteShapePage(shapePageId: number) {
+        const deleteResponse = await window.electron.deleteShapePages(
+            new Set([shapePageId]),
         );
         if (!deleteResponse.success)
             console.error(

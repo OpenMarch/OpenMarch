@@ -2,6 +2,8 @@ import React from "react";
 import { cva, VariantProps } from "class-variance-authority";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import * as RadixTooltip from "@radix-ui/react-tooltip";
+import { TooltipContents } from "./Tooltip";
 
 const variants = cva(
     [
@@ -63,6 +65,7 @@ export interface ButtonProps
     variant?: "primary" | "secondary" | "red";
     size?: "default" | "compact";
     content?: "text" | "icon";
+    tooltipText?: string;
 }
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     (
@@ -72,18 +75,42 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             size = "default",
             content = "text",
             className,
+            tooltipText,
             ...props
         },
         ref,
     ) => (
-        <button
-            ref={ref}
-            className={twMerge(
-                clsx(variants({ variant, size, content }), className),
+        <>
+            {tooltipText !== undefined ? (
+                <RadixTooltip.Provider>
+                    <RadixTooltip.Root>
+                        <RadixTooltip.Trigger
+                            ref={ref}
+                            className={twMerge(
+                                clsx(
+                                    variants({ variant, size, content }),
+                                    className,
+                                ),
+                            )}
+                            {...props}
+                        >
+                            {children}
+                        </RadixTooltip.Trigger>
+                        <TooltipContents side="bottom">
+                            {tooltipText}
+                        </TooltipContents>
+                    </RadixTooltip.Root>
+                </RadixTooltip.Provider>
+            ) : (
+                <button
+                    className={twMerge(
+                        clsx(variants({ variant, size, content }), className),
+                    )}
+                    {...props}
+                >
+                    {children}
+                </button>
             )}
-            {...props}
-        >
-            {children}
-        </button>
+        </>
     ),
 );
