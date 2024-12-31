@@ -338,16 +338,36 @@ export function updatePages({
     modifiedPages: ModifiedPageArgs[];
 }): DbActions.DatabaseResponse<DatabasePage[]> {
     console.log("\n=========== start updatePages ===========");
+    const pages = getPages({ db });
+    if (!pages.success) {
+        throw new Error("error getting pages");
+    }
+    const pagesMap = new Map<number, DatabasePage>(
+        pages.data.map((page) => [page.id, page]),
+    );
     const newModifiedPages: ModifiedDatabasePageArgs[] = modifiedPages.map(
         (modifiedPage) => {
+            let output: ModifiedDatabasePageArgs;
             // Do not modify counts or is_subset in first_page
             if (modifiedPage.id === FIRST_PAGE_ID) {
-                return { ...modifiedPage, counts: 0, is_subset: 0 };
+                output = { ...modifiedPage, counts: 0, is_subset: 0 };
+            } else {
+                let isSubset = modifiedPage.is_subset;
+                if (isSubset === undefined) {
+                    const oldPage = pagesMap.get(modifiedPage.id);
+                    if (!oldPage) {
+                        throw new Error(
+                            `Could not find page with id ${modifiedPage.id}`,
+                        );
+                    }
+                    isSubset = oldPage.is_subset;
+                }
+                output = {
+                    ...modifiedPage,
+                    is_subset: isSubset ? 1 : 0,
+                };
             }
-            return {
-                ...modifiedPage,
-                is_subset: modifiedPage.is_subset ? 1 : 0,
-            };
+            return output;
         },
     );
     const response = processPageTableResponse(
