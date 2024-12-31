@@ -379,14 +379,27 @@ export function initHandlers() {
         ),
     );
 
+    ipcMain.handle(
+        "shape_page:copy",
+        async (_, shapePageId: number, targetPageId: number) =>
+            connectWrapper<ShapePageTable.ShapePage | null>(
+                ShapePageTable.copyShapePageToPage,
+                {
+                    shapePageId,
+                    targetPageId,
+                },
+            ),
+    );
+
     // ShapePageMarcher
     ipcMain.handle(
-        "shape_page_marcher:getAll",
-        async (_, shapePageId: number) =>
+        "shape_page_marcher:get",
+        async (_, shapePageId: number, marcherIds: Set<number>) =>
             connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
                 ShapePageMarcherTable.getShapePageMarchers,
                 {
                     shapePageId,
+                    marcherIds,
                 },
             ),
     );

@@ -122,7 +122,7 @@ function PageEditor() {
                             onBlur={handleBlur}
                         />
                     </div>
-                    <div className="flex w-full items-center justify-between">
+                    <div className="flex w-full items-center justify-between gap-8">
                         <label
                             htmlFor={subsetInputId}
                             className="text-body text-text/80"

@@ -96,6 +96,9 @@ export class StaticMarcherShape {
         this.distributeMarchers();
     }
 
+    /**
+     * Enables the control of the StaticMarcherShape by creating control points for each coordinate in the shape path, adding them to the canvas, and enabling control on the shape path.
+     */
     enableControl() {
         if (!this.canvas) {
             console.error("Canvas is not defined");
@@ -135,6 +138,9 @@ export class StaticMarcherShape {
         this._controlEnabled = true;
     }
 
+    /**
+     * Disables the control of the StaticMarcherShape by destroying the control points, disabling control on the shape path, and setting the control enabled flag to false.
+     */
     disableControl() {
         if (!this._controlEnabled) return; // Control already disabled
         for (const controlPoint of this.controlPoints) controlPoint.destroy();
@@ -277,6 +283,7 @@ export class StaticMarcherShape {
             console.error("Canvas is not defined");
             return;
         }
+        this.disableControl();
         if (this._shapePath) this.canvas.remove(this._shapePath);
         for (const point of this.controlPoints) {
             this.canvas.remove(point);
@@ -316,10 +323,20 @@ export class StaticMarcherShape {
         }
     }
 
+    /**
+     * Getter for the `_canvasMarchers` property, which represents the array of CanvasMarcher objects associated with this StaticMarcherShape.
+     * @returns {CanvasMarcher[]} The array of CanvasMarcher objects.
+     */
     get canvasMarchers() {
         return this._canvasMarchers;
     }
 
+    /**
+     * Sets the `canvasMarchers` property and distributes the marchers along the path of the StaticMarcherShape object.
+     * This method calculates the new coordinates for each marcher based on the SVG path and places the marchers at those coordinates.
+     * It also brings the control points to the front of the canvas.
+     * @param {CanvasMarcher[]} canvasMarchers - The array of CanvasMarcher objects to be associated with this StaticMarcherShape.
+     */
     set canvasMarchers(canvasMarchers: CanvasMarcher[]) {
         this._canvasMarchers = canvasMarchers;
         this.distributeMarchers();
@@ -379,7 +396,8 @@ export class StaticMarcherShape {
             svgSegmentLengths.push(tempSvgPath.getTotalLength());
         }
 
-        if (itemIds.length < svgSegmentLengths.length + 1)
+        // The itemIds check is just to prevent printing on initial creation
+        if (itemIds.length < svgSegmentLengths.length + 1 && itemIds.length > 0)
             console.warn(
                 "The number of marchers is less than the number of segments in the path. This means there are not enough marchers to place on each point. The shape will be distributed unevenly.",
             );
@@ -637,12 +655,12 @@ class ShapePointController extends fabric.Circle {
             console.error("The parent path does not have a path");
             return;
         }
-        const VanillaPoint = this.marcherShape.shapePath.path[
+        const vanillaPoint = this.marcherShape.shapePath.path[
             this.pointIndex
         ] as unknown as number[];
         const point = {
-            left: VanillaPoint[this.coordIndex],
-            top: VanillaPoint[this.coordIndex + 1],
+            left: vanillaPoint[this.coordIndex],
+            top: vanillaPoint[this.coordIndex + 1],
         };
         return point;
     }
@@ -651,14 +669,14 @@ class ShapePointController extends fabric.Circle {
      * Handles the movement of the parent path by updating the control point's coordinates
      */
     handleParentMove() {
-        const VanillaPoint = this.getPathCoordinates();
-        if (!VanillaPoint) {
+        const vanillaPoint = this.getPathCoordinates();
+        if (!vanillaPoint) {
             throw new Error("The point does not have coordinates");
         }
         this.left =
-            VanillaPoint.left + this.marcherShape.moveOffset.fromInitial.x;
+            vanillaPoint.left + this.marcherShape.moveOffset.fromInitial.x;
         this.top =
-            VanillaPoint.top + this.marcherShape.moveOffset.fromInitial.y;
+            vanillaPoint.top + this.marcherShape.moveOffset.fromInitial.y;
 
         this.refreshLines();
     }

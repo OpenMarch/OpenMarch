@@ -1,4 +1,4 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import * as RadixAlertDialog from "@radix-ui/react-alert-dialog";
 import { AlertDialogProps as RadixAlertDialogProps } from "@radix-ui/react-alert-dialog";
 import { AlertDialogContentProps as RadixAlertDialogContentProps } from "@radix-ui/react-alert-dialog";
@@ -14,11 +14,14 @@ export const AlertDialog = ({ children, ...props }: AlertDialogProps) => (
     <RadixAlertDialog.Root {...props}>{children}</RadixAlertDialog.Root>
 );
 
-export const AlertDialogTrigger = ({
-    children,
-}: {
-    children: React.ReactNode;
-}) => <RadixAlertDialog.Trigger asChild>{children}</RadixAlertDialog.Trigger>;
+export const AlertDialogTrigger = forwardRef<
+    HTMLButtonElement,
+    React.ComponentPropsWithoutRef<typeof RadixAlertDialog.Trigger>
+>(({ children, ...props }, ref) => (
+    <RadixAlertDialog.Trigger {...props} ref={ref} asChild>
+        {children}
+    </RadixAlertDialog.Trigger>
+));
 
 export const AlertDialogTitle = ({
     children,
@@ -48,11 +51,14 @@ export const AlertDialogDescription = ({
     </RadixAlertDialog.Description>
 );
 
-export const AlertDialogCancel = ({
-    children,
-}: {
-    children: React.ReactNode;
-}) => <RadixAlertDialog.Cancel asChild>{children}</RadixAlertDialog.Cancel>;
+export const AlertDialogCancel = forwardRef<
+    HTMLButtonElement,
+    React.ComponentPropsWithoutRef<typeof RadixAlertDialog.Cancel>
+>(({ children, ...props }, ref) => (
+    <RadixAlertDialog.Cancel {...props} ref={ref}>
+        {children}
+    </RadixAlertDialog.Cancel>
+));
 
 export const AlertDialogAction = ({
     children,
