@@ -8,16 +8,70 @@ import {
     SelectItem,
     Select,
     SelectContent,
-    SelectTriggerButton,
+    SelectTriggerCompact,
 } from "../ui/Select";
 import {
     secondSegmentSvgCommands,
     SvgCommandEnum,
     SvgCommands,
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
+import { Plus, Trash } from "@phosphor-icons/react";
+import { toast } from "sonner";
+import { usePageStore } from "@/stores/PageStore";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 
 export default function ShapeEditor() {
-    const { selectedMarcherShapes } = useShapePageStore()!;
+    const { selectedMarcherShapes, setSelectedMarcherShapes } =
+        useShapePageStore()!;
+    const { pages } = usePageStore()!;
+    const { selectedPage } = useSelectedPage()!;
+
+    // const [shapeIsOnNextPage, setShapeIsOnNextPage] = useState<
+    //     Map<number, boolean>
+    // >(new Map());
+    // const [shapeIsOnPreviousPage, setShapeIsOnPreviousPage] = useState<
+    //     Map<number, boolean>
+    // >(new Map());
+
+    // useEffect(() => {
+    //     if (!selectedPage || !selectedMarcherShapes) {
+    //         setShapeIsOnNextPage(new Map());
+    //         setShapeIsOnPreviousPage(new Map());
+    //         return;
+    //     }
+
+    //     const shapeIsOnPage = (
+    //         marcherShape: MarcherShape,
+    //         pageId: number | null,
+    //     ) => {
+    //         if (pageId === null) return false;
+    //         const page = pages.find((page) => page.id === pageId);
+    //         if (!page) {
+    //             console.error("Page not found with id", pageId);
+    //             return false;
+    //         }
+
+    //         return shapePages.some((shapePage) => {
+    //             return (
+    //                 shapePage.shape_id === marcherShape.shapePage.shape_id &&
+    //                 shapePage.page_id === page.id
+    //             );
+    //         });
+    //     };
+
+    //     const nextPageMap = new Map<number, boolean>();
+    //     const previousPageMap = new Map<number, boolean>();
+    //     for (const marcherShape of selectedMarcherShapes) {
+    //         nextPageMap.set(
+    //             marcherShape.shapePage.id,
+    //             shapeIsOnPage(marcherShape, selectedPage.nextPageId),
+    //         );
+    //         previousPageMap.set(
+    //             marcherShape.shapePage.id,
+    //             shapeIsOnPage(marcherShape, selectedPage.previousPageId),
+    //         );
+    //     }
+    // }, [pages, selectedMarcherShapes, selectedPage, shapePages]);
 
     const updateSegment = useCallback(
         ({
@@ -29,7 +83,6 @@ export default function ShapeEditor() {
             index: number;
             newSvg: SvgCommandEnum;
         }) => {
-            // console.log("updateSegment", { shapePageId, index, newSvg });
             const marcherShape = selectedMarcherShapes.find(
                 (marcherShape) => marcherShape.shapePage.id === shapePageId,
             );
@@ -42,35 +95,145 @@ export default function ShapeEditor() {
         [selectedMarcherShapes],
     );
 
+    const handleCopy = useCallback(
+        async (marcherShape: MarcherShape, targetPageId: number) => {
+            const page = pages.find((page) => page.id === targetPageId);
+
+            if (!page) {
+                const message = `Page not found with id ${targetPageId}`;
+                console.error(message);
+                toast.error(message);
+                return;
+            }
+
+            const response = await MarcherShape.copyToPage(
+                marcherShape,
+                targetPageId,
+            );
+
+            if (response.success && response.data) {
+                toast.success(`Shape successfully copied to page ${page.name}`);
+            } else {
+                console.error(
+                    `Error creating pages:`,
+                    response.error?.message || "",
+                );
+                toast.error(
+                    `Error copying to page ${page.name}. Are there marchers already assigned to shapes?`,
+                );
+            }
+        },
+        [pages],
+    );
+    const handleDeleteShape = useCallback(
+        (marcherShape: MarcherShape) => {
+            MarcherShape.deleteShapePage(marcherShape.shapePage.id);
+            setSelectedMarcherShapes(
+                selectedMarcherShapes.filter(
+                    (shape) => shape.shapePage.id !== marcherShape.shapePage.id,
+                ),
+            );
+        },
+        [selectedMarcherShapes, setSelectedMarcherShapes],
+    );
+
     const singleShapeEditor = (marcherShape: MarcherShape) => {
         return (
             <Form.Root
                 id={`${marcherShape.shapePage.id}-shapeForm`}
-                className="flex flex-col gap-2"
+                className="flex flex-col gap-24"
             >
-                {marcherShape.canvasMarchers.length > 0 && (
-                    <div className="">
-                        {marcherShape.canvasMarchers.length} Marchers:{" "}
-                        <p className="max-h-64 overflow-y-auto text-sub">
-                            {marcherShape.canvasMarchers
-                                .map((cm) => cm.marcherObj.drill_number)
-                                .join(", ")}
-                        </p>
-                    </div>
-                )}
-                {marcherShape.shapePath.points.map(
-                    (point, index) =>
-                        index > 0 && ( // do not render the first shape (move)
-                            <Form.Field
-                                key={index}
-                                name="section"
-                                className="flex items-center justify-between"
+                <div className="flex flex-wrap gap-8">
+                    {selectedPage && (
+                        <>
+                            <Button
+                                disabled={
+                                    selectedPage.previousPageId === null
+                                    // ||
+                                    // shapeIsOnPreviousPage.get(
+                                    //     marcherShape.shapePage.id,
+                                    // )
+                                }
+                                onClick={() => {
+                                    handleCopy(
+                                        marcherShape,
+                                        selectedPage.previousPageId!,
+                                    );
+                                }}
+                                className="min-h-0 w-fit"
+                                type="button"
+                                size="compact"
+                                variant="secondary"
+                                tooltipSide="top"
+                                tooltipText={
+                                    selectedPage.previousPageId === null
+                                        ? "Cannot copy. There is no previous page"
+                                        : // : !shapeIsOnPreviousPage.get(
+                                          //         marcherShape.shapePage.id,
+                                          //     )
+                                          "Copy this shape to the previous page"
+                                    //   ?"Cannot copy. The previous page already has this shape"
+                                }
                             >
-                                <Form.Label className="text-body text-text/80">
-                                    Segment {index}
-                                </Form.Label>
-
-                                <Form.Control asChild>
+                                Copy to prev pg
+                            </Button>
+                            <Button
+                                disabled={
+                                    selectedPage.nextPageId === null
+                                    // ||
+                                    // shapeIsOnNextPage.get(
+                                    //     marcherShape.shapePage.id,
+                                    // )
+                                }
+                                onClick={() => {
+                                    handleCopy(
+                                        marcherShape,
+                                        selectedPage.nextPageId!,
+                                    );
+                                }}
+                                className="min-h-0 w-fit"
+                                type="button"
+                                size="compact"
+                                variant="secondary"
+                                tooltipText={
+                                    selectedPage.nextPageId === null
+                                        ? "Cannot copy. There is no next page"
+                                        : // : !shapeIsOnNextPage.get(
+                                          //         marcherShape.shapePage.id,
+                                          //     )
+                                          "Copy this shape to the next page"
+                                    //   ?"Cannot copy. The next page already has this shape"
+                                }
+                            >
+                                Copy to next pg
+                            </Button>
+                        </>
+                    )}
+                    <Button
+                        onClick={() => {
+                            handleDeleteShape(marcherShape);
+                        }}
+                        className="min-h-0 w-fit"
+                        type="button"
+                        size="compact"
+                        variant="red"
+                        tooltipText="Delete this shape for this page. Will not move marchers from their current position"
+                    >
+                        Un-group
+                    </Button>
+                </div>
+                <div className="flex flex-col gap-16">
+                    <h5 className="text-h5">Segments</h5>
+                    {marcherShape.shapePath.points.map(
+                        (point, index) =>
+                            index > 0 && ( // do not render the first shape (move)
+                                <div
+                                    key={index}
+                                    className="flex items-center justify-between"
+                                >
+                                    <p className="text-body text-text/80">
+                                        Segment {index}
+                                    </p>
                                     <Select
                                         required
                                         value={
@@ -87,7 +250,7 @@ export default function ShapeEditor() {
                                             })
                                         }
                                     >
-                                        <SelectTriggerButton label={"Type"} />
+                                        <SelectTriggerCompact label={"Type"} />
                                         <SelectContent>
                                             {(index > 1
                                                 ? Object.values(SvgCommands)
@@ -106,34 +269,54 @@ export default function ShapeEditor() {
                                             })}
                                         </SelectContent>
                                     </Select>
-                                </Form.Control>
-                                <Form.Message
-                                    match={"valueMissing"}
-                                    className="text-sub leading-none text-red"
-                                >
-                                    Please enter a value.
-                                </Form.Message>
-                            </Form.Field>
-                        ),
-                )}
-                <Button
-                    onClick={() => {
-                        marcherShape.addSegment();
-                    }}
-                    type="button"
-                >
-                    Add Segment
-                </Button>
-                <Button
-                    onClick={() => {
-                        marcherShape.deleteSegment(
-                            marcherShape.shapePath.points.length - 1,
-                        );
-                    }}
-                    type="button"
-                >
-                    Delete Segment
-                </Button>
+                                </div>
+                            ),
+                    )}
+                    <div className="flex flex-wrap gap-8">
+                        <Button
+                            onClick={() => {
+                                marcherShape.addSegment();
+                            }}
+                            type="button"
+                            size="compact"
+                            variant="primary"
+                            tooltipText="Add segment to shape"
+                        >
+                            <Plus size={20} /> Add
+                        </Button>
+
+                        <Button
+                            onClick={() => {
+                                marcherShape.deleteSegment(
+                                    marcherShape.shapePath.points.length - 1,
+                                );
+                            }}
+                            className="min-h-0"
+                            type="button"
+                            size="compact"
+                            content="icon"
+                            variant="red"
+                            disabled={
+                                marcherShape.shapePath.points.length === 2
+                            }
+                            tooltipText="Delete last segment"
+                        >
+                            <Trash size={20} />
+                        </Button>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-8">
+                    <h5 className="text-h5">
+                        {marcherShape.canvasMarchers.length} Marchers
+                    </h5>
+                    {marcherShape.canvasMarchers.length > 0 && (
+                        <p className="max-h-64 overflow-y-auto font-mono text-sub text-text/80">
+                            {marcherShape.canvasMarchers
+                                .map((cm) => cm.marcherObj.drill_number)
+                                .join(", ")}
+                        </p>
+                    )}
+                </div>
             </Form.Root>
         );
     };
@@ -142,14 +325,14 @@ export default function ShapeEditor() {
         selectedMarcherShapes.length > 0 && (
             <SidebarCollapsible
                 defaultOpen
-                title={"Shapes"}
-                className="max-h-100 mt-12 flex flex-col gap-12 overflow-y-auto"
+                title={"Shape"}
+                className="mt-12 flex flex-col gap-12 overflow-y-auto"
             >
                 {selectedMarcherShapes.map((marcherShape) => {
                     return (
                         <div
                             key={marcherShape.shapePage.id}
-                            className="flex flex-col gap-2"
+                            className="flex flex-col gap-12"
                         >
                             {singleShapeEditor(marcherShape)}
                         </div>

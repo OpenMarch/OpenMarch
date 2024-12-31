@@ -42,6 +42,8 @@ export enum RegisteredActionsEnum {
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
     setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
+    applySelectedMarchersShapesToPreviousPage = "applySelectedMarchersShapesToPreviousPage",
+    applySelectedMarchersShapesToNextPage = "applySelectedMarchersShapesToNextPage",
 
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
@@ -59,6 +61,7 @@ export enum RegisteredActionsEnum {
     // Cursor Mode
     applyQuickShape = "applyQuickShape",
     createMarcherShape = "createMarcherShape",
+    deleteMarcherShape = "deleteMarcherShape",
     cancelAlignmentUpdates = "cancelAlignmentUpdates",
     alignmentEventDefault = "alignmentEventDefault",
     alignmentEventLine = "alignmentEventLine",
@@ -275,6 +278,16 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true }),
         enumString: "setSelectedMarchersToPreviousPage",
     }),
+    applySelectedMarchersShapesToPreviousPage: new RegisteredAction({
+        desc: "Set selected marcher(s) coordinates to previous page",
+        keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
+        enumString: "applySelectedMarchersShapesToPreviousPage",
+    }),
+    applySelectedMarchersShapesToNextPage: new RegisteredAction({
+        desc: "Set selected marcher(s) coordinates to previous page",
+        keyboardShortcut: new KeyboardShortcut({ key: "m", shift: true }),
+        enumString: "applySelectedMarchersShapesToNextPage",
+    }),
 
     // Alignment
     snapToNearestWhole: new RegisteredAction({
@@ -286,7 +299,7 @@ export const RegisteredActionsObjects: {
         desc: "Lock X axis",
         toggleOnStr: "Lock X movement",
         toggleOffStr: "Enable X movement",
-        keyboardShortcut: new KeyboardShortcut({ key: "z" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "y" }),
         enumString: "lockX",
     }),
     lockY: new RegisteredAction({
@@ -340,9 +353,14 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "Enter", shift: true }),
     }),
     createMarcherShape: new RegisteredAction({
-        desc: "Creates a new shape that can be edited across pages",
+        desc: "Creates a new shape with lines or curves that can be edited across pages",
         enumString: "createMarcherShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
+    }),
+    deleteMarcherShape: new RegisteredAction({
+        desc: "Deletes the current selected shapes",
+        enumString: "deleteMarcherShape",
+        keyboardShortcut: new KeyboardShortcut({ key: "Delete" }),
     }),
     cancelAlignmentUpdates: new RegisteredAction({
         desc: "Cancel updates to marchers",
@@ -385,7 +403,8 @@ function RegisteredActionsHandler() {
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { selectedMarcherShapes, setSelectedMarcherShapes } =
+        useShapePageStore()!;
     const {
         resetAlignmentEvent,
         setAlignmentEvent,
@@ -715,6 +734,7 @@ function RegisteredActionsHandler() {
             pages,
             resetAlignmentEvent,
             selectedMarchers,
+            selectedMarcherShapes,
             selectedPage,
             setAlignmentEvent,
             setAlignmentEventMarchers,

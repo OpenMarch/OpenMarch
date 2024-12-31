@@ -225,13 +225,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
 
         for (const shapePage of shapePages) {
-            if (existingMarcherShapeMap.has(shapePage.shape_id)) {
-                existingMarcherShapeMap
-                    .get(shapePage.shape_id)
-                    ?.updateWithSvg(shapePage.svg_path);
+            const existingMarcherShape = existingMarcherShapeMap.get(
+                shapePage.shape_id,
+            );
+            if (existingMarcherShape) {
+                existingMarcherShape.setShapePage(shapePage);
             } else {
                 this.marcherShapes.push(
-                    new MarcherShape({ canvas: this, shapePage }),
+                    new MarcherShape({
+                        canvas: this,
+                        shapePage,
+                    }),
                 );
             }
         }
@@ -1008,11 +1012,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
 
             this.setActiveObject(activeSelection);
-            this.requestRenderAll();
         } else {
             this.discardActiveObject();
         }
 
+        this.requestRenderAll();
         // is this safe? Could there be a point when this is set to false before the handler has a chance to run?
         this.handleSelectLock = false;
     };

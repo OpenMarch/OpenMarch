@@ -2,6 +2,7 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import * as History from "../database.history";
+import { deleteShapePages, ShapePage } from "./ShapePageTable";
 
 /**
  * A Shape can have many ShapePages to signify its existence on multiple pages.
@@ -69,28 +70,37 @@ export function createShapePageMarcherTable(db: Database.Database) {
  * Retrieves all shapePageMarchers from the database or filters by shapePageId.
  *
  * @param db The database instance
- * @param shapePageId The shapePageId to filter by. If undefined, all shapePageMarchers are returned
+ * @param shapePageId The shapePageId to filter by. If undefined, SPMs with all page_ids are returned
+ * @param marcherIds The marcherIds to filter by.  If undefined, SPMs with all marcher_ids are returned
  * @returns DatabaseResponse containing an array of ShapePageMarcher objects
  */
 export function getShapePageMarchers({
     db,
     shapePageId,
+    marcherIds,
 }: {
     db: Database.Database;
     shapePageId?: number;
+    marcherIds?: Set<number>;
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
+    let response: DbActions.DatabaseResponse<ShapePageMarcher[]>;
     if (shapePageId !== undefined)
-        return DbActions.getItemsByColValue<ShapePageMarcher>({
+        response = DbActions.getItemsByColValue<ShapePageMarcher>({
             db,
             tableName: Constants.ShapePageMarcherTableName,
             col: "shape_page_id",
             value: shapePageId,
         });
     else
-        return DbActions.getAllItems<ShapePageMarcher>({
+        response = DbActions.getAllItems<ShapePageMarcher>({
             db,
             tableName: Constants.ShapePageMarcherTableName,
         });
+
+    let outputData = response.data;
+    if (marcherIds)
+        outputData = outputData.filter((spm) => marcherIds.has(spm.marcher_id));
+    return { ...response, data: outputData };
 }
 
 export function getSpmByMarcherPage({
@@ -275,16 +285,19 @@ function flattenOrder({
  * @param db The database instance
  * @param args Array of NewShapePageMarcherArgs containing name and optional notes
  * @param isChildAction Whether the action is a child action of another action
+ * @param force If a marcher is already assigned to a shapePage on the same page, delete that shapePage to allow the new SPM to be created
  * @returns DatabaseResponse containing the created Shape objects
  */
 export function createShapePageMarchers({
     db,
     args,
     isChildAction = false,
+    force = false,
 }: {
     db: Database.Database;
     args: NewShapePageMarcherArgs[];
     isChildAction?: boolean;
+    force?: boolean;
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
     let output: DbActions.DatabaseResponse<ShapePageMarcher[]>;
     const createdSPMIds: Set<number> = new Set();
@@ -318,6 +331,85 @@ export function createShapePageMarchers({
                 });
                 actionWasPerformed = true;
             }
+
+            const shapePage = DbActions.getItem<ShapePage>({
+                db,
+                tableName: Constants.ShapePageTableName,
+                id: newItem.shape_page_id,
+            });
+            if (!shapePage.success)
+                throw new Error(shapePage.error?.message ?? "");
+            if (!shapePage.data)
+                throw new Error(
+                    `ShapePage for this SPM not found: id ${newItem.shape_page_id}`,
+                );
+
+            const shapePagesForThisPage =
+                DbActions.getItemsByColValue<ShapePage>({
+                    db,
+                    tableName: Constants.ShapePageTableName,
+                    col: "page_id",
+                    value: shapePage.data.page_id,
+                });
+            const shapePageIds = new Set(
+                shapePagesForThisPage.data.map((sp) => sp.id),
+            );
+
+            let shapePageMarchersForThisMarcher = getShapePageMarchers({
+                db,
+                marcherIds: new Set([newItem.marcher_id]),
+            });
+            if (!shapePageMarchersForThisMarcher.success)
+                throw new Error(
+                    "Error getting shapePageMarchersForThisMarcher ",
+                );
+
+            if (force) {
+                const conflictingShapePageIds =
+                    shapePageMarchersForThisMarcher.data
+                        .filter((spm) => shapePageIds.has(spm.shape_page_id))
+                        .map((spm) => spm.shape_page_id);
+
+                console.log(
+                    `Deleting conflicting shape pages:`,
+                    conflictingShapePageIds,
+                );
+
+                const deleteShapePagesResponse = deleteShapePages({
+                    db,
+                    ids: new Set(conflictingShapePageIds),
+                    isChildAction: true,
+                });
+
+                if (!deleteShapePagesResponse.success) {
+                    throw new Error(
+                        `Error deleting conflicting shape pages: ${deleteShapePagesResponse.error?.message}`,
+                    );
+                }
+
+                // Re-fetch the shapePageMarchers for this marcher to ensure they are up to date after deletion
+                shapePageMarchersForThisMarcher = getShapePageMarchers({
+                    db,
+                    marcherIds: new Set([newItem.marcher_id]),
+                });
+                if (!shapePageMarchersForThisMarcher.success)
+                    throw new Error(
+                        "Error getting shapePageMarchersForThisMarcher ",
+                    );
+            }
+
+            // Even if force is true, still do this check to prevent erroneous shape page creation
+            const marcherAndPageCombinationExists =
+                shapePageMarchersForThisMarcher.data.some((spm) =>
+                    shapePageIds.has(spm.shape_page_id),
+                );
+
+            if (marcherAndPageCombinationExists) {
+                throw new Error(
+                    `ShapePageMarcher with marcher_id ${newItem.marcher_id} and page_id ${shapePage.data.page_id} already exists`,
+                );
+            }
+
             // Create the new item
             const response = DbActions.createItems<
                 ShapePageMarcher[],

@@ -65,7 +65,7 @@ async function createWindow(title?: string) {
         minHeight: 400,
         autoHideMenuBar: true,
         frame: false,
-        trafficLightPosition: { x: 24, y: 7 },
+        trafficLightPosition: { x: 24, y: 9 },
         titleBarStyle: "hidden",
         webPreferences: {
             preload,

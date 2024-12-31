@@ -121,10 +121,10 @@ function PageEditor() {
                             onBlur={handleBlur}
                         />
                     </div>
-                    <div className="flex w-full items-center justify-between">
+                    <div className="flex w-full items-center justify-between gap-8">
                         <label
                             htmlFor="page-order"
-                            className="text-body text-text/80"
+                            className="text-right text-body text-text/80"
                         >
                             Order
                         </label>
@@ -149,24 +149,26 @@ function PageEditor() {
                                 pages.length}
                         </p>
                     </div>
-                    <div className="flex w-full items-center justify-between">
-                        <label className="text-body text-text/80">
-                            Measures
-                        </label>
-                        <p className="text-body leading-none text-text">
-                            {selectedPage.measures.map((measure, index) => {
-                                return (
-                                    <span key={index}>
-                                        {" "}
-                                        {measure.number}
-                                        {index !==
-                                            selectedPage.measures.length - 1 &&
-                                            ","}
-                                    </span>
-                                );
-                            })}
-                        </p>
-                    </div>
+                    {selectedPage.measures.length > 0 && (
+                        <div className="flex w-full items-center justify-between gap-8">
+                            <label className="text-body text-text/80">
+                                Measures
+                            </label>
+                            <p className="text-right text-body leading-none text-text">
+                                {selectedPage.measures.map((measure, index) => {
+                                    return (
+                                        <span key={index}>
+                                            {" "}
+                                            {measure.number}
+                                            {index !==
+                                                selectedPage.measures.length -
+                                                    1 && ","}
+                                        </span>
+                                    );
+                                })}
+                            </p>
+                        </div>
+                    )}
                     {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
                     Not yet implemented

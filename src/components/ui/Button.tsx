@@ -2,10 +2,12 @@ import React from "react";
 import { cva, VariantProps } from "class-variance-authority";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import * as RadixTooltip from "@radix-ui/react-tooltip";
+import { TooltipContents } from "./Tooltip";
 
 const variants = cva(
     [
-        "text-body w-fit flex justify-center flex-center rounded-full border border-stroke focus-visible:outline-none",
+        "text-body w-fit flex gap-4 justify-center items-center rounded-full border border-stroke min-h-0 focus-visible:outline-none",
         "enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out",
         "disabled:cursor-not-allowed disabled:opacity-50",
     ],
@@ -34,7 +36,7 @@ const variants = cva(
             {
                 size: "compact",
                 content: "text",
-                className: ["px-10 py-4"],
+                className: ["h-[1.625rem] px-8 py-[4px]"],
             },
             {
                 size: "default",
@@ -44,7 +46,7 @@ const variants = cva(
             {
                 size: "compact",
                 content: "icon",
-                className: ["p-4"],
+                className: ["p-[4px] size-[1.625rem]"],
             },
         ],
         defaultVariants: {
@@ -63,23 +65,54 @@ export interface ButtonProps
     variant?: "primary" | "secondary" | "red";
     size?: "default" | "compact";
     content?: "text" | "icon";
+    tooltipText?: string;
+    tooltipSide?: "top" | "bottom" | "left" | "right";
 }
-export function Button({
-    children,
-    variant,
-    size,
-    content,
-    className,
-    ...props
-}: ButtonProps) {
-    return (
-        <button
-            className={twMerge(
-                clsx(variants({ variant, size, content }), className),
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+    (
+        {
+            children,
+            variant = "primary",
+            size = "default",
+            content = "text",
+            className,
+            tooltipText,
+            tooltipSide = "bottom",
+            ...props
+        },
+        ref,
+    ) => (
+        <>
+            {tooltipText !== undefined ? (
+                <RadixTooltip.Provider>
+                    <RadixTooltip.Root>
+                        <RadixTooltip.Trigger
+                            ref={ref}
+                            className={twMerge(
+                                clsx(
+                                    variants({ variant, size, content }),
+                                    className,
+                                ),
+                            )}
+                            {...props}
+                        >
+                            {children}
+                        </RadixTooltip.Trigger>
+                        <TooltipContents side={tooltipSide}>
+                            {tooltipText}
+                        </TooltipContents>
+                    </RadixTooltip.Root>
+                </RadixTooltip.Provider>
+            ) : (
+                <button
+                    className={twMerge(
+                        clsx(variants({ variant, size, content }), className),
+                    )}
+                    {...props}
+                >
+                    {children}
+                </button>
             )}
-            {...props}
-        >
-            {children}
-        </button>
-    );
-}
+        </>
+    ),
+);

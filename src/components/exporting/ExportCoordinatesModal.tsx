@@ -288,6 +288,12 @@ function ExportModalContents() {
 export default function ExportCoordinatesModal() {
     return (
         <Dialog>
+            <DialogTrigger
+                asChild
+                className="cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+            >
+                <ArrowSquareOut size={18} />
+            </DialogTrigger>
             {/* Tooltip Setup */}
             <Tooltip.Root>
                 <Tooltip.Trigger asChild>
