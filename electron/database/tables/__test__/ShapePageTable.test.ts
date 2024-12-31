@@ -11,7 +11,7 @@ import {
 import * as History from "../../database.history";
 import Constants from "@/global/Constants";
 import { createPages, createPageTable, deletePages } from "../PageTable";
-import * as DbMocks from "./DatabaseMocks";
+import * as DbMocks from "../../__test__/DatabaseMocks";
 import { createShapes, createShapeTable, deleteShapes } from "../ShapeTable";
 import { createMarcherPageTable } from "../MarcherPageTable";
 import { createMarchers, createMarcherTable } from "../MarcherTable";
@@ -42,7 +42,7 @@ describe("ShapePageTable CRUD Operations", () => {
     });
 
     afterEach(() => {
-        db.close();
+        db?.close();
     });
 
     it("should create the shape_pages table", () => {
@@ -209,7 +209,8 @@ describe("ShapePageTable CRUD Operations", () => {
         expect(deleteShapes({ db, ids: new Set([1]) }).success).toBeTruthy();
 
         const remaining = getShapePages({ db }).data;
-        expect(remaining).toMatchObject([
+
+        const expectedShapePages = [
             {
                 shape_id: 2,
                 page_id: 0,
@@ -220,7 +221,8 @@ describe("ShapePageTable CRUD Operations", () => {
                 page_id: 1,
                 svg_path: "M 50 50 L 150 150",
             },
-        ]);
+        ];
+        expect(remaining).toMatchObject(expectedShapePages);
     });
 
     it("should delete shape pages when the page is deleted", () => {
@@ -254,6 +256,7 @@ describe("ShapePageTable CRUD Operations", () => {
             true,
         );
         expect(deletePages({ db, pageIds: new Set([1]) }).success).toBeTruthy();
+
         const remaining = getShapePages({ db }).data;
         expect(remaining).toMatchObject([
             {

@@ -12,7 +12,7 @@ import {
     updateShapePageMarchers,
 } from "../ShapePageMarcherTable";
 import { createMarchers, createMarcherTable } from "../MarcherTable";
-import * as DbMocks from "./DatabaseMocks";
+import * as DbMocks from "../../__test__/DatabaseMocks";
 import {
     createShapePages,
     createShapePageTable,
@@ -592,7 +592,11 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 { shape_page_id: 1, marcher_id: 3, position_order: 3 },
                 { shape_page_id: 1, marcher_id: 4, position_order: 4 },
             ];
-            createShapePageMarchers({ db, args: initialSPMs });
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
 
             const result = deleteShapePageMarchers({
                 db,

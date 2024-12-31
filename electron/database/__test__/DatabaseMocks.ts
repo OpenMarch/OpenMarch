@@ -1,7 +1,7 @@
 import { NewMarcherArgs } from "@/global/classes/Marcher";
 import { NewPageArgs } from "@/global/classes/Page";
-import { NewShapeArgs } from "../ShapeTable";
-import { NewShapePageArgs } from "../ShapePageTable";
+import { NewShapeArgs } from "../tables/ShapeTable";
+import { NewShapePageArgs } from "../tables/ShapePageTable";
 
 export const NewMarchers: NewMarcherArgs[] = [
     {

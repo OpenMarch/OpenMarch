@@ -5,12 +5,16 @@ import { release } from "node:os";
 import { join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
-import { generatePDF } from "./export-coordinates";
+import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
 import AudioFile from "@/global/classes/AudioFile";
+import { parseMxl } from "../mxl/MxlUtil";
 // const xml2abc = require('../xml2abc-js/xml2abc.js')
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');
+
+// Modify this when the database is updated
+import * as DatabaseMigrator from "../database/versions/v3";
 
 // The built directory structure
 //
@@ -57,8 +61,8 @@ async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
-        minWidth: 1400,
-        minHeight: 800,
+        minWidth: 1000,
+        minHeight: 400,
         autoHideMenuBar: true,
         frame: false,
         trafficLightPosition: { x: 24, y: 9 },
@@ -105,6 +109,7 @@ async function createWindow(title?: string) {
 app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
+
     Menu.setApplicationMenu(applicationMenu);
     const previousPath = store.get("databasePath") as string;
     if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
@@ -123,7 +128,6 @@ app.whenReady().then(async () => {
     ipcMain.handle("database:create", async () => newFile());
     ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
     ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
-
     ipcMain.handle("audio:insert", async () => insertAudioFile());
     ipcMain.handle("measure:insert", async () =>
         launchImportMusicXmlFileDialogue(),
@@ -157,12 +161,21 @@ function initGetters() {
         store.set("lockY", lockY as boolean);
     });
 
-    // Export Individual Coordinate Sheets
-    ipcMain.on(
-        "send:exportIndividual",
-        async (_, coordinateSheets: string[]) =>
-            await generatePDF(coordinateSheets),
-    );
+    // Exports
+    ipcMain.handle("export:pdf", async (_, params) => {
+        return await PDFExportService.export(
+            params.sheets,
+            params.organizeBySection,
+        );
+    });
+
+    // Export Full Charts
+    // ipcMain.handle(
+
+    //    "send:exportCanvas",
+    //   async (_, dataUrl: string) =>
+    //       await exportCanvas(dataUrl)
+    //);
 }
 
 app.on("window-all-closed", () => {
@@ -174,6 +187,7 @@ app.on("open-file", (event, path) => {
     event.preventDefault();
     setActiveDb(path);
 });
+
 // Handle instances where the app is already running and a file is opened
 // const gotTheLock = app.requestSingleInstanceLock();
 // if (!gotTheLock) {
@@ -289,7 +303,10 @@ export async function newFile() {
             if (path.canceled || !path.filePath) return;
 
             setActiveDb(path.filePath, true);
-            DatabaseServices.initDatabase();
+            const dbVersion = new DatabaseMigrator.default(
+                DatabaseServices.connect,
+            );
+            dbVersion.createTables();
             win?.webContents.reload();
 
             return 200;
@@ -466,15 +483,15 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
     const dialogueResponse = await dialog.showOpenDialog(win, {
         filters: [
             {
-                name: "MusicXML File (uncompressed)",
-                extensions: [/**'mxl',**/ "musicxml", "xml"],
+                name: "MusicXML File",
+                extensions: ["mxl", "musicxml", "xml"],
             },
             { name: "All Files", extensions: ["*"] },
         ],
     });
 
     if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
-        console.error("Operation was cancelled or no audio file was provided");
+        console.error("Operation was cancelled or no file was provided");
         return;
     }
 
@@ -483,7 +500,7 @@ export async function launchImportMusicXmlFileDialogue(): Promise<
 
     let xmlString;
     if (filePath.endsWith(".mxl")) {
-        console.error("compressed MusicXML not supported yet");
+        xmlString = parseMxl(filePath);
     } else {
         xmlString = fs.readFileSync(filePath, "utf8");
     }
@@ -528,6 +545,48 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
 function setActiveDb(path: string, isNewFile = false) {
     DatabaseServices.setDbPath(path, isNewFile);
     win?.setTitle("OpenMarch - " + path);
+
+    const migrator = new DatabaseMigrator.default(DatabaseServices.connect);
+    const db = DatabaseServices.connect();
+    if (!db) {
+        console.error("Error connecting to database");
+        return;
+    }
+    if (!isNewFile) {
+        console.log("Checking database version to see if migration is needed");
+        DatabaseMigrator.default.getVersion(db);
+        // Create backup before migration
+        if (DatabaseMigrator.default.getVersion(db) !== migrator.version) {
+            const backupDir = join(app.getPath("userData"), "backups");
+            if (!fs.existsSync(backupDir)) {
+                fs.mkdirSync(backupDir);
+            }
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const originalName = path.split(/[\\/]/).pop();
+            const backupPath = join(
+                backupDir,
+                `backup_${timestamp}_${originalName}`,
+            );
+            console.log("Creating backup of database in " + backupPath);
+            fs.copyFileSync(path, backupPath);
+
+            console.log("Deleting backups older than 30 days");
+            // Delete backups older than 30 days
+            const files = fs.readdirSync(backupDir);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            files.forEach((file) => {
+                const filePath = join(backupDir, file);
+                const stats = fs.statSync(filePath);
+                if (stats.birthtime < thirtyDaysAgo) {
+                    fs.unlinkSync(filePath);
+                }
+            });
+        }
+        migrator.migrateToThisVersion();
+    } else console.log(`Creating new database at ${path}`);
+
     !isNewFile && win?.webContents.reload();
     store.set("databasePath", path); // Save current db path
 }

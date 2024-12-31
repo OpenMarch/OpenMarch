@@ -17,10 +17,13 @@ import {
 } from "../ui/Select";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
+import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
     const [rCoords, setRCoords] = useState<ReadableCoords>();
+    const [stepSize, setStepSize] = useState<StepSize>();
+    const [minMaxStepSize, setMinMaxStepSize] = useState<MinMaxStepSizes>();
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -83,16 +86,56 @@ function MarcherEditor() {
 
     useEffect(() => {
         setRCoords(undefined);
-        if (!selectedMarchers || selectedMarchers.length !== 1) return;
-        const marcherPage = marcherPages.find(
+        setStepSize(undefined);
+        setMinMaxStepSize(undefined);
+        if (!selectedMarchers || !selectedMarchers.length || !fieldProperties)
+            return;
+
+        if (selectedMarchers.length > 1) {
+            if (selectedPage) {
+                setMinMaxStepSize(
+                    StepSize.getMinAndMaxStepSizesForMarchers({
+                        marchers: selectedMarchers,
+                        marcherPages,
+                        page: selectedPage,
+                        fieldProperties,
+                    }),
+                );
+            }
+
+            return;
+        }
+
+        const selectedMarcherPages = marcherPages.filter(
+            (marcherPage) => marcherPage.marcher_id === selectedMarchers[0]?.id,
+        );
+        const selectedMarcherPage = selectedMarcherPages.find(
             (marcherPage) =>
                 marcherPage.marcher_id === selectedMarchers[0]?.id &&
                 marcherPage.page_id === selectedPage?.id,
         );
-        if (marcherPage) {
-            if (!fieldProperties) return;
-            const newRcoords = ReadableCoords.fromMarcherPage(marcherPage);
+        if (selectedMarcherPage) {
+            const newRcoords =
+                ReadableCoords.fromMarcherPage(selectedMarcherPage);
             setRCoords(newRcoords);
+
+            if (selectedPage) {
+                const previousMarcherPage = selectedMarcherPages.find(
+                    (previousMarcherPage) =>
+                        previousMarcherPage.marcher_id ===
+                            selectedMarcherPage.marcher_id &&
+                        previousMarcherPage.page_id ===
+                            selectedPage?.previousPageId,
+                );
+                setStepSize(
+                    StepSize.createStepSizeForMarcher({
+                        startingPage: previousMarcherPage,
+                        endingPage: selectedMarcherPage,
+                        page: selectedPage,
+                        fieldProperties,
+                    }),
+                );
+            }
         }
     }, [selectedMarchers, marcherPages, selectedPage, fieldProperties]);
 
@@ -142,6 +185,52 @@ function MarcherEditor() {
                                     .map((marcher) => marcher.drill_number)
                                     .join(", ")}
                             </p>
+                            {minMaxStepSize &&
+                                minMaxStepSize.min &&
+                                minMaxStepSize.max && (
+                                    <div className="w-full px-6">
+                                        <div className="">
+                                            <p className="w-full leading-none opacity-80">
+                                                Smallest step size
+                                            </p>
+                                        </div>
+                                        <div className="mt-6 flex justify-between">
+                                            <label className="text-body leading-none opacity-80">
+                                                {
+                                                    selectedMarchers.find(
+                                                        (marcher) =>
+                                                            marcher.id ===
+                                                            minMaxStepSize.min
+                                                                ?.marcher_id,
+                                                    )?.drill_number
+                                                }
+                                            </label>
+                                            <p className="text-body leading-none">
+                                                {minMaxStepSize.min.displayString()}
+                                            </p>
+                                        </div>
+                                        <div className="mt-12">
+                                            <p className="w-full leading-none opacity-80">
+                                                Largest step size
+                                            </p>
+                                        </div>
+                                        <div className="flex justify-between pt-6">
+                                            <label className="text-body leading-none opacity-80">
+                                                {
+                                                    selectedMarchers.find(
+                                                        (marcher) =>
+                                                            marcher.id ===
+                                                            minMaxStepSize.max
+                                                                ?.marcher_id,
+                                                    )?.drill_number
+                                                }
+                                            </label>
+                                            <p className="text-body leading-none">
+                                                {minMaxStepSize.max.displayString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             {selectedMarchers.length >= 3 &&
                                 createLineIsVisible() && (
                                     <RegisteredActionButton
@@ -329,6 +418,17 @@ function MarcherEditor() {
                                             </Select>
                                         </div>
                                     </div>
+                                    {stepSize !== undefined && (
+                                        <div className="flex justify-between px-6">
+                                            <label className="text-body leading-none opacity-80">
+                                                Step Size
+                                            </label>
+
+                                            <p className="bg-transparent text-body leading-none">
+                                                {stepSize.displayString()}
+                                            </p>
+                                        </div>
+                                    )}
                                     {/* This is here so the form submits when enter is pressed */}
                                     <button
                                         type="submit"
