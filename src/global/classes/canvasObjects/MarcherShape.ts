@@ -19,8 +19,8 @@ export class MarcherShape extends StaticMarcherShape {
     name?: string;
     /** Notes about this shape. Optional */
     notes?: string;
-    /** A tracker for whether the shape has been saved to the database */
-    hasBeenSavedToDatabase: boolean = true;
+    /** A tracker to check if the shape has been saved to the database */
+    dirty: boolean = false;
 
     /**
      * Fetches all of the ShapePages from the database.
@@ -91,21 +91,28 @@ export class MarcherShape extends StaticMarcherShape {
     }
 
     distributeMarchers() {
-        this.hasBeenSavedToDatabase = false;
         super.distributeMarchers();
+        this.dirty = true;
     }
 
     moveHandler(e: fabric.IEvent): void {
         super.moveHandler(e);
-        this.hasBeenSavedToDatabase = false;
+        this.dirty = true;
     }
 
     recreatePath(pathArg: VanillaPoint[]): ShapePath {
+        // Disable control to prevent errors from non-existent control points
+        const controlWasEnabled = this._controlEnabled;
+        if (controlWasEnabled) this.disableControl();
+
         const newPath = super.recreatePath(pathArg);
-        if (!this.hasBeenSavedToDatabase) {
+        if (this.dirty) {
             MarcherShape.updateMarcherShape(this);
-            this.hasBeenSavedToDatabase = true;
+            this.dirty = false;
         }
+
+        // Re-enable control if it was enabled before
+        if (controlWasEnabled) this.enableControl();
         return newPath;
     }
 
@@ -149,6 +156,8 @@ export class MarcherShape extends StaticMarcherShape {
         });
 
         this.setShapePathPoints([...this.shapePath.points, newPoint]);
+        // set dirty to false so that the shape is not updated twice
+        this.dirty = false;
         MarcherShape.updateMarcherShape(this);
     }
 
@@ -161,6 +170,8 @@ export class MarcherShape extends StaticMarcherShape {
         this.setShapePathPoints(
             this.shapePath.points.filter((_, i) => i !== index),
         );
+        // set dirty to false so that the shape is not updated twice
+        this.dirty = false;
         MarcherShape.updateMarcherShape(this);
     }
 
@@ -235,6 +246,8 @@ export class MarcherShape extends StaticMarcherShape {
         const newPoints = [...this.shapePath.points];
         newPoints[index] = newSegment;
         this.setShapePathPoints(newPoints);
+        // set dirty to false so that the shape is not updated twice
+        this.dirty = false;
         MarcherShape.updateMarcherShape(this);
     }
 
