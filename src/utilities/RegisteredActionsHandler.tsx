@@ -583,36 +583,6 @@ function RegisteredActionsHandler() {
                     }
                     break;
                 }
-                case RegisteredActionsEnum.applySelectedMarchersShapesToPreviousPage: {
-                    const previousPage = selectedPage.getPreviousPage(pages);
-                    if (!previousPage || selectedMarcherShapes.length === 0)
-                        break;
-
-                    selectedMarcherShapes.forEach((shape) => {
-                        MarcherShape.copyShapeToPage(
-                            shape,
-                            selectedPage,
-                            previousPage,
-                            marcherPages,
-                        );
-                    });
-                    break;
-                }
-
-                case RegisteredActionsEnum.applySelectedMarchersShapesToNextPage: {
-                    const nextPage = selectedPage.getNextPage(pages);
-                    if (!nextPage || selectedMarcherShapes.length === 0) break;
-
-                    selectedMarcherShapes.forEach((shape) => {
-                        MarcherShape.copyShapeToPage(
-                            shape,
-                            selectedPage,
-                            nextPage,
-                            marcherPages,
-                        );
-                    });
-                    break;
-                }
 
                 /****************** Alignment ******************/
                 case RegisteredActionsEnum.snapToNearestWhole: {
@@ -721,16 +691,6 @@ function RegisteredActionsHandler() {
                         end: lastMarcherPage,
                         pageId: selectedPage.id,
                     });
-                    resetAlignmentEvent();
-                    break;
-                }
-                case RegisteredActionsEnum.deleteMarcherShape: {
-                    for (const shape of selectedMarcherShapes) {
-                        MarcherShape.deleteMarcherShape(shape);
-                    }
-
-                    setSelectedMarcherShapes([]);
-
                     resetAlignmentEvent();
                     break;
                 }

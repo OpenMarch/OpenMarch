@@ -6,7 +6,6 @@ import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
-import ShapeEditorToolbar from "./toolbars/ShapeEditorToolbar";
 
 export default function Topbar() {
     return (
@@ -20,7 +19,6 @@ export default function Topbar() {
             </ToolbarSection>
             <UiSettingsToolbar />
             <AlignmentToolbar />
-            <ShapeEditorToolbar />
         </div>
     );
 }

@@ -141,9 +141,87 @@ export default function ShapeEditor() {
         return (
             <Form.Root
                 id={`${marcherShape.shapePage.id}-shapeForm`}
-                className="flex flex-col gap-12"
+                className="flex flex-col gap-24"
             >
-                <div className="flex flex-col gap-12">
+                <div className="flex flex-wrap gap-8">
+                    {selectedPage && (
+                        <>
+                            <Button
+                                disabled={
+                                    selectedPage.previousPageId === null
+                                    // ||
+                                    // shapeIsOnPreviousPage.get(
+                                    //     marcherShape.shapePage.id,
+                                    // )
+                                }
+                                onClick={() => {
+                                    handleCopy(
+                                        marcherShape,
+                                        selectedPage.previousPageId!,
+                                    );
+                                }}
+                                className="min-h-0 w-fit"
+                                type="button"
+                                size="compact"
+                                variant="secondary"
+                                tooltipText={
+                                    selectedPage.previousPageId === null
+                                        ? "Cannot copy. There is no previous page"
+                                        : // : !shapeIsOnPreviousPage.get(
+                                          //         marcherShape.shapePage.id,
+                                          //     )
+                                          //   ? "Copy this shape to the previous page"
+                                          "Cannot copy. The previous page already has this shape"
+                                }
+                            >
+                                Copy to prev pg
+                            </Button>
+                            <Button
+                                disabled={
+                                    selectedPage.nextPageId === null
+                                    // ||
+                                    // shapeIsOnNextPage.get(
+                                    //     marcherShape.shapePage.id,
+                                    // )
+                                }
+                                onClick={() => {
+                                    handleCopy(
+                                        marcherShape,
+                                        selectedPage.nextPageId!,
+                                    );
+                                }}
+                                className="min-h-0 w-fit"
+                                type="button"
+                                size="compact"
+                                variant="secondary"
+                                tooltipText={
+                                    selectedPage.nextPageId === null
+                                        ? "Cannot copy. There is no next page"
+                                        : // : !shapeIsOnNextPage.get(
+                                          //         marcherShape.shapePage.id,
+                                          //     )
+                                          //   ? "Copy this shape to the next page"
+                                          "Cannot copy. The next page already has this shape"
+                                }
+                            >
+                                Copy to next pg
+                            </Button>
+                        </>
+                    )}
+                    <Button
+                        onClick={() => {
+                            handleDeleteShape(marcherShape);
+                        }}
+                        className="min-h-0 w-fit"
+                        type="button"
+                        size="compact"
+                        variant="red"
+                        tooltipText="Delete this shape for this page. Will not move marchers from their current position"
+                    >
+                        Un-group
+                    </Button>
+                </div>
+                <div className="flex flex-col gap-16">
                     <h5 className="text-h5">Segments</h5>
                     {marcherShape.shapePath.points.map(
                         (point, index) =>
@@ -224,86 +302,6 @@ export default function ShapeEditor() {
                         >
                             <Trash size={20} />
                         </Button>
-                        <div className="flex-grow" />
-                        <Button
-                            onClick={() => {
-                                handleDeleteShape(marcherShape);
-                            }}
-                            className="min-h-0 w-fit"
-                            type="button"
-                            size="compact"
-                            content="icon"
-                            variant="red"
-                            tooltipText="Delete this shape for this page. Will not move marchers from their current position"
-                        >
-                            Un-group
-                        </Button>
-                        {selectedPage && (
-                            <div className="grid w-full grid-cols-2 gap-4">
-                                <Button
-                                    disabled={
-                                        selectedPage.previousPageId === null
-                                        // ||
-                                        // shapeIsOnPreviousPage.get(
-                                        //     marcherShape.shapePage.id,
-                                        // )
-                                    }
-                                    onClick={() => {
-                                        handleCopy(
-                                            marcherShape,
-                                            selectedPage.previousPageId!,
-                                        );
-                                    }}
-                                    className="min-h-0 w-full"
-                                    type="button"
-                                    size="compact"
-                                    content="icon"
-                                    variant="primary"
-                                    tooltipText={
-                                        selectedPage.previousPageId === null
-                                            ? "Cannot copy. There is no previous page"
-                                            : // : !shapeIsOnPreviousPage.get(
-                                              //         marcherShape.shapePage.id,
-                                              //     )
-                                              //   ? "Copy this shape to the previous page"
-                                              "Cannot copy. The previous page already has this shape"
-                                    }
-                                >
-                                    Copy to prev
-                                </Button>
-                                <Button
-                                    disabled={
-                                        selectedPage.nextPageId === null
-                                        // ||
-                                        // shapeIsOnNextPage.get(
-                                        //     marcherShape.shapePage.id,
-                                        // )
-                                    }
-                                    onClick={() => {
-                                        handleCopy(
-                                            marcherShape,
-                                            selectedPage.nextPageId!,
-                                        );
-                                    }}
-                                    className="min-h-0 w-full"
-                                    type="button"
-                                    size="compact"
-                                    content="icon"
-                                    variant="primary"
-                                    tooltipText={
-                                        selectedPage.nextPageId === null
-                                            ? "Cannot copy.There is no next page"
-                                            : // : !shapeIsOnNextPage.get(
-                                              //         marcherShape.shapePage.id,
-                                              //     )
-                                              //   ? "Copy this shape to the next page"
-                                              "Cannot copy. The next page already has this shape"
-                                    }
-                                >
-                                    Copy to next
-                                </Button>
-                            </div>
-                        )}
                     </div>
                 </div>
                 <div className="flex flex-col gap-8">
