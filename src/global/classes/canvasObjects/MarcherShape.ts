@@ -20,7 +20,7 @@ export class MarcherShape extends StaticMarcherShape {
     /** Notes about this shape. Optional */
     notes?: string;
     /** A tracker for whether the shape has been saved to the database */
-    hasBeenSavedToDatabase: boolean = false;
+    hasBeenSavedToDatabase: boolean = true;
 
     /**
      * Fetches all of the ShapePages from the database.
@@ -238,6 +238,15 @@ export class MarcherShape extends StaticMarcherShape {
         MarcherShape.updateMarcherShape(this);
     }
 
+    /**
+     * Sets the current ShapePage and updates the shape with the SVG path from the ShapePage.
+     * @param shapePage - The ShapePage to set as the current shape page.
+     */
+    setShapePage(shapePage: ShapePage) {
+        this.shapePage = shapePage;
+        this.updateWithSvg(shapePage.svg_path);
+    }
+
     /****************** DATABASE FUNCTIONS *******************/
     /**
      * Fetches all of the ShapePages from the database.
@@ -331,7 +340,7 @@ export class MarcherShape extends StaticMarcherShape {
             [];
         const canvasMarchers = marcherShape.canvasMarchers;
 
-        if (!canvasMarchers || canvasMarchers.length > 0) {
+        if (canvasMarchers && canvasMarchers.length > 0) {
             const itemIds: { id: number }[] = marcherShape.canvasMarchers.map(
                 (cm) => {
                     return { id: cm.marcherObj.id };
@@ -349,17 +358,22 @@ export class MarcherShape extends StaticMarcherShape {
             });
         }
 
-        const updateResponse = await window.electron.updateShapePages([
-            {
-                id: marcherShape.shapePage.id,
-                svg_path: marcherShape.shapePath.toString(),
-                marcher_coordinates: marcherCoordinates,
-            },
-        ]);
-        if (!updateResponse.success)
-            console.error(
-                `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
-            );
+        if (!marcherShape.shapePage) {
+            // This is really only to prevent the error  that prints from the update response
+            return;
+        } else {
+            const updateResponse = await window.electron.updateShapePages([
+                {
+                    id: marcherShape.shapePage.id,
+                    svg_path: marcherShape.shapePath.toString(),
+                    marcher_coordinates: marcherCoordinates,
+                },
+            ]);
+            if (!updateResponse.success)
+                console.error(
+                    `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
+                );
+        }
         this.checkForFetchShapePages();
         this.fetchShapePages();
     }
@@ -384,68 +398,6 @@ export class MarcherShape extends StaticMarcherShape {
         this.fetchShapePages();
         MarcherPage.fetchMarcherPages();
         return response;
-        // try {
-        //     const marcherIds = shape.canvasMarchers.map(
-        //         (cm) => cm.marcherObj.id,
-        //     );
-
-        //     // Get marcher pages for target page
-        //     const targetMarcherPages = marcherPages.filter(
-        //         (mp) =>
-        //             mp.page_id === toPage.id &&
-        //             marcherIds.includes(mp.marcher_id),
-        //     );
-
-        //     // Get marcher pages for source page
-        //     const sourceMarcherPages = marcherPages.filter(
-        //         (mp) =>
-        //             mp.page_id === fromPage.id &&
-        //             marcherIds.includes(mp.marcher_id),
-        //     );
-
-        //     if (targetMarcherPages.length === marcherIds.length) {
-        //         // Get existing shapes on target page with these marchers
-        //         const existingShapesResponse =
-        //             await window.electron.getShapePageMarchers(toPage.id);
-        //         if (existingShapesResponse.success) {
-        //             const existingShapePageIds = new Set(
-        //                 existingShapesResponse.data
-        //                     .filter((spm) =>
-        //                         marcherIds.includes(spm.marcher_id),
-        //                     )
-        //                     .map((spm) => spm.shape_page_id),
-        //             );
-
-        //             // Delete existing shapes that have any of our marchers
-        //             await window.electron.deleteShapePages(
-        //                 existingShapePageIds,
-        //             );
-        //         } else {
-        //             console.error(
-        //                 `Error fetching existing shapes to copy over: ${existingShapesResponse.error}`,
-        //             );
-        //         }
-
-        //         // Create new shape
-        //         MarcherShape.createMarcherShape({
-        //             pageId: toPage.id,
-        //             marcherIds: marcherIds,
-        //             start: targetMarcherPages[0],
-        //             end: targetMarcherPages[targetMarcherPages.length - 1],
-        //             points: shape.shapePath.points,
-        //         });
-
-        //         // Update marcher coordinates on target page
-        //         const updates = targetMarcherPages.map((mp, idx) => ({
-        //             ...mp,
-        //             x: sourceMarcherPages[idx].x,
-        //             y: sourceMarcherPages[idx].y,
-        //         }));
-        //         MarcherPage.updateMarcherPages(updates);
-        //     }
-        // } catch (error) {
-        //     console.error(`Failed to copy shape to ${toPage.id}:`, error);
-        // }
     }
 
     /**

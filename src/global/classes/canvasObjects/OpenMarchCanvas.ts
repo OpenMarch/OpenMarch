@@ -225,16 +225,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
 
         for (const shapePage of shapePages) {
-            if (existingMarcherShapeMap.has(shapePage.shape_id)) {
-                existingMarcherShapeMap
-                    .get(shapePage.shape_id)
-                    ?.updateWithSvg(shapePage.svg_path);
+            const existingMarcherShape = existingMarcherShapeMap.get(
+                shapePage.shape_id,
+            );
+            if (existingMarcherShape) {
+                existingMarcherShape.setShapePage(shapePage);
             } else {
                 this.marcherShapes.push(
                     new MarcherShape({
                         canvas: this,
                         shapePage,
-                        page: this.currentPage,
                     }),
                 );
             }

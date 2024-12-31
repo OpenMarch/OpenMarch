@@ -25,6 +25,7 @@ export default function ShapeEditor() {
         useShapePageStore()!;
     const { pages } = usePageStore()!;
     const { selectedPage } = useSelectedPage()!;
+
     // const [shapeIsOnNextPage, setShapeIsOnNextPage] = useState<
     //     Map<number, boolean>
     // >(new Map());
@@ -82,7 +83,6 @@ export default function ShapeEditor() {
             index: number;
             newSvg: SvgCommandEnum;
         }) => {
-            // console.log("updateSegment", { shapePageId, index, newSvg });
             const marcherShape = selectedMarcherShapes.find(
                 (marcherShape) => marcherShape.shapePage.id === shapePageId,
             );
@@ -97,8 +97,6 @@ export default function ShapeEditor() {
 
     const handleCopy = useCallback(
         async (marcherShape: MarcherShape, targetPageId: number) => {
-            console.log("handleCopy", { marcherShape, targetPageId, pages });
-
             const page = pages.find((page) => page.id === targetPageId);
 
             if (!page) {
@@ -120,7 +118,9 @@ export default function ShapeEditor() {
                     `Error creating pages:`,
                     response.error?.message || "",
                 );
-                toast.error(`Error copying to page ${page.name}`);
+                toast.error(
+                    `Error copying to page ${page.name}. Are there marchers already assigned to shapes?`,
+                );
             }
         },
         [pages],

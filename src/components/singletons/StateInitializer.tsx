@@ -29,7 +29,8 @@ function StateInitializer() {
     const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchMeasures } = useMeasureStore()!;
-    const { fetchShapePages, setSelectedMarcherShapes } = useShapePageStore()!;
+    const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
+        useShapePageStore()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -41,6 +42,7 @@ function StateInitializer() {
      * This component exists so that OpenMarch doesn't rely on other components
      * to ensure the initial state has been retrieved.
      */
+
     useEffect(() => {
         Marcher.fetchMarchers = fetchMarchers;
         Marcher.fetchMarchers();
@@ -65,6 +67,24 @@ function StateInitializer() {
         MarcherShape.fetchShapePages = fetchShapePages;
         MarcherShape.fetchShapePages();
     }, [fetchShapePages]);
+
+    /****************************** CHECKS *****************************/
+
+    useEffect(() => {
+        if (selectedPage === null || selectedMarcherShapes.length === 0) return;
+        if (
+            selectedMarcherShapes.some(
+                (marcherShape) =>
+                    marcherShape.shapePage.page_id !== selectedPage.id,
+            )
+        ) {
+            console.warn(
+                "Selected marcher shapes are not on the selected page. This is likely not intended.",
+                selectedPage,
+                selectedMarcherShapes,
+            );
+        }
+    }, [selectedMarcherShapes, selectedPage]);
 
     /*******************************************************************/
 

@@ -379,7 +379,8 @@ export class StaticMarcherShape {
             svgSegmentLengths.push(tempSvgPath.getTotalLength());
         }
 
-        if (itemIds.length < svgSegmentLengths.length + 1)
+        // The itemIds check is just to prevent printing on initial creation
+        if (itemIds.length < svgSegmentLengths.length + 1 && itemIds.length > 0)
             console.warn(
                 "The number of marchers is less than the number of segments in the path. This means there are not enough marchers to place on each point. The shape will be distributed unevenly.",
             );
