@@ -164,14 +164,15 @@ export default function ShapeEditor() {
                                 type="button"
                                 size="compact"
                                 variant="secondary"
+                                tooltipSide="top"
                                 tooltipText={
                                     selectedPage.previousPageId === null
                                         ? "Cannot copy. There is no previous page"
                                         : // : !shapeIsOnPreviousPage.get(
                                           //         marcherShape.shapePage.id,
                                           //     )
-                                          //   ? "Copy this shape to the previous page"
-                                          "Cannot copy. The previous page already has this shape"
+                                          "Copy this shape to the previous page"
+                                    //   ?"Cannot copy. The previous page already has this shape"
                                 }
                             >
                                 Copy to prev pg
@@ -200,8 +201,8 @@ export default function ShapeEditor() {
                                         : // : !shapeIsOnNextPage.get(
                                           //         marcherShape.shapePage.id,
                                           //     )
-                                          //   ? "Copy this shape to the next page"
-                                          "Cannot copy. The next page already has this shape"
+                                          "Copy this shape to the next page"
+                                    //   ?"Cannot copy. The next page already has this shape"
                                 }
                             >
                                 Copy to next pg

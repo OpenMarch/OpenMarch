@@ -66,6 +66,7 @@ export interface ButtonProps
     size?: "default" | "compact";
     content?: "text" | "icon";
     tooltipText?: string;
+    tooltipSide?: "top" | "bottom" | "left" | "right";
 }
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     (
@@ -76,6 +77,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             content = "text",
             className,
             tooltipText,
+            tooltipSide = "bottom",
             ...props
         },
         ref,
@@ -96,7 +98,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                         >
                             {children}
                         </RadixTooltip.Trigger>
-                        <TooltipContents side="bottom">
+                        <TooltipContents side={tooltipSide}>
                             {tooltipText}
                         </TooltipContents>
                     </RadixTooltip.Root>
