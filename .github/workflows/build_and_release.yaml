@@ -28,13 +28,18 @@ jobs:
                   # Install Visual Studio Build Tools
                   npm install --global --production windows-build-tools
 
-                  # Install GTK bundle (includes Cairo) and other dependencies
+                  # Install GTK bundle and other dependencies
                   choco install -y gtk-runtime
                   choco install -y microsoft-build-tools
                   choco install -y libjpeg-turbo
 
-                  # Refresh environment variables
-                  refreshenv
+                  # Properly refresh environment variables in PowerShell
+                  Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+                  Update-SessionEnvironment
+
+                  # Verify PATH includes required directories
+                  $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+              shell: PowerShell
 
             # - name: Install canvas dependencies (macOS)
             #   if: startsWith(matrix.os, 'macos')
