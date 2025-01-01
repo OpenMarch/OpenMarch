@@ -19,8 +19,6 @@ export class MarcherShape extends StaticMarcherShape {
     name?: string;
     /** Notes about this shape. Optional */
     notes?: string;
-    /** A tracker to check if the shape has been saved to the database */
-    dirty: boolean = false;
 
     /**
      * Fetches all of the ShapePages from the database.
@@ -88,16 +86,6 @@ export class MarcherShape extends StaticMarcherShape {
             if (!spm) throw new Error(`Could not find marcher with id ${id}`);
             return spm;
         });
-    }
-
-    distributeMarchers() {
-        super.distributeMarchers();
-        this.dirty = true;
-    }
-
-    moveHandler(e: fabric.IEvent): void {
-        super.moveHandler(e);
-        this.dirty = true;
     }
 
     recreatePath(pathArg: VanillaPoint[]): ShapePath {
