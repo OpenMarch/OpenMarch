@@ -18,7 +18,6 @@ import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
-// import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
