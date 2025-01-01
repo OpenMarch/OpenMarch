@@ -38,9 +38,9 @@ export default function FeatureSelector() {
     return (
         <section
             id="features"
-            className="relative grid h-screen grid-cols-3 items-center gap-32 text-text"
+            className="relative grid h-screen grid-cols-3 items-center gap-32 text-text max-[1250px]:h-fit max-[1250px]:grid-cols-1"
         >
-            <div className="col-span-1 flex flex-col gap-12 max-[950px]:max-w-full">
+            <div className="col-span-1 flex flex-col gap-12">
                 <h1 className="text-h1">Features</h1>
                 <Accordion.Root
                     className="flex min-w-0 flex-col gap-12"
@@ -99,7 +99,7 @@ export default function FeatureSelector() {
                     loop
                     muted
                     playsInline
-                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover"
+                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover max-[1250px]:col-span-1"
                 />
             )}
             {selected === "music" && (
