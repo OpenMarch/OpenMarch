@@ -4,6 +4,7 @@ import path from "path";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history";
+import * as Utilities from "./utilities";
 import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import FieldPropertiesTemplates from "../../src/global/classes/FieldProperties.templates";
@@ -404,6 +405,14 @@ export function initHandlers() {
             ),
     );
     ipcMain.handle(
+        "shape_page_marcher:get_by_marcher_page",
+        async (_, marcherPage: { marcher_id: number; page_id: number }) =>
+            connectWrapper<ShapePageMarcherTable.ShapePageMarcher | null>(
+                ShapePageMarcherTable.getSpmByMarcherPage,
+                { marcherPage },
+            ),
+    );
+    ipcMain.handle(
         "shape_page_marcher:insert",
         async (_, args: ShapePageMarcherTable.NewShapePageMarcherArgs[]) =>
             connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
@@ -430,6 +439,14 @@ export function initHandlers() {
                     ids: shapePageMarcherIds,
                 },
             ),
+    );
+
+    // utilities
+
+    ipcMain.handle(
+        "utilities:swap_marchers",
+        async (_, args: Utilities.SwapMarchersArgs) =>
+            connectWrapper(Utilities.swapMarchers, args),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {

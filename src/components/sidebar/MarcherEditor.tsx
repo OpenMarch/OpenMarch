@@ -231,6 +231,21 @@ function MarcherEditor() {
                                         </div>
                                     </div>
                                 )}
+                            {selectedMarchers.length === 2 && (
+                                <RegisteredActionButton
+                                    registeredAction={
+                                        RegisteredActionsObjects.swapMarchers
+                                    }
+                                >
+                                    <Button
+                                        size="compact"
+                                        className="w-full"
+                                        variant="secondary"
+                                    >
+                                        Swap marchers
+                                    </Button>
+                                </RegisteredActionButton>
+                            )}
                             {selectedMarchers.length >= 3 &&
                                 createLineIsVisible() && (
                                     <RegisteredActionButton

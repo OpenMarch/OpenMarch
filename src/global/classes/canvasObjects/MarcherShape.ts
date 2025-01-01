@@ -8,6 +8,7 @@ import {
     VanillaPoint,
 } from "./StaticMarcherShape";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { ModifiedShapePageMarcherArgs } from "electron/database/tables/ShapePageMarcherTable";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -377,6 +378,29 @@ export class MarcherShape extends StaticMarcherShape {
         }
         this.checkForFetchShapePages();
         this.fetchShapePages();
+    }
+
+    /**
+     * Updates the marcher coordinates for a set of modified shape pages.
+     *
+     * This should seldom be called directly. Often, you would call `updateMarcherShape` instead.
+     *
+     * @param modifiedSpms - An array of modified shape page marcher arguments to update.
+     * @returns - A Promise that resolves when the update is complete, or rejects with an error message.
+     */
+    static async updateShapePageMarchers(
+        modifiedSpms: ModifiedShapePageMarcherArgs[],
+    ) {
+        const updateResponse =
+            await window.electron.updateShapePageMarchers(modifiedSpms);
+        if (!updateResponse.success)
+            console.error(
+                `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
+            );
+        this.checkForFetchShapePages();
+        this.fetchShapePages();
+        MarcherPage.fetchMarcherPages();
+        return updateResponse;
     }
 
     /**

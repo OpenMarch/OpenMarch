@@ -17,6 +17,7 @@ import Measure from "@/global/classes/Measure";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
+import { toast } from "sonner";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -53,6 +54,7 @@ export enum RegisteredActionsEnum {
     alignHorizontally = "alignHorizontally",
     evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
     evenlyDistributeVertically = "evenlyDistributeVertically",
+    swapMarchers = "swapMarchers",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -328,6 +330,11 @@ export const RegisteredActionsObjects: {
         desc: "Evenly distribute marchers horizontally",
         keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true }),
         enumString: "evenlyDistributeHorizontally",
+    }),
+    swapMarchers: new RegisteredAction({
+        desc: "Swap marchers",
+        keyboardShortcut: new KeyboardShortcut({ key: "s", shift: true }),
+        enumString: "swapMarchers",
     }),
 
     // UI settings
@@ -639,6 +646,41 @@ function RegisteredActionsHandler() {
                             fieldProperties,
                         });
                     MarcherPage.updateMarcherPages(distributedCoords);
+                    break;
+                }
+                case RegisteredActionsEnum.swapMarchers: {
+                    if (selectedMarchers.length !== 2) {
+                        console.error(
+                            "Can only swap 2 marchers. Selected marchers:",
+                            selectedMarchers,
+                        );
+                        toast.error(
+                            "Can only swap when 2 marchers are selected.",
+                        );
+                        return;
+                    }
+
+                    const marchersStr = `marchers ${selectedMarchers[0].drill_number} and ${selectedMarchers[1].drill_number}`;
+                    window.electron
+                        .swapMarchers({
+                            pageId: selectedPage.id,
+                            marcher1Id: selectedMarchers[0].id,
+                            marcher2Id: selectedMarchers[1].id,
+                        })
+                        .then((response) => {
+                            if (response.success) {
+                                toast.success(`Swapped ${marchersStr}`);
+                                MarcherPage.fetchMarcherPages();
+                                // This causes an infinite loop
+                                // It's not a huge deal to leave it like this as marchers are updated on a refresh
+                                MarcherShape.fetchShapePages();
+                            } else {
+                                const errorMessage =
+                                    "Could not swap marchers " + marchersStr;
+                                console.error(errorMessage, response.error);
+                                toast.error(errorMessage);
+                            }
+                        });
                     break;
                 }
 

@@ -9,6 +9,7 @@ import {
     deleteShapePageMarchers,
     getShapePageMarchers,
     getSpmByMarcherPage,
+    swapPositionOrder,
     updateShapePageMarchers,
 } from "../ShapePageMarcherTable";
 import { createMarchers, createMarcherTable } from "../MarcherTable";
@@ -662,16 +663,40 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 position_order: 1,
                 notes: "Test notes",
             };
-            expect(
-                createShapePageMarchers({ db, args: [newSPM] }).success,
-            ).toBe(true);
+            const createSpmResponse = createShapePageMarchers({
+                db,
+                args: [newSPM],
+            });
+            expect(createSpmResponse.success).toBe(true);
 
             const result = getSpmByMarcherPage({
                 db,
                 marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
             });
             expect(result.success).toBe(true);
-            expect(result.data).toMatchObject({ spm_id: expect.any(Number) });
+            expect(result.data).toMatchObject(createSpmResponse.data[0]);
+        });
+
+        it("should return the correct ShapePageMarcher when it exists", () => {
+            const shapePage = getShapePages({ db }).data[2];
+            const newSPM = {
+                shape_page_id: shapePage.id,
+                marcher_id: 1,
+                position_order: 1,
+                notes: "Test notes",
+            };
+            const createSpmResponse = createShapePageMarchers({
+                db,
+                args: [newSPM],
+            });
+            expect(createSpmResponse.success).toBe(true);
+
+            const result = getSpmByMarcherPage({
+                db,
+                marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
+            });
+            expect(result.success).toBe(true);
+            expect(result.data).toMatchObject(createSpmResponse.data[0]);
         });
 
         it("should return null when the marcher_id is invalid", () => {
@@ -794,6 +819,99 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                     (sp) => sp.id === shapePageToDelete!.id,
                 ),
             ).toBeUndefined();
+        });
+    });
+    describe("SwapShapePageMarcherPositions", () => {
+        it("should swap positions of two shape page marchers", () => {
+            const initialSPMs = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+            ];
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 2,
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data[0].position_order).toBe(2);
+            expect(result.data[1].position_order).toBe(1);
+        });
+
+        it("should fail when one of the SPM IDs doesn't exist", () => {
+            const initialSPM = {
+                shape_page_id: 1,
+                marcher_id: 1,
+                position_order: 1,
+            };
+            const createResult = createShapePageMarchers({
+                db,
+                args: [initialSPM],
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 999,
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBeDefined();
+        });
+
+        it("should maintain position integrity when swapping non-consecutive positions", () => {
+            const initialSPMs = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+                { shape_page_id: 1, marcher_id: 3, position_order: 3 },
+            ];
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 3,
+            });
+
+            expect(result.success).toBe(true);
+            const updatedSPMs = getShapePageMarchers({ db }).data;
+            expect(updatedSPMs[0].position_order).toBe(3);
+            expect(updatedSPMs[1].position_order).toBe(2);
+            expect(updatedSPMs[2].position_order).toBe(1);
+        });
+
+        it("should handle swapping with useNextUndoGroup flag", () => {
+            const initialSPMs = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+            ];
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 2,
+                useNextUndoGroup: true,
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data[0].position_order).toBe(2);
+            expect(result.data[1].position_order).toBe(1);
         });
     });
 });
