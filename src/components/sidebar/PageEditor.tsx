@@ -11,6 +11,7 @@ function PageEditor() {
     const [isFirstPage, setIsFirstPage] = useState(false);
 
     const countsInputId = "page-counts";
+    const subsetInputId = "page-subset";
     const formId = "edit-page-form";
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -77,7 +78,7 @@ function PageEditor() {
 
     // Reset the form when the selected page changes so the values are correct
     useEffect(() => {
-        resetForm();
+        if (selectedPage) resetForm();
     }, [selectedPage]);
 
     useEffect(() => {
@@ -123,52 +124,42 @@ function PageEditor() {
                     </div>
                     <div className="flex w-full items-center justify-between gap-8">
                         <label
-                            htmlFor="page-order"
-                            className="text-right text-body text-text/80"
+                            htmlFor={subsetInputId}
+                            className="text-body text-text/80"
                         >
-                            Order
+                            Subset
                         </label>
-                        {/*
-                            <Input
-                                className="w-fit min-w-0"
-                                type="string"
-                                value={
-                                    pages.indexOf(selectedPage) +
-                                    1 +
-                                    "/" +
-                                    pages.length
+                        <Input
+                            compact
+                            type="checkbox"
+                            className="w-fit min-w-0"
+                            disabled={isFirstPage}
+                            onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                if (
+                                    selectedPage &&
+                                    isChecked !== selectedPage.isSubset
+                                ) {
+                                    Page.updatePages([
+                                        {
+                                            id: selectedPage.id,
+                                            is_subset: e.target.checked,
+                                        },
+                                    ]);
                                 }
-                                id="page-order"
-                                disabled={true}
-                            />
-                            */}
+                            }}
+                            defaultChecked={selectedPage.isSubset}
+                            id={subsetInputId}
+                        />
+                    </div>
+                    <div className="flex w-full items-center justify-between">
+                        <label className="text-body text-text/80">
+                            Measures
+                        </label>
                         <p className="text-body leading-none text-text">
-                            {pages.indexOf(selectedPage) +
-                                1 +
-                                "/" +
-                                pages.length}
+                            {selectedPage.measureRangeString()}
                         </p>
                     </div>
-                    {selectedPage.measures.length > 0 && (
-                        <div className="flex w-full items-center justify-between gap-8">
-                            <label className="text-body text-text/80">
-                                Measures
-                            </label>
-                            <p className="text-right text-body leading-none text-text">
-                                {selectedPage.measures.map((measure, index) => {
-                                    return (
-                                        <span key={index}>
-                                            {" "}
-                                            {measure.number}
-                                            {index !==
-                                                selectedPage.measures.length -
-                                                    1 && ","}
-                                        </span>
-                                    );
-                                })}
-                            </p>
-                        </div>
-                    )}
                     {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
                     Not yet implemented

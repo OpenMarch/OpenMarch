@@ -350,6 +350,14 @@ const APP_API = {
             shapePageId,
             marcherIds,
         ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
+    getShapePageMarcherByMarcherPage: (marcherPage: {
+        marcher_id: number;
+        page_id: number;
+    }) =>
+        ipcRenderer.invoke(
+            "shape_page_marcher:get_by_marcher_page",
+            marcherPage,
+        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
     createShapePageMarchers: (
         newShapePageMarcherArgs: NewShapePageMarcherArgs[],
     ) =>
@@ -370,6 +378,16 @@ const APP_API = {
         >,
 
     /******************************/
+
+    // Utilities
+    swapMarchers: (args: {
+        pageId: number;
+        marcher1Id: number;
+        marcher2Id: number;
+    }) =>
+        ipcRenderer.invoke("utilities:swap_marchers", args) as Promise<
+            DatabaseResponse<MarcherPage[]>
+        >,
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);
