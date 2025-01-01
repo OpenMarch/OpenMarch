@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import * as History from "../../database.history";
 import { createPages, createPageTable } from "../PageTable";
@@ -9,6 +9,7 @@ import {
     deleteShapePageMarchers,
     getShapePageMarchers,
     getSpmByMarcherPage,
+    swapPositionOrder,
     updateShapePageMarchers,
 } from "../ShapePageMarcherTable";
 import { createMarchers, createMarcherTable } from "../MarcherTable";
@@ -17,8 +18,39 @@ import {
     createShapePages,
     createShapePageTable,
     getShapePages,
+    NewShapePageArgs,
 } from "../ShapePageTable";
 import { createMarcherPageTable } from "../MarcherPageTable";
+
+const NewShapePages: NewShapePageArgs[] = [
+    {
+        shape_id: 1,
+        page_id: 1,
+        svg_path: "M 0 0 L 100 100",
+        notes: "This is a note",
+        marcher_coordinates: [],
+    },
+    {
+        shape_id: 2,
+        page_id: 1,
+        svg_path: "M 200 200 L 100 100",
+        notes: null,
+        marcher_coordinates: [],
+    },
+    {
+        shape_id: 2,
+        page_id: 2,
+        svg_path: "M 0 0 Q 150 150 780 500",
+        marcher_coordinates: [],
+    },
+    {
+        shape_id: 1,
+        page_id: 4,
+        svg_path: "M 0 0 L 100 100",
+        notes: "This is a note",
+        marcher_coordinates: [],
+    },
+];
 
 describe("ShapePageMarcherTable CRUD Operations", () => {
     let db: Database.Database;
@@ -33,26 +65,18 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
         createMarcherTable(db);
         createMarcherPageTable(db);
         // Create the pre-requisite objects
-        createPages({ db, newPages: DbMocks.NewPages });
-        createMarchers({ db, newMarchers: DbMocks.NewMarchers });
-        createShapes({ db, args: DbMocks.NewShapes });
-        createShapePages({ db, args: DbMocks.NewShapePages });
-
-        // Delete SPMs that are created by the above
-        const getSpmsResult = getShapePageMarchers({
-            db,
-        });
-        expect(getSpmsResult.success).toBe(true);
-
-        const deleteResult = deleteShapePageMarchers({
-            db,
-            ids: new Set(getSpmsResult.data.map((spm) => spm.id)),
-        });
-        expect(deleteResult.success).toBe(true);
-    });
-
-    afterEach(() => {
-        db?.close();
+        expect(createPages({ db, newPages: DbMocks.NewPages }).success).toBe(
+            true,
+        );
+        expect(
+            createMarchers({ db, newMarchers: DbMocks.NewMarchers }).success,
+        ).toBe(true);
+        expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
+            true,
+        );
+        expect(createShapePages({ db, args: NewShapePages }).success).toBe(
+            true,
+        );
     });
 
     describe("CreateShapePageMarchers", () => {
@@ -229,6 +253,86 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
             expect(result.success).toBe(true);
             expect(result.data).toHaveLength(1);
             expect(result.data[0]).toMatchObject(spm);
+        });
+
+        describe("GetShapePageMarchers with marcherIds filter", () => {
+            it("should filter results by marcherIds when provided", () => {
+                const spms = [
+                    { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                    { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+                    { shape_page_id: 1, marcher_id: 3, position_order: 3 },
+                    { shape_page_id: 4, marcher_id: 1, position_order: 1 },
+                ];
+                createShapePageMarchers({ db, args: spms });
+
+                const result = getShapePageMarchers({
+                    db,
+                    marcherIds: new Set([1, 2]),
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.data).toHaveLength(3);
+                expect(
+                    result.data.every(
+                        (spm) => spm.marcher_id === 1 || spm.marcher_id === 2,
+                    ),
+                ).toBe(true);
+            });
+
+            it("should combine shapePageId and marcherIds filters correctly", () => {
+                const spms = [
+                    { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                    { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+                    { shape_page_id: 4, marcher_id: 1, position_order: 1 },
+                    { shape_page_id: 4, marcher_id: 3, position_order: 2 },
+                ];
+                createShapePageMarchers({ db, args: spms });
+
+                const result = getShapePageMarchers({
+                    db,
+                    shapePageId: 1,
+                    marcherIds: new Set([1, 3]),
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.data).toHaveLength(1);
+                expect(result.data[0]).toMatchObject({
+                    shape_page_id: 1,
+                    marcher_id: 1,
+                });
+            });
+
+            it("should return empty array when marcherIds filter matches no records", () => {
+                const spms = [
+                    { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                    { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+                ];
+                createShapePageMarchers({ db, args: spms });
+
+                const result = getShapePageMarchers({
+                    db,
+                    marcherIds: new Set([3, 4]),
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.data).toHaveLength(0);
+            });
+
+            it("should handle empty marcherIds set", () => {
+                const spms = [
+                    { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                    { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+                ];
+                createShapePageMarchers({ db, args: spms });
+
+                const result = getShapePageMarchers({
+                    db,
+                    marcherIds: new Set(),
+                });
+
+                expect(result.success).toBe(true);
+                expect(result.data).toHaveLength(0);
+            });
         });
     });
 
@@ -559,16 +663,40 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 position_order: 1,
                 notes: "Test notes",
             };
-            expect(
-                createShapePageMarchers({ db, args: [newSPM] }).success,
-            ).toBe(true);
+            const createSpmResponse = createShapePageMarchers({
+                db,
+                args: [newSPM],
+            });
+            expect(createSpmResponse.success).toBe(true);
 
             const result = getSpmByMarcherPage({
                 db,
                 marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
             });
             expect(result.success).toBe(true);
-            expect(result.data).toMatchObject({ spm_id: expect.any(Number) });
+            expect(result.data).toMatchObject(createSpmResponse.data[0]);
+        });
+
+        it("should return the correct ShapePageMarcher when it exists", () => {
+            const shapePage = getShapePages({ db }).data[2];
+            const newSPM = {
+                shape_page_id: shapePage.id,
+                marcher_id: 1,
+                position_order: 1,
+                notes: "Test notes",
+            };
+            const createSpmResponse = createShapePageMarchers({
+                db,
+                args: [newSPM],
+            });
+            expect(createSpmResponse.success).toBe(true);
+
+            const result = getSpmByMarcherPage({
+                db,
+                marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
+            });
+            expect(result.success).toBe(true);
+            expect(result.data).toMatchObject(createSpmResponse.data[0]);
         });
 
         it("should return null when the marcher_id is invalid", () => {
@@ -587,6 +715,203 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
             });
             expect(result.success).toBe(true);
             expect(result.data).toBeNull();
+        });
+    });
+
+    describe("throwError when creating duplicate marcher and page combination", () => {
+        it("should throw an error when creating duplicate marcher and page combination", () => {
+            const shapePagesResponse = getShapePages({
+                db,
+            });
+            expect(shapePagesResponse.success).toBe(true);
+
+            const shapePage0 = shapePagesResponse.data[0];
+            const shapePage1 = shapePagesResponse.data[1];
+            // If this is not true, pick two ShapePages that have the same page_id
+            expect(shapePage0.page_id).toBe(shapePage1.page_id);
+
+            const newSPMs = [
+                {
+                    shape_page_id: shapePage0.id,
+                    marcher_id: 3,
+                    position_order: 1,
+                    notes: "Test notes",
+                },
+                {
+                    shape_page_id: shapePage1.id,
+                    marcher_id: 3,
+                    position_order: 2,
+                },
+            ];
+
+            const existingSPMsResponse = getShapePageMarchers({
+                db,
+            });
+            expect(existingSPMsResponse.success).toBe(true);
+
+            // Create first ShapePageMarcher
+            expect(
+                createShapePageMarchers({ db, args: [newSPMs[0]] }).success,
+            ).toBe(true);
+
+            // Attempt to create duplicate ShapePageMarcher
+            const duplicateResult = createShapePageMarchers({
+                db,
+                args: [newSPMs[1]],
+            });
+            expect(duplicateResult.success).toBe(false);
+            expect(duplicateResult.error).toBeDefined();
+        });
+
+        it("should not throw an error when forced creating duplicate marcher and page combination", () => {
+            let shapePagesResponse = getShapePages({
+                db,
+            });
+            expect(shapePagesResponse.success).toBe(true);
+
+            const shapePage0 = shapePagesResponse.data[0];
+            const shapePage1 = shapePagesResponse.data[1];
+            // If this is not true, pick two ShapePages that have the same page_id
+            expect(shapePage0.page_id).toBe(shapePage1.page_id);
+
+            const newSPMs = [
+                {
+                    shape_page_id: shapePage0.id,
+                    marcher_id: 3,
+                    position_order: 1,
+                    notes: "Test notes",
+                },
+                {
+                    shape_page_id: shapePage1.id,
+                    marcher_id: 3,
+                    position_order: 2,
+                },
+            ];
+
+            const existingSPMsResponse = getShapePageMarchers({
+                db,
+            });
+            expect(existingSPMsResponse.success).toBe(true);
+
+            const shapePageToDelete = shapePage0;
+
+            // Create first ShapePageMarcher
+            expect(
+                createShapePageMarchers({ db, args: [newSPMs[0]] }).success,
+            ).toBe(true);
+
+            // Attempt to create duplicate ShapePageMarcher
+            const duplicateResult = createShapePageMarchers({
+                db,
+                args: [newSPMs[1]],
+                force: true,
+            });
+            expect(duplicateResult.success).toBe(true);
+            expect(duplicateResult.data[0]).toMatchObject(newSPMs[1]);
+
+            shapePagesResponse = getShapePages({
+                db,
+            });
+            // expect the shape page to be deleted
+            expect(shapePagesResponse.success).toBeTruthy();
+            expect(
+                shapePagesResponse.data.find(
+                    (sp) => sp.id === shapePageToDelete!.id,
+                ),
+            ).toBeUndefined();
+        });
+    });
+    describe("SwapShapePageMarcherPositions", () => {
+        it("should swap positions of two shape page marchers", () => {
+            const initialSPMs = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+            ];
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 2,
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data[0].position_order).toBe(2);
+            expect(result.data[1].position_order).toBe(1);
+        });
+
+        it("should fail when one of the SPM IDs doesn't exist", () => {
+            const initialSPM = {
+                shape_page_id: 1,
+                marcher_id: 1,
+                position_order: 1,
+            };
+            const createResult = createShapePageMarchers({
+                db,
+                args: [initialSPM],
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 999,
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error).toBeDefined();
+        });
+
+        it("should maintain position integrity when swapping non-consecutive positions", () => {
+            const initialSPMs = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+                { shape_page_id: 1, marcher_id: 3, position_order: 3 },
+            ];
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 3,
+            });
+
+            expect(result.success).toBe(true);
+            const updatedSPMs = getShapePageMarchers({ db }).data;
+            expect(updatedSPMs[0].position_order).toBe(3);
+            expect(updatedSPMs[1].position_order).toBe(2);
+            expect(updatedSPMs[2].position_order).toBe(1);
+        });
+
+        it("should handle swapping with useNextUndoGroup flag", () => {
+            const initialSPMs = [
+                { shape_page_id: 1, marcher_id: 1, position_order: 1 },
+                { shape_page_id: 1, marcher_id: 2, position_order: 2 },
+            ];
+            const createResult = createShapePageMarchers({
+                db,
+                args: initialSPMs,
+            });
+            expect(createResult.success).toBe(true);
+
+            const result = swapPositionOrder({
+                db,
+                spmId1: 1,
+                spmId2: 2,
+                useNextUndoGroup: true,
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.data[0].position_order).toBe(2);
+            expect(result.data[1].position_order).toBe(1);
         });
     });
 });

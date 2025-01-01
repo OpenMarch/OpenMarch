@@ -1132,4 +1132,282 @@ describe("Page", () => {
             });
         });
     });
+    describe("measureBeatToEndOn", () => {
+        it("should calculate correct end beat for single measure", () => {
+            const measure = new Measure({
+                number: 1,
+                timeSignature: TimeSignature.fromString("4/4"),
+                tempo: 120,
+                beatUnit: BeatUnit.QUARTER,
+            });
+            const page = new Page({
+                id: 1,
+                name: "1",
+                counts: 3,
+                order: 0,
+                nextPageId: null,
+                previousPageId: null,
+            });
+            const alignedPages = Page.alignWithMeasures([page], [measure]);
+
+            expect(alignedPages[0].measureBeatToEndOn).toBe(3);
+        });
+
+        it("should calculate correct end beat for multiple measures", () => {
+            const measures = [
+                new Measure({
+                    number: 1,
+                    timeSignature: TimeSignature.fromString("4/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+                new Measure({
+                    number: 2,
+                    timeSignature: TimeSignature.fromString("3/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+            ];
+            const page = new Page({
+                id: 1,
+                name: "1",
+                counts: 5,
+                order: 0,
+                nextPageId: null,
+                previousPageId: null,
+            });
+            const alignedPages = Page.alignWithMeasures([page], measures);
+
+            expect(alignedPages[0].measureBeatToEndOn).toBe(1);
+        });
+
+        it("should handle when counts exactly match available beats", () => {
+            const measures = [
+                new Measure({
+                    number: 1,
+                    timeSignature: TimeSignature.fromString("4/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+                new Measure({
+                    number: 2,
+                    timeSignature: TimeSignature.fromString("4/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+            ];
+            const page = new Page({
+                id: 1,
+                name: "1",
+                counts: 8,
+                order: 0,
+                nextPageId: null,
+                previousPageId: null,
+            });
+            const alignedPages = Page.alignWithMeasures([page], measures);
+
+            expect(alignedPages[0].measureBeatToEndOn).toBe(0);
+        });
+
+        it("should handle complex time signatures", () => {
+            const measures = [
+                new Measure({
+                    number: 1,
+                    timeSignature: TimeSignature.fromString("7/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.EIGHTH,
+                }),
+                new Measure({
+                    number: 2,
+                    timeSignature: TimeSignature.fromString("5/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.EIGHTH,
+                }),
+            ];
+            const page = new Page({
+                id: 1,
+                name: "1",
+                counts: 9,
+                order: 0,
+                nextPageId: null,
+                previousPageId: null,
+            });
+            const alignedPages = Page.alignWithMeasures([page], measures);
+
+            expect(alignedPages[0].measureBeatToEndOn).toBe(2);
+        });
+
+        it("should handle starting on a beat other than 1", () => {
+            const pages = [
+                new Page({
+                    id: 1,
+                    name: "1",
+                    counts: 5,
+                    order: 0,
+                    nextPageId: null,
+                    previousPageId: null,
+                }),
+                new Page({
+                    id: 2,
+                    name: "2",
+                    counts: 3,
+                    order: 1,
+                    nextPageId: null,
+                    previousPageId: null,
+                }),
+                new Page({
+                    id: 3,
+                    name: "2A",
+                    counts: 4,
+                    order: 1,
+                    nextPageId: null,
+                    previousPageId: null,
+                }),
+            ];
+            const measures = [
+                new Measure({
+                    number: 10,
+                    timeSignature: TimeSignature.fromString("9/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.DOTTED_QUARTER,
+                }),
+                new Measure({
+                    number: 11,
+                    timeSignature: TimeSignature.fromString("9/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.DOTTED_QUARTER,
+                }),
+                new Measure({
+                    number: 12,
+                    timeSignature: TimeSignature.fromString("9/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.DOTTED_QUARTER,
+                }),
+                new Measure({
+                    number: 13,
+                    timeSignature: TimeSignature.fromString("9/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.DOTTED_QUARTER,
+                }),
+            ];
+            const alignedPages = Page.alignWithMeasures(pages, measures);
+            expect(alignedPages[0].measureBeatToStartOn).toBe(1);
+            expect(alignedPages[0].measureBeatToEndOn).toBe(2);
+            expect(alignedPages[1].measureBeatToStartOn).toBe(3);
+            expect(alignedPages[1].measureBeatToEndOn).toBe(2);
+        });
+    });
+
+    describe("measureRangeString", () => {
+        it("should format range when starting on first beat", () => {
+            const page = new Page({
+                id: 1,
+                name: "1",
+                counts: 8,
+                order: 0,
+                nextPageId: null,
+                previousPageId: null,
+            });
+            const measures = [
+                new Measure({
+                    number: 5,
+                    timeSignature: TimeSignature.fromString("4/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+                new Measure({
+                    number: 6,
+                    timeSignature: TimeSignature.fromString("4/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+            ];
+            const alignedPages = Page.alignWithMeasures([page], measures);
+            expect(alignedPages[0].measureRangeString()).toBe("5 → 6");
+        });
+
+        it("should format range when starting mid-measure", () => {
+            const pages = [
+                new Page({
+                    id: 1,
+                    name: "1",
+                    counts: 2,
+                    order: 0,
+                    nextPageId: null,
+                    previousPageId: null,
+                }),
+                new Page({
+                    id: 2,
+                    name: "2",
+                    counts: 5,
+                    order: 1,
+                    nextPageId: null,
+                    previousPageId: null,
+                }),
+            ];
+            const measures = [
+                new Measure({
+                    number: 10,
+                    timeSignature: TimeSignature.fromString("6/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.EIGHTH,
+                }),
+                new Measure({
+                    number: 11,
+                    timeSignature: TimeSignature.fromString("6/8"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.EIGHTH,
+                }),
+            ];
+            const alignedPages = Page.alignWithMeasures(pages, measures);
+            expect(alignedPages[0].measureRangeString()).toBe("10 → 10(2)");
+            expect(alignedPages[1].measureRangeString()).toBe("10(3) → 11(1)");
+        });
+
+        it("should format range for single measure", () => {
+            const page = new Page({
+                id: 1,
+                name: "1",
+                counts: 3,
+                order: 0,
+                nextPageId: null,
+                previousPageId: null,
+            });
+            const measure = new Measure({
+                number: 15,
+                timeSignature: TimeSignature.fromString("4/4"),
+                tempo: 120,
+                beatUnit: BeatUnit.QUARTER,
+            });
+            const alignedPages = Page.alignWithMeasures([page], [measure]);
+            expect(alignedPages[0].measureRangeString()).toBe("15 → 15(3)");
+        });
+
+        it("should format range when ending on first beat of next measure", () => {
+            const page = new Page({
+                id: 1,
+                name: "1",
+                counts: 4,
+                order: 0,
+                nextPageId: null,
+                previousPageId: null,
+            });
+            const measures = [
+                new Measure({
+                    number: 20,
+                    timeSignature: TimeSignature.fromString("4/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+                new Measure({
+                    number: 21,
+                    timeSignature: TimeSignature.fromString("4/4"),
+                    tempo: 120,
+                    beatUnit: BeatUnit.QUARTER,
+                }),
+            ];
+            const alignedPages = Page.alignWithMeasures([page], measures);
+            expect(alignedPages[0].measureRangeString()).toBe("20");
+        });
+    });
 });

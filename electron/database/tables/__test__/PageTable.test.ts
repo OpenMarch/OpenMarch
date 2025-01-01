@@ -877,6 +877,43 @@ describe("PageTable", () => {
                 expect(updatedPageResult.counts).toBe(0); // Should remain unchanged
                 expect(updatedPageResult.is_subset).toBe(false); // Should remain unchanged
             });
+
+            it("should not update is_subset if it is undefined in the updatedPageArgs", () => {
+                const newPages: NewPageArgs[] = [
+                    { counts: 12, isSubset: true, previousPageId: 0 },
+                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    {
+                        counts: 16,
+                        isSubset: false,
+                        previousPageId: 0,
+                        notes: "jeff notes",
+                    },
+                ];
+
+                const createResult = PageTable.createPages({ newPages, db });
+                expect(createResult.success).toBe(true);
+                expect(createResult.data.length).toBe(3);
+
+                const updatedPage: ModifiedPageArgs = {
+                    id: 1,
+                    notes: "updated notes",
+                    counts: 100, // Should not be updated
+                    is_subset: true, // Should not be updated
+                };
+
+                const updateResult = PageTable.updatePages({
+                    modifiedPages: [updatedPage],
+                    db,
+                });
+                expect(updateResult.success).toBe(true);
+                expect(updateResult.data.length).toBe(1);
+
+                const updatedPageResult = updateResult.data[0];
+                expect(updatedPageResult.id).toBe(1);
+                expect(updatedPageResult.notes).toBe("updated notes");
+                expect(updatedPageResult.counts).toBe(100); // Should update
+                expect(updatedPageResult.is_subset).toBe(true); // Should update
+            });
         });
 
         describe("deletePage", () => {

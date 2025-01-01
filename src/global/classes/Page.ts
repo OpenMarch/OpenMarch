@@ -89,6 +89,42 @@ class Page {
         this.isSubset = isSubset;
     }
 
+    /**
+     * Generates a string representation of the measure range for the page.
+     * If the page starts on the first beat, the measure number is returned.
+     * Otherwise, the measure number and the starting beat are returned.
+     * The last measure number and ending beat are also included in the string if the page ends in the middle of a measure.
+     *
+     * E.g. "1 - 2" means the page starts on the first beat of m1 and goes through m2 to the start of m3.
+     *
+     * E.g. "1(2) - 3(4)" means the page starts on the second beat of m1 and goes up to the fourth beat of m3.
+     *
+     * @returns A string representing the measure range for the page.
+     */
+    measureRangeString() {
+        try {
+            const firstMeasure = this.measures[0];
+            const lastMeasure = this.measures[this.measures.length - 1];
+
+            // If the page starts on the first measure, just return the measure number. Otherwise, return the measure number and the beat.
+            const firstMeasureString =
+                this.measureBeatToStartOn === 1
+                    ? firstMeasure.number.toString()
+                    : `${firstMeasure.number}(${this.measureBeatToStartOn})`;
+            const beatToEndOn = this.measureBeatToEndOn;
+            const lastMeasureString =
+                beatToEndOn === 0
+                    ? lastMeasure.number.toString()
+                    : `${lastMeasure.number}(${beatToEndOn})`;
+
+            if (firstMeasureString === lastMeasureString)
+                return firstMeasureString;
+            return `${firstMeasureString} → ${lastMeasureString}`;
+        } catch (err) {
+            return "N/A";
+        }
+    }
+
     /**************** Getters and Setters ****************/
 
     /** Duration of the page in seconds */
@@ -104,10 +140,34 @@ class Page {
     /**
      * An offset that defines how many beats into the measure the page starts.
      *
-     * E.g. an offset of 2 means page starts on beat 3 of measure[0] (because we are 2 beats in, so we start at 3)
+     * E.g. if this is 1 then we start on the first beat of the measure. If this is 2, then we start on the second beat of the measure.
      */
     public get measureBeatToStartOn() {
         return this._measureBeatToStartOn;
+    }
+
+    /**
+     * Gets the beat number of the last measure that the page goes until.
+     * This is calculated by taking the total big beats of all measures, subtracting the start beat offset,
+     * and then subtracting the total counts of the page to get the remaining beats.
+     *
+     * E.g. if the page has 7 counts and has two 4/4 measures, the beat to end on is 4 because
+     *
+     * @returns The beat number of the last measure that the page goes until.
+     */
+    public get measureBeatToEndOn() {
+        const totalMeasureBigBeats = this.measures.reduce(
+            (total, measure) => total + measure.getBigBeats(),
+            0,
+        );
+        const missingBeats =
+            totalMeasureBigBeats -
+            this.counts -
+            (this.measureBeatToStartOn - 1);
+        if (missingBeats === 0) return 0;
+
+        const lastMeasure = this.measures[this.measures.length - 1];
+        return lastMeasure.getBigBeats() - missingBeats;
     }
 
     /** Whether or not the Page object has been aligned with the measures */
@@ -239,20 +299,10 @@ class Page {
      * Update one or many pages with the provided arguments.
      *
      * @param modifiedPagesArg - The objects to update the pages with.
-     * @param currentPages - The current list of pages. Must be provided to check for the order of the pages.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updatePages(modifiedPagesArg: ModifiedPageArgs[]) {
-        const modifiedPagesToSend: ModifiedPageArgs[] = modifiedPagesArg.map(
-            (page) => {
-                const modifiedPage: ModifiedPageArgs = { id: page.id };
-                if (page.counts) modifiedPage.counts = page.counts;
-                if (page.notes) modifiedPage.notes = page.notes;
-
-                return modifiedPage;
-            },
-        );
-        const response = await window.electron.updatePages(modifiedPagesToSend);
+        const response = await window.electron.updatePages(modifiedPagesArg);
         // fetch the pages to update the store
         this.checkForFetchPages();
         this.fetchPages();

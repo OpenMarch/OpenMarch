@@ -17,6 +17,7 @@ import Measure from "@/global/classes/Measure";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
+import { toast } from "sonner";
 // import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
@@ -42,6 +43,8 @@ export enum RegisteredActionsEnum {
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
     setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
+    setAllMarchersToNextPage = "setAllMarchersToNextPage",
+    setSelectedMarchersToNextPage = "setSelectedMarchersToNextPage",
 
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
@@ -51,6 +54,7 @@ export enum RegisteredActionsEnum {
     alignHorizontally = "alignHorizontally",
     evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
     evenlyDistributeVertically = "evenlyDistributeVertically",
+    swapMarchers = "swapMarchers",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -59,6 +63,7 @@ export enum RegisteredActionsEnum {
     // Cursor Mode
     applyQuickShape = "applyQuickShape",
     createMarcherShape = "createMarcherShape",
+    deleteMarcherShape = "deleteMarcherShape",
     cancelAlignmentUpdates = "cancelAlignmentUpdates",
     alignmentEventDefault = "alignmentEventDefault",
     alignmentEventLine = "alignmentEventLine",
@@ -275,6 +280,20 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true }),
         enumString: "setSelectedMarchersToPreviousPage",
     }),
+    setAllMarchersToNextPage: new RegisteredAction({
+        desc: "Set all marcher coordinates to next page",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "n",
+            shift: true,
+            control: true,
+        }),
+        enumString: "setAllMarchersToNextPage",
+    }),
+    setSelectedMarchersToNextPage: new RegisteredAction({
+        desc: "Set selected marcher(s) coordinates to next page",
+        keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
+        enumString: "setSelectedMarchersToNextPage",
+    }),
 
     // Alignment
     snapToNearestWhole: new RegisteredAction({
@@ -286,7 +305,7 @@ export const RegisteredActionsObjects: {
         desc: "Lock X axis",
         toggleOnStr: "Lock X movement",
         toggleOffStr: "Enable X movement",
-        keyboardShortcut: new KeyboardShortcut({ key: "z" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "y" }),
         enumString: "lockX",
     }),
     lockY: new RegisteredAction({
@@ -316,6 +335,11 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true }),
         enumString: "evenlyDistributeHorizontally",
     }),
+    swapMarchers: new RegisteredAction({
+        desc: "Swap marchers",
+        keyboardShortcut: new KeyboardShortcut({ key: "s", shift: true }),
+        enumString: "swapMarchers",
+    }),
 
     // UI settings
     togglePreviousPagePaths: new RegisteredAction({
@@ -340,9 +364,14 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "Enter", shift: true }),
     }),
     createMarcherShape: new RegisteredAction({
-        desc: "Creates a new shape that can be edited across pages",
+        desc: "Creates a new shape with lines or curves that can be edited across pages",
         enumString: "createMarcherShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
+    }),
+    deleteMarcherShape: new RegisteredAction({
+        desc: "Deletes the current selected shapes",
+        enumString: "deleteMarcherShape",
+        keyboardShortcut: new KeyboardShortcut({ key: "Delete" }),
     }),
     cancelAlignmentUpdates: new RegisteredAction({
         desc: "Cancel updates to marchers",
@@ -530,6 +559,12 @@ function RegisteredActionsHandler() {
                 /****************** Batch Editing ******************/
                 case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
                     const previousPage = selectedPage.getPreviousPage(pages);
+                    if (!previousPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to previous page. There is no previous page",
+                        );
+                        return;
+                    }
                     const previousPageMarcherPages = marcherPages.filter(
                         (marcherPage) =>
                             marcherPage.page_id === previousPage?.id,
@@ -541,10 +576,19 @@ function RegisteredActionsHandler() {
                         }),
                     );
                     MarcherPage.updateMarcherPages(changes);
+                    toast.success(
+                        `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
+                    );
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
                     const previousPage = selectedPage.getPreviousPage(pages);
+                    if (!previousPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to previous page. There is no previous page",
+                        );
+                        return;
+                    }
                     const selectedMarcherIds = selectedMarchers.map(
                         (marcher) => marcher.id,
                     );
@@ -561,6 +605,58 @@ function RegisteredActionsHandler() {
                             }),
                         );
                         MarcherPage.updateMarcherPages(changes);
+                        toast.success(
+                            `Successfully set ${previousMarcherPages.length} marcher coordinate${previousMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
+                        );
+                    }
+                    break;
+                }
+                case RegisteredActionsEnum.setAllMarchersToNextPage: {
+                    const nextPage = selectedPage.getNextPage(pages);
+                    if (!nextPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to next page. There is no next page",
+                        );
+                        return;
+                    }
+                    const nextPageMarcherPages = marcherPages.filter(
+                        (marcherPage) => marcherPage.page_id === nextPage?.id,
+                    );
+                    const changes = nextPageMarcherPages.map((marcherPage) => ({
+                        ...marcherPage,
+                        page_id: selectedPage.id,
+                    }));
+                    MarcherPage.updateMarcherPages(changes);
+                    toast.success(
+                        `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
+                    );
+                    break;
+                }
+                case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
+                    const nextPage = selectedPage.getNextPage(pages);
+                    if (!nextPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to next page. There is no next page",
+                        );
+                        return;
+                    }
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
+                    );
+                    const nextMarcherPages = marcherPages.filter(
+                        (marcherPage) =>
+                            marcherPage.page_id === nextPage?.id &&
+                            selectedMarcherIds.includes(marcherPage.marcher_id),
+                    );
+                    if (nextMarcherPages) {
+                        const changes = nextMarcherPages.map((marcherPage) => ({
+                            ...marcherPage,
+                            page_id: selectedPage.id,
+                        }));
+                        MarcherPage.updateMarcherPages(changes);
+                        toast.success(
+                            `Successfully set ${nextMarcherPages.length} marcher coordinate${nextMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
+                        );
                     }
                     break;
                 }
@@ -621,6 +717,41 @@ function RegisteredActionsHandler() {
                             fieldProperties,
                         });
                     MarcherPage.updateMarcherPages(distributedCoords);
+                    break;
+                }
+                case RegisteredActionsEnum.swapMarchers: {
+                    if (selectedMarchers.length !== 2) {
+                        console.error(
+                            "Can only swap 2 marchers. Selected marchers:",
+                            selectedMarchers,
+                        );
+                        toast.error(
+                            "Can only swap when 2 marchers are selected.",
+                        );
+                        return;
+                    }
+
+                    const marchersStr = `marchers ${selectedMarchers[0].drill_number} and ${selectedMarchers[1].drill_number}`;
+                    window.electron
+                        .swapMarchers({
+                            pageId: selectedPage.id,
+                            marcher1Id: selectedMarchers[0].id,
+                            marcher2Id: selectedMarchers[1].id,
+                        })
+                        .then((response) => {
+                            if (response.success) {
+                                toast.success(`Swapped ${marchersStr}`);
+                                MarcherPage.fetchMarcherPages();
+                                // This causes an infinite loop
+                                // It's not a huge deal to leave it like this as marchers are updated on a refresh
+                                MarcherShape.fetchShapePages();
+                            } else {
+                                const errorMessage =
+                                    "Could not swap marchers " + marchersStr;
+                                console.error(errorMessage, response.error);
+                                toast.error(errorMessage);
+                            }
+                        });
                     break;
                 }
 

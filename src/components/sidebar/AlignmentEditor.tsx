@@ -18,34 +18,40 @@ export default function AlignmentEditor() {
                 title={`Alignment`}
                 className="mt-12 flex flex-col gap-12"
             >
-                <div className="flex gap-8">
-                    {alignmentEventNewMarcherPages.length > 0 && (
-                        <div>
+                <div className="flex flex-wrap items-center gap-8">
+                    {alignmentEventNewMarcherPages.length > 0 ? (
+                        <>
                             <RegisteredActionButton
                                 registeredAction={
                                     RegisteredActionsObjects.createMarcherShape
                                 }
                             >
-                                <Button>Create Shape</Button>
+                                <Button size="compact">Create Shape</Button>
                             </RegisteredActionButton>
                             <RegisteredActionButton
                                 registeredAction={
                                     RegisteredActionsObjects.applyQuickShape
                                 }
                             >
-                                <Button>Apply coordinates</Button>
+                                <Button size="compact" variant="secondary">
+                                    Apply coordinates
+                                </Button>
                             </RegisteredActionButton>
-                        </div>
+                        </>
+                    ) : (
+                        <p className="text-body text-text/75">Draw a line.</p>
                     )}
                     <RegisteredActionButton
                         registeredAction={
                             RegisteredActionsObjects.cancelAlignmentUpdates
                         }
                     >
-                        <Button variant="secondary">Cancel</Button>
+                        <Button size="compact" variant="secondary">
+                            Cancel
+                        </Button>
                     </RegisteredActionButton>
                 </div>
-                <p className="text-sub text-text/80">
+                <p className="font-mono text-sub text-text/80">
                     Marchers{" "}
                     {alignmentEventMarchers
                         .map((marcher) => marcher.drill_number)

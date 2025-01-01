@@ -561,8 +561,6 @@ export function deleteItems<DatabaseItemType>({
         const currentUndoGroup = History.getCurrentUndoGroup(db);
         const newUndoGroup = History.incrementUndoGroup(db);
         groupWasIncremented = currentUndoGroup !== newUndoGroup;
-        // Increment the undo group so this action can be rolled back if needed
-        History.incrementUndoGroup(db);
 
         for (const id of ids) {
             currentId = id;

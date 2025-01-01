@@ -9,16 +9,38 @@ import {
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CaretUp, CaretDown, Check } from "@phosphor-icons/react";
+import { forwardRef } from "react";
 
-export type SelectProps = RadixSelectProps;
-export const Select = ({ children, ...props }: SelectProps) => {
-    return <RadixSelect.Root {...props}>{children}</RadixSelect.Root>;
+export type SelectProps = RadixSelectProps & {
+    children: React.ReactNode;
 };
+export const Select = forwardRef<HTMLButtonElement, SelectProps>(
+    ({ children, ...props }, ref) => {
+        return (
+            <RadixSelect.Root {...props}>
+                {React.Children.map(children, (child) => {
+                    if (
+                        React.isValidElement(child) &&
+                        (child.type === SelectTriggerButton ||
+                            child.type === SelectTriggerText ||
+                            child.type === SelectTriggerCompact)
+                    ) {
+                        return React.cloneElement(child, {
+                            ...child.props,
+                            ref: ref as any, // or use a more specific type if needed
+                        });
+                    }
+                    return child;
+                })}
+            </RadixSelect.Root>
+        );
+    },
+);
 
-export const SelectTriggerButton = ({
-    label,
-    className,
-}: RadixSelectTriggerProps & { label: string }) => {
+export const SelectTriggerButton = forwardRef<
+    HTMLButtonElement,
+    RadixSelectTriggerProps & { label: string }
+>(({ label, className }, ref) => {
     return (
         <RadixSelect.Trigger
             className={twMerge(
@@ -35,16 +57,18 @@ export const SelectTriggerButton = ({
             </RadixSelect.Icon>
         </RadixSelect.Trigger>
     );
-};
-export const SelectTriggerText = ({
-    label,
-    className,
-}: RadixSelectTriggerProps & { label: string }) => {
+});
+
+export const SelectTriggerText = forwardRef<
+    HTMLButtonElement,
+    RadixSelectTriggerProps & { label: string }
+>(({ label, className }, ref) => {
     return (
         <RadixSelect.Trigger
+            ref={ref}
             className={twMerge(
                 clsx(
-                    "flex h-fit w-fit items-center gap-4 p-0 text-body leading-none text-text outline-1 duration-150 ease-out enabled:hover:text-accent data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "flex h-fit w-fit items-center justify-center gap-2 p-0 text-body leading-none text-text outline-1 duration-150 ease-out enabled:hover:text-accent data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -52,11 +76,31 @@ export const SelectTriggerText = ({
         >
             <RadixSelect.Value placeholder={label} />
             <RadixSelect.Icon>
-                <CaretDown size={18} />
+                <CaretDown size={16} />
             </RadixSelect.Icon>
         </RadixSelect.Trigger>
     );
-};
+});
+
+export const SelectTriggerCompact = forwardRef<
+    HTMLButtonElement,
+    RadixSelectTriggerProps & { label: string }
+>(({ label, className }, ref) => {
+    return (
+        <RadixSelect.Trigger
+            ref={ref}
+            className={twMerge(
+                clsx(
+                    "flex h-[1.625rem] min-h-0 w-fit min-w-0 items-center justify-center rounded-6 border border-stroke bg-fg-2 px-8 py-[4px] text-body text-text placeholder-text/50 placeholder:text-body focus:border-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                    className,
+                ),
+            )}
+            aria-label={label}
+        >
+            <RadixSelect.Value placeholder={label} />
+        </RadixSelect.Trigger>
+    );
+});
 
 export const SelectContent = ({ children }: RadixSelectContentProps) => {
     return (
