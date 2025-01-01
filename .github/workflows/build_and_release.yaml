@@ -19,27 +19,60 @@ jobs:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            - name: Install canvas dependencies (Windows)
+            - name: Setup MSYS2
+              if: startsWith(matrix.os, 'windows')
+              uses: msys2/setup-msys2@v2
+              with:
+                  msystem: MINGW64
+                  update: true
+                  install: >-
+                      mingw-w64-x86_64-gtk3
+                      mingw-w64-x86_64-cairo
+                      mingw-w64-x86_64-pango
+                      mingw-w64-x86_64-libjpeg-turbo
+                      mingw-w64-x86_64-freetype
+                      mingw-w64-x86_64-libpng
+                      base-devel
+                      gcc
+
+            - name: Install canvas dependencies
               if: startsWith(matrix.os, 'windows')
               run: |
-                  # Setup Node.js and Python
+                  # Add MSYS2 to PATH
+                  $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+                  [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH, "Machine")
+
+                  # Install node and python
                   choco install nodejs-lts python3 -y
 
-                  # Install Visual Studio Build Tools
+                  # Install windows-build-tools
                   npm install --global --production windows-build-tools
 
-                  # Install GTK bundle and other dependencies
-                  choco install -y gtk-runtime
-                  choco install -y microsoft-build-tools
-                  choco install -y libjpeg-turbo
+                  # Verify PATH and required DLLs
+                  dir C:\msys64\mingw64\bin\*.dll
+              shell: powershell
 
-                  # Properly refresh environment variables in PowerShell
-                  Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-                  Update-SessionEnvironment
+            # - name: Install canvas dependencies (Windows)
+            #   if: startsWith(matrix.os, 'windows')
+            #   run: |
+            #       # Setup Node.js and Python
+            #       choco install nodejs-lts python3 -y
 
-                  # Verify PATH includes required directories
-                  $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-              shell: PowerShell
+            #       # Install Visual Studio Build Tools
+            #       npm install --global --production windows-build-tools
+
+            #       # Install GTK bundle and other dependencies
+            #       choco install -y gtk-runtime
+            #       choco install -y microsoft-build-tools
+            #       choco install -y libjpeg-turbo
+
+            #       # Properly refresh environment variables in PowerShell
+            #       Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
+            #       Update-SessionEnvironment
+
+            #       # Verify PATH includes required directories
+            #       $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+            #   shell: PowerShell
 
             # - name: Install canvas dependencies (macOS)
             #   if: startsWith(matrix.os, 'macos')
