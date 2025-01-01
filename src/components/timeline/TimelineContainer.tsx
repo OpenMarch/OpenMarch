@@ -96,7 +96,7 @@ export default function TimelineContainer() {
                             >
                                 {/* ------ PAGES ------ */}
                                 <div
-                                    className={`ml-6 flex h-full items-center justify-end rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
+                                    className={`relative ml-6 flex h-full items-center justify-end overflow-clip rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
                                         !isPlaying && "cursor-pointer"
                                     } ${
                                         page.id === selectedPage?.id
@@ -117,9 +117,20 @@ export default function TimelineContainer() {
                                         setSelectedMarcherShapes([]);
                                     }}
                                 >
-                                    <div className="rig static">
+                                    <div className="rig static z-10">
                                         {page.name}
                                     </div>
+                                    {(selectedPage?.id === page.id + 1 ||
+                                        (selectedPage?.id === 0 &&
+                                            page.id === pages.length - 1)) &&
+                                        isPlaying && (
+                                            <div
+                                                className="absolute left-0 top-0 z-0 h-full w-full bg-accent/25"
+                                                style={{
+                                                    animation: `progress ${page.duration}s linear forwards`,
+                                                }}
+                                            />
+                                        )}
                                 </div>
                             </div>
                         );
