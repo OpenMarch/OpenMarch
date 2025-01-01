@@ -129,7 +129,7 @@ export default function FeatureSelector() {
                     className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover"
                 />
             )}
-            <div className="absolute bottom-0 left-1/2 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px]"></div>
+            <div className="absolute bottom-0 left-1/2 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px] intersect:motion-preset-fade-lg"></div>
         </section>
     );
 }
