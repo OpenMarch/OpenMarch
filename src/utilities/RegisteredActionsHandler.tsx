@@ -43,8 +43,6 @@ export enum RegisteredActionsEnum {
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
     setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
-    applySelectedMarchersShapesToPreviousPage = "applySelectedMarchersShapesToPreviousPage",
-    applySelectedMarchersShapesToNextPage = "applySelectedMarchersShapesToNextPage",
 
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
@@ -279,16 +277,6 @@ export const RegisteredActionsObjects: {
         desc: "Set selected marcher(s) coordinates to previous page",
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true }),
         enumString: "setSelectedMarchersToPreviousPage",
-    }),
-    applySelectedMarchersShapesToPreviousPage: new RegisteredAction({
-        desc: "Set selected marcher(s) coordinates to previous page",
-        keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
-        enumString: "applySelectedMarchersShapesToPreviousPage",
-    }),
-    applySelectedMarchersShapesToNextPage: new RegisteredAction({
-        desc: "Set selected marcher(s) coordinates to previous page",
-        keyboardShortcut: new KeyboardShortcut({ key: "m", shift: true }),
-        enumString: "applySelectedMarchersShapesToNextPage",
     }),
 
     // Alignment
