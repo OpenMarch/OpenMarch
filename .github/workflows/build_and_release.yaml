@@ -28,11 +28,13 @@ jobs:
                   # Install Visual Studio Build Tools
                   npm install --global --production windows-build-tools
 
-                  # Install GTK and other required dependencies
+                  # Install GTK bundle (includes Cairo) and other dependencies
                   choco install -y gtk-runtime
                   choco install -y microsoft-build-tools
                   choco install -y libjpeg-turbo
-                  choco install -y cairo
+
+                  # Refresh environment variables
+                  refreshenv
 
             # - name: Install canvas dependencies (macOS)
             #   if: startsWith(matrix.os, 'macos')
