@@ -462,13 +462,7 @@ export default function Canvas({
                 shapePages: currentShapePages,
             });
         }
-    }, [
-        canvas,
-        selectedPage,
-        shapePages,
-        selectedMarcherShapes,
-        setSelectedMarcherShapes,
-    ]);
+    }, [canvas, selectedPage, shapePages]);
 
     // // Refresh the selectedMarcherShapes when the ShapePages change
     // useEffect(() => {

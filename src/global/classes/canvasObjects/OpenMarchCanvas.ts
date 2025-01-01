@@ -213,6 +213,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const newShapeIds = new Set(shapePages.map((sp) => sp.shape_id));
         const removedShapeIds = new Set();
         for (const existingMarcherShape of existingMarcherShapeMap) {
+            // The shape is no longer present in the shape pages. Remove it.
             if (!newShapeIds.has(existingMarcherShape[0])) {
                 removedShapeIds.add(existingMarcherShape[0]);
                 existingMarcherShape[1].destroy();
@@ -230,6 +231,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
             if (existingMarcherShape) {
                 existingMarcherShape.setShapePage(shapePage);
+                existingMarcherShape.refreshMarchers();
             } else {
                 this.marcherShapes.push(
                     new MarcherShape({

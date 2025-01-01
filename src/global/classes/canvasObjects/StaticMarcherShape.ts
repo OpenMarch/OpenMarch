@@ -35,6 +35,9 @@ export class StaticMarcherShape {
 
     _controlEnabled: boolean;
 
+    /** A tracker to check if the shape has been edited */
+    dirty: boolean = false;
+
     /**
      * Represents the initial position and offset of a move in the StaticMarcherShape.
      * The `initialPosition` property holds the initial x and y coordinates of the shape.
@@ -192,6 +195,7 @@ export class StaticMarcherShape {
             };
             m.setMarcherCoords(newMarcherPage, false);
         });
+        this.dirty = true;
     }
 
     /**
@@ -695,6 +699,7 @@ class ShapePointController extends fabric.Circle {
             this.marcherShape.distributeMarchers();
             this.marcherShape.bringControlPointsToFront();
         }
+        this.marcherShape.dirty = true;
         this.refreshLines();
     }
 

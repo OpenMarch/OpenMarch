@@ -94,10 +94,6 @@ export function getShapePages({
 
 /**
  * Updates the MarcherPages associated with the provided ShapePage.
- * This function retrieves the ShapePageMarchers for the given ShapePage,
- * calculates new coordinates for the Marchers along the ShapePage's SVG path,
- * and then updates the MarcherPages in the database with the new coordinates.
- *
  * @param db The database instance
  * @param shapePage The ShapePage for which to update the associated MarcherPages
  * @throws Error if there is an issue retrieving the ShapePageMarchers or updating the MarcherPages
