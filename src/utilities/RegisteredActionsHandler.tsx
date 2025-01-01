@@ -43,6 +43,8 @@ export enum RegisteredActionsEnum {
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
     setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
+    setAllMarchersToNextPage = "setAllMarchersToNextPage",
+    setSelectedMarchersToNextPage = "setSelectedMarchersToNextPage",
 
     // Alignment
     snapToNearestWhole = "snapToNearestWhole",
@@ -277,6 +279,20 @@ export const RegisteredActionsObjects: {
         desc: "Set selected marcher(s) coordinates to previous page",
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true }),
         enumString: "setSelectedMarchersToPreviousPage",
+    }),
+    setAllMarchersToNextPage: new RegisteredAction({
+        desc: "Set all marcher coordinates to next page",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "n",
+            shift: true,
+            control: true,
+        }),
+        enumString: "setAllMarchersToNextPage",
+    }),
+    setSelectedMarchersToNextPage: new RegisteredAction({
+        desc: "Set selected marcher(s) coordinates to next page",
+        keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
+        enumString: "setSelectedMarchersToNextPage",
     }),
 
     // Alignment
@@ -543,6 +559,12 @@ function RegisteredActionsHandler() {
                 /****************** Batch Editing ******************/
                 case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
                     const previousPage = selectedPage.getPreviousPage(pages);
+                    if (!previousPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to previous page. There is no previous page",
+                        );
+                        return;
+                    }
                     const previousPageMarcherPages = marcherPages.filter(
                         (marcherPage) =>
                             marcherPage.page_id === previousPage?.id,
@@ -554,10 +576,19 @@ function RegisteredActionsHandler() {
                         }),
                     );
                     MarcherPage.updateMarcherPages(changes);
+                    toast.success(
+                        `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
+                    );
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
                     const previousPage = selectedPage.getPreviousPage(pages);
+                    if (!previousPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to previous page. There is no previous page",
+                        );
+                        return;
+                    }
                     const selectedMarcherIds = selectedMarchers.map(
                         (marcher) => marcher.id,
                     );
@@ -574,6 +605,58 @@ function RegisteredActionsHandler() {
                             }),
                         );
                         MarcherPage.updateMarcherPages(changes);
+                        toast.success(
+                            `Successfully set ${previousMarcherPages.length} marcher coordinate${previousMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
+                        );
+                    }
+                    break;
+                }
+                case RegisteredActionsEnum.setAllMarchersToNextPage: {
+                    const nextPage = selectedPage.getNextPage(pages);
+                    if (!nextPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to next page. There is no next page",
+                        );
+                        return;
+                    }
+                    const nextPageMarcherPages = marcherPages.filter(
+                        (marcherPage) => marcherPage.page_id === nextPage?.id,
+                    );
+                    const changes = nextPageMarcherPages.map((marcherPage) => ({
+                        ...marcherPage,
+                        page_id: selectedPage.id,
+                    }));
+                    MarcherPage.updateMarcherPages(changes);
+                    toast.success(
+                        `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
+                    );
+                    break;
+                }
+                case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
+                    const nextPage = selectedPage.getNextPage(pages);
+                    if (!nextPage) {
+                        toast.error(
+                            "Cannot set marcher coordinates to next page. There is no next page",
+                        );
+                        return;
+                    }
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
+                    );
+                    const nextMarcherPages = marcherPages.filter(
+                        (marcherPage) =>
+                            marcherPage.page_id === nextPage?.id &&
+                            selectedMarcherIds.includes(marcherPage.marcher_id),
+                    );
+                    if (nextMarcherPages) {
+                        const changes = nextMarcherPages.map((marcherPage) => ({
+                            ...marcherPage,
+                            page_id: selectedPage.id,
+                        }));
+                        MarcherPage.updateMarcherPages(changes);
+                        toast.success(
+                            `Successfully set ${nextMarcherPages.length} marcher coordinate${nextMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
+                        );
                     }
                     break;
                 }
