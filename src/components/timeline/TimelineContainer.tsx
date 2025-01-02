@@ -15,33 +15,43 @@ export default function TimelineContainer() {
     const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
     const timelineRef = useRef<HTMLDivElement>(null);
 
-    // Automatically scroll to the selected page when the timeline is in focus
     useEffect(() => {
         if (!selectedPage) return;
 
+        const container = timelineRef.current;
         const selectedPageElement = document.querySelector(
             `[data-page-id="${selectedPage.id}"]`,
         );
 
-        if (!selectedPageElement) return;
+        if (!container || !selectedPageElement) return;
 
         if (isPlaying) {
-            const scrollInterval = setInterval(() => {
-                selectedPageElement.scrollIntoView({
-                    behavior: "smooth",
-                    block: "nearest",
-                    inline: "center",
-                });
-            }, 100);
+            // During playback: Linear scroll animation
+            container.style.scrollBehavior = "auto";
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = selectedPageElement.getBoundingClientRect();
 
-            return () => clearInterval(scrollInterval);
+            const targetScroll =
+                elementRect.left +
+                container.scrollLeft -
+                containerRect.left -
+                (containerRect.width - elementRect.width) / 2;
+
+            container.style.transition = `scroll-left ${selectedPage.duration}s linear`;
+            container.scrollLeft = targetScroll;
         } else {
+            // Manual selection: Smooth scroll
+            container.style.scrollBehavior = "smooth";
             selectedPageElement.scrollIntoView({
-                behavior: "smooth",
                 block: "nearest",
                 inline: "center",
             });
         }
+
+        return () => {
+            container.style.scrollBehavior = "smooth";
+            container.style.transition = "";
+        };
     }, [selectedPage, isPlaying]);
 
     // Rerender the timeline when the measures or pages change
