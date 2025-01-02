@@ -44,7 +44,7 @@ jobs:
                   [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH, "Machine")
 
                   # Install node
-                  choco install nodejs-lts -y
+                  choco install nodejs-lts -y --no-progress
 
                   # Verify PATH and required DLLs
                   dir C:\msys64\mingw64\bin\*.dll
