@@ -294,18 +294,6 @@ export default function ExportCoordinatesModal() {
             >
                 <ArrowSquareOut size={18} />
             </DialogTrigger>
-            {/* Tooltip Setup */}
-            <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                    <DialogTrigger className="cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50">
-                        <ArrowSquareOut size={18} />
-                    </DialogTrigger>
-                </Tooltip.Trigger>
-                <TooltipContents>
-                    {" "}
-                    Export individual coordinate sheets for marchers{" "}
-                </TooltipContents>
-            </Tooltip.Root>
 
             {/* Dialog Setup */}
             <DialogContent className="w-[48rem]">

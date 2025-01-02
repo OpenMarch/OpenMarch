@@ -29,14 +29,16 @@ export default function TimelineContainer() {
                 id="zoomIcons"
             >
                 <button
-                    className="m-4 text-text outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4"
+                    className="m-4 text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 active:hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => setPxPerSecond(pxPerSecond * 0.8)}
+                    disabled={pxPerSecond <= 25}
                 >
                     <Minus size={16} />
                 </button>
                 <button
-                    className="m-4 text-text outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4"
+                    className="m-4 text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 active:hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => setPxPerSecond(pxPerSecond * 1.2)}
+                    disabled={pxPerSecond >= 100}
                 >
                     <Plus size={16} />
                 </button>
@@ -86,6 +88,9 @@ export default function TimelineContainer() {
                     {pages.map((page, index) => {
                         if (index === 0) return null;
                         const width = page.duration * pxPerSecond;
+                        const selectedIndex = pages.findIndex(
+                            (p) => p.id === selectedPage?.id,
+                        );
                         return (
                             <div
                                 key={index}
@@ -120,9 +125,9 @@ export default function TimelineContainer() {
                                     <div className="rig static z-10">
                                         {page.name}
                                     </div>
-                                    {(selectedPage?.id === page.id + 1 ||
-                                        (selectedPage?.id === 0 &&
-                                            page.id === pages.length - 1)) &&
+                                    {(selectedIndex === index - 1 ||
+                                        (selectedIndex === 0 &&
+                                            index === pages.length)) &&
                                         isPlaying && (
                                             <div
                                                 className="absolute left-0 top-0 z-0 h-full w-full bg-accent/25"
