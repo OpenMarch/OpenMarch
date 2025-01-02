@@ -3,7 +3,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMeasureStore } from "@/stores/MeasureStore";
 import { usePageStore } from "@/stores/PageStore";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 
 export default function TimelineContainer() {
@@ -13,6 +13,36 @@ export default function TimelineContainer() {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
+    const timelineRef = useRef<HTMLDivElement>(null);
+
+    // Automatically scroll to the selected page when the timeline is in focus
+    useEffect(() => {
+        if (!selectedPage) return;
+
+        const selectedPageElement = document.querySelector(
+            `[data-page-id="${selectedPage.id}"]`,
+        );
+
+        if (!selectedPageElement) return;
+
+        if (isPlaying) {
+            const scrollInterval = setInterval(() => {
+                selectedPageElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest",
+                    inline: "center",
+                });
+            }, 100);
+
+            return () => clearInterval(scrollInterval);
+        } else {
+            selectedPageElement.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+                inline: "center",
+            });
+        }
+    }, [selectedPage, isPlaying]);
 
     // Rerender the timeline when the measures or pages change
     React.useEffect(() => {
@@ -21,6 +51,7 @@ export default function TimelineContainer() {
 
     return (
         <div
+            ref={timelineRef}
             id="timeline"
             className="relative flex h-[8rem] min-h-[8rem] w-full min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
         >
@@ -95,6 +126,7 @@ export default function TimelineContainer() {
                             <div
                                 key={index}
                                 className="inline-block"
+                                data-page-id={page.id}
                                 style={{ width: `${width}px` }}
                                 title={`Page ${page.name}`}
                                 aria-label={`Page ${page.name}`}
