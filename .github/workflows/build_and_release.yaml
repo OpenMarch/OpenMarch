@@ -34,6 +34,7 @@ jobs:
                       mingw-w64-x86_64-libpng
                       base-devel
                       gcc
+                      python3
 
             - name: Install canvas dependencies
               if: startsWith(matrix.os, 'windows')
@@ -42,11 +43,8 @@ jobs:
                   $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
                   [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH, "Machine")
 
-                  # Install node and python
-                  choco install nodejs-lts python3 -y
-
-                  # Install windows-build-tools
-                  npm install --global --production windows-build-tools
+                  # Install node
+                  choco install nodejs-lts -y
 
                   # Verify PATH and required DLLs
                   dir C:\msys64\mingw64\bin\*.dll
@@ -105,7 +103,8 @@ jobs:
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   # mac_certs: ${{ secrets.mac_certs }}
                   # mac_certs_password: ${{ secrets.mac_certs_password }}
-            #   env:
-            #       APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
-            #       APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
-            #       APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
+              env:
+                  PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
+                  # APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
+                  # APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
+                  # APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
