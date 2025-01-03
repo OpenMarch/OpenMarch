@@ -31,6 +31,20 @@ jobs:
               if: startsWith(matrix.os, 'ubuntu')
               run: sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
 
+            - name: Set up Wine for Windows build (Ubuntu)
+              if: startsWith(matrix.os, 'ubuntu')
+              run: |
+                  sudo dpkg --add-architecture i386
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    software-properties-common \
+                    wine64 \
+                    wine32 \
+                    winbind \
+                    xvfb
+                  # Verify Wine installation
+                  wine --version
+
             - name: Prepare for app notarization
               if: startsWith(matrix.os, 'macos')
               run: |
