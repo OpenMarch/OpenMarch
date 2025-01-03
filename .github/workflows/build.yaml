@@ -45,7 +45,7 @@ jobs:
                   # Verify Wine installation
                   wine --version
 
-            - name: Build/release Electron app
+            - name: Check if build passes without errors
               uses: OpenMarch/builder@v2
               with:
                   release: false
