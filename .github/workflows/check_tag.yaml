@@ -2,7 +2,7 @@ name: Build/release
 
 on:
     push:
-        branches: [test]
+        tags: [v*]
 
 jobs:
     release:
