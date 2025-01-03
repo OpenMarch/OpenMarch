@@ -4,6 +4,9 @@ on:
     push:
         tags: [v*]
 
+permissions:
+    contents: write # Required for creating releases
+
 jobs:
     release:
         runs-on: ${{ matrix.os }}
@@ -63,7 +66,8 @@ jobs:
                   mac_certs: ${{ secrets.mac_certs }}
                   mac_certs_password: ${{ secrets.mac_certs_password }}
               env:
-                  #   PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
+                  # Not needed since not building on windows
+                  # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
                   APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
                   APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
                   APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
@@ -71,3 +75,5 @@ jobs:
                   appleApiKey: "~/private_keys/apple_api_key.p8"
                   appleApiKeyId: ${{ secrets.apple_api_key_id }}
                   appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
+                  # For releasing
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
