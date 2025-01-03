@@ -52,7 +52,7 @@ jobs:
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Build/release Electron app
-              uses: OpenMarch/builder@v1
+              uses: OpenMarch/builder@v2
               with:
                   # GitHub token, automatically provided to the action
                   # (No need to define this secret in the repo settings)
@@ -64,7 +64,11 @@ jobs:
                   mac_certs: ${{ secrets.mac_certs }}
                   mac_certs_password: ${{ secrets.mac_certs_password }}
               env:
-                  PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
+                  #   PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
                   APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
                   APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
                   APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
+                  # also put in camelCase for electron/notarize
+                  appleApiKey: "~/private_keys/apple_api_key.p8"
+                  appleApiKeyId: ${{ secrets.apple_api_key_id }}
+                  appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
