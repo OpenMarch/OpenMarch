@@ -336,12 +336,28 @@ const APP_API = {
         ipcRenderer.invoke("shape_page:delete", idsToDelete) as Promise<
             DatabaseResponse<ShapePage[]>
         >,
+    copyShapePageToPage: (shapePageId: number, targetPageId: number) =>
+        ipcRenderer.invoke(
+            "shape_page:copy",
+            shapePageId,
+            targetPageId,
+        ) as Promise<DatabaseResponse<ShapePage[]>>,
 
     //ShapePageMarcher
-    getShapePageMarchers: (shapePageId?: number) =>
-        ipcRenderer.invoke("shape_page_marcher:getAll", shapePageId) as Promise<
-            DatabaseResponse<ShapePageMarcher[]>
-        >,
+    getShapePageMarchers: (shapePageId?: number, marcherIds?: Set<number>) =>
+        ipcRenderer.invoke(
+            "shape_page_marcher:get",
+            shapePageId,
+            marcherIds,
+        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
+    getShapePageMarcherByMarcherPage: (marcherPage: {
+        marcher_id: number;
+        page_id: number;
+    }) =>
+        ipcRenderer.invoke(
+            "shape_page_marcher:get_by_marcher_page",
+            marcherPage,
+        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
     createShapePageMarchers: (
         newShapePageMarcherArgs: NewShapePageMarcherArgs[],
     ) =>
@@ -362,6 +378,16 @@ const APP_API = {
         >,
 
     /******************************/
+
+    // Utilities
+    swapMarchers: (args: {
+        pageId: number;
+        marcher1Id: number;
+        marcher2Id: number;
+    }) =>
+        ipcRenderer.invoke("utilities:swap_marchers", args) as Promise<
+            DatabaseResponse<MarcherPage[]>
+        >,
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

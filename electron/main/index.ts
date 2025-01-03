@@ -13,6 +13,9 @@ import { parseMxl } from "../mxl/MxlUtil";
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');
 
+// Modify this when the database is updated
+import * as DatabaseMigrator from "../database/versions/v3";
+
 // The built directory structure
 //
 // ├─┬ dist-electron
@@ -58,11 +61,11 @@ async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
-        minWidth: 1400,
-        minHeight: 800,
+        minWidth: 1000,
+        minHeight: 400,
         autoHideMenuBar: true,
         frame: false,
-        trafficLightPosition: { x: 24, y: 7 },
+        trafficLightPosition: { x: 24, y: 9 },
         titleBarStyle: "hidden",
         webPreferences: {
             preload,
@@ -106,6 +109,7 @@ async function createWindow(title?: string) {
 app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
+
     Menu.setApplicationMenu(applicationMenu);
     const previousPath = store.get("databasePath") as string;
     if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
@@ -299,7 +303,10 @@ export async function newFile() {
             if (path.canceled || !path.filePath) return;
 
             setActiveDb(path.filePath, true);
-            DatabaseServices.initDatabase();
+            const dbVersion = new DatabaseMigrator.default(
+                DatabaseServices.connect,
+            );
+            dbVersion.createTables();
             win?.webContents.reload();
 
             return 200;
@@ -538,6 +545,48 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
 function setActiveDb(path: string, isNewFile = false) {
     DatabaseServices.setDbPath(path, isNewFile);
     win?.setTitle("OpenMarch - " + path);
+
+    const migrator = new DatabaseMigrator.default(DatabaseServices.connect);
+    const db = DatabaseServices.connect();
+    if (!db) {
+        console.error("Error connecting to database");
+        return;
+    }
+    if (!isNewFile) {
+        console.log("Checking database version to see if migration is needed");
+        DatabaseMigrator.default.getVersion(db);
+        // Create backup before migration
+        if (DatabaseMigrator.default.getVersion(db) !== migrator.version) {
+            const backupDir = join(app.getPath("userData"), "backups");
+            if (!fs.existsSync(backupDir)) {
+                fs.mkdirSync(backupDir);
+            }
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const originalName = path.split(/[\\/]/).pop();
+            const backupPath = join(
+                backupDir,
+                `backup_${timestamp}_${originalName}`,
+            );
+            console.log("Creating backup of database in " + backupPath);
+            fs.copyFileSync(path, backupPath);
+
+            console.log("Deleting backups older than 30 days");
+            // Delete backups older than 30 days
+            const files = fs.readdirSync(backupDir);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            files.forEach((file) => {
+                const filePath = join(backupDir, file);
+                const stats = fs.statSync(filePath);
+                if (stats.birthtime < thirtyDaysAgo) {
+                    fs.unlinkSync(filePath);
+                }
+            });
+        }
+        migrator.migrateToThisVersion();
+    } else console.log(`Creating new database at ${path}`);
+
     !isNewFile && win?.webContents.reload();
     store.set("databasePath", path); // Save current db path
 }

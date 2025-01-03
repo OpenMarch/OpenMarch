@@ -1,7 +1,7 @@
 import { NewMarcherArgs } from "@/global/classes/Marcher";
 import { NewPageArgs } from "@/global/classes/Page";
-import { NewShapeArgs } from "../ShapeTable";
-import { NewShapePageArgs } from "../ShapePageTable";
+import { NewShapeArgs } from "../tables/ShapeTable";
+import { NewShapePageArgs } from "../tables/ShapePageTable";
 
 export const NewMarchers: NewMarcherArgs[] = [
     {
@@ -110,12 +110,12 @@ export const NewShapePages: NewShapePageArgs[] = [
         notes: null,
         marcher_coordinates: [
             {
-                marcher_id: 1,
+                marcher_id: 3,
                 x: 10,
                 y: 20,
             },
             {
-                marcher_id: 2,
+                marcher_id: 4,
                 x: 30,
                 y: 40,
             },

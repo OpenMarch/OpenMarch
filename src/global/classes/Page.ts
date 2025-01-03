@@ -121,7 +121,6 @@ class Page {
                 return firstMeasureString;
             return `${firstMeasureString} → ${lastMeasureString}`;
         } catch (err) {
-            console.error("Unable to get measure range string", err);
             return "N/A";
         }
     }
@@ -300,20 +299,10 @@ class Page {
      * Update one or many pages with the provided arguments.
      *
      * @param modifiedPagesArg - The objects to update the pages with.
-     * @param currentPages - The current list of pages. Must be provided to check for the order of the pages.
      * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updatePages(modifiedPagesArg: ModifiedPageArgs[]) {
-        const modifiedPagesToSend: ModifiedPageArgs[] = modifiedPagesArg.map(
-            (page) => {
-                const modifiedPage: ModifiedPageArgs = { id: page.id };
-                if (page.counts) modifiedPage.counts = page.counts;
-                if (page.notes) modifiedPage.notes = page.notes;
-
-                return modifiedPage;
-            },
-        );
-        const response = await window.electron.updatePages(modifiedPagesToSend);
+        const response = await window.electron.updatePages(modifiedPagesArg);
         // fetch the pages to update the store
         this.checkForFetchPages();
         this.fetchPages();

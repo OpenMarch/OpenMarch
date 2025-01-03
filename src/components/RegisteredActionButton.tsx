@@ -6,8 +6,6 @@ import {
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "./ui/Tooltip";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -64,24 +62,16 @@ export default function RegisteredActionButton({
         registeredAction.instructionalString,
         removeRegisteredAction,
     ]);
-    // idea
-    // add "keyboardShortcut" prop with special mono font and outline
+
     if (showTooltip)
         return (
             <RadixTooltip.Root>
-                <RadixTooltip.Trigger className="flex items-center" asChild>
-                    <button
-                        {...rest}
-                        ref={buttonRef}
-                        className={twMerge(
-                            clsx(
-                                `group outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`,
-                                rest.className,
-                            ),
-                        )}
-                    >
-                        {children}
-                    </button>
+                <RadixTooltip.Trigger
+                    {...rest}
+                    ref={buttonRef}
+                    className={rest.className}
+                >
+                    {children}
                 </RadixTooltip.Trigger>
                 <TooltipContents side="bottom">
                     {instructionalString
@@ -92,14 +82,7 @@ export default function RegisteredActionButton({
         );
     else
         return (
-            <button
-                {...rest}
-                ref={buttonRef}
-                className={clsx(
-                    "group outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
-                    rest.className,
-                )}
-            >
+            <button {...rest} ref={buttonRef} className={rest.className}>
                 {children}
             </button>
         );

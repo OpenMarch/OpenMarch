@@ -2,6 +2,7 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import * as History from "../database.history";
+import { deleteShapePages, ShapePage } from "./ShapePageTable";
 
 /**
  * A Shape can have many ShapePages to signify its existence on multiple pages.
@@ -69,30 +70,46 @@ export function createShapePageMarcherTable(db: Database.Database) {
  * Retrieves all shapePageMarchers from the database or filters by shapePageId.
  *
  * @param db The database instance
- * @param shapePageId The shapePageId to filter by. If undefined, all shapePageMarchers are returned
+ * @param shapePageId The shapePageId to filter by. If undefined, SPMs with all page_ids are returned
+ * @param marcherIds The marcherIds to filter by.  If undefined, SPMs with all marcher_ids are returned
  * @returns DatabaseResponse containing an array of ShapePageMarcher objects
  */
 export function getShapePageMarchers({
     db,
     shapePageId,
+    marcherIds,
 }: {
     db: Database.Database;
     shapePageId?: number;
+    marcherIds?: Set<number>;
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
+    let response: DbActions.DatabaseResponse<ShapePageMarcher[]>;
     if (shapePageId !== undefined)
-        return DbActions.getItemsByColValue<ShapePageMarcher>({
+        response = DbActions.getItemsByColValue<ShapePageMarcher>({
             db,
             tableName: Constants.ShapePageMarcherTableName,
             col: "shape_page_id",
             value: shapePageId,
         });
     else
-        return DbActions.getAllItems<ShapePageMarcher>({
+        response = DbActions.getAllItems<ShapePageMarcher>({
             db,
             tableName: Constants.ShapePageMarcherTableName,
         });
+
+    let outputData = response.data;
+    if (marcherIds)
+        outputData = outputData.filter((spm) => marcherIds.has(spm.marcher_id));
+    return { ...response, data: outputData };
 }
 
+/**
+ * Retrieves a single ShapePageMarcher record from the database based on the provided marcher_id and page_id.
+ *
+ * @param db The database instance
+ * @param marcherPage An object containing the marcher_id and page_id to filter the query
+ * @returns A DatabaseResponse containing the matching ShapePageMarcher record, or null if no record is found
+ */
 export function getSpmByMarcherPage({
     db,
     marcherPage,
@@ -111,9 +128,19 @@ export function getSpmByMarcherPage({
             .get({
                 marcher_id: marcherPage.marcher_id,
                 page_id: marcherPage.page_id,
-            }) as ShapePageMarcher;
-        if (response) output = { success: true, data: response };
-        else
+            }) as { spm_id: number };
+        if (response) {
+            const spmId = response.spm_id;
+            const spmResponse = DbActions.getItem<ShapePageMarcher>({
+                db,
+                tableName: Constants.ShapePageMarcherTableName,
+                id: spmId,
+            });
+            return {
+                ...spmResponse,
+                data: spmResponse.data ?? null,
+            };
+        } else
             output = {
                 success: true,
                 data: null,
@@ -275,16 +302,19 @@ function flattenOrder({
  * @param db The database instance
  * @param args Array of NewShapePageMarcherArgs containing name and optional notes
  * @param isChildAction Whether the action is a child action of another action
+ * @param force If a marcher is already assigned to a shapePage on the same page, delete that shapePage to allow the new SPM to be created
  * @returns DatabaseResponse containing the created Shape objects
  */
 export function createShapePageMarchers({
     db,
     args,
     isChildAction = false,
+    force = false,
 }: {
     db: Database.Database;
     args: NewShapePageMarcherArgs[];
     isChildAction?: boolean;
+    force?: boolean;
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
     let output: DbActions.DatabaseResponse<ShapePageMarcher[]>;
     const createdSPMIds: Set<number> = new Set();
@@ -318,6 +348,85 @@ export function createShapePageMarchers({
                 });
                 actionWasPerformed = true;
             }
+
+            const shapePage = DbActions.getItem<ShapePage>({
+                db,
+                tableName: Constants.ShapePageTableName,
+                id: newItem.shape_page_id,
+            });
+            if (!shapePage.success)
+                throw new Error(shapePage.error?.message ?? "");
+            if (!shapePage.data)
+                throw new Error(
+                    `ShapePage for this SPM not found: id ${newItem.shape_page_id}`,
+                );
+
+            const shapePagesForThisPage =
+                DbActions.getItemsByColValue<ShapePage>({
+                    db,
+                    tableName: Constants.ShapePageTableName,
+                    col: "page_id",
+                    value: shapePage.data.page_id,
+                });
+            const shapePageIds = new Set(
+                shapePagesForThisPage.data.map((sp) => sp.id),
+            );
+
+            let shapePageMarchersForThisMarcher = getShapePageMarchers({
+                db,
+                marcherIds: new Set([newItem.marcher_id]),
+            });
+            if (!shapePageMarchersForThisMarcher.success)
+                throw new Error(
+                    "Error getting shapePageMarchersForThisMarcher ",
+                );
+
+            if (force) {
+                const conflictingShapePageIds =
+                    shapePageMarchersForThisMarcher.data
+                        .filter((spm) => shapePageIds.has(spm.shape_page_id))
+                        .map((spm) => spm.shape_page_id);
+
+                console.log(
+                    `Deleting conflicting shape pages:`,
+                    conflictingShapePageIds,
+                );
+
+                const deleteShapePagesResponse = deleteShapePages({
+                    db,
+                    ids: new Set(conflictingShapePageIds),
+                    isChildAction: true,
+                });
+
+                if (!deleteShapePagesResponse.success) {
+                    throw new Error(
+                        `Error deleting conflicting shape pages: ${deleteShapePagesResponse.error?.message}`,
+                    );
+                }
+
+                // Re-fetch the shapePageMarchers for this marcher to ensure they are up to date after deletion
+                shapePageMarchersForThisMarcher = getShapePageMarchers({
+                    db,
+                    marcherIds: new Set([newItem.marcher_id]),
+                });
+                if (!shapePageMarchersForThisMarcher.success)
+                    throw new Error(
+                        "Error getting shapePageMarchersForThisMarcher ",
+                    );
+            }
+
+            // Even if force is true, still do this check to prevent erroneous shape page creation
+            const marcherAndPageCombinationExists =
+                shapePageMarchersForThisMarcher.data.some((spm) =>
+                    shapePageIds.has(spm.shape_page_id),
+                );
+
+            if (marcherAndPageCombinationExists) {
+                throw new Error(
+                    `ShapePageMarcher with marcher_id ${newItem.marcher_id} and page_id ${shapePage.data.page_id} already exists`,
+                );
+            }
+
             // Create the new item
             const response = DbActions.createItems<
                 ShapePageMarcher[],
@@ -494,6 +603,142 @@ export function updateShapePageMarchers({
     }
 
     return output;
+}
+
+/**
+ * Swaps the position order of two ShapePageMarcher objects in the database.
+ *
+ * @param db - The database instance to use.
+ * @param spmId1 - The ID of the first ShapePageMarcher object.
+ * @param spmId2 - The ID of the second ShapePageMarcher object.
+ * @param useNextUndoGroup - Whether to use the next undo group for the operation (optional).
+ * @returns A DatabaseResponse containing the updated ShapePageMarcher objects.
+ */
+export function swapPositionOrder({
+    db,
+    spmId1,
+    spmId2,
+    useNextUndoGroup = true,
+}: {
+    db: Database.Database;
+    spmId1: number;
+    spmId2: number;
+    useNextUndoGroup?: boolean;
+}): DbActions.DatabaseResponse<ShapePageMarcher[]> {
+    console.log("=========== begin swapPositionOrder ===========");
+    let output: DbActions.DatabaseResponse<ShapePageMarcher[]>;
+    const spm1Response = DbActions.getItem<ShapePageMarcher>({
+        db,
+        tableName: Constants.ShapePageMarcherTableName,
+        id: spmId1,
+    });
+    const spm2Response = DbActions.getItem<ShapePageMarcher>({
+        db,
+        tableName: Constants.ShapePageMarcherTableName,
+        id: spmId2,
+    });
+    if (!spm1Response.success || !spm2Response.success) {
+        output = {
+            success: false,
+            error: {
+                message:
+                    "Error getting shape page marchers" +
+                    spm1Response.error?.message +
+                    spm2Response.error?.message,
+                stack: spm1Response.error?.stack || spm2Response.error?.stack,
+            },
+            data: [],
+        };
+        return output;
+    }
+    if (spm1Response.data === undefined || spm2Response.data === undefined) {
+        output = {
+            success: false,
+            error: {
+                message:
+                    spm1Response.data === null && spm2Response.data === null
+                        ? `SPM with id ${spmId1} and SPM with id ${spmId2} not found`
+                        : spm1Response.data === null
+                          ? `SPM with id ${spmId1} not found`
+                          : `SPM with id ${spmId2} not found`,
+
+                stack: "No stack",
+            },
+            data: [],
+        };
+        return output;
+    }
+
+    if (spm1Response.data.shape_page_id !== spm2Response.data.shape_page_id) {
+        output = {
+            success: false,
+            error: {
+                message:
+                    "ShapePageMarchers must be on the same shape page to be swapped",
+                stack: "No stack",
+            },
+            data: [],
+        };
+        return output;
+    }
+    const spm1 = spm1Response.data;
+    const spm2 = spm2Response.data;
+    History.incrementUndoGroup(db);
+    const deleteSql = db.prepare(
+        `UPDATE ${Constants.ShapePageMarcherTableName} SET position_order = NULL WHERE id = ?`,
+    );
+    deleteSql.run(spm1.id);
+    deleteSql.run(spm2.id);
+
+    const updateSql = db.prepare(
+        `UPDATE ${Constants.ShapePageMarcherTableName} SET position_order = ? WHERE id = ?`,
+    );
+    updateSql.run(spm2.position_order, spm1.id);
+    updateSql.run(spm1.position_order, spm2.id);
+
+    const newSpm1 = DbActions.getItem<ShapePageMarcher>({
+        db,
+        tableName: Constants.ShapePageMarcherTableName,
+        id: spm1.id,
+    });
+    const newSpm2 = DbActions.getItem<ShapePageMarcher>({
+        db,
+        tableName: Constants.ShapePageMarcherTableName,
+        id: spm2.id,
+    });
+    if (
+        !newSpm1.success ||
+        !newSpm2.success ||
+        !newSpm1.data ||
+        !newSpm2.data
+    ) {
+        console.error(
+            "Error swapping shape page marchers. Rolling back changes.",
+            newSpm1.error,
+            newSpm2.error,
+        );
+        History.performUndo(db);
+        History.clearMostRecentRedo(db);
+        output = {
+            success: false,
+            error: {
+                message:
+                    "Error swapping shape page marchers. Rolling back changes.",
+                stack: "No stack",
+            },
+            data: [],
+        };
+        return output;
+    }
+
+    if (useNextUndoGroup) {
+        History.decrementLastUndoGroup(db);
+    }
+
+    return {
+        success: true,
+        data: [newSpm1.data, newSpm2.data],
+    };
 }
 
 /**

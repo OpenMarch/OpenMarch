@@ -17,6 +17,7 @@ import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectabl
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
+import { CircleNotch } from "@phosphor-icons/react";
 
 /**
  * The field/stage UI of OpenMarch
@@ -281,7 +282,6 @@ export default function Canvas({
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {
         if (!canvas || activeObjectsAreGloballySelected()) return;
-
         const selectableObjects: Map<string, Selectable.ISelectable> = new Map(
             canvas
                 .getAllSelectableObjects()
@@ -462,13 +462,7 @@ export default function Canvas({
                 shapePages: currentShapePages,
             });
         }
-    }, [
-        canvas,
-        selectedPage,
-        shapePages,
-        selectedMarcherShapes,
-        setSelectedMarcherShapes,
-    ]);
+    }, [canvas, selectedPage, shapePages]);
 
     // // Refresh the selectedMarcherShapes when the ShapePages change
     // useEffect(() => {
@@ -635,16 +629,8 @@ export default function Canvas({
             {pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
-                // If there are no marchers or pages, display a message
-                <div className="flex h-full w-full flex-col justify-center gap-8 text-center align-middle text-text">
-                    <h4 className="text-h4">
-                        To start the show, create Marchers and Pages
-                    </h4>
-                    <p>Then refresh the window. (Ctrl/Cmd+R)</p>
-                    <p>
-                        If anything in OpenMarch ever seems broken, a refresh
-                        will often fix it.
-                    </p>
+                <div className="flex h-full w-full items-center justify-center">
+                    <CircleNotch size={32} className="animate-spin text-text" />
                 </div>
             )}
         </div>

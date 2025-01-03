@@ -4,7 +4,7 @@
 {
     appId: "com.openmarch.app",
     productName: "OpenMarch",
-    buildVersion: "0.0.5b",
+    buildVersion: "0.0.5",
     asar: true,
     directories: {
         output: "release/${buildVersion}",
@@ -14,10 +14,13 @@
         artifactName: "${productName}_${buildVersion}.${ext}",
         target: [
             {
-                target: "dmg",
+                target: "default",
                 arch: "universal",
             },
         ],
+        hardenedRuntime: true,
+        gatekeeperAssess: false,
+        entitlements: "./build/entitlements.mac.plist",
         notarize: true,
     },
     win: {
@@ -36,8 +39,8 @@
         deleteAppDataOnUninstall: false,
     },
     publish: {
-        provider: "generic",
+        provider: "github",
         channel: "latest",
-        url: "https://www.openmarch.com/",
+        url: "https://github.com/OpenMarch/OpenMarch/releases/latest",
     },
 }

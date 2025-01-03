@@ -1,7 +1,10 @@
 import React from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
-import { DialogProps as RadixDialogProps } from "@radix-ui/react-dialog";
-import { DialogContentProps as RadixDialogContentProps } from "@radix-ui/react-dialog";
+import {
+    DialogProps as RadixDialogProps,
+    DialogContentProps as RadixDialogContentProps,
+    DialogTriggerProps,
+} from "@radix-ui/react-dialog";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { X } from "@phosphor-icons/react";
@@ -17,7 +20,8 @@ export const Dialog = ({ children, ...props }: DialogProps) => (
 export const DialogTrigger = ({
     children,
     className,
-}: {
+    ...rest
+}: DialogTriggerProps & {
     children: React.ReactNode;
     className?: string;
 }) => (

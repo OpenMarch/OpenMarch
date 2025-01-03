@@ -4,6 +4,8 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import FieldProperties from "@/global/classes/FieldProperties";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import type { Shape } from "electron/database/tables/ShapeTable";
+import type { ShapePage } from "electron/database/tables/ShapePageTable";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({
@@ -188,6 +190,60 @@ export const mockMarcherLines: MarcherLine[] = [
         y2: 1000,
         notes: "This is the last marcherLine",
     }),
+] as const;
+
+export const mockShapes: Shape[] = [
+    {
+        id: 1,
+        name: "Shape 1",
+        updated_at: "some_time",
+        created_at: "other_time",
+        notes: "These are notes",
+    },
+    {
+        id: 2,
+        name: "Shape 2",
+        updated_at: "some_time",
+        created_at: "other_time",
+        notes: null,
+    },
+    {
+        id: 3,
+        name: "Shape 3",
+        updated_at: "some_time",
+        created_at: "other_time",
+        notes: "",
+    },
+] as const;
+
+export const mockShapePages: ShapePage[] = [
+    {
+        id: 1,
+        shape_id: 1,
+        page_id: 1,
+        svg_path: "M 0 0 L 100 100",
+        created_at: "some_time",
+        updated_at: "other_time",
+        notes: "These are notes",
+    },
+    {
+        id: 2,
+        shape_id: 2,
+        page_id: 1,
+        svg_path: "M 200 0 L 0 0",
+        created_at: "some_time",
+        updated_at: "other_time",
+        notes: null,
+    },
+    {
+        id: 3,
+        shape_id: 3,
+        page_id: 1,
+        svg_path: "M 5 10 L -50 1000",
+        created_at: "some_time",
+        updated_at: "other_time",
+        notes: "",
+    },
 ] as const;
 
 /**
