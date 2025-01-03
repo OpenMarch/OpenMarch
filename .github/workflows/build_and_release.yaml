@@ -2,7 +2,7 @@ name: Build/release
 
 on:
     push:
-        branches: [main, updater]
+        branches: [main]
 
 jobs:
     release:
@@ -11,21 +11,21 @@ jobs:
         strategy:
             matrix:
                 os:
-                    # - macos-latest
+                    - macos-latest
                     - ubuntu-latest
 
         steps:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            - name: Install canvas dependencies (macOS)
-              if: startsWith(matrix.os, 'macos')
-              run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman python-setuptools
-
             - name: Install Node.js, NPM
               uses: actions/setup-node@v1
               with:
                   node-version: 22
+
+            - name: Install canvas dependencies (macOS)
+              if: startsWith(matrix.os, 'macos')
+              run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman python-setuptools
 
             - name: Install canvas dependencies (Ubuntu)
               if: startsWith(matrix.os, 'ubuntu')

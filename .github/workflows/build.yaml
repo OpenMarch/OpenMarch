@@ -6,24 +6,47 @@ on:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        runs-on: ${{ matrix.os }}
+
         strategy:
             matrix:
-                include:
-                    - branch: main
-                      artifact: main
-                    - branch: ${{ github.head_ref }}
-                      artifact: pull-request
-
-        permissions:
-            # Required to checkout the code
-            contents: read
+                os:
+                    - macos-latest
+                    - ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
-            - name: Install canvas dependencies
-              run: sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
-            - name: Install project dependencies
-              run: npm ci
-            - name: Build app
-              run: npm run build
+            - name: Check out Git repository
+              uses: actions/checkout@v1
+
+            - name: Install Node.js, NPM
+              uses: actions/setup-node@v1
+              with:
+                  node-version: 22
+
+            - name: Install canvas dependencies (macOS)
+              if: startsWith(matrix.os, 'macos')
+              run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman python-setuptools
+
+            - name: Install canvas dependencies (Ubuntu)
+              if: startsWith(matrix.os, 'ubuntu')
+              run: sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+
+            - name: Set up Wine for Windows build (Ubuntu)
+              if: startsWith(matrix.os, 'ubuntu')
+              run: |
+                  sudo dpkg --add-architecture i386
+                  sudo apt-get update
+                  sudo apt-get install -y \
+                    software-properties-common \
+                    wine64 \
+                    wine32 \
+                    winbind \
+                    xvfb
+                  # Verify Wine installation
+                  wine --version
+
+            - name: Build/release Electron app
+              uses: OpenMarch/builder@v2
+              with:
+                  release: false
+                  github_token: ${{ secrets.github_token }}
