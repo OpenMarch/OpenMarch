@@ -39,7 +39,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                 )}
                 <div className="flex gap-12">
                     <p className="text-body leading-none">OpenMarch</p>
-                    <p className="text-body leading-none opacity-50">0.0.5b</p>
+                    <p className="text-body leading-none opacity-50">0.0.5</p>
                 </div>
                 {!noControls && (
                     <>

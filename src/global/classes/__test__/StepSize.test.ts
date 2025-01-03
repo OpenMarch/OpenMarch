@@ -271,25 +271,25 @@ describe("StepSize", () => {
         expect(stepSizes.length).toBe(3);
 
         const marcher1StepSize = stepSizes.find(
-            (stepSize) => stepSize.marcher_id === 1,
+            (stepSize) => stepSize?.marcher_id === 1,
         );
         expect(marcher1StepSize).toBeDefined();
         expect(marcher1StepSize!.displayString()).toBe("8 to 5");
 
         const marcher2StepSize = stepSizes.find(
-            (stepSize) => stepSize.marcher_id === 2,
+            (stepSize) => stepSize?.marcher_id === 2,
         );
         expect(marcher2StepSize).toBeDefined();
         expect(marcher2StepSize!.displayString()).toBe("16 to 5");
 
         const marcher3StepSize = stepSizes.find(
-            (stepSize) => stepSize.marcher_id === 3,
+            (stepSize) => stepSize?.marcher_id === 3,
         );
         expect(marcher3StepSize).toBeDefined();
         expect(marcher3StepSize!.displayString()).toBe("12.8 to 5");
 
         const marcher4StepSize = stepSizes.find(
-            (stepSize) => stepSize.marcher_id === 4,
+            (stepSize) => stepSize?.marcher_id === 4,
         );
         expect(marcher4StepSize).toBeUndefined();
     });

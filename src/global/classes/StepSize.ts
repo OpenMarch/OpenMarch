@@ -168,24 +168,26 @@ export class StepSize {
         const endingPages = marcherPages.filter(
             (marcherPage) => marcherPage.page_id === page.id,
         );
-        return marchers
-            .map((marcher) => {
-                const startingPage = startingPages.find(
-                    (marcherPage) => marcherPage.marcher_id === marcher.id,
-                );
-                const endingPage = endingPages.find(
-                    (marcherPage) => marcherPage.marcher_id === marcher.id,
-                );
-                if (!endingPage) return undefined;
+        const output: StepSize[] = [];
+        marchers.forEach((marcher) => {
+            const startingPage = startingPages.find(
+                (marcherPage) => marcherPage.marcher_id === marcher.id,
+            );
+            const endingPage = endingPages.find(
+                (marcherPage) => marcherPage.marcher_id === marcher.id,
+            );
+            if (!endingPage) return undefined;
 
-                return StepSize.createStepSizeForMarcher({
-                    startingPage,
-                    endingPage,
-                    page: page,
-                    fieldProperties,
-                });
-            })
-            .filter((stepSize) => stepSize !== undefined); // filter out undefined
+            const stepSize = StepSize.createStepSizeForMarcher({
+                startingPage,
+                endingPage,
+                page: page,
+                fieldProperties,
+            });
+
+            if (stepSize) output.push(stepSize);
+        });
+        return output;
     }
 
     /**

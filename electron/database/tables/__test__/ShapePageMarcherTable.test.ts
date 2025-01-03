@@ -52,6 +52,11 @@ const NewShapePages: NewShapePageArgs[] = [
     },
 ];
 
+const noUpdatedOrCreatedAt = (object: any) => {
+    const { updated_at, created_at, ...rest } = object;
+    return rest;
+};
+
 describe("ShapePageMarcherTable CRUD Operations", () => {
     let db: Database.Database;
 
@@ -674,7 +679,9 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
             });
             expect(result.success).toBe(true);
-            expect(result.data).toMatchObject(createSpmResponse.data[0]);
+            expect(result.data).toMatchObject(
+                noUpdatedOrCreatedAt(createSpmResponse.data[0]),
+            );
         });
 
         it("should return the correct ShapePageMarcher when it exists", () => {
@@ -696,7 +703,9 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
             });
             expect(result.success).toBe(true);
-            expect(result.data).toMatchObject(createSpmResponse.data[0]);
+            expect(result.data).toMatchObject(
+                noUpdatedOrCreatedAt(createSpmResponse.data[0]),
+            );
         });
 
         it("should return null when the marcher_id is invalid", () => {
