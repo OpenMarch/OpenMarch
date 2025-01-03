@@ -1,0 +1,29 @@
+name: Build
+
+on:
+    pull_request:
+        branches: [main, develop, prerelease/*]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    - branch: main
+                      artifact: main
+                    - branch: ${{ github.head_ref }}
+                      artifact: pull-request
+
+        permissions:
+            # Required to checkout the code
+            contents: read
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Install canvas dependencies
+              run: sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+            - name: Install project dependencies
+              run: npm ci
+            - name: Build app
+              run: npm run build
