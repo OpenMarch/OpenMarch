@@ -50,7 +50,9 @@ export default function FeatureSelector() {
                 >
                     <Accordion.Item value="drill">
                         <Accordion.Trigger className="flex w-full flex-col gap-12 rounded-6 border border-stroke bg-fg-1 p-24 transition-all duration-150 data-[state=closed]:border-transparent data-[state=closed]:bg-transparent data-[state=closed]:opacity-50 data-[state=closed]:hover:border-accent">
-                            <h2 className="text-left text-h2">Drill writing</h2>
+                            <h2 className="text-left text-h2 max-[550px]:text-h3">
+                                Drill writing
+                            </h2>
                             <Accordion.Content className="text-left text-body">
                                 Create shapes with curves and lines via SVG
                                 segments.
@@ -60,7 +62,7 @@ export default function FeatureSelector() {
 
                     <Accordion.Item value="music">
                         <Accordion.Trigger className="flex w-full flex-col gap-12 rounded-6 border border-stroke bg-fg-1 p-24 transition-all duration-150 data-[state=closed]:border-transparent data-[state=closed]:bg-transparent data-[state=closed]:opacity-50 data-[state=closed]:hover:border-accent">
-                            <h2 className="text-left text-h2">
+                            <h2 className="text-left text-h2 max-[550px]:text-h3">
                                 Music integration
                             </h2>
                             <Accordion.Content className="text-left text-body">
@@ -71,7 +73,9 @@ export default function FeatureSelector() {
                     </Accordion.Item>
                     <Accordion.Item value="fields">
                         <Accordion.Trigger className="flex w-full flex-col gap-12 rounded-6 border border-stroke bg-fg-1 p-24 transition-all duration-150 data-[state=closed]:border-transparent data-[state=closed]:bg-transparent data-[state=closed]:opacity-50 data-[state=closed]:hover:border-accent">
-                            <h2 className="text-left text-h2">Any field</h2>
+                            <h2 className="text-left text-h2 max-[550px]:text-h3">
+                                Any field
+                            </h2>
                             <Accordion.Content className="text-left text-body">
                                 Use any field type you want, even custom ones.
                                 High school, college, pro, indoor, or anything
@@ -81,7 +85,7 @@ export default function FeatureSelector() {
                     </Accordion.Item>
                     <Accordion.Item value="modern">
                         <Accordion.Trigger className="flex w-full flex-col gap-12 rounded-6 border border-stroke bg-fg-1 p-24 transition-all duration-150 data-[state=closed]:border-transparent data-[state=closed]:bg-transparent data-[state=closed]:opacity-50 data-[state=closed]:hover:border-accent">
-                            <h2 className="text-left text-h2">
+                            <h2 className="text-left text-h2 max-[550px]:text-h3">
                                 Fast, modern, free
                             </h2>
                             <Accordion.Content className="text-left text-body">
@@ -108,7 +112,7 @@ export default function FeatureSelector() {
                     width={1920}
                     height={1080}
                     alt="Drill writing app"
-                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover"
+                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover max-[1250px]:col-span-1"
                 />
             )}
             {selected === "fields" && (
@@ -117,7 +121,7 @@ export default function FeatureSelector() {
                     width={1920}
                     height={1080}
                     alt="Drill writing app"
-                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover"
+                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover max-[1250px]:col-span-1"
                 />
             )}
             {selected === "modern" && (
@@ -126,7 +130,7 @@ export default function FeatureSelector() {
                     width={1920}
                     height={1080}
                     alt="Drill writing app"
-                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover"
+                    className="col-span-2 aspect-video h-auto w-full rounded-6 border-2 border-stroke object-cover max-[1250px]:col-span-1"
                 />
             )}
             <div className="absolute bottom-0 left-1/2 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px] intersect:motion-preset-fade-lg"></div>

@@ -16,7 +16,7 @@ type Blog = CollectionEntry<"blog">;
 
         Observer.start();
     </script>
-    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
+    <div class="flex flex-col gap-64 p-64 max-[750px]:p-12">
         <section
             id="landing"
             class="relative flex h-[80vh] flex-col justify-center gap-32 max-[950px]:justify-start"
@@ -140,6 +140,18 @@ type Blog = CollectionEntry<"blog">;
                             <Button variant="secondary">GitHub</Button>
                         </a>
                     </div>
+                </div>
+                <div
+                    id="partners"
+                    class="flex w-full flex-col items-center justify-center gap-16 rounded-6 border border-stroke p-24"
+                >
+                    <h2 class="text-h2">Partners</h2>
+                    <a href="https://silentcommand.org"
+                        ><div
+                            class="aspect-[328/125] h-auto w-[16rem] bg-[url('/partners/sicommandDark.png')] bg-cover dark:bg-[url('/partners/sicommandLight.png')]"
+                        >
+                        </div></a
+                    >
                 </div>
             </div>
             <section id="blogs" class="flex flex-col gap-16">
