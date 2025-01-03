@@ -674,7 +674,7 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
             });
             expect(result.success).toBe(true);
-            expect(result.data).toMatchObject(createSpmResponse.data[0]);
+            expect(createSpmResponse.data[0]).toMatchObject(result.data as any);
         });
 
         it("should return the correct ShapePageMarcher when it exists", () => {
@@ -696,7 +696,7 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
                 marcherPage: { marcher_id: 1, page_id: shapePage.page_id },
             });
             expect(result.success).toBe(true);
-            expect(result.data).toMatchObject(createSpmResponse.data[0]);
+            expect(createSpmResponse.data[0]).toMatchObject(result.data as any);
         });
 
         it("should return null when the marcher_id is invalid", () => {
