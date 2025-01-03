@@ -12,78 +12,24 @@ jobs:
             matrix:
                 os:
                     # - macos-latest
-                    # - ubuntu-latest
-                    - windows-latest # Skip windows for now to figure out canvas dependencies
+                    - ubuntu-latest
 
         steps:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            - name: Setup MSYS2
-              if: startsWith(matrix.os, 'windows')
-              uses: msys2/setup-msys2@v2
-              with:
-                  msystem: MINGW64
-                  update: true
-                  install: >-
-                      mingw-w64-x86_64-gtk3
-                      mingw-w64-x86_64-cairo
-                      mingw-w64-x86_64-pango
-                      mingw-w64-x86_64-libjpeg-turbo
-                      mingw-w64-x86_64-freetype
-                      mingw-w64-x86_64-libpng
-                      base-devel
-                      gcc
-                      python3
-
-            - name: Install canvas dependencies
-              if: startsWith(matrix.os, 'windows')
-              run: |
-                  # Add MSYS2 to PATH
-                  $env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
-                  [System.Environment]::SetEnvironmentVariable("PATH", $env:PATH, "Machine")
-
-                  # Install node
-                  choco install nodejs-lts -y --no-progress
-
-                  # Verify PATH and required DLLs
-                  dir C:\msys64\mingw64\bin\*.dll
-              shell: powershell
-
-            # - name: Install canvas dependencies (Windows)
-            #   if: startsWith(matrix.os, 'windows')
-            #   run: |
-            #       # Setup Node.js and Python
-            #       choco install nodejs-lts python3 -y
-
-            #       # Install Visual Studio Build Tools
-            #       npm install --global --production windows-build-tools
-
-            #       # Install GTK bundle and other dependencies
-            #       choco install -y gtk-runtime
-            #       choco install -y microsoft-build-tools
-            #       choco install -y libjpeg-turbo
-
-            #       # Properly refresh environment variables in PowerShell
-            #       Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
-            #       Update-SessionEnvironment
-
-            #       # Verify PATH includes required directories
-            #       $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-            #   shell: PowerShell
-
             # - name: Install canvas dependencies (macOS)
             #   if: startsWith(matrix.os, 'macos')
             #   run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman python-setuptools
 
-            # - name: Install Node.js, NPM
-            #   uses: actions/setup-node@v1
-            #   with:
-            #       node-version: 22
+            - name: Install Node.js, NPM
+              uses: actions/setup-node@v1
+              with:
+                  node-version: 22
 
-            # - name: Install canvas dependencies (Ubuntu)
-            #   if: startsWith(matrix.os, 'ubuntu')
-            #   run: sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
+            - name: Install canvas dependencies (Ubuntu)
+              if: startsWith(matrix.os, 'ubuntu')
+              run: sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
 
             # - name: Prepare for app notarization
             #   if: startsWith(matrix.os, 'macos')
@@ -92,7 +38,7 @@ jobs:
             #       echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Build/release Electron app
-              uses: samuelmeuli/action-electron-builder@v1.6.0
+              uses: OpenMarch/builder
               with:
                   # GitHub token, automatically provided to the action
                   # (No need to define this secret in the repo settings)

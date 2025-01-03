@@ -39,8 +39,8 @@
         deleteAppDataOnUninstall: false,
     },
     publish: {
-        provider: "generic",
+        provider: "github",
         channel: "latest",
-        url: "https://www.openmarch.com/",
+        url: "https://github.com/OpenMarch/OpenMarch/releases/latest",
     },
 }
