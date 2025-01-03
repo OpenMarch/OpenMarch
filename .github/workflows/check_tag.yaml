@@ -19,7 +19,7 @@ jobs:
               uses: actions/checkout@v1
 
             - name: Print version tag
-              run: "echo 'Version tag: ${{ github.ref_name }}'"
+              run: "echo 'Version tag: ${{ github.ref }}'"
             #dummy comment
 
             - name: Check if version tag is valid
