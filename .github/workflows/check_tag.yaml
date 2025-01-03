@@ -20,6 +20,7 @@ jobs:
 
             - name: Print version tag
               run: "echo 'Version tag: ${{ github.ref_name }}'"
+            #dummy comment
 
             - name: Check if version tag is valid
               if: startsWith(github.ref_name, 'v')
