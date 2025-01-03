@@ -4,7 +4,7 @@
 {
     appId: "com.openmarch.app",
     productName: "OpenMarch",
-    buildVersion: "0.0.5",
+    buildVersion: "v0.0.5",
     asar: true,
     directories: {
         output: "release/${buildVersion}",
@@ -36,7 +36,7 @@
         oneClick: false,
         perMachine: false,
         allowToChangeInstallationDirectory: true,
-        deleteAppDataOnUninstall: false,
+        deleteAppDataOnUninstall: true,
     },
     publish: {
         provider: "github",
