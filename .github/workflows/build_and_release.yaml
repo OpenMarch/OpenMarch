@@ -39,9 +39,7 @@ jobs:
                   libpango1.0-dev \
                   libjpeg-dev \
                   libgif-dev \
-                  librsvg2-dev \
-                  libgtk-3-dev \
-                  libwebkit2gtk-4.0-dev
+                  librsvg2-dev
 
             - name: Set up Wine for Windows build (Ubuntu)
               if: startsWith(matrix.os, 'ubuntu')
