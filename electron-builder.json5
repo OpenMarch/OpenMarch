@@ -18,10 +18,10 @@
                 arch: "universal",
             },
         ],
-        hardenedRuntime: true,
-        gatekeeperAssess: false,
-        entitlements: "./build/entitlements.mac.plist",
-        notarize: true,
+        // hardenedRuntime: true,
+        // gatekeeperAssess: false,
+        // entitlements: "./build/entitlements.mac.plist",
+        notarize: false,
     },
     win: {
         target: [

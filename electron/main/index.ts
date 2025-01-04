@@ -60,8 +60,7 @@ const indexHtml = join(process.env.DIST, "index.html");
 async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
-        // Use app.getPath('userData') for the icon path if it's in the resources
-        icon: join(process.env.VITE_PUBLIC || app.getAppPath(), "favicon.ico"),
+        icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
         minWidth: 1000,
         minHeight: 400,
         autoHideMenuBar: true,
@@ -69,30 +68,26 @@ async function createWindow(title?: string) {
         trafficLightPosition: { x: 24, y: 9 },
         titleBarStyle: "hidden",
         webPreferences: {
-            preload, // Make sure this path is absolute
-            nodeIntegration: false,
-            contextIsolation: true,
-            // Add these to help with file loading
-            webSecurity: true,
-            allowRunningInsecureContent: false,
+            preload,
+            // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
+            // Consider using contextBridge.exposeInMainWorld
+            // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
+            nodeIntegration: false, // is default value after Electron v5
+            contextIsolation: true, // protect against prototype pollution
         },
     });
 
-    // Make sure indexHtml is using an absolute path
-    const indexHtml = join(__dirname, "../dist/index.html");
-
-    if (app.isPackaged) {
-        // When packaged, use loadFile with the correct path
-        await win.loadFile(indexHtml);
+    if (url) {
+        // electron-vite-vue#298
+        win.loadURL(url);
+        win.on("ready-to-show", () => {
+            if (win) win.webContents.openDevTools();
+        });
     } else {
-        // In development, use the URL
-        if (url) {
-            await win.loadURL(url);
-            win.webContents.openDevTools();
-        }
+        win.loadFile(indexHtml);
     }
 
-    // Rest of your code remains the same
+    // Test actively push message to the Electron-Renderer
     win.webContents.on("did-finish-load", () => {
         win?.maximize();
         win?.webContents.send(
@@ -101,11 +96,13 @@ async function createWindow(title?: string) {
         );
     });
 
+    // Make all links open with the browser, not with the application
     win.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith("https:")) shell.openExternal(url);
         return { action: "deny" };
     });
 
+    // Apply electron-updater
     update(win);
 }
 
