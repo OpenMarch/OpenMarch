@@ -18,9 +18,9 @@
                 arch: "universal",
             },
         ],
-        // hardenedRuntime: true,
-        // gatekeeperAssess: false,
-        // entitlements: "./build/entitlements.mac.plist",
+        hardenedRuntime: true,
+        gatekeeperAssess: false,
+        entitlements: "./build/entitlements.mac.plist",
         notarize: false,
     },
     win: {
