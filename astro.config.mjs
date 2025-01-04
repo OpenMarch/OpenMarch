@@ -11,6 +11,8 @@ import sitemap from "@astrojs/sitemap";
 
 import starlight from "@astrojs/starlight";
 
+import yeskunallumami from "@yeskunall/astro-umami";
+
 // https://astro.build/config
 export default defineConfig({
     redirects: {
@@ -52,6 +54,10 @@ export default defineConfig({
         }),
         mdx(),
         sitemap(),
+        yeskunallumami({
+            id: "de873366-d3d9-4a2d-a894-7ebaba0bfcb8",
+            endpointUrl: "https://umami.cool.korhq.com",
+        }),
     ],
     site: "https://openmarch.com",
     devToolbar: {
