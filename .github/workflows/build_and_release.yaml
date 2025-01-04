@@ -71,8 +71,8 @@ jobs:
 
                   # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-                  #   mac_certs: ${{ secrets.mac_certs }}
-                  #   mac_certs_password: ${{ secrets.mac_certs_password }}
+                  mac_certs: ${{ secrets.mac_certs }}
+                  mac_certs_password: ${{ secrets.mac_certs_password }}
                   #   max_attempts: 3
               env:
                   # Not needed since not building on windows
