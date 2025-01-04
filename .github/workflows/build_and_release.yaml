@@ -15,7 +15,7 @@ jobs:
             matrix:
                 os:
                     - macos-latest
-                    - ubuntu-latest
+                    # - ubuntu-latest
 
         steps:
             - name: Check out Git repository
