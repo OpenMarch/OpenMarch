@@ -1,0 +1,35 @@
+---
+title: "Introduction"
+description: "Introduction to developing OpenMarch"
+sidebar:
+    order: -1
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+Get in here and contribute to OpenMarch! Learn our stack and how to contribute.
+
+<LinkCard
+  title="Stack"
+  href="/developers/stack/"
+/>
+<LinkCard
+  title="Contributing"
+  href="/developers/contributing/"
+/>
+<LinkCard
+  title="Discord"
+  href="https://discord.com/invite/eTsQ98uZzq"
+  description="Go to #developers for support!"
+/>
+
+##  Running the Dev Environment
+
+1. Download & install [Node.js](https://nodejs.org/en)
+2. Download the code via git from the main branch (if you're contributing, [make a fork](https://github.com/OpenMarch/OpenMarch/fork) and clone your own repo): `git clone https://github.com/OpenMarch/OpenMarch.git`
+    - You might need to download git for this. You can also use other methods like the GitHub CLI
+3. Install dependencies: `npm install` (may take a while)
+    - You might get a bunch of scary npm errors after installing. If running the app doesn't work after, follow [these steps](https://github.com/Automattic/node-canvas?tab=readme-ov-file#compiling) to fix it.
+4. Run the dev environment: `npm run dev`
+
+Feel free to ask questions in the Discord if you're having problems.

@@ -1,40 +1,40 @@
 ---
-import { getCollection, type CollectionEntry } from "astro:content";
+import { getCollection, render, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
 import Prose from "@/components/Prose.astro";
 
 export async function getStaticPaths() {
     const blogEntries = await getCollection("blog");
-    return blogEntries.map((entry) => ({
-        params: { slug: entry.slug },
-        props: { entry },
+    return blogEntries.map((post) => ({
+        params: { id: post.id },
+        props: { post },
     }));
 }
 
 interface Props {
-    entry: CollectionEntry<"blog">;
+    post: CollectionEntry<"blog">;
 }
-const { entry } = Astro.props;
-const { Content } = await entry.render();
+const { post } = Astro.props;
+const { Content } = await render(post);
 ---
 
-<Layout title={entry.data.title}>
+<Layout title={post.data.title}>
     <section class="m-16 flex flex-col items-center py-128">
         <article class="flex w-full max-w-[48rem] flex-col items-center gap-16">
             <Image
-                src={entry.data.image}
+                src={post.data.image}
                 width={1280}
                 height={720}
-                alt={entry.data.title}
+                alt={post.data.title}
                 class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
             />
-            <h1 class="text-h1">{entry.data.title}</h1>
+            <h1 class="text-h1">{post.data.title}</h1>
             <div class="flex gap-16">
-                <p class="text-body">{entry.data.author}</p>
+                <p class="text-body">{post.data.author}</p>
                 <p class="text-body">
                     {
-                        entry.data.date.toLocaleDateString("en-US", {
+                        post.data.date.toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
                             day: "numeric",

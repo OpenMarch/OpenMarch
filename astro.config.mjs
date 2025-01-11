@@ -1,16 +1,10 @@
 // @ts-check
 import { defineConfig } from "astro/config";
-
 import react from "@astrojs/react";
-
 import tailwind from "@astrojs/tailwind";
-
 import mdx from "@astrojs/mdx";
-
 import sitemap from "@astrojs/sitemap";
-
 import starlight from "@astrojs/starlight";
-
 import yeskunallumami from "@yeskunall/astro-umami";
 
 // https://astro.build/config
@@ -50,12 +44,20 @@ export default defineConfig({
                     label: "Guides",
                     autogenerate: { directory: "guides" },
                 },
+                {
+                    label: "About",
+                    autogenerate: { directory: "about" },
+                },
+                {
+                    label: "Developers",
+                    autogenerate: { directory: "developers" },
+                },
             ],
         }),
         mdx(),
         sitemap(),
         yeskunallumami({
-            id: "de873366-d3d9-4a2d-a894-7ebaba0bfcb8",
+            id: "09a72d11-c8dd-43b0-9ee8-e2c7c492bc21",
             endpointUrl: "https://umami.cool.korhq.com",
         }),
     ],

@@ -1,6 +1,6 @@
 ---
-title: Planned Feature List
-description: Features that are on the way
+title: "Planned Feature List"
+description: "Features that are on the way"
 ---
 
 More details to come soon.

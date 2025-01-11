@@ -129,8 +129,7 @@ type Blog = CollectionEntry<"blog">;
                     <h2 class="text-h2">Community</h2>
                     <p class="text-body">
                         Make sure to share feedback, get help, and get updates
-                        within our Discord & GitHub community, and our
-                        newsletter.
+                        within our Discord & GitHub community.
                     </p>
                     <div class="flex gap-8">
                         <a href="https://discord.gg/eTsQ98uZzq">
@@ -173,7 +172,7 @@ type Blog = CollectionEntry<"blog">;
                             .slice(0, 3)
                             .map((blog: Blog) => (
                                 <a
-                                    href={`/blog/${blog.slug}`}
+                                    href={`/blog/${blog.id}`}
                                     class="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
                                 >
                                     <Image
