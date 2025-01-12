@@ -78,3 +78,4 @@ jobs:
                   appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
                   # For releasing
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
