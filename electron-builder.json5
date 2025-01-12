@@ -38,11 +38,7 @@
 
     linux: {
         category: "Graphics",
-        synopsis: "OpenMarch is an open source drill writing software built on web app frameworks. Our goal is to be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles. OpenMarch hopes to be enough for 90% of ensembles with reasonable design needs. We want to make drill writing effortless. OpenMarch is designed with three principles: stay free, stay fast, and stay simple.\n
-        OpenMarch is designed with three principles:
-            Stay free - All of the technologies OpenMarch uses have been intentionally chosen to minimize operation costs. This ensures that OpenMarch remains accessible to everyone, regardless of their financial situation.
-            Stay fast - OpenMarch is built with performance in mind. We want to ensure that the software runs smoothly on any device, making the drill writing process efficient and enjoyable.
-            Stay simple - We focus on providing essential features without unnecessary complexity. Our interface is intuitive and easy to use, allowing you to create drill without a steep learning curve.",
+        synopsis: "OpenMarch is an open source drill writing software built on web app frameworks. Our goal is to be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles. OpenMarch hopes to be enough for 90% of ensembles with reasonable design needs. We want to make drill writing effortless. OpenMarch is designed with three principles: stay free, stay fast, and stay simple.\nOpenMarch is designed with three principles:\n\tStay free - All of the technologies OpenMarch uses have been intentionally chosen to minimize operation costs. This ensures that OpenMarch remains accessible to everyone, regardless of their financial situation.\n\tStay fast - OpenMarch is built with performance in mind. We want to ensure that the software runs smoothly on any device, making the drill writing process efficient and enjoyable.\n\tStay simple - We focus on providing essential features without unnecessary complexity. Our interface is intuitive and easy to use, allowing you to create drill without a steep learning curve.",
         snap: {
             summary: "Open source drill-writing software",
         },
