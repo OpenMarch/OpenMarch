@@ -21,11 +21,12 @@ The main part of the app, the field, is built with [Fabric.js](http://fabricjs.c
 
 We use [Tailwind](https://tailwindcss.com/) for all things styling and CSS. For basic UI components (such as selects, checkboxes), we use [Radix Primitives](https://www.radix-ui.com/primitives) and then apply our own styles on top of them.
 
-# Misc
 
-### Testing
+# Testing
 
 [Vitest](https://vitest.dev/) and [Playwright](https://playwright.dev/).
+
+# Misc
 
 ### Tooling
 
