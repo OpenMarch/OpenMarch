@@ -117,13 +117,6 @@
         "vite-plugin-electron-renderer": "^0.14.5",
         "vitest": "^2.0.5"
     },
-    "build": {
-        "afterSign": "electron-builder-notarize",
-        "mac": {
-            "hardenedRuntime": true
-        },
-        "appId": "com.openmarch.app"
-    },
     "engines": {
         "node": ">18.0.0"
     }
