@@ -24,7 +24,7 @@ jobs:
             - name: Install Node.js, NPM
               uses: actions/setup-node@v1
               with:
-                  node-version: 20
+                  node-version: 22
 
             - name: Install canvas dependencies (macOS)
               if: startsWith(matrix.os, 'macos')
@@ -39,6 +39,7 @@ jobs:
               run: |
                   sudo dpkg --add-architecture i386
                   sudo apt-get update
+                  sudo snap install snapcraft --classic
                   sudo apt-get install -y \
                     software-properties-common \
                     wine64 \
