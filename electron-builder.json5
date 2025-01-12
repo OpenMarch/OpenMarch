@@ -38,9 +38,4 @@
         allowToChangeInstallationDirectory: true,
         deleteAppDataOnUninstall: true,
     },
-    publish: {
-        provider: "github",
-        channel: "latest",
-        url: "https://github.com/OpenMarch/OpenMarch/releases/latest",
-    },
 }
