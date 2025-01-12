@@ -117,27 +117,47 @@ type Blog = CollectionEntry<"blog">;
                         <p class="text-body">
                             Help us build the modern drill writing app.
                         </p>
-                        <a href="https://github.com/OpenMarch/OpenMarch">
-                            <Button variant="primary">GitHub</Button>
-                        </a>
+                        <div class="flex flex-wrap gap-8">
+                            <a href="https://github.com/OpenMarch/OpenMarch">
+                                <Button variant="primary">GitHub</Button>
+                            </a>
+                            <a href="/developers/contributing">
+                                <Button variant="secondary">Dev Docs</Button>
+                            </a>
+                        </div>
                     </div>
                 </div>
-                <div
-                    id="community"
-                    class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
-                >
-                    <h2 class="text-h2">Community</h2>
-                    <p class="text-body">
-                        Make sure to share feedback, get help, and get updates
-                        within our Discord & GitHub community.
-                    </p>
-                    <div class="flex gap-8">
-                        <a href="https://discord.gg/eTsQ98uZzq">
-                            <Button variant="secondary">Discord</Button>
-                        </a>
-                        <a href="https://github.com/OpenMarch/OpenMarch">
-                            <Button variant="secondary">GitHub</Button>
-                        </a>
+                <div class="grid grid-cols-2 gap-24 max-[920px]:grid-cols-1">
+                    <div
+                        id="community"
+                        class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
+                    >
+                        <h2 class="text-h2">Community</h2>
+                        <p class="text-body">
+                            Make sure to share feedback, get help, and get
+                            updates within our Discord & GitHub community.
+                        </p>
+                        <div class="flex gap-8">
+                            <a href="https://discord.gg/eTsQ98uZzq">
+                                <Button variant="secondary">Discord</Button>
+                            </a>
+                            <a href="https://github.com/OpenMarch/OpenMarch">
+                                <Button variant="secondary">GitHub</Button>
+                            </a>
+                        </div>
+                    </div><div
+                        id="community"
+                        class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
+                    >
+                        <h2 class="text-h2">Get Started</h2>
+                        <p class="text-body">
+                            Take a look at our beginner tutorial to get started.
+                        </p>
+                        <div class="flex gap-8">
+                            <a href="/guides/getting-started">
+                                <Button variant="secondary">Guides</Button>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div
