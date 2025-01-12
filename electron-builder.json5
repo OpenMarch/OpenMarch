@@ -9,18 +9,16 @@
         output: "release/${buildVersion}",
     },
     files: ["dist-electron", "dist"],
+
     mac: {
         artifactName: "${productName}_${buildVersion}.${ext}",
-        target: [
-            {
-                target: "default",
-                arch: "universal",
-            },
-        ],
+        target: "dmg",
         hardenedRuntime: true,
         gatekeeperAssess: false,
+        darkModeSupport: true,
         entitlements: "./build/entitlements.mac.plist",
         notarize: true,
+        category: "public.app-category.graphics-design",
     },
     win: {
         target: [
@@ -36,5 +34,9 @@
         perMachine: false,
         allowToChangeInstallationDirectory: true,
         deleteAppDataOnUninstall: true,
+    },
+
+    linux: {
+        category: "Graphics",
     },
 }
