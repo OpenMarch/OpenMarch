@@ -6,6 +6,7 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import yeskunallumami from "@yeskunall/astro-umami";
+import starlightImageZoom from "starlight-image-zoom";
 
 // https://astro.build/config
 export default defineConfig({
@@ -16,6 +17,7 @@ export default defineConfig({
         react(),
         tailwind({ applyBaseStyles: false }),
         starlight({
+            plugins: [starlightImageZoom()],
             title: "OpenMarch",
             logo: {
                 light: "./public/openmarch-black.svg",
