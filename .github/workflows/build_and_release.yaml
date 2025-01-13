@@ -133,14 +133,17 @@ jobs:
               with:
                   node-version: 20
 
-            - name: Install canvas dependencies (Windows)
-              run: |
-                  echo "Installing vctools"
-                  choco install visualstudio2022-workload-vctools -y
-                  echo "Installing node-gyp"
-                  npm install -g node-gyp
-                  echo "Installing gtk-2 and libjpeg-turbo"
-                  pacman -S mingw-w64-ucrt-x86_64-gtk2 mingw-w64-x86_64-libjpeg-turbo --noconfirm
+            - name: Install canvas node-gyp dependencies
+              run: pacman -S python make gcc --noconfirm
+
+            - name: Install node-gyp
+              run: npm install -g node-gyp
+
+            - name: Install gtk2
+              run: pacman -S mingw-w64-ucrt-x86_64-gtk2 mingw-w64-x86_64-libjpeg-turbo --noconfirm
+
+            - name: Install libjpeg-turbo
+              run: pacman -S mingw-w64-x86_64-libjpeg-turbo --noconfirm
 
             # - name: Configure Canvas Build (Windows)
             #   if: startsWith(matrix.os, 'windows')
