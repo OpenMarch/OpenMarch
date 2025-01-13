@@ -54,9 +54,9 @@ jobs:
             - name: Add MSYS2 to PATH
               if: startsWith(matrix.os, 'windows')
               run: |
-                  echo "::add-path::C:/msys64/usr/bin"
-                  echo "::add-path::C:/msys64/mingw64/bin"
-                  echo "::add-path::C:/msys64/mingw32/bin"
+                  echo "C:/msys64/usr/bin" >> $GITHUB_ENV
+                  echo "C:/msys64/mingw64/bin" >> $GITHUB_ENV
+                  echo "C:/msys64/mingw32/bin" >> $GITHUB_ENV
 
             - name: Update MSYS2 and Install Packages
               if: startsWith(matrix.os, 'windows')
