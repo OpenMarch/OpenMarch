@@ -32,7 +32,7 @@
         "preview": "vite preview",
         "pree2e": "vite build --mode=test",
         "e2e": "playwright test",
-        "postinstall": "electron-builder install-app-deps && electron-rebuild && npm rebuild canvas --update-binary && node_modules/.bin/electron-rebuild -f -w better-sqlite3",
+        "postinstall": "electron-builder install-app-deps && electron-rebuild && npm rebuild canvas --update-binary",
         "lint": "eslint . --max-warnings 0",
         "lint-fix": "npm run lint -- --fix",
         "prepare": "husky",
