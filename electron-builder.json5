@@ -9,9 +9,9 @@
         output: "release/${buildVersion}",
     },
     files: ["dist-electron", "dist"],
+    artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
     mac: {
-        artifactName: "${productName}_${buildVersion}.${ext}",
         target: "dmg",
         hardenedRuntime: true,
         gatekeeperAssess: false,
