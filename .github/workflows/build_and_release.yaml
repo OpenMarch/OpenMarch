@@ -121,7 +121,6 @@ jobs:
 
         steps:
             - name: Add MSYS2 to PATH
-              if: startsWith(matrix.os, 'windows')
               shell: powershell
               run: |
                   echo "C:/msys64/usr/bin" >> $GITHUB_ENV
@@ -137,13 +136,11 @@ jobs:
                   node-version: 20
 
             - name: Update MSYS2 and Install Packages
-              if: startsWith(matrix.os, 'windows')
               run: |
                   pacman -Syu --noconfirm
                   pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
 
             - name: Install canvas dependencies (Windows)
-              if: startsWith(matrix.os, 'windows')
               run: |
                   echo "Installing vctools"
                   choco install visualstudio2022-workload-vctools -y
