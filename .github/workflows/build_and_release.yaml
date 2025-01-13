@@ -129,12 +129,10 @@ jobs:
                   pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
 
             - name: Install Node.js, NPM
-              uses: actions/setup-node@v1
-              with:
-                  node-version: 20
+              run: pacman -S mingw-w64-nodejs --noconfirm
 
             - name: Install canvas node-gyp dependencies
-              run: pacman -S python make gcc --noconfirm
+              run: pacman -S mingw-w64-python mingw-w64-make mingw-w64-gcc --noconfirm
 
             - name: Install node-gyp
               run: npm install -g node-gyp
@@ -144,20 +142,6 @@ jobs:
 
             - name: Install libjpeg-turbo
               run: pacman -S mingw-w64-x86_64-libjpeg-turbo --noconfirm
-
-            # - name: Configure Canvas Build (Windows)
-            #   if: startsWith(matrix.os, 'windows')
-            #   shell: powershell
-            #   run: |
-            #       $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin;$env:PATH"
-            #       npm config set canvas_binary_host_mirror https://github.com/Automattic/node-canvas/releases/download/
-            #       npm config set target_arch x64
-
-            - name: Prepare for app notarization
-              if: startsWith(matrix.os, 'macos')
-              run: |
-                  mkdir -p ~/private_keys/
-                  echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Build/release Electron app
               uses: OpenMarch/builder@v4.3
