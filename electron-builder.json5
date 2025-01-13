@@ -21,12 +21,7 @@
         category: "public.app-category.graphics-design",
     },
     win: {
-        target: [
-            {
-                target: "nsis",
-                arch: ["x64"],
-            },
-        ],
+        target: "nsis",
         artifactName: "${productName}_${buildVersion}.${ext}",
     },
     nsis: {

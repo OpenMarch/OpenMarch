@@ -15,7 +15,9 @@ jobs:
             matrix:
                 os:
                     - macos-latest
+                    - macos-14-large # x86 (Intel) macOS
                     - ubuntu-latest
+                    # - windows-latest
 
         steps:
             - name: Check out Git repository
