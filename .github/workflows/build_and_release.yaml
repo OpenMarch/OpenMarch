@@ -117,7 +117,7 @@ jobs:
         runs-on: windows-latest
         defaults:
             run:
-                shell: C:\msys64
+                shell: C:/msys64/usr/bin/bash.exe -l {0}
 
         steps:
             - name: Check out Git repository
