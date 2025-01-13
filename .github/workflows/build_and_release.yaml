@@ -54,7 +54,6 @@ jobs:
             - name: Install canvas dependencies (Windows)
               if: startsWith(matrix.os, 'windows')
               run: |
-                  npm install --global --production windows-build-tools
                   npm config set msvs_version 2019
                   choco install gtk-runtime
 
@@ -73,7 +72,7 @@ jobs:
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Build/release Electron app
-              uses: OpenMarch/builder@v3.1
+              uses: OpenMarch/builder@v4.1
               with:
                   # GitHub token, automatically provided to the action
                   # (No need to define this secret in the repo settings)
