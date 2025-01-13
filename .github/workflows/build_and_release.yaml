@@ -117,28 +117,21 @@ jobs:
         runs-on: windows-latest
         defaults:
             run:
-                shell: msys2 {0}
+                shell: C:\msys64 {0}
 
         steps:
-            - name: Add MSYS2 to PATH
-              shell: powershell
-              run: |
-                  echo "C:/msys64/usr/bin" >> $GITHUB_ENV
-                  echo "C:/msys64/mingw64/bin" >> $GITHUB_ENV
-                  echo "C:/msys64/mingw32/bin" >> $GITHUB_ENV
-
             - name: Check out Git repository
               uses: actions/checkout@v1
-
-            - name: Install Node.js, NPM
-              uses: actions/setup-node@v1
-              with:
-                  node-version: 20
 
             - name: Update MSYS2 and Install Packages
               run: |
                   pacman -Syu --noconfirm
                   pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
+
+            - name: Install Node.js, NPM
+              uses: actions/setup-node@v1
+              with:
+                  node-version: 20
 
             - name: Install canvas dependencies (Windows)
               run: |
