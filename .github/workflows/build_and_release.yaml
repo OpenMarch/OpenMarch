@@ -58,7 +58,7 @@ jobs:
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Build/release Electron app
-              uses: OpenMarch/builder@v3.1
+              uses: OpenMarch/builder@v5
               with:
                   # GitHub token, automatically provided to the action
                   # (No need to define this secret in the repo settings)
