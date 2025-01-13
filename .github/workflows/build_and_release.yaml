@@ -58,13 +58,13 @@ jobs:
                   npm config set msvs_version 2019
                   choco install gtk-runtime
 
-            - name: Configure Canvas Build (Windows)
-              if: startsWith(matrix.os, 'windows')
-              shell: powershell
-              run: |
-                  $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin;$env:PATH"
-                  npm config set canvas_binary_host_mirror https://github.com/Automattic/node-canvas/releases/download/
-                  npm config set target_arch x64
+            # - name: Configure Canvas Build (Windows)
+            #   if: startsWith(matrix.os, 'windows')
+            #   shell: powershell
+            #   run: |
+            #       $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin;$env:PATH"
+            #       npm config set canvas_binary_host_mirror https://github.com/Automattic/node-canvas/releases/download/
+            #       npm config set target_arch x64
 
             - name: Prepare for app notarization
               if: startsWith(matrix.os, 'macos')
