@@ -54,8 +54,9 @@ jobs:
             - name: Install canvas dependencies (Windows)
               if: startsWith(matrix.os, 'windows')
               run: |
-                  npm config set msvs_version 2019
-                  choco install gtk-runtime
+                  choco install visualstudio2022-workload-vctools -y
+                  npm install -g node-gyp
+                  pacman -S mingw-w64-ucrt-x86_64-gtk2 mingw-w64-x86_64-libjpeg-turbo
 
             # - name: Configure Canvas Build (Windows)
             #   if: startsWith(matrix.os, 'windows')
