@@ -14,9 +14,9 @@ jobs:
         strategy:
             matrix:
                 os:
-                    - macos-latest
-                    - macos-14-large # x86 (Intel) macOS
-                    - ubuntu-latest
+                    # - macos-latest
+                    - macos-13 # x86 (Intel) macOS
+                    # - ubuntu-latest
                     # - windows-latest
 
         steps:
