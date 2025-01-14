@@ -128,6 +128,9 @@ jobs:
                   pacman -Syu --noconfirm
                   pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
 
+            - name: Install Node.js, NPM
+              run: pacman -S mingw-w64-x86_64-nodejs --noconfirm
+
             - name: Install node-gyp
               run: npm install -g node-gyp
 
