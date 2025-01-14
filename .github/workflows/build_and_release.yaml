@@ -128,8 +128,9 @@ jobs:
                   pacman -Syu --noconfirm
                   pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
 
-            - name: Install Node.js, NPM
-              run: pacman -S mingw-w64-nodejs --noconfirm
+            # - name: Install Node.js, NPM
+            #   # TODO: this says the package does not exist, but it is defined in msys2 packages
+            #   run: pacman -S mingw-w64-nodejs --noconfirm
 
             - name: Install canvas node-gyp dependencies
               run: pacman -S mingw-w64-python mingw-w64-make mingw-w64-gcc --noconfirm
