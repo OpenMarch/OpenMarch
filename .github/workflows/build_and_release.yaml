@@ -115,33 +115,60 @@ jobs:
     #               SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
     release-windows:
         runs-on: windows-latest
-        defaults:
-            run:
-                shell: C:/msys64/usr/bin/bash.exe -l {0}
 
         steps:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            - name: Update MSYS2 and Install Packages
-              run: |
-                  pacman -Syu --noconfirm
-                  pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
+            # - name: Update MSYS2 and Install Packages
+            #   run: |
+            #       pacman -Syu --noconfirm
+            #       pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
 
-            - name: Install Node.js, NPM
-              run: pacman -S mingw-w64-x86_64-nodejs --noconfirm
+            # - name: Install Node.js, NPM
+            #   run: pacman -S mingw-w64-x86_64-nodejs --noconfirm
 
-            - name: Ensure Node.js is in PATH
-              run: echo 'export PATH="/mingw64/bin:$PATH"' >> ~/.bashrc
+            # - name: Ensure Node.js is in PATH
+            #   run: echo 'export PATH="/mingw64/bin:$PATH"' >> ~/.bashrc
+
+            - name: Install node-gyp dependencies
+              run: choco install python visualstudio2022-workload-vctools -y
 
             - name: Install node-gyp
               run: npm install -g node-gyp
 
-            - name: Install gtk2
-              run: pacman -S mingw-w64-gtk2 mingw-w64-x86_64-libjpeg-turbo --noconfirm
+            - name: Create GTK Directory in Windows
+              run: |
+                  # Create the target directory in Windows (C:\GTK)
+                  mkdir C:\GTK
+
+            - name: Download and Extract GTK2
+              env:
+                  URL: https://ftp.gnome.org/pub/GNOME/binaries/win64/gtk+/2.22/gtk+-bundle_2.22.1-20101229_win64.zip
+                  DESTINATION_ZIP: C:\GTK\gtk-bundle.zip
+                  DESTINATION_FOLDER: C:\GTK
+              run: |
+                  # Ensure the destination folder exists
+                  if (-not (Test-Path -Path $DESTINATION_FOLDER)) {
+                      New-Item -ItemType Directory -Path $DESTINATION_FOLDER | Out-Null
+                  }
+
+                  # Download the file
+                  Write-Host "Downloading file from $URL to $DESTINATION_ZIP..."
+                  Invoke-WebRequest -Uri $URL -OutFile $DESTINATION_ZIP
+
+                  # Unzip the contents to the destination folder
+                  Write-Host "Unzipping the contents to $DESTINATION_FOLDER..."
+                  Expand-Archive -Path $DESTINATION_ZIP -DestinationPath $DESTINATION_FOLDER -Force
+
+                  # Clean up the downloaded zip file
+                  Write-Host "Cleaning up..."
+                  Remove-Item -Path $DESTINATION_ZIP -Force
+
+                  Write-Host "Download and extraction complete. Files are in $DESTINATION_FOLDER."
 
             - name: Install libjpeg-turbo
-              run: pacman -S mingw-w64-x86_64-libjpeg-turbo --noconfirm
+              run: choco install libjpeg-turbo -y
 
             - name: Build/release Electron app
               uses: OpenMarch/builder@v4.3
