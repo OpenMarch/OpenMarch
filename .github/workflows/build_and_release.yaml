@@ -131,11 +131,14 @@ jobs:
             - name: Install Node.js, NPM
               run: pacman -S mingw-w64-x86_64-nodejs --noconfirm
 
+            - name: Ensure Node.js is in PATH
+              run: echo 'export PATH="/mingw64/bin:$PATH"' >> ~/.bashrc
+
             - name: Install node-gyp
               run: npm install -g node-gyp
 
             - name: Install gtk2
-              run: pacman -S mingw-w64-ucrt-x86_64-gtk2 mingw-w64-x86_64-libjpeg-turbo --noconfirm
+              run: pacman -S mingw-w64-gtk2 mingw-w64-x86_64-libjpeg-turbo --noconfirm
 
             - name: Install libjpeg-turbo
               run: pacman -S mingw-w64-x86_64-libjpeg-turbo --noconfirm
