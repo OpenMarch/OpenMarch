@@ -149,23 +149,23 @@ jobs:
                   DESTINATION_FOLDER: C:\GTK
               run: |
                   # Ensure the destination folder exists
-                  if (-not (Test-Path -Path $DESTINATION_FOLDER)) {
-                      New-Item -ItemType Directory -Path $DESTINATION_FOLDER | Out-Null
+                  if (-not (Test-Path -Path $Env:DESTINATION_FOLDER)) {
+                      New-Item -ItemType Directory -Path $Env:DESTINATION_FOLDER | Out-Null
                   }
 
                   # Download the file
-                  Write-Host "Downloading file from $URL to $DESTINATION_ZIP..."
-                  Invoke-WebRequest -Uri $URL -OutFile $DESTINATION_ZIP
+                  Write-Host "Downloading file from $Env:URL to $Env:DESTINATION_ZIP..."
+                  Invoke-WebRequest -Uri $Env:URL -OutFile $Env:DESTINATION_ZIP
 
                   # Unzip the contents to the destination folder
-                  Write-Host "Unzipping the contents to $DESTINATION_FOLDER..."
-                  Expand-Archive -Path $DESTINATION_ZIP -DestinationPath $DESTINATION_FOLDER -Force
+                  Write-Host "Unzipping the contents to $Env:DESTINATION_FOLDER..."
+                  Expand-Archive -Path $Env:DESTINATION_ZIP -DestinationPath $Env:DESTINATION_FOLDER -Force
 
                   # Clean up the downloaded zip file
                   Write-Host "Cleaning up..."
-                  Remove-Item -Path $DESTINATION_ZIP -Force
+                  Remove-Item -Path $Env:DESTINATION_ZIP -Force
 
-                  Write-Host "Download and extraction complete. Files are in $DESTINATION_FOLDER."
+                  Write-Host "Download and extraction complete. Files are in $Env:DESTINATION_FOLDER."
 
             - name: Install libjpeg-turbo
               run: choco install libjpeg-turbo -y
