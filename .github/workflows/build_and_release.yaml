@@ -135,7 +135,7 @@ jobs:
               run: choco install python visualstudio2022-workload-vctools -y
 
             - name: Install node-gyp and windows-build-tools
-              run: npm install -g node-gyp windows-build-tools
+              run: npm install -g node-gyp
 
             - name: Create GTK Directory in Windows
               run: |
