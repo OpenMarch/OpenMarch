@@ -543,6 +543,12 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  * @param isNewFile True if this is a new file, false if it is an existing file
  */
 function setActiveDb(path: string, isNewFile = false) {
+    if (!fs.existsSync(path) && !isNewFile) {
+        store.delete("databasePath");
+        console.error("Database file does not exist:", path);
+        return;
+    }
+
     DatabaseServices.setDbPath(path, isNewFile);
     win?.setTitle("OpenMarch - " + path);
 

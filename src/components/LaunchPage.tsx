@@ -35,7 +35,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 </WarningNote>
             </div>
             <img
-                src="/placeholder.jpg"
+                src="/dist/placeholder.jpg"
                 alt="Placeholder"
                 className="h-full w-full rounded-6"
             />
