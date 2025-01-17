@@ -1,7 +1,7 @@
 {
     "name": "openmarch",
     "productName": "OpenMarch",
-    "version": "0.0.5-d",
+    "version": "0.0.5",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
     "license": "GPL-3.0",
