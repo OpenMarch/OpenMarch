@@ -49,6 +49,7 @@ jobs:
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   mac_certs: ${{ secrets.mac_certs }}
                   mac_certs_password: ${{ secrets.mac_certs_password }}
+                  maxAttempts: 5
               env:
                   # Not needed since not building on windows
                   # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
