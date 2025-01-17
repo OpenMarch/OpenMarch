@@ -1,6 +1,7 @@
 {
     "name": "openmarch",
     "productName": "OpenMarch",
+    "description": "Free drill-writing software for the marching arts",
     "version": "0.0.5",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
