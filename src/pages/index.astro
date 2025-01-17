@@ -5,6 +5,7 @@ import LinkButton from "@/components/ui/LinkButton.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
 import FeatureSelector from "@/components/home/FeatureSelector";
+import { CURRENT_VERSION } from "@/constants";
 
 const blogs = await getCollection("blog");
 type Blog = CollectionEntry<"blog">;
@@ -26,7 +27,7 @@ type Blog = CollectionEntry<"blog">;
             >
                 <code
                     class="font-mono text-[1.25rem] text-accent intersect:motion-preset-fade-lg"
-                    >v0.0.5</code
+                    >{CURRENT_VERSION}</code
                 >
                 <h1
                     class="text-[96px] leading-[130%] intersect:motion-preset-slide-up max-[1450px]:text-[64px] max-[750px]:text-[48px]"
