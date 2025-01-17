@@ -8,173 +8,34 @@ permissions:
     contents: write # Required for creating releases
 
 jobs:
-    # release-non-windows:
-    #     runs-on: ${{ matrix.os }}
+    build-and-release:
+        runs-on: ${{ matrix.os }}
 
-    #     strategy:
-    #         matrix:
-    #             os:
-    #                 - macos-latest
-    #                 - macos-13 # x86 (Intel) macOS
-    #                 - ubuntu-latest
-
-    #     steps:
-    #         - name: Check out Git repository
-    #           uses: actions/checkout@v1
-
-    #         - name: Install Node.js, NPM
-    #           uses: actions/setup-node@v1
-    #           with:
-    #               node-version: 20
-
-    #         - name: Install canvas dependencies (macOS)
-    #           if: startsWith(matrix.os, 'macos')
-    #           run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman python-setuptools
-
-    #         - name: Install canvas dependencies (Ubuntu)
-    #           if: startsWith(matrix.os, 'ubuntu')
-    #           run: sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
-
-    #         # - name: Set up Wine for Windows build (Ubuntu)
-    #         #   if: startsWith(matrix.os, 'ubuntu')
-    #         #   run: |
-    #         #       sudo dpkg --add-architecture i386
-    #         #       sudo apt-get update
-    #         #       sudo snap install snapcraft --classic
-    #         #       sudo apt-get install -y \
-    #         #         software-properties-common \
-    #         #         wine64 \
-    #         #         wine32 \
-    #         #         winbind \
-    #         #         xvfb
-    #         #       # Verify Wine installation
-    #         #       wine --version
-
-    #         - name: Add MSYS2 to PATH
-    #           if: startsWith(matrix.os, 'windows')
-    #           run: |
-    #               echo "C:/msys64/usr/bin" >> $GITHUB_ENV
-    #               echo "C:/msys64/mingw64/bin" >> $GITHUB_ENV
-    #               echo "C:/msys64/mingw32/bin" >> $GITHUB_ENV
-
-    #         - name: Update MSYS2 and Install Packages
-    #           if: startsWith(matrix.os, 'windows')
-    #           shell: msys2 {0}
-    #           run: |
-    #               pacman -Syu --noconfirm
-    #               pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
-
-    #         - name: Install canvas dependencies (Windows)
-    #           if: startsWith(matrix.os, 'windows')
-    #           shell: msys2 {0}
-    #           run: |
-    #               echo "Installing vctools"
-    #               choco install visualstudio2022-workload-vctools -y
-    #               echo "Installing node-gyp"
-    #               npm install -g node-gyp
-    #               echo "Installing gtk-2 and libjpeg-turbo"
-    #               pacman -S mingw-w64-ucrt-x86_64-gtk2 mingw-w64-x86_64-libjpeg-turbo
-
-    #         # - name: Configure Canvas Build (Windows)
-    #         #   if: startsWith(matrix.os, 'windows')
-    #         #   shell: powershell
-    #         #   run: |
-    #         #       $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin;$env:PATH"
-    #         #       npm config set canvas_binary_host_mirror https://github.com/Automattic/node-canvas/releases/download/
-    #         #       npm config set target_arch x64
-
-    #         - name: Prepare for app notarization
-    #           if: startsWith(matrix.os, 'macos')
-    #           run: |
-    #               mkdir -p ~/private_keys/
-    #               echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
-
-    #         - name: Build/release Electron app
-    #           uses: OpenMarch/builder@v4.3
-    #           with:
-    #               # GitHub token, automatically provided to the action
-    #               # (No need to define this secret in the repo settings)
-    #               github_token: ${{ secrets.github_token }}
-
-    #               # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
-    #               release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    #               mac_certs: ${{ secrets.mac_certs }}
-    #               mac_certs_password: ${{ secrets.mac_certs_password }}
-    #           env:
-    #               # Not needed since not building on windows
-    #               # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
-    #               APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
-    #               APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
-    #               APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
-    #               # also put in camelCase for electron/notarize
-    #               appleApiKey: "~/private_keys/apple_api_key.p8"
-    #               appleApiKeyId: ${{ secrets.apple_api_key_id }}
-    #               appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
-    #               # For releasing
-    #               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #               SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-    release-windows:
-        runs-on: windows-latest
+        strategy:
+            matrix:
+                os:
+                    # - macos-latest
+                    # - macos-13 # x86 (Intel) macOS
+                    # - ubuntu-latest
+                    - windows-latest
 
         steps:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            # - name: Update MSYS2 and Install Packages
-            #   run: |
-            #       pacman -Syu --noconfirm
-            #       pacman -S base-devel mingw-w64-x86_64-toolchain --noconfirm
+            - name: Install Node.js, NPM
+              uses: actions/setup-node@v1
+              with:
+                  node-version: 20
 
-            # - name: Install Node.js, NPM
-            #   run: pacman -S mingw-w64-x86_64-nodejs --noconfirm
-
-            # - name: Ensure Node.js is in PATH
-            #   run: echo 'export PATH="/mingw64/bin:$PATH"' >> ~/.bashrc
-
-            - name: Install node-gyp dependencies
-              run: choco install python visualstudio2022-workload-vctools -y
-
-            - name: Install node-gyp
-              run: npm install -g node-gyp
-
-            - name: Create GTK Directory in Windows
+            - name: Prepare for app notarization
+              if: startsWith(matrix.os, 'macos')
               run: |
-                  # Create the target directory in Windows (C:\GTK)
-                  mkdir C:\GTK
-
-            - name: Download and Extract GTK2
-              env:
-                  URL: https://ftp.gnome.org/pub/GNOME/binaries/win64/gtk+/2.22/gtk+-bundle_2.22.1-20101229_win64.zip
-                  DESTINATION_ZIP: C:\GTK\gtk-bundle.zip
-                  DESTINATION_FOLDER: C:\GTK
-              run: |
-                  # Ensure the destination folder exists
-                  if (-not (Test-Path -Path $Env:DESTINATION_FOLDER)) {
-                      New-Item -ItemType Directory -Path $Env:DESTINATION_FOLDER | Out-Null
-                  }
-
-                  # Download the file
-                  Write-Host "Downloading file from $Env:URL to $Env:DESTINATION_ZIP..."
-                  Invoke-WebRequest -Uri $Env:URL -OutFile $Env:DESTINATION_ZIP
-
-                  # Unzip the contents to the destination folder
-                  Write-Host "Unzipping the contents to $Env:DESTINATION_FOLDER..."
-                  Expand-Archive -Path $Env:DESTINATION_ZIP -DestinationPath $Env:DESTINATION_FOLDER -Force
-
-                  # Clean up the downloaded zip file
-                  Write-Host "Cleaning up..."
-                  Remove-Item -Path $Env:DESTINATION_ZIP -Force
-
-                  Write-Host "Download and extraction complete. Files are in $Env:DESTINATION_FOLDER."
-
-            - name: Install libjpeg-turbo
-              run: choco install libjpeg-turbo -y
-
-            - name: Install canvas from source
-              run: npm install canvas --build-from-source
+                  mkdir -p ~/private_keys/
+                  echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Build/release Electron app
-              uses: OpenMarch/builder@v5
+              uses: OpenMarch/builder@v4.3
               with:
                   # GitHub token, automatically provided to the action
                   # (No need to define this secret in the repo settings)
@@ -182,5 +43,18 @@ jobs:
 
                   # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
+                  mac_certs: ${{ secrets.mac_certs }}
+                  mac_certs_password: ${{ secrets.mac_certs_password }}
               env:
+                  # Not needed since not building on windows
+                  # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
+                  APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
+                  APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
+                  APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
+                  # also put in camelCase for electron/notarize
+                  appleApiKey: "~/private_keys/apple_api_key.p8"
+                  appleApiKeyId: ${{ secrets.apple_api_key_id }}
+                  appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
+                  # For releasing
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
