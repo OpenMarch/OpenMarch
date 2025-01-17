@@ -28,6 +28,10 @@ jobs:
               with:
                   node-version: 20
 
+            - name: Install Snapcraft (Ubuntu)
+              if: startsWith(matrix.os, 'ubuntu')
+              run: sudo snap install snapcraft --classic
+
             - name: Prepare for app notarization
               if: startsWith(matrix.os, 'macos')
               run: |
