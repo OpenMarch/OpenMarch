@@ -8,16 +8,16 @@ permissions:
     contents: write # Required for creating releases
 
 jobs:
-    release:
+    build-and-release:
         runs-on: ${{ matrix.os }}
 
         strategy:
             matrix:
                 os:
                     # - macos-latest
-                    - macos-13 # x86 (Intel) macOS
+                    # - macos-13 # x86 (Intel) macOS
                     # - ubuntu-latest
-                    # - windows-latest
+                    - windows-latest
 
         steps:
             - name: Check out Git repository
@@ -27,29 +27,6 @@ jobs:
               uses: actions/setup-node@v1
               with:
                   node-version: 20
-
-            - name: Install canvas dependencies (macOS)
-              if: startsWith(matrix.os, 'macos')
-              run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman python-setuptools
-
-            - name: Install canvas dependencies (Ubuntu)
-              if: startsWith(matrix.os, 'ubuntu')
-              run: sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
-
-            - name: Set up Wine for Windows build (Ubuntu)
-              if: startsWith(matrix.os, 'ubuntu')
-              run: |
-                  sudo dpkg --add-architecture i386
-                  sudo apt-get update
-                  sudo snap install snapcraft --classic
-                  sudo apt-get install -y \
-                    software-properties-common \
-                    wine64 \
-                    wine32 \
-                    winbind \
-                    xvfb
-                  # Verify Wine installation
-                  wine --version
 
             - name: Prepare for app notarization
               if: startsWith(matrix.os, 'macos')

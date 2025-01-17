@@ -2,6 +2,8 @@
 
 ## Releasing OpenMarch
 
+All of the other release requirements for each platform and GitHub are defined in the `build_and_release.yaml` workflow.
+
 ### Snapcraft
 
 Using [these instructions](https://snapcraft.io/docs/snapcraft-authentication) to create credentials, set the `SNAPCRAFT_STORE_CREDENTIALS` environment variable to the contents of this file.
