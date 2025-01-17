@@ -1,6 +1,6 @@
 ---
-title: Master Feature List
-description: Everything OpenMarch can do
+title: "Master Feature List"
+description: "Everything OpenMarch can do"
 ---
 
 These are all the current features that OpenMarch supports.

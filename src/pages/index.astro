@@ -4,13 +4,20 @@ import { Button } from "@/components/ui/Button";
 import LinkButton from "@/components/ui/LinkButton.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
+import FeatureSelector from "@/components/home/FeatureSelector";
+import { CURRENT_VERSION } from "@/constants";
 
 const blogs = await getCollection("blog");
 type Blog = CollectionEntry<"blog">;
 ---
 
 <Layout title="Home">
-    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
+    <script>
+        import { Observer } from "tailwindcss-intersect";
+
+        Observer.start();
+    </script>
+    <div class="flex flex-col gap-64 p-64 max-[750px]:p-12">
         <section
             id="landing"
             class="relative flex h-[80vh] flex-col justify-center gap-32 max-[950px]:justify-start"
@@ -18,253 +25,208 @@ type Blog = CollectionEntry<"blog">;
             <div
                 class="flex max-w-[60%] flex-col gap-24 max-[950px]:max-w-full"
             >
-                <code class="font-mono text-[1.25rem] text-accent">v0.0.4</code>
+                <code
+                    class="font-mono text-[1.25rem] text-accent intersect:motion-preset-fade-lg"
+                    >{CURRENT_VERSION}</code
+                >
                 <h1
-                    class="text-[96px] leading-[130%] max-[1450px]:text-[64px] max-[750px]:text-[48px]"
+                    class="text-[96px] leading-[130%] intersect:motion-preset-slide-up max-[1450px]:text-[64px] max-[750px]:text-[48px]"
                 >
                     Free & open-source drill writing software
                 </h1>
                 <div class="flex gap-32">
                     <p class="text-body">
-                        Fast and intuitive drill writing experience for marching
-                        band, indoor ensembles, drum corps, or anything else
+                        OpenMarch is a free, open-source, fast and intuitive
+                        drill writing experience for all marching arts.
                     </p>
                 </div>
-                <div class="flex flex-wrap gap-8">
+                <div
+                    class="flex flex-wrap gap-8 intersect:motion-preset-fade-lg"
+                >
                     <a href="/download">
                         <Button>Download</Button>
                     </a>
-                    <a href="/#drill-writing">
+                    <a href="/#features">
                         <Button variant="secondary">Learn More</Button>
                     </a>
                 </div>
                 <div
-                    class="absolute right-[-20%] top-1/2 -z-40 aspect-[1408/731] h-auto w-[64vw] -translate-y-1/2 bg-[url('/landing/land-light.png')] bg-cover dark:bg-[url('/landing/land-dark.png')] max-[950px]:relative max-[950px]:right-0 max-[950px]:top-0 max-[950px]:mt-32 max-[950px]:w-full max-[950px]:translate-y-0"
+                    class="absolute right-[-20%] top-1/2 -z-40 aspect-[1408/731] h-auto w-[64vw] -translate-y-1/2 bg-[url('/landing/land-light.png')] bg-cover intersect:motion-preset-slide-up dark:bg-[url('/landing/land-dark.png')] max-[950px]:relative max-[950px]:right-0 max-[950px]:top-0 max-[950px]:mt-32 max-[950px]:w-full max-[950px]:translate-y-0"
                 >
                 </div>
             </div>
             <div
-                class="absolute bottom-0 left-0 -z-50 h-[18vw] w-[22vw] rounded-full bg-accent opacity-40 blur-[512px]"
+                class="absolute bottom-0 left-0 -z-50 h-[18vw] w-[22vw] rounded-full bg-accent opacity-40 blur-[512px] intersect:motion-preset-fade-lg"
             >
             </div>
         </section>
-        <section
-            id="drill-writing"
-            class="relative flex h-screen flex-col justify-center gap-32"
-        >
-            <div
-                class="flex max-w-[42%] flex-col gap-24 max-[950px]:max-w-full"
-            >
-                <h1 class="text-[96px] leading-[130%] max-[750px]:text-[48px]">
-                    Drill writing
-                </h1>
-                <p class="text-body">
-                    Create lines, shapes, and align your marchers with ease,
-                    quickly.
-                </p>
+        <FeatureSelector client:load />
+        <section class="flex flex-col gap-72 px-128 max-[1300px]:px-0">
+            <div class="flex flex-col gap-24">
                 <div
-                    class="absolute right-[-10%] top-1/2 -z-40 aspect-[1408/731] h-auto w-[64vw] -translate-y-1/2 bg-[url('/landing/drill-write-light.png')] bg-cover dark:bg-[url('/landing/drill-write-dark.png')] max-[950px]:relative max-[950px]:right-0 max-[950px]:top-0 max-[950px]:mt-32 max-[950px]:w-full max-[950px]:translate-y-0"
+                    id="warning"
+                    class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
                 >
+                    <div class="flex items-center gap-8">
+                        <i class="ph ph-warning text-[1.5rem] text-yellow"></i>
+                        <h3 class="text-h3">Alpha Software</h3>
+                    </div>
+                    <p class="text-body">
+                        OpenMarch is still in development. You probably will
+                        encounter bugs, issues, and missing features. Help
+                        support us grow by contributing or donating!
+                    </p>
                 </div>
-            </div>
-            <div
-                class="absolute bottom-0 left-1/2 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px]"
-            >
-            </div>
-        </section>
-        <section
-            id="music"
-            class="relative flex h-screen flex-col justify-center gap-32"
-        >
-            <div
-                class="flex max-w-[42%] flex-col gap-24 max-[950px]:max-w-full"
-            >
-                <h1 class="text-[96px] leading-[130%] max-[750px]:text-[48px]">
-                    Music integration
-                </h1>
-                <p class="text-body">
-                    Import your MusicXML and audio files to have your measures
-                    and music inside the program, ready for you to write drill
-                    on top of.
-                </p>
-                <div
-                    class="absolute right-[-10%] top-1/2 -z-40 aspect-[1408/731] h-auto w-[64vw] -translate-y-1/2 bg-[url('/landing/music-light.png')] bg-cover dark:bg-[url('/landing/music-dark.png')] max-[950px]:relative max-[950px]:right-0 max-[950px]:top-0 max-[950px]:mt-32 max-[950px]:w-full max-[950px]:translate-y-0"
-                >
-                </div>
-            </div>
-            <div
-                class="absolute bottom-0 right-0 -z-50 h-[18vw] w-[22vw] rounded-full bg-accent opacity-40 blur-[512px]"
-            >
-            </div>
-        </section>
-        <section
-            id="features"
-            class="grid grid-cols-6 gap-32 max-[1000px]:grid-cols-1"
-        >
-            <div
-                class="col-span-2 flex flex-col items-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[1000px]:col-span-1 max-[500px]:p-24"
-            >
-                <i class="ph ph-arrow-square-out text-[2.25rem]"></i>
-                <h1 class="text-center text-h1">Exporting</h1>
-                <p class="text-center text-body leading-[150%]">
-                    Export coordinates for each marcher to PDF, with multiple
-                    options to customize the output format.
-                </p>
-            </div>
-            <div
-                class="col-span-2 flex flex-col items-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[1000px]:col-span-1 max-[500px]:p-24"
-            >
-                <i class="ph ph-rectangle text-[2.25rem]"></i>
-                <h1 class="text-center text-h1">Field Types</h1>
-                <p class="text-center text-body leading-[150%]">
-                    Toggle grid lines, toggle end zones, and switch between high
-                    school, college, or pro.
-                </p>
-            </div>
-            <div
-                class="col-span-2 flex flex-col items-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[1000px]:col-span-1 max-[500px]:p-24"
-            >
-                <i class="ph ph-app-window text-[2.25rem]"></i>
-                <h1 class="text-center text-h1">Fast & Modern</h1>
-                <p class="text-center text-body leading-[150%]">
-                    OpenMarch is a cross platform desktop app built to be fast,
-                    modern, and beautiful.
-                </p>
-            </div>
-            <div
-                class="col-span-3 flex flex-col items-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[1000px]:col-span-1 max-[500px]:p-24"
-            >
-                <i class="ph ph-git-merge text-[2.25rem]"></i>
-                <h1 class="text-center text-h1">Free & Open Source</h1>
-                <p class="text-center text-body leading-[150%]">
-                    We will always stay free, fast, and simple. You’ll never
-                    have to worry about paying or privacy.
-                </p>
-            </div>
-            <div
-                class="col-span-3 flex flex-col items-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[1000px]:col-span-1 max-[500px]:p-24"
-            >
-                <h4 class="font-mono text-h4 text-accent">v0.0.4</h4>
-                <h1 class="text-center text-h1">Alpha Software</h1>
-                <p class="text-center text-body leading-[150%]">
-                    OpenMarch is still in development, expect some bugs or
-                    issues here and there, and keep in mind we're still planning
-                    to add many more features. Please report bugs or give
-                    feedback in the <a
-                        href="https://github.com/OpenMarch/OpenMarch"
-                        class="text-accent">GitHub repo</a
-                    > or <a
-                        href="https://discord.gg/eTsQ98uZzq"
-                        class="text-accent">Discord</a
-                    >.
-                </p>
-            </div>
-        </section>
-        <section
-            id="download"
-            class="flex justify-between gap-24 rounded-6 border border-accent px-96 py-48 max-[1000px]:p-32 max-[700px]:flex-col"
-        >
-            <div class="flex-col gap-16">
-                <h1 class="text-h1">Download</h1>
-                <p class="text-left text-body leading-[150%]">
-                    Try out the only modern, free & open source drill writing
-                    app.
-                </p>
-            </div>
-            <div
-                class="flex flex-wrap justify-end gap-24 max-[700px]:justify-start"
-            >
-                <LinkButton href="/download" label="Download" />
-            </div>
-        </section>
-        <section
-            id="donate"
-            class="flex justify-between gap-24 rounded-6 border border-accent px-96 py-48 max-[1000px]:p-32 max-[700px]:flex-col"
-        >
-            <div class="flex-col gap-16">
-                <h1 class="text-h1">Donate</h1>
-                <p class="text-left text-body leading-[150%]">
-                    Subscribe on Patreon to help us keep this app free &
-                    accessible, and support the team. Your help is appreciated!
-                </p>
-            </div>
-            <div
-                class="flex flex-wrap justify-end gap-24 max-[700px]:justify-start"
-            >
-                <LinkButton
-                    href="https://www.patreon.com/openmarch"
-                    label="Patreon"
-                />
-            </div>
-        </section>
-        <section
-            id="contribute"
-            class="flex justify-between gap-24 rounded-6 border border-accent px-96 py-48 max-[1000px]:p-32 max-[700px]:flex-col"
-        >
-            <div class="flex-col gap-16">
-                <h1 class="text-h1">Contribute</h1>
-                <p
-                    class="text-left text-body leading-[150%] max-[700px]:justify-start"
-                >
-                    We need help building this app. If you’re able to help,
-                    please take a look at the contributing docs. <br />
-                    <strong>If you’re a drill writer</strong>, please test out
-                    the app, and give feedback in Discord or GitHub!
-                </p>
-            </div>
-            <div
-                class="flex flex-wrap justify-end gap-24 max-[700px]:justify-start"
-            >
-                <LinkButton
-                    href="https://github.com/OpenMarch"
-                    label="GitHub"
-                />
-                <LinkButton
-                    href="https://discord.gg/eTsQ98uZzq"
-                    label="Discord"
-                />
-            </div>
-        </section>
-        <section id="blogs" class="flex flex-col gap-16">
-            <div class="flex justify-between">
-                <h1 class="text-h1">Blog</h1><a href="/blog"
-                    ><Button>See all posts</Button></a
-                >
-            </div>
-            <div
-                class="grid grid-cols-3 gap-32 max-[1200px]:grid-cols-2 max-[850px]:grid-cols-1"
-            >
-                {
-                    blogs
-                        .reverse()
-                        .slice(0, 3)
-                        .map((blog: Blog) => (
-                            <a
-                                href={`/blog/${blog.slug}`}
-                                class="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
-                            >
-                                <Image
-                                    src={blog.data.image}
-                                    width={670}
-                                    height={420}
-                                    alt={blog.data.title}
-                                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
-                                />
-                                <div class="flex w-full flex-col gap-16">
-                                    <h2 class="w-full text-h2">
-                                        {blog.data.title}
-                                    </h2>
-                                    <p class="w-full text-body leading-[150%]">
-                                        by {blog.data.author}
-                                    </p>
-                                    <p class="w-full text-body leading-[150%]">
-                                        {blog.data.date}
-                                    </p>
-                                </div>
+                <div class="grid grid-cols-3 gap-24 max-[1000px]:grid-cols-1">
+                    <div
+                        id="download"
+                        class="flex flex-col gap-16 rounded-6 border border-accent p-32"
+                    >
+                        <i
+                            class="ph ph-download-simple text-[2.5rem] text-accent"
+                        ></i>
+                        <h2 class="text-h2">Download</h2>
+                        <p class="text-body">
+                            Try out the modern drill writing app.
+                        </p>
+
+                        <a href="/download">
+                            <Button variant="primary">Download</Button>
+                        </a>
+                    </div>
+                    <div
+                        id="donate"
+                        class="flex flex-col gap-16 rounded-6 border border-accent p-32"
+                    >
+                        <i class="ph ph-patreon-logo text-[2.5rem] text-accent"
+                        ></i>
+                        <h2 class="text-h2">Become a Patreon</h2>
+                        <p class="text-body">
+                            Help us grow, stay free, and support our team! Get
+                            access to exclusive content and benefeits.
+                        </p>
+                        <a href="https://www.patreon.com/openmarch">
+                            <Button variant="primary">Patreon</Button>
+                        </a>
+                    </div>
+                    <div
+                        id="contribute"
+                        class="flex flex-col gap-16 rounded-6 border border-accent p-32"
+                    >
+                        <i class="ph ph-git-fork text-[2.5rem] text-accent"></i>
+                        <h2 class="text-h2">Contribute</h2>
+                        <p class="text-body">
+                            Help us build the modern drill writing app.
+                        </p>
+                        <div class="flex flex-wrap gap-8">
+                            <a href="https://github.com/OpenMarch/OpenMarch">
+                                <Button variant="primary">GitHub</Button>
                             </a>
-                        ))
-                }
+                            <a href="/developers/contributing">
+                                <Button variant="secondary">Dev Docs</Button>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-24 max-[920px]:grid-cols-1">
+                    <div
+                        id="community"
+                        class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
+                    >
+                        <h2 class="text-h2">Community</h2>
+                        <p class="text-body">
+                            Make sure to share feedback, get help, and get
+                            updates within our Discord & GitHub community.
+                        </p>
+                        <div class="flex gap-8">
+                            <a href="https://discord.gg/eTsQ98uZzq">
+                                <Button variant="secondary">Discord</Button>
+                            </a>
+                            <a href="https://github.com/OpenMarch/OpenMarch">
+                                <Button variant="secondary">GitHub</Button>
+                            </a>
+                        </div>
+                    </div><div
+                        id="community"
+                        class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
+                    >
+                        <h2 class="text-h2">Get Started</h2>
+                        <p class="text-body">
+                            Take a look at our beginner tutorial to get started.
+                        </p>
+                        <div class="flex gap-8">
+                            <a href="/guides/getting-started">
+                                <Button variant="secondary">Guides</Button>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    id="partners"
+                    class="flex w-full flex-col items-center justify-center gap-16 rounded-6 border border-stroke p-24"
+                >
+                    <h2 class="text-h2">Partners</h2>
+                    <a href="https://silentcommand.org"
+                        ><div
+                            class="aspect-[328/125] h-auto w-[16rem] bg-[url('/partners/sicommandDark.png')] bg-cover dark:bg-[url('/partners/sicommandLight.png')]"
+                        >
+                        </div></a
+                    >
+                </div>
             </div>
+            <section id="blogs" class="flex flex-col gap-16">
+                <div class="flex justify-between">
+                    <h1 class="text-h1">Blog</h1><a href="/blog"
+                        ><Button>See all posts</Button></a
+                    >
+                </div>
+                <div
+                    class="grid grid-cols-3 gap-24 max-[1200px]:grid-cols-2 max-[850px]:grid-cols-1"
+                >
+                    {
+                        blogs
+                            .sort(
+                                (a, b) =>
+                                    new Date(b.data.date).getTime() -
+                                    new Date(a.data.date).getTime(),
+                            )
+                            .slice(0, 3)
+                            .map((blog: Blog) => (
+                                <a
+                                    href={`/blog/${blog.id}`}
+                                    class="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
+                                >
+                                    <Image
+                                        src={blog.data.image}
+                                        width={670}
+                                        height={420}
+                                        alt={blog.data.title}
+                                        class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                                    />
+                                    <div class="flex w-full flex-col gap-16">
+                                        <h2 class="w-full text-h2">
+                                            {blog.data.title}
+                                        </h2>
+                                        <p class="w-full text-body leading-[150%]">
+                                            by {blog.data.author}
+                                        </p>
+                                        <p class="w-full text-body leading-[150%]">
+                                            {blog.data.date.toLocaleDateString(
+                                                "en-US",
+                                                {
+                                                    year: "numeric",
+                                                    month: "long",
+                                                    day: "numeric",
+                                                    timeZone: "UTC",
+                                                },
+                                            )}
+                                        </p>
+                                    </div>
+                                </a>
+                            ))
+                    }
+                </div>
+            </section>
         </section>
     </div>
 </Layout>

@@ -2,6 +2,7 @@
 import Layout from "@/layouts/Layout.astro";
 import { Button } from "@/components/ui/Button";
 import { Windows, MacOS, Linux } from "../components/OsLogos";
+import { CURRENT_VERSION } from "@/constants";
 ---
 
 <Layout title="Download">
@@ -20,19 +21,20 @@ import { Windows, MacOS, Linux } from "../components/OsLogos";
                 </h1>
             </div>
             <div
-                class="grid h-fit w-full min-w-0 grid-cols-3 gap-12 max-[1200px]:grid-cols-1"
+                class="grid h-fit w-full min-w-0 grid-cols-4 gap-12 max-[1200px]:grid-cols-1"
             >
                 <div
                     class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
                 >
                     <Windows />
                     <h1 class="text-h1">Windows</h1>
+                    <div class="text-h4">x86</div>
                     <div class="flex flex-wrap gap-12">
                         <a
-                            href="https://github.com/OpenMarch/OpenMarch/releases/latest/download/OpenMarch_0.0.4_windows.zip"
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}.exe`
                         >
                             <Button variant="secondary">
-                                Download for x64
+                                Download .exe
                             </Button>
                         </a>
                     </div>
@@ -42,9 +44,24 @@ import { Windows, MacOS, Linux } from "../components/OsLogos";
                 >
                     <MacOS />
                     <h1 class="text-h1">macOS</h1>
+                    <div class="text-h4">Apple Silicon</div>
                     <div class="flex flex-wrap gap-12">
                         <a
-                            href="https://github.com/OpenMarch/OpenMarch/releases/latest/download/OpenMarch_0.0.4_macOS.zip"
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_arm64.dmg`
+                        >
+                            <Button variant="secondary"> Download .dmg </Button>
+                        </a>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
+                >
+                    <MacOS />
+                    <h1 class="text-h1">macOS</h1>
+                    <div class="text-h4">Intel</div>
+                    <div class="flex flex-wrap gap-12">
+                        <a
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_x64.dmg`
                         >
                             <Button variant="secondary"> Download .dmg </Button>
                         </a>
@@ -55,12 +72,19 @@ import { Windows, MacOS, Linux } from "../components/OsLogos";
                 >
                     <Linux />
                     <h1 class="text-h1">Linux</h1>
-                    <div class="flex flex-wrap gap-12">
+                    <div class="flex gap-12 flex-col justify-center items-center">
                         <a
-                            href="https://github.com/OpenMarch/OpenMarch/releases/latest/download/OpenMarch_0.0.4_linux.zip"
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_x86_64.AppImage`
                         >
                             <Button variant="secondary">
-                                Download AppImage & Snap
+                                Download AppImage
+                            </Button>
+                        </a>
+                        <a
+                            href=`https://snapcraft.io/openmarch`
+                        >
+                            <Button variant="secondary">
+                                Go to Snapcraft
                             </Button>
                         </a>
                     </div>
