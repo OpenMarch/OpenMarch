@@ -1,3 +1,10 @@
+# OpenMarch
+
+![GitHub Release](https://img.shields.io/github/v/release/OpenMarch/OpenMarch)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/OpenMarch/OpenMarch/total)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/OpenMarch/OpenMarch)
+![GitHub License](https://img.shields.io/github/license/OpenMarch/OpenMarch)
+
 ![Banner](public/githubbanner.png)
 
 <!-- WHENEVER MODIFYING THIS FILE, you must also modify /docs/README.md to ensure the website is up to date.
