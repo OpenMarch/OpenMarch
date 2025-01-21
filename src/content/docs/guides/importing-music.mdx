@@ -35,9 +35,9 @@ Since the music integration is so bare bones, keep in mind the following limitat
 
 - Accelerandos, deccelerandos and other gradual tempo changes are not supported
   - If you must change the tempo gradually, only change the tempo at the **start of the measure**
-- The less information the MusicXML has, the better
+- The less information the MusicXML has, the better (with one exception)
   - The parser OpenMarch uses to extract the tempo information from MusicXML files is not perfect
-  - Remove all notes from the staff and only have one part
+  - Remove all notes from the staff and only have one part. Then, add a single note to the first beat.
   - If it's still not working, try removing all staff notes and other markings
 - If you have a count-in, the MusicXML must also include that
 
@@ -51,10 +51,14 @@ Follow these steps if you have the sheet music to open in Musescore, Dorico, etc
 
 1. Open your score in your notation software
    - If you don't have any notation software, [Musescore](https://musescore.com) is free and is what this project is tested on
+1. Save a copy of the file
 1. Create a **new part** that has no notes in it
+1. Delete all of the other parts
+1. Add a single note to the first beat of the first measure of the new part
+   - This is important, as if there are no notes at all, the parser will ignore it
+1. Ensure that you have a tempo defined on at least on the first note
 1. Click `File` → `Export`
-1. Ensure **only the new part with no notes** is checked
-   - You might also just want to make a copy of the file and delete all of the other parts besides the one with no notes
+1. Ensure you have **Main Score** checked
 1. Import this file into OpenMarch by clicking `Music` → `Import MusicXML`
 1. If nothing seems to have happened try refreshing the page with `Ctrl + R`
    - If it's still not working, reach out on the [community Discord](https://github.com/OpenMarch/OpenMarch) or [dev@openmarch.com](mailto:dev@openmarch.com) for troubleshooting
