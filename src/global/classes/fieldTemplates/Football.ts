@@ -69,10 +69,15 @@ function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
                 ? curYardLine.toString()
                 : undefined;
 
+        const sideNumber = yards < 50 ? 1 : 2;
         xCheckpoints.push({
-            name: `${curYardLine} yard line`,
+            name:
+                `${curYardLine} yard line` +
+                (stepsFromCenterFront === 0 ? "" : ` - Side ${sideNumber}`),
             axis: "x",
-            terseName: curYardLine.toString(),
+            terseName:
+                `${curYardLine.toString()}` +
+                (stepsFromCenterFront === 0 ? "" : ` - Side ${sideNumber}`),
             stepsFromCenterFront: stepsFromCenterFront,
             useAsReference: true,
             fieldLabel: label,
@@ -85,18 +90,18 @@ function createFootballFieldXCheckpointsWithEndZones(): Checkpoint[] {
     const xCheckpoints = createFootballFieldXCheckpointsWithoutEndZones();
     xCheckpoints.push(
         {
-            name: "end zone",
+            name: "end zone (Side 1)",
             axis: "x",
             stepsFromCenterFront: -96,
             useAsReference: true,
-            terseName: "EZ",
+            terseName: "EZ (S1)",
         },
         {
-            name: "end zone",
+            name: "end zone (Side 2)",
             axis: "x",
             stepsFromCenterFront: 96,
             useAsReference: true,
-            terseName: "EZ",
+            terseName: "EZ (S2)",
         },
     );
 

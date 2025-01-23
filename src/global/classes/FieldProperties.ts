@@ -32,12 +32,16 @@ export default class FieldProperties {
     readonly centerFrontPoint: { xPixels: number; yPixels: number };
     /**
      * An array of objects with the name of the X checkpoint and the number of X steps from the center.
-     * E.g. The 40 yard line side 2 line would be { "40": 16 }, side 1 would be { "40": -16 }
+     * The name of each checkpoint must be unique.
+     * E.g. The 40 yard line side 2 line would be { "40": 16 } , side 1 would be { "40": -16 }
+     * I.e. the audience's left side is the negative side, the right side is the positive side.
      */
     readonly xCheckpoints: Checkpoint[];
     /**
      * An array of objects with the name of the Y checkpoint and the number of Y steps from the center.
      * The front hash on a college field would be { "front hash": 80 } (assuming the origin )
+     * The name of each checkpoint must be unique.
+     *
      * Note that Y trends positive towards the front of the field (bottom on the canvas).
      */
     readonly yCheckpoints: Checkpoint[];
@@ -63,6 +67,29 @@ export default class FieldProperties {
         pixelsPerStep,
     }: FieldPropertyArgs) {
         this.name = name;
+
+        // Verify x checkpoints have unique names
+        const xNames = new Set();
+        for (const checkpoint of xCheckpoints) {
+            if (xNames.has(checkpoint.name)) {
+                throw new Error(
+                    `Duplicate x checkpoint name found: ${checkpoint.name}`,
+                );
+            }
+            xNames.add(checkpoint.name);
+        }
+
+        // Verify y checkpoints have unique names
+        const yNames = new Set();
+        for (const checkpoint of yCheckpoints) {
+            if (yNames.has(checkpoint.name)) {
+                throw new Error(
+                    `Duplicate y checkpoint name found: ${checkpoint.name}`,
+                );
+            }
+            yNames.add(checkpoint.name);
+        }
+
         this.xCheckpoints = xCheckpoints;
         this.yCheckpoints = yCheckpoints;
         this.yardNumberCoordinates = yardNumberCoordinates;
