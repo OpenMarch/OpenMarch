@@ -461,6 +461,7 @@ export function updateFieldProperties(
     let output: LegacyDatabaseResponse<FieldProperties> = { success: true };
 
     try {
+        History.incrementUndoGroup(dbToUse);
         const stmt = dbToUse.prepare(`
             UPDATE ${Constants.FieldPropertiesTableName}
             SET json_data = @json_data

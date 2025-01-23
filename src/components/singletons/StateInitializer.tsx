@@ -15,6 +15,7 @@ import AudioFile from "@/global/classes/AudioFile";
 import { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
+import { useFieldProperties } from "@/context/fieldPropertiesContext";
 
 /**
  * A component that initializes the state of the application.
@@ -31,6 +32,7 @@ function StateInitializer() {
     const { fetchMeasures } = useMeasureStore()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
+    const { setFieldProperties } = useFieldProperties()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -165,6 +167,12 @@ function StateInitializer() {
                         if (args.pageId && args.pageId > 0)
                             setSelectedPage(getPage(args.pageId));
                         break;
+                    case Constants.FieldPropertiesTableName:
+                        window.electron
+                            .getFieldProperties()
+                            .then((fieldProperties) => {
+                                setFieldProperties(fieldProperties);
+                            });
                 }
             }
         };
@@ -184,6 +192,7 @@ function StateInitializer() {
         setSelectedMarchers,
         marchers,
         fetchShapePages,
+        setFieldProperties,
     ]);
 
     // Listen for fetch actions from the main process
