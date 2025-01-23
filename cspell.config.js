@@ -7,6 +7,7 @@ module.exports = {
         "Bézier",
         "BFSL",
         "Bilby",
+        "customizer",
         "evented",
         "frontfield",
         "measurenb",
