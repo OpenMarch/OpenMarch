@@ -63,6 +63,29 @@ export default class FieldProperties {
         pixelsPerStep,
     }: FieldPropertyArgs) {
         this.name = name;
+
+        // Verify x checkpoints have unique names
+        const xNames = new Set();
+        for (const checkpoint of xCheckpoints) {
+            if (xNames.has(checkpoint.name)) {
+                throw new Error(
+                    `Duplicate x checkpoint name found: ${checkpoint.name}`,
+                );
+            }
+            xNames.add(checkpoint.name);
+        }
+
+        // Verify y checkpoints have unique names
+        const yNames = new Set();
+        for (const checkpoint of yCheckpoints) {
+            if (yNames.has(checkpoint.name)) {
+                throw new Error(
+                    `Duplicate y checkpoint name found: ${checkpoint.name}`,
+                );
+            }
+            yNames.add(checkpoint.name);
+        }
+
         this.xCheckpoints = xCheckpoints;
         this.yCheckpoints = yCheckpoints;
         this.yardNumberCoordinates = yardNumberCoordinates;
