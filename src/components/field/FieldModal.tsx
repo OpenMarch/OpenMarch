@@ -1,7 +1,7 @@
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { X } from "@phosphor-icons/react";
-import FieldProperties from "./FieldProperties";
+import FieldProperties from "./FieldPropertiesSettings";
 
 export default function FieldModal() {
     return (
