@@ -36,7 +36,6 @@ function MarcherEditor() {
     const xInputRef = useRef<HTMLInputElement>(null);
     const xDescriptionRef = useRef<HTMLSelectElement>(null);
     const xCheckpointRef = useRef<HTMLSelectElement>(null);
-    const fieldSideRef = useRef<HTMLSelectElement>(null);
     const yInputRef = useRef<HTMLInputElement>(null);
     const yDescriptionRef = useRef<HTMLSelectElement>(null);
     const yCheckpointRef = useRef<HTMLSelectElement>(null);
@@ -150,8 +149,6 @@ function MarcherEditor() {
             if (xCheckpointRef.current)
                 xCheckpointRef.current.value =
                     rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name;
-            if (fieldSideRef.current)
-                fieldSideRef.current.value = rCoords.side.toString();
             if (yInputRef.current)
                 yInputRef.current.value = rCoords.ySteps.toString();
             if (yDescriptionRef.current)
@@ -346,20 +343,6 @@ function MarcherEditor() {
                                                             rCoords.xCheckpoint
                                                                 .name}
                                                     </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Select
-                                                disabled
-                                                value={`S${rCoords.side}`}
-                                            >
-                                                <SelectTriggerCompact
-                                                    className="disabled:cursor-auto disabled:opacity-100"
-                                                    label={`S${rCoords.side}`}
-                                                />
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={`S${rCoords.side}`}
-                                                    >{`S${rCoords.side}`}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
