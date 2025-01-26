@@ -4,19 +4,12 @@ import { usePageStore } from "@/stores/PageStore";
 import Page from "@/global/classes/Page";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
 import { Input } from "../ui/Input";
-import { Checkbox } from "../ui/Checkbox";
+import { Switch } from "../ui/Switch";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
     const { pages } = usePageStore()!;
     const [isFirstPage, setIsFirstPage] = useState(false);
-    const [isSubset, setIsSubset] = useState(selectedPage?.isSubset || false);
-
-    useEffect(() => {
-        if (selectedPage) {
-            setIsSubset(selectedPage.isSubset);
-        }
-    }, [selectedPage]);
 
     const countsInputId = "page-counts";
     const subsetInputId = "page-subset";
@@ -26,9 +19,12 @@ function PageEditor() {
         event.preventDefault();
         const form = event.currentTarget;
         const counts = form[countsInputId].value;
+        const subset = form[subsetInputId].checked;
 
         if (selectedPage) {
-            Page.updatePages([{ id: selectedPage.id, counts: counts }]);
+            Page.updatePages([
+                { id: selectedPage.id, counts: counts, is_subset: subset },
+            ]);
         }
 
         // Remove focus from the input field
@@ -137,22 +133,19 @@ function PageEditor() {
                         >
                             Subset
                         </label>
-                        <Checkbox
+                        <Switch
                             disabled={isFirstPage}
-                            onCheckedChange={(checked: boolean) => {
-                                if (
-                                    selectedPage &&
-                                    checked !== selectedPage.isSubset
-                                ) {
+                            onClick={(e) => {
+                                if (selectedPage) {
                                     Page.updatePages([
                                         {
                                             id: selectedPage.id,
-                                            is_subset: checked,
+                                            is_subset: !selectedPage.isSubset,
                                         },
                                     ]);
                                 }
                             }}
-                            checked={isSubset}
+                            checked={selectedPage?.isSubset || false}
                             id={subsetInputId}
                         />
                     </div>
