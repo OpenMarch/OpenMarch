@@ -1,14 +1,14 @@
-name: Build/release
+name: Test Build
 
 on:
-    push:
-        tags: [v*]
+    pull_request:
+        branches: [main, develop, prerelease/*]
 
 permissions:
     contents: write # Required for creating releases
 
 jobs:
-    build-and-release:
+    test-build:
         runs-on: ${{ matrix.os }}
 
         strategy:
