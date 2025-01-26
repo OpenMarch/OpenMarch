@@ -26,17 +26,11 @@ jobs:
             - name: Install Node.js, NPM
               uses: actions/setup-node@v1
               with:
-                  node-version: 20
+                  node-version: 18
 
             - name: Install Snapcraft (Ubuntu)
               if: startsWith(matrix.os, 'ubuntu')
               run: sudo snap install snapcraft --classic
-
-            - name: Prepare for app notarization
-              if: startsWith(matrix.os, 'macos')
-              run: |
-                  mkdir -p ~/private_keys/
-                  echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Check if build passes without errors
               uses: OpenMarch/builder@v5
