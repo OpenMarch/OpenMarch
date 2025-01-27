@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Checkbox } from "../ui/Checkbox";
 import FieldPropertiesSelector from "./FieldPropertiesSelector";
 import FieldPropertiesCustomizer from "./FieldPropertiesCustomizer";
+import { Switch } from "../ui/Switch";
 
 export default function FieldPropertiesSettings() {
     const [useCustomField, setUseCustomField] = useState(false);
@@ -17,7 +18,7 @@ export default function FieldPropertiesSettings() {
                         <label htmlFor="gridLines" className="text-body">
                             Grid lines
                         </label>
-                        <Checkbox
+                        <Switch
                             id="gridLines"
                             checked={uiSettings.gridLines}
                             onCheckedChange={() =>
@@ -32,7 +33,7 @@ export default function FieldPropertiesSettings() {
                         <label htmlFor="halfLines" className="text-body">
                             Half lines
                         </label>
-                        <Checkbox
+                        <Switch
                             id="halfLines"
                             checked={uiSettings.halfLines}
                             onCheckedChange={() =>

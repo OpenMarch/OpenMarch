@@ -77,6 +77,7 @@ export function createIndoorXCheckpoints({
     const stepInterval = 4;
     let curCharCode = "A".charCodeAt(0);
     const stageRightBoundary = (xSteps / 2) * -1;
+    let curId = 0;
     xCheckpoints.push({
         name: `Line ${String.fromCharCode(curCharCode)}`,
         axis: "x",
@@ -84,6 +85,7 @@ export function createIndoorXCheckpoints({
         stepsFromCenterFront: stageRightBoundary,
         useAsReference: true,
         visible: false,
+        id: curId++,
     });
     const totalCheckpoints =
         Math.ceil(xSteps / stepInterval) +
@@ -101,6 +103,7 @@ export function createIndoorXCheckpoints({
                 stepsFromCenterFront: curSteps,
                 useAsReference: true,
                 visible: curSteps === xSteps / 2,
+                id: curId++,
             });
             curCharCode++;
             curSteps += stepInterval;
@@ -113,6 +116,7 @@ export function createIndoorXCheckpoints({
         stepsFromCenterFront: stageLeftBoundary,
         useAsReference: true,
         visible: false,
+        id: curId++,
     });
 
     return xCheckpoints;
@@ -141,6 +145,7 @@ export function createIndoorYCheckpoints({
     const stepInterval = 4;
     let curCheckpointName = 0;
     const frontStageSteps = 0;
+    let curId = 0;
     yCheckpoints.push({
         name: `Line ${curCheckpointName.toString()}`,
         axis: "y",
@@ -148,6 +153,7 @@ export function createIndoorYCheckpoints({
         stepsFromCenterFront: frontStageSteps,
         useAsReference: true,
         visible: false,
+        id: curId++,
     });
     const totalCheckpoints =
         Math.ceil(ySteps / stepInterval) +
@@ -165,6 +171,7 @@ export function createIndoorYCheckpoints({
                 stepsFromCenterFront: curSteps,
                 useAsReference: true,
                 visible: false,
+                id: curId++,
             });
             curCheckpointName++;
             curSteps -= stepInterval;
@@ -177,6 +184,7 @@ export function createIndoorYCheckpoints({
         stepsFromCenterFront: backStageSteps,
         useAsReference: true,
         visible: false,
+        id: curId++,
     });
 
     return yCheckpoints;

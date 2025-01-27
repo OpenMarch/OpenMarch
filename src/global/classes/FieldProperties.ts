@@ -69,25 +69,25 @@ export default class FieldProperties {
         this.name = name;
 
         // Verify x checkpoints have unique names
-        const xNames = new Set();
+        const xIds = new Set();
         for (const checkpoint of xCheckpoints) {
-            if (xNames.has(checkpoint.name)) {
+            if (xIds.has(checkpoint.id)) {
                 throw new Error(
-                    `Duplicate x checkpoint name found: ${checkpoint.name}`,
+                    `Duplicate x checkpoint ID found: ${checkpoint.id}`,
                 );
             }
-            xNames.add(checkpoint.name);
+            xIds.add(checkpoint.id);
         }
 
         // Verify y checkpoints have unique names
-        const yNames = new Set();
+        const yIds = new Set();
         for (const checkpoint of yCheckpoints) {
-            if (yNames.has(checkpoint.name)) {
+            if (yIds.has(checkpoint.id)) {
                 throw new Error(
-                    `Duplicate y checkpoint name found: ${checkpoint.name}`,
+                    `Duplicate y checkpoint name found: ${checkpoint.id}`,
                 );
             }
-            yNames.add(checkpoint.name);
+            yIds.add(checkpoint.id);
         }
 
         this.xCheckpoints = xCheckpoints;
@@ -128,6 +128,10 @@ export default class FieldProperties {
 /** A reference point on the field. Yard line, hash, etc. */
 export interface Checkpoint {
     /**
+     * An identifier for the checkpoint. The number is arbitrary, but must be unique.
+     */
+    id: number;
+    /**
      * "50 yard line", "front hash", "real college back hash", "grid high school back hash"
      */
     name: string;
@@ -159,7 +163,7 @@ export interface Checkpoint {
      * Whether or not this checkpoint should be visible on the canvas.
      * If false, it will not be drawn. Default is true if not defined.
      */
-    visible?: boolean;
+    visible: boolean;
 }
 
 /** The location of the top/bottom of the yard line numbers */

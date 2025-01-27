@@ -60,6 +60,7 @@ export default FootballTemplates;
 function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
     const xCheckpoints: Checkpoint[] = [];
 
+    let curId = 0;
     for (let yards = 0; yards <= 100; yards = yards += 5) {
         const curYardLine = yards < 50 ? yards : 100 - yards;
         const stepsFromCenterFront = ((yards - 50) / 5) * 8;
@@ -69,18 +70,15 @@ function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
                 ? curYardLine.toString()
                 : undefined;
 
-        const sideNumber = yards < 50 ? 1 : 2;
         xCheckpoints.push({
-            name:
-                `${curYardLine} yard line` +
-                (stepsFromCenterFront === 0 ? "" : ` - Side ${sideNumber}`),
+            id: curId++,
+            name: `${curYardLine} yard line`,
             axis: "x",
-            terseName:
-                `${curYardLine.toString()}` +
-                (stepsFromCenterFront === 0 ? "" : ` - Side ${sideNumber}`),
+            terseName: `${curYardLine.toString()}`,
             stepsFromCenterFront: stepsFromCenterFront,
             useAsReference: true,
             fieldLabel: label,
+            visible: true,
         });
     }
     return xCheckpoints;
@@ -88,20 +86,25 @@ function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
 
 function createFootballFieldXCheckpointsWithEndZones(): Checkpoint[] {
     const xCheckpoints = createFootballFieldXCheckpointsWithoutEndZones();
+    let maxId = Math.max(...xCheckpoints.map((cp) => cp.id)) + 1;
     xCheckpoints.push(
         {
-            name: "end zone (Side 1)",
+            name: "end zone",
             axis: "x",
             stepsFromCenterFront: -96,
             useAsReference: true,
-            terseName: "EZ (S1)",
+            terseName: "EZ",
+            visible: true,
+            id: maxId++,
         },
         {
-            name: "end zone (Side 2)",
+            name: "end zone",
             axis: "x",
             stepsFromCenterFront: 96,
             useAsReference: true,
-            terseName: "EZ (S2)",
+            terseName: "EZ",
+            visible: true,
+            id: maxId++,
         },
     );
 
@@ -150,6 +153,7 @@ function getFootballYardNumberCoordinates(
  * 0 is the front sideline. To negative is the back sideline.
  */
 function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
+    let curId = 0;
     const frontSideline: Checkpoint = {
         name: "front sideline",
         axis: "y",
@@ -157,6 +161,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "FSL",
         visible: false,
+        id: curId++,
     };
     const frontHash: Checkpoint = {
         name: "HS front hash",
@@ -166,6 +171,8 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -28,
         useAsReference: true,
         terseName: "FH",
+        visible: true,
+        id: curId++,
     };
     const backHash: Checkpoint = {
         name: "HS back hash",
@@ -174,6 +181,8 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -56,
         useAsReference: true,
         terseName: "BH",
+        visible: true,
+        id: curId++,
     };
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
@@ -182,6 +191,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
+        id: curId++,
     };
     const realBackSideline: Checkpoint = {
         name: "real back sideline",
@@ -190,6 +200,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         useAsReference: false,
         terseName: "real:BSL",
         visible: false,
+        id: curId++,
     };
     return [
         frontSideline,
@@ -206,6 +217,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
  * 0 is the front sideline. To negative is the back sideline (that is how it is in Fabric.js).
  */
 function createCollegeFootballYCheckpoints(): Checkpoint[] {
+    let curId = 0;
     const frontSideline: Checkpoint = {
         name: "front sideline",
         axis: "y",
@@ -213,6 +225,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "FSL",
         visible: false,
+        id: curId++,
     };
     const frontHash: Checkpoint = {
         name: "NCAA front hash",
@@ -220,6 +233,8 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -32,
         useAsReference: true,
         terseName: "FH",
+        visible: true,
+        id: curId++,
     };
     const gridBackHash: Checkpoint = {
         name: "grid NCAA back hash",
@@ -227,6 +242,8 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -52,
         useAsReference: true,
         terseName: "grid:BH",
+        visible: true,
+        id: curId++,
     };
     const realBackHash: Checkpoint = {
         name: "real NCAA back hash",
@@ -234,6 +251,8 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -53.33,
         useAsReference: false,
         terseName: "real:BH",
+        visible: true,
+        id: curId++,
     };
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
@@ -242,6 +261,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
+        id: curId++,
     };
     const realBackSideline: Checkpoint = {
         name: "real back sideline",
@@ -250,6 +270,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         useAsReference: false,
         terseName: "real:BSL",
         visible: false,
+        id: curId++,
     };
     return [
         frontSideline,
@@ -268,6 +289,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
  * 0 is the front sideline. To negative is the back sideline (that is how it is in Fabric.js).
  */
 function createProFootballYCheckpoints(): Checkpoint[] {
+    let curId = 0;
     const frontSideline: Checkpoint = {
         name: "front sideline",
         axis: "y",
@@ -275,6 +297,7 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "FSL",
         visible: false,
+        id: curId++,
     };
     const frontHash: Checkpoint = {
         name: "NFL front hash",
@@ -282,6 +305,8 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -38, // note, it's actually 37.733 steps
         useAsReference: true,
         terseName: "FH",
+        visible: true,
+        id: curId++,
     };
     const gridBackHash: Checkpoint = {
         name: "NFL back hash",
@@ -289,6 +314,8 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -48, // note, it's actually 47.6 steps
         useAsReference: true,
         terseName: "BH",
+        visible: true,
+        id: curId++,
     };
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
@@ -297,6 +324,7 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
+        id: curId++,
     };
     const realBackSideline: Checkpoint = {
         name: "real back sideline",
@@ -305,6 +333,7 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         useAsReference: false,
         terseName: "real:BSL",
         visible: false,
+        id: curId++,
     };
     return [
         frontSideline,
