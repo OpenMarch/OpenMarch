@@ -4,12 +4,20 @@ interface FieldPropertyArgs {
     yCheckpoints: Checkpoint[];
     yardNumberCoordinates?: YardNumberCoordinates;
     pixelsPerStep: PixelsPerStep;
+    sideDescriptions?: SideDescriptions;
 }
 
 export enum PixelsPerStep {
     EIGHT_TO_FIVE = 12,
     SIX_TO_FIVE = 16,
 }
+
+const defaultSideDescriptions: SideDescriptions = {
+    verboseLeft: "Side 1",
+    verboseRight: "Side 2",
+    terseLeft: "S1",
+    terseRight: "S2",
+};
 
 /**
  * FieldProperties define everything about the performance area the marchers are on.
@@ -58,6 +66,8 @@ export default class FieldProperties {
     readonly height: number;
     /** Optional. In steps, the location of the top and bottom of the yard line numbers on the field */
     readonly yardNumberCoordinates?: YardNumberCoordinates;
+    /** The description of the sides of the field. E.g. "Side 1" and "Side 2" */
+    readonly sideDescriptions: SideDescriptions;
 
     constructor({
         name,
@@ -65,6 +75,7 @@ export default class FieldProperties {
         yCheckpoints,
         yardNumberCoordinates,
         pixelsPerStep,
+        sideDescriptions = defaultSideDescriptions,
     }: FieldPropertyArgs) {
         this.name = name;
 
@@ -93,6 +104,7 @@ export default class FieldProperties {
         this.xCheckpoints = xCheckpoints;
         this.yCheckpoints = yCheckpoints;
         this.yardNumberCoordinates = yardNumberCoordinates;
+        this.sideDescriptions = sideDescriptions;
         this.pixelsPerStep = pixelsPerStep;
 
         const minX = this.xCheckpoints.reduce(
@@ -188,4 +200,20 @@ export interface YardNumberCoordinates {
      * (closer to the back sideline)
      */
     awayStepsFromFrontToOutside: number;
+}
+
+/**
+ * Strings to describe the left and right sides of the field.
+ *
+ * The left and right in the variable names are from the director's (audience's) perspective.
+ */
+export interface SideDescriptions {
+    /** E.g. "Side 1"," Audience Left" or "Stage Right" */
+    verboseLeft: string;
+    /** E.g. "Side 2"," Audience Right" or "Stage Left" */
+    verboseRight: string;
+    /** E.g. "S1", "AL" or "SR" (short for "Side 1", "Audience Left" or "Stage Right") */
+    terseLeft: string;
+    /** E.g. "S2", "AR" or "SL" (short for "Side 2", "Audience Right" or "Stage Left") */
+    terseRight: string;
 }

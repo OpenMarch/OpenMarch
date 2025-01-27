@@ -151,7 +151,7 @@ function MarcherEditor() {
                 xCheckpointRef.current.value =
                     rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name;
             if (fieldSideRef.current)
-                fieldSideRef.current.value = rCoords.side.toString();
+                fieldSideRef.current.value = rCoords.sideDescription;
 
             if (yInputRef.current)
                 yInputRef.current.value = rCoords.ySteps.toString();
@@ -172,7 +172,7 @@ function MarcherEditor() {
 
     return (
         <>
-            {selectedMarchers.length > 0 && (
+            {selectedMarchers.length > 0 && fieldProperties && (
                 <div>
                     {selectedMarchers.length > 1 ? (
                         // Multiple marchers selected
@@ -290,7 +290,7 @@ function MarcherEditor() {
                                         </label>
                                         <div className="flex w-full flex-wrap gap-4">
                                             {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
-                                            <span className="w-[3.5rem]">
+                                            <span className="w-[4.2rem]">
                                                 <Input
                                                     compact
                                                     disabled
@@ -351,16 +351,43 @@ function MarcherEditor() {
                                             </Select>
                                             <Select
                                                 disabled
-                                                value={`S${rCoords.side}`}
+                                                value={rCoords.sideDescription}
                                             >
                                                 <SelectTriggerCompact
                                                     className="disabled:cursor-auto disabled:opacity-100"
-                                                    label={`S${rCoords.side}`}
+                                                    label={
+                                                        rCoords.sideDescription
+                                                    }
                                                 />
                                                 <SelectContent>
                                                     <SelectItem
-                                                        value={`S${rCoords.side}`}
-                                                    >{`S${rCoords.side}`}</SelectItem>
+                                                        value={
+                                                            fieldProperties
+                                                                .sideDescriptions
+                                                                .terseLeft
+                                                        }
+                                                        key={1}
+                                                    >
+                                                        {
+                                                            fieldProperties
+                                                                .sideDescriptions
+                                                                .terseLeft
+                                                        }
+                                                    </SelectItem>
+                                                    <SelectItem
+                                                        value={
+                                                            fieldProperties
+                                                                .sideDescriptions
+                                                                .terseRight
+                                                        }
+                                                        key={2}
+                                                    >
+                                                        {
+                                                            fieldProperties
+                                                                .sideDescriptions
+                                                                .terseRight
+                                                        }
+                                                    </SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -373,7 +400,7 @@ function MarcherEditor() {
                                             Y
                                         </label>
                                         <div className="flex w-full flex-wrap gap-4">
-                                            <span className="w-[3.5rem]">
+                                            <span className="w-[4.2rem]">
                                                 <Input
                                                     compact
                                                     disabled

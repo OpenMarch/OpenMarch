@@ -14,6 +14,18 @@ import { Switch } from "../ui/Switch";
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
 
+const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px]");
+const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
+const inputClassname = clsx("col-span-6 self-center");
+const tooltipClassname = clsx("");
+const errorClassname = clsx("text-md leading-none text-red mt-8");
+
+const blurOnEnterFunc = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+        e.currentTarget.blur();
+    }
+};
+
 function CheckpointEditor({
     checkpoint,
     updateCheckpoint,
@@ -36,14 +48,7 @@ function CheckpointEditor({
      * This is used to handle the behavior of the input field when the user presses the "Enter" key,
      * ensuring that the focus is removed from the input.
      **/
-    const blurOnEnter = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === "Enter") {
-                e.currentTarget.blur();
-            }
-        },
-        [],
-    );
+    const blurOnEnter = useCallback(blurOnEnterFunc, []);
 
     /**
      * A callback function that checks if a checkpoint with the given name already exists in the `allCheckpoints` array.
@@ -62,14 +67,6 @@ function CheckpointEditor({
         [allCheckpoints],
     );
 
-    const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px]");
-    const labelClassname = clsx(
-        "text-body text-text/80 self-center col-span-5",
-    );
-    const inputClassname = clsx("col-span-6 self-center");
-    const tooltipClassname = clsx("");
-    const errorClassname = clsx("text-md leading-none text-red mt-8");
-
     return (
         <RadixCollapsible.Root
             className="CollapsibleRoot"
@@ -84,10 +81,7 @@ function CheckpointEditor({
                 {open ? <CaretUp size={24} /> : <CaretDown size={24} />}
             </RadixCollapsible.Trigger>
             <RadixCollapsible.Content className={"mx-12 my-8"}>
-                <Form.Root
-                    onSubmit={(e) => e.preventDefault()}
-                    className="flex flex-col gap-8"
-                >
+                <div className="flex flex-col gap-8">
                     <Form.Field name="Steps from center">
                         <div className={formFieldClassname}>
                             <Form.Label className={labelClassname}>
@@ -439,7 +433,7 @@ function CheckpointEditor({
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
                     </Form.Field>
-                </Form.Root>
+                </div>
             </RadixCollapsible.Content>
         </RadixCollapsible.Root>
     );
@@ -448,6 +442,8 @@ export default function FieldPropertiesCustomizer() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
     const [currentFieldProperties, setCurrentFieldProperties] =
         useState<FieldProperties>(fieldProperties ?? defaultFieldProperties);
+
+    const blurOnEnter = useCallback(blurOnEnterFunc, []);
 
     const updateCheckpoint = useCallback(
         ({
@@ -500,7 +496,237 @@ export default function FieldPropertiesCustomizer() {
     }, [fieldProperties]);
 
     return (
-        <div className="flex flex-col gap-16">
+        <Form.Root
+            onSubmit={(e) => e.preventDefault()}
+            className="flex flex-col gap-16"
+        >
+            <div>
+                {/* <div className="mb-16">Field </div> */}
+                <div className="flex flex-col gap-12">
+                    <h4 className="text-lg">Side Descriptions</h4>
+                    <Form.Field
+                        name="Director's left"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Director&apos;s left*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text" // Changed from "number"
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (
+                                        e.target.value !==
+                                        currentFieldProperties.sideDescriptions
+                                            .verboseLeft
+                                    ) {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                verboseLeft: e.target.value,
+                                            },
+                                        });
+                                    }
+                                }}
+                                className={inputClassname}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    currentFieldProperties.sideDescriptions
+                                        .verboseLeft
+                                }
+                                required
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    E.g. &quot;Side 1&quot;,&quot; Audience
+                                    Left&quot; or &quot;Stage Right&quot;
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <Form.Field
+                        name="Director's left"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Left abbreviation*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text" // Changed from "number"
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (
+                                        e.target.value !==
+                                        currentFieldProperties.sideDescriptions
+                                            .terseLeft
+                                    ) {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                terseLeft: e.target.value,
+                                            },
+                                        });
+                                    }
+                                }}
+                                className={inputClassname}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    currentFieldProperties.sideDescriptions
+                                        .terseLeft
+                                }
+                                required
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    E.g. &quot;S1&quot;, &quot;AL&quot; or
+                                    &quot;SR&quot; (short for &quot;Side
+                                    1&quot;, &quot;Audience Left&quot; or
+                                    &quot;Stage Right&quot;)
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+
+                    <Form.Field
+                        name="Director's right"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Director&apos;s right*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text" // Changed from "number"
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (
+                                        e.target.value !==
+                                        currentFieldProperties.sideDescriptions
+                                            .verboseRight
+                                    ) {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                verboseRight: e.target.value,
+                                            },
+                                        });
+                                    }
+                                }}
+                                className={inputClassname}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    currentFieldProperties.sideDescriptions
+                                        .verboseRight
+                                }
+                                required
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    E.g. &quot;Side 2&quot;,&quot; Audience
+                                    Right&quot; or &quot;Stage Left&quot;
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <Form.Field
+                        name="Director's right"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Right abbreviation*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text" // Changed from "number"
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (
+                                        e.target.value !==
+                                        currentFieldProperties.sideDescriptions
+                                            .terseRight
+                                    ) {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                terseRight: e.target.value,
+                                            },
+                                        });
+                                    }
+                                }}
+                                className={inputClassname}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    currentFieldProperties.sideDescriptions
+                                        .terseRight
+                                }
+                                required
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    E.g. &quot;S2&quot;, &quot;AR&quot; or
+                                    &quot;SL&quot; (short for &quot;Side
+                                    2&quot;, &quot;Audience Right&quot; or
+                                    &quot;Stage Left&quot;)
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                </div>
+            </div>
             <div>
                 <div className="mb-16">X Checkpoints</div>
                 <div className="flex flex-col gap-12">
@@ -537,6 +763,6 @@ export default function FieldPropertiesCustomizer() {
                         ))}
                 </div>
             </div>
-        </div>
+        </Form.Root>
     );
 }
