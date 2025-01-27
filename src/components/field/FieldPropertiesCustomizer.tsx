@@ -491,6 +491,7 @@ export default function FieldPropertiesCustomizer() {
         setCurrentFieldProperties(
             fieldProperties ?? currentFieldProperties ?? defaultFieldProperties,
         );
+        console.log(fieldProperties);
         // Eslint disable to avoid infinite loop
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fieldProperties]);
@@ -500,8 +501,175 @@ export default function FieldPropertiesCustomizer() {
             onSubmit={(e) => e.preventDefault()}
             className="flex flex-col gap-16"
         >
-            <div>
+            <div className="flex flex-col gap-16">
                 {/* <div className="mb-16">Field </div> */}
+                <div className="flex flex-col gap-12">
+                    <h4 className="text-lg">Grid</h4>
+                    <Form.Field
+                        name="Half line X-Interval"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Half line X-Interval
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="-?[0-9]*\.?[0-9]*"
+                                className={inputClassname}
+                                onBlur={(e) => {
+                                    e.preventDefault();
+
+                                    if (e.target.value === "") {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            halfLineXInterval: undefined,
+                                        });
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties({
+                                                ...currentFieldProperties,
+                                                halfLineXInterval: parsedFloat,
+                                            });
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers and decimal point
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.]/g,
+                                        "",
+                                    );
+                                    // Ensure only one decimal point
+                                    const normalized = filtered.replace(
+                                        /\.+/g,
+                                        ".",
+                                    );
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.halfLineXInterval ?? ""
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents
+                                    className="p-16 text-center"
+                                    side="right"
+                                >
+                                    <div>
+                                        The interval that half lines appear in
+                                        the UI on the X axis from the center of
+                                        the field.
+                                    </div>
+                                    <div>
+                                        Leave empty to omit half lines on the
+                                        X-axis.
+                                    </div>
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <Form.Field
+                        name="Half line Y-Interval"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Half line Y-Interval
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="-?[0-9]*\.?[0-9]*"
+                                className={inputClassname}
+                                onBlur={(e) => {
+                                    e.preventDefault();
+
+                                    if (e.target.value === "") {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            halfLineYInterval: undefined,
+                                        });
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties({
+                                                ...currentFieldProperties,
+                                                halfLineYInterval: parsedFloat,
+                                            });
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers and decimal point
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.]/g,
+                                        "",
+                                    );
+                                    // Ensure only one decimal point
+                                    const normalized = filtered.replace(
+                                        /\.+/g,
+                                        ".",
+                                    );
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.halfLineYInterval ?? ""
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents
+                                    className="p-16 text-center"
+                                    side="right"
+                                >
+                                    <div>
+                                        The interval that half lines appear in
+                                        the UI on the Y axis from the front of
+                                        the field.
+                                    </div>
+                                    <div>
+                                        Leave empty to omit half lines on the
+                                        Y-axis.
+                                    </div>
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                </div>
                 <div className="flex flex-col gap-12">
                     <h4 className="text-lg">Side Descriptions</h4>
                     <Form.Field
@@ -721,6 +889,350 @@ export default function FieldPropertiesCustomizer() {
                                     &quot;SL&quot; (short for &quot;Side
                                     2&quot;, &quot;Audience Right&quot; or
                                     &quot;Stage Left&quot;)
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                </div>
+                <div className="flex flex-col gap-12">
+                    {/* <div className="mb-16">Field </div> */}
+                    <h4 className="text-lg">Field Labels</h4>
+                    <Form.Field
+                        name="Steps from front to label bottom"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Steps from front to label bottom*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="-?[0-9]*\.?[0-9]*"
+                                className={inputClassname}
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (e.target.value === "") {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                homeStepsFromFrontToOutside:
+                                                    undefined,
+                                            },
+                                        });
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+                                        console.info(parsedFloat);
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    homeStepsFromFrontToOutside:
+                                                        parsedFloat,
+                                                },
+                                            });
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
+                                    );
+
+                                    // Ensure only one decimal point and one negative sign at start
+                                    const normalized = filtered
+                                        .replace(/\.+/g, ".")
+                                        .replace(/--+/g, "-")
+                                        .replace(/(.+)-/g, "$1");
+
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.yardNumberCoordinates
+                                        .homeStepsFromFrontToOutside ?? ""
+                                }
+                                disabled
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    Number of steps from the front sideline to
+                                    the outside of the home number (closer to
+                                    the front sideline)
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <Form.Field
+                        name="Steps from front to label top"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Steps from front to label top*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="-?[0-9]*\.?[0-9]*"
+                                className={inputClassname}
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (e.target.value === "") {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                homeStepsFromFrontToInside:
+                                                    undefined,
+                                            },
+                                        });
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+                                        console.info(parsedFloat);
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    homeStepsFromFrontToInside:
+                                                        parsedFloat,
+                                                },
+                                            });
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
+                                    );
+
+                                    // Ensure only one decimal point and one negative sign at start
+                                    const normalized = filtered
+                                        .replace(/\.+/g, ".")
+                                        .replace(/--+/g, "-")
+                                        .replace(/(.+)-/g, "$1");
+
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.yardNumberCoordinates
+                                        .homeStepsFromFrontToInside ?? ""
+                                }
+                                disabled
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    Number of steps from the front sideline to
+                                    the inside of the home number (closer to the
+                                    center of the field)
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <Form.Field
+                        name="Steps from back to label top"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Steps from back to label top*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="-?[0-9]*\.?[0-9]*"
+                                className={inputClassname}
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (e.target.value === "") {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                awayStepsFromFrontToInside:
+                                                    undefined,
+                                            },
+                                        });
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+                                        console.info(parsedFloat);
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    awayStepsFromFrontToInside:
+                                                        parsedFloat,
+                                                },
+                                            });
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
+                                    );
+
+                                    // Ensure only one decimal point and one negative sign at start
+                                    const normalized = filtered
+                                        .replace(/\.+/g, ".")
+                                        .replace(/--+/g, "-")
+                                        .replace(/(.+)-/g, "$1");
+
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.yardNumberCoordinates
+                                        .awayStepsFromFrontToInside ?? ""
+                                }
+                                disabled
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    Number of steps from the front sideline to
+                                    the inside of the away number (closer to the
+                                    center of the field)
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <Form.Field
+                        name="Steps from back to label bottom"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Steps from back to label bottom*
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="-?[0-9]*\.?[0-9]*"
+                                className={inputClassname}
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (e.target.value === "") {
+                                        setFieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                awayStepsFromFrontToOutside:
+                                                    undefined,
+                                            },
+                                        });
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+                                        console.info(parsedFloat);
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    awayStepsFromFrontToOutside:
+                                                        parsedFloat,
+                                                },
+                                            });
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
+                                    );
+
+                                    // Ensure only one decimal point and one negative sign at start
+                                    const normalized = filtered
+                                        .replace(/\.+/g, ".")
+                                        .replace(/--+/g, "-")
+                                        .replace(/(.+)-/g, "$1");
+
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.yardNumberCoordinates
+                                        .awayStepsFromFrontToOutside ?? ""
+                                }
+                                disabled
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    Number of steps from the front sideline to
+                                    the outside of the away number (closer to
+                                    the back sideline)
                                 </TooltipContents>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>

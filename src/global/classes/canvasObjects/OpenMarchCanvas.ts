@@ -630,32 +630,41 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 selectable: false,
             };
             // X
-            for (
-                let i = centerFrontPoint.xPixels + pixelsPerStep * 4;
-                i < fieldWidth;
-                i += pixelsPerStep * 4
-            )
-                fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
-                );
-            for (
-                let i = centerFrontPoint.xPixels - pixelsPerStep * 4;
-                i > 0;
-                i -= pixelsPerStep * 4
-            )
-                fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
-                );
-
-            // Y
-            for (
-                let i = centerFrontPoint.yPixels - pixelsPerStep * 4;
-                i > 0;
-                i -= pixelsPerStep * 4
-            )
-                fieldArray.push(
-                    new fabric.Line([0, i, fieldWidth, i], darkLineProps),
-                );
+            if (this.fieldProperties.halfLineXInterval) {
+                for (
+                    let i =
+                        centerFrontPoint.xPixels +
+                        pixelsPerStep * this.fieldProperties.halfLineXInterval;
+                    i < fieldWidth;
+                    i += pixelsPerStep * this.fieldProperties.halfLineXInterval
+                )
+                    fieldArray.push(
+                        new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
+                    );
+                for (
+                    let i =
+                        centerFrontPoint.xPixels -
+                        pixelsPerStep * this.fieldProperties.halfLineXInterval;
+                    i > 0;
+                    i -= pixelsPerStep * this.fieldProperties.halfLineXInterval
+                )
+                    fieldArray.push(
+                        new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
+                    );
+            }
+            if (this.fieldProperties.halfLineYInterval) {
+                // Y
+                for (
+                    let i =
+                        centerFrontPoint.yPixels -
+                        pixelsPerStep * this.fieldProperties.halfLineYInterval;
+                    i > 0;
+                    i -= pixelsPerStep * this.fieldProperties.halfLineYInterval
+                )
+                    fieldArray.push(
+                        new fabric.Line([0, i, fieldWidth, i], darkLineProps),
+                    );
+            }
         }
 
         // Yard lines, field numbers, and hashes
@@ -711,7 +720,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // Print yard line numbers if they exist
         const yardNumberCoordinates =
             this.fieldProperties.yardNumberCoordinates;
-        if (yardNumberCoordinates) {
+        if (
+            yardNumberCoordinates.homeStepsFromFrontToInside !== undefined &&
+            yardNumberCoordinates.homeStepsFromFrontToOutside !== undefined
+        ) {
             const numberHeight =
                 (yardNumberCoordinates.homeStepsFromFrontToInside -
                     yardNumberCoordinates.homeStepsFromFrontToOutside) *
@@ -722,7 +734,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 selectable: false,
                 charSpacing: 160,
             };
-            const yardNumberXOffset = 18;
+            const yardNumberXOffset = 22;
             for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
                 // Yard line numbers
                 const x =
@@ -741,19 +753,24 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             ...numberProps,
                         }),
                     );
-                    // Away number
-                    fieldArray.push(
-                        new fabric.Text(xCheckpoint.fieldLabel, {
-                            left: x - yardNumberXOffset,
-                            top:
-                                centerFrontPoint.yPixels -
-                                yardNumberCoordinates.awayStepsFromFrontToOutside *
-                                    pixelsPerStep,
-                            flipY: true,
-                            flipX: true,
-                            ...numberProps,
-                        }),
-                    );
+                    if (
+                        yardNumberCoordinates.awayStepsFromFrontToOutside !==
+                        undefined
+                    ) {
+                        // Away number
+                        fieldArray.push(
+                            new fabric.Text(xCheckpoint.fieldLabel, {
+                                left: x - yardNumberXOffset,
+                                top:
+                                    centerFrontPoint.yPixels -
+                                    yardNumberCoordinates.awayStepsFromFrontToOutside *
+                                        pixelsPerStep,
+                                flipY: true,
+                                flipX: true,
+                                ...numberProps,
+                            }),
+                        );
+                    }
                 }
             }
         }

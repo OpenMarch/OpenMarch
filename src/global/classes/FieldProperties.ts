@@ -5,6 +5,8 @@ interface FieldPropertyArgs {
     yardNumberCoordinates?: YardNumberCoordinates;
     pixelsPerStep: PixelsPerStep;
     sideDescriptions?: SideDescriptions;
+    halfLineXInterval?: number;
+    halfLineYInterval?: number;
 }
 
 export enum PixelsPerStep {
@@ -65,17 +67,23 @@ export default class FieldProperties {
     /** In pixels. The height of the field on the y axis. E.g side line to side line */
     readonly height: number;
     /** Optional. In steps, the location of the top and bottom of the yard line numbers on the field */
-    readonly yardNumberCoordinates?: YardNumberCoordinates;
+    readonly yardNumberCoordinates: YardNumberCoordinates;
     /** The description of the sides of the field. E.g. "Side 1" and "Side 2" */
     readonly sideDescriptions: SideDescriptions;
+    /** The interval that half lines appear in the UI on the X axis from the center of the field. */
+    readonly halfLineXInterval?: number;
+    /** The interval that half lines appear in the UI on the Y axis from the front of the field. */
+    readonly halfLineYInterval?: number;
 
     constructor({
         name,
         xCheckpoints,
         yCheckpoints,
-        yardNumberCoordinates,
+        yardNumberCoordinates = {},
         pixelsPerStep,
         sideDescriptions = defaultSideDescriptions,
+        halfLineXInterval = 4,
+        halfLineYInterval = 4,
     }: FieldPropertyArgs) {
         this.name = name;
 
@@ -105,6 +113,8 @@ export default class FieldProperties {
         this.yCheckpoints = yCheckpoints;
         this.yardNumberCoordinates = yardNumberCoordinates;
         this.sideDescriptions = sideDescriptions;
+        this.halfLineXInterval = halfLineXInterval;
+        this.halfLineYInterval = halfLineYInterval;
         this.pixelsPerStep = pixelsPerStep;
 
         const minX = this.xCheckpoints.reduce(
@@ -184,22 +194,22 @@ export interface YardNumberCoordinates {
      * Number of steps from the front sideline to the outside of the home number
      * (closer to the front sideline)
      */
-    homeStepsFromFrontToOutside: number;
+    homeStepsFromFrontToOutside?: number;
     /**
      * Number of steps from the front sideline to the inside of the home number
      * (closer to the center of the field)
      */
-    homeStepsFromFrontToInside: number;
+    homeStepsFromFrontToInside?: number;
     /**
      * Number of steps from the front sideline to the inside of the away number
      * (closer to the center of the field)
      */
-    awayStepsFromFrontToInside: number;
+    awayStepsFromFrontToInside?: number;
     /**
      * Number of steps from the front sideline to the outside of the away number
      * (closer to the back sideline)
      */
-    awayStepsFromFrontToOutside: number;
+    awayStepsFromFrontToOutside?: number;
 }
 
 /**
