@@ -10,6 +10,8 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "../ui/Tooltip";
 import clsx from "clsx";
 import { Switch } from "../ui/Switch";
+import { Button } from "../ui/Button";
+import { toast } from "sonner";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -29,19 +31,21 @@ const blurOnEnterFunc = (e: React.KeyboardEvent<HTMLInputElement>) => {
 function CheckpointEditor({
     checkpoint,
     updateCheckpoint,
+    deleteCheckpoint,
     allCheckpoints,
     axis,
 }: {
     checkpoint: Checkpoint;
+    deleteCheckpoint: (checkpoint: Checkpoint) => void;
     updateCheckpoint: (args: {
         oldCheckpoint: Checkpoint;
         newCheckpoint: Checkpoint;
+        axis: "x" | "y";
     }) => void;
     allCheckpoints: Checkpoint[];
     axis: "x" | "y";
 }) {
     const [open, setOpen] = useState(false);
-    const [hasDuplicateName, setHasDuplicateName] = useState(false);
 
     /**
      * A callback function that blurs the current input element when the "Enter" key is pressed.
@@ -85,7 +89,7 @@ function CheckpointEditor({
                     <Form.Field name="Steps from center">
                         <div className={formFieldClassname}>
                             <Form.Label className={labelClassname}>
-                                Steps from center*
+                                Steps from{axis === "x" ? " center" : " front"}*
                             </Form.Label>
                             <Form.Control asChild>
                                 <Input
@@ -101,6 +105,7 @@ function CheckpointEditor({
 
                                         if (!isNaN(parsedInt)) {
                                             updateCheckpoint({
+                                                axis,
                                                 oldCheckpoint: checkpoint,
                                                 newCheckpoint: {
                                                     ...checkpoint,
@@ -147,11 +152,10 @@ function CheckpointEditor({
                                         className="p-16 text-center"
                                         side="right"
                                     >
-                                        The number of steps away from the center
+                                        The number of steps away from the front
                                         of the field that this checkpoint is.{" "}
                                         <br />
-                                        Negative is to the audience&apos;s left,
-                                        positive to the right.
+                                        Negative is towards the back.
                                     </TooltipContents>
                                 </Tooltip.Root>
                             </Tooltip.TooltipProvider>
@@ -181,9 +185,9 @@ function CheckpointEditor({
                                                 checkForDuplicateName(
                                                     e.target.value,
                                                 );
-                                            setHasDuplicateName(hasDuplicate);
                                             if (!hasDuplicate) {
                                                 updateCheckpoint({
+                                                    axis,
                                                     oldCheckpoint: checkpoint,
                                                     newCheckpoint: {
                                                         ...checkpoint,
@@ -227,11 +231,6 @@ function CheckpointEditor({
                         >
                             Please enter a value.
                         </Form.Message>
-                        {hasDuplicateName && (
-                            <Form.Message className={errorClassname}>
-                                Checkpoint with this name already exists.
-                            </Form.Message>
-                        )}
                     </Form.Field>
                     <Form.Field
                         name="Short Name"
@@ -247,6 +246,7 @@ function CheckpointEditor({
                                     e.preventDefault();
                                     if (e.target.value !== checkpoint.name) {
                                         updateCheckpoint({
+                                            axis,
                                             oldCheckpoint: checkpoint,
                                             newCheckpoint: {
                                                 ...checkpoint,
@@ -298,6 +298,7 @@ function CheckpointEditor({
                                             checkpoint.fieldLabel
                                         ) {
                                             updateCheckpoint({
+                                                axis,
                                                 oldCheckpoint: checkpoint,
                                                 newCheckpoint: {
                                                     ...checkpoint,
@@ -376,6 +377,7 @@ function CheckpointEditor({
                                 onClick={(e) => {
                                     e.preventDefault();
                                     updateCheckpoint({
+                                        axis,
                                         oldCheckpoint: checkpoint,
                                         newCheckpoint: {
                                             ...checkpoint,
@@ -411,6 +413,7 @@ function CheckpointEditor({
                                 onClick={(e) => {
                                     e.preventDefault();
                                     updateCheckpoint({
+                                        axis,
                                         oldCheckpoint: checkpoint,
                                         newCheckpoint: {
                                             ...checkpoint,
@@ -433,6 +436,18 @@ function CheckpointEditor({
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
                     </Form.Field>
+                    <Button
+                        variant="red"
+                        size="compact"
+                        className="self-end text-white"
+                        tooltipText="Delete this checkpoint from the field"
+                        tooltipSide="right"
+                        onClick={() => {
+                            deleteCheckpoint(checkpoint);
+                        }}
+                    >
+                        Delete
+                    </Button>
                 </div>
             </RadixCollapsible.Content>
         </RadixCollapsible.Root>
@@ -449,30 +464,136 @@ export default function FieldPropertiesCustomizer() {
         ({
             oldCheckpoint,
             newCheckpoint,
+            axis,
         }: {
             oldCheckpoint: Checkpoint;
             newCheckpoint: Checkpoint;
+            axis: "x" | "y";
         }) => {
             let found = false;
-            const newCheckpoints = currentFieldProperties.xCheckpoints.map(
-                (checkpoint) => {
-                    if (!found && checkpoint.name === oldCheckpoint.name) {
-                        found = true;
-                        return newCheckpoint;
-                    }
-                    return checkpoint;
-                },
-            );
+            const newCheckpoints = (
+                axis === "x"
+                    ? currentFieldProperties.xCheckpoints
+                    : currentFieldProperties.yCheckpoints
+            ).map((checkpoint) => {
+                if (!found && checkpoint.id === oldCheckpoint.id) {
+                    found = true;
+                    return newCheckpoint;
+                }
+                return checkpoint;
+            });
             if (!found) {
                 console.error(
-                    `Checkpoint with name ${oldCheckpoint.name} not found`,
+                    `Checkpoint with id ${oldCheckpoint.id} not found`,
                 );
                 return;
             }
+            if (axis === "x") {
+                setFieldProperties({
+                    ...currentFieldProperties,
+                    xCheckpoints: newCheckpoints,
+                });
+            } else {
+                setFieldProperties({
+                    ...currentFieldProperties,
+                    yCheckpoints: newCheckpoints,
+                });
+            }
+        },
+        [currentFieldProperties, setFieldProperties],
+    );
+
+    const deleteCheckpoint = useCallback(
+        (checkpoint: Checkpoint) => {
+            const newCheckpoints = currentFieldProperties.xCheckpoints.filter(
+                (c) => c.id !== checkpoint.id,
+            );
             setFieldProperties({
                 ...currentFieldProperties,
                 xCheckpoints: newCheckpoints,
             });
+            toast.success(
+                `${checkpoint.axis.toUpperCase()}-checkpoint at ${checkpoint.stepsFromCenterFront} steps deleted - "${checkpoint.name}"`,
+            );
+        },
+        [currentFieldProperties, setFieldProperties],
+    );
+
+    const addCheckpoint = useCallback(
+        (axis: "x" | "y") => {
+            let newSteps: number;
+            if (axis === "x") {
+                const maxXCheckpointSteps =
+                    currentFieldProperties.xCheckpoints.reduce(
+                        (max, checkpoint) => {
+                            return checkpoint.stepsFromCenterFront > max
+                                ? checkpoint.stepsFromCenterFront
+                                : max;
+                        },
+                        0,
+                    );
+                newSteps = maxXCheckpointSteps;
+                const maxXCheckpointId =
+                    currentFieldProperties.xCheckpoints.reduce(
+                        (max, checkpoint) => {
+                            return checkpoint.id > max ? checkpoint.id : max;
+                        },
+                        0,
+                    );
+                const newXCheckpoint: Checkpoint = {
+                    id: maxXCheckpointId + 1,
+                    name: "New X Checkpoint",
+                    terseName: "TBD",
+                    axis: "x",
+                    stepsFromCenterFront: maxXCheckpointSteps,
+                    useAsReference: true,
+                    visible: true,
+                };
+                setFieldProperties({
+                    ...currentFieldProperties,
+                    xCheckpoints: [
+                        ...currentFieldProperties.xCheckpoints,
+                        newXCheckpoint,
+                    ].sort(sorter),
+                });
+            } else {
+                const maxYCheckpointId =
+                    currentFieldProperties.yCheckpoints.reduce(
+                        (max, checkpoint) => {
+                            return checkpoint.id > max ? checkpoint.id : max;
+                        },
+                        0,
+                    );
+                const maxYCheckpointSteps =
+                    currentFieldProperties.yCheckpoints.reduce(
+                        (max, checkpoint) => {
+                            return checkpoint.stepsFromCenterFront > max
+                                ? checkpoint.stepsFromCenterFront
+                                : max;
+                        },
+                        0,
+                    );
+                newSteps = maxYCheckpointSteps;
+                const newYCheckpoint: Checkpoint = {
+                    id: maxYCheckpointId + 1,
+                    name: "New Y Checkpoint",
+                    terseName: "TBD",
+                    axis: "y",
+                    stepsFromCenterFront: maxYCheckpointSteps,
+                    useAsReference: true,
+                    visible: true,
+                };
+                setFieldProperties({
+                    ...currentFieldProperties,
+                    yCheckpoints: [
+                        ...currentFieldProperties.yCheckpoints,
+                        newYCheckpoint,
+                    ].sort(sorter),
+                });
+            }
+            toast.success(
+                `${axis.toUpperCase()}-checkpoint at ${newSteps} steps created`,
+            );
         },
         [currentFieldProperties, setFieldProperties],
     );
@@ -491,7 +612,6 @@ export default function FieldPropertiesCustomizer() {
         setCurrentFieldProperties(
             fieldProperties ?? currentFieldProperties ?? defaultFieldProperties,
         );
-        console.log(fieldProperties);
         // Eslint disable to avoid infinite loop
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fieldProperties]);
@@ -1240,7 +1360,30 @@ export default function FieldPropertiesCustomizer() {
                 </div>
             </div>
             <div>
-                <div className="mb-16">X Checkpoints</div>
+                <div className="mb-16">X-Checkpoints</div>
+                <div
+                    className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
+                    hidden={
+                        Math.abs(
+                            Math.min(
+                                ...currentFieldProperties.xCheckpoints.map(
+                                    (x) => x.stepsFromCenterFront,
+                                ),
+                            ),
+                        ) ===
+                        Math.abs(
+                            Math.max(
+                                ...currentFieldProperties.xCheckpoints.map(
+                                    (x) => x.stepsFromCenterFront,
+                                ),
+                            ),
+                        )
+                    }
+                >
+                    WARNING - The left and rightmost X-checkpoints are not
+                    equidistant from the center. This may cause strange
+                    graphical artifacts and should be fixed.
+                </div>
                 <div className="flex flex-col gap-12">
                     {currentFieldProperties.xCheckpoints
                         .sort(sorter)
@@ -1253,12 +1396,37 @@ export default function FieldPropertiesCustomizer() {
                                 }
                                 key={xCheckpoint.id}
                                 axis="x"
+                                deleteCheckpoint={deleteCheckpoint}
                             />
                         ))}
                 </div>
+                <div className="mt-16 flex justify-end">
+                    <Button
+                        onClick={() => addCheckpoint("x")}
+                        className="self-end"
+                    >
+                        New X-Checkpoint
+                    </Button>
+                </div>
             </div>
             <div>
-                <div className="mb-16">Y Checkpoints</div>
+                <div className="mb-16">Y-Checkpoints</div>
+                <div
+                    className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
+                    hidden={
+                        Math.max(
+                            ...currentFieldProperties.yCheckpoints.map(
+                                (y) => y.stepsFromCenterFront,
+                            ),
+                        ) <= 0
+                    }
+                >
+                    WARNING - It is highly recommended that all
+                    Y-checkpoints&apos; steps be less than zero (i.e. negative
+                    numbers). All of the Y-coordinates should be behind the
+                    front of the field. Failing to do so may cause graphical
+                    errors and unexpected coordinates.
+                </div>
                 <div className="flex flex-col gap-12">
                     {currentFieldProperties.yCheckpoints
                         .sort(sorter)
@@ -1271,8 +1439,17 @@ export default function FieldPropertiesCustomizer() {
                                 }
                                 key={yCheckpoint.id}
                                 axis="y"
+                                deleteCheckpoint={deleteCheckpoint}
                             />
                         ))}
+                </div>
+                <div className="mt-16 flex justify-end">
+                    <Button
+                        onClick={() => addCheckpoint("y")}
+                        className="self-end"
+                    >
+                        New Y-Checkpoint
+                    </Button>
                 </div>
             </div>
         </Form.Root>

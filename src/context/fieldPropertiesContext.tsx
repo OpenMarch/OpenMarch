@@ -25,12 +25,13 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
 
     const setFieldProperties = useCallback(
         (fieldProperties: FieldProperties, updateDatabase = true) => {
+            const newFieldProperties = new FieldProperties(fieldProperties);
             if (updateDatabase) {
-                window.electron.updateFieldProperties(fieldProperties);
+                window.electron.updateFieldProperties(newFieldProperties);
             }
-            setFieldPropertiesState(fieldProperties);
+            setFieldPropertiesState(newFieldProperties);
             // Set the field properties for the ReadableCoords class
-            ReadableCoords.setFieldProperties(fieldProperties);
+            ReadableCoords.setFieldProperties(newFieldProperties);
         },
         [],
     );
@@ -38,7 +39,10 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
     // Fetch the field properties from the main process and set the state
     useEffect(() => {
         window.electron.getFieldProperties().then((fieldPropertiesResult) => {
-            setFieldProperties(fieldPropertiesResult, false);
+            const newFieldProperties = new FieldProperties(
+                fieldPropertiesResult,
+            );
+            setFieldProperties(newFieldProperties, false);
         });
     }, [setFieldProperties]);
 
