@@ -447,6 +447,17 @@ export function getFieldProperties(db?: Database.Database): FieldProperties {
     return fieldProperties;
 }
 
+export function getFieldPropertiesJson(db?: Database.Database): string {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(
+        `SELECT json_data FROM ${Constants.FieldPropertiesTableName}`,
+    );
+    const result = stmt.get({});
+    const jsonData = (result as { json_data: string }).json_data;
+    if (!db) dbToUse.close();
+    return jsonData;
+}
+
 /**
  * Updates the field properties in the database.
  *
@@ -454,7 +465,7 @@ export function getFieldProperties(db?: Database.Database): FieldProperties {
  * @returns {success: boolean, result?: FieldProperties, error?: string}
  */
 export function updateFieldProperties(
-    fieldProperties: FieldProperties,
+    fieldProperties: FieldProperties | string,
     db?: Database.Database,
 ): LegacyDatabaseResponse<FieldProperties> {
     const dbToUse = db || connect();
@@ -467,7 +478,11 @@ export function updateFieldProperties(
             SET json_data = @json_data
             WHERE id = 1
         `);
-        stmt.run({ json_data: JSON.stringify(fieldProperties) });
+        if (typeof fieldProperties === "string") {
+            stmt.run({ json_data: fieldProperties });
+        } else {
+            stmt.run({ json_data: JSON.stringify(fieldProperties) });
+        }
         const newFieldProperties = getFieldProperties(dbToUse);
         output = { success: true, result: newFieldProperties };
     } catch (error: any) {

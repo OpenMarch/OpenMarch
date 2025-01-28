@@ -132,6 +132,12 @@ app.whenReady().then(async () => {
     ipcMain.handle("measure:insert", async () =>
         launchImportMusicXmlFileDialogue(),
     );
+    ipcMain.handle("field_properties:export", async () =>
+        exportFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import", async () =>
+        importFieldPropertiesFile(),
+    );
 
     // Getters
     initGetters();
@@ -317,6 +323,8 @@ export async function newFile() {
         });
 }
 
+// Database (main file)
+
 /**
  * Opens a dialog to create a new database file path to connect to with the data of the current database.
  * I.e. Save As..
@@ -390,6 +398,82 @@ export async function loadDatabaseFile() {
             return -1;
         });
 }
+
+// Field properties
+
+/**
+ * Opens a dialog to export the field properties to a file.
+ * The file's extension is  .fieldots, but it's actually a JSON file.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function exportFieldPropertiesFile() {
+    console.log("exportFieldPropertiesFile");
+
+    if (!win) return -1;
+
+    const jsonStr = DatabaseServices.getFieldPropertiesJson();
+
+    // Save
+    dialog
+        .showSaveDialog(win, {
+            buttonLabel: "Save Field",
+            filters: [
+                { name: "OpenMarch Field File", extensions: ["fieldots"] },
+            ],
+        })
+        .then((path) => {
+            if (path.canceled || !path.filePath) return -1;
+
+            fs.writeFileSync(path.filePath, jsonStr, {
+                encoding: "utf-8",
+            });
+
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
+}
+
+/**
+ * Opens a dialog to import a field properties file and updates the field properties in the database.
+ * The file's extension is .fieldots, but it's actually a JSON file.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function importFieldPropertiesFile() {
+    console.log("importFieldPropertiesFile");
+
+    if (!win) return -1;
+
+    // If there is no previous path, open a dialog
+    dialog
+        .showOpenDialog(win, {
+            filters: [
+                { name: "penMarch Field File", extensions: ["fieldots"] },
+            ],
+        })
+        .then((path) => {
+            const fileContents = fs.readFileSync(path.filePaths[0]);
+            const jsonStr = fileContents.toString();
+            DatabaseServices.updateFieldProperties(jsonStr);
+
+            // If the user cancels the dialog, and there is no previous path, return -1
+            if (path.canceled || !path.filePaths[0]) return -1;
+
+            win?.webContents.send("field_properties:onImport");
+
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
+}
+
+// Audio files
 
 /**
  * Opens a dialog to import an audio file to the database.

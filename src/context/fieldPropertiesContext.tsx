@@ -13,6 +13,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 type FieldPropertiesContextProps = {
     fieldProperties: FieldProperties | undefined;
     setFieldProperties: (fieldProperties: FieldProperties) => void;
+    fetchFieldProperties: () => Promise<void>;
 };
 
 const FieldPropertiesContext = createContext<
@@ -36,8 +37,7 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
         [],
     );
 
-    // Fetch the field properties from the main process and set the state
-    useEffect(() => {
+    const fetchFieldProperties = useCallback(async () => {
         window.electron.getFieldProperties().then((fieldPropertiesResult) => {
             const newFieldProperties = new FieldProperties(
                 fieldPropertiesResult,
@@ -46,10 +46,16 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
         });
     }, [setFieldProperties]);
 
+    // Fetch the field properties from the main process and set the state
+    useEffect(() => {
+        fetchFieldProperties();
+    }, [fetchFieldProperties]);
+
     // Create the context value object
     const contextValue: FieldPropertiesContextProps = {
         fieldProperties,
         setFieldProperties, // TODO update this in the database
+        fetchFieldProperties,
     };
 
     return (

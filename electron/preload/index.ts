@@ -202,6 +202,13 @@ const APP_API = {
             "field_properties:update",
             newFieldProperties,
         ) as Promise<DbServices.LegacyDatabaseResponse<FieldProperties>>,
+    exportFieldPropertiesFile: () =>
+        ipcRenderer.invoke("field_properties:export"),
+    importFieldPropertiesFile: () =>
+        ipcRenderer.invoke("field_properties:import"),
+
+    onImportFieldPropertiesFile: (callback: () => void) =>
+        ipcRenderer.on("field_properties:onImport", (event) => callback()),
 
     // Marcher
     /**

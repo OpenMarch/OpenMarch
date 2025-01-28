@@ -32,7 +32,7 @@ function StateInitializer() {
     const { fetchMeasures } = useMeasureStore()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
-    const { setFieldProperties } = useFieldProperties()!;
+    const { fetchFieldProperties } = useFieldProperties()!;
 
     /**
      * These functions set the fetch function in each respective class.
@@ -168,16 +168,16 @@ function StateInitializer() {
                             setSelectedPage(getPage(args.pageId));
                         break;
                     case Constants.FieldPropertiesTableName:
-                        window.electron
-                            .getFieldProperties()
-                            .then((fieldProperties) => {
-                                setFieldProperties(fieldProperties);
-                            });
+                        fetchFieldProperties();
                 }
             }
         };
 
         window.electron.onHistoryAction(handler);
+
+        window.electron.onImportFieldPropertiesFile(() =>
+            fetchFieldProperties(),
+        );
 
         return () => {
             window.electron.removeHistoryActionListener(); // Remove the event listener
@@ -192,7 +192,7 @@ function StateInitializer() {
         setSelectedMarchers,
         marchers,
         fetchShapePages,
-        setFieldProperties,
+        fetchFieldProperties,
     ]);
 
     // Listen for fetch actions from the main process

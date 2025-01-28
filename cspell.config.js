@@ -10,6 +10,7 @@ module.exports = {
         "customizer",
         "evented",
         "frontfield",
+        "fieldots",
         "measurenb",
         "musicxml",
         "multiselection",
