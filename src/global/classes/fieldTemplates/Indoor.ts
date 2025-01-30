@@ -1,54 +1,54 @@
-import FieldProperties, { Checkpoint, PixelsPerStep } from "../FieldProperties";
+import FieldProperties, { Checkpoint } from "../FieldProperties";
 
 const IndoorTemplates = {
     INDOOR_40x60_8to5: new FieldProperties({
         name: "Indoor 40x60 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     INDOOR_50x70_8to5: new FieldProperties({
         name: "Indoor 50x70 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 36 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     INDOOR_50x80_8to5: new FieldProperties({
         name: "Indoor 50x80 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 44 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     INDOOR_50x90_8to5: new FieldProperties({
         name: "Indoor 50x90 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 48 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     // 6 to 5
     INDOOR_40x60_6to5: new FieldProperties({
         name: "Indoor 40x60 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 24 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 16 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
     }),
     INDOOR_50x70_6to5: new FieldProperties({
         name: "Indoor 50x70 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 28 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
     }),
     INDOOR_50x80_6to5: new FieldProperties({
         name: "Indoor 50x80 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
     }),
     INDOOR_50x90_6to5: new FieldProperties({
         name: "Indoor 50x90 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
     }),
 } as const;
 

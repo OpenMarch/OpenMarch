@@ -3,15 +3,16 @@ interface FieldPropertyArgs {
     xCheckpoints: Checkpoint[];
     yCheckpoints: Checkpoint[];
     yardNumberCoordinates?: YardNumberCoordinates;
-    pixelsPerStep: PixelsPerStep;
     sideDescriptions?: SideDescriptions;
     halfLineXInterval?: number;
     halfLineYInterval?: number;
+    stepSizeInches?: number;
+    measurementSystem?: MeasurementSystem;
 }
 
-export enum PixelsPerStep {
-    EIGHT_TO_FIVE = 12,
-    SIX_TO_FIVE = 16,
+export enum MeasurementSystem {
+    IMPERIAL = "imperial",
+    METRIC = "metric",
 }
 
 const defaultSideDescriptions: SideDescriptions = {
@@ -31,7 +32,10 @@ const defaultSideDescriptions: SideDescriptions = {
  */
 export default class FieldProperties {
     /*********** Constants ***********/
+    /** The width of the grid lines in the UI. I can't think of a reason to change this. */
     static readonly GRID_STROKE_WIDTH = 1;
+    /** The number of canvas "pixels" per inch in the real world. */
+    static readonly PIXELS_PER_INCH = 0.5;
 
     /*********** Attributes ***********/
     /**
@@ -56,9 +60,9 @@ export default class FieldProperties {
      */
     readonly yCheckpoints: Checkpoint[];
     /**
-     * The number of pixels per step.
+     * The size of this field's step in inches.
      */
-    readonly pixelsPerStep: PixelsPerStep;
+    readonly stepSizeInches: number;
 
     /** The name of the FieldProperties. E.g. "High School Football Field" or "Custom Gym Floor" */
     readonly name: string;
@@ -74,16 +78,22 @@ export default class FieldProperties {
     readonly halfLineXInterval?: number;
     /** The interval that half lines appear in the UI on the Y axis from the front of the field. */
     readonly halfLineYInterval?: number;
+    /**
+     * The measurement system used for the field. Imperial or Metric.
+     * This only affects some cosmetic things and stepSizeInches is still in inches.
+     */
+    readonly measurementSystem: MeasurementSystem;
 
     constructor({
         name,
         xCheckpoints,
         yCheckpoints,
         yardNumberCoordinates = {},
-        pixelsPerStep,
         sideDescriptions = defaultSideDescriptions,
         halfLineXInterval = 4,
         halfLineYInterval = 4,
+        stepSizeInches = 22.5,
+        measurementSystem = MeasurementSystem.IMPERIAL,
     }: FieldPropertyArgs) {
         this.name = name;
 
@@ -115,7 +125,8 @@ export default class FieldProperties {
         this.sideDescriptions = sideDescriptions;
         this.halfLineXInterval = halfLineXInterval;
         this.halfLineYInterval = halfLineYInterval;
-        this.pixelsPerStep = pixelsPerStep;
+        this.stepSizeInches = stepSizeInches;
+        this.measurementSystem = measurementSystem;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>
@@ -144,6 +155,31 @@ export default class FieldProperties {
             xPixels: this.width / 2,
             yPixels: this.height,
         };
+    }
+
+    /**
+     * The number of pixels per step.
+     *
+     * Uses the stepSizeInches along with PIXELS_PER_INCH to calculate the number of pixels per step.
+     * This means that the pixels per step will be representative of real space.
+     */
+    get pixelsPerStep(): number {
+        return this.stepSizeInches * FieldProperties.PIXELS_PER_INCH;
+    }
+
+    get stepSizeInUnits(): number {
+        return this.measurementSystem === MeasurementSystem.IMPERIAL
+            ? this.stepSizeInches
+            : 2.54 * this.stepSizeInches;
+    }
+
+    /**
+     * Converts a value in centimeters to inches.
+     * @param centimeters - The value in centimeters to be converted.
+     * @returns The value in inches.
+     */
+    static centimetersToInches(centimeters: number): number {
+        return centimeters / 2.54;
     }
 }
 

@@ -1,8 +1,11 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import FieldProperties, { Checkpoint } from "@/global/classes/FieldProperties";
+import FieldProperties, {
+    Checkpoint,
+    MeasurementSystem,
+} from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CaretDown, CaretUp, Info } from "@phosphor-icons/react";
 import * as Form from "@radix-ui/react-form";
 import { Input } from "../ui/Input";
@@ -12,6 +15,14 @@ import clsx from "clsx";
 import { Switch } from "../ui/Switch";
 import { Button } from "../ui/Button";
 import { toast } from "sonner";
+import { UnitInput } from "../ui/UnitInput";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTriggerButton,
+} from "../ui/Select";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -340,6 +351,7 @@ function CheckpointEditor({
                         <Form.Field
                             name="Symmetrical"
                             className={formFieldClassname}
+                            hidden={true}
                         >
                             <Form.Label className={labelClassname}>
                                 Symmetrical
@@ -453,10 +465,14 @@ function CheckpointEditor({
         </RadixCollapsible.Root>
     );
 }
+
 export default function FieldPropertiesCustomizer() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
     const [currentFieldProperties, setCurrentFieldProperties] =
         useState<FieldProperties>(fieldProperties ?? defaultFieldProperties);
+    const [measurementSystem, setMeasurementSystem] =
+        useState<MeasurementSystem>(currentFieldProperties.measurementSystem);
+    const stepSizeInputRef = useRef<HTMLInputElement>(null);
 
     const blurOnEnter = useCallback(blurOnEnterFunc, []);
 
@@ -489,15 +505,19 @@ export default function FieldPropertiesCustomizer() {
                 return;
             }
             if (axis === "x") {
-                setFieldProperties({
-                    ...currentFieldProperties,
-                    xCheckpoints: newCheckpoints,
-                });
+                setFieldProperties(
+                    new FieldProperties({
+                        ...currentFieldProperties,
+                        xCheckpoints: newCheckpoints,
+                    }),
+                );
             } else {
-                setFieldProperties({
-                    ...currentFieldProperties,
-                    yCheckpoints: newCheckpoints,
-                });
+                setFieldProperties(
+                    new FieldProperties({
+                        ...currentFieldProperties,
+                        yCheckpoints: newCheckpoints,
+                    }),
+                );
             }
         },
         [currentFieldProperties, setFieldProperties],
@@ -508,10 +528,12 @@ export default function FieldPropertiesCustomizer() {
             const newCheckpoints = currentFieldProperties.xCheckpoints.filter(
                 (c) => c.id !== checkpoint.id,
             );
-            setFieldProperties({
-                ...currentFieldProperties,
-                xCheckpoints: newCheckpoints,
-            });
+            setFieldProperties(
+                new FieldProperties({
+                    ...currentFieldProperties,
+                    xCheckpoints: newCheckpoints,
+                }),
+            );
             toast.success(
                 `${checkpoint.axis.toUpperCase()}-checkpoint at ${checkpoint.stepsFromCenterFront} steps deleted - "${checkpoint.name}"`,
             );
@@ -549,13 +571,15 @@ export default function FieldPropertiesCustomizer() {
                     useAsReference: true,
                     visible: true,
                 };
-                setFieldProperties({
-                    ...currentFieldProperties,
-                    xCheckpoints: [
-                        ...currentFieldProperties.xCheckpoints,
-                        newXCheckpoint,
-                    ].sort(sorter),
-                });
+                setFieldProperties(
+                    new FieldProperties({
+                        ...currentFieldProperties,
+                        xCheckpoints: [
+                            ...currentFieldProperties.xCheckpoints,
+                            newXCheckpoint,
+                        ].sort(sorter),
+                    }),
+                );
             } else {
                 const maxYCheckpointId =
                     currentFieldProperties.yCheckpoints.reduce(
@@ -583,13 +607,15 @@ export default function FieldPropertiesCustomizer() {
                     useAsReference: true,
                     visible: true,
                 };
-                setFieldProperties({
-                    ...currentFieldProperties,
-                    yCheckpoints: [
-                        ...currentFieldProperties.yCheckpoints,
-                        newYCheckpoint,
-                    ].sort(sorter),
-                });
+                setFieldProperties(
+                    new FieldProperties({
+                        ...currentFieldProperties,
+                        yCheckpoints: [
+                            ...currentFieldProperties.yCheckpoints,
+                            newYCheckpoint,
+                        ].sort(sorter),
+                    }),
+                );
             }
             toast.success(
                 `${axis.toUpperCase()}-checkpoint at ${newSteps} steps created`,
@@ -612,9 +638,22 @@ export default function FieldPropertiesCustomizer() {
         setCurrentFieldProperties(
             fieldProperties ?? currentFieldProperties ?? defaultFieldProperties,
         );
-        // Eslint disable to avoid infinite loop
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fieldProperties]);
+
+    useEffect(() => {
+        if (currentFieldProperties.measurementSystem !== measurementSystem) {
+            setMeasurementSystem(currentFieldProperties.measurementSystem);
+            if (stepSizeInputRef.current) {
+                stepSizeInputRef.current.value =
+                    currentFieldProperties.stepSizeInUnits.toString();
+            }
+        }
+    }, [
+        currentFieldProperties.measurementSystem,
+        currentFieldProperties.stepSizeInUnits,
+        measurementSystem,
+    ]);
 
     return (
         <Form.Root
@@ -643,6 +682,153 @@ export default function FieldPropertiesCustomizer() {
                 </div>
                 <div className="flex flex-col gap-12">
                     <h4 className="text-lg">Grid</h4>
+                    <Form.Field name="Step Size" className={formFieldClassname}>
+                        <Form.Label className={labelClassname}>
+                            Step Size
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <UnitInput
+                                type="text"
+                                ref={stepSizeInputRef}
+                                inputMode="numeric"
+                                pattern="[0-9]*\.?[0-9]*"
+                                containerClassName={inputClassname}
+                                // className={inputClassname}
+                                unit={
+                                    measurementSystem ===
+                                    MeasurementSystem.IMPERIAL
+                                        ? "in"
+                                        : "cm"
+                                }
+                                onBlur={(e) => {
+                                    e.preventDefault();
+
+                                    if (e.target.value !== "") {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    stepSizeInches:
+                                                        measurementSystem ===
+                                                        MeasurementSystem.IMPERIAL
+                                                            ? parsedFloat
+                                                            : FieldProperties.centimetersToInches(
+                                                                  parsedFloat,
+                                                              ),
+                                                }),
+                                            );
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers and decimal point
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.]/g,
+                                        "",
+                                    );
+                                    // Ensure only one decimal point
+                                    const normalized = filtered.replace(
+                                        /\.+/g,
+                                        ".",
+                                    );
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    currentFieldProperties.stepSizeInUnits
+                                }
+                                required
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents
+                                    className="w-256 flex-wrap p-16 text-center"
+                                    side="right"
+                                >
+                                    <div>
+                                        The size of each step. The canvas will
+                                        adjust to this number so that the size
+                                        of it is always consistent with its
+                                        real-world dimensions.
+                                    </div>
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <Form.Field
+                        name="Measurement System"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Measurement System
+                        </Form.Label>
+                        <Select
+                            onValueChange={(e) => {
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        measurementSystem:
+                                            e as MeasurementSystem,
+                                    }),
+                                );
+                            }}
+                            defaultValue={
+                                currentFieldProperties.measurementSystem
+                            }
+                        >
+                            <SelectTriggerButton
+                                className={inputClassname}
+                                label={fieldProperties?.name || "Field type"}
+                            />
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="imperial">
+                                        Imperial
+                                    </SelectItem>
+                                    <SelectItem value="metric">
+                                        Metric
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents
+                                    className="p-16 text-center"
+                                    side="right"
+                                >
+                                    The unit of measurement to define the step
+                                    size in. Can go back and forth
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+
                     <Form.Field
                         name="Half line X-Interval"
                         className={formFieldClassname}
@@ -654,26 +840,31 @@ export default function FieldPropertiesCustomizer() {
                             <Input
                                 type="text"
                                 inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
+                                pattern="[0-9]*\.?[0-9]*"
                                 className={inputClassname}
                                 onBlur={(e) => {
                                     e.preventDefault();
 
                                     if (e.target.value === "") {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            halfLineXInterval: undefined,
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                halfLineXInterval: undefined,
+                                            }),
+                                        );
                                     } else {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
                                         );
 
                                         if (!isNaN(parsedFloat)) {
-                                            setFieldProperties({
-                                                ...currentFieldProperties,
-                                                halfLineXInterval: parsedFloat,
-                                            });
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    halfLineXInterval:
+                                                        parsedFloat,
+                                                }),
+                                            );
                                         }
                                     }
                                 }}
@@ -696,13 +887,6 @@ export default function FieldPropertiesCustomizer() {
                                 }
                             />
                         </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
@@ -721,6 +905,10 @@ export default function FieldPropertiesCustomizer() {
                                         Leave empty to omit half lines on the
                                         X-axis.
                                     </div>
+                                    <div>
+                                        This is purely cosmetic and does not
+                                        affect coordinates in any way
+                                    </div>
                                 </TooltipContents>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
@@ -736,26 +924,31 @@ export default function FieldPropertiesCustomizer() {
                             <Input
                                 type="text"
                                 inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
+                                pattern="[0-9]*\.?[0-9]*"
                                 className={inputClassname}
                                 onBlur={(e) => {
                                     e.preventDefault();
 
                                     if (e.target.value === "") {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            halfLineYInterval: undefined,
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                halfLineYInterval: undefined,
+                                            }),
+                                        );
                                     } else {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
                                         );
 
                                         if (!isNaN(parsedFloat)) {
-                                            setFieldProperties({
-                                                ...currentFieldProperties,
-                                                halfLineYInterval: parsedFloat,
-                                            });
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    halfLineYInterval:
+                                                        parsedFloat,
+                                                }),
+                                            );
                                         }
                                     }
                                 }}
@@ -778,13 +971,6 @@ export default function FieldPropertiesCustomizer() {
                                 }
                             />
                         </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
@@ -802,6 +988,10 @@ export default function FieldPropertiesCustomizer() {
                                     <div>
                                         Leave empty to omit half lines on the
                                         Y-axis.
+                                    </div>
+                                    <div>
+                                        This is purely cosmetic and does not
+                                        affect coordinates in any way
                                     </div>
                                 </TooltipContents>
                             </Tooltip.Root>
@@ -827,13 +1017,15 @@ export default function FieldPropertiesCustomizer() {
                                         currentFieldProperties.sideDescriptions
                                             .verboseLeft
                                     ) {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                verboseLeft: e.target.value,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                sideDescriptions: {
+                                                    ...currentFieldProperties.sideDescriptions,
+                                                    verboseLeft: e.target.value,
+                                                },
+                                            }),
+                                        );
                                     }
                                 }}
                                 className={inputClassname}
@@ -881,13 +1073,15 @@ export default function FieldPropertiesCustomizer() {
                                         currentFieldProperties.sideDescriptions
                                             .terseLeft
                                     ) {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                terseLeft: e.target.value,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                sideDescriptions: {
+                                                    ...currentFieldProperties.sideDescriptions,
+                                                    terseLeft: e.target.value,
+                                                },
+                                            }),
+                                        );
                                     }
                                 }}
                                 className={inputClassname}
@@ -938,13 +1132,16 @@ export default function FieldPropertiesCustomizer() {
                                         currentFieldProperties.sideDescriptions
                                             .verboseRight
                                     ) {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                verboseRight: e.target.value,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                sideDescriptions: {
+                                                    ...currentFieldProperties.sideDescriptions,
+                                                    verboseRight:
+                                                        e.target.value,
+                                                },
+                                            }),
+                                        );
                                     }
                                 }}
                                 className={inputClassname}
@@ -992,13 +1189,15 @@ export default function FieldPropertiesCustomizer() {
                                         currentFieldProperties.sideDescriptions
                                             .terseRight
                                     ) {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                terseRight: e.target.value,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                sideDescriptions: {
+                                                    ...currentFieldProperties.sideDescriptions,
+                                                    terseRight: e.target.value,
+                                                },
+                                            }),
+                                        );
                                     }
                                 }}
                                 className={inputClassname}
@@ -1051,14 +1250,16 @@ export default function FieldPropertiesCustomizer() {
                                 onBlur={(e) => {
                                     e.preventDefault();
                                     if (e.target.value === "") {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            yardNumberCoordinates: {
-                                                ...currentFieldProperties.yardNumberCoordinates,
-                                                homeStepsFromFrontToOutside:
-                                                    undefined,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    homeStepsFromFrontToOutside:
+                                                        undefined,
+                                                },
+                                            }),
+                                        );
                                     } else {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
@@ -1066,14 +1267,16 @@ export default function FieldPropertiesCustomizer() {
                                         console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
-                                            setFieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    homeStepsFromFrontToOutside:
-                                                        parsedFloat,
-                                                },
-                                            });
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        homeStepsFromFrontToOutside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
                                         }
                                     }
                                 }}
@@ -1136,14 +1339,16 @@ export default function FieldPropertiesCustomizer() {
                                 onBlur={(e) => {
                                     e.preventDefault();
                                     if (e.target.value === "") {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            yardNumberCoordinates: {
-                                                ...currentFieldProperties.yardNumberCoordinates,
-                                                homeStepsFromFrontToInside:
-                                                    undefined,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    homeStepsFromFrontToInside:
+                                                        undefined,
+                                                },
+                                            }),
+                                        );
                                     } else {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
@@ -1151,14 +1356,16 @@ export default function FieldPropertiesCustomizer() {
                                         console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
-                                            setFieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    homeStepsFromFrontToInside:
-                                                        parsedFloat,
-                                                },
-                                            });
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        homeStepsFromFrontToInside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
                                         }
                                     }
                                 }}
@@ -1221,14 +1428,16 @@ export default function FieldPropertiesCustomizer() {
                                 onBlur={(e) => {
                                     e.preventDefault();
                                     if (e.target.value === "") {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            yardNumberCoordinates: {
-                                                ...currentFieldProperties.yardNumberCoordinates,
-                                                awayStepsFromFrontToInside:
-                                                    undefined,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    awayStepsFromFrontToInside:
+                                                        undefined,
+                                                },
+                                            }),
+                                        );
                                     } else {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
@@ -1236,14 +1445,16 @@ export default function FieldPropertiesCustomizer() {
                                         console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
-                                            setFieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    awayStepsFromFrontToInside:
-                                                        parsedFloat,
-                                                },
-                                            });
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        awayStepsFromFrontToInside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
                                         }
                                     }
                                 }}
@@ -1306,14 +1517,16 @@ export default function FieldPropertiesCustomizer() {
                                 onBlur={(e) => {
                                     e.preventDefault();
                                     if (e.target.value === "") {
-                                        setFieldProperties({
-                                            ...currentFieldProperties,
-                                            yardNumberCoordinates: {
-                                                ...currentFieldProperties.yardNumberCoordinates,
-                                                awayStepsFromFrontToOutside:
-                                                    undefined,
-                                            },
-                                        });
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                yardNumberCoordinates: {
+                                                    ...currentFieldProperties.yardNumberCoordinates,
+                                                    awayStepsFromFrontToOutside:
+                                                        undefined,
+                                                },
+                                            }),
+                                        );
                                     } else {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
@@ -1321,14 +1534,16 @@ export default function FieldPropertiesCustomizer() {
                                         console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
-                                            setFieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    awayStepsFromFrontToOutside:
-                                                        parsedFloat,
-                                                },
-                                            });
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        awayStepsFromFrontToOutside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
                                         }
                                     }
                                 }}

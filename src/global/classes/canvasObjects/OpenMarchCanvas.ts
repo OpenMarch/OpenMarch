@@ -685,7 +685,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         };
 
         for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
-            // Yard line
+            if (!xCheckpoint.visible) continue;
+            // X-Checkpoint (or yard lines)
             const x =
                 centerFrontPoint.xPixels +
                 xCheckpoint.stepsFromCenterFront * pixelsPerStep;
@@ -693,27 +694,26 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps),
             );
 
-            // Hashes
+            // Y-Checkpoints (or hashes)
             const hashWidth = 20;
             for (const yCheckpoint of this.fieldProperties.yCheckpoints) {
-                if (yCheckpoint.visible !== false) {
-                    const y =
-                        centerFrontPoint.yPixels +
-                        yCheckpoint.stepsFromCenterFront * pixelsPerStep -
-                        1;
-                    let x1 = x - hashWidth / 2;
-                    x1 = x1 < 0 ? 0 : x1;
-                    let x2 = x + hashWidth / 2;
-                    x2 = x2 > fieldWidth ? fieldWidth : x2;
-                    fieldArray.push(
-                        new fabric.Line(
-                            [x1, y, x2 + 1, y],
-                            yCheckpoint.useAsReference
-                                ? yCheckpointProps
-                                : ySecondaryCheckpointProps,
-                        ),
-                    );
-                }
+                if (!yCheckpoint.visible) continue;
+                const y =
+                    centerFrontPoint.yPixels +
+                    yCheckpoint.stepsFromCenterFront * pixelsPerStep -
+                    1;
+                let x1 = x - hashWidth / 2;
+                x1 = x1 < 0 ? 0 : x1;
+                let x2 = x + hashWidth / 2;
+                x2 = x2 > fieldWidth ? fieldWidth : x2;
+                fieldArray.push(
+                    new fabric.Line(
+                        [x1, y, x2 + 1, y],
+                        yCheckpoint.useAsReference
+                            ? yCheckpointProps
+                            : ySecondaryCheckpointProps,
+                    ),
+                );
             }
         }
 

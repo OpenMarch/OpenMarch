@@ -1,7 +1,6 @@
 import FieldProperties, {
     Checkpoint,
     YardNumberCoordinates,
-    PixelsPerStep,
 } from "../FieldProperties";
 
 const FootballTemplates = {
@@ -10,42 +9,42 @@ const FootballTemplates = {
         xCheckpoints: createFootballFieldXCheckpointsWithoutEndZones(),
         yCheckpoints: createHighSchoolFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     COLLEGE_FOOTBALL_FIELD_NO_END_ZONES: new FieldProperties({
         name: "College football field (no end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithoutEndZones(),
         yCheckpoints: createCollegeFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     PRO_FOOTBALL_FIELD_NO_END_ZONES: new FieldProperties({
         name: "Pro football field (no end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithoutEndZones(),
         yCheckpoints: createProFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES: new FieldProperties({
         name: "High school football field (with end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithEndZones(),
         yCheckpoints: createHighSchoolFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     COLLEGE_FOOTBALL_FIELD_WITH_END_ZONES: new FieldProperties({
         name: "College football field (with end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithEndZones(),
         yCheckpoints: createCollegeFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
     PRO_FOOTBALL_FIELD_WITH_END_ZONES: new FieldProperties({
         name: "Pro football field (with end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithEndZones(),
         yCheckpoints: createProFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
     }),
 } as const;
 
