@@ -8,6 +8,10 @@ interface FieldPropertyArgs {
     halfLineYInterval?: number;
     stepSizeInches?: number;
     measurementSystem?: MeasurementSystem;
+    topLabelsVisible?: boolean;
+    bottomLabelsVisible?: boolean;
+    leftLabelsVisible?: boolean;
+    rightLabelsVisible?: boolean;
 }
 
 export enum MeasurementSystem {
@@ -83,6 +87,14 @@ export default class FieldProperties {
      * This only affects some cosmetic things and stepSizeInches is still in inches.
      */
     readonly measurementSystem: MeasurementSystem;
+    /** If the top labels should be visible. */
+    readonly topLabelsVisible: boolean;
+    /** If the bottom labels should be visible. */
+    readonly bottomLabelsVisible: boolean;
+    /** If the left labels should be visible */
+    readonly leftLabelsVisible: boolean;
+    /** If the right labels should be visible */
+    readonly rightLabelsVisible: boolean;
 
     constructor({
         name,
@@ -90,10 +102,14 @@ export default class FieldProperties {
         yCheckpoints,
         yardNumberCoordinates = {},
         sideDescriptions = defaultSideDescriptions,
-        halfLineXInterval = 4,
-        halfLineYInterval = 4,
+        halfLineXInterval = 0,
+        halfLineYInterval = 0,
         stepSizeInches = 22.5,
         measurementSystem = MeasurementSystem.IMPERIAL,
+        topLabelsVisible = true,
+        bottomLabelsVisible = true,
+        leftLabelsVisible = true,
+        rightLabelsVisible = true,
     }: FieldPropertyArgs) {
         this.name = name;
 
@@ -127,6 +143,11 @@ export default class FieldProperties {
         this.halfLineYInterval = halfLineYInterval;
         this.stepSizeInches = stepSizeInches;
         this.measurementSystem = measurementSystem;
+
+        this.topLabelsVisible = topLabelsVisible;
+        this.bottomLabelsVisible = bottomLabelsVisible;
+        this.leftLabelsVisible = leftLabelsVisible;
+        this.rightLabelsVisible = rightLabelsVisible;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>

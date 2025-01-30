@@ -84,7 +84,7 @@ export function createIndoorXCheckpoints({
         terseName: String.fromCharCode(curCharCode),
         stepsFromCenterFront: stageRightBoundary,
         useAsReference: true,
-        visible: false,
+        visible: true,
         id: curId++,
     });
     const totalCheckpoints =
@@ -102,7 +102,7 @@ export function createIndoorXCheckpoints({
                 terseName: String.fromCharCode(curCharCode),
                 stepsFromCenterFront: curSteps,
                 useAsReference: true,
-                visible: curSteps === xSteps / 2,
+                visible: true,
                 id: curId++,
             });
             curCharCode++;
@@ -115,7 +115,7 @@ export function createIndoorXCheckpoints({
         terseName: String.fromCharCode(curCharCode),
         stepsFromCenterFront: stageLeftBoundary,
         useAsReference: true,
-        visible: false,
+        visible: true,
         id: curId++,
     });
 
@@ -152,7 +152,7 @@ export function createIndoorYCheckpoints({
         terseName: curCheckpointName.toString(),
         stepsFromCenterFront: frontStageSteps,
         useAsReference: true,
-        visible: false,
+        visible: true,
         id: curId++,
     });
     const totalCheckpoints =
@@ -170,7 +170,7 @@ export function createIndoorYCheckpoints({
                 terseName: curCheckpointName.toString(),
                 stepsFromCenterFront: curSteps,
                 useAsReference: true,
-                visible: false,
+                visible: true,
                 id: curId++,
             });
             curCheckpointName++;
@@ -183,7 +183,7 @@ export function createIndoorYCheckpoints({
         terseName: curCheckpointName.toString(),
         stepsFromCenterFront: backStageSteps,
         useAsReference: true,
-        visible: false,
+        visible: true,
         id: curId++,
     });
 

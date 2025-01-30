@@ -717,6 +717,79 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
 
+        // Print labels for each checkpoint
+        // These are different from the yard numbers and will always be visible
+        const labelProps: fabric.TextOptions = {
+            fontSize: 20,
+            fill: "#888888",
+            selectable: false,
+            // stroke: "#BBBBBB",
+            strokeWidth: 0.5,
+            fontFamily: "mono",
+        };
+        for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
+            if (!xCheckpoint.visible) continue;
+            const x =
+                centerFrontPoint.xPixels +
+                xCheckpoint.stepsFromCenterFront * pixelsPerStep;
+            const bottomY = centerFrontPoint.yPixels + 5;
+            const topY = -25;
+            const text = xCheckpoint.terseName;
+            if (this.fieldProperties.bottomLabelsVisible)
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: x,
+                        top: bottomY,
+                        originX: "center",
+
+                        ...labelProps,
+                    }),
+                );
+            if (this.fieldProperties.topLabelsVisible)
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: x,
+                        top: topY,
+                        originX: "center",
+                        ...labelProps,
+                    }),
+                );
+        }
+        for (const yCheckpoint of this.fieldProperties.yCheckpoints) {
+            if (!yCheckpoint.visible) continue;
+            const text = yCheckpoint.terseName;
+            const y =
+                centerFrontPoint.yPixels +
+                yCheckpoint.stepsFromCenterFront * pixelsPerStep;
+            const padding = 10;
+            if (this.fieldProperties.leftLabelsVisible) {
+                const newText = new fabric.Text(text, {
+                    left: 0,
+                    top: y,
+                    originY: "center",
+                    ...labelProps,
+                });
+
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: 0 - newText.width! - padding,
+                        top: y,
+                        originY: "center",
+                        ...labelProps,
+                    }),
+                );
+            }
+            if (this.fieldProperties.rightLabelsVisible)
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: fieldWidth + padding,
+                        top: y,
+                        originY: "center",
+                        ...labelProps,
+                    }),
+                );
+        }
+
         // Print yard line numbers if they exist
         const yardNumberCoordinates =
             this.fieldProperties.yardNumberCoordinates;
@@ -742,20 +815,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     xCheckpoint.stepsFromCenterFront * pixelsPerStep;
 
                 if (xCheckpoint.fieldLabel) {
-                    // Home number
-                    fieldArray.push(
-                        new fabric.Text(xCheckpoint.fieldLabel, {
-                            left: x - yardNumberXOffset,
-                            top:
-                                centerFrontPoint.yPixels -
-                                yardNumberCoordinates.homeStepsFromFrontToInside *
-                                    pixelsPerStep,
-                            ...numberProps,
-                        }),
-                    );
+                    if (
+                        yardNumberCoordinates.homeStepsFromFrontToInside !==
+                            undefined &&
+                        yardNumberCoordinates.homeStepsFromFrontToOutside !==
+                            undefined
+                    ) {
+                        // Home number
+                        fieldArray.push(
+                            new fabric.Text(xCheckpoint.fieldLabel, {
+                                left: x - yardNumberXOffset,
+                                top:
+                                    centerFrontPoint.yPixels -
+                                    yardNumberCoordinates.homeStepsFromFrontToInside *
+                                        pixelsPerStep,
+                                ...numberProps,
+                            }),
+                        );
+                    }
                     if (
                         yardNumberCoordinates.awayStepsFromFrontToOutside !==
-                        undefined
+                            undefined &&
+                        yardNumberCoordinates.awayStepsFromFrontToOutside !==
+                            undefined
                     ) {
                         // Away number
                         fieldArray.push(

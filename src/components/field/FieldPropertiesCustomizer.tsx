@@ -1235,11 +1235,11 @@ export default function FieldPropertiesCustomizer() {
                     {/* <div className="mb-16">Field </div> */}
                     <h4 className="text-lg">Field Labels</h4>
                     <Form.Field
-                        name="Steps from front to label bottom"
+                        name="Steps from front to home label bottom"
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from front to label bottom*
+                            Steps from front to home label bottom*
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1324,11 +1324,11 @@ export default function FieldPropertiesCustomizer() {
                         </Tooltip.TooltipProvider>
                     </Form.Field>
                     <Form.Field
-                        name="Steps from front to label top"
+                        name="Steps from front to home label top"
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from front to label top*
+                            Steps from front to home label top*
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1413,11 +1413,11 @@ export default function FieldPropertiesCustomizer() {
                         </Tooltip.TooltipProvider>
                     </Form.Field>
                     <Form.Field
-                        name="Steps from back to label top"
+                        name="Steps from front to away label top"
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from back to label top*
+                            Steps from front to away label top*
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1502,11 +1502,11 @@ export default function FieldPropertiesCustomizer() {
                         </Tooltip.TooltipProvider>
                     </Form.Field>
                     <Form.Field
-                        name="Steps from back to label bottom"
+                        name="Steps from front to away label bottom"
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from back to label bottom*
+                            Steps from front to away label bottom*
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1590,6 +1590,140 @@ export default function FieldPropertiesCustomizer() {
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
                     </Form.Field>
+                </div>
+                <div className="flex flex-col gap-12">
+                    {/* <div className="mb-16">Field </div> */}
+                    <h4 className="text-lg">External Labels</h4>
+                    <div className="grid grid-cols-4">
+                        <Form.Field
+                            name="Left"
+                            className={clsx(
+                                formFieldClassname,
+                                "flex justify-between",
+                            )}
+                        >
+                            <Form.Label
+                                className={clsx(labelClassname, "col-span-4")}
+                            >
+                                Left
+                            </Form.Label>
+                            <Form.Control asChild>
+                                <Switch
+                                    className={clsx(
+                                        inputClassname,
+                                        "col-span-2",
+                                    )}
+                                    checked={
+                                        currentFieldProperties.leftLabelsVisible
+                                    }
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                leftLabelsVisible:
+                                                    !currentFieldProperties.leftLabelsVisible,
+                                            }),
+                                        );
+                                    }}
+                                />
+                            </Form.Control>
+                        </Form.Field>
+                        <Form.Field
+                            name="Right"
+                            className={clsx(
+                                formFieldClassname,
+                                "flex justify-between",
+                            )}
+                        >
+                            <Form.Label
+                                className={clsx(labelClassname, "col-span-4")}
+                            >
+                                Right
+                            </Form.Label>
+                            <Form.Control asChild>
+                                <Switch
+                                    className={clsx(
+                                        inputClassname,
+                                        "col-span-2",
+                                    )}
+                                    checked={
+                                        currentFieldProperties.rightLabelsVisible
+                                    }
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                rightLabelsVisible:
+                                                    !currentFieldProperties.rightLabelsVisible,
+                                            }),
+                                        );
+                                    }}
+                                />
+                            </Form.Control>
+                        </Form.Field>
+                        <Form.Field
+                            name="Bottom"
+                            className={clsx(
+                                formFieldClassname,
+                                "flex justify-between",
+                            )}
+                        >
+                            <Form.Label className={labelClassname}>
+                                Bottom
+                            </Form.Label>
+                            <Form.Control asChild>
+                                <Switch
+                                    className={inputClassname}
+                                    checked={
+                                        currentFieldProperties.bottomLabelsVisible
+                                    }
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                bottomLabelsVisible:
+                                                    !currentFieldProperties.bottomLabelsVisible,
+                                            }),
+                                        );
+                                    }}
+                                />
+                            </Form.Control>
+                        </Form.Field>
+                        <Form.Field
+                            name="Top"
+                            className={clsx(
+                                formFieldClassname,
+                                "flex justify-between",
+                            )}
+                        >
+                            <Form.Label
+                                className={clsx(labelClassname, "col-span-4")}
+                            >
+                                Top
+                            </Form.Label>
+                            <Form.Control asChild>
+                                <Switch
+                                    className={inputClassname}
+                                    checked={
+                                        currentFieldProperties.topLabelsVisible
+                                    }
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                topLabelsVisible:
+                                                    !currentFieldProperties.topLabelsVisible,
+                                            }),
+                                        );
+                                    }}
+                                />
+                            </Form.Control>
+                        </Form.Field>
+                    </div>
                 </div>
             </div>
             <div>
