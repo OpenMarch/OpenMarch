@@ -1,4 +1,4 @@
-import FieldProperties, { PixelsPerStep } from "../FieldProperties";
+import FieldProperties from "../FieldProperties";
 import FieldPropertiesTemplates from "../FieldProperties.templates";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
@@ -74,7 +74,7 @@ describe("StepSize", () => {
             endingY: 815.96,
             counts: 8,
             fieldProperties: {
-                pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+                stepSizeInches: 30,
             } as FieldProperties,
         });
 

@@ -39,7 +39,8 @@ export default class v3 extends v2 {
                     );
                     const newFieldProperties = new FieldProperties({
                         name: fieldProperties.name,
-                        pixelsPerStep: 12,
+                        // TODO UNDO THIS
+                        stepSizeInches: 22.5,
                         xCheckpoints: fieldProperties.xCheckpoints,
                         yCheckpoints: fieldProperties.yCheckpoints,
                         yardNumberCoordinates:
