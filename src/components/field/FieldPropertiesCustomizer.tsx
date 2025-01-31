@@ -43,7 +43,6 @@ function CheckpointEditor({
     checkpoint,
     updateCheckpoint,
     deleteCheckpoint,
-    allCheckpoints,
     axis,
 }: {
     checkpoint: Checkpoint;
@@ -53,7 +52,6 @@ function CheckpointEditor({
         newCheckpoint: Checkpoint;
         axis: "x" | "y";
     }) => void;
-    allCheckpoints: Checkpoint[];
     axis: "x" | "y";
 }) {
     const [open, setOpen] = useState(false);
@@ -64,23 +62,6 @@ function CheckpointEditor({
      * ensuring that the focus is removed from the input.
      **/
     const blurOnEnter = useCallback(blurOnEnterFunc, []);
-
-    /**
-     * A callback function that checks if a checkpoint with the given name already exists in the `allCheckpoints` array.
-     * If another checkpoint with the same name is found, it returns `true`, indicating a duplicate name.
-     *
-     * @param name - The name of the checkpoint to check for duplicates.
-     * @returns `true` if a checkpoint with the same name already exists, `false` otherwise.
-     */
-    const checkForDuplicateName = useCallback(
-        (name: string) => {
-            const existingCheckpoint = allCheckpoints.find(
-                (checkpoint) => checkpoint.name === name,
-            );
-            return !!existingCheckpoint;
-        },
-        [allCheckpoints],
-    );
 
     return (
         <RadixCollapsible.Root
@@ -188,24 +169,18 @@ function CheckpointEditor({
                                     type="text" // Changed from "number"
                                     onBlur={(e) => {
                                         e.preventDefault();
+                                        console.log(e);
                                         if (
                                             e.target.value !== checkpoint.name
                                         ) {
-                                            // Set validation state using aria-invalid
-                                            const hasDuplicate =
-                                                checkForDuplicateName(
-                                                    e.target.value,
-                                                );
-                                            if (!hasDuplicate) {
-                                                updateCheckpoint({
-                                                    axis,
-                                                    oldCheckpoint: checkpoint,
-                                                    newCheckpoint: {
-                                                        ...checkpoint,
-                                                        name: e.target.value,
-                                                    },
-                                                });
-                                            }
+                                            updateCheckpoint({
+                                                axis,
+                                                oldCheckpoint: checkpoint,
+                                                newCheckpoint: {
+                                                    ...checkpoint,
+                                                    name: e.target.value,
+                                                },
+                                            });
                                         }
                                     }}
                                     className={inputClassname}
@@ -248,14 +223,16 @@ function CheckpointEditor({
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Short Name
+                            Short Name*
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
                                 type="text" // Changed from "number"
                                 onBlur={(e) => {
                                     e.preventDefault();
-                                    if (e.target.value !== checkpoint.name) {
+                                    if (
+                                        e.target.value !== checkpoint.terseName
+                                    ) {
                                         updateCheckpoint({
                                             axis,
                                             oldCheckpoint: checkpoint,
@@ -487,6 +464,7 @@ export default function FieldPropertiesCustomizer() {
             axis: "x" | "y";
         }) => {
             let found = false;
+            console.log(newCheckpoint);
             const newCheckpoints = (
                 axis === "x"
                     ? currentFieldProperties.xCheckpoints
@@ -525,15 +503,29 @@ export default function FieldPropertiesCustomizer() {
 
     const deleteCheckpoint = useCallback(
         (checkpoint: Checkpoint) => {
-            const newCheckpoints = currentFieldProperties.xCheckpoints.filter(
-                (c) => c.id !== checkpoint.id,
-            );
-            setFieldProperties(
-                new FieldProperties({
-                    ...currentFieldProperties,
-                    xCheckpoints: newCheckpoints,
-                }),
-            );
+            if (checkpoint.axis === "x") {
+                const newCheckpoints =
+                    currentFieldProperties.xCheckpoints.filter(
+                        (c) => c.id !== checkpoint.id,
+                    );
+                setFieldProperties(
+                    new FieldProperties({
+                        ...currentFieldProperties,
+                        xCheckpoints: newCheckpoints,
+                    }),
+                );
+            } else {
+                const newCheckpoints =
+                    currentFieldProperties.yCheckpoints.filter(
+                        (c) => c.id !== checkpoint.id,
+                    );
+                setFieldProperties(
+                    new FieldProperties({
+                        ...currentFieldProperties,
+                        yCheckpoints: newCheckpoints,
+                    }),
+                );
+            }
             toast.success(
                 `${checkpoint.axis.toUpperCase()}-checkpoint at ${checkpoint.stepsFromCenterFront} steps deleted - "${checkpoint.name}"`,
             );
@@ -695,8 +687,7 @@ export default function FieldPropertiesCustomizer() {
                                 containerClassName={inputClassname}
                                 // className={inputClassname}
                                 unit={
-                                    measurementSystem ===
-                                    MeasurementSystem.IMPERIAL
+                                    measurementSystem === "imperial"
                                         ? "in"
                                         : "cm"
                                 }
@@ -714,7 +705,7 @@ export default function FieldPropertiesCustomizer() {
                                                     ...currentFieldProperties,
                                                     stepSizeInches:
                                                         measurementSystem ===
-                                                        MeasurementSystem.IMPERIAL
+                                                        "imperial"
                                                             ? parsedFloat
                                                             : FieldProperties.centimetersToInches(
                                                                   parsedFloat,
@@ -1239,7 +1230,7 @@ export default function FieldPropertiesCustomizer() {
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from front to home label bottom*
+                            Steps from front to home label bottom
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1328,7 +1319,7 @@ export default function FieldPropertiesCustomizer() {
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from front to home label top*
+                            Steps from front to home label top
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1417,7 +1408,7 @@ export default function FieldPropertiesCustomizer() {
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from front to away label top*
+                            Steps from front to away label top
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1506,7 +1497,7 @@ export default function FieldPropertiesCustomizer() {
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Steps from front to away label bottom*
+                            Steps from front to away label bottom
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1758,9 +1749,6 @@ export default function FieldPropertiesCustomizer() {
                             <CheckpointEditor
                                 checkpoint={xCheckpoint}
                                 updateCheckpoint={updateCheckpoint}
-                                allCheckpoints={
-                                    currentFieldProperties.xCheckpoints
-                                }
                                 key={xCheckpoint.id}
                                 axis="x"
                                 deleteCheckpoint={deleteCheckpoint}
@@ -1794,6 +1782,41 @@ export default function FieldPropertiesCustomizer() {
                     front of the field. Failing to do so may cause graphical
                     errors and unexpected coordinates.
                 </div>
+                <Form.Field name="Use Hashes" className={formFieldClassname}>
+                    <Form.Label className={labelClassname}>
+                        Use Hashes
+                    </Form.Label>
+                    <Form.Control asChild>
+                        <Switch
+                            className={inputClassname}
+                            checked={currentFieldProperties.useHashes}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        useHashes:
+                                            !currentFieldProperties.useHashes,
+                                    }),
+                                );
+                            }}
+                        />
+                    </Form.Control>
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16" side="right">
+                                <div>
+                                    Use hashes for the Y-checkpoints, like a
+                                    football field.
+                                </div>
+                                <div>If unchecked, lines will be used.</div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
+                </Form.Field>
                 <div className="flex flex-col gap-12">
                     {currentFieldProperties.yCheckpoints
                         .sort(sorter)
@@ -1801,9 +1824,6 @@ export default function FieldPropertiesCustomizer() {
                             <CheckpointEditor
                                 checkpoint={yCheckpoint}
                                 updateCheckpoint={updateCheckpoint}
-                                allCheckpoints={
-                                    currentFieldProperties.yCheckpoints
-                                }
                                 key={yCheckpoint.id}
                                 axis="y"
                                 deleteCheckpoint={deleteCheckpoint}

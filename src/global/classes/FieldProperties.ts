@@ -12,13 +12,10 @@ interface FieldPropertyArgs {
     bottomLabelsVisible?: boolean;
     leftLabelsVisible?: boolean;
     rightLabelsVisible?: boolean;
+    useHashes?: boolean;
 }
 
-export enum MeasurementSystem {
-    IMPERIAL = "imperial",
-    METRIC = "metric",
-}
-
+export type MeasurementSystem = "imperial" | "metric";
 const defaultSideDescriptions: SideDescriptions = {
     verboseLeft: "Side 1",
     verboseRight: "Side 2",
@@ -95,6 +92,10 @@ export default class FieldProperties {
     readonly leftLabelsVisible: boolean;
     /** If the right labels should be visible */
     readonly rightLabelsVisible: boolean;
+    /** If the Y-checkpoints are hashes, like in a football field.
+     * Otherwise Y-checkpoints will be printed as lines
+     */
+    readonly useHashes: boolean;
 
     constructor({
         name,
@@ -105,15 +106,16 @@ export default class FieldProperties {
         halfLineXInterval = 0,
         halfLineYInterval = 0,
         stepSizeInches = 22.5,
-        measurementSystem = MeasurementSystem.IMPERIAL,
+        measurementSystem = "imperial",
         topLabelsVisible = true,
         bottomLabelsVisible = true,
         leftLabelsVisible = true,
         rightLabelsVisible = true,
+        useHashes = false,
     }: FieldPropertyArgs) {
         this.name = name;
 
-        // Verify x checkpoints have unique names
+        // Verify x checkpoints have unique ids
         const xIds = new Set();
         for (const checkpoint of xCheckpoints) {
             if (xIds.has(checkpoint.id)) {
@@ -124,12 +126,12 @@ export default class FieldProperties {
             xIds.add(checkpoint.id);
         }
 
-        // Verify y checkpoints have unique names
+        // Verify y checkpoints have unique ids
         const yIds = new Set();
         for (const checkpoint of yCheckpoints) {
             if (yIds.has(checkpoint.id)) {
                 throw new Error(
-                    `Duplicate y checkpoint name found: ${checkpoint.id}`,
+                    `Duplicate y checkpoint id found: ${checkpoint.id}`,
                 );
             }
             yIds.add(checkpoint.id);
@@ -148,6 +150,7 @@ export default class FieldProperties {
         this.bottomLabelsVisible = bottomLabelsVisible;
         this.leftLabelsVisible = leftLabelsVisible;
         this.rightLabelsVisible = rightLabelsVisible;
+        this.useHashes = useHashes;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>
@@ -189,7 +192,7 @@ export default class FieldProperties {
     }
 
     get stepSizeInUnits(): number {
-        return this.measurementSystem === MeasurementSystem.IMPERIAL
+        return this.measurementSystem === "imperial"
             ? this.stepSizeInches
             : 2.54 * this.stepSizeInches;
     }
