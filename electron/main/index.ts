@@ -14,7 +14,7 @@ import { parseMxl } from "../mxl/MxlUtil";
 // const $ = require('jquery');
 
 // Modify this when the database is updated
-import * as DatabaseMigrator from "../database/versions/v3";
+import * as DatabaseMigrator from "../database/versions/v4";
 
 // The built directory structure
 //

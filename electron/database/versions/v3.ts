@@ -39,8 +39,8 @@ export default class v3 extends v2 {
                     );
                     const newFieldProperties = new FieldProperties({
                         name: fieldProperties.name,
-                        // TODO UNDO THIS
-                        stepSizeInches: 22.5,
+                        // This is a hacky way to simulate the old behavior. Pixels per step is 12 in this migration
+                        stepSizeInches: 12 / 0.5, // 0.5 is PIXELS_PER_INCH as defined during this migration
                         xCheckpoints: fieldProperties.xCheckpoints,
                         yCheckpoints: fieldProperties.yCheckpoints,
                         yardNumberCoordinates:
@@ -98,6 +98,6 @@ export default class v3 extends v2 {
     }
 
     createTables() {
-        super.createTables(this.version);
+        super.createTables();
     }
 }

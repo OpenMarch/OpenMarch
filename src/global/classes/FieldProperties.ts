@@ -35,7 +35,9 @@ export default class FieldProperties {
     /*********** Constants ***********/
     /** The width of the grid lines in the UI. I can't think of a reason to change this. */
     static readonly GRID_STROKE_WIDTH = 1;
-    /** The number of canvas "pixels" per inch in the real world. */
+    /** The number of canvas "pixels" per inch in the real world.
+     * If this constant ever changes, it will mess up old files.
+     */
     static readonly PIXELS_PER_INCH = 0.5;
 
     /*********** Attributes ***********/
