@@ -1,13 +1,23 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useState } from "react";
-import { Checkbox } from "../ui/Checkbox";
 import FieldPropertiesSelector from "./FieldPropertiesSelector";
 import FieldPropertiesCustomizer from "./FieldPropertiesCustomizer";
 import { Switch } from "../ui/Switch";
+import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import FieldIoButtons from "./FieldIoButtons";
+import { Button } from "../ui/Button";
+import FieldProperties from "@/global/classes/FieldProperties";
 
 export default function FieldPropertiesSettings() {
-    const [useCustomField, setUseCustomField] = useState(false);
+    const { fieldProperties, setFieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore();
+
+    if (!fieldProperties)
+        return (
+            <div>
+                No field properties to load! This should never happen, please
+                reach out to support
+            </div>
+        );
 
     return (
         <div className="flex flex-col">
@@ -44,30 +54,32 @@ export default function FieldPropertiesSettings() {
                             }
                         />
                     </div>
+                    <div className="m-8">
+                        <FieldIoButtons />
+                    </div>
                 </div>
 
                 <div className="flex w-full min-w-0 flex-col gap-16">
                     <h4 className="text-h5 leading-none">Customization</h4>
-                    {/* TODO, make this a toggle group. Look like this - https://www.subframe.com/library/components/toggle-group or https://www.radix-ui.com/primitives/docs/components/toggle-group */}
-                    TODO - Get rid of this checkbox and make a toggle group
-                    instead
-                    {/* This is in text so I don't forget */}
-                    <div className="flex w-full items-center justify-between gap-16">
-                        <label htmlFor="gridLines" className="text-h6">
-                            Use custom field
-                        </label>
-                        <Checkbox
-                            id="customField"
-                            checked={useCustomField}
-                            onCheckedChange={(e) => {
-                                setUseCustomField(e as boolean);
-                            }}
-                        />
-                    </div>
-                    {useCustomField ? (
+                    <FieldPropertiesSelector />
+                    {fieldProperties?.isCustom ? (
                         <FieldPropertiesCustomizer />
                     ) : (
-                        <FieldPropertiesSelector />
+                        <Button
+                            onClick={() => {
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...fieldProperties,
+                                        isCustom: true,
+                                    }),
+                                );
+                            }}
+                            size="compact"
+                            className="w-[50%] self-end"
+                            variant="secondary"
+                        >
+                            Customize
+                        </Button>
                     )}
                 </div>
             </div>

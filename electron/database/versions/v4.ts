@@ -65,6 +65,7 @@ export default class v4 extends v3 {
                     useHashes: true,
                     halfLineXInterval: 4,
                     halfLineYInterval: 4,
+                    isCustom: false,
                 });
                 const stmt = dbToUse.prepare(`
                             UPDATE ${Constants.FieldPropertiesTableName}

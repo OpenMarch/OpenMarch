@@ -13,6 +13,7 @@ interface FieldPropertyArgs {
     leftLabelsVisible?: boolean;
     rightLabelsVisible?: boolean;
     useHashes?: boolean;
+    isCustom?: boolean;
 }
 
 export type MeasurementSystem = "imperial" | "metric";
@@ -98,6 +99,8 @@ export default class FieldProperties {
      * Otherwise Y-checkpoints will be printed as lines
      */
     readonly useHashes: boolean;
+    /** If this field is a custom field. */
+    readonly isCustom: boolean;
 
     constructor({
         name,
@@ -114,6 +117,7 @@ export default class FieldProperties {
         leftLabelsVisible = true,
         rightLabelsVisible = true,
         useHashes = false,
+        isCustom = true,
     }: FieldPropertyArgs) {
         this.name = name;
 
@@ -153,6 +157,7 @@ export default class FieldProperties {
         this.leftLabelsVisible = leftLabelsVisible;
         this.rightLabelsVisible = rightLabelsVisible;
         this.useHashes = useHashes;
+        this.isCustom = isCustom;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>

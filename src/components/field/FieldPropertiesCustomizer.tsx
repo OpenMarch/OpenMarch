@@ -29,7 +29,11 @@ const defaultFieldProperties =
 
 const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px]");
 const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
-const inputClassname = clsx("col-span-6 self-center");
+const requiredLabelClassname = clsx(
+    labelClassname,
+    "after:content-['*'] after:text-red",
+);
+const inputClassname = clsx("col-span-6 self-center ");
 const tooltipClassname = clsx("");
 const errorClassname = clsx("text-md leading-none text-red mt-8");
 
@@ -80,8 +84,8 @@ function CheckpointEditor({
                 <div className="flex flex-col gap-8">
                     <Form.Field name="Steps from center">
                         <div className={formFieldClassname}>
-                            <Form.Label className={labelClassname}>
-                                Steps from{axis === "x" ? " center" : " front"}*
+                            <Form.Label className={requiredLabelClassname}>
+                                Steps from{axis === "x" ? " center" : " front"}
                             </Form.Label>
                             <Form.Control asChild>
                                 <Input
@@ -161,15 +165,14 @@ function CheckpointEditor({
                     </Form.Field>
                     <Form.Field name="Name">
                         <div className={formFieldClassname}>
-                            <Form.Label className={labelClassname}>
-                                Name*
+                            <Form.Label className={requiredLabelClassname}>
+                                Name
                             </Form.Label>
                             <Form.Control asChild>
                                 <Input
-                                    type="text" // Changed from "number"
+                                    type="text"
                                     onBlur={(e) => {
                                         e.preventDefault();
-                                        console.log(e);
                                         if (
                                             e.target.value !== checkpoint.name
                                         ) {
@@ -222,8 +225,8 @@ function CheckpointEditor({
                         name="Short Name"
                         className={formFieldClassname}
                     >
-                        <Form.Label className={labelClassname}>
-                            Short Name*
+                        <Form.Label className={requiredLabelClassname}>
+                            Short Name
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -348,6 +351,7 @@ function CheckpointEditor({
                                         className="p-16"
                                         side="right"
                                     >
+                                        {/* This does not do anything yet */}
                                         If this checkpoint exists on both sides
                                         of the field
                                     </TooltipContents>
@@ -464,7 +468,6 @@ export default function FieldPropertiesCustomizer() {
             axis: "x" | "y";
         }) => {
             let found = false;
-            console.log(newCheckpoint);
             const newCheckpoints = (
                 axis === "x"
                     ? currentFieldProperties.xCheckpoints
@@ -653,29 +656,58 @@ export default function FieldPropertiesCustomizer() {
             className="flex flex-col gap-16"
         >
             <div className="flex flex-col gap-16">
-                {/* <div className="mb-16">Field </div> */}
-                <div className="grid grid-cols-2 gap-8">
-                    <Button
-                        className="w-full"
-                        tooltipText="Import a custom field"
-                        variant="primary"
-                        onClick={window.electron.importFieldPropertiesFile}
-                    >
-                        Import Field
-                    </Button>
-                    <Button
-                        className="w-full"
-                        tooltipText="Export this field to a file to use in other projects"
-                        variant="secondary"
-                        onClick={window.electron.exportFieldPropertiesFile}
-                    >
-                        Export Field
-                    </Button>
-                </div>
                 <div className="flex flex-col gap-12">
-                    <h4 className="text-lg">Grid</h4>
+                    <h4 className="text-lg">General</h4>
+                    <Form.Field
+                        name="Field Name"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={requiredLabelClassname}>
+                            Field Name
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text" // Changed from "number"
+                                onBlur={(e) => {
+                                    e.preventDefault();
+                                    if (
+                                        e.target.value !==
+                                        currentFieldProperties.name
+                                    ) {
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                name: e.target.value,
+                                            }),
+                                        );
+                                    }
+                                }}
+                                className={inputClassname}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={currentFieldProperties.name}
+                                required
+                            />
+                        </Form.Control>
+                        <Form.Message
+                            match={"valueMissing"}
+                            className={errorClassname}
+                        >
+                            Please enter a value.
+                        </Form.Message>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents className="p-16" side="right">
+                                    The name of this field, stage, or grid
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
                     <Form.Field name="Step Size" className={formFieldClassname}>
-                        <Form.Label className={labelClassname}>
+                        <Form.Label className={requiredLabelClassname}>
                             Step Size
                         </Form.Label>
                         <Form.Control asChild>
@@ -825,7 +857,7 @@ export default function FieldPropertiesCustomizer() {
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Half line X-Interval
+                            Half Line X-Interval
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -909,7 +941,7 @@ export default function FieldPropertiesCustomizer() {
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Half line Y-Interval
+                            Half Line Y-Interval
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -995,8 +1027,8 @@ export default function FieldPropertiesCustomizer() {
                         name="Director's left"
                         className={formFieldClassname}
                     >
-                        <Form.Label className={labelClassname}>
-                            Director&apos;s left*
+                        <Form.Label className={requiredLabelClassname}>
+                            Director&apos;s Left
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1051,8 +1083,8 @@ export default function FieldPropertiesCustomizer() {
                         name="Director's left"
                         className={formFieldClassname}
                     >
-                        <Form.Label className={labelClassname}>
-                            Left abbreviation*
+                        <Form.Label className={requiredLabelClassname}>
+                            Left Abbreviation
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1110,8 +1142,8 @@ export default function FieldPropertiesCustomizer() {
                         name="Director's right"
                         className={formFieldClassname}
                     >
-                        <Form.Label className={labelClassname}>
-                            Director&apos;s right*
+                        <Form.Label className={requiredLabelClassname}>
+                            Director&apos;s Right
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1167,8 +1199,8 @@ export default function FieldPropertiesCustomizer() {
                         name="Director's right"
                         className={formFieldClassname}
                     >
-                        <Form.Label className={labelClassname}>
-                            Right abbreviation*
+                        <Form.Label className={requiredLabelClassname}>
+                            Right Abbreviation
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -1759,6 +1791,7 @@ export default function FieldPropertiesCustomizer() {
                     <Button
                         onClick={() => addCheckpoint("x")}
                         className="self-end"
+                        size="compact"
                     >
                         New X-Checkpoint
                     </Button>
@@ -1782,7 +1815,10 @@ export default function FieldPropertiesCustomizer() {
                     front of the field. Failing to do so may cause graphical
                     errors and unexpected coordinates.
                 </div>
-                <Form.Field name="Use Hashes" className={formFieldClassname}>
+                <Form.Field
+                    name="Use Hashes"
+                    className={clsx(formFieldClassname, "mb-8")}
+                >
                     <Form.Label className={labelClassname}>
                         Use Hashes
                     </Form.Label>
@@ -1807,7 +1843,10 @@ export default function FieldPropertiesCustomizer() {
                             <Tooltip.Trigger type="button">
                                 <Info size={18} className="text-text/60" />
                             </Tooltip.Trigger>
-                            <TooltipContents className="p-16" side="right">
+                            <TooltipContents
+                                className="p-16 text-center"
+                                side="right"
+                            >
                                 <div>
                                     Use hashes for the Y-checkpoints, like a
                                     football field.
@@ -1830,9 +1869,10 @@ export default function FieldPropertiesCustomizer() {
                             />
                         ))}
                 </div>
-                <div className="mt-16 flex justify-end">
+                <div className="mb-16 mt-16 flex justify-end">
                     <Button
                         onClick={() => addCheckpoint("y")}
+                        size="compact"
                         className="self-end"
                     >
                         New Y-Checkpoint

@@ -6,24 +6,28 @@ const IndoorTemplates = {
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
         stepSizeInches: 22.5,
+        isCustom: false,
     }),
     INDOOR_50x70_8to5: new FieldProperties({
         name: "Indoor 50x70 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 36 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
         stepSizeInches: 22.5,
+        isCustom: false,
     }),
     INDOOR_50x80_8to5: new FieldProperties({
         name: "Indoor 50x80 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 44 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
         stepSizeInches: 22.5,
+        isCustom: false,
     }),
     INDOOR_50x90_8to5: new FieldProperties({
         name: "Indoor 50x90 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 48 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
         stepSizeInches: 22.5,
+        isCustom: false,
     }),
     // 6 to 5
     INDOOR_40x60_6to5: new FieldProperties({
@@ -31,24 +35,28 @@ const IndoorTemplates = {
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 24 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 16 }),
         stepSizeInches: 30,
+        isCustom: false,
     }),
     INDOOR_50x70_6to5: new FieldProperties({
         name: "Indoor 50x70 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 28 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
         stepSizeInches: 30,
+        isCustom: false,
     }),
     INDOOR_50x80_6to5: new FieldProperties({
         name: "Indoor 50x80 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
         stepSizeInches: 30,
+        isCustom: false,
     }),
     INDOOR_50x90_6to5: new FieldProperties({
         name: "Indoor 50x90 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
         stepSizeInches: 30,
+        isCustom: false,
     }),
 } as const;
 

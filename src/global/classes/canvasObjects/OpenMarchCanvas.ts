@@ -500,12 +500,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param gridLines Whether or not to include grid lines (every step)
      * @param halfLines Whether or not to include half lines (every 4 steps)
      */
-    renderFieldGrid = (
-        { gridLines = true, halfLines = true } = {
-            gridLines: true,
-            halfLines: true,
-        } as { gridLines?: boolean; halfLines?: boolean },
-    ) => {
+    renderFieldGrid = () => {
+        const gridLines = this.uiSettings?.gridLines ?? true;
+        const halfLines = this.uiSettings?.halfLines ?? true;
         if (this.staticGridRef) this.remove(this.staticGridRef);
         this.staticGridRef = this.createFieldGrid({
             gridLines,
@@ -631,6 +628,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             };
             // X
             if (this.fieldProperties.halfLineXInterval) {
+                fieldArray.push(
+                    new fabric.Line(
+                        [
+                            centerFrontPoint.xPixels,
+                            0,
+                            centerFrontPoint.xPixels,
+                            fieldHeight,
+                        ],
+                        darkLineProps,
+                    ),
+                );
                 for (
                     let i =
                         centerFrontPoint.xPixels +
@@ -1071,10 +1079,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             oldUiSettings.gridLines !== uiSettings.gridLines ||
             oldUiSettings.halfLines !== uiSettings.halfLines
         ) {
-            this.renderFieldGrid({
-                gridLines: uiSettings.gridLines,
-                halfLines: uiSettings.halfLines,
-            });
+            this.renderFieldGrid();
         }
     }
 
