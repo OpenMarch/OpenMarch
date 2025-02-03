@@ -4,6 +4,7 @@ description: "Solutions to OpenMarch music importing bugs"
 ---
 
 import { Steps } from "@astrojs/starlight/components";
+import { YouTube } from "astro-embed";
 
 The music integration in OpenMarch is currently extremely minimal.
 The best think we can ask for right now is your patience as we work through it. 😊
@@ -16,16 +17,10 @@ In the meantime, here is a list of tips and tricks to get music to work for you.
 
 This video walks through the steps if you prefer not to read.
 
-<iframe
-  width="560"
-  height="315"
-  src="https://www.youtube.com/embed/2HjLimsxUxQ?si=m-FCDOpT7oJvauCR&amp;start=972"
-  title="YouTube video player"
-  frameborder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-  referrerpolicy="strict-origin-when-cross-origin"
-  allowfullscreen
-></iframe>
+<YouTube
+  id="https://youtu.be/2HjLimsxUxQ?si=tPmBEZMKTE6O-IY_"
+  params="start=972"
+/>
 
 > If OpenMarch ever seems broken, refreshing the page `Ctrl + R` will often fix it.
 
