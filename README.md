@@ -9,6 +9,10 @@
 
 OpenMarch is a free, open-source, fast and intuitive drill writing experience for the marching arts.
 
+## Our goal
+
+To be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles. OpenMarch hopes to be enough for 90% of ensembles with reasonable design needs. We want to make drill writing effortless.
+
 ## Developers
 
 Learn about contributing and running the development server [here](https://openmarch.com/developers/contributing/). Also have a look at our stack on the developer docs.
