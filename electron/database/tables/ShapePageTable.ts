@@ -49,34 +49,6 @@ export interface ModifiedShapePageArgs {
 }
 
 /**
- * Creates the ShapePage table in the database with columns for id, name, timestamps, and notes.
- * Also sets up undo triggers for history tracking.
- * @param db The database instance
- */
-export function createShapePageTable(db: Database.Database) {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.ShapePageTableName}" (
-                "id"            INTEGER PRIMARY KEY,
-                "shape_id"      INTEGER NOT NULL,
-                "page_id"       INTEGER NOT NULL,
-                "svg_path"      TEXT NOT NULL,
-                "created_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updated_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "notes"         TEXT,
-                FOREIGN KEY (shape_id) REFERENCES "${Constants.ShapeTableName}" ("id") ON DELETE CASCADE,
-                FOREIGN KEY (page_id) REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE,
-                UNIQUE (shape_id, page_id)
-            );
-        `);
-        History.createUndoTriggers(db, Constants.ShapePageTableName);
-    } catch (error) {
-        throw new Error(
-            `Failed to create ${Constants.ShapePageTableName} table: ${error}`,
-        );
-    }
-}
-/**
  * Retrieves all ShapePages from the database
  * @param db The database instance
  * @returns DatabaseResponse containing an array of ShapePage objects

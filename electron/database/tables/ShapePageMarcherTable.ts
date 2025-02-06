@@ -33,40 +33,6 @@ export interface ModifiedShapePageMarcherArgs {
 }
 
 /**
- * Creates the ShapePageMarcher table in the database.
- * Also sets up undo triggers for history tracking.
- *
- * @param db The database instance
- */
-export function createShapePageMarcherTable(db: Database.Database) {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.ShapePageMarcherTableName}" (
-                "id"                INTEGER PRIMARY KEY,
-                "shape_page_id"     INTEGER NOT NULL REFERENCES "${Constants.ShapePageTableName}" ("id"),
-                "marcher_id"        INTEGER NOT NULL REFERENCES "${Constants.MarcherTableName}" ("id"),
-                "position_order"    INTEGER,
-                "created_at"        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updated_at"        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "notes"             TEXT,
-                FOREIGN KEY (shape_page_id) REFERENCES "${Constants.ShapePageTableName}" ("id") ON DELETE CASCADE,
-                FOREIGN KEY (marcher_id) REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE,
-                UNIQUE (shape_page_id, position_order),
-                UNIQUE (shape_page_id, marcher_id)
-            );
-            CREATE INDEX "idx-spm-shape_page_id" ON "${Constants.ShapePageMarcherTableName}" (shape_page_id);
-            CREATE INDEX "idx-spm-marcher_id" ON "${Constants.ShapePageMarcherTableName}" (marcher_id);
-        `);
-        History.createUndoTriggers(db, Constants.ShapePageMarcherTableName);
-    } catch (error: any) {
-        throw new Error(
-            `Failed to create ${Constants.ShapePageMarcherTableName} table: ${error}`,
-            error,
-        );
-    }
-}
-
-/**
  * Retrieves all shapePageMarchers from the database or filters by shapePageId.
  *
  * @param db The database instance
