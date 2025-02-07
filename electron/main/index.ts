@@ -14,7 +14,7 @@ import { parseMxl } from "../mxl/MxlUtil";
 // const $ = require('jquery');
 
 // Modify this when the database is updated
-import * as DatabaseMigrator from "../database/versions/v4";
+import CurrentDatabase from "../database/versions/CurrentDatabase";
 import {
     getFieldPropertiesJson,
     updateFieldProperties,
@@ -313,9 +313,7 @@ export async function newFile() {
             if (path.canceled || !path.filePath) return;
 
             setActiveDb(path.filePath, true);
-            const dbVersion = new DatabaseMigrator.default(
-                DatabaseServices.connect,
-            );
+            const dbVersion = new CurrentDatabase(DatabaseServices.connect);
             dbVersion.createTables();
             win?.webContents.reload();
 
@@ -645,7 +643,7 @@ function setActiveDb(path: string, isNewFile = false) {
     DatabaseServices.setDbPath(path, isNewFile);
     win?.setTitle("OpenMarch - " + path);
 
-    const migrator = new DatabaseMigrator.default(DatabaseServices.connect);
+    const migrator = new CurrentDatabase(DatabaseServices.connect);
     const db = DatabaseServices.connect();
     if (!db) {
         console.error("Error connecting to database");
@@ -653,9 +651,9 @@ function setActiveDb(path: string, isNewFile = false) {
     }
     if (!isNewFile) {
         console.log("Checking database version to see if migration is needed");
-        DatabaseMigrator.default.getVersion(db);
+        CurrentDatabase.getVersion(db);
         // Create backup before migration
-        if (DatabaseMigrator.default.getVersion(db) !== migrator.version) {
+        if (CurrentDatabase.getVersion(db) !== migrator.version) {
             const backupDir = join(app.getPath("userData"), "backups");
             if (!fs.existsSync(backupDir)) {
                 fs.mkdirSync(backupDir);

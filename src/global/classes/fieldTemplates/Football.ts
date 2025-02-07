@@ -100,8 +100,8 @@ function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
             terseName: `${curYardLine.toString()}`,
             stepsFromCenterFront: stepsFromCenterFront,
             useAsReference: true,
-            fieldLabel: label,
             visible: true,
+            fieldLabel: label,
         });
     }
     return xCheckpoints;
