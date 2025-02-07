@@ -8,7 +8,9 @@ import { ElectronApi } from "electron/preload";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 window.electron = {
-    getFieldProperties: vi.fn().mockResolvedValue(mockNCAAFieldProperties),
+    getFieldProperties: vi
+        .fn()
+        .mockResolvedValue({ data: mockNCAAFieldProperties, success: true }),
 } as Partial<ElectronApi> as ElectronApi;
 describe("SelectedPageContext", () => {
     beforeEach(() => {
@@ -25,8 +27,7 @@ describe("SelectedPageContext", () => {
             }));
         });
         expect(result).toBeDefined();
-        expect(result.current?.fieldProperties).toEqual({
-            ...mockNCAAFieldProperties,
-        });
+        expect(result.current.fieldProperties).toBeDefined();
+        expect(result.current.fieldProperties).toEqual(mockNCAAFieldProperties);
     });
 });

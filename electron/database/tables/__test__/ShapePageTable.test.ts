@@ -5,33 +5,22 @@ import {
     getShapePages,
     updateShapePages,
     deleteShapePages,
-    createShapePageTable,
     copyShapePageToPage,
 } from "../ShapePageTable";
-import * as History from "../../database.history";
 import Constants from "@/global/Constants";
-import { createPages, createPageTable, deletePages } from "../PageTable";
+import { createPages, deletePages } from "../PageTable";
 import * as DbMocks from "../../__test__/DatabaseMocks";
-import { createShapes, createShapeTable, deleteShapes } from "../ShapeTable";
-import { createMarcherPageTable } from "../MarcherPageTable";
-import { createMarchers, createMarcherTable } from "../MarcherTable";
-import {
-    createShapePageMarcherTable,
-    getShapePageMarchers,
-} from "../ShapePageMarcherTable";
+import { createShapes, deleteShapes } from "../ShapeTable";
+import { createMarchers } from "../MarcherTable";
+import { getShapePageMarchers } from "../ShapePageMarcherTable";
+import { initTestDatabase } from "./testUtils";
 
 describe("ShapePageTable CRUD Operations", () => {
     let db: Database.Database;
 
     beforeEach(() => {
-        db = new Database(":memory:");
-        History.createHistoryTables(db);
-        createShapePageTable(db);
-        createPageTable(db);
-        createShapeTable(db);
-        createMarcherPageTable(db);
-        createShapePageMarcherTable(db);
-        createMarcherTable(db);
+        db = initTestDatabase();
+
         // Create a shape
         expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
             true,
@@ -275,14 +264,7 @@ describe("ShapePageTable CRUD Operations", () => {
         let db: Database.Database;
 
         beforeEach(() => {
-            db = new Database(":memory:");
-            History.createHistoryTables(db);
-            createShapePageTable(db);
-            createPageTable(db);
-            createShapeTable(db);
-            createMarcherPageTable(db);
-            createShapePageMarcherTable(db);
-            createMarcherTable(db);
+            db = initTestDatabase();
             expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
                 true,
             );
