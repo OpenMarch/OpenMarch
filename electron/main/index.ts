@@ -15,6 +15,10 @@ import { parseMxl } from "../mxl/MxlUtil";
 
 // Modify this when the database is updated
 import * as DatabaseMigrator from "../database/versions/v4";
+import {
+    getFieldPropertiesJson,
+    updateFieldProperties,
+} from "../database/tables/FieldPropertiesTable";
 
 // The built directory structure
 //
@@ -412,7 +416,9 @@ export async function exportFieldPropertiesFile() {
 
     if (!win) return -1;
 
-    const jsonStr = DatabaseServices.getFieldPropertiesJson();
+    const jsonStr = getFieldPropertiesJson({
+        db: DatabaseServices.connect(),
+    }).data;
 
     // Save
     dialog
@@ -458,7 +464,10 @@ export async function importFieldPropertiesFile() {
         .then((path) => {
             const fileContents = fs.readFileSync(path.filePaths[0]);
             const jsonStr = fileContents.toString();
-            DatabaseServices.updateFieldProperties(jsonStr);
+            updateFieldProperties({
+                db: DatabaseServices.connect(),
+                fieldProperties: jsonStr,
+            });
 
             // If the user cancels the dialog, and there is no previous path, return -1
             if (path.canceled || !path.filePaths[0]) return -1;

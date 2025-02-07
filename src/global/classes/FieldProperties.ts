@@ -14,6 +14,7 @@ interface FieldPropertyArgs {
     rightLabelsVisible?: boolean;
     useHashes?: boolean;
     isCustom?: boolean;
+    showFieldImage?: boolean;
 }
 
 export type MeasurementSystem = "imperial" | "metric";
@@ -101,6 +102,8 @@ export default class FieldProperties {
     readonly useHashes: boolean;
     /** If this field is a custom field. */
     readonly isCustom: boolean;
+    /** True to display the field's image under the grid (if one exists) */
+    readonly showFieldImage: boolean;
 
     constructor({
         name,
@@ -118,6 +121,7 @@ export default class FieldProperties {
         rightLabelsVisible = true,
         useHashes = false,
         isCustom = true,
+        showFieldImage = true,
     }: FieldPropertyArgs) {
         this.name = name;
 
@@ -158,6 +162,7 @@ export default class FieldProperties {
         this.rightLabelsVisible = rightLabelsVisible;
         this.useHashes = useHashes;
         this.isCustom = isCustom;
+        this.showFieldImage = showFieldImage;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>

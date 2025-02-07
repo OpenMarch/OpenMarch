@@ -16,6 +16,7 @@ import { ModifiedPageArgs } from "@/global/classes/Page";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
+import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -122,9 +123,17 @@ async function connectWrapper<T>(
  */
 export function initHandlers() {
     // Field properties
-    ipcMain.handle("field_properties:get", async () => getFieldProperties());
-    ipcMain.handle("field_properties:update", async (_, field_properties) =>
-        updateFieldProperties(field_properties),
+    ipcMain.handle("field_properties:get", async () =>
+        connectWrapper<FieldProperties>(
+            FieldPropertiesTable.getFieldProperties,
+            {},
+        ),
+    );
+    ipcMain.handle("field_properties:update", async (_, fieldProperties) =>
+        connectWrapper<FieldProperties | null>(
+            FieldPropertiesTable.updateFieldProperties,
+            { fieldProperties },
+        ),
     );
 
     // File IO handlers located in electron/main/index.ts
@@ -427,77 +436,6 @@ export function performHistoryAction(
 
     return { ...response, marcherIds, pageId };
 }
-
-/* ======================== Field Properties ======================== */
-/**
- * Gets the field properties from the database.
- *
- * @param db
- * @returns
- */
-export function getFieldProperties(db?: Database.Database): FieldProperties {
-    const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.FieldPropertiesTableName}`,
-    );
-    const result = stmt.get({});
-    const jsonData = (result as any).json_data;
-    const fieldProperties = JSON.parse(jsonData) as FieldProperties;
-    if (!db) dbToUse.close();
-    return fieldProperties;
-}
-
-export function getFieldPropertiesJson(db?: Database.Database): string {
-    const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT json_data FROM ${Constants.FieldPropertiesTableName}`,
-    );
-    const result = stmt.get({});
-    const jsonData = (result as { json_data: string }).json_data;
-    if (!db) dbToUse.close();
-    return jsonData;
-}
-
-/**
- * Updates the field properties in the database.
- *
- * @param fieldProperties The new field properties
- * @returns {success: boolean, result?: FieldProperties, error?: string}
- */
-export function updateFieldProperties(
-    fieldProperties: FieldProperties | string,
-    db?: Database.Database,
-): LegacyDatabaseResponse<FieldProperties> {
-    const dbToUse = db || connect();
-    let output: LegacyDatabaseResponse<FieldProperties> = { success: true };
-
-    try {
-        History.incrementUndoGroup(dbToUse);
-        const stmt = dbToUse.prepare(`
-            UPDATE ${Constants.FieldPropertiesTableName}
-            SET json_data = @json_data
-            WHERE id = 1
-        `);
-        if (typeof fieldProperties === "string") {
-            stmt.run({ json_data: fieldProperties });
-        } else {
-            stmt.run({ json_data: JSON.stringify(fieldProperties) });
-        }
-        const newFieldProperties = getFieldProperties(dbToUse);
-        output = { success: true, result: newFieldProperties };
-    } catch (error: any) {
-        console.error(error);
-        output = {
-            success: false,
-            error: { message: error.message, stack: error.stack },
-        };
-    } finally {
-        History.incrementUndoGroup(dbToUse);
-        if (!db) dbToUse.close();
-    }
-    return output;
-}
-
 /* ============================ Measures ============================ */
 const defaultMeasures = `X:1
 Q:1/4=120

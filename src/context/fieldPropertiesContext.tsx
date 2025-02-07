@@ -39,8 +39,14 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
 
     const fetchFieldProperties = useCallback(async () => {
         window.electron.getFieldProperties().then((fieldPropertiesResult) => {
+            if (!fieldPropertiesResult.success) {
+                throw new Error(
+                    "Could not get field properties " +
+                        fieldPropertiesResult.error,
+                );
+            }
             const newFieldProperties = new FieldProperties(
-                fieldPropertiesResult,
+                fieldPropertiesResult.data,
             );
             setFieldProperties(newFieldProperties, false);
         });
