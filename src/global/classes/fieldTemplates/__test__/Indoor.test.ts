@@ -12,20 +12,22 @@ describe("createIndoorXCheckpoints", () => {
         const checkpoints = createIndoorXCheckpoints({ xSteps: 4 });
         expect(checkpoints).toHaveLength(2);
         expect(checkpoints[0]).toEqual({
+            id: 0,
             name: "Line A",
             axis: "x",
             terseName: "A",
             stepsFromCenterFront: -2,
             useAsReference: true,
-            visible: false,
+            visible: true,
         });
         expect(checkpoints[1]).toEqual({
+            id: 1,
             name: "Line B",
             axis: "x",
             terseName: "B",
             stepsFromCenterFront: 2,
             useAsReference: true,
-            visible: false,
+            visible: true,
         });
     });
 
@@ -70,20 +72,22 @@ describe("createIndoorYCheckpoints", () => {
         const checkpoints = createIndoorYCheckpoints({ ySteps: 4 });
         expect(checkpoints).toHaveLength(2);
         expect(checkpoints[0]).toEqual({
+            id: 0,
             name: "Line 0",
             axis: "y",
             terseName: "0",
             stepsFromCenterFront: 0,
             useAsReference: true,
-            visible: false,
+            visible: true,
         });
         expect(checkpoints[1]).toEqual({
+            id: 1,
             name: "Line 1",
             axis: "y",
             terseName: "1",
             stepsFromCenterFront: -4,
             useAsReference: true,
-            visible: false,
+            visible: true,
         });
     });
 

@@ -251,3 +251,14 @@ export const mockShapePages: ShapePage[] = [
  */
 export const mockNCAAFieldProperties: FieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+/**
+ * A mock to represent the field back when an 8-to-5 step was 24 pixels.
+ * This is here because many of the unit tests had that number hard-coded
+ */
+export const legacyMockNCAAFieldProperties: FieldProperties =
+    new FieldProperties({
+        ...mockNCAAFieldProperties,
+        stepSizeInches:
+            mockNCAAFieldProperties.stepSizeInches *
+            (24 / mockNCAAFieldProperties.stepSizeInches),
+    });
