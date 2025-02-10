@@ -208,6 +208,12 @@ const APP_API = {
         ipcRenderer.invoke("field_properties:export"),
     importFieldPropertiesFile: () =>
         ipcRenderer.invoke("field_properties:import"),
+    importFieldPropertiesImage: () =>
+        ipcRenderer.invoke("field_properties:import_image"),
+    getFieldPropertiesImage: () =>
+        ipcRenderer.invoke("field_properties:get_image") as Promise<
+            DatabaseResponse<Buffer | null>
+        >,
 
     onImportFieldPropertiesFile: (callback: () => void) =>
         ipcRenderer.on("field_properties:onImport", (event) => callback()),

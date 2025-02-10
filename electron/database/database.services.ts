@@ -135,6 +135,12 @@ export function initHandlers() {
             { fieldProperties },
         ),
     );
+    ipcMain.handle("field_properties:get_image", async () =>
+        connectWrapper<Buffer | null>(
+            FieldPropertiesTable.getFieldPropertiesImage,
+            {},
+        ),
+    );
 
     // File IO handlers located in electron/main/index.ts
     // Marcher

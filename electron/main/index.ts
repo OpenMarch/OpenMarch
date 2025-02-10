@@ -18,6 +18,7 @@ import CurrentDatabase from "../database/versions/CurrentDatabase";
 import {
     getFieldPropertiesJson,
     updateFieldProperties,
+    updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
 
 // The built directory structure
@@ -141,6 +142,9 @@ app.whenReady().then(async () => {
     );
     ipcMain.handle("field_properties:import", async () =>
         importFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import_image", async () =>
+        importFieldPropertiesImage(),
     );
 
     // Getters
@@ -456,7 +460,7 @@ export async function importFieldPropertiesFile() {
     dialog
         .showOpenDialog(win, {
             filters: [
-                { name: "penMarch Field File", extensions: ["fieldots"] },
+                { name: "OpenMarch Field File", extensions: ["fieldots"] },
             ],
         })
         .then((path) => {
@@ -471,6 +475,47 @@ export async function importFieldPropertiesFile() {
             if (path.canceled || !path.filePaths[0]) return -1;
 
             win?.webContents.send("field_properties:onImport");
+
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
+}
+
+export async function importFieldPropertiesImage() {
+    console.log("importFieldPropertiesFile");
+
+    if (!win) return -1;
+
+    // If there is no previous path, open a dialog
+    dialog
+        .showOpenDialog(win, {
+            filters: [
+                {
+                    name: "Image file",
+                    extensions: [
+                        ".jpg",
+                        ".jpeg",
+                        ".png",
+                        ".gif",
+                        ".bmp",
+                        ".webp",
+                    ],
+                },
+            ],
+        })
+        .then((path) => {
+            updateFieldPropertiesImage({
+                db: DatabaseServices.connect(),
+                imagePath: path.filePaths[0],
+            });
+
+            // If the user cancels the dialog, and there is no previous path, return -1
+            if (path.canceled || !path.filePaths[0]) return -1;
+
+            win?.webContents.send("field_properties:onImageImport");
 
             return 200;
         })

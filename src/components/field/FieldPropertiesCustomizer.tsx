@@ -1022,6 +1022,115 @@ export default function FieldPropertiesCustomizer() {
                     </Form.Field>
                 </div>
                 <div className="flex flex-col gap-12">
+                    <h4 className="text-lg">Image Rendering</h4>
+                    <Form.Field
+                        name="Left"
+                        className={clsx(
+                            formFieldClassname,
+                            "flex justify-between",
+                        )}
+                    >
+                        <Form.Label
+                            className={clsx(labelClassname, "col-span-4")}
+                        >
+                            Show Background Image
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Switch
+                                className={clsx(inputClassname, "col-span-2")}
+                                checked={currentFieldProperties.showFieldImage}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            showFieldImage:
+                                                !currentFieldProperties.showFieldImage,
+                                        }),
+                                    );
+                                }}
+                            />
+                        </Form.Control>
+                    </Form.Field>
+                    <Form.Field
+                        name="Measurement System"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Conform Method
+                        </Form.Label>
+                        <Select
+                            onValueChange={(e) => {
+                                const newValue =
+                                    e === "fit" || e === "fill" ? e : "fit";
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        imageFillOrFit: newValue,
+                                    }),
+                                );
+                            }}
+                            defaultValue={currentFieldProperties.imageFillOrFit}
+                        >
+                            <SelectTriggerButton
+                                className={inputClassname}
+                                label={"Conforming Method"}
+                            />
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="fit">Fit</SelectItem>
+                                    <SelectItem value="fill">Fill</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents
+                                    className="p-16 text-center"
+                                    side="right"
+                                >
+                                    <div>
+                                        Whether to fit the background image
+                                        inside the field or fill it
+                                    </div>
+                                    <div>
+                                        The aspect ratio is always maintained{" "}
+                                    </div>
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+
+                    <Button
+                        className="self-end"
+                        tooltipText="Import an image to display on the field"
+                        tooltipSide="right"
+                        variant="primary"
+                        size="compact"
+                        onClick={async () => {
+                            await window.electron
+                                .importFieldPropertiesImage()
+                                .then(() =>
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            showFieldImage: true,
+                                        }),
+                                    ),
+                                );
+                        }}
+                    >
+                        Import Image
+                    </Button>
+                    <div className="text-end text-sub">
+                        Refresh the page after import [Ctrl + R]
+                    </div>
+                </div>
+                <div className="flex flex-col gap-12">
                     <h4 className="text-lg">Side Descriptions</h4>
                     <Form.Field
                         name="Director's left"
@@ -1287,7 +1396,6 @@ export default function FieldPropertiesCustomizer() {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
                                         );
-                                        console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
                                             setFieldProperties(
@@ -1376,7 +1484,6 @@ export default function FieldPropertiesCustomizer() {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
                                         );
-                                        console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
                                             setFieldProperties(
@@ -1465,7 +1572,6 @@ export default function FieldPropertiesCustomizer() {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
                                         );
-                                        console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
                                             setFieldProperties(
@@ -1554,7 +1660,6 @@ export default function FieldPropertiesCustomizer() {
                                         const parsedFloat = parseFloat(
                                             e.target.value,
                                         );
-                                        console.info(parsedFloat);
 
                                         if (!isNaN(parsedFloat)) {
                                             setFieldProperties(

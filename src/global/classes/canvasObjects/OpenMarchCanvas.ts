@@ -29,6 +29,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /** The FieldProperties this OpenMarchCanvas has been built on */
     private _fieldProperties: FieldProperties;
+
+    private _backgroundImage: fabric.Image | null;
+    private _bgImageValues?: {
+        left: number;
+        top: number;
+        scale: number;
+        imgAspectRatio: number;
+    };
+
     /** The current page this canvas is on */
     currentPage: Page;
     /**
@@ -136,6 +145,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this._uiSettings = uiSettings;
 
         if (listeners) this.setListeners(listeners);
+
+        this._backgroundImage = null;
+        this.refreshBackgroundImage();
 
         this.requestRenderAll();
     }
@@ -564,6 +576,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }: {
         gridLines?: boolean;
         halfLines?: boolean;
+        imageBuffer?: HTMLImageElement;
     }): fabric.Group => {
         const fieldArray: fabric.Object[] = [];
         const fieldWidth = this.fieldProperties.width;
@@ -582,6 +595,25 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             hoverCursor: "default",
         });
         fieldArray.push(background);
+
+        if (
+            this.fieldProperties.showFieldImage &&
+            this._backgroundImage &&
+            this._backgroundImage !== null
+        ) {
+            this.refreshBackgroundImageValues();
+            if (!this._bgImageValues) {
+                console.error(
+                    "background image values not defined. This will cause strange image rendering",
+                );
+            } else {
+                this._backgroundImage.scaleX = this._bgImageValues.scale;
+                this._backgroundImage.scaleY = this._bgImageValues.scale;
+                this._backgroundImage.left = this._bgImageValues.left;
+                this._backgroundImage.top = this._bgImageValues.top;
+            }
+            fieldArray.push(this._backgroundImage);
+        }
 
         // Grid lines
         if (gridLines) {
@@ -1105,6 +1137,118 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     set fieldProperties(fieldProperties: FieldProperties) {
         this._fieldProperties = fieldProperties;
         this.renderFieldGrid();
+    }
+
+    /**
+     * Refreshes the background image of the canvas by fetching the field properties image from the Electron API.
+     * If the image data is successfully retrieved, it is converted to a Fabric.js Image object and set as the background image.
+     * If the image data is null, the background image is set to null.
+     * Finally, the field grid is re-rendered to reflect the updated background image.
+     */
+    async refreshBackgroundImage(renderFieldGrid: boolean = true) {
+        // if (this._backgroundImage) this.remove(this._backgroundImage);
+        const backgroundImageResponse =
+            await window.electron.getFieldPropertiesImage();
+
+        if (this._backgroundImage) {
+            this.remove(this._backgroundImage);
+            this._backgroundImage = null;
+        }
+        if (backgroundImageResponse.success) {
+            if (backgroundImageResponse.data === null) {
+                this._backgroundImage = null;
+                return;
+            }
+
+            const loadImage = async (): Promise<HTMLImageElement> => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+
+                    const buffer =
+                        backgroundImageResponse.data as Buffer<ArrayBufferLike>;
+                    const blob = new Blob([buffer]);
+                    img.src = URL.createObjectURL(blob);
+
+                    return img;
+                });
+            };
+
+            const img = await loadImage();
+
+            this._backgroundImage = new fabric.Image(img, {
+                height: img.height,
+                width: img.width,
+                left: 0,
+                top: 0,
+                selectable: false,
+                hoverCursor: "default",
+                evented: false,
+            });
+
+            const imgAspectRatio = img.width / img.height;
+            this.refreshBackgroundImageValues(imgAspectRatio);
+            renderFieldGrid && this.renderFieldGrid();
+        } else {
+            this._backgroundImage = null;
+            console.error("Error fetching field properties image");
+            console.error(backgroundImageResponse.error);
+        }
+    }
+
+    /**
+     * Refreshes all of the offset and scale values for the current background image.
+     *
+     * This does not fetch the most recent image from the database.
+     */
+    refreshBackgroundImageValues(newAspectRatio?: number) {
+        // Do not refresh the values if the background image is not defined
+        if (!this._backgroundImage) {
+            return;
+        }
+        if (newAspectRatio === undefined && !this._bgImageValues)
+            throw new Error(
+                "Must provide an aspect ratio or have _bgImageValues be defined",
+            );
+
+        const imgAspectRatio =
+            newAspectRatio ?? this._bgImageValues!.imgAspectRatio;
+        const { width, height } = this.fieldProperties;
+        const canvasAspectRatio = width / height;
+        const offset = { left: 0, top: 0 };
+        let scale: number;
+        if (this.fieldProperties.imageFillOrFit === "fill") {
+            if (imgAspectRatio > canvasAspectRatio) {
+                scale = height / this._backgroundImage.height!;
+                offset.left =
+                    (width - this._backgroundImage.width! * scale) / 2;
+            } else {
+                scale = width / this._backgroundImage.width!;
+                offset.top =
+                    (height - this._backgroundImage.height! * scale) / 2;
+            }
+        } else {
+            if (this.fieldProperties.imageFillOrFit !== "fit") {
+                console.error(
+                    "Invalid image fill or fit value. Defaulting to 'fit'",
+                );
+            }
+            if (imgAspectRatio > canvasAspectRatio) {
+                scale = width / this._backgroundImage.width!;
+                offset.top =
+                    (height - this._backgroundImage.height! * scale) / 2;
+            } else {
+                scale = height / this._backgroundImage.height!;
+                offset.left =
+                    (width - this._backgroundImage.width! * scale) / 2;
+            }
+        }
+        this._bgImageValues = {
+            ...offset,
+            scale,
+            imgAspectRatio: imgAspectRatio,
+        };
     }
 
     /*********************** SELECTION UTILITIES ***********************/

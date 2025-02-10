@@ -548,6 +548,7 @@ export default function Canvas({
     // Update the canvas when the field properties change
     useEffect(() => {
         if (canvas && fieldProperties) {
+            // canvas.refreshBackgroundImage();
             canvas.fieldProperties = fieldProperties;
         }
     }, [canvas, fieldProperties]);
