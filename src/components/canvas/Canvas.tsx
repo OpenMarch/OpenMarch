@@ -12,7 +12,6 @@ import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas"
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
-import { CanvasColors } from "./CanvasConstants";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
@@ -387,7 +386,7 @@ export default function Canvas({
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
-        if (canvas && selectedPage) {
+        if (canvas && selectedPage && fieldProperties) {
             for (const pathway of pagePathways.current) {
                 canvas.remove(pathway);
             }
@@ -410,13 +409,13 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: prevPageMarcherPages,
-                    color: CanvasColors.PREVIOUS_PAGE,
+                    color: fieldProperties.theme.previousPath,
                     allMarchers: marchers,
                 });
                 const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: prevPageMarcherPages,
                     endPageMarcherPages: selectedPageMarcherPages,
-                    color: CanvasColors.PREVIOUS_PAGE,
+                    color: fieldProperties.theme.previousPath,
                 });
                 pagePathways.current.push(...renderedPathways);
             }
@@ -428,13 +427,13 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: nextPageMarcherPages,
-                    color: CanvasColors.NEXT_PAGE,
+                    color: fieldProperties.theme.nextPath,
                     allMarchers: marchers,
                 });
                 const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: selectedPageMarcherPages,
                     endPageMarcherPages: nextPageMarcherPages,
-                    color: CanvasColors.NEXT_PAGE,
+                    color: fieldProperties.theme.nextPath,
                 });
                 pagePathways.current.push(...renderedPathways);
             }
@@ -443,6 +442,7 @@ export default function Canvas({
         }
     }, [
         canvas,
+        fieldProperties,
         marcherPages,
         marchers,
         pages,

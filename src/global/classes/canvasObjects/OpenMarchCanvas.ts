@@ -7,16 +7,14 @@ import CanvasListeners from "../../../components/canvas/listeners/CanvasListener
 import Marcher from "@/global/classes/Marcher";
 import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
-import {
-    ActiveObjectArgs,
-    CanvasColors,
-} from "../../../components/canvas/CanvasConstants";
+import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
+import { setAlpha } from "../FieldTheme";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -108,8 +106,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             // TODO - why are these here from 4023b18
             // selectionColor: "white",
             // selectionLineWidth: 8,
-            selectionColor: "rgba(0, 0, 255, 0.2)",
-            selectionBorderColor: "rgba(0, 0, 255, 1)",
+            selectionColor: setAlpha(fieldProperties.theme.shape, 0.2),
+            selectionBorderColor: fieldProperties.theme.shape,
             selectionLineWidth: 2,
             fireRightClick: true, // Allow right click events
             stopContextMenu: true, // Prevent right click context menu
@@ -590,7 +588,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             top: 0,
             width: fieldWidth,
             height: fieldHeight,
-            fill: "white",
+            fill: this.fieldProperties.theme.background,
             selectable: false,
             hoverCursor: "default",
         });
@@ -618,7 +616,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // Grid lines
         if (gridLines) {
             const gridLineProps = {
-                stroke: "#DDDDDD",
+                stroke: this.fieldProperties.theme.tertiaryStroke,
                 strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
                 selectable: false,
             };
@@ -654,7 +652,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // Half lines
         if (halfLines) {
             const darkLineProps = {
-                stroke: "#AAAAAA",
+                stroke: this.fieldProperties.theme.secondaryStroke,
                 strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
                 selectable: false,
             };
@@ -709,17 +707,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         // Yard lines, field numbers, and hashes
         const xCheckpointProps = {
-            stroke: "black",
+            stroke: this.fieldProperties.theme.primaryStroke,
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
             selectable: false,
         };
         const yCheckpointProps = {
-            stroke: "black",
+            stroke: this.fieldProperties.theme.primaryStroke,
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 3,
             selectable: false,
         };
         const ySecondaryCheckpointProps = {
-            stroke: "gray",
+            stroke: this.fieldProperties.theme.secondaryStroke,
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 2,
             selectable: false,
         };
@@ -776,9 +774,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // These are different from the yard numbers and will always be visible
         const labelProps: fabric.TextOptions = {
             fontSize: 20,
-            fill: "#888888",
+            fill: this.fieldProperties.theme.externalLabel,
             selectable: false,
-            // stroke: "#BBBBBB",
             strokeWidth: 0.5,
             fontFamily: "mono",
         };
@@ -858,7 +855,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 pixelsPerStep;
             const numberProps = {
                 fontSize: numberHeight,
-                fill: "#888888",
+                fill: this.fieldProperties.theme.fieldLabel,
                 selectable: false,
                 charSpacing: 160,
             };
@@ -916,7 +913,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const borderWidth = FieldProperties.GRID_STROKE_WIDTH * 3;
         const borderOffset = 1 - borderWidth; // Offset to prevent clipping. Border hangs off the edge of the canvas
         const borderProps = {
-            stroke: "black",
+            stroke: this.fieldProperties.theme.primaryStroke,
             strokeWidth: borderWidth,
             selectable: false,
         };
@@ -1127,7 +1124,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         marchers.forEach((marcher) =>
             marcher.backgroundRectangle.set({
                 strokeWidth: 2,
-                stroke: CanvasColors.SHAPE,
+                stroke: this.fieldProperties.theme.shape,
                 strokeDashArray: [3, 5],
             }),
         );

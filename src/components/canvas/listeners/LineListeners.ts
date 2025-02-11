@@ -3,7 +3,6 @@ import CanvasListeners from "./CanvasListeners";
 import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { CanvasColors } from "../CanvasConstants";
 import { Pathway } from "@/global/classes/canvasObjects/Pathway";
 
 /**
@@ -99,6 +98,7 @@ export default class LineListeners
                     y1: pointer.y,
                     x2: pointer.x,
                     y2: pointer.y,
+                    color: this.canvas.fieldProperties.theme.shape,
                     startPageId: this.canvas.currentPage.id,
                     endPageId: this.canvas.currentPage.id,
                 });
@@ -215,7 +215,7 @@ export default class LineListeners
         const createdPathways = this.canvas.renderPathways({
             startPageMarcherPages: oldDots,
             endPageMarcherPages: offsetNewDots,
-            color: CanvasColors.TEMP_PATH,
+            color: this.canvas.fieldProperties.theme.tempPath,
             strokeWidth: 2,
             dashed: true,
         });
@@ -224,7 +224,7 @@ export default class LineListeners
         );
 
         const createdStaticMarchers = this.canvas.renderStaticMarchers({
-            color: CanvasColors.TEMP_PATH,
+            color: this.canvas.fieldProperties.theme.tempPath,
             intendedMarcherPages: offsetNewDots,
             allMarchers: this.canvas.eventMarchers.map(
                 (canvasMarcher) => canvasMarcher.marcherObj,

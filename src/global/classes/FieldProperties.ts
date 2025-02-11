@@ -1,3 +1,5 @@
+import { FieldTheme, DEFAULT_FIELD_THEME } from "./FieldTheme";
+
 interface FieldPropertyArgs {
     name: string;
     xCheckpoints: Checkpoint[];
@@ -16,6 +18,7 @@ interface FieldPropertyArgs {
     isCustom?: boolean;
     showFieldImage?: boolean;
     imageFillOrFit?: "fill" | "fit";
+    theme?: FieldTheme;
 }
 
 export type MeasurementSystem = "imperial" | "metric";
@@ -107,6 +110,7 @@ export default class FieldProperties {
     readonly showFieldImage: boolean;
     /** How the field image should be displayed. */
     readonly imageFillOrFit: "fill" | "fit";
+    readonly theme: FieldTheme;
 
     constructor({
         name,
@@ -126,6 +130,7 @@ export default class FieldProperties {
         isCustom = true,
         showFieldImage = true,
         imageFillOrFit = "fit",
+        theme = DEFAULT_FIELD_THEME,
     }: FieldPropertyArgs) {
         this.name = name;
 
@@ -159,7 +164,6 @@ export default class FieldProperties {
         this.halfLineYInterval = halfLineYInterval;
         this.stepSizeInches = stepSizeInches;
         this.measurementSystem = measurementSystem;
-
         this.topLabelsVisible = topLabelsVisible;
         this.bottomLabelsVisible = bottomLabelsVisible;
         this.leftLabelsVisible = leftLabelsVisible;
@@ -168,6 +172,7 @@ export default class FieldProperties {
         this.isCustom = isCustom;
         this.showFieldImage = showFieldImage;
         this.imageFillOrFit = imageFillOrFit;
+        this.theme = theme;
 
         const minX = this.xCheckpoints.reduce(
             (min, cur) =>

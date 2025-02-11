@@ -16,9 +16,13 @@ export default class v5 extends v4 {
 
         this.migrationWrapper(() => {
             dbToUse.exec(`
-                            ALTER TABLE "${Constants.FieldPropertiesTableName}"
-                            ADD COLUMN image BLOB;
-                        `);
+                ALTER TABLE "${Constants.FieldPropertiesTableName}"
+                ADD COLUMN image BLOB;
+            `);
+            dbToUse.exec(`
+                ALTER TABLE "${Constants.FieldPropertiesTableName}"
+                ADD COLUMN field_theme string;
+            `);
         });
     }
 

@@ -60,7 +60,7 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
     // Create the context value object
     const contextValue: FieldPropertiesContextProps = {
         fieldProperties,
-        setFieldProperties, // TODO update this in the database
+        setFieldProperties,
         fetchFieldProperties,
     };
 

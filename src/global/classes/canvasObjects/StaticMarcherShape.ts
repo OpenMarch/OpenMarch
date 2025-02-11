@@ -1,8 +1,8 @@
 import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { CanvasColors } from "../../../components/canvas/CanvasConstants";
 import MarcherPage from "../MarcherPage";
 import CanvasMarcher from "./CanvasMarcher";
+import { DEFAULT_FIELD_THEME, FieldTheme, setAlpha } from "../FieldTheme";
 
 /**
  * An SVG point in the StaticMarcherShape path.
@@ -83,6 +83,7 @@ export class StaticMarcherShape {
         points: ShapePoint[];
         controlEnabled?: boolean;
     }) {
+        ShapePath.fieldTheme = canvas.fieldProperties.theme;
         this.canvas = canvas;
         this._shapePath = this.recreatePath(ShapePoint.pointsToArray(points));
         this._canvasMarchers = canvasMarchers;
@@ -574,7 +575,7 @@ class ShapePointController extends fabric.Circle {
             strokeWidth: 4,
             radius: 6,
             fill: "#fff",
-            stroke: CanvasColors.SHAPE,
+            stroke: canvas.fieldProperties.theme.shape,
             hasBorders: false,
             originX: "center",
             originY: "center",
@@ -766,7 +767,9 @@ class ShapePointController extends fabric.Circle {
                 this.outgoingPoint.top,
             ],
             {
-                stroke: CanvasColors.SHAPE,
+                stroke:
+                    this.canvas?.fieldProperties.theme.shape ??
+                    "rgba(126, 34, 206, 1)",
                 strokeWidth: 1,
                 strokeDashArray: [5, 5],
                 selectable: false,
@@ -788,6 +791,8 @@ class ShapePointController extends fabric.Circle {
  * The fabric.Path object that represents the path of the shape.
  */
 export class ShapePath extends fabric.Path {
+    static fieldTheme: FieldTheme = DEFAULT_FIELD_THEME;
+
     /**
      * @param points The points to draw the path from
      */
@@ -795,7 +800,7 @@ export class ShapePath extends fabric.Path {
         super(ShapePoint.pointsToString(points), {
             fill: "",
             strokeWidth: 2,
-            stroke: CanvasColors.SHAPE,
+            stroke: ShapePath.fieldTheme.shape,
             objectCaching: true,
             hasControls: false,
             borderColor: "#0d6efd",
@@ -805,16 +810,16 @@ export class ShapePath extends fabric.Path {
     }
 
     enableControl() {
-        this.stroke = CanvasColors.SHAPE;
+        this.stroke = ShapePath.fieldTheme.shape;
         this.strokeWidth = 2;
         this.strokeDashArray = [];
         this.selectable = true;
-        this.backgroundColor = CanvasColors.TEMP_PATH_TRANSPARENT;
+        this.backgroundColor = setAlpha(ShapePath.fieldTheme.tempPath, 0.2);
         this.hoverCursor = "move";
     }
 
     disableControl() {
-        this.stroke = CanvasColors.TEMP_PATH;
+        this.stroke = ShapePath.fieldTheme.tempPath;
         this.strokeWidth = 1;
         this.strokeDashArray = [5, 3];
         this.selectable = false;
