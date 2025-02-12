@@ -23,6 +23,15 @@ import {
     SelectItem,
     SelectTriggerButton,
 } from "../ui/Select";
+import {
+    ColorResult,
+    RgbaColor,
+    rgbaToHex,
+    rgbaToHsva,
+    Sketch,
+} from "@uiw/react-color";
+import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
+import { RxReset } from "react-icons/rx";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -435,6 +444,7 @@ function CheckpointEditor({
                         className="self-end text-white"
                         tooltipText="Delete this checkpoint from the field"
                         tooltipSide="right"
+                        type="button"
                         onClick={() => {
                             deleteCheckpoint(checkpoint);
                         }}
@@ -650,10 +660,230 @@ export default function FieldPropertiesCustomizer() {
         measurementSystem,
     ]);
 
+    interface ColorPickerProps {
+        themeProperty?: keyof FieldTheme;
+        initialColor: RgbaColor;
+        label: string;
+        tooltip?: string;
+        defaultColor?: RgbaColor;
+        updateColorProp?: (color: RgbaColor) => void;
+    }
+
+    const ColorPicker: React.FC<ColorPickerProps> = ({
+        themeProperty,
+        initialColor,
+        label,
+        tooltip,
+        defaultColor,
+        updateColorProp,
+    }: ColorPickerProps) => {
+        const [displayColorPicker, setDisplayColorPicker] = useState(false);
+        const [currentColor, setCurrentColor] =
+            useState<RgbaColor>(initialColor);
+        const pickerRef = useRef<HTMLDivElement>(null);
+
+        const validateIsRgbaColor = useCallback(
+            (themeProperty: keyof FieldTheme) => {
+                const color = currentFieldProperties.theme[
+                    themeProperty
+                ] as RgbaColor;
+                const isRgba =
+                    color.r !== undefined &&
+                    color.g !== undefined &&
+                    color.b !== undefined &&
+                    color.a !== undefined;
+                if (!isRgba) {
+                    toast.error("Invalid color");
+                    return false;
+                }
+                return true;
+            },
+            [],
+        );
+
+        const updateColor = useCallback(
+            (color?: RgbaColor) => {
+                if (!currentColor) {
+                    console.error("No color selected");
+                    toast.error("No color selected");
+                    return;
+                }
+                if (updateColorProp) {
+                    updateColorProp(color ? color : currentColor);
+                } else if (themeProperty) {
+                    validateIsRgbaColor(themeProperty);
+                    rgbaToHex(
+                        currentFieldProperties.theme[
+                            themeProperty
+                        ] as RgbaColor,
+                    );
+
+                    setFieldProperties(
+                        new FieldProperties({
+                            ...currentFieldProperties,
+                            theme: {
+                                ...currentFieldProperties.theme,
+                                [themeProperty]: color ? color : currentColor,
+                            },
+                        }),
+                    );
+                } else {
+                    console.error("No theme property provided");
+                    toast.error("No theme property provided");
+                    return;
+                }
+            },
+            [currentColor, updateColorProp, validateIsRgbaColor, themeProperty],
+        );
+
+        const handleClick = () => setDisplayColorPicker(true);
+        const handleClose = useCallback(() => {
+            setDisplayColorPicker(false);
+            updateColor();
+        }, [updateColor]);
+
+        const handleChange = (color: ColorResult) => {
+            setCurrentColor(color.rgba);
+        };
+
+        const handleBlur = useCallback(
+            (event: React.FocusEvent) => {
+                if (
+                    pickerRef.current &&
+                    !pickerRef.current.contains(event.relatedTarget)
+                ) {
+                    handleClose();
+                }
+            },
+            [handleClose],
+        );
+
+        const handleKeyDown = useCallback(
+            (event: React.KeyboardEvent) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleClose();
+                }
+            },
+            [handleClose],
+        );
+
+        const resetToDefault = useCallback(() => {
+            let newColor: RgbaColor;
+            if (defaultColor) {
+                newColor = defaultColor;
+            } else if (themeProperty) {
+                validateIsRgbaColor(themeProperty);
+                newColor = DEFAULT_FIELD_THEME[themeProperty] as RgbaColor;
+            } else {
+                console.error("No theme property provided");
+                toast.error("No theme property provided");
+                return;
+            }
+            handleClose();
+            updateColor(newColor);
+        }, [
+            defaultColor,
+            handleClose,
+            themeProperty,
+            updateColor,
+            validateIsRgbaColor,
+        ]);
+
+        return (
+            <div className={formFieldClassname} ref={pickerRef}>
+                <div className={labelClassname}>{label}</div>
+                {/* Color Preview Box */}
+                <div
+                    className={
+                        "flex-between font border-fg-2 col-span-5 flex h-32 w-full cursor-pointer items-center justify-center rounded-full border-2 font-mono text-h4 tracking-wider"
+                    }
+                    style={{
+                        backgroundColor: rgbaToHex(currentColor),
+                        color:
+                            currentColor.r * 0.299 +
+                                currentColor.g * 0.587 +
+                                currentColor.b * 0.114 >
+                            186
+                                ? "#000000"
+                                : "#ffffff",
+                    }}
+                    onClick={handleClick}
+                    tabIndex={0} // Allows focus for blur detection
+                >
+                    {rgbaToHex(currentColor).toUpperCase()}
+                    {"-a"}
+                    {currentColor.a === 1
+                        ? 1
+                        : currentColor.a === 0
+                          ? 0
+                          : currentColor.a.toPrecision(2)}
+                </div>
+
+                {/* Color Picker Popover */}
+                {displayColorPicker && (
+                    <div className="rounded rounded absolute left-[50%] z-10 mt-32 bg-bg-1 p-2 shadow-lg">
+                        <div className="z-50 my-8 flex justify-between gap-8">
+                            <Button
+                                size="compact"
+                                variant="secondary"
+                                className="w-full"
+                                onClick={() => {
+                                    setCurrentColor(initialColor);
+                                    setDisplayColorPicker(false);
+                                }}
+                            >
+                                Discard
+                            </Button>
+                            <Button
+                                size="compact"
+                                variant="primary"
+                                className="w-full"
+                                onClick={handleClose}
+                            >
+                                Apply
+                            </Button>
+                        </div>
+                        <Sketch
+                            color={rgbaToHsva(currentColor)}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
+                            className="bg-fg-2"
+                        />
+                    </div>
+                )}
+
+                <Button
+                    tooltipSide="right"
+                    size="compact"
+                    tooltipText={"Reset to default"}
+                    variant="secondary"
+                    onClick={resetToDefault}
+                    className="col-span-1 bg-transparent"
+                >
+                    <RxReset />
+                </Button>
+                {tooltip && (
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16" side="right">
+                                {tooltip}
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
+                )}
+            </div>
+        );
+    };
+
     return (
         <Form.Root
             onSubmit={(e) => e.preventDefault()}
-            className="flex flex-col gap-16"
+            className="mb-16 flex flex-col gap-16"
         >
             <div className="flex flex-col gap-16">
                 <div className="flex flex-col gap-12">
@@ -1110,6 +1340,7 @@ export default function FieldPropertiesCustomizer() {
                         tooltipText="Import an image to display on the field"
                         tooltipSide="right"
                         variant="primary"
+                        type="button"
                         size="compact"
                         onClick={async () => {
                             await window.electron
@@ -1897,13 +2128,14 @@ export default function FieldPropertiesCustomizer() {
                         onClick={() => addCheckpoint("x")}
                         className="self-end"
                         size="compact"
+                        type="button"
                     >
                         New X-Checkpoint
                     </Button>
                 </div>
             </div>
             <div>
-                <div className="mb-16">Y-Checkpoints</div>
+                <div>Y-Checkpoints</div>
                 <div
                     className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
                     hidden={
@@ -1979,10 +2211,161 @@ export default function FieldPropertiesCustomizer() {
                         onClick={() => addCheckpoint("y")}
                         size="compact"
                         className="self-end"
+                        type="button"
                     >
                         New Y-Checkpoint
                     </Button>
                 </div>
+            </div>
+
+            <div className="flex flex-col gap-12">
+                <h4 className="text-lg">Theme</h4>
+                <ColorPicker
+                    themeProperty="background"
+                    label="Background"
+                    tooltip="Background color of the field"
+                    initialColor={currentFieldProperties.theme.background}
+                />
+                <ColorPicker
+                    themeProperty="primaryStroke"
+                    label="Primary Lines"
+                    tooltip="Color of the main field lines. E.g. sidelines and yard lines"
+                    initialColor={currentFieldProperties.theme.primaryStroke}
+                />
+                <ColorPicker
+                    themeProperty="secondaryStroke"
+                    label="Secondary Lines"
+                    tooltip="Color of secondary markings. E.g. Hashes and half lines"
+                    initialColor={currentFieldProperties.theme.secondaryStroke}
+                />
+                <ColorPicker
+                    themeProperty="tertiaryStroke"
+                    label="Grid Lines"
+                    tooltip="Color the 1-step grid"
+                    initialColor={currentFieldProperties.theme.tertiaryStroke}
+                />
+                <ColorPicker
+                    themeProperty="fieldLabel"
+                    label="Field Labels"
+                    tooltip="Color of yard numbers and field markings text"
+                    initialColor={currentFieldProperties.theme.fieldLabel}
+                />
+                <ColorPicker
+                    themeProperty="externalLabel"
+                    label="External Labels"
+                    tooltip="Color of labels outside the main field area"
+                    initialColor={currentFieldProperties.theme.externalLabel}
+                />
+                <ColorPicker
+                    themeProperty="previousPath"
+                    label="Previous Path"
+                    tooltip="Color of paths showing previous movement"
+                    initialColor={currentFieldProperties.theme.previousPath}
+                />
+                <ColorPicker
+                    themeProperty="nextPath"
+                    label="Next Path"
+                    tooltip="Color of paths showing upcoming movement"
+                    initialColor={currentFieldProperties.theme.nextPath}
+                />
+                <div className="text-center text-[14px] text-text">
+                    Below values may not be applied until after a refresh
+                </div>
+                <ColorPicker
+                    themeProperty="shape"
+                    label="Shapes"
+                    tooltip="Color of geometric shapes drawn on the field"
+                    initialColor={currentFieldProperties.theme.shape}
+                />
+                <ColorPicker
+                    themeProperty="tempPath"
+                    label="Temporary Path"
+                    tooltip="Color of temporary or in-progress paths"
+                    initialColor={currentFieldProperties.theme.tempPath}
+                />
+                <ColorPicker
+                    label="Marcher Fill"
+                    tooltip="Dot color of the marchers"
+                    updateColorProp={(color) =>
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    defaultMarcher: {
+                                        ...currentFieldProperties.theme
+                                            .defaultMarcher,
+                                        fill: color,
+                                    },
+                                },
+                            }),
+                        )
+                    }
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.fill
+                    }
+                />
+                <ColorPicker
+                    label="Marcher Outline"
+                    tooltip="Outline color of the marchers"
+                    updateColorProp={(color) =>
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    defaultMarcher: {
+                                        ...currentFieldProperties.theme
+                                            .defaultMarcher,
+                                        outline: color,
+                                    },
+                                },
+                            }),
+                        )
+                    }
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.outline
+                    }
+                />
+                <ColorPicker
+                    label="Marcher Text"
+                    tooltip="Text color for marcher drill numbers"
+                    updateColorProp={(color) =>
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    defaultMarcher: {
+                                        ...currentFieldProperties.theme
+                                            .defaultMarcher,
+                                        label: color,
+                                    },
+                                },
+                            }),
+                        )
+                    }
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.label
+                    }
+                />
+                <Button
+                    onClick={() =>
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: DEFAULT_FIELD_THEME,
+                            }),
+                        )
+                    }
+                    variant="secondary"
+                    size="compact"
+                    className="w-full px-16"
+                    tooltipSide="right"
+                    tooltipText="Reset the theme to the default values"
+                >
+                    Reset Theme to Default
+                </Button>
             </div>
         </Form.Root>
     );

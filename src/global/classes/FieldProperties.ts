@@ -132,8 +132,6 @@ export default class FieldProperties {
         imageFillOrFit = "fit",
         theme = DEFAULT_FIELD_THEME,
     }: FieldPropertyArgs) {
-        this.name = name;
-
         // Verify x checkpoints have unique ids
         const xIds = new Set();
         for (const checkpoint of xCheckpoints) {
@@ -156,6 +154,7 @@ export default class FieldProperties {
             yIds.add(checkpoint.id);
         }
 
+        this.name = name;
         this.xCheckpoints = xCheckpoints;
         this.yCheckpoints = yCheckpoints;
         this.yardNumberCoordinates = yardNumberCoordinates;

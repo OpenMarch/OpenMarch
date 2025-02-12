@@ -1,24 +1,24 @@
-import { fabric } from "fabric";
+import { RgbaColor } from "@uiw/react-color";
 
 /** Represents a marcher’s colors. */
 export interface MarcherColor {
-    fill: string;
-    outline: string;
-    label: string;
+    fill: RgbaColor;
+    outline: RgbaColor;
+    label: RgbaColor;
 }
 
 /** Represents a field theme with various colors. */
 export interface FieldTheme {
-    readonly primaryStroke: string;
-    readonly secondaryStroke: string;
-    readonly tertiaryStroke: string;
-    readonly background: string;
-    readonly fieldLabel: string;
-    readonly externalLabel: string;
-    readonly previousPath: string;
-    readonly nextPath: string;
-    readonly shape: string;
-    readonly tempPath: string;
+    readonly primaryStroke: RgbaColor;
+    readonly secondaryStroke: RgbaColor;
+    readonly tertiaryStroke: RgbaColor;
+    readonly background: RgbaColor;
+    readonly fieldLabel: RgbaColor;
+    readonly externalLabel: RgbaColor;
+    readonly previousPath: RgbaColor;
+    readonly nextPath: RgbaColor;
+    readonly shape: RgbaColor;
+    readonly tempPath: RgbaColor;
     readonly defaultMarcher: MarcherColor;
 }
 
@@ -26,28 +26,26 @@ export interface FieldTheme {
 export const createFieldTheme = (
     overrides: Partial<FieldTheme> = {},
 ): FieldTheme => ({
-    primaryStroke: "#000000",
-    secondaryStroke: "#AAAAAA",
-    tertiaryStroke: "#DDDDDD",
-    background: "#FFFFFF",
-    fieldLabel: "#888888",
-    externalLabel: "#888888",
-    previousPath: "#000000",
-    nextPath: "rgba(0, 175, 13, 1)",
-    shape: "rgba(126, 34, 206, 1)",
-    tempPath: "rgba(192,132,252, 1)",
+    primaryStroke: { r: 0, g: 0, b: 0, a: 1 },
+    secondaryStroke: { r: 170, g: 170, b: 170, a: 1 },
+    tertiaryStroke: { r: 221, g: 221, b: 221, a: 1 },
+    background: { r: 255, g: 255, b: 255, a: 1 },
+    fieldLabel: { r: 136, g: 136, b: 136, a: 1 },
+    externalLabel: { r: 136, g: 136, b: 136, a: 1 },
+    previousPath: { r: 0, g: 0, b: 0, a: 1 },
+    nextPath: { r: 0, g: 175, b: 13, a: 1 },
+    shape: { r: 126, g: 34, b: 206, a: 1 },
+    tempPath: { r: 192, g: 132, b: 252, a: 1 },
     defaultMarcher: {
-        fill: "#FF0000",
-        outline: "#00000000",
-        label: "#000000",
+        fill: { r: 255, g: 0, b: 0, a: 1 },
+        outline: { r: 0, g: 0, b: 0, a: 0 },
+        label: { r: 0, g: 0, b: 0, a: 1 },
     },
     ...overrides,
 });
 
-export const setAlpha = (color: string, alpha: number): string => {
-    const colorObj = new fabric.Color(color);
-    colorObj.setAlpha(alpha);
-    return colorObj.toRgba();
+export const rgbaToString = (color: RgbaColor): string => {
+    return `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
 };
 
 /** Default field theme */

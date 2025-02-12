@@ -4,7 +4,7 @@ import MarcherPage from "../MarcherPage";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
-import { DEFAULT_FIELD_THEME, FieldTheme } from "../FieldTheme";
+import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -42,7 +42,7 @@ export default class CanvasMarcher
         marcher,
         marcherPage,
         dotRadius = CanvasMarcher.dotRadius,
-        color = CanvasMarcher.theme.defaultMarcher.fill,
+        color = rgbaToString(CanvasMarcher.theme.defaultMarcher.fill),
     }: {
         marcher: Marcher;
         marcherPage: MarcherPage;
@@ -56,7 +56,9 @@ export default class CanvasMarcher
                     top: marcherPage.y,
                     originX: "center",
                     originY: "center",
-                    stroke: CanvasMarcher.theme.defaultMarcher.outline,
+                    stroke: rgbaToString(
+                        CanvasMarcher.theme.defaultMarcher.outline,
+                    ),
                     fill: color,
                     radius: dotRadius,
                 }),
@@ -66,7 +68,9 @@ export default class CanvasMarcher
                     originX: "center",
                     originY: "center",
                     fontFamily: "courier new",
-                    fill: CanvasMarcher.theme.defaultMarcher.label,
+                    fill: rgbaToString(
+                        CanvasMarcher.theme.defaultMarcher.label,
+                    ),
                     fontWeight: "bold",
                     fontSize: 14,
                 }),

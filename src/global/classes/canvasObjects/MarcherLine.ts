@@ -3,7 +3,7 @@ import * as CanvasConstants from "@/components/canvas/CanvasConstants";
 import FieldProperties from "../FieldProperties";
 import MarcherPage from "../MarcherPage";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { DEFAULT_FIELD_THEME } from "../FieldTheme";
+import { DEFAULT_FIELD_THEME, rgbaToString } from "../FieldTheme";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.
@@ -35,7 +35,7 @@ export default class MarcherLine extends fabric.Line {
         x2,
         y2,
         groupId,
-        color = DEFAULT_FIELD_THEME.shape,
+        color = rgbaToString(DEFAULT_FIELD_THEME.shape),
         startPageId,
         endPageId,
         notes = "",

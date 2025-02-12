@@ -17,6 +17,7 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import { CircleNotch } from "@phosphor-icons/react";
+import { rgbaToString } from "@/global/classes/FieldTheme";
 
 /**
  * The field/stage UI of OpenMarch
@@ -401,7 +402,10 @@ export default function Canvas({
                     selectedPage.id,
                 );
 
-            if (uiSettings.previousPaths && selectedPage.previousPageId) {
+            if (
+                uiSettings.previousPaths &&
+                selectedPage.previousPageId !== null
+            ) {
                 const prevPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.previousPageId,
@@ -409,17 +413,17 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: prevPageMarcherPages,
-                    color: fieldProperties.theme.previousPath,
+                    color: rgbaToString(fieldProperties.theme.previousPath),
                     allMarchers: marchers,
                 });
                 const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: prevPageMarcherPages,
                     endPageMarcherPages: selectedPageMarcherPages,
-                    color: fieldProperties.theme.previousPath,
+                    color: rgbaToString(fieldProperties.theme.previousPath),
                 });
                 pagePathways.current.push(...renderedPathways);
             }
-            if (uiSettings.nextPaths && selectedPage.nextPageId) {
+            if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.nextPageId,
@@ -427,13 +431,13 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: nextPageMarcherPages,
-                    color: fieldProperties.theme.nextPath,
+                    color: rgbaToString(fieldProperties.theme.nextPath),
                     allMarchers: marchers,
                 });
                 const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: selectedPageMarcherPages,
                     endPageMarcherPages: nextPageMarcherPages,
-                    color: fieldProperties.theme.nextPath,
+                    color: rgbaToString(fieldProperties.theme.nextPath),
                 });
                 pagePathways.current.push(...renderedPathways);
             }

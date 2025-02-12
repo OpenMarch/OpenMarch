@@ -2,7 +2,7 @@ import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import MarcherPage from "../MarcherPage";
 import CanvasMarcher from "./CanvasMarcher";
-import { DEFAULT_FIELD_THEME, FieldTheme, setAlpha } from "../FieldTheme";
+import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
 
 /**
  * An SVG point in the StaticMarcherShape path.
@@ -575,7 +575,7 @@ class ShapePointController extends fabric.Circle {
             strokeWidth: 4,
             radius: 6,
             fill: "#fff",
-            stroke: canvas.fieldProperties.theme.shape,
+            stroke: rgbaToString(canvas.fieldProperties.theme.shape),
             hasBorders: false,
             originX: "center",
             originY: "center",
@@ -767,9 +767,14 @@ class ShapePointController extends fabric.Circle {
                 this.outgoingPoint.top,
             ],
             {
-                stroke:
-                    this.canvas?.fieldProperties.theme.shape ??
-                    "rgba(126, 34, 206, 1)",
+                stroke: rgbaToString(
+                    this.canvas?.fieldProperties.theme.shape ?? {
+                        r: 126,
+                        g: 34,
+                        b: 206,
+                        a: 1,
+                    },
+                ),
                 strokeWidth: 1,
                 strokeDashArray: [5, 5],
                 selectable: false,
@@ -800,7 +805,7 @@ export class ShapePath extends fabric.Path {
         super(ShapePoint.pointsToString(points), {
             fill: "",
             strokeWidth: 2,
-            stroke: ShapePath.fieldTheme.shape,
+            stroke: rgbaToString(ShapePath.fieldTheme.shape),
             objectCaching: true,
             hasControls: false,
             borderColor: "#0d6efd",
@@ -810,16 +815,19 @@ export class ShapePath extends fabric.Path {
     }
 
     enableControl() {
-        this.stroke = ShapePath.fieldTheme.shape;
+        this.stroke = rgbaToString(ShapePath.fieldTheme.shape);
         this.strokeWidth = 2;
         this.strokeDashArray = [];
         this.selectable = true;
-        this.backgroundColor = setAlpha(ShapePath.fieldTheme.tempPath, 0.2);
+        this.backgroundColor = rgbaToString({
+            ...ShapePath.fieldTheme.tempPath,
+            a: 0.2,
+        });
         this.hoverCursor = "move";
     }
 
     disableControl() {
-        this.stroke = ShapePath.fieldTheme.tempPath;
+        this.stroke = rgbaToString(ShapePath.fieldTheme.tempPath);
         this.strokeWidth = 1;
         this.strokeDashArray = [5, 3];
         this.selectable = false;
