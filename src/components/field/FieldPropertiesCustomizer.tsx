@@ -36,7 +36,7 @@ import { RxReset } from "react-icons/rx";
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
 
-const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px]");
+const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px] ml-16");
 const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
 const requiredLabelClassname = clsx(
     labelClassname,
@@ -796,7 +796,7 @@ export default function FieldPropertiesCustomizer() {
                 {/* Color Preview Box */}
                 <div
                     className={
-                        "flex-between font border-fg-2 col-span-5 flex h-32 w-full cursor-pointer items-center justify-center rounded-full border-2 font-mono text-h4 tracking-wider"
+                        "flex-between font border-fg-2 col-span-5 flex h-24 w-full cursor-pointer items-center justify-center rounded-full border-2 py-16 font-mono text-h5 tracking-wider"
                     }
                     style={{
                         backgroundColor: rgbaToHex(currentColor),
@@ -887,7 +887,7 @@ export default function FieldPropertiesCustomizer() {
         >
             <div className="flex flex-col gap-16">
                 <div className="flex flex-col gap-12">
-                    <h4 className="text-lg">General</h4>
+                    <h4 className="mb-8 text-h4">General</h4>
                     <Form.Field
                         name="Field Name"
                         className={formFieldClassname}
@@ -1252,7 +1252,7 @@ export default function FieldPropertiesCustomizer() {
                     </Form.Field>
                 </div>
                 <div className="flex flex-col gap-12">
-                    <h4 className="text-lg">Image Rendering</h4>
+                    <h4 className="mb-8 text-h4">Image Rendering</h4>
                     <Form.Field
                         name="Left"
                         className={clsx(
@@ -1361,8 +1361,198 @@ export default function FieldPropertiesCustomizer() {
                         Refresh the page after import [Ctrl + R]
                     </div>
                 </div>
+
                 <div className="flex flex-col gap-12">
-                    <h4 className="text-lg">Side Descriptions</h4>
+                    <h4 className="mb-8 text-h4">Stats</h4>
+                    <div className={clsx(formFieldClassname, "items-center")}>
+                        <div className={clsx("col-span-4 align-middle")}>
+                            Width
+                        </div>
+                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            {currentFieldProperties.width /
+                                currentFieldProperties.pixelsPerStep}{" "}
+                            steps
+                        </div>
+                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            {currentFieldProperties.prettyWidth}
+                        </div>
+                    </div>
+                    <div className={clsx(formFieldClassname, "items-center")}>
+                        <div className={clsx("col-span-4 align-middle")}>
+                            Height
+                        </div>
+                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            {currentFieldProperties.height /
+                                currentFieldProperties.pixelsPerStep}{" "}
+                            steps
+                        </div>
+                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            {currentFieldProperties.prettyHeight}
+                        </div>
+                    </div>
+                    <div className={clsx(formFieldClassname, "items-center")}>
+                        <div className={clsx("col-span-4 align-middle")}>
+                            Aspect Ratio
+                        </div>
+                        <div className="px-1 col-span-8 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            {(() => {
+                                const w = currentFieldProperties.width;
+                                const h = currentFieldProperties.height;
+                                const gcd = (a: number, b: number): number =>
+                                    b ? gcd(b, a % b) : a;
+                                const divisor = gcd(w, h);
+                                const ratioStr = `${w / divisor}:${h / divisor}`;
+                                if (ratioStr.length > 12) {
+                                    return (w / h).toFixed(3);
+                                } else {
+                                    return ratioStr;
+                                }
+                            })()}
+                            <span className="font-mono tracking-widest">
+                                {" - "}w/h
+                            </span>
+                        </div>
+                    </div>
+                    <div className="mx-16 text-pretty rounded-full py-4 text-end text-sub text-text">
+                        These values can be modified by adjusting the X and Y
+                        coordinates and the step size
+                    </div>
+                </div>
+
+                <div>
+                    <h4 className="mb-16 text-h4">X-Checkpoints</h4>
+                    <div
+                        className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
+                        hidden={
+                            Math.abs(
+                                Math.min(
+                                    ...currentFieldProperties.xCheckpoints.map(
+                                        (x) => x.stepsFromCenterFront,
+                                    ),
+                                ),
+                            ) ===
+                            Math.abs(
+                                Math.max(
+                                    ...currentFieldProperties.xCheckpoints.map(
+                                        (x) => x.stepsFromCenterFront,
+                                    ),
+                                ),
+                            )
+                        }
+                    >
+                        WARNING - The left and rightmost X-checkpoints are not
+                        equidistant from the center. This may cause strange
+                        graphical artifacts and should be fixed.
+                    </div>
+                    <div className="flex flex-col gap-12">
+                        {currentFieldProperties.xCheckpoints
+                            .sort(sorter)
+                            .map((xCheckpoint) => (
+                                <CheckpointEditor
+                                    checkpoint={xCheckpoint}
+                                    updateCheckpoint={updateCheckpoint}
+                                    key={xCheckpoint.id}
+                                    axis="x"
+                                    deleteCheckpoint={deleteCheckpoint}
+                                />
+                            ))}
+                    </div>
+                    <div className="mt-16 flex justify-end">
+                        <Button
+                            onClick={() => addCheckpoint("x")}
+                            className="self-end"
+                            size="compact"
+                            type="button"
+                        >
+                            New X-Checkpoint
+                        </Button>
+                    </div>
+                </div>
+                <div>
+                    <h4 className="mb-16 text-h4">Y-Checkpoints</h4>
+                    <div
+                        className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
+                        hidden={
+                            Math.max(
+                                ...currentFieldProperties.yCheckpoints.map(
+                                    (y) => y.stepsFromCenterFront,
+                                ),
+                            ) <= 0
+                        }
+                    >
+                        WARNING - It is highly recommended that all
+                        Y-checkpoints&apos; steps be less than zero (i.e.
+                        negative numbers). All of the Y-coordinates should be
+                        behind the front of the field. Failing to do so may
+                        cause graphical errors and unexpected coordinates.
+                    </div>
+                    <Form.Field
+                        name="Use Hashes"
+                        className={clsx(formFieldClassname, "mb-8")}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Use Hashes
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Switch
+                                className={inputClassname}
+                                checked={currentFieldProperties.useHashes}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            useHashes:
+                                                !currentFieldProperties.useHashes,
+                                        }),
+                                    );
+                                }}
+                            />
+                        </Form.Control>
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents
+                                    className="p-16 text-center"
+                                    side="right"
+                                >
+                                    <div>
+                                        Use hashes for the Y-checkpoints, like a
+                                        football field.
+                                    </div>
+                                    <div>If unchecked, lines will be used.</div>
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                    <div className="flex flex-col gap-12">
+                        {currentFieldProperties.yCheckpoints
+                            .sort(sorter)
+                            .map((yCheckpoint) => (
+                                <CheckpointEditor
+                                    checkpoint={yCheckpoint}
+                                    updateCheckpoint={updateCheckpoint}
+                                    key={yCheckpoint.id}
+                                    axis="y"
+                                    deleteCheckpoint={deleteCheckpoint}
+                                />
+                            ))}
+                    </div>
+                    <div className="mb-16 mt-16 flex justify-end">
+                        <Button
+                            onClick={() => addCheckpoint("y")}
+                            size="compact"
+                            className="self-end"
+                            type="button"
+                        >
+                            New Y-Checkpoint
+                        </Button>
+                    </div>
+                </div>
+                <div className="flex flex-col gap-12">
+                    <h4 className="mb-8 text-h4">Side Descriptions</h4>
                     <Form.Field
                         name="Director's left"
                         className={formFieldClassname}
@@ -1596,7 +1786,7 @@ export default function FieldPropertiesCustomizer() {
                 </div>
                 <div className="flex flex-col gap-12">
                     {/* <div className="mb-16">Field </div> */}
-                    <h4 className="text-lg">Field Labels</h4>
+                    <h4 className="mb-8 text-h4">Field Labels</h4>
                     <Form.Field
                         name="Steps from front to home label bottom"
                         className={formFieldClassname}
@@ -1952,7 +2142,7 @@ export default function FieldPropertiesCustomizer() {
                 </div>
                 <div className="flex flex-col gap-12">
                     {/* <div className="mb-16">Field </div> */}
-                    <h4 className="text-lg">External Labels</h4>
+                    <h4 className="mb-8 text-h4">External Labels</h4>
                     <div className="grid grid-cols-4">
                         <Form.Field
                             name="Left"
@@ -2085,141 +2275,9 @@ export default function FieldPropertiesCustomizer() {
                     </div>
                 </div>
             </div>
-            <div>
-                <div className="mb-16">X-Checkpoints</div>
-                <div
-                    className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
-                    hidden={
-                        Math.abs(
-                            Math.min(
-                                ...currentFieldProperties.xCheckpoints.map(
-                                    (x) => x.stepsFromCenterFront,
-                                ),
-                            ),
-                        ) ===
-                        Math.abs(
-                            Math.max(
-                                ...currentFieldProperties.xCheckpoints.map(
-                                    (x) => x.stepsFromCenterFront,
-                                ),
-                            ),
-                        )
-                    }
-                >
-                    WARNING - The left and rightmost X-checkpoints are not
-                    equidistant from the center. This may cause strange
-                    graphical artifacts and should be fixed.
-                </div>
-                <div className="flex flex-col gap-12">
-                    {currentFieldProperties.xCheckpoints
-                        .sort(sorter)
-                        .map((xCheckpoint) => (
-                            <CheckpointEditor
-                                checkpoint={xCheckpoint}
-                                updateCheckpoint={updateCheckpoint}
-                                key={xCheckpoint.id}
-                                axis="x"
-                                deleteCheckpoint={deleteCheckpoint}
-                            />
-                        ))}
-                </div>
-                <div className="mt-16 flex justify-end">
-                    <Button
-                        onClick={() => addCheckpoint("x")}
-                        className="self-end"
-                        size="compact"
-                        type="button"
-                    >
-                        New X-Checkpoint
-                    </Button>
-                </div>
-            </div>
-            <div>
-                <div>Y-Checkpoints</div>
-                <div
-                    className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
-                    hidden={
-                        Math.max(
-                            ...currentFieldProperties.yCheckpoints.map(
-                                (y) => y.stepsFromCenterFront,
-                            ),
-                        ) <= 0
-                    }
-                >
-                    WARNING - It is highly recommended that all
-                    Y-checkpoints&apos; steps be less than zero (i.e. negative
-                    numbers). All of the Y-coordinates should be behind the
-                    front of the field. Failing to do so may cause graphical
-                    errors and unexpected coordinates.
-                </div>
-                <Form.Field
-                    name="Use Hashes"
-                    className={clsx(formFieldClassname, "mb-8")}
-                >
-                    <Form.Label className={labelClassname}>
-                        Use Hashes
-                    </Form.Label>
-                    <Form.Control asChild>
-                        <Switch
-                            className={inputClassname}
-                            checked={currentFieldProperties.useHashes}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        useHashes:
-                                            !currentFieldProperties.useHashes,
-                                    }),
-                                );
-                            }}
-                        />
-                    </Form.Control>
-                    <Tooltip.TooltipProvider>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger type="button">
-                                <Info size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <TooltipContents
-                                className="p-16 text-center"
-                                side="right"
-                            >
-                                <div>
-                                    Use hashes for the Y-checkpoints, like a
-                                    football field.
-                                </div>
-                                <div>If unchecked, lines will be used.</div>
-                            </TooltipContents>
-                        </Tooltip.Root>
-                    </Tooltip.TooltipProvider>
-                </Form.Field>
-                <div className="flex flex-col gap-12">
-                    {currentFieldProperties.yCheckpoints
-                        .sort(sorter)
-                        .map((yCheckpoint) => (
-                            <CheckpointEditor
-                                checkpoint={yCheckpoint}
-                                updateCheckpoint={updateCheckpoint}
-                                key={yCheckpoint.id}
-                                axis="y"
-                                deleteCheckpoint={deleteCheckpoint}
-                            />
-                        ))}
-                </div>
-                <div className="mb-16 mt-16 flex justify-end">
-                    <Button
-                        onClick={() => addCheckpoint("y")}
-                        size="compact"
-                        className="self-end"
-                        type="button"
-                    >
-                        New Y-Checkpoint
-                    </Button>
-                </div>
-            </div>
 
             <div className="flex flex-col gap-12">
-                <h4 className="text-lg">Theme</h4>
+                <h4 className="mb-8 text-h4">Theme</h4>
                 <ColorPicker
                     themeProperty="background"
                     label="Background"
@@ -2268,7 +2326,7 @@ export default function FieldPropertiesCustomizer() {
                     tooltip="Color of paths showing upcoming movement"
                     initialColor={currentFieldProperties.theme.nextPath}
                 />
-                <div className="text-center text-[14px] text-text">
+                <div className="rounded-full bg-fg-2 py-4 text-center text-[14px] text-text">
                     Below values may not be applied until after a refresh
                 </div>
                 <ColorPicker

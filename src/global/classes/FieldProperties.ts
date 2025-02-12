@@ -226,6 +226,64 @@ export default class FieldProperties {
     static centimetersToInches(centimeters: number): number {
         return centimeters / 2.54;
     }
+
+    /**
+     * Gets the total width of the field in inches.
+     *
+     * Calculates the total width of the field by multiplying the width in pixels by the pixels per step, and then dividing by the number of pixels per inch.
+     *
+     * @returns The total width of the field in inches.
+     */
+    get totalWidthInches(): number {
+        return this.width / FieldProperties.PIXELS_PER_INCH;
+    }
+
+    /**
+     * Gets the total height of the field in inches.
+     *
+     * Calculates the total height of the field by multiplying the height in pixels by the pixels per step, and then dividing by the number of pixels per inch.
+     *
+     * @returns The total height of the field in inches.
+     */
+    get totalHeightInches(): number {
+        return this.height / FieldProperties.PIXELS_PER_INCH;
+    }
+
+    /**
+     * Gets the field width in a human-readable format.
+     *
+     * Calculates the total width of the field in inches and then converts it to either meters or feet based on the measurement system.
+     *
+     * @returns A string representing the field width in the appropriate units.
+     */
+    get prettyWidth(): string {
+        const widthInches = this.totalWidthInches;
+        let output: string;
+        if (this.measurementSystem === "metric") {
+            output = `${(widthInches * 0.0254).toFixed(2)} m`;
+        } else {
+            output = `${(widthInches / 12).toFixed(2)} ft`;
+        }
+        return output;
+    }
+
+    /**
+     * Gets the field height in a human-readable format.
+     *
+     * Calculates the total height of the field in inches and then converts it to either meters or feet based on the measurement system.
+     *
+     * @returns A string representing the field height in the appropriate units.
+     */
+    get prettyHeight(): string {
+        const heightInches = this.totalHeightInches;
+        let output: string;
+        if (this.measurementSystem === "metric") {
+            output = `${(heightInches * 0.0254).toFixed(2)} m`;
+        } else {
+            output = `${(heightInches / 12).toFixed(2)} ft`;
+        }
+        return output;
+    }
 }
 
 /** A reference point on the field. Yard line, hash, etc. */
