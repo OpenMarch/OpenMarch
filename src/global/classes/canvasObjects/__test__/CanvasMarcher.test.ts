@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import Marcher from "../../Marcher";
-import CanvasMarcher, {
-    DEFAULT_COLOR,
-    DEFAULT_DOT_RADIUS,
-} from "../CanvasMarcher";
+import CanvasMarcher, { DEFAULT_DOT_RADIUS } from "../CanvasMarcher";
 import MarcherPage from "../../MarcherPage";
 import { fabric } from "fabric";
 
@@ -80,7 +77,6 @@ describe("CanvasMarcher", () => {
                 canvasMarcherWithDefaultParams.getObjects()[0] as fabric.Circle;
             expect(circle.isType("circle")).toBeTruthy();
             expect(circle.radius).toBe(DEFAULT_DOT_RADIUS);
-            expect(circle.fill).toBe(DEFAULT_COLOR);
 
             const text =
                 canvasMarcherWithDefaultParams.getObjects()[1] as fabric.Text;

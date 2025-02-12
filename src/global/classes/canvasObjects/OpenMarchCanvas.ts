@@ -1170,8 +1170,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     img.onload = () => resolve(img);
                     img.onerror = reject;
 
-                    const buffer =
-                        backgroundImageResponse.data as Buffer<ArrayBufferLike>;
+                    const buffer = backgroundImageResponse.data as Buffer;
                     const blob = new Blob([buffer]);
                     img.src = URL.createObjectURL(blob);
 
