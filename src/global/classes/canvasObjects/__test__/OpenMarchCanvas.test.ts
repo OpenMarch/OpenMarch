@@ -1,5 +1,5 @@
 import { cleanup } from "@testing-library/react";
-import { describe, expect, afterEach, it, vi } from "vitest";
+import { describe, expect, afterEach, it, vi, beforeEach } from "vitest";
 import OpenMarchCanvas from "../OpenMarchCanvas";
 import {
     falsyUiSettings,
@@ -9,10 +9,22 @@ import {
 } from "@/components/canvas/__test__/MocksForCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
+import { ElectronApi } from "electron/preload";
 
 describe("OpenMarchCanvas", () => {
     const NCAAFieldProperties =
         FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+
+    beforeEach(() => {
+        window.electron = {
+            getFieldPropertiesImage: vi.fn().mockResolvedValue({
+                success: true,
+                data: [1, 2, 3] as any as Buffer,
+            }),
+        } as Partial<ElectronApi> as ElectronApi;
+        global.URL.createObjectURL = vi.fn(() => "mock-url");
+    });
+
     afterEach(() => {
         vi.clearAllMocks();
         cleanup();
