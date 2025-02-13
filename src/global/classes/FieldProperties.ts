@@ -46,6 +46,9 @@ export default class FieldProperties {
      */
     static readonly PIXELS_PER_INCH = 0.5;
 
+    /** The dimensions of the field's image in pixels. Undefined if there is none. */
+    static imageDimensions?: { width: number; height: number };
+
     /*********** Attributes ***********/
     /**
      *  In pixels. The canvas coordinates (in pixels) of the perceivable center front of the field.

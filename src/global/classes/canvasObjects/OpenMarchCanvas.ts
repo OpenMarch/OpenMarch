@@ -1180,6 +1180,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
             const img = await loadImage();
 
+            FieldProperties.imageDimensions = {
+                width: img.width,
+                height: img.height,
+            };
+
             this._backgroundImage = new fabric.Image(img, {
                 height: img.height,
                 width: img.width,
@@ -1194,6 +1199,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.refreshBackgroundImageValues(imgAspectRatio);
             renderFieldGrid && this.renderFieldGrid();
         } else {
+            FieldProperties.imageDimensions = undefined;
             this._backgroundImage = null;
             console.error("Error fetching field properties image");
             console.error(backgroundImageResponse.error);

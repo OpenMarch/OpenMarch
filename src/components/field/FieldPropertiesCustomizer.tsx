@@ -1365,36 +1365,36 @@ export default function FieldPropertiesCustomizer() {
                 <div className="flex flex-col gap-12">
                     <h4 className="mb-8 text-h4">Stats</h4>
                     <div className={clsx(formFieldClassname, "items-center")}>
-                        <div className={clsx("col-span-4 align-middle")}>
+                        <div className={clsx("col-span-2 align-middle")}>
                             Width
                         </div>
-                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
                             {currentFieldProperties.width /
                                 currentFieldProperties.pixelsPerStep}{" "}
                             steps
                         </div>
-                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
                             {currentFieldProperties.prettyWidth}
                         </div>
                     </div>
                     <div className={clsx(formFieldClassname, "items-center")}>
-                        <div className={clsx("col-span-4 align-middle")}>
+                        <div className={clsx("col-span-2 align-middle")}>
                             Height
                         </div>
-                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
                             {currentFieldProperties.height /
                                 currentFieldProperties.pixelsPerStep}{" "}
                             steps
                         </div>
-                        <div className="px-1 col-span-4 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
                             {currentFieldProperties.prettyHeight}
                         </div>
                     </div>
                     <div className={clsx(formFieldClassname, "items-center")}>
-                        <div className={clsx("col-span-4 align-middle")}>
-                            Aspect Ratio
+                        <div className={clsx("col-span-5 align-middle")}>
+                            Field Ratio
                         </div>
-                        <div className="px-1 col-span-8 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
                             {(() => {
                                 const w = currentFieldProperties.width;
                                 const h = currentFieldProperties.height;
@@ -1402,20 +1402,49 @@ export default function FieldPropertiesCustomizer() {
                                     b ? gcd(b, a % b) : a;
                                 const divisor = gcd(w, h);
                                 const ratioStr = `${w / divisor}:${h / divisor}`;
+                                const divStr = (w / h).toFixed(3);
                                 if (ratioStr.length > 12) {
-                                    return (w / h).toFixed(3);
+                                    return divStr;
                                 } else {
-                                    return ratioStr;
+                                    return `${ratioStr}  or  ${divStr}`;
                                 }
                             })()}
-                            <span className="font-mono tracking-widest">
-                                {" - "}w/h
-                            </span>
+                        </div>
+                        <div className="px-1 col-span-2 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            w/h
+                        </div>
+                    </div>
+                    <div className={clsx(formFieldClassname, "items-center")}>
+                        <div className={clsx("col-span-5 align-middle")}>
+                            Background Image Ratio
+                        </div>
+                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            {(() => {
+                                if (!FieldProperties.imageDimensions) {
+                                    return "N/A";
+                                }
+                                const w = FieldProperties.imageDimensions.width;
+                                const h =
+                                    FieldProperties.imageDimensions.height;
+                                const gcd = (a: number, b: number): number =>
+                                    b ? gcd(b, a % b) : a;
+                                const divisor = gcd(w, h);
+                                const ratioStr = `${w / divisor}:${h / divisor}`;
+                                const divStr = (w / h).toFixed(3);
+                                if (ratioStr.length > 12) {
+                                    return divStr;
+                                } else {
+                                    return `${ratioStr}  or  ${divStr}`;
+                                }
+                            })()}
+                        </div>
+                        <div className="px-1 col-span-2 rounded-full bg-fg-1 py-2 text-center font-mono">
+                            w/h
                         </div>
                     </div>
                     <div className="mx-16 text-pretty rounded-full py-4 text-end text-sub text-text">
                         These values can be modified by adjusting the X and Y
-                        coordinates and the step size
+                        coordinates, the step size and the background image
                     </div>
                 </div>
 
