@@ -163,7 +163,7 @@ export class StepSize {
         fieldProperties: FieldProperties;
     }) {
         const startingPages = marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === page.id - 1,
+            (marcherPage) => marcherPage.page_id === page.previousPageId,
         );
         const endingPages = marcherPages.filter(
             (marcherPage) => marcherPage.page_id === page.id,
@@ -191,12 +191,12 @@ export class StepSize {
     }
 
     /**
-     * Returns the smallest and largest step size for the given marchers
-     * @param startingPages the starting coordinates of each marcher
-     * @param endingPages the ending coordinates of each marcher
-     * @param page the page that the marchers are on
-     * @param fieldProperties the properties of the performance area
-     * @returns largest and smallest step size for the given marchers
+     * Returns the minimum and maximum step sizes for the given marchers.
+     * @param marchers - The list of marchers.
+     * @param marcherPages - The list of marcher pages.
+     * @param page - The current page.
+     * @param fieldProperties - The properties of the performance area.
+     * @returns An object containing the minimum and maximum step sizes.
      */
     static getMinAndMaxStepSizesForMarchers({
         marchers,
