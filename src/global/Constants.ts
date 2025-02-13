@@ -26,6 +26,11 @@ export const TablesWithHistory = [
     Constants.MarcherTableName,
     Constants.PageTableName,
     Constants.MarcherPageTableName,
+    Constants.ShapeTableName,
+    Constants.ShapePageTableName,
+    Constants.ShapePageMarcherTableName,
+    Constants.FieldPropertiesTableName,
+    Constants.MeasureTableName,
 ] as const;
 
 export default Constants;

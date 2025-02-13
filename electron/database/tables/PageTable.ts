@@ -21,40 +21,6 @@ export interface DatabasePage {
 
 export const FIRST_PAGE_ID = 0;
 
-export function createPageTable(
-    db: Database.Database,
-): DbActions.DatabaseResponse<string> {
-    try {
-        db.prepare(
-            `
-            CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
-            "id"	            INTEGER PRIMARY KEY,
-            "is_subset"	        INTEGER NOT NULL DEFAULT 0 CHECK (is_subset IN (0, 1)),
-            "notes"	            TEXT,
-            "counts"	        INTEGER NOT NULL CHECK (counts >= 0),
-            "created_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "updated_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "next_page_id"	    INTEGER,
-            FOREIGN KEY ("next_page_id") REFERENCES "${Constants.PageTableName}" ("id")
-            );
-        `,
-        ).run();
-
-        // Create page 1 with 0 counts. Page 1 should always exist
-        // It is safe to assume there are no marchers in the database at this point, so MarcherPages do not need to be created
-        db.prepare(
-            `INSERT INTO ${Constants.PageTableName} ("counts", "id") VALUES (0, ${FIRST_PAGE_ID})`,
-        ).run();
-
-        // Make the undo triggers after so the creation of the first page cannot be undone
-        History.createUndoTriggers(db, Constants.PageTableName);
-
-        return { success: true, data: Constants.PageTableName };
-    } catch (error: any) {
-        throw new Error(`Failed to create page table: ${error}`);
-    }
-}
-
 interface NewPage {
     next_page_id: number | null;
     notes?: string;

@@ -1,54 +1,62 @@
-import FieldProperties, { Checkpoint, PixelsPerStep } from "../FieldProperties";
+import FieldProperties, { Checkpoint } from "../FieldProperties";
 
 const IndoorTemplates = {
     INDOOR_40x60_8to5: new FieldProperties({
         name: "Indoor 40x60 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        isCustom: false,
     }),
     INDOOR_50x70_8to5: new FieldProperties({
         name: "Indoor 50x70 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 36 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        isCustom: false,
     }),
     INDOOR_50x80_8to5: new FieldProperties({
         name: "Indoor 50x80 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 44 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        isCustom: false,
     }),
     INDOOR_50x90_8to5: new FieldProperties({
         name: "Indoor 50x90 - 8 to 5ish Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 48 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 28 }),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        isCustom: false,
     }),
     // 6 to 5
     INDOOR_40x60_6to5: new FieldProperties({
         name: "Indoor 40x60 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 24 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 16 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
+        isCustom: false,
     }),
     INDOOR_50x70_6to5: new FieldProperties({
         name: "Indoor 50x70 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 28 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
+        isCustom: false,
     }),
     INDOOR_50x80_6to5: new FieldProperties({
         name: "Indoor 50x80 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
+        isCustom: false,
     }),
     INDOOR_50x90_6to5: new FieldProperties({
         name: "Indoor 50x90 - 6 to 5 Steps",
         xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
         yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
-        pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
+        stepSizeInches: 30,
+        isCustom: false,
     }),
 } as const;
 
@@ -77,13 +85,15 @@ export function createIndoorXCheckpoints({
     const stepInterval = 4;
     let curCharCode = "A".charCodeAt(0);
     const stageRightBoundary = (xSteps / 2) * -1;
+    let curId = 0;
     xCheckpoints.push({
         name: `Line ${String.fromCharCode(curCharCode)}`,
         axis: "x",
         terseName: String.fromCharCode(curCharCode),
         stepsFromCenterFront: stageRightBoundary,
         useAsReference: true,
-        visible: false,
+        visible: true,
+        id: curId++,
     });
     const totalCheckpoints =
         Math.ceil(xSteps / stepInterval) +
@@ -100,7 +110,8 @@ export function createIndoorXCheckpoints({
                 terseName: String.fromCharCode(curCharCode),
                 stepsFromCenterFront: curSteps,
                 useAsReference: true,
-                visible: curSteps === xSteps / 2,
+                visible: true,
+                id: curId++,
             });
             curCharCode++;
             curSteps += stepInterval;
@@ -112,7 +123,8 @@ export function createIndoorXCheckpoints({
         terseName: String.fromCharCode(curCharCode),
         stepsFromCenterFront: stageLeftBoundary,
         useAsReference: true,
-        visible: false,
+        visible: true,
+        id: curId++,
     });
 
     return xCheckpoints;
@@ -141,13 +153,15 @@ export function createIndoorYCheckpoints({
     const stepInterval = 4;
     let curCheckpointName = 0;
     const frontStageSteps = 0;
+    let curId = 0;
     yCheckpoints.push({
         name: `Line ${curCheckpointName.toString()}`,
         axis: "y",
         terseName: curCheckpointName.toString(),
         stepsFromCenterFront: frontStageSteps,
         useAsReference: true,
-        visible: false,
+        visible: true,
+        id: curId++,
     });
     const totalCheckpoints =
         Math.ceil(ySteps / stepInterval) +
@@ -164,7 +178,8 @@ export function createIndoorYCheckpoints({
                 terseName: curCheckpointName.toString(),
                 stepsFromCenterFront: curSteps,
                 useAsReference: true,
-                visible: false,
+                visible: true,
+                id: curId++,
             });
             curCheckpointName++;
             curSteps -= stepInterval;
@@ -176,7 +191,8 @@ export function createIndoorYCheckpoints({
         terseName: curCheckpointName.toString(),
         stepsFromCenterFront: backStageSteps,
         useAsReference: true,
-        visible: false,
+        visible: true,
+        id: curId++,
     });
 
     return yCheckpoints;

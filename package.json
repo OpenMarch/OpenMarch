@@ -2,7 +2,7 @@
     "name": "openmarch",
     "productName": "OpenMarch",
     "description": "Free drill-writing software for the marching arts",
-    "version": "0.0.6",
+    "version": "0.0.7-b",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
     "license": "GPL-3.0",
@@ -26,7 +26,7 @@
         "url": "https://github.com/OpenMarch/OpenMarch.git"
     },
     "scripts": {
-        "dev": "eslint . && vite",
+        "dev": "vite",
         "app:prepare": "node_modules/.bin/electron-rebuild -f -w better-sqlite3 && vite",
         "build": "tsc && vite build",
         "clean": "rm -rf node_modules dist-electron release",
@@ -60,6 +60,9 @@
         "@radix-ui/react-switch": "^1.1.2",
         "@radix-ui/react-toggle-group": "^1.1.1",
         "@radix-ui/react-tooltip": "^1.1.7",
+        "@uiw/react-color": "^2.3.4",
+        "@uiw/react-color-sketch": "^2.3.4",
+        "@uiw/react-color-swatch": "^2.3.4",
         "adm-zip": "^0.5.16",
         "autoprefixer": "^10.4.20",
         "better-sqlite3": "^9.6.0",

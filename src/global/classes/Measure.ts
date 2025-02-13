@@ -217,6 +217,7 @@ z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
         const abcString = xml2abcInterpreter(xml);
         const response =
             await window.electron.updateMeasureAbcString(abcString);
+        console.log("Parsed MusicXML to ABC string:", abcString);
         Measure.checkForFetchMeasures();
         Measure.fetchMeasures();
         return response;

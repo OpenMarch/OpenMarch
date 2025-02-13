@@ -1,7 +1,6 @@
 import FieldProperties, {
     Checkpoint,
     YardNumberCoordinates,
-    PixelsPerStep,
 } from "../FieldProperties";
 
 const FootballTemplates = {
@@ -10,42 +9,66 @@ const FootballTemplates = {
         xCheckpoints: createFootballFieldXCheckpointsWithoutEndZones(),
         yCheckpoints: createHighSchoolFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        halfLineXInterval: 4,
+        halfLineYInterval: 4,
+        useHashes: true,
+        isCustom: false,
     }),
     COLLEGE_FOOTBALL_FIELD_NO_END_ZONES: new FieldProperties({
         name: "College football field (no end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithoutEndZones(),
         yCheckpoints: createCollegeFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        halfLineXInterval: 4,
+        halfLineYInterval: 4,
+        useHashes: true,
+        isCustom: false,
     }),
     PRO_FOOTBALL_FIELD_NO_END_ZONES: new FieldProperties({
         name: "Pro football field (no end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithoutEndZones(),
         yCheckpoints: createProFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        halfLineXInterval: 4,
+        halfLineYInterval: 4,
+        useHashes: true,
+        isCustom: false,
     }),
     HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES: new FieldProperties({
         name: "High school football field (with end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithEndZones(),
         yCheckpoints: createHighSchoolFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        halfLineXInterval: 4,
+        halfLineYInterval: 4,
+        useHashes: true,
+        isCustom: false,
     }),
     COLLEGE_FOOTBALL_FIELD_WITH_END_ZONES: new FieldProperties({
         name: "College football field (with end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithEndZones(),
         yCheckpoints: createCollegeFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("non-pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        halfLineXInterval: 4,
+        halfLineYInterval: 4,
+        useHashes: true,
+        isCustom: false,
     }),
     PRO_FOOTBALL_FIELD_WITH_END_ZONES: new FieldProperties({
         name: "Pro football field (with end zones)",
         xCheckpoints: createFootballFieldXCheckpointsWithEndZones(),
         yCheckpoints: createProFootballYCheckpoints(),
         yardNumberCoordinates: getFootballYardNumberCoordinates("pro"),
-        pixelsPerStep: PixelsPerStep.EIGHT_TO_FIVE,
+        stepSizeInches: 22.5,
+        halfLineXInterval: 4,
+        halfLineYInterval: 4,
+        useHashes: true,
+        isCustom: false,
     }),
 } as const;
 
@@ -60,6 +83,7 @@ export default FootballTemplates;
 function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
     const xCheckpoints: Checkpoint[] = [];
 
+    let curId = 0;
     for (let yards = 0; yards <= 100; yards = yards += 5) {
         const curYardLine = yards < 50 ? yards : 100 - yards;
         const stepsFromCenterFront = ((yards - 50) / 5) * 8;
@@ -70,11 +94,13 @@ function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
                 : undefined;
 
         xCheckpoints.push({
+            id: curId++,
             name: `${curYardLine} yard line`,
             axis: "x",
-            terseName: curYardLine.toString(),
+            terseName: `${curYardLine.toString()}`,
             stepsFromCenterFront: stepsFromCenterFront,
             useAsReference: true,
+            visible: true,
             fieldLabel: label,
         });
     }
@@ -83,6 +109,7 @@ function createFootballFieldXCheckpointsWithoutEndZones(): Checkpoint[] {
 
 function createFootballFieldXCheckpointsWithEndZones(): Checkpoint[] {
     const xCheckpoints = createFootballFieldXCheckpointsWithoutEndZones();
+    let maxId = Math.max(...xCheckpoints.map((cp) => cp.id)) + 1;
     xCheckpoints.push(
         {
             name: "end zone",
@@ -90,6 +117,8 @@ function createFootballFieldXCheckpointsWithEndZones(): Checkpoint[] {
             stepsFromCenterFront: -96,
             useAsReference: true,
             terseName: "EZ",
+            visible: true,
+            id: maxId++,
         },
         {
             name: "end zone",
@@ -97,6 +126,8 @@ function createFootballFieldXCheckpointsWithEndZones(): Checkpoint[] {
             stepsFromCenterFront: 96,
             useAsReference: true,
             terseName: "EZ",
+            visible: true,
+            id: maxId++,
         },
     );
 
@@ -145,6 +176,7 @@ function getFootballYardNumberCoordinates(
  * 0 is the front sideline. To negative is the back sideline.
  */
 function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
+    let curId = 0;
     const frontSideline: Checkpoint = {
         name: "front sideline",
         axis: "y",
@@ -152,6 +184,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "FSL",
         visible: false,
+        id: curId++,
     };
     const frontHash: Checkpoint = {
         name: "HS front hash",
@@ -161,6 +194,8 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -28,
         useAsReference: true,
         terseName: "FH",
+        visible: true,
+        id: curId++,
     };
     const backHash: Checkpoint = {
         name: "HS back hash",
@@ -169,6 +204,8 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -56,
         useAsReference: true,
         terseName: "BH",
+        visible: true,
+        id: curId++,
     };
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
@@ -177,6 +214,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
+        id: curId++,
     };
     const realBackSideline: Checkpoint = {
         name: "real back sideline",
@@ -185,6 +223,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
         useAsReference: false,
         terseName: "real:BSL",
         visible: false,
+        id: curId++,
     };
     return [
         frontSideline,
@@ -201,6 +240,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
  * 0 is the front sideline. To negative is the back sideline (that is how it is in Fabric.js).
  */
 function createCollegeFootballYCheckpoints(): Checkpoint[] {
+    let curId = 0;
     const frontSideline: Checkpoint = {
         name: "front sideline",
         axis: "y",
@@ -208,6 +248,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "FSL",
         visible: false,
+        id: curId++,
     };
     const frontHash: Checkpoint = {
         name: "NCAA front hash",
@@ -215,6 +256,8 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -32,
         useAsReference: true,
         terseName: "FH",
+        visible: true,
+        id: curId++,
     };
     const gridBackHash: Checkpoint = {
         name: "grid NCAA back hash",
@@ -222,6 +265,8 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -52,
         useAsReference: true,
         terseName: "grid:BH",
+        visible: true,
+        id: curId++,
     };
     const realBackHash: Checkpoint = {
         name: "real NCAA back hash",
@@ -229,6 +274,8 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -53.33,
         useAsReference: false,
         terseName: "real:BH",
+        visible: true,
+        id: curId++,
     };
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
@@ -237,6 +284,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
+        id: curId++,
     };
     const realBackSideline: Checkpoint = {
         name: "real back sideline",
@@ -245,6 +293,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
         useAsReference: false,
         terseName: "real:BSL",
         visible: false,
+        id: curId++,
     };
     return [
         frontSideline,
@@ -263,6 +312,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
  * 0 is the front sideline. To negative is the back sideline (that is how it is in Fabric.js).
  */
 function createProFootballYCheckpoints(): Checkpoint[] {
+    let curId = 0;
     const frontSideline: Checkpoint = {
         name: "front sideline",
         axis: "y",
@@ -270,6 +320,7 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "FSL",
         visible: false,
+        id: curId++,
     };
     const frontHash: Checkpoint = {
         name: "NFL front hash",
@@ -277,6 +328,8 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -38, // note, it's actually 37.733 steps
         useAsReference: true,
         terseName: "FH",
+        visible: true,
+        id: curId++,
     };
     const gridBackHash: Checkpoint = {
         name: "NFL back hash",
@@ -284,6 +337,8 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         stepsFromCenterFront: -48, // note, it's actually 47.6 steps
         useAsReference: true,
         terseName: "BH",
+        visible: true,
+        id: curId++,
     };
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
@@ -292,6 +347,7 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
+        id: curId++,
     };
     const realBackSideline: Checkpoint = {
         name: "real back sideline",
@@ -300,6 +356,7 @@ function createProFootballYCheckpoints(): Checkpoint[] {
         useAsReference: false,
         terseName: "real:BSL",
         visible: false,
+        id: curId++,
     };
     return [
         frontSideline,

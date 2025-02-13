@@ -8,10 +8,12 @@ import {
     getRoundCoordinates,
 } from "../CoordinateActions";
 import { describe, expect, it } from "vitest";
-import { mockNCAAFieldProperties } from "@/__mocks__/globalMocks";
+import { legacyMockNCAAFieldProperties } from "@/__mocks__/globalMocks";
 
 describe("CoordinateActions", () => {
-    const fieldProperties = mockNCAAFieldProperties;
+    // Convert the field properties to use the legacy PixelsPerStep (which was 24)
+    // These tests can be written later
+    const fieldProperties = legacyMockNCAAFieldProperties;
 
     describe("checkMarcherPagesAreSamePage", () => {
         it("should return true if all marcherPages are on the same page", () => {

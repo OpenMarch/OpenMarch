@@ -37,11 +37,11 @@ export default class v2 extends v1 {
         }
     }
 
-    createTables(version = this.version) {
+    createTables() {
         const db = this.databaseConnector();
         if (!db) throw new Error("Failed to connect to database.");
         console.log(db);
-        db.pragma("user_version = " + version);
+        db.pragma("user_version = " + this.version);
         console.log("Creating database...");
         createHistoryTables(db);
         super.createMarcherTable(db);

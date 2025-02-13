@@ -1,26 +1,23 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import * as History from "../../database.history";
-import { createPages, createPageTable } from "../PageTable";
-import { createShapes, createShapeTable } from "../ShapeTable";
+import { createPages } from "../PageTable";
+import { createShapes } from "../ShapeTable";
 import {
     createShapePageMarchers,
-    createShapePageMarcherTable,
     deleteShapePageMarchers,
     getShapePageMarchers,
     getSpmByMarcherPage,
     swapPositionOrder,
     updateShapePageMarchers,
 } from "../ShapePageMarcherTable";
-import { createMarchers, createMarcherTable } from "../MarcherTable";
+import { createMarchers } from "../MarcherTable";
 import * as DbMocks from "../../__test__/DatabaseMocks";
 import {
     createShapePages,
-    createShapePageTable,
     getShapePages,
     NewShapePageArgs,
 } from "../ShapePageTable";
-import { createMarcherPageTable } from "../MarcherPageTable";
+import { initTestDatabase } from "./testUtils";
 
 const NewShapePages: NewShapePageArgs[] = [
     {
@@ -61,14 +58,8 @@ describe("ShapePageMarcherTable CRUD Operations", () => {
     let db: Database.Database;
 
     beforeEach(() => {
-        db = new Database(":memory:");
-        History.createHistoryTables(db);
-        createPageTable(db);
-        createShapeTable(db);
-        createShapePageMarcherTable(db);
-        createShapePageTable(db);
-        createMarcherTable(db);
-        createMarcherPageTable(db);
+        db = initTestDatabase();
+
         // Create the pre-requisite objects
         expect(createPages({ db, newPages: DbMocks.NewPages }).success).toBe(
             true,

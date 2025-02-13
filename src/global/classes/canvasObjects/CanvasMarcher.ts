@@ -4,9 +4,9 @@ import MarcherPage from "../MarcherPage";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
+import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
 
 export const DEFAULT_DOT_RADIUS = 5;
-export const DEFAULT_COLOR = "red";
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
@@ -17,9 +17,9 @@ export default class CanvasMarcher
     implements Selectable.ISelectable
 {
     // Styles
+    static theme: FieldTheme = DEFAULT_FIELD_THEME;
     private static readonly dotRadius = DEFAULT_DOT_RADIUS;
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
-    private static readonly color = DEFAULT_COLOR;
     readonly classString = Selectable.SelectableClasses.MARCHER;
     backgroundRectangle: fabric.Rect;
 
@@ -42,7 +42,7 @@ export default class CanvasMarcher
         marcher,
         marcherPage,
         dotRadius = CanvasMarcher.dotRadius,
-        color = CanvasMarcher.color,
+        color = rgbaToString(CanvasMarcher.theme.defaultMarcher.fill),
     }: {
         marcher: Marcher;
         marcherPage: MarcherPage;
@@ -56,6 +56,9 @@ export default class CanvasMarcher
                     top: marcherPage.y,
                     originX: "center",
                     originY: "center",
+                    stroke: rgbaToString(
+                        CanvasMarcher.theme.defaultMarcher.outline,
+                    ),
                     fill: color,
                     radius: dotRadius,
                 }),
@@ -65,6 +68,9 @@ export default class CanvasMarcher
                     originX: "center",
                     originY: "center",
                     fontFamily: "courier new",
+                    fill: rgbaToString(
+                        CanvasMarcher.theme.defaultMarcher.label,
+                    ),
                     fontWeight: "bold",
                     fontSize: 14,
                 }),

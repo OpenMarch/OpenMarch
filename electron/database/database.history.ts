@@ -366,6 +366,7 @@ const switchTriggerMode = (
     deleteRedoRows: boolean,
     tableNames?: Set<string>,
 ) => {
+    console.log(`------ Switching triggers to ${mode} mode ------`);
     let sql = `SELECT * FROM sqlite_master WHERE type='trigger' AND ("name" LIKE '%$_ut' ESCAPE '$' OR "name" LIKE  '%$_it' ESCAPE '$' OR "name" LIKE  '%$_dt' ESCAPE '$')`;
     if (tableNames) {
         sql += ` AND tbl_name IN (${Array.from(tableNames)
@@ -385,6 +386,7 @@ const switchTriggerMode = (
     for (const table of tables) {
         createTriggers(db, table, mode, deleteRedoRows);
     }
+    console.log(`------ Done switching triggers to ${mode} mode ------`);
 };
 
 /**
@@ -399,6 +401,7 @@ function executeHistoryAction(
     db: Database.Database,
     type: HistoryType,
 ): HistoryResponse {
+    console.log(`\n============ PERFORMING ${type.toUpperCase()} ============`);
     let response: HistoryResponse = {
         success: false,
         tableNames: new Set(),
@@ -499,6 +502,10 @@ function executeHistoryAction(
                 stack: err?.stack || "Failed to get stack",
             },
         };
+    } finally {
+        console.log(
+            `============ FINISHED ${type.toUpperCase()} =============\n`,
+        );
     }
 
     return response;
@@ -513,6 +520,7 @@ function executeHistoryAction(
  * @param db database connection
  */
 export function clearMostRecentRedo(db: Database.Database) {
+    console.log(`-------- Clearing most recent redo --------`);
     const maxGroup = (
         db
             .prepare(
@@ -523,6 +531,7 @@ export function clearMostRecentRedo(db: Database.Database) {
     db.prepare(
         `DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ?`,
     ).run(maxGroup);
+    console.log(`-------- Done clearing most recent redo --------`);
 }
 
 /**
@@ -548,6 +557,7 @@ export function getCurrentUndoGroup(db: Database.Database) {
  * @param db database connection
  */
 export function decrementLastUndoGroup(db: Database.Database) {
+    console.log(`-------- Decrementing last undo group --------`);
     const maxGroup = (
         db
             .prepare(
@@ -572,4 +582,5 @@ export function decrementLastUndoGroup(db: Database.Database) {
             `UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ?`,
         ).run(previousGroup);
     }
+    console.log(`-------- Done decrementing last undo group --------`);
 }

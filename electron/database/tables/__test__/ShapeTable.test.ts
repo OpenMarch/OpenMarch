@@ -1,21 +1,18 @@
 import Database from "better-sqlite3";
 import { describe, beforeEach, afterEach, test, expect } from "vitest";
 import {
-    createShapeTable,
     getShapes,
     createShapes,
     updateShapes,
     deleteShapes,
 } from "../ShapeTable";
-import * as History from "../../database.history";
+import { initTestDatabase } from "./testUtils";
 
 describe("MarcherShapeTable", () => {
     let db: Database.Database;
 
     beforeEach(() => {
-        db = new Database(":memory:");
-        History.createHistoryTables(db);
-        createShapeTable(db);
+        db = initTestDatabase();
     });
 
     afterEach(() => {

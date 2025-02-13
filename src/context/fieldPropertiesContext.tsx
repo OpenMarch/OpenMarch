@@ -13,6 +13,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 type FieldPropertiesContextProps = {
     fieldProperties: FieldProperties | undefined;
     setFieldProperties: (fieldProperties: FieldProperties) => void;
+    fetchFieldProperties: () => Promise<void>;
 };
 
 const FieldPropertiesContext = createContext<
@@ -25,27 +26,42 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
 
     const setFieldProperties = useCallback(
         (fieldProperties: FieldProperties, updateDatabase = true) => {
+            const newFieldProperties = new FieldProperties(fieldProperties);
             if (updateDatabase) {
-                window.electron.updateFieldProperties(fieldProperties);
+                window.electron.updateFieldProperties(newFieldProperties);
             }
-            setFieldPropertiesState(fieldProperties);
+            setFieldPropertiesState(newFieldProperties);
             // Set the field properties for the ReadableCoords class
-            ReadableCoords.setFieldProperties(fieldProperties);
+            ReadableCoords.setFieldProperties(newFieldProperties);
         },
         [],
     );
 
-    // Fetch the field properties from the main process and set the state
-    useEffect(() => {
+    const fetchFieldProperties = useCallback(async () => {
         window.electron.getFieldProperties().then((fieldPropertiesResult) => {
-            setFieldProperties(fieldPropertiesResult, false);
+            if (!fieldPropertiesResult.success) {
+                throw new Error(
+                    "Could not get field properties " +
+                        fieldPropertiesResult.error,
+                );
+            }
+            const newFieldProperties = new FieldProperties(
+                fieldPropertiesResult.data,
+            );
+            setFieldProperties(newFieldProperties, false);
         });
     }, [setFieldProperties]);
+
+    // Fetch the field properties from the main process and set the state
+    useEffect(() => {
+        fetchFieldProperties();
+    }, [fetchFieldProperties]);
 
     // Create the context value object
     const contextValue: FieldPropertiesContextProps = {
         fieldProperties,
-        setFieldProperties, // TODO update this in the database
+        setFieldProperties,
+        fetchFieldProperties,
     };
 
     return (

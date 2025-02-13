@@ -14,7 +14,12 @@ import { parseMxl } from "../mxl/MxlUtil";
 // const $ = require('jquery');
 
 // Modify this when the database is updated
-import * as DatabaseMigrator from "../database/versions/v3";
+import CurrentDatabase from "../database/versions/CurrentDatabase";
+import {
+    getFieldPropertiesJson,
+    updateFieldProperties,
+    updateFieldPropertiesImage,
+} from "../database/tables/FieldPropertiesTable";
 
 // The built directory structure
 //
@@ -131,6 +136,15 @@ app.whenReady().then(async () => {
     ipcMain.handle("audio:insert", async () => insertAudioFile());
     ipcMain.handle("measure:insert", async () =>
         launchImportMusicXmlFileDialogue(),
+    );
+    ipcMain.handle("field_properties:export", async () =>
+        exportFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import", async () =>
+        importFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import_image", async () =>
+        importFieldPropertiesImage(),
     );
 
     // Getters
@@ -303,9 +317,7 @@ export async function newFile() {
             if (path.canceled || !path.filePath) return;
 
             setActiveDb(path.filePath, true);
-            const dbVersion = new DatabaseMigrator.default(
-                DatabaseServices.connect,
-            );
+            const dbVersion = new CurrentDatabase(DatabaseServices.connect);
             dbVersion.createTables();
             win?.webContents.reload();
 
@@ -316,6 +328,8 @@ export async function newFile() {
             return -1;
         });
 }
+
+// Database (main file)
 
 /**
  * Opens a dialog to create a new database file path to connect to with the data of the current database.
@@ -390,6 +404,128 @@ export async function loadDatabaseFile() {
             return -1;
         });
 }
+
+// Field properties
+
+/**
+ * Opens a dialog to export the field properties to a file.
+ * The file's extension is  .fieldots, but it's actually a JSON file.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function exportFieldPropertiesFile() {
+    console.log("exportFieldPropertiesFile");
+
+    if (!win) return -1;
+
+    const jsonStr = getFieldPropertiesJson({
+        db: DatabaseServices.connect(),
+    }).data;
+
+    // Save
+    dialog
+        .showSaveDialog(win, {
+            buttonLabel: "Save Field",
+            filters: [
+                { name: "OpenMarch Field File", extensions: ["fieldots"] },
+            ],
+        })
+        .then((path) => {
+            if (path.canceled || !path.filePath) return -1;
+
+            fs.writeFileSync(path.filePath, jsonStr, {
+                encoding: "utf-8",
+            });
+
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
+}
+
+/**
+ * Opens a dialog to import a field properties file and updates the field properties in the database.
+ * The file's extension is .fieldots, but it's actually a JSON file.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function importFieldPropertiesFile() {
+    console.log("importFieldPropertiesFile");
+
+    if (!win) return -1;
+
+    // If there is no previous path, open a dialog
+    dialog
+        .showOpenDialog(win, {
+            filters: [
+                { name: "OpenMarch Field File", extensions: ["fieldots"] },
+            ],
+        })
+        .then((path) => {
+            const fileContents = fs.readFileSync(path.filePaths[0]);
+            const jsonStr = fileContents.toString();
+            updateFieldProperties({
+                db: DatabaseServices.connect(),
+                fieldProperties: jsonStr,
+            });
+
+            // If the user cancels the dialog, and there is no previous path, return -1
+            if (path.canceled || !path.filePaths[0]) return -1;
+
+            win?.webContents.send("field_properties:onImport");
+
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
+}
+
+export async function importFieldPropertiesImage() {
+    console.log("importFieldPropertiesFile");
+
+    if (!win) return -1;
+
+    // If there is no previous path, open a dialog
+    dialog
+        .showOpenDialog(win, {
+            filters: [
+                {
+                    name: "Image file",
+                    extensions: [
+                        ".jpg",
+                        ".jpeg",
+                        ".png",
+                        ".gif",
+                        ".bmp",
+                        ".webp",
+                    ],
+                },
+            ],
+        })
+        .then((path) => {
+            updateFieldPropertiesImage({
+                db: DatabaseServices.connect(),
+                imagePath: path.filePaths[0],
+            });
+
+            // If the user cancels the dialog, and there is no previous path, return -1
+            if (path.canceled || !path.filePaths[0]) return -1;
+
+            win?.webContents.send("field_properties:onImageImport");
+
+            return 200;
+        })
+        .catch((err) => {
+            console.log(err);
+            return -1;
+        });
+}
+
+// Audio files
 
 /**
  * Opens a dialog to import an audio file to the database.
@@ -552,7 +688,7 @@ function setActiveDb(path: string, isNewFile = false) {
     DatabaseServices.setDbPath(path, isNewFile);
     win?.setTitle("OpenMarch - " + path);
 
-    const migrator = new DatabaseMigrator.default(DatabaseServices.connect);
+    const migrator = new CurrentDatabase(DatabaseServices.connect);
     const db = DatabaseServices.connect();
     if (!db) {
         console.error("Error connecting to database");
@@ -560,9 +696,9 @@ function setActiveDb(path: string, isNewFile = false) {
     }
     if (!isNewFile) {
         console.log("Checking database version to see if migration is needed");
-        DatabaseMigrator.default.getVersion(db);
+        CurrentDatabase.getVersion(db);
         // Create backup before migration
-        if (DatabaseMigrator.default.getVersion(db) !== migrator.version) {
+        if (CurrentDatabase.getVersion(db) !== migrator.version) {
             const backupDir = join(app.getPath("userData"), "backups");
             if (!fs.existsSync(backupDir)) {
                 fs.mkdirSync(backupDir);

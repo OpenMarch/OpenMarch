@@ -7,7 +7,6 @@ import * as History from "./database.history";
 import * as Utilities from "./utilities";
 import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import FieldPropertiesTemplates from "../../src/global/classes/FieldProperties.templates";
 import * as MarcherTable from "./tables/MarcherTable";
 import * as PageTable from "./tables/PageTable";
 import * as MarcherPageTable from "./tables/MarcherPageTable";
@@ -17,6 +16,7 @@ import { ModifiedPageArgs } from "@/global/classes/Page";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
+import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -75,31 +75,6 @@ export function databaseIsReady() {
     return DB_PATH.length > 0 && fs.existsSync(DB_PATH);
 }
 
-/**
- * Initiates the database by creating the tables if they do not exist.
- */
-export function initDatabase() {
-    const db = connect();
-    console.log(db);
-    console.log("Creating database...");
-    if (!db) return;
-    History.createHistoryTables(db);
-    MarcherTable.createMarcherTable(db);
-    PageTable.createPageTable(db);
-    MarcherPageTable.createMarcherPageTable(db);
-    createFieldPropertiesTable(
-        db,
-        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
-    );
-    createMeasureTable(db);
-    createAudioFileTable(db);
-    ShapeTable.createShapeTable(db);
-    ShapePageTable.createShapePageTable(db);
-    ShapePageMarcherTable.createShapePageMarcherTable(db);
-    console.log("Database created.");
-    db.close();
-}
-
 export function connect() {
     try {
         const dbPath =
@@ -118,105 +93,6 @@ export function connect() {
             error,
         );
     }
-}
-
-function createFieldPropertiesTable(
-    db: Database.Database,
-    fieldProperties: FieldProperties,
-) {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.FieldPropertiesTableName}" (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
-                json_data TEXT
-            );
-        `);
-    } catch (error) {
-        throw new Error(`Failed to create field properties table: ${error}`);
-    }
-    const stmt = db.prepare(`
-        INSERT INTO ${Constants.FieldPropertiesTableName} (
-            id,
-            json_data
-        ) VALUES (
-            1,
-            @json_data
-        );
-    `);
-    stmt.run({ json_data: JSON.stringify(fieldProperties) });
-    console.log("Field properties table created.");
-    History.createUndoTriggers(db, Constants.FieldPropertiesTableName);
-}
-
-/**
- * Measures in OpenMarch use a simplified version of ABC notation.
- * There is only ever one entry in this table, and it is the ABC notation string.
- * When updating measures, this string will be modified.
- *
- * @param db Database object to use
- */
-function createMeasureTable(db: Database.Database) {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
-                abc_data TEXT,
-                "created_at"	TEXT NOT NULL,
-                "updated_at"	TEXT NOT NULL
-            );
-        `);
-        // Create a default entry
-        const stmt = db.prepare(`
-            INSERT INTO ${Constants.MeasureTableName} (
-                id,
-                abc_data,
-                "created_at",
-                "updated_at"
-            ) VALUES (
-                1,
-                @abc_data,
-                @created_at,
-                @updated_at
-            );
-        `);
-        const created_at = new Date().toISOString();
-        stmt.run({
-            abc_data: defaultMeasures,
-            created_at,
-            updated_at: created_at,
-        });
-        History.createUndoTriggers(db, Constants.MeasureTableName);
-        console.log("Measures table created.");
-    } catch (error) {
-        throw new Error(`Failed to create Measures table: ${error}`);
-    }
-}
-
-/**
- * Audio files are stored in the database as BLOBs.
- * There can be multiple audio files in the database, but only one is used at a time.
- * They can be used to differentiate tracks with metronome, simplified parts, etc.
- *
- * @param db Database object to use
- */
-function createAudioFileTable(db: Database.Database) {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.AudioFilesTableName}" (
-                id INTEGER PRIMARY KEY,
-                path TEXT NOT NULL,
-                nickname TEXT,
-                data BLOB,
-                selected INTEGER NOT NULL DEFAULT 0,
-                "created_at"	TEXT NOT NULL,
-                "updated_at"	TEXT NOT NULL
-            );
-        `);
-        History.createUndoTriggers(db, Constants.AudioFilesTableName);
-    } catch (error) {
-        throw new Error(`Failed to create audio file table: ${error}`);
-    }
-    console.log("audio file table created.");
 }
 
 /* ============================ Handlers ============================ */
@@ -247,9 +123,23 @@ async function connectWrapper<T>(
  */
 export function initHandlers() {
     // Field properties
-    ipcMain.handle("field_properties:get", async () => getFieldProperties());
-    ipcMain.handle("field_properties:update", async (_, field_properties) =>
-        updateFieldProperties(field_properties),
+    ipcMain.handle("field_properties:get", async () =>
+        connectWrapper<FieldProperties>(
+            FieldPropertiesTable.getFieldProperties,
+            {},
+        ),
+    );
+    ipcMain.handle("field_properties:update", async (_, fieldProperties) =>
+        connectWrapper<FieldProperties | null>(
+            FieldPropertiesTable.updateFieldProperties,
+            { fieldProperties },
+        ),
+    );
+    ipcMain.handle("field_properties:get_image", async () =>
+        connectWrapper<Buffer | null>(
+            FieldPropertiesTable.getFieldPropertiesImage,
+            {},
+        ),
     );
 
     // File IO handlers located in electron/main/index.ts
@@ -552,61 +442,6 @@ export function performHistoryAction(
 
     return { ...response, marcherIds, pageId };
 }
-
-/* ======================== Field Properties ======================== */
-/**
- * Gets the field properties from the database.
- *
- * @param db
- * @returns
- */
-export function getFieldProperties(db?: Database.Database): FieldProperties {
-    const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.FieldPropertiesTableName}`,
-    );
-    const result = stmt.get({});
-    const jsonData = (result as any).json_data;
-    const fieldProperties = JSON.parse(jsonData) as FieldProperties;
-    if (!db) dbToUse.close();
-    return fieldProperties;
-}
-
-/**
- * Updates the field properties in the database.
- *
- * @param fieldProperties The new field properties
- * @returns {success: boolean, result?: FieldProperties, error?: string}
- */
-export function updateFieldProperties(
-    fieldProperties: FieldProperties,
-    db?: Database.Database,
-): LegacyDatabaseResponse<FieldProperties> {
-    const dbToUse = db || connect();
-    let output: LegacyDatabaseResponse<FieldProperties> = { success: true };
-
-    try {
-        const stmt = dbToUse.prepare(`
-            UPDATE ${Constants.FieldPropertiesTableName}
-            SET json_data = @json_data
-            WHERE id = 1
-        `);
-        stmt.run({ json_data: JSON.stringify(fieldProperties) });
-        const newFieldProperties = getFieldProperties(dbToUse);
-        output = { success: true, result: newFieldProperties };
-    } catch (error: any) {
-        console.error(error);
-        output = {
-            success: false,
-            error: { message: error.message, stack: error.stack },
-        };
-    } finally {
-        History.incrementUndoGroup(dbToUse);
-        if (!db) dbToUse.close();
-    }
-    return output;
-}
-
 /* ============================ Measures ============================ */
 const defaultMeasures = `X:1
 Q:1/4=120

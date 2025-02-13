@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import * as PageTable from "../PageTable";
 import * as MarcherTable from "../MarcherTable";
@@ -8,6 +8,7 @@ import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
 import { NewMarcherArgs } from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import Constants from "@/global/Constants";
+import { initTestDatabase } from "./testUtils";
 
 const sorter = (a: any, b: any) => a.id - b.id;
 const sort = (items: PageTable.DatabasePage[]): PageTable.DatabasePage[] => {
@@ -78,8 +79,7 @@ describe("PageTable", () => {
         let db: Database.Database;
 
         beforeEach(() => {
-            db = new Database(":memory:");
-            History.createHistoryTables(db);
+            db = initTestDatabase();
         });
 
         it("should create the page table if it does not exist", () => {
@@ -87,11 +87,7 @@ describe("PageTable", () => {
             let tableInfo = db
                 .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
                 .all() as { name: string }[];
-            expect(tableInfo.length).toBe(0);
-            const triggerSpy = vi.spyOn(History, "createUndoTriggers");
-            const createTableResponse = PageTable.createPageTable(db);
-            expect(createTableResponse.success).toBeTruthy();
-
+            expect(tableInfo.length).toBe(7);
             // Expect the page table to be created
             tableInfo = db
                 .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
@@ -107,17 +103,9 @@ describe("PageTable", () => {
             ];
             const columnNames = tableInfo.map((column) => column.name);
             expect(columnNames.sort()).toEqual(expectedColumns.sort());
-
-            expect(triggerSpy).toHaveBeenCalledWith(
-                db,
-                Constants.PageTableName,
-            );
         });
 
         it("Page 1 should exist at table creation with zero counts", () => {
-            const createTableResponse = PageTable.createPageTable(db);
-            expect(createTableResponse.success).toBeTruthy();
-
             const allPages = PageTable.getPages({ db });
             expect(allPages.success).toBeTruthy();
             expect(trimData(allPages.data)).toEqual([
@@ -130,27 +118,13 @@ describe("PageTable", () => {
                 },
             ]);
         });
-
-        it("should throw an error if table creation fails", () => {
-            try {
-                PageTable.createPageTable(db);
-                // Should throw an error
-                expect(true).toBe(false);
-            } catch (error) {
-                expect(true).toBe(true);
-            }
-        });
     });
 
     describe("database interactions", () => {
         let db: Database.Database;
 
         beforeEach(() => {
-            db = new Database(":memory:");
-            History.createHistoryTables(db);
-            PageTable.createPageTable(db);
-            MarcherPageTable.createMarcherPageTable(db);
-            MarcherTable.createMarcherTable(db);
+            db = initTestDatabase();
         });
 
         describe("createPages", () => {
@@ -1403,11 +1377,7 @@ describe("PageTable", () => {
         let db: Database.Database;
 
         beforeEach(() => {
-            db = new Database(":memory:");
-            History.createHistoryTables(db);
-            PageTable.createPageTable(db);
-            MarcherPageTable.createMarcherPageTable(db);
-            MarcherTable.createMarcherTable(db);
+            db = initTestDatabase();
         });
         describe("CreatePages", () => {
             describe("without any marchers", () => {
