@@ -644,8 +644,28 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 );
 
             // Y
+            const lastYCheckpoint = this.fieldProperties.yCheckpoints.reduce(
+                (prev, curr) => {
+                    if (curr.stepsFromCenterFront < prev.stepsFromCenterFront)
+                        return curr;
+                    return prev;
+                },
+            );
+            const firstVisibleYCheckpoint =
+                this.fieldProperties.yCheckpoints.reduce((prev, curr) => {
+                    if (
+                        curr.visible &&
+                        curr.stepsFromCenterFront > prev.stepsFromCenterFront
+                    )
+                        return curr;
+                    return prev;
+                }, lastYCheckpoint);
+            console.log(firstVisibleYCheckpoint);
             for (
-                let i = centerFrontPoint.yPixels - pixelsPerStep;
+                let i =
+                    centerFrontPoint.yPixels +
+                    firstVisibleYCheckpoint.stepsFromCenterFront *
+                        pixelsPerStep;
                 i > 0;
                 i -= pixelsPerStep
             )

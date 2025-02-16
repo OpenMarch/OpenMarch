@@ -336,38 +336,6 @@ function CheckpointEditor({
                             </Tooltip.TooltipProvider>
                         </Form.Field>
                     )}
-                    {axis === "x" && (
-                        <Form.Field
-                            name="Symmetrical"
-                            className={formFieldClassname}
-                            hidden={true}
-                        >
-                            <Form.Label className={labelClassname}>
-                                Symmetrical
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Switch className={inputClassname} />
-                            </Form.Control>
-                            <Tooltip.TooltipProvider>
-                                <Tooltip.Root>
-                                    <Tooltip.Trigger type="button">
-                                        <Info
-                                            size={18}
-                                            className="text-text/60"
-                                        />
-                                    </Tooltip.Trigger>
-                                    <TooltipContents
-                                        className="p-16"
-                                        side="right"
-                                    >
-                                        {/* This does not do anything yet */}
-                                        If this checkpoint exists on both sides
-                                        of the field
-                                    </TooltipContents>
-                                </Tooltip.Root>
-                            </Tooltip.TooltipProvider>
-                        </Form.Field>
-                    )}
                     <Form.Field name="Visible" className={formFieldClassname}>
                         <Form.Label className={labelClassname}>
                             Visible
