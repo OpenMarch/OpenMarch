@@ -77,40 +77,47 @@ export default abstract class DatabaseMigrator {
             this.databaseConnector,
         );
         const db = this.databaseConnector();
-        const currentVersion = db.pragma("user_version", {
-            simple: true,
-        }) as number;
-        console.log(
-            `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
-        );
-        console.log("Migrating database to newer version...");
-        console.log(
-            `currentVersion: ${currentVersion}, this.version: ${this.version}, superMigrator.version: ${superMigrator.version}`,
-        );
-        if (
-            currentVersion !== superMigrator.version &&
-            !(currentVersion === 0 && this.version === 2) // This is a special case for the initial migration
-        ) {
+        const isThisVersion = this.isThisVersion(db);
+        if (isThisVersion) {
             console.log(
-                `DATABASE MIGRATOR V-${this.version}: The database's version is not the immediate previous one, which would be ${superMigrator.version}. Continuing down the migration chain...`,
-                `Database version: ${currentVersion}`,
+                `Database version is up-to-date (v${this.version}). Not migrating`,
             );
-            superMigrator.migrateToThisVersion(db);
-        }
-        func();
-        this.setPragmaToThisVersion(db);
+        } else {
+            const currentVersion = db.pragma("user_version", {
+                simple: true,
+            }) as number;
+            console.log(
+                `\n================ BEGIN MIGRATION: ${currentVersion} -> ${this.version} ================`,
+            );
+            console.log("Migrating database to newer version...");
+            console.log(
+                `currentVersion: ${currentVersion}, this.version: ${this.version}, superMigrator.version: ${superMigrator.version}`,
+            );
+            if (
+                currentVersion !== superMigrator.version &&
+                !(currentVersion === 0 && this.version === 2) // This is a special case for the initial migration
+            ) {
+                console.log(
+                    `DATABASE MIGRATOR V-${this.version}: The database's version is not the immediate previous one, which would be ${superMigrator.version}. Continuing down the migration chain...`,
+                    `Database version: ${currentVersion}`,
+                );
+                superMigrator.migrateToThisVersion(db);
+            }
+            func();
+            this.setPragmaToThisVersion(db);
 
-        if (clearHistory) {
-            console.log("Clearing history...");
-            this.clearHistory(db);
-        }
+            if (clearHistory) {
+                console.log("Clearing history...");
+                this.clearHistory(db);
+            }
 
-        console.log(
-            `Database migrated from version ${superMigrator.version} to ${this.version} successfully.`,
-        );
-        console.log(
-            `================= END MIGRATION: ${currentVersion} -> ${this.version} ================\n`,
-        );
+            console.log(
+                `Database migrated from version ${superMigrator.version} to ${this.version} successfully.`,
+            );
+            console.log(
+                `================= END MIGRATION: ${currentVersion} -> ${this.version} ================\n`,
+            );
+        }
     }
 
     /**

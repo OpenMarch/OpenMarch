@@ -2,7 +2,6 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import { DatabaseResponse } from "../DatabaseActions";
-import * as History from "../database.history";
 
 export interface Shape {
     id: number;
@@ -23,29 +22,6 @@ export interface ModifiedShapeArgs {
     notes?: string | null;
 }
 
-/**
- * Creates the Shape table in the database with columns for id, name, timestamps, and notes.
- * Also sets up undo triggers for history tracking.
- * @param db The database instance
- */
-export function createShapeTable(db: Database.Database) {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.ShapeTableName}" (
-                "id"            INTEGER PRIMARY KEY,
-                "name"          TEXT,
-                "created_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updated_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "notes"         TEXT
-            );
-        `);
-        History.createUndoTriggers(db, Constants.ShapeTableName);
-    } catch (error) {
-        throw new Error(
-            `Failed to create ${Constants.ShapeTableName} table: ${error}`,
-        );
-    }
-}
 /**
  * Retrieves all shapes from the database
  * @param db The database instance

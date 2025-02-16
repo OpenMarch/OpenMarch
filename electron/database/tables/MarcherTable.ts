@@ -12,32 +12,6 @@ import * as MarcherPageTable from "./MarcherPageTable";
 import { DatabaseResponse } from "../DatabaseActions";
 import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 
-export function createMarcherTable(
-    db: Database.Database,
-): DatabaseResponse<string> {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.MarcherTableName}" (
-                "id"	        INTEGER PRIMARY KEY,
-                "name"	        TEXT,
-                "section"	    TEXT NOT NULL,
-                "year"	        TEXT,
-                "notes"	        TEXT,
-                "drill_prefix"	TEXT NOT NULL,
-                "drill_order"	INTEGER NOT NULL,
-                "created_at"	TEXT NOT NULL,
-                "updated_at"	TEXT NOT NULL,
-                UNIQUE ("drill_prefix", "drill_order")
-            );
-        `);
-        History.createUndoTriggers(db, Constants.MarcherTableName);
-        console.log("Marcher table created.");
-        return { success: true, data: Constants.MarcherTableName };
-    } catch (error: any) {
-        throw new Error(`Failed to create marcher table: ${error}`);
-    }
-}
-
 /**
  * @param db The database connection, or undefined to create a new connection
  * @returns An array of all marchers in the database

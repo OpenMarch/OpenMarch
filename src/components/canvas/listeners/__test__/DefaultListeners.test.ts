@@ -11,6 +11,7 @@ import {
 import { cleanup } from "@testing-library/react";
 import { fabric } from "fabric";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import { ElectronApi } from "electron/preload";
 
 describe("DefaultListeners", () => {
     const NCAAFieldProperties =
@@ -19,6 +20,13 @@ describe("DefaultListeners", () => {
     let listeners: DefaultListeners;
 
     beforeEach(() => {
+        window.electron = {
+            getFieldPropertiesImage: vi.fn().mockResolvedValue({
+                success: true,
+                data: [1, 2, 3] as any as Buffer,
+            }),
+        } as Partial<ElectronApi> as ElectronApi;
+        global.URL.createObjectURL = vi.fn(() => "mock-url");
         canvas = new OpenMarchCanvas({
             canvasRef: null,
             fieldProperties: NCAAFieldProperties,

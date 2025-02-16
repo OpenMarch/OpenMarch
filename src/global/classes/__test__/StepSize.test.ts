@@ -1,5 +1,5 @@
-import FieldProperties, { PixelsPerStep } from "../FieldProperties";
-import FieldPropertiesTemplates from "../FieldProperties.templates";
+import { legacyMockNCAAFieldProperties } from "@/__mocks__/globalMocks";
+import FieldProperties from "../FieldProperties";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
 import Page from "../Page";
@@ -17,8 +17,7 @@ describe("StepSize", () => {
             endingX: 960,
             endingY: 783.96,
             counts: 8,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize).toBeInstanceOf(StepSize);
@@ -37,8 +36,7 @@ describe("StepSize", () => {
             endingX: 1008,
             endingY: 687.96,
             counts: 8,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize.displayString()).toBe("16 to 5");
@@ -55,8 +53,7 @@ describe("StepSize", () => {
             endingX: 1008,
             endingY: 651.96,
             counts: 8,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize.displayString()).toBe("12.8 to 5");
@@ -64,6 +61,10 @@ describe("StepSize", () => {
     });
 
     it("should correctly handle a 6 to 5 grid", () => {
+        const sixToFiveGrid = new FieldProperties({
+            ...legacyMockNCAAFieldProperties,
+            stepSizeInches: 30,
+        });
         const stepSize = new StepSize({
             marcher_id: 3,
             // on the 50, on the front hash
@@ -71,11 +72,9 @@ describe("StepSize", () => {
             startingY: 687.96,
             // on the 50, 8 in front of the front hash (in 6 to 5 grid)
             endingX: 960,
-            endingY: 815.96,
+            endingY: 807.96,
             counts: 8,
-            fieldProperties: {
-                pixelsPerStep: PixelsPerStep.SIX_TO_FIVE,
-            } as FieldProperties,
+            fieldProperties: sixToFiveGrid,
         });
 
         expect(stepSize.displayString()).toBe("8 to 5");
@@ -92,8 +91,7 @@ describe("StepSize", () => {
             endingX: 960,
             endingY: 687.97,
             counts: 8,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize.displayString()).toBe("Tiny");
@@ -110,8 +108,7 @@ describe("StepSize", () => {
             endingX: 1008,
             endingY: 651.96,
             counts: 0,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize.displayString()).toBe("Undefined");
@@ -128,8 +125,7 @@ describe("StepSize", () => {
             endingX: 960,
             endingY: 687.96,
             counts: 8,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize.displayString()).toBe("Hold");
@@ -156,8 +152,7 @@ describe("StepSize", () => {
             startingPage,
             endingPage,
             page,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize).toBeDefined();
@@ -179,8 +174,7 @@ describe("StepSize", () => {
             startingPage: undefined,
             endingPage,
             page,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize).toBeUndefined();
@@ -263,8 +257,7 @@ describe("StepSize", () => {
             marchers,
             marcherPages,
             page,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSizes).toBeDefined();
@@ -371,8 +364,7 @@ describe("StepSize", () => {
             marchers,
             marcherPages,
             page,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSizes).toBeDefined();
@@ -435,8 +427,7 @@ describe("StepSize", () => {
             marchers,
             marcherPages,
             page,
-            fieldProperties:
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSizes).toBeDefined();

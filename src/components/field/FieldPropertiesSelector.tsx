@@ -1,9 +1,7 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldProperties from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useCallback, useEffect, useState } from "react";
-import { Checkbox } from "../ui/Checkbox";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     Select,
     SelectContent,
@@ -14,12 +12,12 @@ import {
 import { Button } from "../ui/Button";
 import { DangerNote } from "../ui/Note";
 
-export default function FieldPropertiesSettings() {
+export default function FieldPropertiesSelector() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
     const [currentTemplate, setCurrentTemplate] = useState<
         FieldProperties | undefined
     >(fieldProperties);
-    const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const selectRef = useRef<HTMLButtonElement>(null);
 
     const handleFieldTypeChange = useCallback((value: string) => {
         const template = Object.values(FieldPropertiesTemplates).find(
@@ -38,48 +36,26 @@ export default function FieldPropertiesSettings() {
         setCurrentTemplate(fieldProperties);
     }, [fieldProperties]);
 
+    if (!fieldProperties)
+        return <div>FieldProperties not defined. This should never happen</div>;
+
     return (
-        <div className="flex flex-col gap-16">
-            <div className="flex flex-col gap-16 px-12">
-                <div className="flex w-full items-center justify-between gap-16">
-                    <label htmlFor="gridLines" className="text-body">
-                        Grid lines
-                    </label>
-                    <Checkbox
-                        id="gridLines"
-                        checked={uiSettings.gridLines}
-                        onCheckedChange={() =>
-                            setUiSettings({
-                                ...uiSettings,
-                                gridLines: !uiSettings.gridLines,
-                            })
-                        }
-                    />
-                </div>
-                <div className="flex w-full items-center justify-between gap-16">
-                    <label htmlFor="halfLines" className="text-body">
-                        Half lines
-                    </label>
-                    <Checkbox
-                        id="halfLines"
-                        checked={uiSettings.halfLines}
-                        onCheckedChange={() =>
-                            setUiSettings({
-                                ...uiSettings,
-                                halfLines: !uiSettings.halfLines,
-                            })
-                        }
-                    />
-                </div>
-                <div className="flex w-full items-center justify-between gap-16">
-                    <p className="text-body">Type</p>
+        <div className="flex w-full min-w-0 flex-col gap-16">
+            <div className="flex w-full min-w-0 flex-col gap-16">
+                <div className="flex w-full items-center justify-between gap-16 px-12">
+                    <p className="text-body">Field Template</p>
                     <div className="flex gap-8">
                         <Select
                             onValueChange={handleFieldTypeChange}
-                            defaultValue={fieldProperties?.name}
+                            defaultValue={
+                                fieldProperties.isCustom
+                                    ? "Custom"
+                                    : fieldProperties.name
+                            }
+                            ref={selectRef}
                         >
                             <SelectTriggerButton
-                                label={fieldProperties?.name || "Field type"}
+                                label={fieldProperties.name || "Field type"}
                             />
                             <SelectContent>
                                 <SelectGroup>
@@ -93,6 +69,14 @@ export default function FieldPropertiesSettings() {
                                             {template[1].name}
                                         </SelectItem>
                                     ))}
+                                    {fieldProperties.isCustom && (
+                                        <SelectItem
+                                            key={"custom"}
+                                            value={"Custom"}
+                                        >
+                                            Custom
+                                        </SelectItem>
+                                    )}
                                 </SelectGroup>
                             </SelectContent>
                         </Select>

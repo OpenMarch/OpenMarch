@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import * as PageTable from "../PageTable";
 import * as MarcherTable from "../MarcherTable";
@@ -8,14 +8,14 @@ import { NewPageArgs } from "@/global/classes/Page";
 import { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import Constants from "@/global/Constants";
+import { initTestDatabase } from "./testUtils";
 
 describe("MarcherTable", () => {
     describe("createMarcherTable", () => {
         let db: Database.Database;
 
         beforeEach(() => {
-            db = new Database(":memory:");
-            History.createHistoryTables(db);
+            db = initTestDatabase();
         });
 
         it("should create the marcher table if it does not exist", () => {
@@ -23,10 +23,7 @@ describe("MarcherTable", () => {
             let tableInfo = db
                 .prepare(`PRAGMA table_info(${Constants.MarcherTableName})`)
                 .all() as { name: string }[];
-            expect(tableInfo.length).toBe(0);
-            const triggerSpy = vi.spyOn(History, "createUndoTriggers");
-            const createTableResponse = MarcherTable.createMarcherTable(db);
-            expect(createTableResponse.success).toBeTruthy();
+            expect(tableInfo.length).toBe(9);
 
             // Expect the marcher table to be created
             tableInfo = db
@@ -44,22 +41,7 @@ describe("MarcherTable", () => {
                 "updated_at",
             ];
             const columnNames = tableInfo.map((column) => column.name);
-            expect(columnNames.sort()).toEqual(expectedColumns.sort());
-
-            expect(triggerSpy).toHaveBeenCalledWith(
-                db,
-                Constants.MarcherTableName,
-            );
-        });
-
-        it("should throw an error if table creation fails", () => {
-            try {
-                MarcherTable.createMarcherTable(db);
-                // Should throw an error
-                expect(true).toBe(false);
-            } catch (error) {
-                expect(true).toBe(true);
-            }
+            expect(columnNames).toEqual(expectedColumns);
         });
     });
 
@@ -67,11 +49,7 @@ describe("MarcherTable", () => {
         let db: Database.Database;
 
         beforeEach(() => {
-            db = new Database(":memory:");
-            History.createHistoryTables(db);
-            PageTable.createPageTable(db);
-            MarcherPageTable.createMarcherPageTable(db);
-            MarcherTable.createMarcherTable(db);
+            db = initTestDatabase();
         });
 
         describe("createMarchers", () => {
@@ -791,11 +769,7 @@ describe("MarcherTable", () => {
         let db: Database.Database;
 
         beforeEach(() => {
-            db = new Database(":memory:");
-            History.createHistoryTables(db);
-            PageTable.createPageTable(db);
-            MarcherPageTable.createMarcherPageTable(db);
-            MarcherTable.createMarcherTable(db);
+            db = initTestDatabase();
         });
 
         describe("createMarchers", () => {

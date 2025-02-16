@@ -1,6 +1,5 @@
 import * as RadixCheckbox from "@radix-ui/react-checkbox";
 import type { CheckboxProps as RadixCheckboxProps } from "@radix-ui/react-checkbox";
-import React from "react";
 import { Check } from "@phosphor-icons/react";
 
 export type CheckboxProps = RadixCheckboxProps;

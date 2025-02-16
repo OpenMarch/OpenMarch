@@ -44,8 +44,8 @@ export class ReadableCoords {
     readonly xCheckpoint: Checkpoint;
     /** The Y-Checkpoint (e.g front hash or back sideline) the marcher is guiding to. */
     readonly yCheckpoint: Checkpoint;
-    /** The side of the field the marcher is on. (1 or 2) */
-    readonly side: 1 | 2;
+    /** The side of the field the marcher is on. Based on the values in the field properties. E.g. "Side 1" or "Side 2" */
+    readonly sideDescription: string;
     /** The way the marcher relates to the yard line. (Inside or outside) */
     readonly xDescription: X_DESCRIPTION;
     /** The way the marcher relates to the hash or sideline. (in front of or behind) */
@@ -76,7 +76,7 @@ export class ReadableCoords {
         const readableCoords = this.parseCanvasCoords(x, y);
         this.xCheckpoint = readableCoords.xCheckpoint;
         this.yCheckpoint = readableCoords.yCheckpoint;
-        this.side = readableCoords.side;
+        this.sideDescription = readableCoords.sideDescription;
         this.xDescription = readableCoords.xDescription;
         this.yDescription = readableCoords.yDescription;
         this.xSteps = readableCoords.xSteps;
@@ -159,7 +159,17 @@ export class ReadableCoords {
 
         /* ----------- Calculate X descriptions ----------- */
         // Determine which side of the field the marcher is on
-        output.side = stepsFromCenterFront.x > 0 ? 2 : 1;
+        output.sideDescription = stepsFromCenterFront.x > 0 ? 2 : 1;
+
+        const sideDescriptions =
+            ReadableCoords._fieldProperties.sideDescriptions;
+        output.sideDescription = "";
+        if (stepsFromCenterFront.x !== 0) {
+            output.sideDescription =
+                stepsFromCenterFront.x < 0
+                    ? sideDescriptions.terseLeft
+                    : sideDescriptions.terseRight;
+        }
 
         // create a const for shorthand
         const xStepsFromCenter = stepsFromCenterFront.x;
@@ -301,6 +311,10 @@ export class ReadableCoords {
         return `${this.toVerboseStringX()} - ${this.toVerboseStringY()}`;
     }
 
+    isFieldCenter() {
+        return this.xCheckpoint.stepsFromCenterFront === 0 && this.xSteps === 0;
+    }
+
     /**
      * Create a verbose description of a ReadableCoords' X properties.
      *
@@ -310,12 +324,14 @@ export class ReadableCoords {
      */
     toVerboseStringX({
         includeStepsString = false,
-    }: { includeStepsString?: boolean } = {}) {
+    }: {
+        includeStepsString?: boolean;
+    } = {}) {
         // Handle case where the marcher is on the center x checkpoint
         return (
-            (this.xCheckpoint.stepsFromCenterFront === 0 && this.xSteps === 0
+            (this.sideDescription.length === 0
                 ? ""
-                : `S${this.side}: `) +
+                : `${this.sideDescription}: `) +
             ReadableCoords.formatStepsString(this.xSteps, includeStepsString) +
             this.xDescription +
             " " +
@@ -332,9 +348,9 @@ export class ReadableCoords {
     toTerseStringX() {
         // Handle case where the marcher is on the center x checkpoint
         return (
-            (this.xCheckpoint.stepsFromCenterFront === 0 && this.xSteps === 0
+            (this.sideDescription.length === 0
                 ? ""
-                : `S${this.side}: `) +
+                : `${this.sideDescription}: `) +
             ReadableCoords.formatStepsString(this.xSteps) +
             ReadableCoords.getTerseXDescription(this.xDescription) +
             " " +

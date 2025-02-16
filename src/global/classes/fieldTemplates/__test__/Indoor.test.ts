@@ -9,28 +9,19 @@ describe("createIndoorXCheckpoints", () => {
     });
 
     it("should create correct checkpoints for minimum xSteps (4)", () => {
-        const checkpoints = createIndoorXCheckpoints({ xSteps: 4 });
-        expect(checkpoints).toHaveLength(2);
-        expect(checkpoints[0]).toEqual({
-            name: "Line A",
-            axis: "x",
-            terseName: "A",
-            stepsFromCenterFront: -2,
-            useAsReference: true,
-            visible: false,
-        });
-        expect(checkpoints[1]).toEqual({
-            name: "Line B",
-            axis: "x",
-            terseName: "B",
-            stepsFromCenterFront: 2,
-            useAsReference: true,
-            visible: false,
-        });
+        let checkpoints = createIndoorXCheckpoints({ xSteps: 4 }).sort(
+            (a, b) => a.stepsFromCenterFront - b.stepsFromCenterFront,
+        );
+        expect(checkpoints).toHaveLength(3);
+        expect(checkpoints[0].stepsFromCenterFront).toBe(-2);
+        expect(checkpoints[1].stepsFromCenterFront).toBe(0);
+        expect(checkpoints[2].stepsFromCenterFront).toBe(2);
     });
 
     it("should create correct checkpoints for 8 steps", () => {
-        const checkpoints = createIndoorXCheckpoints({ xSteps: 8 });
+        const checkpoints = createIndoorXCheckpoints({ xSteps: 8 }).sort(
+            (a, b) => a.stepsFromCenterFront - b.stepsFromCenterFront,
+        );
         expect(checkpoints).toHaveLength(3);
         expect(checkpoints[0].stepsFromCenterFront).toBe(-4);
         expect(checkpoints[1].stepsFromCenterFront).toBe(0);
@@ -38,25 +29,30 @@ describe("createIndoorXCheckpoints", () => {
     });
 
     it("should create correct checkpoints for 12 steps", () => {
-        const checkpoints = createIndoorXCheckpoints({ xSteps: 12 });
-        expect(checkpoints).toHaveLength(4);
+        const checkpoints = createIndoorXCheckpoints({ xSteps: 12 }).sort(
+            (a, b) => a.stepsFromCenterFront - b.stepsFromCenterFront,
+        );
+        expect(checkpoints).toHaveLength(5);
         expect(checkpoints.map((c) => c.stepsFromCenterFront)).toEqual([
-            -6, -2, 2, 6,
+            -6, -4, 0, 4, 6,
         ]);
         expect(checkpoints.map((c) => c.terseName)).toEqual([
-            "A",
-            "B",
-            "C",
-            "D",
+            "LE",
+            "4",
+            "5",
+            "4",
+            "RE",
         ]);
     });
 
     it("should handle non-divisible-by-4 steps", () => {
         const checkpoints = createIndoorXCheckpoints({ xSteps: 10 });
-        expect(checkpoints).toHaveLength(4);
-        expect(checkpoints.map((c) => c.stepsFromCenterFront)).toEqual([
-            -5, -1, 3, 5,
-        ]);
+        expect(checkpoints).toHaveLength(5);
+        expect(
+            checkpoints
+                .map((c) => c.stepsFromCenterFront)
+                .sort((a, b) => a - b),
+        ).toEqual([-5, -4, 0, 4, 5]);
     });
 });
 describe("createIndoorYCheckpoints", () => {
@@ -70,55 +66,88 @@ describe("createIndoorYCheckpoints", () => {
         const checkpoints = createIndoorYCheckpoints({ ySteps: 4 });
         expect(checkpoints).toHaveLength(2);
         expect(checkpoints[0]).toEqual({
-            name: "Line 0",
+            id: 0,
+            name: "A line",
             axis: "y",
-            terseName: "0",
+            terseName: "A",
             stepsFromCenterFront: 0,
             useAsReference: true,
-            visible: false,
+            visible: true,
         });
         expect(checkpoints[1]).toEqual({
-            name: "Line 1",
+            id: 1,
+            name: "B line",
             axis: "y",
-            terseName: "1",
+            terseName: "B",
             stepsFromCenterFront: -4,
             useAsReference: true,
-            visible: false,
+            visible: true,
         });
     });
 
     it("should create correct checkpoints for 8 steps", () => {
         const checkpoints = createIndoorYCheckpoints({ ySteps: 8 });
         expect(checkpoints).toHaveLength(3);
-        expect(checkpoints.map((c) => c.stepsFromCenterFront)).toEqual([
-            0, -4, -8,
-        ]);
-        expect(checkpoints.map((c) => c.terseName)).toEqual(["0", "1", "2"]);
+        expect(
+            checkpoints
+                .map((c) => c.stepsFromCenterFront)
+                .sort((a, b) => b - a),
+        ).toEqual([0, -4, -8]);
+        expect(checkpoints.map((c) => c.terseName)).toEqual(["A", "B", "C"]);
     });
 
     it("should create correct checkpoints for 16 steps", () => {
         const checkpoints = createIndoorYCheckpoints({ ySteps: 16 });
         expect(checkpoints).toHaveLength(5);
-        expect(checkpoints.map((c) => c.stepsFromCenterFront)).toEqual([
-            0, -4, -8, -12, -16,
-        ]);
+        expect(
+            checkpoints
+                .map((c) => c.stepsFromCenterFront)
+                .sort((a, b) => b - a),
+        ).toEqual([0, -4, -8, -12, -16]);
         expect(checkpoints.map((c) => c.name)).toEqual([
-            "Line 0",
-            "Line 1",
-            "Line 2",
-            "Line 3",
-            "Line 4",
+            "A line",
+            "B line",
+            "C line",
+            "D line",
+            "E line",
+        ]);
+        expect(checkpoints.map((c) => c.terseName)).toEqual([
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+        ]);
+    });
+
+    it("should create correct checkpoints for 18 steps", () => {
+        const checkpoints = createIndoorYCheckpoints({ ySteps: 18 });
+        expect(checkpoints).toHaveLength(7);
+        expect(
+            checkpoints
+                .map((c) => c.stepsFromCenterFront)
+                .sort((a, b) => b - a),
+        ).toEqual([0, -1, -5, -9, -13, -17, -18]);
+        expect(checkpoints.map((c) => c.name)).toEqual([
+            "Front edge",
+            "Back edge",
+            "A line",
+            "B line",
+            "C line",
+            "D line",
+            "E line",
         ]);
     });
 
     it("should handle non-divisible-by-4 steps with correct warning", () => {
         const consoleSpy = vi.spyOn(console, "warn");
         const checkpoints = createIndoorYCheckpoints({ ySteps: 6 });
-        expect(consoleSpy).toHaveBeenCalledWith(
-            "ySteps is not divisible by 4.This may cause weird formatting",
-        );
-        expect(checkpoints).toHaveLength(2);
-        expect(checkpoints.map((c) => c.stepsFromCenterFront)).toEqual([0, -6]);
+        expect(checkpoints).toHaveLength(4);
+        expect(
+            checkpoints
+                .map((c) => c.stepsFromCenterFront)
+                .sort((a, b) => b - a),
+        ).toEqual([0, -1, -5, -6]);
         consoleSpy.mockRestore();
     });
 });

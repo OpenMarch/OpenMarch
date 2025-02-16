@@ -7,16 +7,14 @@ import CanvasListeners from "../../../components/canvas/listeners/CanvasListener
 import Marcher from "@/global/classes/Marcher";
 import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
-import {
-    ActiveObjectArgs,
-    CanvasColors,
-} from "../../../components/canvas/CanvasConstants";
+import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
+import { rgbaToString } from "../FieldTheme";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -29,6 +27,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /** The FieldProperties this OpenMarchCanvas has been built on */
     private _fieldProperties: FieldProperties;
+
+    private _backgroundImage: fabric.Image | null;
+    private _bgImageValues?: {
+        left: number;
+        top: number;
+        scale: number;
+        imgAspectRatio: number;
+    };
+
     /** The current page this canvas is on */
     currentPage: Page;
     /**
@@ -99,8 +106,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             // TODO - why are these here from 4023b18
             // selectionColor: "white",
             // selectionLineWidth: 8,
-            selectionColor: "rgba(0, 0, 255, 0.2)",
-            selectionBorderColor: "rgba(0, 0, 255, 1)",
+            selectionColor: rgbaToString({
+                ...fieldProperties.theme.shape,
+                a: 0.2,
+            }),
+            selectionBorderColor: rgbaToString(fieldProperties.theme.shape),
             selectionLineWidth: 2,
             fireRightClick: true, // Allow right click events
             stopContextMenu: true, // Prevent right click context menu
@@ -136,6 +146,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this._uiSettings = uiSettings;
 
         if (listeners) this.setListeners(listeners);
+
+        this._backgroundImage = null;
+        this.refreshBackgroundImage();
 
         this.requestRenderAll();
     }
@@ -255,6 +268,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         currentMarcherPages: MarcherPage[];
         allMarchers: Marcher[];
     }) => {
+        CanvasMarcher.theme = this.fieldProperties.theme;
+
         // Get the canvas marchers on the canvas
         const canvasMarchersMap = new Map<number, CanvasMarcher>(
             this.getCanvasMarchers().map((m) => [m.marcherObj.id, m]),
@@ -500,12 +515,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param gridLines Whether or not to include grid lines (every step)
      * @param halfLines Whether or not to include half lines (every 4 steps)
      */
-    renderFieldGrid = (
-        { gridLines = true, halfLines = true } = {
-            gridLines: true,
-            halfLines: true,
-        } as { gridLines?: boolean; halfLines?: boolean },
-    ) => {
+    renderFieldGrid = () => {
+        const gridLines = this.uiSettings?.gridLines ?? true;
+        const halfLines = this.uiSettings?.halfLines ?? true;
         if (this.staticGridRef) this.remove(this.staticGridRef);
         this.staticGridRef = this.createFieldGrid({
             gridLines,
@@ -567,6 +579,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }: {
         gridLines?: boolean;
         halfLines?: boolean;
+        imageBuffer?: HTMLImageElement;
     }): fabric.Group => {
         const fieldArray: fabric.Object[] = [];
         const fieldWidth = this.fieldProperties.width;
@@ -580,16 +593,35 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             top: 0,
             width: fieldWidth,
             height: fieldHeight,
-            fill: "white",
+            fill: rgbaToString(this.fieldProperties.theme.background),
             selectable: false,
             hoverCursor: "default",
         });
         fieldArray.push(background);
 
+        if (
+            this.fieldProperties.showFieldImage &&
+            this._backgroundImage &&
+            this._backgroundImage !== null
+        ) {
+            this.refreshBackgroundImageValues();
+            if (!this._bgImageValues) {
+                console.error(
+                    "background image values not defined. This will cause strange image rendering",
+                );
+            } else {
+                this._backgroundImage.scaleX = this._bgImageValues.scale;
+                this._backgroundImage.scaleY = this._bgImageValues.scale;
+                this._backgroundImage.left = this._bgImageValues.left;
+                this._backgroundImage.top = this._bgImageValues.top;
+            }
+            fieldArray.push(this._backgroundImage);
+        }
+
         // Grid lines
         if (gridLines) {
             const gridLineProps = {
-                stroke: "#DDDDDD",
+                stroke: rgbaToString(this.fieldProperties.theme.tertiaryStroke),
                 strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
                 selectable: false,
             };
@@ -612,8 +644,28 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 );
 
             // Y
+            const lastYCheckpoint = this.fieldProperties.yCheckpoints.reduce(
+                (prev, curr) => {
+                    if (curr.stepsFromCenterFront < prev.stepsFromCenterFront)
+                        return curr;
+                    return prev;
+                },
+            );
+            const firstVisibleYCheckpoint =
+                this.fieldProperties.yCheckpoints.reduce((prev, curr) => {
+                    if (
+                        curr.visible &&
+                        curr.stepsFromCenterFront > prev.stepsFromCenterFront
+                    )
+                        return curr;
+                    return prev;
+                }, lastYCheckpoint);
+            console.log(firstVisibleYCheckpoint);
             for (
-                let i = centerFrontPoint.yPixels - pixelsPerStep;
+                let i =
+                    centerFrontPoint.yPixels +
+                    firstVisibleYCheckpoint.stepsFromCenterFront *
+                        pixelsPerStep;
                 i > 0;
                 i -= pixelsPerStep
             )
@@ -625,58 +677,81 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // Half lines
         if (halfLines) {
             const darkLineProps = {
-                stroke: "#AAAAAA",
+                stroke: rgbaToString(
+                    this.fieldProperties.theme.secondaryStroke,
+                ),
                 strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
                 selectable: false,
             };
             // X
-            for (
-                let i = centerFrontPoint.xPixels + pixelsPerStep * 4;
-                i < fieldWidth;
-                i += pixelsPerStep * 4
-            )
+            if (this.fieldProperties.halfLineXInterval) {
                 fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
+                    new fabric.Line(
+                        [
+                            centerFrontPoint.xPixels,
+                            0,
+                            centerFrontPoint.xPixels,
+                            fieldHeight,
+                        ],
+                        darkLineProps,
+                    ),
                 );
-            for (
-                let i = centerFrontPoint.xPixels - pixelsPerStep * 4;
-                i > 0;
-                i -= pixelsPerStep * 4
-            )
-                fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
-                );
-
-            // Y
-            for (
-                let i = centerFrontPoint.yPixels - pixelsPerStep * 4;
-                i > 0;
-                i -= pixelsPerStep * 4
-            )
-                fieldArray.push(
-                    new fabric.Line([0, i, fieldWidth, i], darkLineProps),
-                );
+                for (
+                    let i =
+                        centerFrontPoint.xPixels +
+                        pixelsPerStep * this.fieldProperties.halfLineXInterval;
+                    i < fieldWidth;
+                    i += pixelsPerStep * this.fieldProperties.halfLineXInterval
+                )
+                    fieldArray.push(
+                        new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
+                    );
+                for (
+                    let i =
+                        centerFrontPoint.xPixels -
+                        pixelsPerStep * this.fieldProperties.halfLineXInterval;
+                    i > 0;
+                    i -= pixelsPerStep * this.fieldProperties.halfLineXInterval
+                )
+                    fieldArray.push(
+                        new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
+                    );
+            }
+            if (this.fieldProperties.halfLineYInterval) {
+                // Y
+                for (
+                    let i =
+                        centerFrontPoint.yPixels -
+                        pixelsPerStep * this.fieldProperties.halfLineYInterval;
+                    i > 0;
+                    i -= pixelsPerStep * this.fieldProperties.halfLineYInterval
+                )
+                    fieldArray.push(
+                        new fabric.Line([0, i, fieldWidth, i], darkLineProps),
+                    );
+            }
         }
 
         // Yard lines, field numbers, and hashes
         const xCheckpointProps = {
-            stroke: "black",
+            stroke: rgbaToString(this.fieldProperties.theme.primaryStroke),
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH,
             selectable: false,
         };
         const yCheckpointProps = {
-            stroke: "black",
+            stroke: rgbaToString(this.fieldProperties.theme.primaryStroke),
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 3,
             selectable: false,
         };
         const ySecondaryCheckpointProps = {
-            stroke: "gray",
+            stroke: rgbaToString(this.fieldProperties.theme.secondaryStroke),
             strokeWidth: FieldProperties.GRID_STROKE_WIDTH * 2,
             selectable: false,
         };
 
         for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
-            // Yard line
+            if (!xCheckpoint.visible) continue;
+            // X-Checkpoint (or yard lines)
             const x =
                 centerFrontPoint.xPixels +
                 xCheckpoint.stepsFromCenterFront * pixelsPerStep;
@@ -684,10 +759,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps),
             );
 
-            // Hashes
-            const hashWidth = 20;
-            for (const yCheckpoint of this.fieldProperties.yCheckpoints) {
-                if (yCheckpoint.visible !== false) {
+            // Y-Checkpoints (or hashes)
+            if (this.fieldProperties.useHashes) {
+                const hashWidth = 20;
+                for (const yCheckpoint of this.fieldProperties.yCheckpoints) {
+                    if (!yCheckpoint.visible) continue;
                     const y =
                         centerFrontPoint.yPixels +
                         yCheckpoint.stepsFromCenterFront * pixelsPerStep -
@@ -708,21 +784,109 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
 
+        if (!this.fieldProperties.useHashes) {
+            for (const yCheckpoint of this.fieldProperties.yCheckpoints) {
+                if (!yCheckpoint.visible) continue;
+                // X-Checkpoint (or yard lines)
+                const y =
+                    centerFrontPoint.yPixels +
+                    yCheckpoint.stepsFromCenterFront * pixelsPerStep;
+                fieldArray.push(
+                    new fabric.Line([0, y, fieldWidth, y], xCheckpointProps),
+                );
+            }
+        }
+
+        // Print labels for each checkpoint
+        // These are different from the yard numbers and will always be visible
+        const labelProps: fabric.TextOptions = {
+            fontSize: 20,
+            fill: rgbaToString(this.fieldProperties.theme.externalLabel),
+            selectable: false,
+            strokeWidth: 0.5,
+            fontFamily: "mono",
+        };
+        for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
+            if (!xCheckpoint.visible) continue;
+            const x =
+                centerFrontPoint.xPixels +
+                xCheckpoint.stepsFromCenterFront * pixelsPerStep;
+            const bottomY = centerFrontPoint.yPixels + 5;
+            const topY = -25;
+            const text = xCheckpoint.terseName;
+            if (this.fieldProperties.bottomLabelsVisible)
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: x,
+                        top: bottomY,
+                        originX: "center",
+
+                        ...labelProps,
+                    }),
+                );
+            if (this.fieldProperties.topLabelsVisible)
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: x,
+                        top: topY,
+                        originX: "center",
+                        ...labelProps,
+                    }),
+                );
+        }
+        for (const yCheckpoint of this.fieldProperties.yCheckpoints) {
+            if (!yCheckpoint.visible) continue;
+            const text = yCheckpoint.terseName;
+            const y =
+                centerFrontPoint.yPixels +
+                yCheckpoint.stepsFromCenterFront * pixelsPerStep;
+            const padding = 10;
+            if (this.fieldProperties.leftLabelsVisible) {
+                const newText = new fabric.Text(text, {
+                    left: 0,
+                    top: y,
+                    originY: "center",
+                    ...labelProps,
+                });
+
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: 0 - newText.width! - padding,
+                        top: y,
+                        originY: "center",
+                        ...labelProps,
+                    }),
+                );
+            }
+            if (this.fieldProperties.rightLabelsVisible)
+                fieldArray.push(
+                    new fabric.Text(text, {
+                        left: fieldWidth + padding,
+                        top: y,
+                        originY: "center",
+                        ...labelProps,
+                    }),
+                );
+        }
+
         // Print yard line numbers if they exist
         const yardNumberCoordinates =
             this.fieldProperties.yardNumberCoordinates;
-        if (yardNumberCoordinates) {
+        if (
+            yardNumberCoordinates.homeStepsFromFrontToInside !== undefined &&
+            yardNumberCoordinates.homeStepsFromFrontToOutside !== undefined
+        ) {
             const numberHeight =
                 (yardNumberCoordinates.homeStepsFromFrontToInside -
                     yardNumberCoordinates.homeStepsFromFrontToOutside) *
                 pixelsPerStep;
             const numberProps = {
                 fontSize: numberHeight,
-                fill: "#888888",
+                fill: rgbaToString(this.fieldProperties.theme.fieldLabel),
                 selectable: false,
                 charSpacing: 160,
             };
-            const yardNumberXOffset = 18;
+            const yardNumberXOffset = 22;
             for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
                 // Yard line numbers
                 const x =
@@ -730,30 +894,44 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     xCheckpoint.stepsFromCenterFront * pixelsPerStep;
 
                 if (xCheckpoint.fieldLabel) {
-                    // Home number
-                    fieldArray.push(
-                        new fabric.Text(xCheckpoint.fieldLabel, {
-                            left: x - yardNumberXOffset,
-                            top:
-                                centerFrontPoint.yPixels -
-                                yardNumberCoordinates.homeStepsFromFrontToInside *
-                                    pixelsPerStep,
-                            ...numberProps,
-                        }),
-                    );
-                    // Away number
-                    fieldArray.push(
-                        new fabric.Text(xCheckpoint.fieldLabel, {
-                            left: x - yardNumberXOffset,
-                            top:
-                                centerFrontPoint.yPixels -
-                                yardNumberCoordinates.awayStepsFromFrontToOutside *
-                                    pixelsPerStep,
-                            flipY: true,
-                            flipX: true,
-                            ...numberProps,
-                        }),
-                    );
+                    if (
+                        yardNumberCoordinates.homeStepsFromFrontToInside !==
+                            undefined &&
+                        yardNumberCoordinates.homeStepsFromFrontToOutside !==
+                            undefined
+                    ) {
+                        // Home number
+                        fieldArray.push(
+                            new fabric.Text(xCheckpoint.fieldLabel, {
+                                left: x - yardNumberXOffset,
+                                top:
+                                    centerFrontPoint.yPixels -
+                                    yardNumberCoordinates.homeStepsFromFrontToInside *
+                                        pixelsPerStep,
+                                ...numberProps,
+                            }),
+                        );
+                    }
+                    if (
+                        yardNumberCoordinates.awayStepsFromFrontToOutside !==
+                            undefined &&
+                        yardNumberCoordinates.awayStepsFromFrontToOutside !==
+                            undefined
+                    ) {
+                        // Away number
+                        fieldArray.push(
+                            new fabric.Text(xCheckpoint.fieldLabel, {
+                                left: x - yardNumberXOffset,
+                                top:
+                                    centerFrontPoint.yPixels -
+                                    yardNumberCoordinates.awayStepsFromFrontToOutside *
+                                        pixelsPerStep,
+                                flipY: true,
+                                flipX: true,
+                                ...numberProps,
+                            }),
+                        );
+                    }
                 }
             }
         }
@@ -762,7 +940,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const borderWidth = FieldProperties.GRID_STROKE_WIDTH * 3;
         const borderOffset = 1 - borderWidth; // Offset to prevent clipping. Border hangs off the edge of the canvas
         const borderProps = {
-            stroke: "black",
+            stroke: rgbaToString(this.fieldProperties.theme.primaryStroke),
             strokeWidth: borderWidth,
             selectable: false,
         };
@@ -957,10 +1135,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             oldUiSettings.gridLines !== uiSettings.gridLines ||
             oldUiSettings.halfLines !== uiSettings.halfLines
         ) {
-            this.renderFieldGrid({
-                gridLines: uiSettings.gridLines,
-                halfLines: uiSettings.halfLines,
-            });
+            this.renderFieldGrid();
         }
     }
 
@@ -976,7 +1151,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         marchers.forEach((marcher) =>
             marcher.backgroundRectangle.set({
                 strokeWidth: 2,
-                stroke: CanvasColors.SHAPE,
+                stroke: rgbaToString(this.fieldProperties.theme.shape),
                 strokeDashArray: [3, 5],
             }),
         );
@@ -986,6 +1161,123 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     set fieldProperties(fieldProperties: FieldProperties) {
         this._fieldProperties = fieldProperties;
         this.renderFieldGrid();
+    }
+
+    /**
+     * Refreshes the background image of the canvas by fetching the field properties image from the Electron API.
+     * If the image data is successfully retrieved, it is converted to a Fabric.js Image object and set as the background image.
+     * If the image data is null, the background image is set to null.
+     * Finally, the field grid is re-rendered to reflect the updated background image.
+     */
+    async refreshBackgroundImage(renderFieldGrid: boolean = true) {
+        // if (this._backgroundImage) this.remove(this._backgroundImage);
+        const backgroundImageResponse =
+            await window.electron.getFieldPropertiesImage();
+
+        if (this._backgroundImage) {
+            this.remove(this._backgroundImage);
+            this._backgroundImage = null;
+        }
+        if (backgroundImageResponse.success) {
+            if (backgroundImageResponse.data === null) {
+                this._backgroundImage = null;
+                return;
+            }
+
+            const loadImage = async (): Promise<HTMLImageElement> => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+
+                    const buffer = backgroundImageResponse.data as Buffer;
+                    const blob = new Blob([buffer]);
+                    img.src = URL.createObjectURL(blob);
+
+                    return img;
+                });
+            };
+
+            const img = await loadImage();
+
+            FieldProperties.imageDimensions = {
+                width: img.width,
+                height: img.height,
+            };
+
+            this._backgroundImage = new fabric.Image(img, {
+                height: img.height,
+                width: img.width,
+                left: 0,
+                top: 0,
+                selectable: false,
+                hoverCursor: "default",
+                evented: false,
+            });
+
+            const imgAspectRatio = img.width / img.height;
+            this.refreshBackgroundImageValues(imgAspectRatio);
+            renderFieldGrid && this.renderFieldGrid();
+        } else {
+            FieldProperties.imageDimensions = undefined;
+            this._backgroundImage = null;
+            console.error("Error fetching field properties image");
+            console.error(backgroundImageResponse.error);
+        }
+    }
+
+    /**
+     * Refreshes all of the offset and scale values for the current background image.
+     *
+     * This does not fetch the most recent image from the database.
+     */
+    refreshBackgroundImageValues(newAspectRatio?: number) {
+        // Do not refresh the values if the background image is not defined
+        if (!this._backgroundImage) {
+            return;
+        }
+        if (newAspectRatio === undefined && !this._bgImageValues)
+            throw new Error(
+                "Must provide an aspect ratio or have _bgImageValues be defined",
+            );
+
+        const imgAspectRatio =
+            newAspectRatio ?? this._bgImageValues!.imgAspectRatio;
+        const { width, height } = this.fieldProperties;
+        const canvasAspectRatio = width / height;
+        const offset = { left: 0, top: 0 };
+        let scale: number;
+        if (this.fieldProperties.imageFillOrFit === "fill") {
+            if (imgAspectRatio > canvasAspectRatio) {
+                scale = height / this._backgroundImage.height!;
+                offset.left =
+                    (width - this._backgroundImage.width! * scale) / 2;
+            } else {
+                scale = width / this._backgroundImage.width!;
+                offset.top =
+                    (height - this._backgroundImage.height! * scale) / 2;
+            }
+        } else {
+            if (this.fieldProperties.imageFillOrFit !== "fit") {
+                console.error(
+                    "Invalid image fill or fit value. Defaulting to 'fit'",
+                );
+            }
+            if (imgAspectRatio > canvasAspectRatio) {
+                scale = width / this._backgroundImage.width!;
+                offset.top =
+                    (height - this._backgroundImage.height! * scale) / 2;
+            } else {
+                scale = height / this._backgroundImage.height!;
+                offset.left =
+                    (width - this._backgroundImage.width! * scale) / 2;
+            }
+        }
+        this._bgImageValues = {
+            ...offset,
+            scale,
+            imgAspectRatio: imgAspectRatio,
+        };
     }
 
     /*********************** SELECTION UTILITIES ***********************/

@@ -12,12 +12,12 @@ import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas"
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
-import { CanvasColors } from "./CanvasConstants";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import { CircleNotch } from "@phosphor-icons/react";
+import { rgbaToString } from "@/global/classes/FieldTheme";
 
 /**
  * The field/stage UI of OpenMarch
@@ -387,7 +387,7 @@ export default function Canvas({
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
-        if (canvas && selectedPage) {
+        if (canvas && selectedPage && fieldProperties) {
             for (const pathway of pagePathways.current) {
                 canvas.remove(pathway);
             }
@@ -402,7 +402,10 @@ export default function Canvas({
                     selectedPage.id,
                 );
 
-            if (uiSettings.previousPaths && selectedPage.previousPageId) {
+            if (
+                uiSettings.previousPaths &&
+                selectedPage.previousPageId !== null
+            ) {
                 const prevPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.previousPageId,
@@ -410,17 +413,17 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: prevPageMarcherPages,
-                    color: CanvasColors.PREVIOUS_PAGE,
+                    color: rgbaToString(fieldProperties.theme.previousPath),
                     allMarchers: marchers,
                 });
                 const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: prevPageMarcherPages,
                     endPageMarcherPages: selectedPageMarcherPages,
-                    color: CanvasColors.PREVIOUS_PAGE,
+                    color: rgbaToString(fieldProperties.theme.previousPath),
                 });
                 pagePathways.current.push(...renderedPathways);
             }
-            if (uiSettings.nextPaths && selectedPage.nextPageId) {
+            if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.nextPageId,
@@ -428,13 +431,13 @@ export default function Canvas({
 
                 canvas.renderStaticMarchers({
                     intendedMarcherPages: nextPageMarcherPages,
-                    color: CanvasColors.NEXT_PAGE,
+                    color: rgbaToString(fieldProperties.theme.nextPath),
                     allMarchers: marchers,
                 });
                 const renderedPathways = canvas.renderPathways({
                     startPageMarcherPages: selectedPageMarcherPages,
                     endPageMarcherPages: nextPageMarcherPages,
-                    color: CanvasColors.NEXT_PAGE,
+                    color: rgbaToString(fieldProperties.theme.nextPath),
                 });
                 pagePathways.current.push(...renderedPathways);
             }
@@ -443,6 +446,7 @@ export default function Canvas({
         }
     }, [
         canvas,
+        fieldProperties,
         marcherPages,
         marchers,
         pages,
@@ -548,6 +552,7 @@ export default function Canvas({
     // Update the canvas when the field properties change
     useEffect(() => {
         if (canvas && fieldProperties) {
+            // canvas.refreshBackgroundImage();
             canvas.fieldProperties = fieldProperties;
         }
     }, [canvas, fieldProperties]);

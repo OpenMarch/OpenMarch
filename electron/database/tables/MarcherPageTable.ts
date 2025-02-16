@@ -5,33 +5,7 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import { DatabaseResponse } from "../DatabaseActions";
-import * as History from "../database.history";
 import { getSpmByMarcherPage } from "./ShapePageMarcherTable";
-
-export function createMarcherPageTable(db: Database.Database) {
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS "${Constants.MarcherPageTableName}" (
-                "id"            INTEGER PRIMARY KEY,
-                "id_for_html"   TEXT UNIQUE,
-                "marcher_id"    INTEGER NOT NULL,
-                "page_id"       INTEGER NOT NULL,
-                "x"             REAL,
-                "y"             REAL,
-                "created_at"    TEXT NOT NULL,
-                "updated_at"    TEXT NOT NULL,
-                "notes"         TEXT,
-                FOREIGN KEY ("marcher_id") REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-                FOREIGN KEY ("page_id") REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
-            );
-            CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_marcher_id" ON "marcher_pages" ("marcher_id");
-            CREATE INDEX IF NOT EXISTS "index_marcher_pages_on_page_id" ON "marcher_pages" ("page_id");
-        `);
-        History.createUndoTriggers(db, Constants.MarcherPageTableName);
-    } catch (error) {
-        throw new Error(`Failed to create marcher_page table: ${error}`);
-    }
-}
 
 /**
  * Gets all of the marcherPages, or the marcherPages with the given marcher_id and/or page_id.
