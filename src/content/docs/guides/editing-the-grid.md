@@ -3,13 +3,12 @@ title: "Editing the Grid"
 description: "How to adjust the field or grid in OpenMarch to meet your ensemble's needs"
 ---
 
-## Field and Grid Customization
-
-Now, a user can make their own field with whatever measurements and specifications they want (as long as it's a rectangle).
+OpenMarch allows designers to make their own field with whatever measurements and specifications they want, as long as it's a rectangle.
+Designers can write for football field, indoor floors, or any other rectangular performance surface.
 
 > Note that in this guide, "field" and "grid" are used interchangeably.
 
-### Choosing a template
+## Choosing a template
 
 To start, pick a template that is closest to your use case. The available templates as of 0.0.7 are:
 
@@ -31,7 +30,7 @@ If you need to modify it, you can click "Customize" to make changes to the field
 
 ![Editing field example](/docs/guides/field/editing.gif)
 
-### Importing and Exporting Fields
+## Importing and Exporting Fields
 
 OpenMarch can save your custom field as a `.fielddots` file.
 
@@ -41,7 +40,7 @@ OpenMarch can save your custom field as a `.fielddots` file.
 - For you hackers, this is just a JSON file with a `.fielddots` extension
   - You can poke around with it, but there isn't much you can edit that you can't in the UI
 
-### General Values and Settings
+## General Values and Settings
 
 - **Field Name**
   - The name of the field
@@ -58,7 +57,7 @@ OpenMarch can save your custom field as a `.fielddots` file.
   - This is purely a visual aid and does not affect the coordinates
   - To have no half lines, this can be set to 0
 
-### Image Rendering
+## Image Rendering
 
 - **Import Image**
   - Import a background image to render on the field
@@ -73,7 +72,7 @@ OpenMarch can save your custom field as a `.fielddots` file.
   - Fit the image to the field having a bit of padding
     - ![Fit field](/docs/guides/field/image-10.png)
 
-### Checkpoints
+## Checkpoints
 
 The "checkpoints" of a grid are the reference points that are used to determine a marcher's coordinates.
 
@@ -107,7 +106,7 @@ The Following are the same for both X and Y checkpoints:
   - Whether or not this checkpoint should be used as a reference when generating coordinates
   - This is useful for things like "real hash" vs "grid hash" where there is a point you want on the field for visualization, but don't want the coordinates to reference it
 
-#### X Checkpoints
+### X Checkpoints
 
 Coordinates on the X-axis, e.g. yard lines.
 
@@ -127,7 +126,7 @@ Coordinates on the X-axis, e.g. yard lines.
 - There does not need to be a center checkpoint (0 steps)
   - Whether there is or not, the coordinates will be calculated relative to the center
 
-#### Y Checkpoints
+### Y Checkpoints
 
 Coordinates on the Y-axis, e.g. hashes.
 
@@ -149,23 +148,23 @@ Coordinates on the Y-axis, e.g. hashes.
 - There does not need to be a front checkpoint (0 steps)
   - Whether there is or not, the coordinates will be calculated relative to the front
 
-### Side Descriptions
+## Side Descriptions
 
 Customize the description of the left and right side of the field to fit your ensemble's needs.
 
 - Default is "Side 1" and "Side 2"
 - The abbreviation is used in the marcher editor and optionally in the coordinate sheets for PDF exports
 
-### Field Labels
+## Field Labels
 
 This is unfinished, read-only, and only works for provided football fields.
 
-### External Labels
+## External Labels
 
 Toggle on and off the external labels for each side of the field.
 This is purely cosmetic and does not affect the coordinates.
 
-### Theme
+## Theme
 
 Adjust the color of most elements of the grid.
 
