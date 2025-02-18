@@ -618,6 +618,30 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             fieldArray.push(this._backgroundImage);
         }
 
+        // Render the grid lines either from the first checkpoint, or the first visible checkpoint if i's not an integer amount of steps away from the front point
+        // This is to address when the front of the field isn't exactly with the grid
+        const sortedYCheckpoints = this.fieldProperties.yCheckpoints.sort(
+            (a, b) => b.stepsFromCenterFront - a.stepsFromCenterFront,
+        );
+        const firstVisibleYCheckpoint =
+            this.fieldProperties.yCheckpoints.reduce(
+                (prev, curr) => {
+                    if (
+                        curr.visible &&
+                        curr.stepsFromCenterFront > prev.stepsFromCenterFront
+                    )
+                        return curr;
+                    return prev;
+                },
+                sortedYCheckpoints[sortedYCheckpoints.length - 1],
+            );
+        let yCheckpointToStartGridFrom = sortedYCheckpoints[0];
+        if (
+            firstVisibleYCheckpoint.stepsFromCenterFront !== 0 &&
+            firstVisibleYCheckpoint.stepsFromCenterFront % 1 !== 0
+        )
+            yCheckpointToStartGridFrom = firstVisibleYCheckpoint;
+
         // Grid lines
         if (gridLines) {
             const gridLineProps = {
@@ -644,27 +668,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 );
 
             // Y
-            const lastYCheckpoint = this.fieldProperties.yCheckpoints.reduce(
-                (prev, curr) => {
-                    if (curr.stepsFromCenterFront < prev.stepsFromCenterFront)
-                        return curr;
-                    return prev;
-                },
-            );
-            const firstVisibleYCheckpoint =
-                this.fieldProperties.yCheckpoints.reduce((prev, curr) => {
-                    if (
-                        curr.visible &&
-                        curr.stepsFromCenterFront > prev.stepsFromCenterFront
-                    )
-                        return curr;
-                    return prev;
-                }, lastYCheckpoint);
-            console.log(firstVisibleYCheckpoint);
+
             for (
                 let i =
                     centerFrontPoint.yPixels +
-                    firstVisibleYCheckpoint.stepsFromCenterFront *
+                    yCheckpointToStartGridFrom.stepsFromCenterFront *
                         pixelsPerStep;
                 i > 0;
                 i -= pixelsPerStep
@@ -721,7 +729,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 // Y
                 for (
                     let i =
-                        centerFrontPoint.yPixels -
+                        centerFrontPoint.yPixels +
+                        yCheckpointToStartGridFrom.stepsFromCenterFront *
+                            pixelsPerStep -
                         pixelsPerStep * this.fieldProperties.halfLineYInterval;
                     i > 0;
                     i -= pixelsPerStep * this.fieldProperties.halfLineYInterval
