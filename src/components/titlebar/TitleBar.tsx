@@ -1,6 +1,7 @@
 import { Minus, Square, List, X } from "@phosphor-icons/react";
 import FileControls from "./FileControls";
 import SettingsModal from "../settings/SettingsModal";
+import VersionCheck from "../ui/VersionCheck";
 import { useEffect, useState } from "react";
 
 export default function TitleBar({ noControls }: { noControls?: boolean }) {
@@ -39,12 +40,14 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                 )}
                 <div className="flex gap-12">
                     <p className="text-body leading-none">OpenMarch</p>
-                    <p className="text-body leading-none opacity-50">0.0.7</p>
+                    <p className="text-body leading-none opacity-50">0.0.6</p>
+                    
                 </div>
                 {!noControls && (
                     <>
                         <FileControls />
                         <SettingsModal />
+                        <VersionCheck />
                     </>
                 )}
             </div>
