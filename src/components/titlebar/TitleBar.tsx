@@ -1,7 +1,6 @@
 import { Minus, Square, List, X } from "@phosphor-icons/react";
 import FileControls from "./FileControls";
 import SettingsModal from "../settings/SettingsModal";
-import VersionCheck from "../ui/VersionCheck";
 import { useEffect, useState } from "react";
 
 export default function TitleBar({ noControls }: { noControls?: boolean }) {
@@ -47,7 +46,6 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                     <>
                         <FileControls />
                         <SettingsModal />
-                        <VersionCheck />
                     </>
                 )}
             </div>
