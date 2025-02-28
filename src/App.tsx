@@ -23,6 +23,7 @@ import {
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "./components/titlebar/TitleBar";
+import VersionChecker from "./components/ui/VersionCheck";
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -68,6 +69,7 @@ function App() {
                                                 <TimelineContainer />
                                             </div>
                                         </div>
+                                        <VersionChecker />
                                         <Toaster
                                             visibleToasts={6}
                                             toastOptions={{
