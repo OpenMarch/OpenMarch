@@ -11,6 +11,7 @@ export const Constants = {
     ShapeTableName: "shapes",
     ShapePageTableName: "shape_pages",
     ShapePageMarcherTableName: "shape_page_marchers",
+    BeatsTableName: "beats",
 
     PagePrefix: "page",
     NewPageId: "NEW_PAGE", // deprecated?
