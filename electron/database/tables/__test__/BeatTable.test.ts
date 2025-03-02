@@ -505,7 +505,7 @@ describe("BeatsTable", () => {
 
             const deleteResult = BeatTable.deleteBeats({
                 db,
-                ids: new Set([2, 3]),
+                beatIds: new Set([2, 3]),
             });
 
             expect(deleteResult.success).toBe(true);
@@ -529,7 +529,7 @@ describe("BeatsTable", () => {
 
             const deleteResult = BeatTable.deleteBeats({
                 db,
-                ids: new Set([999, 1000]),
+                beatIds: new Set([999, 1000]),
             });
 
             expect(deleteResult.success).toBe(false);
@@ -538,7 +538,7 @@ describe("BeatsTable", () => {
             expect(getResult.data.length).toBe(1);
         });
 
-        it("should handle deletion of empty set of ids", () => {
+        it("should handle deletion of empty set of beatIds", () => {
             const initialBeats: BeatTable.NewBeatArgs[] = [
                 { duration: 0.5, include_in_measure: 1, notes: "first" },
                 { duration: 0.5, include_in_measure: 1, notes: "second" },
@@ -548,7 +548,7 @@ describe("BeatsTable", () => {
 
             const deleteResult = BeatTable.deleteBeats({
                 db,
-                ids: new Set(),
+                beatIds: new Set(),
             });
 
             expect(deleteResult.success).toBe(true);
@@ -568,7 +568,7 @@ describe("BeatsTable", () => {
 
             const deleteResult = BeatTable.deleteBeats({
                 db,
-                ids: new Set([2]),
+                beatIds: new Set([2]),
             });
 
             expect(deleteResult.success).toBe(true);

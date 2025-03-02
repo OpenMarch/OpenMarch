@@ -13,6 +13,16 @@ import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
+import {
+    DatabaseBeat,
+    NewBeatArgs,
+    ModifiedBeatArgs,
+} from "electron/database/tables/BeatTable";
+import {
+    DatabaseMeasure,
+    NewMeasureArgs,
+    ModifiedMeasureArgs,
+} from "electron/database/tables/MeasureTable";
 import { DatabasePage } from "electron/database/tables/PageTable";
 import {
     ModifiedShapePageMarcherArgs,
@@ -283,19 +293,41 @@ const APP_API = {
             DatabaseResponse<MarcherPage>
         >,
 
-    // Measure
-    /**
-     * @returns A serialized array of all measures in the database.
-     * This means you must call `new Measure(measure)` on each measure or else the instance methods will not work.
-     */
-    getMeasuresAbcString: () =>
-        ipcRenderer.invoke("measure:getAll") as Promise<string>,
-    updateMeasureAbcString: (abcString: string) =>
-        ipcRenderer.invoke("measure:update", abcString) as Promise<
-            DbServices.LegacyDatabaseResponse<string>
+    // Beat
+    getBeats: () =>
+        ipcRenderer.invoke("beat:getAll") as Promise<
+            DatabaseResponse<DatabaseBeat[]>
         >,
-    launchImportMusicXmlFileDialogue: () =>
-        ipcRenderer.invoke("measure:insert") as Promise<string | undefined>,
+    createBeats: (newBeats: NewBeatArgs[]) =>
+        ipcRenderer.invoke("beat:insert", newBeats) as Promise<
+            DatabaseResponse<DatabaseBeat[]>
+        >,
+    updateBeats: (modifiedBeats: ModifiedBeatArgs[]) =>
+        ipcRenderer.invoke("beat:update", modifiedBeats) as Promise<
+            DatabaseResponse<DatabaseBeat[]>
+        >,
+    deleteBeats: (beatIds: Set<number>) =>
+        ipcRenderer.invoke("beat:delete", beatIds) as Promise<
+            DatabaseResponse<DatabaseBeat[]>
+        >,
+
+    // Measure
+    getMeasures: () =>
+        ipcRenderer.invoke("measure:getAll") as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
+        >,
+    createMeasures: (newMeasures: NewMeasureArgs[]) =>
+        ipcRenderer.invoke("measure:insert", newMeasures) as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
+        >,
+    updateMeasures: (modifiedMeasures: ModifiedMeasureArgs[]) =>
+        ipcRenderer.invoke("measure:update", modifiedMeasures) as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
+        >,
+    deleteMeasures: (measureIds: Set<number>) =>
+        ipcRenderer.invoke("measure:delete", measureIds) as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
+        >,
 
     // Audio File
     launchInsertAudioFileDialogue: () =>

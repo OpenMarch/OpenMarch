@@ -96,29 +96,29 @@ export default class v5 extends v4 {
     //     }
     // }
 
-    // /**
-    //  * Measures in OpenMarch use a simplified version of ABC notation.
-    //  * There is only ever one entry in this table, and it is the ABC notation string.
-    //  * When updating measures, this string will be modified.
-    //  *
-    //  * @param db Database object to use
-    //  */
-    // createMeasureTable(db: Database.Database) {
-    //     try {
-    //         db.exec(`
-    //                 CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
-    //                     id INTEGER PRIMARY KEY,
-    //                     start_beat INTEGER NOT NULL,
-    //                     rehearsal_mark TEXT,
-    //                     notes TEXT,
-    //                     "created_at"	TEXT NOT NULL,
-    //                     "updated_at"	TEXT NOT NULL,
-    //                     FOREIGN KEY (start_beat) REFERENCES "${Constants.BeatsTableName}" ("id")
-    //                 );
-    //             `);
-    //     } catch (error) {
-    //         throw new Error(`Failed to create Measures table: ${error}`);
-    //     }
-    //     createUndoTriggers(db, Constants.MeasureTableName);
-    // }
+    /**
+     * Measures in OpenMarch use a simplified version of ABC notation.
+     * There is only ever one entry in this table, and it is the ABC notation string.
+     * When updating measures, this string will be modified.
+     *
+     * @param db Database object to use
+     */
+    createMeasureTable(db: Database.Database) {
+        try {
+            db.exec(`
+                    CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
+                        id INTEGER PRIMARY KEY,
+                        start_beat INTEGER NOT NULL UNIQUE,
+                        rehearsal_mark TEXT,
+                        notes TEXT,
+                        "created_at"	TEXT NOT NULL,
+                        "updated_at"	TEXT NOT NULL,
+                        FOREIGN KEY (start_beat) REFERENCES "${Constants.BeatsTableName}" ("id")
+                    );
+                `);
+        } catch (error) {
+            throw new Error(`Failed to create Measures table: ${error}`);
+        }
+        createUndoTriggers(db, Constants.MeasureTableName);
+    }
 }

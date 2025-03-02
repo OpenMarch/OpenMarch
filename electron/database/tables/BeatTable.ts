@@ -39,6 +39,13 @@ export interface NewBeatArgs {
 }
 type InternalNewBeatArgs = NewBeatArgs & { position: number };
 
+/**
+ * Represents the arguments for modifying an existing beat in the database.
+ * @property {number} id - The unique identifier for the beat to be modified.
+ * @property {number} [duration] - The new duration of the beat in seconds.
+ * @property {0 | 1} [include_in_measure] - The new value for whether the beat should be included in a measure (0 = false, 1 = true).
+ * @property {string | null} [notes] - The new optional human-readable notes about the beat.
+ */
 export interface ModifiedBeatArgs {
     id: number;
     duration?: number;
@@ -335,12 +342,15 @@ export function updateBeats({
     db: Database.Database;
     modifiedBeats: ModifiedBeatArgs[];
 }): DbActions.DatabaseResponse<DatabaseBeat[]> {
-    return DbActions.updateItems<DatabaseBeat, ModifiedBeatArgs>({
+    console.log("\n=========== start updateBeats ===========");
+    const output = DbActions.updateItems<DatabaseBeat, ModifiedBeatArgs>({
         db,
         tableName: Constants.BeatsTableName,
         items: modifiedBeats,
         useNextUndoGroup: true,
     });
+    console.log("=========== end updateBeats ===========\n");
+    return output;
 }
 
 /**
@@ -352,10 +362,10 @@ export function updateBeats({
  */
 export function deleteBeats({
     db,
-    ids,
+    beatIds,
 }: {
     db: Database.Database;
-    ids: Set<number>;
+    beatIds: Set<number>;
 }): DbActions.DatabaseResponse<DatabaseBeat[]> {
     console.log("=========== begin deleteShapePageMarchers ===========");
     let output: DbActions.DatabaseResponse<DatabaseBeat[]>;
@@ -366,7 +376,7 @@ export function deleteBeats({
         output = DbActions.deleteItems<DatabaseBeat>({
             db,
             tableName: Constants.BeatsTableName,
-            ids,
+            ids: beatIds,
             printHeaders: false,
         });
         actionWasPerformed = true;

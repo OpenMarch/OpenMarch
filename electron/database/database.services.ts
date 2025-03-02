@@ -17,6 +17,8 @@ import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
 import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
+import * as MeasureTable from "./tables/MeasureTable";
+import * as BeatTable from "./tables/BeatTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -196,10 +198,44 @@ export function initHandlers() {
         }),
     );
 
-    // Measure
-    ipcMain.handle("measure:getAll", async () => getMeasures());
-    ipcMain.handle("measure:update", async (_, abcString: string) =>
-        updateMeasuresAbcString(abcString),
+    // Beats
+    ipcMain.handle("beat:getAll", async () =>
+        connectWrapper(BeatTable.getBeats),
+    );
+    ipcMain.handle("beat:insert", async (_, newBeats) =>
+        connectWrapper(BeatTable.createBeats, {
+            newBeats,
+        }),
+    );
+    ipcMain.handle("beat:update", async (_, modifiedBeats) =>
+        connectWrapper(BeatTable.updateBeats, {
+            modifiedBeats,
+        }),
+    );
+    ipcMain.handle("beat:delete", async (_, beatIds) =>
+        connectWrapper(BeatTable.deleteBeats, {
+            beatIds,
+        }),
+    );
+
+    // Measures
+    ipcMain.handle("measure:getAll", async () =>
+        connectWrapper(MeasureTable.getMeasures),
+    );
+    ipcMain.handle("measure:insert", async (_, newMeasures) =>
+        connectWrapper(MeasureTable.createMeasures, {
+            newMeasures,
+        }),
+    );
+    ipcMain.handle("measure:update", async (_, modifiedMeasures) =>
+        connectWrapper(MeasureTable.updateMeasures, {
+            modifiedMeasures,
+        }),
+    );
+    ipcMain.handle("measure:delete", async (_, measureIds) =>
+        connectWrapper(MeasureTable.deleteMeasures, {
+            measureIds,
+        }),
     );
 
     // Audio Files
@@ -441,75 +477,6 @@ export function performHistoryAction(
     }
 
     return { ...response, marcherIds, pageId };
-}
-/* ============================ Measures ============================ */
-const defaultMeasures = `X:1
-Q:1/4=120
-M:4/4
-V:1 baritone
-V:1
-z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
-`;
-/***** NOTE - Measures are currently not part of the history table *****/
-
-/**
- * Gets all of the measures from the database.
- *
- * @param db The database connection
- * @returns Array of measures
- */
-async function getMeasures(db?: Database.Database): Promise<string> {
-    const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`,
-    );
-    const response = stmt.all() as {
-        abc_data: string;
-        created_at: string;
-        updated_at: string;
-    }[];
-    if (response.length === 0 || response[0].abc_data.length < 20) {
-        response[0].abc_data = defaultMeasures;
-        updateMeasuresAbcString(defaultMeasures);
-    }
-    if (!db) dbToUse.close();
-    return response[0].abc_data;
-}
-
-/**
- * Updates the ABC representation of the measures in the database.
- *
- * @param abcString The new ABC string to put into the database
- * @returns LegacyDatabaseResponse
- */
-async function updateMeasuresAbcString(
-    abcString: string,
-): Promise<LegacyDatabaseResponse<string>> {
-    const db = connect();
-    let output: LegacyDatabaseResponse<string> = { success: false };
-    try {
-        History.incrementUndoGroup(db);
-        const stmt = db.prepare(`
-                UPDATE ${Constants.MeasureTableName}
-                SET abc_data = @abc_data, updated_at = @new_updated_at
-                WHERE id = 1
-            `);
-        await stmt.run({
-            abc_data: abcString,
-            new_updated_at: new Date().toISOString(),
-        });
-        output = { success: true };
-    } catch (error: any) {
-        console.error(error);
-        output = {
-            success: false,
-            error: { message: error.message, stack: error.stack },
-        };
-    } finally {
-        History.incrementUndoGroup(db);
-        db.close();
-    }
-    return output;
 }
 
 /* ============================ Audio Files ============================ */
