@@ -1,11 +1,92 @@
 import BeatUnit from "@/global/classes/BeatUnit";
 import TimeSignature from "@/global/classes/TimeSignature";
 import { NewBeatArgs } from "electron/database/tables/BeatTable";
+import xml2abcInterpreter from "./xml2abcInterpreter";
 
 interface TemporaryNewMeasureArgs {
     beatIndex: number;
     rehearsalMark: string | null;
 }
+
+/**
+ * Converts a Music XML file to an ABC string representation.
+ *
+ * This function takes a Music XML file, either in the standard .xml format or the compressed .mxl format,
+ * and converts it to an ABC string representation. ABC is a textual format for representing musical notation.
+ *
+ * The function first checks if the file is in the .mxl format, which is a compressed version of the .xml format.
+ * If it is, the function uses JSZip to decompress the file and extract the main XML content. If the file is in the
+ * standard .xml format, the function simply reads the XML content as text.
+ *
+ * The function then passes the XML content to the `xml2abcInterpreter` function, which converts the XML to an ABC
+ * string representation. The ABC string is then returned as a Promise.
+ *
+ * @param musicXmlFile The Music XML file to convert to an ABC string.
+ * @returns A Promise that resolves to the ABC string representation of the Music XML file.
+ */
+export const musicXmlFileToAbcString = (
+    musicXmlFile: File,
+): Promise<string> => {
+    const isMxlFile = musicXmlFile.name.toLowerCase().endsWith(".mxl");
+
+    if (isMxlFile) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    // Read as array buffer for zip files
+                    const arrayBuffer = event.target?.result as ArrayBuffer;
+
+                    // Use JSZip to decompress the .mxl file
+                    const JSZip = (await import("jszip")).default;
+                    const zip = new JSZip();
+                    const zipContents = await zip.loadAsync(arrayBuffer);
+
+                    // Find the main XML file (usually container.xml or the first .xml file)
+                    let xmlContent = "";
+                    for (const [filename, file] of Object.entries(
+                        zipContents.files,
+                    )) {
+                        if (filename.endsWith(".xml")) {
+                            xmlContent = await file.async("string");
+                            break;
+                        }
+                    }
+
+                    if (!xmlContent) {
+                        throw new Error("No XML file found in MXL archive");
+                    }
+
+                    const abcString = xml2abcInterpreter(xmlContent);
+                    resolve(abcString);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = (event) => {
+                reject(event.target?.error);
+            };
+            reader.readAsArrayBuffer(musicXmlFile);
+        });
+    } else {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const xmlString = event.target?.result as string;
+                    const abcString = xml2abcInterpreter(xmlString);
+                    resolve(abcString);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = (event) => {
+                reject(event.target?.error);
+            };
+            reader.readAsText(musicXmlFile);
+        });
+    }
+};
 
 /**
  * Converts an ABC string into a list of new beats and measures.

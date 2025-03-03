@@ -2,7 +2,6 @@ import { createHistoryTables, createUndoTriggers } from "../database.history";
 import DatabaseMigrator from "./DatabaseMigrator";
 import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
-import Measure from "../../../src/global/classes/Measure";
 import type FieldProperties from "../../../src/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
 import { FIRST_PAGE_ID } from "../tables/PageTable";
@@ -171,9 +170,16 @@ export default class v1 extends DatabaseMigrator {
                     @updated_at
                 );
             `);
+            const defaultMeasure = `X:1
+Q:1/4=120
+M:4/4
+V:1 baritone
+V:1
+z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
+`;
             const created_at = new Date().toISOString();
             stmt.run({
-                abc_data: Measure.defaultMeasures,
+                abc_data: defaultMeasure,
                 created_at,
                 updated_at: created_at,
             });

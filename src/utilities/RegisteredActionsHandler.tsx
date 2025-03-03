@@ -13,12 +13,10 @@ import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
-import Measure from "@/global/classes/Measure";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
-// import xml2abcInterpreter from "electron/xml2abc-js/xml2abcInterpreter";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -481,14 +479,7 @@ function RegisteredActionsHandler() {
                     });
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
-                    window.electron
-                        .launchImportMusicXmlFileDialogue()
-                        .then((xmlString) => {
-                            if (xmlString) {
-                                // Convert the xmlString to an abcString
-                                Measure.updateWithXml(xmlString);
-                            }
-                        });
+                    console.log("launchImportMusicXmlFileDialogue");
                     break;
                 default:
                     isElectronAction = false;
@@ -511,16 +502,7 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.launchSaveFileDialogue:
                 case RegisteredActionsEnum.launchNewFileDialogue:
                 case RegisteredActionsEnum.launchInsertAudioFileDialogue:
-                    break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
-                    window.electron
-                        .launchImportMusicXmlFileDialogue()
-                        .then((xmlString) => {
-                            if (xmlString) {
-                                // Convert the xmlString to an abcString
-                                Measure.updateWithXml(xmlString);
-                            }
-                        });
                     break;
                 case RegisteredActionsEnum.performUndo:
                     window.electron.undo();
