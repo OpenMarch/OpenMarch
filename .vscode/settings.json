@@ -1,3 +1,4 @@
 {
-    "prettier.configPath": "/Users/openmarchdev/Documents/GitHub/website/.prettierrc"
+  "prettier.configPath": "/Users/openmarchdev/Documents/GitHub/website/.prettierrc",
+  "cSpell.words": ["merch"]
 }

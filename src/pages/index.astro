@@ -174,6 +174,50 @@ type Blog = CollectionEntry<"blog">;
                     >
                 </div>
             </div>
+
+            <section id="merch">
+                <a
+                    class="grid grid-cols-4"
+                    href="https://store.openmarch.com"
+                    target="_blank"
+                >
+                    <Image
+                        src={"/merch/MerchLaunch-02.png"}
+                        alt={"merch photo"}
+                        class="h-full w-full rotate-[-.1rad] rounded-6 border-2 border-accent object-cover"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/merch/MerchLaunch-01.png"}
+                        alt={"merch photo"}
+                        class="col-span-2 row-span-2 h-full w-full rounded-6 border-2 border-accent object-cover"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/merch/MerchLaunch-03.png"}
+                        alt={"merch photo"}
+                        class="h-full w-full rotate-[.13rad] rounded-6 border-2 border-accent object-cover"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/merch/MerchLaunch-04.png"}
+                        alt={"merch photo"}
+                        class="h-full w-full rotate-[.13rad] rounded-6 border-2 border-accent object-cover"
+                        width={200}
+                        height={400}
+                    />
+                    <Image
+                        src={"/merch/MerchLaunch-05.png"}
+                        alt={"merch photo"}
+                        class="h-full w-full rotate-[-.13rad] rounded-6 border-2 border-accent object-cover"
+                        width={200}
+                        height={400}
+                    />
+                </a>
+            </section>
             <section id="blogs" class="flex flex-col gap-16">
                 <div class="flex justify-between">
                     <h1 class="text-h1">Blog</h1><a href="/blog"
@@ -188,7 +232,7 @@ type Blog = CollectionEntry<"blog">;
                             .sort(
                                 (a, b) =>
                                     new Date(b.data.date).getTime() -
-                                    new Date(a.data.date).getTime(),
+                                    new Date(a.data.date).getTime()
                             )
                             .slice(0, 3)
                             .map((blog: Blog) => (
@@ -218,7 +262,7 @@ type Blog = CollectionEntry<"blog">;
                                                     month: "long",
                                                     day: "numeric",
                                                     timeZone: "UTC",
-                                                },
+                                                }
                                             )}
                                         </p>
                                     </div>
