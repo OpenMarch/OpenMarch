@@ -3,6 +3,7 @@ import { initTestDatabase } from "./testUtils";
 import * as History from "../../database.history";
 import Database from "better-sqlite3";
 import * as BeatTable from "../BeatTable";
+import Constants from "@/global/Constants";
 
 const sorter = (a: any, b: any) => a.position - b.position;
 
@@ -21,15 +22,14 @@ describe("BeatsTable", () => {
 
     beforeEach(() => {
         db = initTestDatabase();
+
+        // Delete all beats from the database
+        db.prepare(`DELETE FROM ${Constants.PageTableName}`).run();
+        db.prepare(`DELETE FROM ${Constants.MeasureTableName}`).run();
+        db.prepare(`DELETE FROM ${Constants.BeatsTableName}`).run();
     });
 
     describe("createBeats", () => {
-        let db: Database.Database;
-
-        beforeEach(() => {
-            db = initTestDatabase();
-        });
-
         it("should insert new beats into an empty database", () => {
             const newBeats: BeatTable.NewBeatArgs[] = [
                 { duration: 0.5, include_in_measure: 1 },
@@ -264,12 +264,6 @@ describe("BeatsTable", () => {
     });
 
     describe("undo/redo", () => {
-        let db: Database.Database;
-
-        beforeEach(() => {
-            db = initTestDatabase();
-        });
-
         it("should undo and redo a single created beat correctly", () => {
             const newBeats: BeatTable.NewBeatArgs[] = [
                 { duration: 0.5, include_in_measure: 1, notes: "test beat" },

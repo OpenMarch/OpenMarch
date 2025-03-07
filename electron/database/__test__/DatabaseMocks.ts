@@ -1,7 +1,7 @@
 import { NewMarcherArgs } from "@/global/classes/Marcher";
-import { NewPageArgs } from "@/global/classes/Page";
 import { NewShapeArgs } from "../tables/ShapeTable";
 import { NewShapePageArgs } from "../tables/ShapePageTable";
+import { NewPageArgs } from "../tables/PageTable";
 
 export const NewMarchers: NewMarcherArgs[] = [
     {
@@ -42,34 +42,28 @@ export const NewMarchers: NewMarcherArgs[] = [
 
 export const NewPages: NewPageArgs[] = [
     {
-        counts: 16,
+        start_beat: 6,
         notes: "This is the second page",
-        previousPageId: 0,
-        isSubset: false,
+        is_subset: false,
     },
     {
-        counts: 16,
-        previousPageId: 0,
-        isSubset: false,
+        start_beat: 16,
+        is_subset: false,
     },
     {
-        counts: 8,
-        previousPageId: 0,
-        isSubset: true,
+        start_beat: 12,
+        is_subset: true,
     },
     {
-        counts: 32,
+        start_beat: 8,
         notes: "really good note",
-        previousPageId: 0,
-        isSubset: false,
+        is_subset: false,
     },
     {
-        counts: 4,
-        previousPageId: 0,
-        isSubset: false,
+        start_beat: 4,
+        is_subset: false,
     },
 ];
-
 export const NewShapes: NewShapeArgs[] = [
     {
         name: "Shape 1",

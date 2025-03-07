@@ -71,6 +71,26 @@ export function getBeats({
 }
 
 /**
+ * Retrieves a single beat from the database by its unique identifier.
+ * @param {Database.Database} db - The database instance to use.
+ * @param {number} beatId - The unique identifier of the beat to retrieve.
+ * @returns {DbActions.DatabaseResponse<DatabaseBeat | undefined>} - The response containing the retrieved beat, or undefined if the beat is not found.
+ */
+export function getBeat({
+    db,
+    beatId,
+}: {
+    db: Database.Database;
+    beatId: number;
+}): DbActions.DatabaseResponse<DatabaseBeat | undefined> {
+    return DbActions.getItem<DatabaseBeat>({
+        tableName: Constants.BeatsTableName,
+        db,
+        id: beatId,
+    });
+}
+
+/**
  * Retrieves the first or last beat from the database. Null if no beats exist.
  * @param {Object} params - The parameters for retrieving the beat.
  * @param {boolean} params.isFirstBeat - True to retrieve the first beat, false to retrieve the last beat.
@@ -367,7 +387,7 @@ export function deleteBeats({
     db: Database.Database;
     beatIds: Set<number>;
 }): DbActions.DatabaseResponse<DatabaseBeat[]> {
-    console.log("=========== begin deleteShapePageMarchers ===========");
+    console.log("=========== begin deleteBeats ===========");
     let output: DbActions.DatabaseResponse<DatabaseBeat[]>;
     let actionWasPerformed = false;
     History.incrementUndoGroup(db);
@@ -378,6 +398,7 @@ export function deleteBeats({
             tableName: Constants.BeatsTableName,
             ids: beatIds,
             printHeaders: false,
+            useNextUndoGroup: false,
         });
         actionWasPerformed = true;
 
@@ -401,7 +422,7 @@ export function deleteBeats({
             data: [],
         };
     } finally {
-        console.log("=========== end deleteDatabaseBeats ===========\n");
+        console.log("=========== end deleteBeats ===========\n");
     }
 
     return output;

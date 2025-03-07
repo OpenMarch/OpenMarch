@@ -4,7 +4,6 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import type FieldProperties from "../../../src/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
-import { FIRST_PAGE_ID } from "../tables/PageTable";
 
 export default class v1 extends DatabaseMigrator {
     get version() {
@@ -72,7 +71,7 @@ export default class v1 extends DatabaseMigrator {
             // Create page 1 with 0 counts. Page 1 should always exist
             // It is safe to assume there are no marchers in the database at this point, so MarcherPages do not need to be created
             db.prepare(
-                `INSERT INTO ${Constants.PageTableName} ("counts", "id") VALUES (0, ${FIRST_PAGE_ID})`,
+                `INSERT INTO ${Constants.PageTableName} ("counts", "id") VALUES (0, 0)`,
             ).run();
 
             // Make the undo triggers after so the creation of the first page cannot be undone

@@ -623,37 +623,6 @@ class Page {
 export default Page;
 
 /**
- * The arguments needed to create a new page.
- */
-export interface NewPageArgs {
-    /**
-     * The page the desired new page should come after
-     *
-     * If you want to add multiple pages that are sequential to each other, provide the page of the initial
-     * page in the sequence and make every following page also have that page as the previous page.
-     */
-    previousPageId: number;
-    /** If a page is a subset, its name will have an alphabetical letter appended. */
-    isSubset: boolean;
-    counts: number;
-    notes?: string;
-}
-
-/**
- * Defines the editable fields of a page. Only the fields that need to be updated are included.
- */
-export interface ModifiedPageArgs {
-    /**
-     * The id of the page to update.
-     */
-    id: number;
-    /** If a page is a subset, its name will have an alphabetical letter appended. */
-    is_subset?: boolean;
-    counts?: number;
-    notes?: string | null;
-}
-
-/**
  * Increments a letter to the next letter in the alphabet.
  *
  * @param letters The letters to increment.
