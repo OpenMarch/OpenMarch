@@ -4,6 +4,7 @@ import * as History from "../../database.history";
 import Database from "better-sqlite3";
 import * as BeatTable from "../BeatTable";
 import Constants from "@/global/Constants";
+import { DatabaseBeat, fromDatabaseBeat } from "../BeatTable";
 
 const sorter = (a: any, b: any) => a.position - b.position;
 
@@ -583,6 +584,71 @@ describe("BeatsTable", () => {
             const trimmedData = trimData(getResult.data).sort(sorter);
             expect(trimmedData[0].notes).toBe("first");
             expect(trimmedData[1].notes).toBe("third");
+        });
+    });
+
+    describe("fromDatabaseBeat", () => {
+        it("should convert a DatabaseBeat to a Beat", () => {
+            // Arrange
+            const databaseBeat: DatabaseBeat = {
+                id: 1,
+                position: 10,
+                duration: 2.5,
+                include_in_measure: 1,
+                notes: "Test note",
+                created_at: "2022-01-01 00:00:00",
+                updated_at: "2022-01-01 00:00:00",
+            };
+
+            // Act
+            const result = fromDatabaseBeat(databaseBeat);
+
+            // Assert
+            expect(result).toEqual({
+                id: 1,
+                position: 10,
+                duration: 2.5,
+                includeInMeasure: true,
+                notes: "Test note",
+            });
+        });
+
+        it("should set includeInMeasure to false when include_in_measure is 0", () => {
+            // Arrange
+            const databaseBeat: DatabaseBeat = {
+                id: 2,
+                position: 20,
+                duration: 1.5,
+                include_in_measure: 0,
+                notes: null,
+                created_at: "2022-01-01 00:00:00",
+                updated_at: "2022-01-01 00:00:00",
+            };
+
+            // Act
+            const result = fromDatabaseBeat(databaseBeat);
+
+            // Assert
+            expect(result.includeInMeasure).toBe(false);
+        });
+
+        it("should handle null notes", () => {
+            // Arrange
+            const databaseBeat: DatabaseBeat = {
+                id: 3,
+                position: 30,
+                duration: 3.0,
+                include_in_measure: 1,
+                notes: null,
+                created_at: "2022-01-01 00:00:00",
+                updated_at: "2022-01-01 00:00:00",
+            };
+
+            // Act
+            const result = fromDatabaseBeat(databaseBeat);
+
+            // Assert
+            expect(result.notes).toBeNull();
         });
     });
 });

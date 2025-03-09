@@ -2,6 +2,9 @@ import Database from "better-sqlite3";
 import * as History from "../database.history";
 import * as DbActions from "../DatabaseActions";
 import Constants from "@/global/Constants";
+import Beat from "../../../src/global/classes/Beat";
+
+export const FIRST_BEAT_ID = 0;
 
 /**
  * Represents a beat in the database.
@@ -427,3 +430,18 @@ export function deleteBeats({
 
     return output;
 }
+
+/**
+ * Converts a DatabaseBeat object to a Beat object.
+ * @param beat - The DatabaseBeat object to convert.
+ * @returns A new Beat object with the same properties as the input DatabaseBeat.
+ */
+export const fromDatabaseBeat = (beat: DatabaseBeat): Beat => {
+    return {
+        id: beat.id,
+        position: beat.position,
+        duration: beat.duration,
+        includeInMeasure: beat.include_in_measure >= 1,
+        notes: beat.notes,
+    };
+};
