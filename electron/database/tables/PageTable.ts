@@ -342,6 +342,8 @@ export function updatePages({
     modifiedPages: ModifiedPageArgs[];
 }): DbActions.DatabaseResponse<DatabasePage[]> {
     console.log("\n=========== start updatePages ===========");
+    // Ensure the first page is not updated
+    modifiedPages = modifiedPages.filter((page) => page.id !== FIRST_PAGE_ID);
     const pages = getPages({ db });
     if (!pages.success) {
         throw new Error("error getting pages");
@@ -381,6 +383,8 @@ export function deletePages({
     pageIds: Set<number>;
     db: Database.Database;
 }): DbActions.DatabaseResponse<DatabasePage[]> {
+    // Ensure the first page is not deleted
+    pageIds.delete(FIRST_PAGE_ID);
     const response = DbActions.deleteItems<RealDatabasePage>({
         db,
         ids: pageIds,

@@ -8,7 +8,7 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import Constants from "@/global/Constants";
 import { initTestDatabase } from "./testUtils";
 import { generatePageNames, NewPageArgs } from "../PageTable";
-import { DatabaseBeat, getBeats } from "../BeatTable";
+import { DatabaseBeat, FIRST_BEAT_ID, getBeats } from "../BeatTable";
 import * as History from "../../database.history";
 import Beat from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
@@ -50,7 +50,7 @@ describe("PageTable", () => {
                     id: 0,
                     is_subset: false,
                     notes: null,
-                    start_beat: 1,
+                    start_beat: FIRST_BEAT_ID,
                 },
             ]);
         });
@@ -92,7 +92,7 @@ describe("PageTable", () => {
         ): PageTable.DatabasePage {
             return {
                 id: 0,
-                start_beat: 1,
+                start_beat: FIRST_BEAT_ID,
                 is_subset: false,
                 notes: null,
             };
@@ -2686,52 +2686,64 @@ describe("PageTable", () => {
             // Mock data
             const mockBeats: Beat[] = [
                 {
-                    id: 1,
+                    id: 0,
                     position: 0,
-                    duration: 1000,
+                    duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                } as Beat,
+                } satisfies Beat,
                 {
-                    id: 2,
+                    id: 1,
                     position: 1,
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                } as Beat,
+                } satisfies Beat,
                 {
-                    id: 3,
+                    id: 2,
                     position: 2,
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                } as Beat,
+                } satisfies Beat,
                 {
-                    id: 4,
+                    id: 3,
                     position: 3,
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                } as Beat,
+                } satisfies Beat,
+                {
+                    id: 4,
+                    position: 4,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                } satisfies Beat,
             ];
 
             const mockMeasures: Measure[] = [
                 {
                     id: 1,
                     number: 1,
-                    startBeat: { id: 1, position: 0 } as Beat,
-                    beats: [mockBeats[0], mockBeats[1]],
+                    startBeat: { id: 1, position: 1 } as Beat,
+                    beats: [mockBeats[1], mockBeats[2]],
                 } as Measure,
                 {
                     id: 2,
                     number: 2,
-                    startBeat: { id: 3, position: 2 } as Beat,
-                    beats: [mockBeats[2], mockBeats[3]],
+                    startBeat: { id: 3, position: 3 } as Beat,
+                    beats: [mockBeats[3], mockBeats[4]],
                 } as Measure,
             ];
 
             const mockDatabasePages: PageTable.DatabasePage[] = [
-                { id: 1, start_beat: 1, is_subset: false, notes: "First page" },
+                {
+                    id: 1,
+                    start_beat: 1,
+                    is_subset: false,
+                    notes: "First page",
+                },
                 {
                     id: 2,
                     start_beat: 3,
@@ -2780,6 +2792,13 @@ describe("PageTable", () => {
             // Mock data
             const mockBeats: Beat[] = [
                 {
+                    id: 0,
+                    position: -1,
+                    duration: 0,
+                    includeInMeasure: true,
+                    notes: null,
+                } satisfies Beat,
+                {
                     id: 1,
                     position: 0,
                     duration: 1000,
@@ -2807,7 +2826,7 @@ describe("PageTable", () => {
                     id: 1,
                     number: 1,
                     startBeat: { id: 1, position: 0 } as Beat,
-                    beats: [mockBeats[0], mockBeats[1], mockBeats[2]],
+                    beats: [mockBeats[1], mockBeats[2], mockBeats[3]],
                     counts: 3,
                     notes: null,
                     rehearsalMark: null,
@@ -2816,7 +2835,12 @@ describe("PageTable", () => {
             ];
 
             const mockDatabasePages: PageTable.DatabasePage[] = [
-                { id: 1, start_beat: 1, is_subset: false, notes: "Main page" },
+                {
+                    id: 1,
+                    start_beat: 1,
+                    is_subset: false,
+                    notes: "Main page",
+                },
                 { id: 2, start_beat: 3, is_subset: true, notes: "Subset page" },
             ];
 
@@ -2832,7 +2856,7 @@ describe("PageTable", () => {
             expect(result[0].measureBeatToStartOn).toBe(1);
             expect(result[0].measureBeatToEndOn).toBe(2);
             expect(result[0].measures).toEqual(mockMeasures);
-            expect(result[0].beats).toEqual([mockBeats[0], mockBeats[1]]);
+            expect(result[0].beats).toEqual([mockBeats[1], mockBeats[2]]);
             expect(result[0].isSubset).toBe(false);
 
             expect(result[1].name).toBe("0A");
@@ -2840,7 +2864,7 @@ describe("PageTable", () => {
             expect(result[1].measureBeatToStartOn).toBe(3);
             expect(result[1].measureBeatToEndOn).toBe(3);
             expect(result[1].measures).toEqual(mockMeasures);
-            expect(result[1].beats).toEqual([mockBeats[2]]);
+            expect(result[1].beats).toEqual([mockBeats[3]]);
             expect(result[1].isSubset).toBe(true);
         });
 
@@ -2851,7 +2875,6 @@ describe("PageTable", () => {
                     id: 1,
                     position: 0,
                     duration: 1000,
-                    count: 1,
                     includeInMeasure: true,
                     notes: null,
                 } as Beat,
@@ -2859,7 +2882,6 @@ describe("PageTable", () => {
                     id: 2,
                     position: 1,
                     duration: 1000,
-                    count: 2,
                     includeInMeasure: true,
                     notes: null,
                 } as Beat,
@@ -2867,7 +2889,6 @@ describe("PageTable", () => {
                     id: 3,
                     position: 2,
                     duration: 1000,
-                    count: 3,
                     includeInMeasure: true,
                     notes: null,
                 } as Beat,
@@ -2875,7 +2896,13 @@ describe("PageTable", () => {
                     id: 4,
                     position: 3,
                     duration: 1000,
-                    count: 4,
+                    includeInMeasure: true,
+                    notes: null,
+                } as Beat,
+                {
+                    id: 0,
+                    position: -1,
+                    duration: 0,
                     includeInMeasure: true,
                     notes: null,
                 } as Beat,

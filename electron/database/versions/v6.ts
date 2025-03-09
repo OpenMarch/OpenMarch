@@ -2,6 +2,8 @@ import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import { createHistoryTables, createUndoTriggers } from "../database.history";
 import v5 from "./v5";
+import { FIRST_BEAT_ID } from "../tables/BeatTable";
+import { FIRST_PAGE_ID } from "../tables/PageTable";
 
 export default class v6 extends v5 {
     get version() {
@@ -49,8 +51,8 @@ export default class v6 extends v5 {
             db.exec(`
                 CREATE TABLE IF NOT EXISTS "${Constants.BeatsTableName}" (
                     "id"                    INTEGER PRIMARY KEY,
-                    "duration"              FLOAT NOT NULL,
-                    "position"              INTEGER NOT NULL UNIQUE,
+                    "duration"              FLOAT NOT NULL CHECK (duration >= 0),
+                    "position"              INTEGER NOT NULL UNIQUE CHECK (position >= 0),
                     "include_in_measure"    INTEGER NOT NULL DEFAULT 1 CHECK (include_in_measure IN (0, 1)),
                     "notes"                 TEXT,
                     "created_at"	        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -58,15 +60,40 @@ export default class v6 extends v5 {
                 );
             `);
 
+            // Create default starting beat
+            db.prepare(
+                `INSERT INTO ${Constants.BeatsTableName} ("duration", "position", "id") VALUES (0, 0, ${FIRST_BEAT_ID})`,
+            ).run();
+
+            db.prepare(
+                `CREATE TRIGGER prevent_beat_modification
+                    BEFORE UPDATE ON "${Constants.BeatsTableName}"
+                    FOR EACH ROW
+                    WHEN OLD.id = ${FIRST_BEAT_ID}
+                    BEGIN
+                        SELECT RAISE(FAIL, 'Modification not allowed for the first beat.');
+                    END;`,
+            ).run();
+            db.prepare(
+                `
+                    CREATE TRIGGER prevent_beat_deletion
+                    BEFORE DELETE ON "${Constants.BeatsTableName}"
+                    FOR EACH ROW
+                    WHEN OLD.id = ${FIRST_BEAT_ID}
+                    BEGIN
+                        SELECT RAISE(FAIL, 'Deletion not allowed for the first beat.');
+                    END;`,
+            ).run();
+
             // Add 16 default beats
             for (let x = 0; x < 16; x++) {
                 db.prepare(
-                    `INSERT INTO ${Constants.BeatsTableName} ("duration", "position") VALUES (0.5, ${x})`,
+                    `INSERT INTO ${Constants.BeatsTableName} ("duration", "position") VALUES (0.5, ${x + 1})`,
                 ).run();
             }
         } catch (error) {
             throw new Error(
-                `Failed to create field properties table: ${error}`,
+                `Failed to create ${Constants.BeatsTableName} table: ${error}`,
             );
         }
         createUndoTriggers(db, Constants.BeatsTableName);
@@ -91,7 +118,27 @@ export default class v6 extends v5 {
             // Create page 1 with 0 counts. Page 1 should always exist
             // It is safe to assume there are no marchers in the database at this point, so MarcherPages do not need to be created
             db.prepare(
-                `INSERT INTO ${Constants.PageTableName} ("start_beat", "id") VALUES (1, 0)`,
+                `INSERT INTO ${Constants.PageTableName} ("start_beat", "id") VALUES (${FIRST_BEAT_ID}, ${FIRST_PAGE_ID})`,
+            ).run();
+
+            db.prepare(
+                `CREATE TRIGGER prevent_page_modification
+                    BEFORE UPDATE ON "${Constants.PageTableName}"
+                    FOR EACH ROW
+                    WHEN OLD.id = ${FIRST_PAGE_ID}
+                    BEGIN
+                        SELECT RAISE(FAIL, 'Modification not allowed for the first page.');
+                    END;`,
+            ).run();
+            db.prepare(
+                `
+                    CREATE TRIGGER prevent_page_deletion
+                    BEFORE DELETE ON "${Constants.PageTableName}"
+                    FOR EACH ROW
+                    WHEN OLD.id = ${FIRST_PAGE_ID}
+                    BEGIN
+                        SELECT RAISE(FAIL, 'Deletion not allowed for the first page.');
+                    END;`,
             ).run();
 
             // Make the undo triggers after so the creation of the first page cannot be undone
@@ -99,7 +146,7 @@ export default class v6 extends v5 {
 
             return { success: true, data: Constants.PageTableName };
         } catch (error: any) {
-            throw new Error(`Failed to create page table: ${error}`);
+            throw new Error(`Failed to create  table: ${error}`);
         }
     }
 
@@ -124,7 +171,9 @@ export default class v6 extends v5 {
                     );
                 `);
         } catch (error) {
-            throw new Error(`Failed to create Measures table: ${error}`);
+            throw new Error(
+                `Failed to create ${Constants.MeasureTableName} table: ${error}`,
+            );
         }
         createUndoTriggers(db, Constants.MeasureTableName);
     }

@@ -179,6 +179,14 @@ export function shiftBeats({
             })
             // Reverse the order of the beats to be from last to first to prevent unique constraint violations
             .sort((a, b) => b.position - a.position);
+        if (beatsToShift.some((beat) => beat.position < 0)) {
+            output = {
+                success: false,
+                error: { message: "Cannot shift beats below 0" },
+                data: [],
+            };
+            return output;
+        }
         const updatedBeatsResponse = DbActions.updateItems<
             DatabaseBeat,
             InternalModifiedBeat
@@ -232,23 +240,23 @@ export function flattenOrder({ db }: { db: Database.Database }): void {
         }
 
         // Sort beats by `position`
-        const sortedSpms = allResponse.data.sort(
-            (a, b) => a.position - b.position,
-        );
+        const sortedBeats = allResponse.data
+            .sort((a, b) => a.position - b.position)
+            .filter((beat) => beat.id !== FIRST_BEAT_ID); // Exclude the first beat
 
         // Create array of modified SPMs with incremental position values
         const modifiedBeats: InternalModifiedBeat[] = [];
-        sortedSpms.forEach((spm, index) => {
+        sortedBeats.forEach((beat, index) => {
             const newIndex = index;
-            if (spm.position !== newIndex) {
+            if (beat.position !== newIndex) {
                 modifiedBeats.push({
-                    id: spm.id,
+                    id: beat.id,
                     position: index + 1,
                 });
             }
         });
 
-        // Update all SPMs with new position values
+        // Update all Beats with new position values
         const response = DbActions.updateItems<
             DatabaseBeat,
             InternalModifiedBeat
@@ -281,7 +289,6 @@ export function createBeats(args: {
     startingPosition?: number;
     db: Database.Database;
 }): DbActions.DatabaseResponse<DatabaseBeat[]> {
-    const createdBeats: DatabaseBeat[] = [];
     let output: DbActions.DatabaseResponse<DatabaseBeat[]>;
     let actionWasPerformed = false;
 
@@ -327,10 +334,7 @@ export function createBeats(args: {
                 newBeatsResponse.error?.message || "Unable to created beats",
             );
         }
-        output = {
-            success: true,
-            data: createdBeats,
-        };
+        output = newBeatsResponse;
     } catch (error: any) {
         console.error("Error creating beats. Rolling back changes.", error);
         if (actionWasPerformed) {
@@ -365,15 +369,16 @@ export function updateBeats({
     db: Database.Database;
     modifiedBeats: ModifiedBeatArgs[];
 }): DbActions.DatabaseResponse<DatabaseBeat[]> {
-    console.log("\n=========== start updateBeats ===========");
-    const output = DbActions.updateItems<DatabaseBeat, ModifiedBeatArgs>({
+    // Ensure the first beat is not modified
+    modifiedBeats = modifiedBeats.filter((beat) => beat.id !== FIRST_BEAT_ID);
+
+    return DbActions.updateItems<DatabaseBeat, ModifiedBeatArgs>({
         db,
         tableName: Constants.BeatsTableName,
         items: modifiedBeats,
         useNextUndoGroup: true,
+        functionName: "updateBeats",
     });
-    console.log("=========== end updateBeats ===========\n");
-    return output;
 }
 
 /**
@@ -396,6 +401,8 @@ export function deleteBeats({
     History.incrementUndoGroup(db);
 
     try {
+        // Ensure the first beat is not deleted
+        beatIds.delete(FIRST_BEAT_ID);
         output = DbActions.deleteItems<DatabaseBeat>({
             db,
             tableName: Constants.BeatsTableName,
