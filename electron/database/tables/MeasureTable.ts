@@ -198,6 +198,9 @@ export function getMeasuresByBeatId({
     }
 }
 
+/** A type that stores a beat with the index that it occurs in a list with all beats */
+type BeatWithIndex = Beat & { index: number };
+
 /**
  * Converts an array of `DatabaseMeasure` and `Beat` objects into an array of `Measure` objects.
  *
@@ -212,39 +215,47 @@ export const fromDatabaseMeasures = (args: {
     databaseMeasures: DatabaseMeasure[];
     allBeats: Beat[];
 }): Measure[] => {
-    const createdMeasures: Measure[] = [];
     const sortedBeats = args.allBeats.sort(compareBeats);
     let currentMeasureNumber = 1;
-    /** A map with starting beat ID as key and the database measure as value */
-    const beatMeasureMap = new Map<number, DatabaseMeasure>(
-        args.databaseMeasures.map((measure) => {
-            return [measure.start_beat, measure];
-        }),
+    const beatMap = new Map<number, BeatWithIndex>(
+        sortedBeats.map((beat, i) => [beat.id, { ...beat, index: i }]),
     );
-
-    let currentBeats: Beat[] = [];
-    let currentMeasure: DatabaseMeasure | null = null;
-    for (const beat of sortedBeats) {
-        // Get the measure that starts with this beat, if it exists
-        const measureWithThisStartingBeat = beatMeasureMap.get(beat.id);
-        if (measureWithThisStartingBeat) {
-            // If the beat is the start of a new measure, add the previous measure to the list and start a new one
-            if (currentMeasure) {
-                createdMeasures.push({
-                    id: currentMeasure.id,
-                    startBeat: beat,
-                    number: currentMeasureNumber,
-                    rehearsalMark: currentMeasure.rehearsal_mark,
-                    notes: currentMeasure.notes,
-                    duration: beatsDuration(currentBeats),
-                    counts: currentBeats.length,
-                    beats: currentBeats,
-                });
-            }
-            currentMeasure = measureWithThisStartingBeat;
+    const sortedDbMeasures = args.databaseMeasures.sort((a, b) => {
+        const aBeat = beatMap.get(a.start_beat);
+        const bBeat = beatMap.get(b.start_beat);
+        if (!aBeat || !bBeat) {
+            console.log("aBeat", a.start_beat, aBeat);
+            console.log("bBeat", b.start_beat, bBeat);
+            throw new Error(
+                `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
+            );
         }
-
-        currentBeats.push(beat);
-    }
-    return createdMeasures.sort((a, b) => a.number - b.number);
+        return aBeat.position - bBeat.position;
+    });
+    const createdMeasures = sortedDbMeasures.map((measure, i) => {
+        const startBeat = beatMap.get(measure.start_beat);
+        if (!startBeat) {
+            throw new Error(`Beat not found: ${measure.start_beat}`);
+        }
+        const nextMeasure = sortedDbMeasures[i + 1] || null;
+        const nextBeat = nextMeasure
+            ? beatMap.get(nextMeasure.start_beat)
+            : null;
+        if (!nextBeat && nextMeasure) {
+            throw new Error(`Beat not found: ${nextMeasure.start_beat}`);
+        }
+        const beats = nextBeat
+            ? sortedBeats.slice(startBeat.index, nextBeat.index)
+            : sortedBeats.slice(startBeat.index);
+        return {
+            ...measure,
+            startBeat: startBeat,
+            beats,
+            number: currentMeasureNumber++,
+            rehearsalMark: measure.rehearsal_mark,
+            duration: beatsDuration(beats),
+            counts: beats.length,
+        } satisfies Measure;
+    });
+    return createdMeasures;
 };
