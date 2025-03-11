@@ -494,15 +494,36 @@ export async function importFieldPropertiesImage() {
         .showOpenDialog(win, {
             filters: [
                 {
-                    name: "Image file",
-                    extensions: [
-                        ".jpg",
-                        ".jpeg",
-                        ".png",
-                        ".gif",
-                        ".bmp",
-                        ".webp",
-                    ],
+                    name: "All Images",
+                    extensions: ["jpg", "jpeg", "png", "bmp", "gif", "webp"],
+                },
+                {
+                    name: "JPEG Image",
+                    extensions: ["jpg", "jpeg"],
+                },
+                {
+                    name: "PNG Image",
+                    extensions: ["png"],
+                },
+                {
+                    name: "GIF Image",
+                    extensions: ["gif"],
+                },
+                {
+                    name: "WEBP Image",
+                    extensions: ["webp"],
+                },
+                {
+                    name: "GIF Image",
+                    extensions: ["gif"],
+                },
+                {
+                    name: "BMP Image",
+                    extensions: ["bmp"],
+                },
+                {
+                    name: "All Files",
+                    extensions: ["*"],
                 },
             ],
         })
