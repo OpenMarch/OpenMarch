@@ -14,7 +14,9 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                 const path = await window.electron.databaseGetPath();
                 setDbPath(path);
             } catch (error) {
-                setDbPath("Failed to fetch dbPath");
+                setDbPath(
+                    "Failed to fetch .dots file path! Please reach out to support",
+                );
                 console.error("Error fetching database path:", error);
             }
         };
