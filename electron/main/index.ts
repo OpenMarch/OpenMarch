@@ -112,45 +112,57 @@ async function createWindow(title?: string) {
 }
 
 app.whenReady().then(async () => {
-    app.setName("OpenMarch");
-    console.log("NODE:", process.versions.node);
+    try {
+        app.setName("OpenMarch");
+        console.log("NODE:", process.versions.node);
 
-    Menu.setApplicationMenu(applicationMenu);
-    const previousPath = store.get("databasePath") as string;
-    if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
-    DatabaseServices.initHandlers();
+        Menu.setApplicationMenu(applicationMenu);
+        const previousPath = store.get("databasePath") as string;
+        if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
+        // Database handlers
+        console.log("db_path: " + DatabaseServices.getDbPath());
 
-    // Database handlers
-    console.log("db_path: " + DatabaseServices.getDbPath());
+        DatabaseServices.initHandlers();
 
-    // File IO handlers
-    ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
-    ipcMain.handle("database:getPath", () => {
-        return DatabaseServices.getDbPath();
-    });
-    ipcMain.handle("database:save", async () => saveFile());
-    ipcMain.handle("database:load", async () => loadDatabaseFile());
-    ipcMain.handle("database:create", async () => newFile());
-    ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
-    ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
-    ipcMain.handle("audio:insert", async () => insertAudioFile());
-    ipcMain.handle("measure:insert", async () =>
-        launchImportMusicXmlFileDialogue(),
-    );
-    ipcMain.handle("field_properties:export", async () =>
-        exportFieldPropertiesFile(),
-    );
-    ipcMain.handle("field_properties:import", async () =>
-        importFieldPropertiesFile(),
-    );
-    ipcMain.handle("field_properties:import_image", async () =>
-        importFieldPropertiesImage(),
-    );
+        // File IO handlers
+        ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
+        ipcMain.handle("database:getPath", () => {
+            return DatabaseServices.getDbPath();
+        });
+        ipcMain.handle("database:save", async () => saveFile());
+        ipcMain.handle("database:load", async () => loadDatabaseFile());
+        ipcMain.handle("database:create", async () => newFile());
+        ipcMain.handle("history:undo", async () =>
+            executeHistoryAction("undo"),
+        );
+        ipcMain.handle("history:redo", async () =>
+            executeHistoryAction("redo"),
+        );
+        ipcMain.handle("audio:insert", async () => insertAudioFile());
+        ipcMain.handle("measure:insert", async () =>
+            launchImportMusicXmlFileDialogue(),
+        );
+        ipcMain.handle("field_properties:export", async () =>
+            exportFieldPropertiesFile(),
+        );
+        ipcMain.handle("field_properties:import", async () =>
+            importFieldPropertiesFile(),
+        );
+        ipcMain.handle("field_properties:import_image", async () =>
+            importFieldPropertiesImage(),
+        );
 
-    // Getters
-    initGetters();
+        // Getters
+        initGetters();
 
-    await createWindow("OpenMarch - " + store.get("databasePath"));
+        await createWindow("OpenMarch - " + store.get("databasePath"));
+    } catch (error) {
+        console.error(error);
+        dialog.showErrorBox(
+            "Error Starting OpenMarch",
+            (error as Error).message,
+        );
+    }
 });
 
 function initGetters() {
@@ -494,15 +506,36 @@ export async function importFieldPropertiesImage() {
         .showOpenDialog(win, {
             filters: [
                 {
-                    name: "Image file",
-                    extensions: [
-                        ".jpg",
-                        ".jpeg",
-                        ".png",
-                        ".gif",
-                        ".bmp",
-                        ".webp",
-                    ],
+                    name: "All Images",
+                    extensions: ["jpg", "jpeg", "png", "bmp", "gif", "webp"],
+                },
+                {
+                    name: "JPEG Image",
+                    extensions: ["jpg", "jpeg"],
+                },
+                {
+                    name: "PNG Image",
+                    extensions: ["png"],
+                },
+                {
+                    name: "GIF Image",
+                    extensions: ["gif"],
+                },
+                {
+                    name: "WEBP Image",
+                    extensions: ["webp"],
+                },
+                {
+                    name: "GIF Image",
+                    extensions: ["gif"],
+                },
+                {
+                    name: "BMP Image",
+                    extensions: ["bmp"],
+                },
+                {
+                    name: "All Files",
+                    extensions: ["*"],
                 },
             ],
         })
@@ -679,56 +712,67 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  * @param isNewFile True if this is a new file, false if it is an existing file
  */
 function setActiveDb(path: string, isNewFile = false) {
-    if (!fs.existsSync(path) && !isNewFile) {
-        store.delete("databasePath");
-        console.error("Database file does not exist:", path);
-        return;
-    }
-
-    DatabaseServices.setDbPath(path, isNewFile);
-    win?.setTitle("OpenMarch - " + path);
-
-    const migrator = new CurrentDatabase(DatabaseServices.connect);
-    const db = DatabaseServices.connect();
-    if (!db) {
-        console.error("Error connecting to database");
-        return;
-    }
-    if (!isNewFile) {
-        console.log("Checking database version to see if migration is needed");
-        CurrentDatabase.getVersion(db);
-        // Create backup before migration
-        if (CurrentDatabase.getVersion(db) !== migrator.version) {
-            const backupDir = join(app.getPath("userData"), "backups");
-            if (!fs.existsSync(backupDir)) {
-                fs.mkdirSync(backupDir);
-            }
-            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-            const originalName = path.split(/[\\/]/).pop();
-            const backupPath = join(
-                backupDir,
-                `backup_${timestamp}_${originalName}`,
-            );
-            console.log("Creating backup of database in " + backupPath);
-            fs.copyFileSync(path, backupPath);
-
-            console.log("Deleting backups older than 30 days");
-            // Delete backups older than 30 days
-            const files = fs.readdirSync(backupDir);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-            files.forEach((file) => {
-                const filePath = join(backupDir, file);
-                const stats = fs.statSync(filePath);
-                if (stats.birthtime < thirtyDaysAgo) {
-                    fs.unlinkSync(filePath);
-                }
-            });
+    try {
+        if (!fs.existsSync(path) && !isNewFile) {
+            store.delete("databasePath");
+            console.error("Database file does not exist:", path);
+            return;
         }
-        migrator.migrateToThisVersion();
-    } else console.log(`Creating new database at ${path}`);
 
-    !isNewFile && win?.webContents.reload();
-    store.set("databasePath", path); // Save current db path
+        DatabaseServices.setDbPath(path, isNewFile);
+        win?.setTitle("OpenMarch - " + path);
+
+        const migrator = new CurrentDatabase(DatabaseServices.connect);
+        const db = DatabaseServices.connect();
+        if (!db) {
+            console.error("Error connecting to database");
+            return;
+        }
+        if (!isNewFile) {
+            console.log(
+                "Checking database version to see if migration is needed",
+            );
+            CurrentDatabase.getVersion(db);
+            // Create backup before migration
+            if (CurrentDatabase.getVersion(db) !== migrator.version) {
+                const backupDir = join(app.getPath("userData"), "backups");
+                if (!fs.existsSync(backupDir)) {
+                    fs.mkdirSync(backupDir);
+                }
+                const timestamp = new Date()
+                    .toISOString()
+                    .replace(/[:.]/g, "-");
+                const originalName = path.split(/[\\/]/).pop();
+                const backupPath = join(
+                    backupDir,
+                    `backup_${timestamp}_${originalName}`,
+                );
+                console.log("Creating backup of database in " + backupPath);
+                fs.copyFileSync(path, backupPath);
+
+                console.log("Deleting backups older than 30 days");
+                // Delete backups older than 30 days
+                const files = fs.readdirSync(backupDir);
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                files.forEach((file) => {
+                    const filePath = join(backupDir, file);
+                    const stats = fs.statSync(filePath);
+                    if (stats.birthtime < thirtyDaysAgo) {
+                        fs.unlinkSync(filePath);
+                    }
+                });
+            }
+            migrator.migrateToThisVersion();
+        } else console.log(`Creating new database at ${path}`);
+
+        !isNewFile && win?.webContents.reload();
+        store.set("databasePath", path); // Save current db path
+    } catch (error) {
+        store.delete("databasePath"); // Reset database path
+        DatabaseServices.setDbPath("", false);
+        dialog.showErrorBox("Error Loading Database", (error as Error).message);
+        win?.webContents.reload();
+    }
 }
