@@ -112,45 +112,57 @@ async function createWindow(title?: string) {
 }
 
 app.whenReady().then(async () => {
-    app.setName("OpenMarch");
-    console.log("NODE:", process.versions.node);
+    try {
+        app.setName("OpenMarch");
+        console.log("NODE:", process.versions.node);
 
-    Menu.setApplicationMenu(applicationMenu);
-    const previousPath = store.get("databasePath") as string;
-    if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
-    // Database handlers
-    console.log("db_path: " + DatabaseServices.getDbPath());
+        Menu.setApplicationMenu(applicationMenu);
+        const previousPath = store.get("databasePath") as string;
+        if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
+        // Database handlers
+        console.log("db_path: " + DatabaseServices.getDbPath());
 
-    DatabaseServices.initHandlers();
+        DatabaseServices.initHandlers();
 
-    // File IO handlers
-    ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
-    ipcMain.handle("database:getPath", () => {
-        return DatabaseServices.getDbPath();
-    });
-    ipcMain.handle("database:save", async () => saveFile());
-    ipcMain.handle("database:load", async () => loadDatabaseFile());
-    ipcMain.handle("database:create", async () => newFile());
-    ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
-    ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
-    ipcMain.handle("audio:insert", async () => insertAudioFile());
-    ipcMain.handle("measure:insert", async () =>
-        launchImportMusicXmlFileDialogue(),
-    );
-    ipcMain.handle("field_properties:export", async () =>
-        exportFieldPropertiesFile(),
-    );
-    ipcMain.handle("field_properties:import", async () =>
-        importFieldPropertiesFile(),
-    );
-    ipcMain.handle("field_properties:import_image", async () =>
-        importFieldPropertiesImage(),
-    );
+        // File IO handlers
+        ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
+        ipcMain.handle("database:getPath", () => {
+            return DatabaseServices.getDbPath();
+        });
+        ipcMain.handle("database:save", async () => saveFile());
+        ipcMain.handle("database:load", async () => loadDatabaseFile());
+        ipcMain.handle("database:create", async () => newFile());
+        ipcMain.handle("history:undo", async () =>
+            executeHistoryAction("undo"),
+        );
+        ipcMain.handle("history:redo", async () =>
+            executeHistoryAction("redo"),
+        );
+        ipcMain.handle("audio:insert", async () => insertAudioFile());
+        ipcMain.handle("measure:insert", async () =>
+            launchImportMusicXmlFileDialogue(),
+        );
+        ipcMain.handle("field_properties:export", async () =>
+            exportFieldPropertiesFile(),
+        );
+        ipcMain.handle("field_properties:import", async () =>
+            importFieldPropertiesFile(),
+        );
+        ipcMain.handle("field_properties:import_image", async () =>
+            importFieldPropertiesImage(),
+        );
 
-    // Getters
-    initGetters();
+        // Getters
+        initGetters();
 
-    await createWindow("OpenMarch - " + store.get("databasePath"));
+        await createWindow("OpenMarch - " + store.get("databasePath"));
+    } catch (error) {
+        console.error(error);
+        dialog.showErrorBox(
+            "Error Starting OpenMarch",
+            (error as Error).message,
+        );
+    }
 });
 
 function initGetters() {
