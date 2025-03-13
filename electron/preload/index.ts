@@ -8,8 +8,8 @@ import {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
-import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
+import { TimingObjects } from "@/stores/TimingObjectsStore";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
@@ -23,7 +23,11 @@ import {
     NewMeasureArgs,
     ModifiedMeasureArgs,
 } from "electron/database/tables/MeasureTable";
-import { DatabasePage } from "electron/database/tables/PageTable";
+import {
+    DatabasePage,
+    ModifiedPageArgs,
+    NewPageArgs,
+} from "electron/database/tables/PageTable";
 import {
     ModifiedShapePageMarcherArgs,
     NewShapePageMarcherArgs,
@@ -250,11 +254,27 @@ const APP_API = {
             DatabaseResponse<DatabaseMarcher[]>
         >,
 
+    // MarcherPage
+    getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
+        ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
+            DatabaseResponse<MarcherPage[]>
+        >,
+    getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
+        ipcRenderer.invoke("marcher_page:get", id) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
+    updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
+        ipcRenderer.invoke("marcher_page:update", args) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
+
+    // **** Timing Objects ****
+    getTimingObjects: () =>
+        ipcRenderer.invoke("timing:getAll") as Promise<
+            DatabaseResponse<TimingObjects>
+        >,
+
     // Page
-    /**
-     * @returns A serialized array of all pages in the database.
-     * This means you must call `new Page(page)` on each page or else the instance methods will not work.
-     */
     getPages: () =>
         ipcRenderer.invoke("page:getAll") as Promise<
             DatabaseResponse<DatabasePage[]>
@@ -277,20 +297,6 @@ const APP_API = {
     deletePages: (pageIds: Set<number>) =>
         ipcRenderer.invoke("page:delete", pageIds) as Promise<
             DatabaseResponse<DatabasePage[]>
-        >,
-
-    // MarcherPage
-    getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
-        ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            DatabaseResponse<MarcherPage[]>
-        >,
-    getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
-        ipcRenderer.invoke("marcher_page:get", id) as Promise<
-            DatabaseResponse<MarcherPage>
-        >,
-    updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
-        ipcRenderer.invoke("marcher_page:update", args) as Promise<
-            DatabaseResponse<MarcherPage>
         >,
 
     // Beat

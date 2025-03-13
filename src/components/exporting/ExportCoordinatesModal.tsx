@@ -5,7 +5,6 @@ import MarcherCoordinateSheet, {
 import ReactDOMServer from "react-dom/server";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import { usePageStore } from "@/stores/PageStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
     Dialog,
@@ -22,6 +21,7 @@ import { Checkbox } from "../ui/Checkbox";
 import * as Form from "@radix-ui/react-form";
 import { Input } from "../ui/Input";
 import { toast } from "react-toastify";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 function ExportModalContents() {
     const [isTerse, setIsTerse] = useState(false);
@@ -30,7 +30,7 @@ function ExportModalContents() {
     const [roundingDenominator, setRoundingDenominator] = useState(4);
     const [organizeBySection, setOrganizeBySection] = useState(false);
     const { marchers } = useMarcherStore()!;
-    const { pages } = usePageStore()!;
+    const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { fieldProperties } = useFieldProperties()!;
     const [isLoading, setIsLoading] = useState(false);

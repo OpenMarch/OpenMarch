@@ -57,7 +57,7 @@ export const mockMarchers: Marcher[] = [
 ] as const;
 
 export const mockPages: Page[] = [
-    new Page({
+    {
         id: 1,
         name: "1",
         counts: 16,
@@ -65,8 +65,15 @@ export const mockPages: Page[] = [
         notes: "This is the first page",
         nextPageId: 2,
         previousPageId: null,
-    }),
-    new Page({
+        isSubset: false,
+        duration: 8,
+        beats: [],
+        measures: [],
+        measureBeatToStartOn: 1,
+        measureBeatToEndOn: 0,
+        timestamp: 0,
+    } as const,
+    {
         id: 2,
         name: "2",
         counts: 8,
@@ -74,16 +81,30 @@ export const mockPages: Page[] = [
         notes: "This is the second page",
         nextPageId: 3,
         previousPageId: 1,
-    }),
-    new Page({
+        isSubset: false,
+        duration: 4,
+        beats: [],
+        measures: [],
+        measureBeatToStartOn: 1,
+        measureBeatToEndOn: 0,
+        timestamp: 8,
+    } as const,
+    {
         id: 3,
         name: "3",
         counts: 16,
         order: 3,
-        notes: undefined,
+        notes: null,
         nextPageId: null,
         previousPageId: 2,
-    }),
+        isSubset: false,
+        duration: 8,
+        beats: [],
+        measures: [],
+        measureBeatToStartOn: 1,
+        measureBeatToEndOn: 0,
+        timestamp: 12,
+    } as const,
 ] as const;
 
 export const mockMarcherPages: MarcherPage[] = [

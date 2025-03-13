@@ -1,15 +1,13 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useMeasureStore } from "@/stores/MeasureStore";
-import { usePageStore } from "@/stores/PageStore";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import React, { useEffect, useRef } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures } = useMeasureStore()!;
-    const { pages } = usePageStore()!;
+    const { measures, pages } = useTimingObjectsStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
@@ -188,13 +186,11 @@ export default function TimelineContainer() {
                     id="counts measures"
                 >
                     {measures.map((measure, index) => {
-                        const countsToUse = measure.getBigBeats();
+                        const countsToUse = measure.counts;
                         const width = measure.duration * pxPerSecond;
                         const metadata = `m${measure.number} - ${
                             measure.duration
-                        } seconds - ${measure.getBigBeats()} counts - time signature: ${measure.timeSignature.toString()} - tempo: ${
-                            measure.tempo
-                        }bpm - rehearsalMark ${measure.rehearsalMark}`;
+                        } seconds - ${measure.counts} counts - rehearsalMark ${measure.rehearsalMark}`;
                         return (
                             <div
                                 key={index}

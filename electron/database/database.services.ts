@@ -6,19 +6,22 @@ import * as fs from "fs";
 import * as History from "./database.history";
 import * as Utilities from "./utilities";
 import FieldProperties from "../../src/global/classes/FieldProperties";
-import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
+import AudioFile, {
+    ModifiedAudioFileArgs,
+} from "../../src/global/classes/AudioFile";
 import * as MarcherTable from "./tables/MarcherTable";
 import * as PageTable from "./tables/PageTable";
 import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
-import { DatabaseMarcher } from "@/global/classes/Marcher";
-import { ModifiedPageArgs } from "@/global/classes/Page";
+import { DatabaseMarcher } from "../../src/global/classes/Marcher";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
 import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
+import { TimingObjects } from "../../src/stores/TimingObjectsStore";
+import { generateTimingObjects } from "./ApiUtils";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -165,26 +168,6 @@ export function initHandlers() {
         }),
     );
 
-    // Page
-    ipcMain.handle("page:getAll", async () =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages),
-    );
-    ipcMain.handle("page:insert", async (_, args) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
-            newPages: args,
-        }),
-    );
-    ipcMain.handle("page:update", async (_, pages: ModifiedPageArgs[]) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
-            modifiedPages: pages,
-        }),
-    );
-    ipcMain.handle("page:delete", async (_, pageIds) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
-            pageIds,
-        }),
-    );
-
     // MarcherPage
     ipcMain.handle("marcher_page:getAll", async (_, args) =>
         connectWrapper(MarcherPageTable.getMarcherPages, args),
@@ -195,6 +178,34 @@ export function initHandlers() {
     ipcMain.handle("marcher_page:update", async (_, args) =>
         connectWrapper(MarcherPageTable.updateMarcherPages, {
             marcherPageUpdates: args,
+        }),
+    );
+
+    // **** Timing Objects ****
+
+    ipcMain.handle("time:getAll", async () =>
+        connectWrapper<TimingObjects>(generateTimingObjects),
+    );
+
+    // Page
+    ipcMain.handle("page:getAll", async () =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages),
+    );
+    ipcMain.handle("page:insert", async (_, args) =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
+            newPages: args,
+        }),
+    );
+    ipcMain.handle(
+        "page:update",
+        async (_, pages: PageTable.ModifiedPageArgs[]) =>
+            connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
+                modifiedPages: pages,
+            }),
+    );
+    ipcMain.handle("page:delete", async (_, pageIds) =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
+            pageIds,
         }),
     );
 

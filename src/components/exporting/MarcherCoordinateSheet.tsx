@@ -1,7 +1,6 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import React, { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
-import { usePageStore } from "@/stores/PageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -10,6 +9,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
 import TimeSignature from "@/global/classes/TimeSignature";
 import BeatUnit from "@/global/classes/BeatUnit";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 // import "./MarcherCoordinateSheet.css";
 
 // TODO, this is broken right now, fix this
@@ -48,7 +48,7 @@ export default function MarcherCoordinateSheet({
     useXY = false,
 }: MarcherCoordinateSheetProps) {
     const { marcherPages } = useMarcherPageStore()!;
-    const { pages } = usePageStore()!;
+    const { pages } = useTimingObjectsStore()!;
     const { fieldProperties } = useFieldProperties()!;
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
@@ -77,30 +77,30 @@ export default function MarcherCoordinateSheet({
                 }),
             );
             const pages = [
-                new Page({
+                {
                     id: 1,
                     name: "1",
                     counts: 8,
                     order: 1,
                     nextPageId: 2,
                     previousPageId: null,
-                }),
-                new Page({
+                } satisfies Partial<Page>,
+                {
                     id: 2,
                     name: "2",
                     counts: 15,
                     order: 2,
                     nextPageId: 3,
                     previousPageId: 1,
-                }),
-                new Page({
+                } satisfies Partial<Page>,
+                {
                     id: 3,
                     name: "2A",
                     counts: 5,
                     order: 3,
                     nextPageId: null,
                     previousPageId: 2,
-                }),
+                } satisfies Partial<Page>,
             ];
             const measures = Array.from(
                 { length: 8 },
