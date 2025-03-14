@@ -20,6 +20,26 @@
         notarize: true,
         category: "public.app-category.graphics-design",
     },
+    dmg: {
+        background: "./build/installerBackground.png",
+        window: {
+            width: 640,
+            height: 400,
+        },
+        icon: "./build/installerIcon.icns",
+        contents: [
+            {
+                x: 190,
+                y: 200,
+            },
+            {
+                x: 450,
+                y: 200,
+                type: "link",
+                path: "/Applications",
+            },
+        ],
+    },
     win: {
         target: "nsis",
         artifactName: "${productName}_${buildVersion}.${ext}",
