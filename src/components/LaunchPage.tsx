@@ -33,6 +33,10 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                     OpenMarch is still in development. By using it, you accept
                     there may be potential glitches and bugs.
                 </WarningNote>
+                <WarningNote>
+                    You also agree to the collecting of anonymous error logs and
+                    crash reports.
+                </WarningNote>
             </div>
             <img
                 src="/placeholder.jpg"

@@ -24,8 +24,12 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "./components/titlebar/TitleBar";
 import VersionChecker from "./components/ui/VersionCheck";
+import { init } from "@sentry/electron/renderer";
 
 function App() {
+    init({
+        dsn: "https://86f3d9182d9c458f846a0b726cb6bfc1@app.glitchtip.com/10601",
+    });
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
 
     useEffect(() => {

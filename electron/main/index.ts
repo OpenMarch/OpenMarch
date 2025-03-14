@@ -9,6 +9,8 @@ import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
 import AudioFile from "@/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
+import { init, captureException } from "@sentry/electron/main";
+
 // const xml2abc = require('../xml2abc-js/xml2abc.js')
 // const xml2abc = require('./xml2abc.js')
 // const $ = require('jquery');
@@ -33,6 +35,9 @@ import {
 //
 
 const store = new Store();
+init({
+    dsn: "https://86f3d9182d9c458f846a0b726cb6bfc1@app.glitchtip.com/10601",
+});
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
 process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
@@ -112,57 +117,45 @@ async function createWindow(title?: string) {
 }
 
 app.whenReady().then(async () => {
-    try {
-        app.setName("OpenMarch");
-        console.log("NODE:", process.versions.node);
+    app.setName("OpenMarch");
+    console.log("NODE:", process.versions.node);
 
-        Menu.setApplicationMenu(applicationMenu);
-        const previousPath = store.get("databasePath") as string;
-        if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
-        // Database handlers
-        console.log("db_path: " + DatabaseServices.getDbPath());
+    Menu.setApplicationMenu(applicationMenu);
+    const previousPath = store.get("databasePath") as string;
+    if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
+    // Database handlers
+    console.log("db_path: " + DatabaseServices.getDbPath());
 
-        DatabaseServices.initHandlers();
+    DatabaseServices.initHandlers();
 
-        // File IO handlers
-        ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
-        ipcMain.handle("database:getPath", () => {
-            return DatabaseServices.getDbPath();
-        });
-        ipcMain.handle("database:save", async () => saveFile());
-        ipcMain.handle("database:load", async () => loadDatabaseFile());
-        ipcMain.handle("database:create", async () => newFile());
-        ipcMain.handle("history:undo", async () =>
-            executeHistoryAction("undo"),
-        );
-        ipcMain.handle("history:redo", async () =>
-            executeHistoryAction("redo"),
-        );
-        ipcMain.handle("audio:insert", async () => insertAudioFile());
-        ipcMain.handle("measure:insert", async () =>
-            launchImportMusicXmlFileDialogue(),
-        );
-        ipcMain.handle("field_properties:export", async () =>
-            exportFieldPropertiesFile(),
-        );
-        ipcMain.handle("field_properties:import", async () =>
-            importFieldPropertiesFile(),
-        );
-        ipcMain.handle("field_properties:import_image", async () =>
-            importFieldPropertiesImage(),
-        );
+    // File IO handlers
+    ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
+    ipcMain.handle("database:getPath", () => {
+        return DatabaseServices.getDbPath();
+    });
+    ipcMain.handle("database:save", async () => saveFile());
+    ipcMain.handle("database:load", async () => loadDatabaseFile());
+    ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
+    ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
+    ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle("measure:insert", async () =>
+        launchImportMusicXmlFileDialogue(),
+    );
+    ipcMain.handle("field_properties:export", async () =>
+        exportFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import", async () =>
+        importFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import_image", async () =>
+        importFieldPropertiesImage(),
+    );
 
-        // Getters
-        initGetters();
+    // Getters
+    initGetters();
 
-        await createWindow("OpenMarch - " + store.get("databasePath"));
-    } catch (error) {
-        console.error(error);
-        dialog.showErrorBox(
-            "Error Starting OpenMarch",
-            (error as Error).message,
-        );
-    }
+    await createWindow("OpenMarch - " + store.get("databasePath"));
 });
 
 function initGetters() {
@@ -770,9 +763,11 @@ function setActiveDb(path: string, isNewFile = false) {
         !isNewFile && win?.webContents.reload();
         store.set("databasePath", path); // Save current db path
     } catch (error) {
+        captureException(error);
         store.delete("databasePath"); // Reset database path
         DatabaseServices.setDbPath("", false);
         dialog.showErrorBox("Error Loading Database", (error as Error).message);
         win?.webContents.reload();
+        throw error;
     }
 }
