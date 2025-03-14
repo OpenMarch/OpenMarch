@@ -22,7 +22,8 @@ import {
     updateFieldProperties,
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
-
+const { updateElectronApp } = require("update-electron-app");
+updateElectronApp();
 // The built directory structure
 //
 // ├─┬ dist-electron

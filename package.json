@@ -2,7 +2,7 @@
     "name": "openmarch",
     "productName": "OpenMarch",
     "description": "Free drill-writing software for the marching arts",
-    "version": "0.0.7",
+    "version": "0.0.6-t",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
     "license": "GPL-3.0",
@@ -83,6 +83,7 @@
         "rimraf": "^5.0.10",
         "sonner": "^1.7.4",
         "tailwind-merge": "^2.6.0",
+        "update-electron-app": "^3.1.1",
         "xml2abc": "file:external-packages/xml2abc.tgz",
         "zustand": "^4.5.6"
     },
