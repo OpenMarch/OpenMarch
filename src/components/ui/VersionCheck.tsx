@@ -5,7 +5,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../ui/Dialog";
-import { BowlSteam } from "@phosphor-icons/react";
 import { version as currentVersion } from "../../../package.json";
 import { Button } from "./Button";
 import CustomMarkdown from "../CustomMarkdown";
@@ -46,7 +45,9 @@ export default function VersionChecker() {
                     if (asset.name.endsWith(".exe")) {
                         assetUrls.windows = asset.browser_download_url;
                     } else if (asset.name.endsWith(".dmg")) {
-                        assetUrls.mac = asset.browser_download_url;
+                        if (asset.name.includes("x64"))
+                            assetUrls.macIntel = asset.browser_download_url;
+                        else assetUrls.macArm = asset.browser_download_url;
                     } else if (
                         asset.name.endsWith(".AppImage") ||
                         asset.name.endsWith(".tar.gz")
@@ -69,7 +70,11 @@ export default function VersionChecker() {
     }, [fetchLatestVersion]);
 
     useEffect(() => {
-        if (isUpdateAvailable) {
+        if (
+            latestVersion &&
+            isUpdateAvailable &&
+            localStorage.getItem("skippedVersion") !== latestVersion
+        ) {
             setIsOpen(true);
         }
     }, [latestVersion, isUpdateAvailable]);
@@ -148,54 +153,84 @@ export default function VersionChecker() {
                     )}
 
                     <div className="mx-2 my-4 flex w-full justify-between">
-                        {/* Show the install button only if an update is available */}
-                        {isUpdateAvailable && downloadUrls.windows && (
+                        {/* Show the install button only if an update is available and matches user's OS */}
+                        {downloadUrls.windows &&
+                            navigator.userAgent.indexOf("Win") !== -1 && (
+                                <Button
+                                    onClick={() =>
+                                        window.open(
+                                            downloadUrls.windows,
+                                            "_blank",
+                                        )
+                                    }
+                                >
+                                    Install Latest Version for Windows
+                                </Button>
+                            )}
+                        {downloadUrls.macArm && (
                             <Button
                                 onClick={() =>
-                                    window.open(downloadUrls.windows, "_blank")
+                                    window.open(downloadUrls.macArm, "_blank")
                                 }
                             >
-                                Install Latest Version for Windows
+                                Install Latest Version for Apple Silicon
                             </Button>
                         )}
-
-                        {isUpdateAvailable && downloadUrls.mac && (
+                        {downloadUrls.macIntel && (
                             <Button
                                 onClick={() =>
-                                    window.open(downloadUrls.mac, "_blank")
+                                    window.open(downloadUrls.macIntel, "_blank")
                                 }
                             >
-                                Install Latest Version for macOS
+                                Install Latest Version for Intel Mac
                             </Button>
                         )}
-
-                        {isUpdateAvailable && downloadUrls.linux && (
-                            <Button
-                                onClick={() =>
-                                    window.open(downloadUrls.linux, "_blank")
-                                }
-                            >
-                                Install Latest Version for Linux
-                            </Button>
-                        )}
+                        {downloadUrls.linux &&
+                            navigator.userAgent.indexOf("Linux") !== -1 && (
+                                <Button
+                                    onClick={() =>
+                                        window.open(
+                                            downloadUrls.linux,
+                                            "_blank",
+                                        )
+                                    }
+                                >
+                                    Install Latest Version for Linux
+                                </Button>
+                            )}{" "}
+                        <Button
+                            onClick={() => {
+                                localStorage.setItem(
+                                    "skippedVersion",
+                                    latestVersion || "",
+                                );
+                                setIsOpen(false);
+                            }}
+                            variant="secondary"
+                        >
+                            Skip this version
+                        </Button>
                     </div>
                 </div>
             </div>
         );
     }
 
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger
-                asChild
-                className="titlebar-button flex cursor-pointer items-center gap-6 outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
-            >
-                <BowlSteam size={18} />
-            </DialogTrigger>
-            <DialogContent className="w-[60rem] max-w-full">
-                <DialogTitle>New Version Available!</DialogTitle>
-                <SettingsModalContents />
-            </DialogContent>
-        </Dialog>
-    );
+    // If the version is the same, don't show the modal
+    if (isUpdateAvailable) {
+        return (
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger
+                    asChild
+                    className="titlebar-button flex cursor-pointer items-center gap-6 text-sub outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                >
+                    New Version Available!
+                </DialogTrigger>
+                <DialogContent className="w-[60rem] max-w-full">
+                    <DialogTitle>New Version Available</DialogTitle>
+                    <SettingsModalContents />
+                </DialogContent>
+            </Dialog>
+        );
+    } else return null;
 }
