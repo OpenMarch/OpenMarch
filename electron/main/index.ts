@@ -350,9 +350,6 @@ export async function saveFile() {
 
     const db = DatabaseServices.connect();
 
-    // Save database file
-    store.set("database", db.serialize());
-
     // Save
     dialog
         .showSaveDialog(win, {
