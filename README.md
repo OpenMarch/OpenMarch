@@ -17,7 +17,7 @@ To be a free and easy drill writing solution for marching bands, indoor programs
 
 Learn about contributing and running the development server [here](https://openmarch.com/developers/contributing/). Also have a look at our stack on the developer docs.
 
-Join our [Discord](https://discord.gg/eTsQ98uZzq) to interact with the other contributrers and to get support!
+Join our [Discord](https://discord.gg/eTsQ98uZzq) to interact with the other contributors and to get support!
 
 ### Stack
 
@@ -37,7 +37,7 @@ Join our [Discord](https://discord.gg/eTsQ98uZzq) to interact with the community
 
 Check out our full [feature list](https://openmarch.com/about/features/) and our [beginner guide](https://openmarch.com/guides/getting-started/) too.
 
-If you're wanting to test the latest and ***unstable*** features, go to the [releases](https://github.com/OpenMarch/OpenMarch/releases) tab on GitHub and download the latest `Pre-release` version displayed. Feel free to give feedback and report bugs in GitHub issues or the Discord.
+If you're wanting to test the latest and **_unstable_** features, go to the [releases](https://github.com/OpenMarch/OpenMarch/releases) tab on GitHub and download the latest `Pre-release` version displayed. Feel free to give feedback and report bugs in GitHub issues or the Discord.
 
 > Always keep in mind, OpenMarch is still in development. You probably will encounter bugs, issues, and missing features. Help support us grow by contributing or donating!
 

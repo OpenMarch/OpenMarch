@@ -11,12 +11,12 @@
     files: ["dist-electron", "dist"],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
-    "fileAssociations": [
+    fileAssociations: [
         {
-            "ext": "dots",
-            "name": "OpenMarch Dots",
-            "role": "Editor"
-        }
+            ext: "dots",
+            name: "OpenMarch Dots",
+            role: "Editor",
+        },
     ],
 
     mac: {
