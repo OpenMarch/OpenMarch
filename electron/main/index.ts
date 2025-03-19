@@ -116,8 +116,13 @@ app.whenReady().then(async () => {
     console.log("NODE:", process.versions.node);
 
     Menu.setApplicationMenu(applicationMenu);
-    const previousPath = store.get("databasePath") as string;
-    if (previousPath && previousPath.length > 0) setActiveDb(previousPath);
+    console.log(process.argv);
+
+    let pathToOpen = store.get("databasePath") as string;
+    if (process.argv.length >= 2) {
+        pathToOpen = process.argv[1];
+    }
+    if (pathToOpen && pathToOpen.length > 0) setActiveDb(pathToOpen);
     DatabaseServices.initHandlers();
 
     // Database handlers
