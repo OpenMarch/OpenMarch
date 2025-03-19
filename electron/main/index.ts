@@ -7,7 +7,7 @@ import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
-import AudioFile from "@/global/classes/AudioFile";
+import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
 import { init, captureException } from "@sentry/electron/main";
 
@@ -22,6 +22,7 @@ import {
     updateFieldProperties,
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
+import { FIRST_PAGE_ID } from "../database/tables/PageTable";
 
 // The built directory structure
 //
@@ -132,8 +133,6 @@ app.whenReady().then(async () => {
     // Database handlers
     console.log("db_path: " + DatabaseServices.getDbPath());
 
-    DatabaseServices.initHandlers();
-
     // File IO handlers
     ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
     ipcMain.handle("database:getPath", () => {
@@ -156,6 +155,10 @@ app.whenReady().then(async () => {
     );
     ipcMain.handle("field_properties:import_image", async () =>
         importFieldPropertiesImage(),
+    );
+    ipcMain.handle(
+        "selectedPageId:get",
+        async () => store.get("selectedPageId") || FIRST_PAGE_ID,
     );
 
     // Getters
