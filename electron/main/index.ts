@@ -116,7 +116,6 @@ app.whenReady().then(async () => {
     console.log("NODE:", process.versions.node);
 
     Menu.setApplicationMenu(applicationMenu);
-    console.log(process.argv);
 
     let pathToOpen = store.get("databasePath") as string;
     if (process.argv.length >= 2) {
