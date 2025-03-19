@@ -712,6 +712,10 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  */
 function setActiveDb(path: string, isNewFile = false) {
     try {
+        // Get the current path from the store if the path is "."
+        // I.e. last opened file
+        if (path === ".") path = store.get("databasePath") as string;
+
         if (!fs.existsSync(path) && !isNewFile) {
             store.delete("databasePath");
             console.error("Database file does not exist:", path);
@@ -727,6 +731,8 @@ function setActiveDb(path: string, isNewFile = false) {
             console.error("Error connecting to database");
             return;
         }
+
+        // If this isn't a new file, check if a migration is needed
         if (!isNewFile) {
             console.log(
                 "Checking database version to see if migration is needed",

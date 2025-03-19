@@ -88,6 +88,8 @@ export function connect() {
                   );
         return Database(dbPath, { verbose: console.log });
     } catch (error: any) {
+        console.error(error);
+
         throw new Error(
             "Failed to connect to database:\nPLEASE RUN 'node_modules/.bin/electron-rebuild -f -w better-sqlite3' to resolve this",
             error,
