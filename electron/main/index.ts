@@ -124,7 +124,7 @@ app.whenReady().then(async () => {
     Menu.setApplicationMenu(applicationMenu);
 
     let pathToOpen = store.get("databasePath") as string;
-    if (process.argv.length >= 2) {
+    if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
         pathToOpen = process.argv[1];
     }
     if (pathToOpen && pathToOpen.length > 0) setActiveDb(pathToOpen);
