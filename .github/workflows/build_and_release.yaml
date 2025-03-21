@@ -63,3 +63,4 @@ jobs:
                   # For releasing
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+                  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

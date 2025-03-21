@@ -2,6 +2,7 @@ module.exports = {
     version: "0.1",
     words: [
         "autoincrement",
+        "openmarch",
         "barline",
         "barlines",
         "Bézier",
