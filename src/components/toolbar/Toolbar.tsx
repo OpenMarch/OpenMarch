@@ -6,6 +6,7 @@ import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
+import BugReport from "../ui/BugReport";
 
 export default function Topbar() {
     return (
@@ -19,6 +20,8 @@ export default function Topbar() {
             </ToolbarSection>
             <UiSettingsToolbar />
             <AlignmentToolbar />
+            {/* TODO - This displays fine, but doesn't report feedback correctly */}
+            <BugReport />
         </div>
     );
 }

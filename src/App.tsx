@@ -23,11 +23,19 @@ import {
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "./components/titlebar/TitleBar";
-import { init } from "@sentry/electron/renderer";
+import * as Sentry from "@sentry/electron/renderer";
 
 function App() {
-    init({
+    Sentry.init({
         dsn: "https://86f3d9182d9c458f846a0b726cb6bfc1@app.glitchtip.com/10601",
+        beforeSend(event, hint) {
+            // Check if it is an exception, and if so, show the report dialog
+            if (event.exception && event.event_id) {
+                Sentry.showReportDialog({ eventId: event.event_id });
+            }
+            return event;
+        },
+        // integrations: [FeedbackObject],
     });
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
 
