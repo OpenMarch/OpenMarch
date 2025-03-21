@@ -2,6 +2,8 @@ import { Minus, Square, List, X } from "@phosphor-icons/react";
 import FileControls from "./FileControls";
 import SettingsModal from "../settings/SettingsModal";
 import { useEffect, useState } from "react";
+import { version as currentVersion } from "../../../package.json";
+import VersionChecker from "../ui/VersionCheck";
 
 export default function TitleBar({ noControls }: { noControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
@@ -14,7 +16,9 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                 const path = await window.electron.databaseGetPath();
                 setDbPath(path);
             } catch (error) {
-                setDbPath("Failed to fetch dbPath");
+                setDbPath(
+                    "Failed to fetch .dots file path! Please reach out to support",
+                );
                 console.error("Error fetching database path:", error);
             }
         };
@@ -39,7 +43,10 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                 )}
                 <div className="flex gap-12">
                     <p className="text-body leading-none">OpenMarch</p>
-                    <p className="text-body leading-none opacity-50">0.0.7</p>
+                    <p className="text-body leading-none opacity-50">
+                        {currentVersion}
+                    </p>
+                    <VersionChecker />
                 </div>
                 {!noControls && (
                     <>

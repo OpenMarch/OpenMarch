@@ -103,3 +103,15 @@ input[type="number"]::-webkit-outer-spin-button {
     color: var(--text);
     margin: 0;
 }
+
+/* Sentry Feedback */
+#sentry-feedback {
+    --border: "black";
+    --foreground: rgb(var(--text));
+    --background: rgb(var(--modal-stop-2));
+    --accent-foreground: rgb(var(--text-invert));
+    --accent-background: rgb(var(--accent));
+    --success-color: rgb(var(--green));
+    --error-color: rgb(var(--red));
+    --box-shadow: rgb(var(--modal-shadow));
+}

@@ -27,7 +27,8 @@
             },
             "runtimeArgs": [
                 "--no-sandbox",
-                "--remote-debugging-port=9229",
+                "--remote-debugging-port=9930",
+                "--inspect-brk=9929",
                 "."
             ],
             "envFile": "${workspaceFolder}/.vscode/.debug.env",
@@ -35,7 +36,7 @@
         },
         {
             "name": "Debug Renderer Process",
-            "port": 9229,
+            "port": 9930,
             "request": "attach",
             "type": "chrome",
             "timeout": 60000,
