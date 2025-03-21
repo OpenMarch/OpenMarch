@@ -59,6 +59,13 @@ template.push(
                         mainProcess.saveFile();
                     },
                 },
+                {
+                    label: "Close File",
+                    accelerator: "CommandOrControl+Q",
+                    click(item: any, focusedWindow: any) {
+                        mainProcess.closeCurrentFile();
+                    },
+                },
             ],
         }),
         // { role: 'editMenu' }
