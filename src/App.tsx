@@ -23,11 +23,12 @@ import {
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "./components/titlebar/TitleBar";
-import { init } from "@sentry/electron/renderer";
+import * as Sentry from "@sentry/electron/renderer";
 
 function App() {
-    init({
-        dsn: "https://86f3d9182d9c458f846a0b726cb6bfc1@app.glitchtip.com/10601",
+    Sentry.init({
+        dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+        enabled: process.env.NODE_ENV === "production",
     });
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
 

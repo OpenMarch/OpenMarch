@@ -74,10 +74,6 @@ export function createIndoorXCheckpoints({
     xSteps: number;
 }): Checkpoint[] {
     if (xSteps < 4) throw new Error("xSteps must be at least 4");
-    if (xSteps % 4 !== 0)
-        console.warn(
-            "xSteps is not divisible by 4.This may cause weird formatting",
-        );
     const xCheckpoints: Checkpoint[] = [];
 
     let curId = 0;

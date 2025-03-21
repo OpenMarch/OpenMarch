@@ -11,10 +11,6 @@ import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
 import { init, captureException } from "@sentry/electron/main";
 
-// const xml2abc = require('../xml2abc-js/xml2abc.js')
-// const xml2abc = require('./xml2abc.js')
-// const $ = require('jquery');
-
 // Modify this when the database is updated
 import CurrentDatabase from "../database/versions/CurrentDatabase";
 import {
@@ -37,7 +33,8 @@ import { FIRST_PAGE_ID } from "../database/tables/PageTable";
 
 const store = new Store();
 init({
-    dsn: "https://86f3d9182d9c458f846a0b726cb6bfc1@app.glitchtip.com/10601",
+    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+    enabled: process.env.NODE_ENV === "production",
 });
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
@@ -87,6 +84,19 @@ async function createWindow(title?: string) {
             contextIsolation: true, // protect against prototype pollution
         },
     });
+
+    win.webContents.session.webRequest.onHeadersReceived(
+        (details, callback) => {
+            callback({
+                responseHeaders: {
+                    ...details.responseHeaders,
+                    "Content-Security-Policy": [
+                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com",
+                    ],
+                },
+            });
+        },
+    );
 
     if (url) {
         // electron-vite-vue#298

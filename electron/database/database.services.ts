@@ -71,8 +71,14 @@ export function getDbPath() {
 }
 
 export function databaseIsReady() {
-    console.log("databaseIsReady", DB_PATH);
-    return DB_PATH.length > 0 && fs.existsSync(DB_PATH);
+    const isReady = DB_PATH.length > 0 && fs.existsSync(DB_PATH);
+    console.log("databaseIsReady:", isReady);
+    if (DB_PATH.length > 0) {
+        console.log("Database path:", DB_PATH);
+    } else {
+        console.log("Database path is empty");
+    }
+    return isReady;
 }
 
 export function connect() {
