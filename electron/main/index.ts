@@ -428,6 +428,25 @@ export async function loadDatabaseFile() {
         });
 }
 
+/**
+ * Closes the current database file.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function closeCurrentFile() {
+    console.log("closeCurrentFile");
+
+    if (!win) return -1;
+
+    // Close the current file
+    DatabaseServices.setDbPath("", false);
+    store.set("databasePath", "");
+
+    win?.webContents.reload();
+
+    return 200;
+}
+
 // Field properties
 
 /**
