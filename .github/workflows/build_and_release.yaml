@@ -38,6 +38,9 @@ jobs:
                   mkdir -p ~/private_keys/
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
+            - name: Create Sentry env file
+              run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+
             - name: Build/release Electron app
               uses: OpenMarch/builder@v5
               with:
