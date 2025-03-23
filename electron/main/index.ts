@@ -731,8 +731,7 @@ function setActiveDb(path: string, isNewFile = false) {
             console.error("Database file does not exist:", path);
             return;
         }
-
-        DatabaseServices.setDbPath(path, isNewFile);
+        if (fs.existsSync(path)) DatabaseServices.setDbPath(path, isNewFile);
         win?.setTitle("OpenMarch - " + path);
 
         const migrator = new CurrentDatabase(DatabaseServices.connect);
