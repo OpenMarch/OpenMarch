@@ -7,7 +7,7 @@ import {
 } from "../ui/Dialog";
 import { version as currentVersion } from "../../../package.json";
 import { Button } from "./Button";
-import CustomMarkdown from "../CustomMarkdown";
+import StyledMarkdown from "./StyledMarkdown";
 import Skeleton from "./Skeleton";
 export default function VersionChecker() {
     const [isOpen, setIsOpen] = useState(false);
@@ -142,7 +142,7 @@ export default function VersionChecker() {
                     {/* Displays the changelog if available */}
                     {changelog ? (
                         <div className="text-sm mt-4 max-h-[400px] overflow-auto">
-                            <CustomMarkdown>{changelog}</CustomMarkdown>
+                            <StyledMarkdown>{changelog}</StyledMarkdown>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-8">

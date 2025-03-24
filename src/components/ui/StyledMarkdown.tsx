@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/heading-has-content */
 import Markdown from "react-markdown";
 
-export default function CustomMarkdown({ children }: { children: string }) {
+export default function StyledMarkdown({ children }: { children: string }) {
     return (
         <Markdown
             components={{
@@ -31,6 +31,21 @@ export default function CustomMarkdown({ children }: { children: string }) {
                 ),
                 p: ({ node, ...props }) => (
                     <p className="text-text" {...props} />
+                ),
+                a: ({ node, ...props }) => (
+                    // eslint-disable-next-line jsx-a11y/anchor-has-content
+                    <a
+                        className="text-accent hover:underline"
+                        target="_blank"
+                        rel="noreferrer"
+                        {...props}
+                    />
+                ),
+                code: ({ node, ...props }) => (
+                    <code
+                        className="py-1 rounded-6 bg-stroke px-4"
+                        {...props}
+                    />
                 ),
             }}
         >

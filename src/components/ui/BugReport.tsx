@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import ToolbarSection from "../toolbar/ToolbarSection";
 import * as Sentry from "@sentry/electron/renderer";
 
 export const feedbackObj = Sentry.feedbackIntegration({
@@ -19,13 +18,11 @@ export default function ErrorReport() {
 
     // If the version is the same, don't show the modal
     return (
-        <ToolbarSection aria-label="Feedback">
-            <div
-                className="cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
-                id="feedback-button"
-            >
-                Report a bug
-            </div>
-        </ToolbarSection>
+        <div
+            className="cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
+            id="feedback-button"
+        >
+            Report a bug
+        </div>
     );
 }
