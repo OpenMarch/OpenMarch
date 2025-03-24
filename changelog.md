@@ -3,7 +3,7 @@
 ## Additions
 
 - Version checker that automatically notifies you about an update
-  - Users can skip version if they wan to
+  - Users can skip version if they want to
 - Automatic error/bug reporting
 - Manual bug/feedback reporting
 - Filesystem associations
