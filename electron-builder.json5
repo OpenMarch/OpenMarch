@@ -11,6 +11,14 @@
     files: ["dist-electron", "dist"],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
+    fileAssociations: [
+        {
+            ext: "dots",
+            name: "OpenMarch Dots",
+            role: "Editor",
+        },
+    ],
+
     mac: {
         target: "dmg",
         hardenedRuntime: true,
