@@ -1296,7 +1296,8 @@ export default function FieldPropertiesCustomizer() {
                                         inside the field or fill it
                                     </div>
                                     <div>
-                                        The aspect ratio is always maintained{" "}
+                                        The aspect ratio is always
+                                        maintained{" "}
                                     </div>
                                 </TooltipContents>
                             </Tooltip.Root>

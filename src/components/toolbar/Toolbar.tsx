@@ -6,6 +6,8 @@ import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
+import BugReport from "../ui/BugReport";
+import TipsAndTricks from "../guides/TipsAndTricks";
 
 export default function Topbar() {
     return (
@@ -19,6 +21,10 @@ export default function Topbar() {
             </ToolbarSection>
             <UiSettingsToolbar />
             <AlignmentToolbar />
+            <ToolbarSection aria-label="Feedback and tips">
+                <TipsAndTricks />
+                <BugReport />
+            </ToolbarSection>
         </div>
     );
 }

@@ -7,11 +7,9 @@ import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
-import AudioFile from "@/global/classes/AudioFile";
+import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
-// const xml2abc = require('../xml2abc-js/xml2abc.js')
-// const xml2abc = require('./xml2abc.js')
-// const $ = require('jquery');
+import { init, captureException } from "@sentry/electron/main";
 
 // Modify this when the database is updated
 import CurrentDatabase from "../database/versions/CurrentDatabase";
@@ -20,6 +18,7 @@ import {
     updateFieldProperties,
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
+import { FIRST_PAGE_ID } from "../database/tables/PageTable";
 
 // The built directory structure
 //
@@ -33,6 +32,12 @@ import {
 //
 
 const store = new Store();
+const enableSentry = process.env.NODE_ENV !== "development";
+console.log("Sentry error reporting enabled:", enableSentry);
+init({
+    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+    enabled: enableSentry,
+});
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
 process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
@@ -82,6 +87,19 @@ async function createWindow(title?: string) {
         },
     });
 
+    win.webContents.session.webRequest.onHeadersReceived(
+        (details, callback) => {
+            callback({
+                responseHeaders: {
+                    ...details.responseHeaders,
+                    "Content-Security-Policy": [
+                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com",
+                    ],
+                },
+            });
+        },
+    );
+
     if (url) {
         // electron-vite-vue#298
         win.loadURL(url);
@@ -112,61 +130,53 @@ async function createWindow(title?: string) {
 }
 
 app.whenReady().then(async () => {
-    try {
-        app.setName("OpenMarch");
-        console.log("NODE:", process.versions.node);
+    app.setName("OpenMarch");
+    console.log("NODE:", process.versions.node);
 
-        Menu.setApplicationMenu(applicationMenu);
+    Menu.setApplicationMenu(applicationMenu);
 
-        let pathToOpen = store.get("databasePath") as string;
-        if (process.argv.length >= 2) {
-            pathToOpen = process.argv[1];
-        }
-        if (pathToOpen && pathToOpen.length > 0) setActiveDb(pathToOpen);
-        DatabaseServices.initHandlers();
-
-        // Database handlers
-        console.log("db_path: " + DatabaseServices.getDbPath());
-
-        // File IO handlers
-        ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
-        ipcMain.handle("database:getPath", () => {
-            return DatabaseServices.getDbPath();
-        });
-        ipcMain.handle("database:save", async () => saveFile());
-        ipcMain.handle("database:load", async () => loadDatabaseFile());
-        ipcMain.handle("database:create", async () => newFile());
-        ipcMain.handle("history:undo", async () =>
-            executeHistoryAction("undo"),
-        );
-        ipcMain.handle("history:redo", async () =>
-            executeHistoryAction("redo"),
-        );
-        ipcMain.handle("audio:insert", async () => insertAudioFile());
-        ipcMain.handle("measure:insert", async () =>
-            launchImportMusicXmlFileDialogue(),
-        );
-        ipcMain.handle("field_properties:export", async () =>
-            exportFieldPropertiesFile(),
-        );
-        ipcMain.handle("field_properties:import", async () =>
-            importFieldPropertiesFile(),
-        );
-        ipcMain.handle("field_properties:import_image", async () =>
-            importFieldPropertiesImage(),
-        );
-
-        // Getters
-        initGetters();
-
-        await createWindow("OpenMarch - " + store.get("databasePath"));
-    } catch (error) {
-        console.error(error);
-        dialog.showErrorBox(
-            "Error Starting OpenMarch",
-            (error as Error).message,
-        );
+    let pathToOpen = store.get("databasePath") as string;
+    if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
+        pathToOpen = process.argv[1];
     }
+    if (pathToOpen && pathToOpen.length > 0) setActiveDb(pathToOpen);
+    DatabaseServices.initHandlers();
+
+    // Database handlers
+    console.log("db_path: " + DatabaseServices.getDbPath());
+
+    // File IO handlers
+    ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
+    ipcMain.handle("database:getPath", () => {
+        return DatabaseServices.getDbPath();
+    });
+    ipcMain.handle("database:save", async () => saveFile());
+    ipcMain.handle("database:load", async () => loadDatabaseFile());
+    ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
+    ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
+    ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle("measure:insert", async () =>
+        launchImportMusicXmlFileDialogue(),
+    );
+    ipcMain.handle("field_properties:export", async () =>
+        exportFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import", async () =>
+        importFieldPropertiesFile(),
+    );
+    ipcMain.handle("field_properties:import_image", async () =>
+        importFieldPropertiesImage(),
+    );
+    ipcMain.handle(
+        "selectedPageId:get",
+        async () => store.get("selectedPageId") || FIRST_PAGE_ID,
+    );
+
+    // Getters
+    initGetters();
+
+    await createWindow("OpenMarch - " + store.get("databasePath"));
 });
 
 function initGetters() {
@@ -361,9 +371,6 @@ export async function saveFile() {
 
     const db = DatabaseServices.connect();
 
-    // Save database file
-    store.set("database", db.serialize());
-
     // Save
     dialog
         .showSaveDialog(win, {
@@ -419,6 +426,25 @@ export async function loadDatabaseFile() {
             console.log(err);
             return -1;
         });
+}
+
+/**
+ * Closes the current database file.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function closeCurrentFile() {
+    console.log("closeCurrentFile");
+
+    if (!win) return -1;
+
+    // Close the current file
+    DatabaseServices.setDbPath("", false);
+    store.set("databasePath", "");
+
+    win?.webContents.reload();
+
+    return 200;
 }
 
 // Field properties
@@ -717,13 +743,16 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  */
 function setActiveDb(path: string, isNewFile = false) {
     try {
+        // Get the current path from the store if the path is "."
+        // I.e. last opened file
+        if (path === ".") path = store.get("databasePath") as string;
+
         if (!fs.existsSync(path) && !isNewFile) {
             store.delete("databasePath");
             console.error("Database file does not exist:", path);
             return;
         }
-
-        DatabaseServices.setDbPath(path, isNewFile);
+        if (fs.existsSync(path)) DatabaseServices.setDbPath(path, isNewFile);
         win?.setTitle("OpenMarch - " + path);
 
         const migrator = new CurrentDatabase(DatabaseServices.connect);
@@ -732,6 +761,8 @@ function setActiveDb(path: string, isNewFile = false) {
             console.error("Error connecting to database");
             return;
         }
+
+        // If this isn't a new file, check if a migration is needed
         if (!isNewFile) {
             console.log(
                 "Checking database version to see if migration is needed",
@@ -774,9 +805,11 @@ function setActiveDb(path: string, isNewFile = false) {
         !isNewFile && win?.webContents.reload();
         store.set("databasePath", path); // Save current db path
     } catch (error) {
+        captureException(error);
         store.delete("databasePath"); // Reset database path
         DatabaseServices.setDbPath("", false);
         dialog.showErrorBox("Error Loading Database", (error as Error).message);
         win?.webContents.reload();
+        throw error;
     }
 }

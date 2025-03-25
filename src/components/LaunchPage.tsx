@@ -1,5 +1,5 @@
 import { Button } from "./ui/Button";
-import { WarningNote } from "./ui/Note";
+import { BugNote, WarningNote } from "./ui/Note";
 
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
@@ -33,11 +33,15 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                     OpenMarch is still in development. By using it, you accept
                     there may be potential glitches and bugs.
                 </WarningNote>
+                <BugNote>
+                    You also agree to the collecting of anonymous error logs and
+                    crash reports.
+                </BugNote>
             </div>
             <img
                 src="/placeholder.jpg"
                 alt="Placeholder"
-                className="h-full w-full rounded-6"
+                className="mx-8 h-full w-full rounded-6"
             />
         </div>
     );
