@@ -1,17 +1,19 @@
-# 0.0.7 - Field Customization
+# 0.0.8 - Performance fixes and error logging
 
-## Field and Grid Customization
+## Additions
 
-Now, a user can make their own field with whatever measurements and specifications they want (as long as it's a rectangle).
-
-Check out the [grid customization guide](https://openmarch.com/guides/editing-the-grid/) on the website for all of the ways you can modify the field.
+- Version checker that automatically notifies you about an update
+  - Users can skip version if they want to
+- Automatic error/bug reporting
+- Manual bug/feedback reporting
+- Filesystem associations
+  - Users can now double-click on files to launch them in OpenMarch
+- DMG installer background
+- Button to close current file and return to launch page
+- Tips and tricks sidebar for common issues and fixes
 
 ## Fixes
 
-- Fixed a bug where the min and max step size were not calculated correctly
-
-## Dev
-
-- Delete old table creation functions in the `Table` files
-  - These tables have been created in the `Migration` files since `0.0.5`
-  - Fixed the test that broke due to this
+- No longer save the database to the `config.json` file
+  - This massively improves performance
+- Fixed buggy launch code in electron `index.ts`

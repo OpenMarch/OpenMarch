@@ -7,11 +7,9 @@ import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
-import AudioFile from "@/global/classes/AudioFile";
+import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
-// const xml2abc = require('../xml2abc-js/xml2abc.js')
-// const xml2abc = require('./xml2abc.js')
-// const $ = require('jquery');
+import { init, captureException } from "@sentry/electron/main";
 
 // Modify this when the database is updated
 import CurrentDatabase from "../database/versions/CurrentDatabase";
@@ -20,6 +18,7 @@ import {
     updateFieldProperties,
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
+import { FIRST_PAGE_ID } from "../database/tables/PageTable";
 
 // The built directory structure
 //
@@ -33,6 +32,12 @@ import {
 //
 
 const store = new Store();
+const enableSentry = process.env.NODE_ENV !== "development";
+console.log("Sentry error reporting enabled:", enableSentry);
+init({
+    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+    enabled: enableSentry,
+});
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
 process.env.DIST = join(process.env.DIST_ELECTRON, "../dist");
@@ -82,6 +87,19 @@ async function createWindow(title?: string) {
         },
     });
 
+    win.webContents.session.webRequest.onHeadersReceived(
+        (details, callback) => {
+            callback({
+                responseHeaders: {
+                    ...details.responseHeaders,
+                    "Content-Security-Policy": [
+                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com",
+                    ],
+                },
+            });
+        },
+    );
+
     if (url) {
         // electron-vite-vue#298
         win.loadURL(url);
@@ -118,7 +136,7 @@ app.whenReady().then(async () => {
     Menu.setApplicationMenu(applicationMenu);
 
     let pathToOpen = store.get("databasePath") as string;
-    if (process.argv.length >= 2) {
+    if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
         pathToOpen = process.argv[1];
     }
     if (pathToOpen && pathToOpen.length > 0) setActiveDb(pathToOpen);
@@ -149,6 +167,10 @@ app.whenReady().then(async () => {
     );
     ipcMain.handle("field_properties:import_image", async () =>
         importFieldPropertiesImage(),
+    );
+    ipcMain.handle(
+        "selectedPageId:get",
+        async () => store.get("selectedPageId") || FIRST_PAGE_ID,
     );
 
     // Getters
@@ -349,9 +371,6 @@ export async function saveFile() {
 
     const db = DatabaseServices.connect();
 
-    // Save database file
-    store.set("database", db.serialize());
-
     // Save
     dialog
         .showSaveDialog(win, {
@@ -407,6 +426,25 @@ export async function loadDatabaseFile() {
             console.log(err);
             return -1;
         });
+}
+
+/**
+ * Closes the current database file.
+ *
+ * @returns 200 for success, -1 for failure
+ */
+export async function closeCurrentFile() {
+    console.log("closeCurrentFile");
+
+    if (!win) return -1;
+
+    // Close the current file
+    DatabaseServices.setDbPath("", false);
+    store.set("databasePath", "");
+
+    win?.webContents.reload();
+
+    return 200;
 }
 
 // Field properties
@@ -498,15 +536,36 @@ export async function importFieldPropertiesImage() {
         .showOpenDialog(win, {
             filters: [
                 {
-                    name: "Image file",
-                    extensions: [
-                        ".jpg",
-                        ".jpeg",
-                        ".png",
-                        ".gif",
-                        ".bmp",
-                        ".webp",
-                    ],
+                    name: "All Images",
+                    extensions: ["jpg", "jpeg", "png", "bmp", "gif", "webp"],
+                },
+                {
+                    name: "JPEG Image",
+                    extensions: ["jpg", "jpeg"],
+                },
+                {
+                    name: "PNG Image",
+                    extensions: ["png"],
+                },
+                {
+                    name: "GIF Image",
+                    extensions: ["gif"],
+                },
+                {
+                    name: "WEBP Image",
+                    extensions: ["webp"],
+                },
+                {
+                    name: "GIF Image",
+                    extensions: ["gif"],
+                },
+                {
+                    name: "BMP Image",
+                    extensions: ["bmp"],
+                },
+                {
+                    name: "All Files",
+                    extensions: ["*"],
                 },
             ],
         })
@@ -683,56 +742,74 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  * @param isNewFile True if this is a new file, false if it is an existing file
  */
 function setActiveDb(path: string, isNewFile = false) {
-    if (!fs.existsSync(path) && !isNewFile) {
-        store.delete("databasePath");
-        console.error("Database file does not exist:", path);
-        return;
-    }
+    try {
+        // Get the current path from the store if the path is "."
+        // I.e. last opened file
+        if (path === ".") path = store.get("databasePath") as string;
 
-    DatabaseServices.setDbPath(path, isNewFile);
-    win?.setTitle("OpenMarch - " + path);
-
-    const migrator = new CurrentDatabase(DatabaseServices.connect);
-    const db = DatabaseServices.connect();
-    if (!db) {
-        console.error("Error connecting to database");
-        return;
-    }
-    if (!isNewFile) {
-        console.log("Checking database version to see if migration is needed");
-        CurrentDatabase.getVersion(db);
-        // Create backup before migration
-        if (CurrentDatabase.getVersion(db) !== migrator.version) {
-            const backupDir = join(app.getPath("userData"), "backups");
-            if (!fs.existsSync(backupDir)) {
-                fs.mkdirSync(backupDir);
-            }
-            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-            const originalName = path.split(/[\\/]/).pop();
-            const backupPath = join(
-                backupDir,
-                `backup_${timestamp}_${originalName}`,
-            );
-            console.log("Creating backup of database in " + backupPath);
-            fs.copyFileSync(path, backupPath);
-
-            console.log("Deleting backups older than 30 days");
-            // Delete backups older than 30 days
-            const files = fs.readdirSync(backupDir);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-            files.forEach((file) => {
-                const filePath = join(backupDir, file);
-                const stats = fs.statSync(filePath);
-                if (stats.birthtime < thirtyDaysAgo) {
-                    fs.unlinkSync(filePath);
-                }
-            });
+        if (!fs.existsSync(path) && !isNewFile) {
+            store.delete("databasePath");
+            console.error("Database file does not exist:", path);
+            return;
         }
-        migrator.migrateToThisVersion();
-    } else console.log(`Creating new database at ${path}`);
+        if (fs.existsSync(path)) DatabaseServices.setDbPath(path, isNewFile);
+        win?.setTitle("OpenMarch - " + path);
 
-    !isNewFile && win?.webContents.reload();
-    store.set("databasePath", path); // Save current db path
+        const migrator = new CurrentDatabase(DatabaseServices.connect);
+        const db = DatabaseServices.connect();
+        if (!db) {
+            console.error("Error connecting to database");
+            return;
+        }
+
+        // If this isn't a new file, check if a migration is needed
+        if (!isNewFile) {
+            console.log(
+                "Checking database version to see if migration is needed",
+            );
+            CurrentDatabase.getVersion(db);
+            // Create backup before migration
+            if (CurrentDatabase.getVersion(db) !== migrator.version) {
+                const backupDir = join(app.getPath("userData"), "backups");
+                if (!fs.existsSync(backupDir)) {
+                    fs.mkdirSync(backupDir);
+                }
+                const timestamp = new Date()
+                    .toISOString()
+                    .replace(/[:.]/g, "-");
+                const originalName = path.split(/[\\/]/).pop();
+                const backupPath = join(
+                    backupDir,
+                    `backup_${timestamp}_${originalName}`,
+                );
+                console.log("Creating backup of database in " + backupPath);
+                fs.copyFileSync(path, backupPath);
+
+                console.log("Deleting backups older than 30 days");
+                // Delete backups older than 30 days
+                const files = fs.readdirSync(backupDir);
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                files.forEach((file) => {
+                    const filePath = join(backupDir, file);
+                    const stats = fs.statSync(filePath);
+                    if (stats.birthtime < thirtyDaysAgo) {
+                        fs.unlinkSync(filePath);
+                    }
+                });
+            }
+            migrator.migrateToThisVersion();
+        } else console.log(`Creating new database at ${path}`);
+
+        !isNewFile && win?.webContents.reload();
+        store.set("databasePath", path); // Save current db path
+    } catch (error) {
+        captureException(error);
+        store.delete("databasePath"); // Reset database path
+        DatabaseServices.setDbPath("", false);
+        dialog.showErrorBox("Error Loading Database", (error as Error).message);
+        win?.webContents.reload();
+        throw error;
+    }
 }
