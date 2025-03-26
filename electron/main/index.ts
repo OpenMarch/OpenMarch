@@ -334,25 +334,18 @@ export async function newFile() {
     if (!win) return -1;
 
     // Get path to new file
-    dialog
-        .showSaveDialog(win, {
-            buttonLabel: "Create New",
-            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
-        })
-        .then((path) => {
-            if (path.canceled || !path.filePath) return;
+    const path = await dialog.showSaveDialog(win, {
+        buttonLabel: "Create New",
+        filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+    });
+    if (path.canceled || !path.filePath) return;
 
-            setActiveDb(path.filePath, true);
-            const dbVersion = new CurrentDatabase(DatabaseServices.connect);
-            dbVersion.createTables();
-            win?.webContents.reload();
+    setActiveDb(path.filePath, true);
+    const dbVersion = new CurrentDatabase(DatabaseServices.connect);
+    dbVersion.createTables();
+    win?.webContents.reload();
 
-            return 200;
-        })
-        .catch((err) => {
-            console.log(err);
-            return -1;
-        });
+    return 200;
 }
 
 // Database (main file)
@@ -752,7 +745,7 @@ function setActiveDb(path: string, isNewFile = false) {
             console.error("Database file does not exist:", path);
             return;
         }
-        if (fs.existsSync(path)) DatabaseServices.setDbPath(path, isNewFile);
+        DatabaseServices.setDbPath(path, isNewFile);
         win?.setTitle("OpenMarch - " + path);
 
         const migrator = new CurrentDatabase(DatabaseServices.connect);
@@ -763,7 +756,10 @@ function setActiveDb(path: string, isNewFile = false) {
         }
 
         // If this isn't a new file, check if a migration is needed
-        if (!isNewFile) {
+        if (isNewFile) {
+            console.log(`Creating new database at ${path}`);
+            migrator.createTables();
+        } else {
             console.log(
                 "Checking database version to see if migration is needed",
             );
@@ -800,10 +796,10 @@ function setActiveDb(path: string, isNewFile = false) {
                 });
             }
             migrator.migrateToThisVersion();
-        } else console.log(`Creating new database at ${path}`);
+        }
 
-        !isNewFile && win?.webContents.reload();
         store.set("databasePath", path); // Save current db path
+        win?.webContents.reload();
     } catch (error) {
         captureException(error);
         store.delete("databasePath"); // Reset database path

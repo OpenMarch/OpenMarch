@@ -1,6 +1,5 @@
 import { ipcMain } from "electron";
 import Database from "better-sqlite3";
-import path from "path";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history";
@@ -82,16 +81,11 @@ export function databaseIsReady() {
 }
 
 export function connect() {
+    if (!DB_PATH) {
+        throw new Error("Database path is empty");
+    }
     try {
-        const dbPath =
-            DB_PATH.length > 0
-                ? DB_PATH
-                : path.resolve(
-                      __dirname,
-                      "../../",
-                      "electron/database/",
-                      "database.db",
-                  );
+        const dbPath = DB_PATH;
         return Database(dbPath, { verbose: console.log });
     } catch (error: any) {
         console.error(error);
