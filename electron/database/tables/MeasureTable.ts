@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
-import Constants from "@/global/Constants";
+import Constants from "../../../src/global/Constants";
 
 /**
  * Represents a measure in the database.

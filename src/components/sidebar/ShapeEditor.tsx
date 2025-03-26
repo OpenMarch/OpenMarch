@@ -17,13 +17,13 @@ import {
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
 import { Plus, Trash } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { usePageStore } from "@/stores/PageStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 export default function ShapeEditor() {
     const { selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
-    const { pages } = usePageStore()!;
+    const { pages } = useTimingObjectsStore()!;
     const { selectedPage } = useSelectedPage()!;
 
     // const [shapeIsOnNextPage, setShapeIsOnNextPage] = useState<

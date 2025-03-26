@@ -119,14 +119,22 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (currentPage) this.currentPage = currentPage;
         // If no page is provided, create a default page
         else
-            this.currentPage = new Page({
-                id: -1,
-                name: "Default",
-                order: -1,
-                counts: 16,
+            this.currentPage = {
+                id: 1,
+                name: "Example",
+                order: 1,
+                counts: 4,
                 nextPageId: null,
                 previousPageId: null,
-            });
+                measures: [],
+                duration: 120,
+                notes: null,
+                isSubset: false,
+                beats: [],
+                measureBeatToStartOn: 1,
+                measureBeatToEndOn: 0,
+                timestamp: 0,
+            };
 
         // Set canvas size
         this.refreshCanvasSize();

@@ -9,7 +9,6 @@ import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
 import { TablesWithHistory } from "@/global/Constants";
-import { TimingObjects } from "@/stores/TimingObjectsStore";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
@@ -269,10 +268,6 @@ const APP_API = {
         >,
 
     // **** Timing Objects ****
-    getTimingObjects: () =>
-        ipcRenderer.invoke("timing:getAll") as Promise<
-            DatabaseResponse<TimingObjects>
-        >,
 
     // Page
     getPages: () =>

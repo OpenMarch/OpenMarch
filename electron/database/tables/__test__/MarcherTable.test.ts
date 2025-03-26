@@ -4,9 +4,12 @@ import * as PageTable from "../PageTable";
 import * as MarcherTable from "../MarcherTable";
 import * as MarcherPageTable from "../MarcherPageTable";
 import * as History from "../../database.history";
-import { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher";
-import MarcherPage from "@/global/classes/MarcherPage";
-import Constants from "@/global/Constants";
+import {
+    ModifiedMarcherArgs,
+    NewMarcherArgs,
+} from "../../../../src/global/classes/Marcher";
+import MarcherPage from "../../../../src/global/classes/MarcherPage";
+import Constants from "../../../../src/global/Constants";
 import { initTestDatabase } from "./testUtils";
 import { NewPages } from "../../../database/__test__/DatabaseMocks";
 

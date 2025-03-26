@@ -1,24 +1,24 @@
 import { DatabaseMeasure } from "electron/database/tables/MeasureTable";
 import Beat, { beatsDuration, compareBeats } from "./Beat";
 
-type Measure = Readonly<{
+interface Measure {
     /** ID of the measure in the database */
-    id: number;
+    readonly id: number;
     /** The beat this measure starts on */
-    startBeat: Beat;
+    readonly startBeat: Beat;
     /** The measure's number in the piece */
-    number: number;
+    readonly number: number;
     /** Optional rehearsal mark for the measure */
-    rehearsalMark: string | null;
+    readonly rehearsalMark: string | null;
     /** Human readable notes about the measure */
-    notes: string | null;
+    readonly notes: string | null;
     /** The duration of the measure in seconds */
-    duration: number;
+    readonly duration: number;
     /** The number of counts (or beats) in this measure */
-    counts: number;
+    readonly counts: number;
     /** The beats that belong to this measure */
-    beats: Beat[];
-}>;
+    readonly beats: Beat[];
+}
 
 export default Measure;
 

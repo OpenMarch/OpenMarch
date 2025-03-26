@@ -72,7 +72,7 @@ export const mockPages: Page[] = [
         measureBeatToStartOn: 1,
         measureBeatToEndOn: 0,
         timestamp: 0,
-    } as const,
+    } satisfies Page,
     {
         id: 2,
         name: "2",
@@ -88,7 +88,7 @@ export const mockPages: Page[] = [
         measureBeatToStartOn: 1,
         measureBeatToEndOn: 0,
         timestamp: 8,
-    } as const,
+    } satisfies Page,
     {
         id: 3,
         name: "3",
@@ -104,7 +104,7 @@ export const mockPages: Page[] = [
         measureBeatToStartOn: 1,
         measureBeatToEndOn: 0,
         timestamp: 12,
-    } as const,
+    } satisfies Page,
 ] as const;
 
 export const mockMarcherPages: MarcherPage[] = [

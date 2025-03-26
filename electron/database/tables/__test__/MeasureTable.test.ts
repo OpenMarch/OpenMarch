@@ -3,7 +3,7 @@ import { initTestDatabase } from "./testUtils";
 import Database from "better-sqlite3";
 import * as MeasureTable from "../MeasureTable";
 import * as BeatTable from "../BeatTable";
-import Beat from "@/global/classes/Beat";
+import Beat from "../../../../src/global/classes/Beat";
 
 // Helper function to trim timestamps from measure objects for comparison
 const trimData = (data: any[]) =>

@@ -732,6 +732,7 @@ export function deleteShapePageMarchers({
             tableName: Constants.ShapePageMarcherTableName,
             ids,
             printHeaders: false,
+            useNextUndoGroup: true,
         });
         actionWasPerformed = true;
 

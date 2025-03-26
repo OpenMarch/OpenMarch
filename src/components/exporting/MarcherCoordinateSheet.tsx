@@ -2,14 +2,13 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import React, { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { Marcher } from "@/global/classes/Marcher";
-import Page from "@/global/classes/Page";
+import Page, { measureRangeString } from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
-import TimeSignature from "@/global/classes/TimeSignature";
-import BeatUnit from "@/global/classes/BeatUnit";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import Beat from "@/global/classes/Beat";
 // import "./MarcherCoordinateSheet.css";
 
 // TODO, this is broken right now, fix this
@@ -66,6 +65,25 @@ export default function MarcherCoordinateSheet({
         const pixelsPerStep = fieldProperties
             ? fieldProperties.pixelsPerStep
             : 0;
+        const measures = Array.from({ length: 12 }, (_, i) => {
+            return {
+                id: i + 1,
+                startBeat: {
+                    id: i + 1,
+                    position: 0 + i * 4,
+                    duration: 4,
+                    includeInMeasure: true,
+                    notes: null,
+                    i,
+                } satisfies Beat,
+                number: i + 1,
+                rehearsalMark: null,
+                notes: null,
+                duration: 16,
+                counts: 8,
+                beats: [],
+            } satisfies Measure;
+        });
         if (example && fieldProperties) {
             setMarcherToUse(
                 new Marcher({
@@ -80,11 +98,24 @@ export default function MarcherCoordinateSheet({
                 {
                     id: 1,
                     name: "1",
-                    counts: 8,
+                    counts: 16,
                     order: 1,
                     nextPageId: 2,
                     previousPageId: null,
-                } satisfies Partial<Page>,
+                    isSubset: false,
+                    duration: 16,
+                    beats: [],
+                    measureBeatToStartOn: 1,
+                    measureBeatToEndOn: 5,
+                    notes: null,
+                    timestamp: 0,
+                    measures: [
+                        measures[0],
+                        measures[1],
+                        measures[2],
+                        measures[3],
+                    ],
+                } satisfies Page,
                 {
                     id: 2,
                     name: "2",
@@ -92,28 +123,43 @@ export default function MarcherCoordinateSheet({
                     order: 2,
                     nextPageId: 3,
                     previousPageId: 1,
-                } satisfies Partial<Page>,
+                    isSubset: false,
+                    duration: 16,
+                    beats: [],
+                    measureBeatToStartOn: 1,
+                    measureBeatToEndOn: 3,
+                    notes: null,
+                    timestamp: 16,
+                    measures: [
+                        measures[4],
+                        measures[5],
+                        measures[6],
+                        measures[7],
+                    ],
+                } satisfies Page,
                 {
                     id: 3,
                     name: "2A",
-                    counts: 5,
+                    counts: 13,
                     order: 3,
                     nextPageId: null,
                     previousPageId: 2,
-                } satisfies Partial<Page>,
+                    isSubset: false,
+                    duration: 16,
+                    beats: [],
+                    measureBeatToStartOn: 4,
+                    measureBeatToEndOn: 5,
+                    notes: null,
+                    timestamp: 32,
+                    measures: [
+                        measures[7],
+                        measures[8],
+                        measures[9],
+                        measures[10],
+                    ],
+                } satisfies Page,
             ];
-            const measures = Array.from(
-                { length: 8 },
-                (_, i) =>
-                    new Measure({
-                        number: i + 1,
-                        timeSignature: TimeSignature.fromString("4/4"),
-                        beatUnit: BeatUnit.QUARTER,
-                        tempo: 120,
-                    }),
-            );
-            Page.alignWithMeasures(pages, measures);
-            setPagesToUse(Page.alignWithMeasures(pages, measures));
+            setPagesToUse(pages);
             setMarcherPagesToUse([
                 {
                     id: 1,
@@ -156,7 +202,6 @@ export default function MarcherCoordinateSheet({
             setMarcherPagesToUse(marcherPages);
         }
     }, [marcher, marcherPages, pages, example, fieldProperties]);
-
     return (
         <StaticMarcherCoordinateSheet
             marcher={marcherToUse!}
@@ -444,7 +489,7 @@ export function StaticMarcherCoordinateSheet({
                                                         width: "10%",
                                                     }}
                                                 >
-                                                    {page.measureRangeString()}
+                                                    {measureRangeString(page)}
                                                 </td>
                                             )}
                                             <td

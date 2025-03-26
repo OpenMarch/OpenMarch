@@ -10,7 +10,7 @@ import {
 import * as PageTable from "./PageTable";
 import * as MarcherPageTable from "./MarcherPageTable";
 import { DatabaseResponse } from "../DatabaseActions";
-import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
+import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
 
 /**
  * @param db The database connection, or undefined to create a new connection

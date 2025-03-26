@@ -5,8 +5,7 @@ import {
 } from "@/context/SelectedPageContext";
 import { ElectronApi } from "electron/preload";
 import { mockPages } from "@/__mocks__/globalMocks";
-import Page from "@/global/classes/Page";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 // Mock the electron api
 window.electron = {
@@ -14,11 +13,6 @@ window.electron = {
 } as Partial<ElectronApi> as ElectronApi;
 
 describe("SelectedPageContext", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        vi.spyOn(Page, "getPages").mockResolvedValue(mockPages);
-    });
-
     it("initial selected pages should be []", async () => {
         const { result } = renderHook(() => useSelectedPage(), {
             wrapper: SelectedPageProvider,
@@ -30,7 +24,7 @@ describe("SelectedPageContext", () => {
         const { result } = renderHook(() => useSelectedPage(), {
             wrapper: SelectedPageProvider,
         });
-        const pages = await Page.getPages();
+        const pages = mockPages;
 
         // copy the first marcher to avoid reference equality issues
         const expectedPage = pages[0];
@@ -42,7 +36,7 @@ describe("SelectedPageContext", () => {
         const { result } = renderHook(() => useSelectedPage(), {
             wrapper: SelectedPageProvider,
         });
-        const pages = await Page.getPages();
+        const pages = mockPages;
 
         // copy the page to avoid reference equality issues
         let expectedPage = pages[0];

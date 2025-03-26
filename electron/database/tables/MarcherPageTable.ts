@@ -1,6 +1,6 @@
 import MarcherPage, {
     ModifiedMarcherPageArgs,
-} from "@/global/classes/MarcherPage";
+} from "../../../src/global/classes/MarcherPage";
 import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";

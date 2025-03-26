@@ -82,11 +82,11 @@ function PageList({
     const setLocalPagesModified = useCallback((pages: Page[] | undefined) => {
         if (!pages || pages.length === 0) return;
         const pagesCopy = [...pages];
-        pagesCopy[0] = new Page({
+        pagesCopy[0] = {
             ...pagesCopy[0],
             counts: 0,
             name: pagesCopy[0].name,
-        });
+        };
         setLocalPages(pagesCopy);
     }, []);
 

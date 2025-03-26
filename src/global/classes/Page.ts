@@ -6,37 +6,38 @@ import {
     NewPageArgs,
 } from "electron/database/tables/PageTable";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
+import { toast } from "sonner";
 
-type Page = Readonly<{
+interface Page {
     /** The id of the page in the database */
-    id: number;
+    readonly id: number;
     /** The name of the page. E.g. "2A" */
-    name: string;
+    readonly name: string;
     /** Number of counts to get to this page */
-    counts: number;
+    readonly counts: number;
     /** The notes for the page. E.g. "Intro" */
-    notes: string | null;
+    readonly notes: string | null;
     /** The order of the page in the show. E.g. 1, 2, 3, etc. */
-    order: number;
+    readonly order: number;
     /** The ID of the next page in the show. Null if this is the last page. */
-    nextPageId: number | null;
+    readonly nextPageId: number | null;
     /** The ID of the previous page in the show. Null if this is the first page. */
-    previousPageId: number | null;
+    readonly previousPageId: number | null;
     /** True if this page is a subset of another page. The only difference is that the name of the page will have an alphabetical letter appended. */
-    isSubset: boolean;
+    readonly isSubset: boolean;
     /** The duration of the page in seconds */
-    duration: number;
+    readonly duration: number;
     /** The beats that belong to this page in order */
-    beats: Beat[];
+    readonly beats: Beat[];
     /** The measures that belong to this page in order */
-    measures: Measure[];
+    readonly measures: Measure[];
     /**
      * The beat in the first measure that the page starts on.
      * Remember that music is 1-indexed, meaning the first beat is 1, not 0.
      *
      * E.g. 3 means the page starts on beat 3 of measures[0]
      */
-    measureBeatToStartOn: number;
+    readonly measureBeatToStartOn: number;
     /**
      * Gets the beat number of the last measure that the page goes until.
      * This is calculated by taking the total big beats of all measures, subtracting the start beat offset,
@@ -44,10 +45,10 @@ type Page = Readonly<{
      *
      * E.g. if the page has 7 counts and has two 4/4 measures, the beat to end on is 4 because it goes to that beat.
      */
-    measureBeatToEndOn: number;
+    readonly measureBeatToEndOn: number;
     /** Where the start of this page is in the music in seconds */
-    timestamp: number;
-}>;
+    readonly timestamp: number;
+}
 export default Page;
 
 /**
@@ -453,4 +454,46 @@ export const generatePageNames = (isSubsetArr: boolean[]) => {
         }
     }
     return pageNames;
+};
+
+/**
+ * Finds the next page in a sequence of pages based on the current page's nextPageId.
+ *
+ * @param currentPage The current page from which to find the next page.
+ * @param allPages An array of all available pages to search through.
+ * @returns The next page if found, or null if no next page exists.
+ */
+export const getNextPage = (
+    currentPage: Page,
+    allPages: Page[],
+): Page | null => {
+    const nextPage = allPages.find(
+        (page) => page.id === currentPage.nextPageId,
+    );
+    if (!nextPage) {
+        toast.info("No next page");
+        return null;
+    }
+    return nextPage;
+};
+
+/**
+ * Finds the previous page in a sequence of pages based on the current page's previousPageId.
+ *
+ * @param currentPage The current page from which to find the previous page.
+ * @param allPages An array of all available pages to search through.
+ * @returns The previous page if found, or null if no previous page exists.
+ */
+export const getPreviousPage = (
+    currentPage: Page,
+    allPages: Page[],
+): Page | null => {
+    const prevPage = allPages.find(
+        (page) => page.id === currentPage.previousPageId,
+    );
+    if (!prevPage) {
+        toast.info("No previous page");
+        return null;
+    }
+    return prevPage;
 };

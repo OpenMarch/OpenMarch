@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import * as History from "../database.history";
 import * as DbActions from "../DatabaseActions";
-import Constants from "@/global/Constants";
+import Constants from "../../../src/global/Constants";
 
 export const FIRST_BEAT_ID = 0;
 

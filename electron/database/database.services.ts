@@ -20,8 +20,6 @@ import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
 import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
-import { TimingObjects } from "../../src/stores/TimingObjectsStore";
-import { generateTimingObjects } from "./ApiUtils";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -190,10 +188,6 @@ export function initHandlers() {
     );
 
     // **** Timing Objects ****
-
-    ipcMain.handle("time:getAll", async () =>
-        connectWrapper<TimingObjects>(generateTimingObjects),
-    );
 
     // Page
     ipcMain.handle("page:getAll", async () =>

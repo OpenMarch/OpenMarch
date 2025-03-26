@@ -7,7 +7,7 @@ import { FIRST_PAGE_ID } from "../tables/PageTable";
 
 export default class v6 extends v5 {
     get version() {
-        return 5;
+        return 6;
     }
 
     migrateToThisVersion(db?: Database.Database): void {

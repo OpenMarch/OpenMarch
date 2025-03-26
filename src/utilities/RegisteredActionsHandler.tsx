@@ -2,12 +2,11 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
-import { usePageStore } from "@/stores/PageStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
 import MarcherPage from "@/global/classes/MarcherPage";
-import Page from "@/global/classes/Page";
+import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { useMarcherStore } from "@/stores/MarcherStore";
@@ -17,6 +16,7 @@ import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -404,7 +404,7 @@ export const RegisteredActionsObjects: {
 function RegisteredActionsHandler() {
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { marchers } = useMarcherStore()!;
-    const { pages } = usePageStore()!;
+    const { pages } = useTimingObjectsStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
@@ -512,35 +512,35 @@ function RegisteredActionsHandler() {
                     break;
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
-                    const nextPage = selectedPage.getNextPage(pages);
+                    const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage && !isPlaying) setSelectedPage(nextPage);
                     break;
                 }
                 case RegisteredActionsEnum.lastPage: {
-                    const lastPage = Page.getLastPage(pages);
+                    const lastPage = pages[0];
                     if (lastPage && !isPlaying) setSelectedPage(lastPage);
                     break;
                 }
                 case RegisteredActionsEnum.previousPage: {
-                    const previousPage = selectedPage.getPreviousPage(pages);
+                    const previousPage = getPreviousPage(selectedPage, pages);
                     if (previousPage && !isPlaying)
                         setSelectedPage(previousPage);
                     break;
                 }
                 case RegisteredActionsEnum.firstPage: {
-                    const firstPage = Page.getFirstPage(pages);
+                    const firstPage = pages[pages.length - 1];
                     if (firstPage && !isPlaying) setSelectedPage(firstPage);
                     break;
                 }
                 case RegisteredActionsEnum.playPause: {
-                    const nextPage = selectedPage.getNextPage(pages);
+                    const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage) setIsPlaying(!isPlaying);
                     break;
                 }
 
                 /****************** Batch Editing ******************/
                 case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
-                    const previousPage = selectedPage.getPreviousPage(pages);
+                    const previousPage = getPreviousPage(selectedPage, pages);
                     if (!previousPage) {
                         toast.error(
                             "Cannot set marcher coordinates to previous page. There is no previous page",
@@ -564,7 +564,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
-                    const previousPage = selectedPage.getPreviousPage(pages);
+                    const previousPage = getPreviousPage(selectedPage, pages);
                     if (!previousPage) {
                         toast.error(
                             "Cannot set marcher coordinates to previous page. There is no previous page",
@@ -594,7 +594,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.setAllMarchersToNextPage: {
-                    const nextPage = selectedPage.getNextPage(pages);
+                    const nextPage = getNextPage(selectedPage, pages);
                     if (!nextPage) {
                         toast.error(
                             "Cannot set marcher coordinates to next page. There is no next page",
@@ -615,7 +615,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
-                    const nextPage = selectedPage.getNextPage(pages);
+                    const nextPage = getNextPage(selectedPage, pages);
                     if (!nextPage) {
                         toast.error(
                             "Cannot set marcher coordinates to next page. There is no next page",
