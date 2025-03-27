@@ -30,14 +30,14 @@ interface Page {
     /** The beats that belong to this page in order */
     readonly beats: Beat[];
     /** The measures that belong to this page in order */
-    readonly measures: Measure[];
+    readonly measures: Measure[] | null;
     /**
      * The beat in the first measure that the page starts on.
      * Remember that music is 1-indexed, meaning the first beat is 1, not 0.
      *
      * E.g. 3 means the page starts on beat 3 of measures[0]
      */
-    readonly measureBeatToStartOn: number;
+    readonly measureBeatToStartOn: number | null;
     /**
      * Gets the beat number of the last measure that the page goes until.
      * This is calculated by taking the total big beats of all measures, subtracting the start beat offset,
@@ -45,7 +45,7 @@ interface Page {
      *
      * E.g. if the page has 7 counts and has two 4/4 measures, the beat to end on is 4 because it goes to that beat.
      */
-    readonly measureBeatToEndOn: number;
+    readonly measureBeatToEndOn: number | null;
     /** Where the start of this page is in the music in seconds */
     readonly timestamp: number;
 }
@@ -156,6 +156,9 @@ export const getLastPage = (allPages: Page[]): Page => {
  * @returns A string representing the measure range for the page.
  */
 export const measureRangeString = (page: Page): string => {
+    if (!page.measures || page.measures.length === 0) {
+        return "-";
+    }
     try {
         const firstMeasure = page.measures[0];
         const lastMeasure = page.measures[page.measures.length - 1];
@@ -320,7 +323,7 @@ export function fromDatabasePages({
                 measure.beats.some((beat) => beatIdSet.has(beat.id)),
         );
         if (measures.length === 0) {
-            throw new Error(`No measures found for page ${dbPage.id}`);
+            console.error(`No measures found for page ${dbPage.id}`);
         }
         const duration = beats.reduce((acc, beat) => acc + beat.duration, 0);
         const output = {
@@ -332,15 +335,19 @@ export function fromDatabasePages({
             isSubset: dbPage.is_subset,
             duration: duration,
             beats,
-            measures,
+            measures: measures.length > 0 ? measures : null,
             measureBeatToStartOn:
-                measures[0].beats.findIndex(
-                    (beat) => beat.id === startBeat.id,
-                ) + 1,
+                measures.length > 0
+                    ? measures[0].beats.findIndex(
+                          (beat) => beat.id === startBeat.id,
+                      ) + 1
+                    : null,
             measureBeatToEndOn:
-                measures[measures.length - 1].beats.findIndex(
-                    (beat) => beat.id === lastBeat.id,
-                ) + 1,
+                measures.length > 0
+                    ? measures[measures.length - 1].beats.findIndex(
+                          (beat) => beat.id === lastBeat.id,
+                      ) + 1
+                    : null,
             timestamp: curTimestamp,
             previousPageId: sortedDbPages[i - 1]?.id || null,
             nextPageId: nextPage ? nextPage.id : null,

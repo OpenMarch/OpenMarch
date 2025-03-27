@@ -7,11 +7,15 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures, pages } = useTimingObjectsStore()!;
+    const { measures, pages, beats } = useTimingObjectsStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
     const timelineRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        console.log(measures, pages, beats);
+    }, [beats, measures, pages]);
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -121,7 +125,7 @@ export default function TimelineContainer() {
                             title="First page"
                             aria-label="First page"
                         >
-                            <div>1</div>
+                            <div>{pages[0].name}</div>
                         </div>
                     )}
                     {pages.map((page, index) => {

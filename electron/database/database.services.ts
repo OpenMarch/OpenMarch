@@ -59,12 +59,25 @@ let DB_PATH = "";
  * @returns 200 if successful, -1 if the file does not exist
  */
 export function setDbPath(path: string, isNewFile = false) {
-    if (!fs.existsSync(path) && !isNewFile) {
-        console.error(`setDbPath: File does not exist at path: ${path}`);
+    const failedDb = (message: string) => {
+        console.error(message);
         DB_PATH = "";
         return -1;
+    };
+    if (!fs.existsSync(path) && !isNewFile) {
+        return failedDb(`setDbPath: File does not exist at path: ${path}`);
     }
+
     DB_PATH = path;
+    const db = connect();
+
+    const user_version = db.pragma("user_version", { simple: true });
+    if (user_version === -1) {
+        return failedDb(
+            `setDbPath: user_version is -1, meaning the database was not created successfully`,
+        );
+    }
+
     return 200;
 }
 

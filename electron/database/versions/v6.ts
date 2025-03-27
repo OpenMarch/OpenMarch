@@ -26,11 +26,28 @@ export default class v6 extends v5 {
         });
     }
 
+    tableAlreadyExists = (tableName: string, db: Database.Database) => {
+        const tableInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
+        const tableExists = tableInfo.length > 0;
+        if (tableExists) {
+            console.log(`Table ${tableName} already exists`);
+        }
+        return tableExists;
+    };
+
     createTables() {
         const db = this.databaseConnector();
         if (!db) throw new Error("Failed to connect to database.");
+
+        const currentVersion = db.pragma("user_version", { simple: true });
+        if (currentVersion === this.version) {
+            console.log(`Database already at version ${this.version}`);
+            return;
+        }
+
         console.log(db);
-        db.pragma("user_version = " + this.version);
+        // Set the pragma version to -1 so we know if it failed in the middle of creation
+        db.pragma("user_version = " + -1);
         console.log("Creating database...");
         createHistoryTables(db);
         this.createBeatsTable(db);
@@ -43,13 +60,20 @@ export default class v6 extends v5 {
         this.createShapeTable(db);
         this.createShapePageTable(db);
         this.createShapePageMarcherTable(db);
+        db.pragma("user_version = " + this.version);
         console.log("\nDatabase created successfully.");
     }
 
     createBeatsTable(db: Database.Database) {
+        const tableName = Constants.BeatsTableName;
+        if (this.tableAlreadyExists(tableName, db))
+            return {
+                success: true,
+                data: tableName,
+            };
         try {
             db.exec(`
-                CREATE TABLE IF NOT EXISTS "${Constants.BeatsTableName}" (
+                CREATE TABLE IF NOT EXISTS "${tableName}" (
                     "id"                    INTEGER PRIMARY KEY,
                     "duration"              FLOAT NOT NULL CHECK (duration >= 0),
                     "position"              INTEGER NOT NULL UNIQUE CHECK (position >= 0),
@@ -62,12 +86,12 @@ export default class v6 extends v5 {
 
             // Create default starting beat
             db.prepare(
-                `INSERT INTO ${Constants.BeatsTableName} ("duration", "position", "id") VALUES (0, 0, ${FIRST_BEAT_ID})`,
+                `INSERT INTO ${tableName} ("duration", "position", "id") VALUES (0, 0, ${FIRST_BEAT_ID})`,
             ).run();
 
             db.prepare(
                 `CREATE TRIGGER prevent_beat_modification
-                    BEFORE UPDATE ON "${Constants.BeatsTableName}"
+                    BEFORE UPDATE ON "${tableName}"
                     FOR EACH ROW
                     WHEN OLD.id = ${FIRST_BEAT_ID}
                     BEGIN
@@ -77,7 +101,7 @@ export default class v6 extends v5 {
             db.prepare(
                 `
                     CREATE TRIGGER prevent_beat_deletion
-                    BEFORE DELETE ON "${Constants.BeatsTableName}"
+                    BEFORE DELETE ON "${tableName}"
                     FOR EACH ROW
                     WHEN OLD.id = ${FIRST_BEAT_ID}
                     BEGIN
@@ -88,22 +112,37 @@ export default class v6 extends v5 {
             // Add 16 default beats
             for (let x = 0; x < 16; x++) {
                 db.prepare(
-                    `INSERT INTO ${Constants.BeatsTableName} ("duration", "position") VALUES (0.5, ${x + 1})`,
+                    `INSERT INTO ${tableName} ("duration", "position") VALUES (0.5, ${x + 1})`,
                 ).run();
             }
         } catch (error) {
-            throw new Error(
-                `Failed to create ${Constants.BeatsTableName} table: ${error}`,
-            );
+            throw new Error(`Failed to create ${tableName} table: ${error}`);
         }
-        createUndoTriggers(db, Constants.BeatsTableName);
+        createUndoTriggers(db, tableName);
     }
 
     createPageTable(db: Database.Database) {
+        const tableName = Constants.PageTableName;
+        // Check if table exists
+        if (this.tableAlreadyExists(tableName, db))
+            return {
+                success: true,
+                data: tableName,
+            };
+        const tableExists = db
+            .prepare(
+                `SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`,
+            )
+            .get();
+        if (tableExists) {
+            console.log(`Table ${tableName} already exists`);
+            return { success: true, data: tableName };
+        }
+
         try {
             db.prepare(
                 `
-                CREATE TABLE IF NOT EXISTS "${Constants.PageTableName}" (
+                CREATE TABLE IF NOT EXISTS "${tableName}" (
                     "id"	            INTEGER PRIMARY KEY,
                     "is_subset"	        INTEGER NOT NULL DEFAULT 0 CHECK (is_subset IN (0, 1)),
                     "notes"	            TEXT,
@@ -118,12 +157,12 @@ export default class v6 extends v5 {
             // Create page 1 with 0 counts. Page 1 should always exist
             // It is safe to assume there are no marchers in the database at this point, so MarcherPages do not need to be created
             db.prepare(
-                `INSERT INTO ${Constants.PageTableName} ("start_beat", "id") VALUES (${FIRST_BEAT_ID}, ${FIRST_PAGE_ID})`,
+                `INSERT INTO ${tableName} ("start_beat", "id") VALUES (${FIRST_BEAT_ID}, ${FIRST_PAGE_ID})`,
             ).run();
 
             db.prepare(
                 `CREATE TRIGGER prevent_page_modification
-                    BEFORE UPDATE ON "${Constants.PageTableName}"
+                    BEFORE UPDATE ON "${tableName}"
                     FOR EACH ROW
                     WHEN OLD.id = ${FIRST_PAGE_ID}
                     BEGIN
@@ -133,7 +172,7 @@ export default class v6 extends v5 {
             db.prepare(
                 `
                     CREATE TRIGGER prevent_page_deletion
-                    BEFORE DELETE ON "${Constants.PageTableName}"
+                    BEFORE DELETE ON "${tableName}"
                     FOR EACH ROW
                     WHEN OLD.id = ${FIRST_PAGE_ID}
                     BEGIN
@@ -142,9 +181,9 @@ export default class v6 extends v5 {
             ).run();
 
             // Make the undo triggers after so the creation of the first page cannot be undone
-            createUndoTriggers(db, Constants.PageTableName);
+            createUndoTriggers(db, tableName);
 
-            return { success: true, data: Constants.PageTableName };
+            return { success: true, data: tableName };
         } catch (error: any) {
             throw new Error(`Failed to create  table: ${error}`);
         }
@@ -158,9 +197,15 @@ export default class v6 extends v5 {
      * @param db Database object to use
      */
     createMeasureTable(db: Database.Database) {
+        const tableName = Constants.MeasureTableName;
+        if (this.tableAlreadyExists(tableName, db))
+            return {
+                success: true,
+                data: tableName,
+            };
         try {
             db.exec(`
-                    CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
+                    CREATE TABLE IF NOT EXISTS "${tableName}" (
                         id              INTEGER PRIMARY KEY,
                         start_beat      INTEGER NOT NULL UNIQUE,
                         rehearsal_mark  TEXT,
@@ -171,10 +216,8 @@ export default class v6 extends v5 {
                     );
                 `);
         } catch (error) {
-            throw new Error(
-                `Failed to create ${Constants.MeasureTableName} table: ${error}`,
-            );
+            throw new Error(`Failed to create ${tableName} table: ${error}`);
         }
-        createUndoTriggers(db, Constants.MeasureTableName);
+        createUndoTriggers(db, tableName);
     }
 }

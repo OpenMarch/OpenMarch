@@ -156,9 +156,6 @@ app.whenReady().then(async () => {
     ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
     ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
     ipcMain.handle("audio:insert", async () => insertAudioFile());
-    ipcMain.handle("measure:insert", async () =>
-        launchImportMusicXmlFileDialogue(),
-    );
     ipcMain.handle("field_properties:export", async () =>
         exportFieldPropertiesFile(),
     );
@@ -755,6 +752,7 @@ function setActiveDb(path: string, isNewFile = false) {
             return;
         }
 
+        // If this is a new file, create the tables
         // If this isn't a new file, check if a migration is needed
         if (isNewFile) {
             console.log(`Creating new database at ${path}`);

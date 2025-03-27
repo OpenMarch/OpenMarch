@@ -110,7 +110,6 @@
         "eslint-plugin-react": "^7.37.4",
         "eslint-plugin-react-hooks": "^4.6.2",
         "husky": "^9.1.7",
-        "jest-canvas-mock": "^2.5.2",
         "jsdom": "^24.1.3",
         "lint-staged": "^15.4.3",
         "prettier-plugin-tailwindcss": "^0.6.11",
