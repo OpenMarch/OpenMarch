@@ -27,7 +27,7 @@
             },
             "runtimeArgs": [
                 "--no-sandbox",
-                "--remote-debugging-port=9930",
+                "--remote-debugging-port=9929",
                 "--inspect-brk=9929",
                 "."
             ],
