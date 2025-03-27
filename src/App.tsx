@@ -34,7 +34,7 @@ function App() {
     }, []);
 
     return (
-        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 pb-8 font-sans text-text outline-accent">
+        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 font-sans text-text outline-accent">
             {!databaseIsReady ? (
                 <>
                     <TitleBar noControls />
