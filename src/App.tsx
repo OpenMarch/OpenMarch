@@ -53,7 +53,7 @@ function App() {
                                         <TitleBar />
                                         <div
                                             id="app"
-                                            className="flex h-full min-h-0 w-full gap-8 px-8"
+                                            className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                         >
                                             <Sidebar />
                                             <div
