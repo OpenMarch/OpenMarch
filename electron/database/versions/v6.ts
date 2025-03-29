@@ -60,6 +60,7 @@ export default class v6 extends v5 {
         this.createShapeTable(db);
         this.createShapePageTable(db);
         this.createShapePageMarcherTable(db);
+        this.createUtilityTable(db);
         db.pragma("user_version = " + this.version);
         console.log("\nDatabase created successfully.");
     }
@@ -149,6 +150,7 @@ export default class v6 extends v5 {
                     "created_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     "updated_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     "start_beat"	    INTEGER NOT NULL UNIQUE,
+                    "counts"            INTEGER DEFAULT NULL CHECK (counts >= 0),
                     FOREIGN KEY ("start_beat") REFERENCES "${Constants.BeatsTableName}" ("id")
                     );
                 `,
@@ -215,6 +217,43 @@ export default class v6 extends v5 {
                         FOREIGN KEY (start_beat) REFERENCES "${Constants.BeatsTableName}" ("id")
                     );
                 `);
+        } catch (error) {
+            throw new Error(`Failed to create ${tableName} table: ${error}`);
+        }
+        createUndoTriggers(db, tableName);
+    }
+
+    /**
+     * A table with various utility and metadata about the piece.
+     * @param db Database object to use
+     */
+    createUtilityTable(db: Database.Database) {
+        const tableName = Constants.UtilityTableName;
+        if (this.tableAlreadyExists(tableName, db))
+            return {
+                success: true,
+                data: tableName,
+            };
+        try {
+            db.exec(`
+                    CREATE TABLE IF NOT EXISTS "${tableName}" (
+                        id                      INTEGER PRIMARY KEY CHECK (id = 0),
+                        last_page_counts        INTEGER,
+                        FOREIGN KEY (last_page_counts) REFERENCES "${Constants.BeatsTableName}" ("id")
+                    );
+                `);
+            db.prepare(
+                `INSERT INTO "${tableName}" (id, last_page_counts) VALUES (0, 8);`,
+            ).run();
+            db.prepare(
+                `CREATE TRIGGER prevent_utility_deletion
+                    BEFORE DELETE ON "${tableName}"
+                    FOR EACH ROW
+                    WHEN OLD.id = 0
+                    BEGIN
+                        SELECT RAISE(FAIL, 'Deletion not allowed for the utility record.');
+                    END;`,
+            ).run();
         } catch (error) {
             throw new Error(`Failed to create ${tableName} table: ${error}`);
         }
