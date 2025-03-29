@@ -4,8 +4,8 @@ import {
     getUtilityRecord,
     updateUtilityRecord,
     UTILITY_RECORD_ID,
-    DatabaseUtility,
-    ModifiedDatabaseUtility,
+    UtilityRecord,
+    ModifiedUtilityRecord,
 } from "../UtilityTable";
 import Constants from "../../../../src/global/Constants";
 import { initTestDatabase } from "./testUtils";
@@ -82,13 +82,14 @@ describe("UtilityTable", () => {
 
     describe("updateUtilityRecord", () => {
         it("should update last_page_counts successfully", () => {
-            const utilityRecord: ModifiedDatabaseUtility = {
+            const utilityRecord: ModifiedUtilityRecord = {
                 last_page_counts: 16,
             };
 
             const result = updateUtilityRecord({
                 db,
                 utilityRecord,
+                useNextUndoGroup: true,
             });
 
             expect(result.success).toBe(true);
@@ -105,7 +106,7 @@ describe("UtilityTable", () => {
                 WHERE id = ${UTILITY_RECORD_ID}
             `,
                 )
-                .get() as DatabaseUtility;
+                .get() as UtilityRecord;
 
             expect(dbRecord).toEqual({
                 id: UTILITY_RECORD_ID,
@@ -124,13 +125,14 @@ describe("UtilityTable", () => {
             ).run();
 
             // Then update to null
-            const utilityRecord: ModifiedDatabaseUtility = {
+            const utilityRecord: ModifiedUtilityRecord = {
                 last_page_counts: null,
             };
 
             const result = updateUtilityRecord({
                 db,
                 utilityRecord,
+                useNextUndoGroup: true,
             });
 
             expect(result.success).toBe(true);
@@ -147,7 +149,7 @@ describe("UtilityTable", () => {
                 WHERE id = ${UTILITY_RECORD_ID}
             `,
                 )
-                .get() as DatabaseUtility;
+                .get() as UtilityRecord;
 
             expect(dbRecord).toEqual({
                 id: UTILITY_RECORD_ID,
@@ -167,6 +169,46 @@ describe("UtilityTable", () => {
                     )
                     .run(),
             ).toThrow("CHECK constraint failed: id = 0");
+        });
+
+        describe("last_page_counts", () => {
+            it("should not allow last_page_counts less than 1", () => {
+                expect(() =>
+                    db
+                        .prepare(
+                            `
+                                    UPDATE "${Constants.UtilityTableName}"
+                                    SET last_page_counts = 0
+                                    WHERE id = 0
+                                `,
+                        )
+                        .run(),
+                ).toThrow("CHECK constraint failed: last_page_counts >= 1");
+            });
+
+            it("should allow last_page_counts to be null", () => {
+                db.prepare(
+                    `
+                                UPDATE "${Constants.UtilityTableName}"
+                                SET last_page_counts = null
+                                WHERE id = 0
+                                `,
+                ).run();
+
+                const result = db
+                    .prepare(
+                        `
+                                    SELECT * FROM "${Constants.UtilityTableName}"
+                                    WHERE id = 0
+                                    `,
+                    )
+                    .get() as UtilityRecord;
+
+                expect(result).toEqual({
+                    id: 0,
+                    last_page_counts: null,
+                });
+            });
         });
     });
 });

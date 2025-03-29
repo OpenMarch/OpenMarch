@@ -396,7 +396,7 @@ export function updateItems<
     const ids = new Set<number>(items.map((item) => item.id));
     let actionWasPerformed = false;
 
-    // Verify all of the items exist before deleting any of them
+    // Verify all of the items exist before updating any of them
     for (const id of ids) {
         if (
             getItem<DatabaseItemType>({ id, db, tableName }).data === undefined

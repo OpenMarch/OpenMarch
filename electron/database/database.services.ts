@@ -19,6 +19,7 @@ import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
 import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
+import * as UtilityTable from "./tables/UtilityTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -393,6 +394,21 @@ export function initHandlers() {
         "utilities:swap_marchers",
         async (_, args: Utilities.SwapMarchersArgs) =>
             connectWrapper(Utilities.swapMarchers, args),
+    );
+
+    ipcMain.handle("utility:getRecord", async () =>
+        connectWrapper<UtilityTable.UtilityRecord | null>(
+            UtilityTable.getUtilityRecord,
+            {},
+        ),
+    );
+    ipcMain.handle(
+        "utility:updateRecord",
+        async (_, utilityRecord: UtilityTable.ModifiedUtilityRecord) =>
+            connectWrapper<UtilityTable.UtilityRecord>(
+                UtilityTable.updateUtilityRecord,
+                { utilityRecord },
+            ),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {

@@ -42,6 +42,10 @@ import {
     NewShapeArgs,
     Shape,
 } from "electron/database/tables/ShapeTable";
+import {
+    UtilityRecord,
+    ModifiedUtilityRecord,
+} from "electron/database/tables/UtilityTable";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -423,6 +427,14 @@ const APP_API = {
     deleteShapePageMarchers: (idsToDelete: Set<number>) =>
         ipcRenderer.invoke("shape_page_marcher:delete", idsToDelete) as Promise<
             DatabaseResponse<void>
+        >,
+    getUtilityRecord: () =>
+        ipcRenderer.invoke("utility:getRecord") as Promise<
+            DatabaseResponse<UtilityRecord | null>
+        >,
+    updateUtilityRecord: (utilityRecord: ModifiedUtilityRecord) =>
+        ipcRenderer.invoke("utility:updateRecord", utilityRecord) as Promise<
+            DatabaseResponse<UtilityRecord>
         >,
 
     /******************************/

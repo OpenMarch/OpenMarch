@@ -150,7 +150,6 @@ export default class v6 extends v5 {
                     "created_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     "updated_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     "start_beat"	    INTEGER NOT NULL UNIQUE,
-                    "counts"            INTEGER DEFAULT NULL CHECK (counts >= 0),
                     FOREIGN KEY ("start_beat") REFERENCES "${Constants.BeatsTableName}" ("id")
                     );
                 `,
@@ -238,7 +237,7 @@ export default class v6 extends v5 {
             db.exec(`
                     CREATE TABLE IF NOT EXISTS "${tableName}" (
                         id                      INTEGER PRIMARY KEY CHECK (id = 0),
-                        last_page_counts        INTEGER,
+                        last_page_counts        INTEGER CHECK (last_page_counts >= 1),
                         FOREIGN KEY (last_page_counts) REFERENCES "${Constants.BeatsTableName}" ("id")
                     );
                 `);

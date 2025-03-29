@@ -1,3 +1,4 @@
+import * as UtilityTable from "../UtilityTable";
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import * as PageTable from "../PageTable";
@@ -2513,6 +2514,79 @@ describe("PageTable", () => {
                     expect(marcherPagesAfterUndo2.data.length).toBe(12);
                 });
             });
+        });
+    });
+
+    describe("updateLastPageCounts", () => {
+        let db: Database.Database;
+
+        beforeEach(() => {
+            db = initTestDatabase();
+        });
+
+        it("should update the last page counts in the utility record", () => {
+            // Initial value should be default (likely 0 or null)
+            const initialUtilityRecord = UtilityTable.getUtilityRecord({ db });
+            expect(initialUtilityRecord.success).toBe(true);
+
+            // Update the last page counts
+            const lastPageCounts = 5;
+            const updateResult = PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts,
+            });
+
+            // Verify the update was successful
+            expect(updateResult.success).toBe(true);
+            expect(updateResult.data.last_page_counts).toBe(lastPageCounts);
+
+            // Verify the utility record was updated in the database
+            const updatedUtilityRecord = UtilityTable.getUtilityRecord({ db });
+            expect(updatedUtilityRecord.success).toBe(true);
+            expect(updatedUtilityRecord.data!.last_page_counts).toBe(
+                lastPageCounts,
+            );
+        });
+
+        it("should update the last page counts with a different value", () => {
+            // Update with an initial value
+            PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts: 3,
+            });
+
+            // Update with a new value
+            const newLastPageCounts = 10;
+            const updateResult = PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts: newLastPageCounts,
+            });
+
+            // Verify the update was successful
+            expect(updateResult.success).toBe(true);
+            expect(updateResult.data.last_page_counts).toBe(newLastPageCounts);
+
+            // Verify the utility record was updated in the database
+            const updatedUtilityRecord = UtilityTable.getUtilityRecord({ db });
+            expect(updatedUtilityRecord.success).toBe(true);
+            expect(updatedUtilityRecord.data!.last_page_counts).toBe(
+                newLastPageCounts,
+            );
+        });
+
+        it("should not use the next undo group", () => {
+            // Get the current undo group
+            const initialUndoGroup = History.incrementUndoGroup(db);
+
+            // Update the last page counts
+            PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts: 7,
+            });
+
+            // Verify the undo group hasn't changed
+            const currentUndoGroup = History.getCurrentUndoGroup(db);
+            expect(currentUndoGroup).toBe(initialUndoGroup);
         });
     });
 

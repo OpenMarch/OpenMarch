@@ -12,11 +12,11 @@ import * as DbActions from "../DatabaseActions";
 export const UTILITY_RECORD_ID = 0;
 
 /** How utility data is represented in the database */
-export type ModifiedDatabaseUtility = {
+export type ModifiedUtilityRecord = {
     /** The counts of the last page in the show */
     last_page_counts?: number | null;
 };
-export type DatabaseUtility = ModifiedDatabaseUtility & {
+export type UtilityRecord = ModifiedUtilityRecord & {
     /** Always 0 for the single utility record */
     id: number;
 };
@@ -31,8 +31,8 @@ export function getUtilityRecord({
     db,
 }: {
     db: Database.Database;
-}): DbActions.DatabaseResponse<DatabaseUtility | undefined> {
-    return DbActions.getItem<DatabaseUtility>({
+}): DbActions.DatabaseResponse<UtilityRecord | undefined> {
+    return DbActions.getItem<UtilityRecord>({
         tableName: Constants.UtilityTableName,
         db,
         id: UTILITY_RECORD_ID,
@@ -49,16 +49,18 @@ export function getUtilityRecord({
 export function updateUtilityRecord({
     db,
     utilityRecord,
+    useNextUndoGroup,
 }: {
     db: Database.Database;
-    utilityRecord: ModifiedDatabaseUtility;
-}): DbActions.DatabaseResponse<DatabaseUtility> {
-    const response = DbActions.updateItems<DatabaseUtility, DatabaseUtility>({
+    utilityRecord: ModifiedUtilityRecord;
+    useNextUndoGroup: boolean;
+}): DbActions.DatabaseResponse<UtilityRecord> {
+    const response = DbActions.updateItems<UtilityRecord, UtilityRecord>({
         db,
         items: [{ id: UTILITY_RECORD_ID, ...utilityRecord }],
         tableName: Constants.UtilityTableName,
         functionName: "updateUtilityRecord",
-        useNextUndoGroup: true,
+        useNextUndoGroup,
     });
 
     return {

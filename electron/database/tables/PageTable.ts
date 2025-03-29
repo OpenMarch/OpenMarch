@@ -6,6 +6,7 @@ import * as MarcherPageTable from "./MarcherPageTable";
 import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
 import { DatabaseBeat, getBeat } from "./BeatTable";
 import { getMarchers } from "./MarcherTable";
+import { updateUtilityRecord, UtilityRecord } from "./UtilityTable";
 
 export const FIRST_PAGE_ID = 0;
 
@@ -49,6 +50,7 @@ export interface NewPageArgs {
     start_beat: number;
     notes?: string | null;
     is_subset: boolean;
+    last_page_counts?: number;
 }
 
 interface RealNewPageArgs {
@@ -68,6 +70,7 @@ export interface ModifiedPageArgs {
     start_beat?: number;
     notes?: string | null;
     is_subset?: boolean;
+    last_page_counts?: number;
 }
 
 interface RealModifiedPageArgs {
@@ -165,6 +168,28 @@ export function getAdjacentPage({
 
     return adjacentPage || null;
 }
+
+/**
+ * Updates the last page counts in the utility record. Does not use the next undo group.
+ *
+ * @param db The database connection.
+ * @param lastPageCounts The number of last page counts to update.
+ * @returns A database response containing the updated utility record.
+ */
+export const updateLastPageCounts = ({
+    db,
+    lastPageCounts,
+}: {
+    db: Database.Database;
+    lastPageCounts: number;
+}): DbActions.DatabaseResponse<UtilityRecord> =>
+    updateUtilityRecord({
+        db,
+        utilityRecord: {
+            last_page_counts: lastPageCounts,
+        },
+        useNextUndoGroup: false,
+    });
 
 /**
  * Create one or many new pages.
