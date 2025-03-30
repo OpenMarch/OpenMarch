@@ -44,7 +44,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 </div>
                 <p className="text-sub opacity-50">Version {currentVersion}</p>
             </div>
-            <div className="flex hidden h-full w-1/2 items-center justify-center fill-white lg:flex">
+            <div className="flex hidden h-full w-1/2 items-center justify-center fill-text lg:flex">
                 <svg
                     id="Layer_1"
                     data-name="Layer 1"
