@@ -4,10 +4,12 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import React, { useEffect, useRef } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { createLastPage } from "@/global/classes/Page";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures, pages, beats } = useTimingObjectsStore()!;
+    const { measures, pages, beats, fetchTimingObjects } =
+        useTimingObjectsStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
@@ -94,7 +96,7 @@ export default function TimelineContainer() {
                     <p className="text-sub leading-none">Measures</p>
                 </div>
                 <div className="flex h-full items-center">
-                    <p className="text-sub leading-none">Counts</p>
+                    <p className="text-sub leading-none">Beats</p>
                 </div>
             </div>
             <div id="timeline" className="grid grid-rows-3 gap-6">
@@ -184,9 +186,22 @@ export default function TimelineContainer() {
                             </div>
                         );
                     })}
+                    <div
+                        className="ml-8 flex h-32 w-32 cursor-pointer items-center justify-center rounded-full bg-accent text-text-invert"
+                        onClick={() =>
+                            createLastPage({
+                                currentLastPage: pages[pages.length - 1],
+                                allBeats: beats,
+                                counts: 8,
+                                fetchPagesFunction: fetchTimingObjects,
+                            })
+                        }
+                    >
+                        <Plus />
+                    </div>
                 </div>
                 <div
-                    className="row-span-2 h-full min-h-0 whitespace-nowrap pl-[31px]"
+                    className="row-span-1 h-full min-h-0 whitespace-nowrap pl-[31px]"
                     id="counts measures"
                 >
                     {measures.map((measure, index) => {
@@ -214,7 +229,7 @@ export default function TimelineContainer() {
                                     <div className="col-span-full flex h-full items-center justify-start rounded-6 border border-stroke bg-fg-2 px-8 py-4 text-body leading-none">
                                         {measure.number}
                                     </div>
-                                    {Array.from(
+                                    {/* {Array.from(
                                         { length: countsToUse },
                                         (_, i) => (
                                             <div
@@ -223,8 +238,31 @@ export default function TimelineContainer() {
                                                 // style={{ width: `${width / page.counts}` }}
                                             />
                                         ),
-                                    )}
+                                    )} */}
                                 </div>
+                            </div>
+                        );
+                    })}
+                </div>
+                <div
+                    className="row-span-1 h-full min-h-0 whitespace-nowrap pl-[31px]"
+                    id="counts measures"
+                >
+                    {beats.slice(1).map((beat, index) => {
+                        const width = beat.duration * pxPerSecond;
+                        const metadata = `Beat ${beat.id} - ${beat.duration} seconds`;
+                        return (
+                            <div
+                                key={index}
+                                className="inline-block h-full pr-6"
+                                style={{ width: `${width}px` }}
+                                title={metadata}
+                                aria-label={metadata}
+                            >
+                                <div
+                                    className="col-span-1 h-full w-full select-none self-center rounded-[12px] border-[1.5px] border-text/25"
+                                    // style={{ width: `${width / page.counts}` }}
+                                />
                             </div>
                         );
                     })}

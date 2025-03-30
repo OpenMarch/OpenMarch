@@ -67,6 +67,63 @@ export async function createPages(
     if (createResponse.success) fetchPagesFunction();
     return createResponse;
 }
+/**
+ * Creates a new page at the next available beat after the current last page.
+ *
+ * @param currentLastPage - The last page in the current sequence.
+ * @param allBeats - The complete list of beats in the show.
+ * @param counts - The number of counts for the new page.
+ * @param fetchPagesFunction - Function to update the pages store after creation.
+ * @returns A DatabaseResponse with the newly created page, or null if no more beats are available.
+ */
+export async function createLastPage({
+    currentLastPage,
+    allBeats,
+    counts,
+    fetchPagesFunction,
+}: {
+    currentLastPage: Page;
+    allBeats: Beat[];
+    counts: number;
+    fetchPagesFunction: () => Promise<void>;
+}) {
+    const lastPageLastBeat =
+        currentLastPage.beats[currentLastPage.beats.length - 1];
+
+    const nextBeat = allBeats.find(
+        (beat) => beat.position > lastPageLastBeat.position,
+    );
+
+    if (!nextBeat) {
+        console.error("The show is already up to the last beat ");
+        return null;
+    }
+
+    // Create the page
+    const createResponse = await createPages(
+        [
+            {
+                start_beat: nextBeat.id,
+                is_subset: false,
+            },
+        ],
+        fetchPagesFunction,
+    );
+
+    if (!createResponse.success) {
+        return createResponse;
+    }
+
+    // Update the last page counts
+    const lastPageCountsResponse = await window.electron.updateUtilityRecord({
+        last_page_counts: counts,
+    });
+    if (!lastPageCountsResponse.success) {
+        console.error("Error updating last page counts:");
+        console.error(lastPageCountsResponse.error);
+    }
+    return createResponse;
+}
 
 /**
  * Update one or many pages with the provided arguments.
@@ -268,10 +325,12 @@ export function fromDatabasePages({
     databasePages,
     allMeasures,
     allBeats,
+    lastPageCounts,
 }: {
     databasePages: DatabasePage[];
     allMeasures: Measure[];
     allBeats: Beat[];
+    lastPageCounts: number;
 }): Page[] {
     if (databasePages.length === 0) return [];
     const sortedBeats = allBeats.sort((a, b) => a.position - b.position);
@@ -296,19 +355,24 @@ export function fromDatabasePages({
 
     let curTimestamp = 0;
     const createdPages: Page[] = sortedDbPages.map((dbPage, i) => {
+        const isLastPage = i === sortedDbPages.length - 1;
+
         // Get the beats that belong to this page
         const startBeat = beatMap.get(dbPage.start_beat);
         if (!startBeat) {
             throw new Error(`Start beat not found: ${dbPage.start_beat}`);
         }
-        const nextPage = sortedDbPages[i + 1] || null;
+        const nextPage = isLastPage ? null : sortedDbPages[i + 1];
         const nextPageBeat = nextPage ? beatMap.get(nextPage.start_beat) : null;
         if (!nextPageBeat && nextPage) {
             throw new Error(`Next beat not found: ${nextPage.start_beat}`);
         }
-        const beats = nextPage
-            ? sortedBeats.slice(startBeat.index, nextPageBeat!.index)
-            : sortedBeats.slice(startBeat.index);
+        const lastBeatIndex = nextPage
+            ? nextPageBeat!.index
+            : startBeat.index + lastPageCounts > sortedBeats.length
+              ? sortedBeats.length
+              : startBeat.index + lastPageCounts;
+        const beats = sortedBeats.slice(startBeat.index, lastBeatIndex);
         const lastBeat = beats[beats.length - 1];
         const beatIdSet = new Set(beats.map((beat) => beat.id));
 
@@ -323,7 +387,7 @@ export function fromDatabasePages({
                 measure.beats.some((beat) => beatIdSet.has(beat.id)),
         );
         if (measures.length === 0) {
-            console.error(`No measures found for page ${dbPage.id}`);
+            console.log(`No measures found for page ${dbPage.id}`);
         }
         const duration = beats.reduce((acc, beat) => acc + beat.duration, 0);
         const output = {

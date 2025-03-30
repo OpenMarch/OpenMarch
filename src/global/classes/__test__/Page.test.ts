@@ -1,8 +1,13 @@
-import { fromDatabasePages, generatePageNames } from "../Page";
+import Page, {
+    createLastPage,
+    fromDatabasePages,
+    generatePageNames,
+} from "../Page";
 import Measure from "../Measure";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Beat from "../Beat";
 import { DatabasePage } from "electron/database/tables/PageTable";
+import { ElectronApi } from "electron/preload";
 
 describe("Page", () => {
     describe("generatePageNames", () => {
@@ -165,6 +170,7 @@ describe("Page", () => {
                 databasePages: [],
                 allMeasures: [],
                 allBeats: [],
+                lastPageCounts: 8,
             });
 
             expect(result).toEqual([]);
@@ -249,6 +255,7 @@ describe("Page", () => {
                 databasePages: mockDatabasePages,
                 allMeasures: mockMeasures,
                 allBeats: mockBeats,
+                lastPageCounts: 6,
             });
 
             // Assertions
@@ -276,6 +283,117 @@ describe("Page", () => {
             expect(result[1].isSubset).toBe(false);
             expect(result[1].duration).toBe(2000);
             expect(result[1].beats).toHaveLength(2);
+            expect(result[1].measures).toHaveLength(1);
+            expect(result[1].previousPageId).toBe(1);
+            expect(result[1].nextPageId).toBeNull();
+        });
+        it("should convert database pages to Page objects with correct with less counts in the last page", () => {
+            // Mock data
+            const mockBeats: Beat[] = [
+                {
+                    id: 0,
+                    position: 0,
+                    duration: 0,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 0,
+                } satisfies Beat,
+                {
+                    id: 1,
+                    position: 1,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 1,
+                } satisfies Beat,
+                {
+                    id: 2,
+                    position: 2,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 2,
+                } satisfies Beat,
+                {
+                    id: 3,
+                    position: 3,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 3,
+                } satisfies Beat,
+                {
+                    id: 4,
+                    position: 4,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 4,
+                } satisfies Beat,
+            ];
+
+            const mockMeasures: Measure[] = [
+                {
+                    id: 1,
+                    number: 1,
+                    startBeat: { id: 1, position: 1 } as Beat,
+                    beats: [mockBeats[1], mockBeats[2]],
+                } as Measure,
+                {
+                    id: 2,
+                    number: 2,
+                    startBeat: { id: 3, position: 3 } as Beat,
+                    beats: [mockBeats[3], mockBeats[4]],
+                } as Measure,
+            ];
+
+            const mockDatabasePages: DatabasePage[] = [
+                {
+                    id: 1,
+                    start_beat: 1,
+                    is_subset: false,
+                    notes: "First page",
+                },
+                {
+                    id: 2,
+                    start_beat: 3,
+                    is_subset: false,
+                    notes: "Second page",
+                },
+            ];
+
+            const result = fromDatabasePages({
+                databasePages: mockDatabasePages,
+                allMeasures: mockMeasures,
+                allBeats: mockBeats,
+                lastPageCounts: 1,
+            });
+
+            // Assertions
+            expect(result).toHaveLength(2);
+
+            // First page
+            expect(result[0].id).toBe(1);
+            expect(result[0].name).toBe("0");
+            expect(result[0].counts).toBe(2);
+            expect(result[0].notes).toBe("First page");
+            expect(result[0].order).toBe(0);
+            expect(result[0].isSubset).toBe(false);
+            expect(result[0].duration).toBe(2000);
+            expect(result[0].beats).toHaveLength(2);
+            expect(result[0].measures).toHaveLength(1);
+            expect(result[0].previousPageId).toBeNull();
+            expect(result[0].nextPageId).toBe(2);
+
+            // Second page
+            expect(result[1].id).toBe(2);
+            expect(result[1].name).toBe("1");
+            expect(result[1].counts).toBe(1);
+            expect(result[1].notes).toBe("Second page");
+            expect(result[1].order).toBe(1);
+            expect(result[1].isSubset).toBe(false);
+            expect(result[1].duration).toBe(1000);
+            expect(result[1].beats).toHaveLength(1);
             expect(result[1].measures).toHaveLength(1);
             expect(result[1].previousPageId).toBe(1);
             expect(result[1].nextPageId).toBeNull();
@@ -345,6 +463,7 @@ describe("Page", () => {
                 databasePages: mockDatabasePages,
                 allMeasures: mockMeasures,
                 allBeats: mockBeats,
+                lastPageCounts: 1,
             });
 
             // Assertions for page names
@@ -433,13 +552,225 @@ describe("Page", () => {
                 databasePages: mockDatabasePages,
                 allMeasures: mockMeasures,
                 allBeats: mockBeats,
+                lastPageCounts: 12963981273,
             });
 
             // Assertions
             expect(result[0].measures).toHaveLength(2);
-            expect(result[0].measures[0].id).toBe(1);
-            expect(result[0].measures[1].id).toBe(2);
+            expect(result[0].measures![0].id).toBe(1);
+            expect(result[0].measures![1].id).toBe(2);
             expect(result[0].duration).toBe(4000); // Sum of all beat durations
+        });
+    });
+
+    // Mock the console.error to avoid polluting test output
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    describe("createLastPage", () => {
+        beforeEach(() => {
+            // Reset mocks before each test
+            vi.resetAllMocks();
+
+            // Setup global window.electron mock using the provided pattern
+            window.electron = {
+                createPages: vi.fn(),
+                updateUtilityRecord: vi.fn(),
+            } as Partial<ElectronApi> as ElectronApi;
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        it("should create a new page at the next available beat", async () => {
+            // Mock data
+            const currentLastPage = {
+                beats: [
+                    { id: 1, position: 10, duration: 1 },
+                    { id: 2, position: 20, duration: 1 },
+                ],
+            } as Page;
+
+            const allBeats = [
+                { id: 1, position: 10, duration: 1 },
+                { id: 2, position: 20, duration: 1 },
+                { id: 3, position: 30, duration: 1 },
+            ] as Beat[];
+
+            const counts = 8;
+            const fetchPagesFunction = vi.fn().mockResolvedValue(undefined);
+
+            // Mock responses
+            window.electron.createPages = vi.fn().mockResolvedValue({
+                success: true,
+                data: [{ id: 3, start_beat: 3, is_subset: false }],
+            });
+
+            window.electron.updateUtilityRecord = vi.fn().mockResolvedValue({
+                success: true,
+            });
+
+            // Execute function
+            const result = await createLastPage({
+                currentLastPage,
+                allBeats,
+                counts,
+                fetchPagesFunction,
+            });
+
+            // Assertions
+            expect(window.electron.createPages).toHaveBeenCalledWith([
+                {
+                    start_beat: 3,
+                    is_subset: false,
+                },
+            ]);
+
+            expect(window.electron.updateUtilityRecord).toHaveBeenCalledWith({
+                last_page_counts: 8,
+            });
+
+            expect(fetchPagesFunction).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({
+                success: true,
+                data: [{ id: 3, start_beat: 3, is_subset: false }],
+            });
+        });
+
+        it("should return null if no more beats are available", async () => {
+            // Mock data
+            const currentLastPage = {
+                beats: [
+                    { id: 1, position: 10, duration: 1 },
+                    { id: 2, position: 20, duration: 1 },
+                ],
+            } as Page;
+
+            const allBeats = [
+                { id: 1, position: 10, duration: 1 },
+                { id: 2, position: 20, duration: 1 },
+            ] as Beat[];
+
+            const counts = 8;
+            const fetchPagesFunction = vi.fn();
+
+            // Execute function
+            const result = await createLastPage({
+                currentLastPage,
+                allBeats,
+                counts,
+                fetchPagesFunction,
+            });
+
+            // Assertions
+            expect(window.electron.createPages).not.toHaveBeenCalled();
+            expect(window.electron.updateUtilityRecord).not.toHaveBeenCalled();
+            expect(fetchPagesFunction).not.toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+
+        it("should handle page creation failure", async () => {
+            // Mock data
+            const currentLastPage = {
+                beats: [
+                    { id: 1, position: 10, duration: 1 },
+                    { id: 2, position: 20, duration: 1 },
+                ],
+            } as Page;
+
+            const allBeats = [
+                { id: 1, position: 10, duration: 1 },
+                { id: 2, position: 20, duration: 1 },
+                { id: 3, position: 30, duration: 1 },
+            ] as Beat[];
+
+            const counts = 8;
+            const fetchPagesFunction = vi.fn();
+
+            // Mock responses
+            window.electron.createPages = vi.fn().mockResolvedValue({
+                success: false,
+                error: "Failed to create page",
+            });
+
+            // Execute function
+            const result = await createLastPage({
+                currentLastPage,
+                allBeats,
+                counts,
+                fetchPagesFunction,
+            });
+
+            // Assertions
+            expect(window.electron.createPages).toHaveBeenCalledWith([
+                {
+                    start_beat: 3,
+                    is_subset: false,
+                },
+            ]);
+
+            expect(window.electron.updateUtilityRecord).not.toHaveBeenCalled();
+            expect(fetchPagesFunction).not.toHaveBeenCalled();
+            expect(result).toEqual({
+                success: false,
+                error: "Failed to create page",
+            });
+        });
+
+        it("should handle utility record update failure but still return successful page creation", async () => {
+            // Mock data
+            const currentLastPage = {
+                beats: [
+                    { id: 1, position: 10, duration: 1 },
+                    { id: 2, position: 20, duration: 1 },
+                ],
+            } as Page;
+
+            const allBeats = [
+                { id: 1, position: 10, duration: 1 },
+                { id: 2, position: 20, duration: 1 },
+                { id: 3, position: 30, duration: 1 },
+            ] as Beat[];
+
+            const counts = 8;
+            const fetchPagesFunction = vi.fn().mockResolvedValue(undefined);
+
+            // Mock responses
+            window.electron.createPages = vi.fn().mockResolvedValue({
+                success: true,
+                data: [{ id: 3, start_beat: 3, is_subset: false }],
+            });
+
+            window.electron.updateUtilityRecord = vi.fn().mockResolvedValue({
+                success: false,
+                error: "Failed to update utility record",
+            });
+
+            // Execute function
+            const result = await createLastPage({
+                currentLastPage,
+                allBeats,
+                counts,
+                fetchPagesFunction,
+            });
+
+            // Assertions
+            expect(window.electron.createPages).toHaveBeenCalledWith([
+                {
+                    start_beat: 3,
+                    is_subset: false,
+                },
+            ]);
+
+            expect(window.electron.updateUtilityRecord).toHaveBeenCalledWith({
+                last_page_counts: 8,
+            });
+
+            expect(fetchPagesFunction).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({
+                success: true,
+                data: [{ id: 3, start_beat: 3, is_subset: false }],
+            });
         });
     });
 });

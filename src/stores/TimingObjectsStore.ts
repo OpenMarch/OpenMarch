@@ -55,10 +55,22 @@ export const useTimingObjectsStore = create<TimingObjectStoreInterface>(
                 databaseMeasures: measuresResponse.data,
                 allBeats: createdBeats,
             });
+
+            const utilityResponse = await window.electron.getUtilityRecord();
+            if (!utilityResponse.success || !utilityResponse.data) {
+                console.error(utilityResponse.error);
+                throw new Error(
+                    utilityResponse.error?.message ??
+                        "Could not fetch utility record",
+                );
+            }
+            const lastPageCounts = utilityResponse.data.last_page_counts;
+
             const createdPages = fromDatabasePages({
                 databasePages: pagesResponse.data,
                 allMeasures: createdMeasures,
                 allBeats: createdBeats,
+                lastPageCounts,
             });
             set({
                 pages: createdPages,
