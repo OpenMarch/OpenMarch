@@ -1,7 +1,6 @@
 import { Button } from "./ui/Button";
 import { BugNote, WarningNote } from "./ui/Note";
 import BugReport from "./ui/BugReport";
-import { version as currentVersion } from "../../package.json";
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
 }
@@ -42,7 +41,6 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 <div className="rounded-full border border-stroke bg-fg-1 px-16 py-8">
                     <BugReport />
                 </div>
-                <p className="text-sub opacity-50">Version {currentVersion}</p>
             </div>
             <div className="flex hidden h-full w-1/2 items-center justify-center fill-text lg:flex">
                 <svg
