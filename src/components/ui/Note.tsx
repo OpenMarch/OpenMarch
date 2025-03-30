@@ -36,7 +36,7 @@ export const WarningNote = ({ children }: { children: React.ReactNode }) => {
 export const BugNote = ({ children }: { children: React.ReactNode }) => {
     return (
         <div className="flex h-fit w-fit items-center gap-8 px-4 py-2">
-            <BugBeetle size={24} className="text-accent" />
+            <BugBeetle size={24} className="text-text" />
             <p className="text-body leading-none text-text">{children}</p>
         </div>
     );
