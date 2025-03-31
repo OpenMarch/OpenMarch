@@ -136,7 +136,7 @@ textarea,
 .bg-launch-gradient {
     background: rgb(var(--bg-1));
     background: linear-gradient(
-        180deg,
+        45deg,
         rgba(var(--bg-1)) 1%,
         rgba(var(--accent)) 100%
     );

@@ -37,7 +37,6 @@ function App() {
         <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 font-sans text-text outline-accent">
             {!databaseIsReady ? (
                 <>
-                    <TitleBar noControls />
                     <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
                 </>
             ) : (
