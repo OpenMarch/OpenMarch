@@ -6,8 +6,12 @@ import Page, {
 import Measure from "../Measure";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Beat from "../Beat";
-import { DatabasePage } from "electron/database/tables/PageTable";
-import { ElectronApi } from "electron/preload";
+import {
+    DatabasePage,
+    FIRST_PAGE_ID,
+} from "../../../../electron/database/tables/PageTable";
+import { ElectronApi } from "../../../../electron/preload";
+import { FIRST_BEAT_ID } from "../../../../electron/database/tables/BeatTable";
 
 describe("Page", () => {
     describe("generatePageNames", () => {
@@ -174,6 +178,118 @@ describe("Page", () => {
             });
 
             expect(result).toEqual([]);
+        });
+
+        it("should convert database pages to Page objects with correct properties when there is only the first page", () => {
+            // Mock data
+            const mockBeats: Beat[] = [
+                {
+                    id: FIRST_BEAT_ID,
+                    position: 0,
+                    duration: 0,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 0,
+                } satisfies Beat,
+                {
+                    id: 1,
+                    position: 1,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 1,
+                } satisfies Beat,
+                {
+                    id: 2,
+                    position: 2,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 2,
+                } satisfies Beat,
+                {
+                    id: 3,
+                    position: 3,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 3,
+                } satisfies Beat,
+                {
+                    id: 4,
+                    position: 4,
+                    duration: 1000,
+                    includeInMeasure: true,
+                    notes: null,
+                    i: 4,
+                } satisfies Beat,
+            ];
+
+            const mockMeasures: Measure[] = [
+                {
+                    id: 1,
+                    number: 1,
+                    startBeat: { id: 1, position: 1 } as Beat,
+                    beats: [mockBeats[1], mockBeats[2]],
+                } as Measure,
+                {
+                    id: 2,
+                    number: 2,
+                    startBeat: { id: 3, position: 3 } as Beat,
+                    beats: [mockBeats[3], mockBeats[4]],
+                } as Measure,
+            ];
+
+            const mockDatabasePages: DatabasePage[] = [
+                {
+                    id: FIRST_PAGE_ID,
+                    start_beat: FIRST_BEAT_ID,
+                    is_subset: false,
+                    notes: "First page",
+                },
+                {
+                    id: 1,
+                    start_beat: 1,
+                    is_subset: false,
+                    notes: "Second page",
+                },
+            ];
+
+            const result = fromDatabasePages({
+                databasePages: mockDatabasePages,
+                allMeasures: mockMeasures,
+                allBeats: mockBeats,
+                lastPageCounts: 6,
+            });
+
+            // Assertions
+            expect(result).toHaveLength(2);
+
+            // First page
+            expect(result[0].id).toBe(FIRST_BEAT_ID);
+            expect(result[0].name).toBe("0");
+            expect(result[0].counts).toBe(0);
+            expect(result[0].notes).toBe("First page");
+            expect(result[0].order).toBe(0);
+            expect(result[0].isSubset).toBe(false);
+            expect(result[0].duration).toBe(0);
+            expect(result[0].beats).toHaveLength(1);
+            expect(result[0].measures).toBeNull();
+            expect(result[0].previousPageId).toBeNull();
+            expect(result[0].nextPageId).toBe(1);
+
+            // Second page
+            expect(result[1].id).toBe(1);
+            expect(result[1].name).toBe("1");
+            expect(result[1].counts).toBe(4);
+            expect(result[1].notes).toBe("Second page");
+            expect(result[1].order).toBe(1);
+            expect(result[1].isSubset).toBe(false);
+            expect(result[1].duration).toBe(4000);
+            expect(result[1].beats).toHaveLength(4);
+            expect(result[1].measures).toHaveLength(2);
+            expect(result[1].previousPageId).toBe(0);
+            expect(result[1].nextPageId).toBeNull();
         });
 
         it("should convert database pages to Page objects with correct properties", () => {

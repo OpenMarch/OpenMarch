@@ -2,10 +2,11 @@ import Measure from "./Measure";
 import Beat from "./Beat";
 import {
     DatabasePage,
+    FIRST_PAGE_ID,
     ModifiedPageArgs,
     NewPageArgs,
-} from "electron/database/tables/PageTable";
-import { DatabaseResponse } from "electron/database/DatabaseActions";
+} from "../../../electron/database/tables/PageTable";
+import { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
 
 interface Page {
@@ -86,7 +87,7 @@ export async function createLastPage({
     allBeats: Beat[];
     counts: number;
     fetchPagesFunction: () => Promise<void>;
-}) {
+}): Promise<DatabaseResponse<DatabasePage | undefined>> {
     const lastPageLastBeat =
         currentLastPage.beats[currentLastPage.beats.length - 1];
 
@@ -95,8 +96,15 @@ export async function createLastPage({
     );
 
     if (!nextBeat) {
-        console.error("The show is already up to the last beat ");
-        return null;
+        const message =
+            "Cannot create a new last page! The show has no beats left";
+        console.log(message);
+        toast.warning(message);
+        return {
+            success: false,
+            error: { message },
+            data: undefined,
+        };
     }
 
     // Create the page
@@ -111,7 +119,7 @@ export async function createLastPage({
     );
 
     if (!createResponse.success) {
-        return createResponse;
+        return { ...createResponse, data: undefined };
     }
 
     // Update the last page counts
@@ -122,7 +130,7 @@ export async function createLastPage({
         console.error("Error updating last page counts:");
         console.error(lastPageCountsResponse.error);
     }
-    return createResponse;
+    return { ...createResponse, data: createResponse.data[0] };
 }
 
 /**
@@ -355,18 +363,37 @@ export function fromDatabasePages({
 
     let curTimestamp = 0;
     const createdPages: Page[] = sortedDbPages.map((dbPage, i) => {
-        const isLastPage = i === sortedDbPages.length - 1;
-
         // Get the beats that belong to this page
         const startBeat = beatMap.get(dbPage.start_beat);
-        if (!startBeat) {
+
+        if (!startBeat)
             throw new Error(`Start beat not found: ${dbPage.start_beat}`);
-        }
+
+        const isLastPage = i === sortedDbPages.length - 1;
         const nextPage = isLastPage ? null : sortedDbPages[i + 1];
         const nextPageBeat = nextPage ? beatMap.get(nextPage.start_beat) : null;
-        if (!nextPageBeat && nextPage) {
+        if (!nextPageBeat && nextPage)
             throw new Error(`Next beat not found: ${nextPage.start_beat}`);
-        }
+
+        // If this is the first page, return that special case
+        if (dbPage.id === FIRST_PAGE_ID)
+            return {
+                id: dbPage.id,
+                name: pageNames[i],
+                counts: 0,
+                notes: dbPage.notes,
+                order: i,
+                isSubset: dbPage.is_subset,
+                duration: 0,
+                beats: [startBeat],
+                measures: null,
+                measureBeatToStartOn: null,
+                measureBeatToEndOn: null,
+                timestamp: curTimestamp,
+                previousPageId: null,
+                nextPageId: nextPage ? nextPage.id : null,
+            };
+
         const lastBeatIndex = nextPage
             ? nextPageBeat!.index
             : startBeat.index + lastPageCounts > sortedBeats.length
@@ -413,7 +440,7 @@ export function fromDatabasePages({
                       ) + 1
                     : null,
             timestamp: curTimestamp,
-            previousPageId: sortedDbPages[i - 1]?.id || null,
+            previousPageId: i > 0 ? sortedDbPages[i - 1].id : null,
             nextPageId: nextPage ? nextPage.id : null,
         } satisfies Page;
         curTimestamp += duration;
