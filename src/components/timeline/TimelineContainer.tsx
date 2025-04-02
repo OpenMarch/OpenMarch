@@ -1,23 +1,244 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { createLastPage } from "@/global/classes/Page";
+import Page, { createLastPage } from "@/global/classes/Page";
+import clsx from "clsx";
+
+function PageTimeline({
+    pxPerSecond,
+    isPlaying,
+}: {
+    pxPerSecond: number;
+    isPlaying: boolean;
+}) {
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { setSelectedMarcherShapes } = useShapePageStore()!;
+
+    const { pages, beats, fetchTimingObjects } = useTimingObjectsStore()!;
+    // Page clicking and dragging
+    const resizingPage = React.useRef<Page | null>(null);
+    const startX = React.useRef(0);
+    const startWidth = React.useRef(0);
+
+    const getWidth = (page: Page) => page.duration * pxPerSecond;
+
+    // Function to handle the start of resizing
+    const handlePageResizeStart = (
+        e: React.MouseEvent,
+        page: Page,
+        index: number,
+    ) => {
+        if (isPlaying) return; // Don't allow resizing during playback
+
+        e.preventDefault();
+        e.stopPropagation(); // Prevent triggering page selection
+
+        resizingPage.current = page;
+        startX.current = e.clientX;
+        startWidth.current = getWidth(page);
+
+        // Add event listeners for mouse move and mouse up
+        document.addEventListener("mousemove", handlePageResizeMove);
+        document.addEventListener("mouseup", handlePageResizeEnd);
+    };
+
+    // Function to handle resizing movement
+    const handlePageResizeMove = React.useCallback((e: MouseEvent) => {
+        console.log("MOVING");
+        if (!resizingPage.current) return;
+
+        const deltaX = e.clientX - startX.current;
+        const newWidth = Math.max(100, startWidth.current + deltaX); // Minimum width of 100px
+
+        // // Calculate new duration based on the new width
+        // const newDuration = newWidth / pxPerSecond;
+
+        // Update the visual width immediately for smooth dragging
+        const pageElement = document.querySelector(
+            `[timeline-page-id="${resizingPage.current.id}"]`,
+        );
+        if (pageElement instanceof HTMLElement) {
+            pageElement.style.width = `${newWidth}px`;
+        }
+
+        // // Store the updated page for later database update
+        // setResizingPage({
+        //     ...resizingPage,
+        //     duration: newDuration,
+        // });
+    }, []);
+
+    // Function to handle the end of resizing
+    const handlePageResizeEnd = useCallback(() => {
+        console.log("RESIZING PAGE END");
+
+        resizingPage.current = null;
+        startX.current = 0;
+        startWidth.current = 0;
+
+        // if (resizingPage.current) {
+        //     try {
+        //         // Update the page in the database
+        //         // await updatePageDuration(resizingPage.id, resizingPage.duration);
+
+        //         // Refresh the timing objects to update everything
+        //         fetchTimingObjects();
+
+        //         // Reset resizing state
+        //     } catch (error) {
+        //         console.error("Failed to update page duration:", error);
+        //     }
+        // }
+        // Remove event listeners
+        document.removeEventListener("mousemove", handlePageResizeMove);
+        document.removeEventListener("mouseup", handlePageResizeEnd);
+    }, [handlePageResizeMove]);
+
+    // Function to update page duration in the database
+    // const updatePageDuration = async (pageId, newDuration) => {
+    //     // This function would need to be implemented based on your API
+    //     // For example:
+    //     // await fetch(`/api/pages/${pageId}`, {
+    //     //     method: 'PATCH',
+    //     //     headers: { 'Content-Type': 'application/json' },
+    //     //     body: JSON.stringify({ duration: newDuration })
+    //     // });
+
+    //     // For now, we'll just update the local state
+    //     useTimingObjectsStore.getState().updatePage(pageId, newDuration);
+    // };
+
+    // Clean up event listeners when component unmounts
+    useEffect(() => {
+        return () => {
+            document.removeEventListener("mousemove", handlePageResizeMove);
+            document.removeEventListener("mouseup", handlePageResizeEnd);
+        };
+    }, [handlePageResizeEnd, handlePageResizeMove]);
+    return (
+        <div className="flex gap-0" id="pages">
+            {/* ------ FIRST PAGE ------ */}
+            {pages.length > 0 && (
+                <div
+                    className={`flex h-full w-[25px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
+                        !isPlaying && "cursor-pointer"
+                    } ${
+                        pages[0].id === selectedPage?.id
+                            ? // if the page is selected
+                              `border-accent ${
+                                  isPlaying
+                                      ? "pointer-events-none text-text/75"
+                                      : ""
+                              }`
+                            : `border-stroke ${
+                                  isPlaying
+                                      ? "pointer-events-none text-text/75"
+                                      : ""
+                              }`
+                    }`}
+                    onClick={() => {
+                        setSelectedPage(pages[0]);
+                        setSelectedMarcherShapes([]);
+                    }}
+                    title="First page"
+                    aria-label="First page"
+                >
+                    <div>{pages[0].name}</div>
+                </div>
+            )}
+            {pages.map((page, index) => {
+                if (index === 0) return null;
+                const width = getWidth(page);
+                const selectedIndex = pages.findIndex(
+                    (p) => p.id === selectedPage?.id,
+                );
+                return (
+                    <div
+                        key={index}
+                        className="relative inline-block"
+                        timeline-page-id={page.id}
+                        style={{ width: `${width}px` }}
+                        title={`Page ${page.name}`}
+                        aria-label={`Page ${page.name}`}
+                    >
+                        {/* ------ PAGES ------ */}
+                        <div
+                            className={`relative ml-6 flex h-full items-center justify-end overflow-clip rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
+                                !isPlaying && "cursor-pointer"
+                            } ${
+                                page.id === selectedPage?.id
+                                    ? // if the page is selected
+                                      `border-accent ${
+                                          isPlaying
+                                              ? "pointer-events-none text-text/75"
+                                              : ""
+                                      }`
+                                    : `border-stroke ${
+                                          isPlaying
+                                              ? "pointer-events-none text-text/75"
+                                              : ""
+                                      }`
+                            }`}
+                            onClick={() => {
+                                if (!isPlaying) setSelectedPage(page);
+                                setSelectedMarcherShapes([]);
+                            }}
+                        >
+                            <div className="rig static z-10">{page.name}</div>
+                            {(selectedIndex === index - 1 ||
+                                (selectedIndex === 0 &&
+                                    index === pages.length)) &&
+                                isPlaying && (
+                                    <div
+                                        className="absolute left-0 top-0 z-0 h-full w-full bg-accent/25"
+                                        style={{
+                                            animation: `progress ${page.duration}s linear forwards`,
+                                        }}
+                                    />
+                                )}
+                        </div>
+                        <div
+                            className={clsx(
+                                "w-3 rounded absolute right-0 top-0 z-20 h-full cursor-ew-resize transition-colors",
+                                resizingPage.current?.id === page.id
+                                    ? "bg-accent/50"
+                                    : "bg-transparent hover:bg-accent/30",
+                            )}
+                            onMouseDown={(e) =>
+                                handlePageResizeStart(e, page, index)
+                            }
+                        >
+                            &nbsp;
+                        </div>
+                    </div>
+                );
+            })}
+            <div
+                className="ml-8 flex h-32 w-32 cursor-pointer items-center justify-center rounded-full bg-accent text-text-invert"
+                onClick={() =>
+                    createLastPage({
+                        currentLastPage: pages[pages.length - 1],
+                        allBeats: beats,
+                        counts: 8,
+                        fetchPagesFunction: fetchTimingObjects,
+                    })
+                }
+            >
+                <Plus />
+            </div>
+        </div>
+    );
+}
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures, pages, beats, fetchTimingObjects } =
-        useTimingObjectsStore()!;
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { measures, beats } = useTimingObjectsStore()!;
+    const { selectedPage } = useSelectedPage()!;
     const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
     const timelineRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        console.log(measures, pages, beats);
-    }, [beats, measures, pages]);
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -61,7 +282,7 @@ export default function TimelineContainer() {
     // Rerender the timeline when the measures or pages change
     React.useEffect(() => {
         // do nothing, just re-render
-    }, [measures, pages]);
+    }, [measures]);
 
     return (
         <div
@@ -100,106 +321,7 @@ export default function TimelineContainer() {
                 </div>
             </div>
             <div id="timeline" className="grid grid-rows-3 gap-6">
-                <div className="flex gap-0" id="pages">
-                    {/* ------ FIRST PAGE ------ */}
-                    {pages.length > 0 && (
-                        <div
-                            className={`flex h-full w-[25px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
-                                !isPlaying && "cursor-pointer"
-                            } ${
-                                pages[0].id === selectedPage?.id
-                                    ? // if the page is selected
-                                      `border-accent ${
-                                          isPlaying
-                                              ? "pointer-events-none text-text/75"
-                                              : ""
-                                      }`
-                                    : `border-stroke ${
-                                          isPlaying
-                                              ? "pointer-events-none text-text/75"
-                                              : ""
-                                      }`
-                            }`}
-                            onClick={() => {
-                                setSelectedPage(pages[0]);
-                                setSelectedMarcherShapes([]);
-                            }}
-                            title="First page"
-                            aria-label="First page"
-                        >
-                            <div>{pages[0].name}</div>
-                        </div>
-                    )}
-                    {pages.map((page, index) => {
-                        if (index === 0) return null;
-                        const width = page.duration * pxPerSecond;
-                        const selectedIndex = pages.findIndex(
-                            (p) => p.id === selectedPage?.id,
-                        );
-                        return (
-                            <div
-                                key={index}
-                                className="inline-block"
-                                data-page-id={page.id}
-                                style={{ width: `${width}px` }}
-                                title={`Page ${page.name}`}
-                                aria-label={`Page ${page.name}`}
-                            >
-                                {/* ------ PAGES ------ */}
-                                <div
-                                    className={`relative ml-6 flex h-full items-center justify-end overflow-clip rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
-                                        !isPlaying && "cursor-pointer"
-                                    } ${
-                                        page.id === selectedPage?.id
-                                            ? // if the page is selected
-                                              `border-accent ${
-                                                  isPlaying
-                                                      ? "pointer-events-none text-text/75"
-                                                      : ""
-                                              }`
-                                            : `border-stroke ${
-                                                  isPlaying
-                                                      ? "pointer-events-none text-text/75"
-                                                      : ""
-                                              }`
-                                    }`}
-                                    onClick={() => {
-                                        if (!isPlaying) setSelectedPage(page);
-                                        setSelectedMarcherShapes([]);
-                                    }}
-                                >
-                                    <div className="rig static z-10">
-                                        {page.name}
-                                    </div>
-                                    {(selectedIndex === index - 1 ||
-                                        (selectedIndex === 0 &&
-                                            index === pages.length)) &&
-                                        isPlaying && (
-                                            <div
-                                                className="absolute left-0 top-0 z-0 h-full w-full bg-accent/25"
-                                                style={{
-                                                    animation: `progress ${page.duration}s linear forwards`,
-                                                }}
-                                            />
-                                        )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                    <div
-                        className="ml-8 flex h-32 w-32 cursor-pointer items-center justify-center rounded-full bg-accent text-text-invert"
-                        onClick={() =>
-                            createLastPage({
-                                currentLastPage: pages[pages.length - 1],
-                                allBeats: beats,
-                                counts: 8,
-                                fetchPagesFunction: fetchTimingObjects,
-                            })
-                        }
-                    >
-                        <Plus />
-                    </div>
-                </div>
+                <PageTimeline pxPerSecond={pxPerSecond} isPlaying={isPlaying} />
                 <div
                     className="row-span-1 h-full min-h-0 whitespace-nowrap pl-[31px]"
                     id="counts measures"
@@ -219,7 +341,7 @@ export default function TimelineContainer() {
                                 aria-label={metadata}
                             >
                                 <div
-                                    className="grid h-full grid-rows-2 gap-6"
+                                    className="absolute right-0 top-0 h-full w-2 cursor-ew-resize hover:bg-accent/50"
                                     style={{
                                         gridTemplateColumns: "1fr ".repeat(
                                             countsToUse,
