@@ -132,3 +132,27 @@ textarea,
     --error-color: rgb(var(--red));
     --box-shadow: rgb(var(--modal-shadow));
 }
+@keyframes pulse {
+    0%,
+    100% {
+        background-position: 0% 50%;
+        background-size: 180% 180%;
+        opacity: 0.85;
+    }
+    50% {
+        background-position: 100% 50%;
+        background-size: 220% 220%;
+        opacity: 1;
+    }
+}
+
+.bg-launch-gradient {
+    background: linear-gradient(
+        45deg,
+        rgba(var(--bg-1)) 1%,
+        rgba(var(--accent)) 100%
+    );
+    background-size: 200% 200%;
+    animation: pulse 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    transition: all 0.3s ease;
+}

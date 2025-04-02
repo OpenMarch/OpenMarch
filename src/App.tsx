@@ -34,10 +34,9 @@ function App() {
     }, []);
 
     return (
-        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 pb-8 font-sans text-text outline-accent">
+        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 font-sans text-text outline-accent">
             {!databaseIsReady ? (
                 <>
-                    <TitleBar noControls />
                     <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
                 </>
             ) : (
@@ -53,7 +52,7 @@ function App() {
                                         <TitleBar />
                                         <div
                                             id="app"
-                                            className="flex h-full min-h-0 w-full gap-8 px-8"
+                                            className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                         >
                                             <Sidebar />
                                             <div
