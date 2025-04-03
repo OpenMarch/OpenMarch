@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
-import AudioPlayer from "@/components/singletons/AudioPlayer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import {
     CheckCircle,
@@ -47,7 +46,6 @@ function App() {
                                 <SelectedAudioFileProvider>
                                     <FieldPropertiesProvider>
                                         <StateInitializer />
-                                        <AudioPlayer />
                                         <RegisteredActionsHandler />
                                         <TitleBar />
                                         <div
