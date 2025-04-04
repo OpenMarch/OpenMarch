@@ -3,7 +3,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMeasureStore } from "@/stores/MeasureStore";
 import { usePageStore } from "@/stores/PageStore";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 import AudioPlayer from "../singletons/AudioPlayer";
 
@@ -13,7 +13,7 @@ export default function TimelineContainer() {
     const { pages } = usePageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
-    const [pxPerSecond, setPxPerSecond] = React.useState(40); // scale of the timeline
+    const [pxPerSecond, setPxPerSecond] = useState(40); // scale of the timeline
     const timelineRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -56,7 +56,7 @@ export default function TimelineContainer() {
     }, [selectedPage, isPlaying]);
 
     // Rerender the timeline when the measures or pages change
-    React.useEffect(() => {
+    useEffect(() => {
         // do nothing, just re-render
     }, [measures, pages]);
 
