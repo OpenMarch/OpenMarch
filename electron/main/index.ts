@@ -286,7 +286,15 @@ ipcMain.handle("set-theme", (event, theme) => {
     store.set("theme", theme);
 });
 
-//
+// Show waveform
+// TODO refactor to settings
+ipcMain.handle("set:showWaveform", async (_, showWaveform: boolean) => {
+    store.set("showWaveform", showWaveform as boolean);
+});
+
+ipcMain.handle("get:showWaveform", async () => {
+    return store.get("showWaveform", true);
+});
 
 app.on("second-instance", () => {
     if (win) {

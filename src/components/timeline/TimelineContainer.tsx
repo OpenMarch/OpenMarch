@@ -6,6 +6,7 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useEffect, useRef, useState } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 import AudioPlayer from "../singletons/AudioPlayer";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
@@ -13,6 +14,7 @@ export default function TimelineContainer() {
     const { pages } = usePageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { uiSettings } = useUiSettingsStore();
     const [pxPerSecond, setPxPerSecond] = useState(40); // scale of the timeline
     const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +66,10 @@ export default function TimelineContainer() {
         <div
             ref={timelineRef}
             id="timeline"
-            className="relative flex min-h-[8rem] w-full min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
+            className={
+                (uiSettings.showWaveform ? "min-h-[12rem]" : "min-h-[8rem]") +
+                " relative flex w-full min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
+            }
         >
             <div
                 className="fixed bottom-0 right-0 m-16 flex gap-6 drop-shadow-md"
@@ -85,13 +90,15 @@ export default function TimelineContainer() {
                     <Plus size={16} />
                 </button>
             </div>
-            <div id="legend" className="grid grid-rows-5 gap-6">
+            <div id="legend" className="grid gap-6">
                 <div className="flex h-full items-center">
                     <p className="text-sub leading-none">Pages</p>
                 </div>
-                <div className="row-span-2 flex h-full items-center">
-                    <p className="text-sub leading-none">Audio</p>
-                </div>
+                {uiSettings.showWaveform && (
+                    <div className="row-span-2 flex h-full items-center">
+                        <p className="text-sub leading-none">Audio</p>
+                    </div>
+                )}
                 <div className="flex h-full items-center">
                     <p className="text-sub leading-none">Measures</p>
                 </div>
@@ -99,7 +106,7 @@ export default function TimelineContainer() {
                     <p className="text-sub leading-none">Counts</p>
                 </div>
             </div>
-            <div id="timeline" className="grid grid-rows-5 gap-6">
+            <div id="timeline" className="grid gap-6">
                 <div className="flex gap-0" id="pages">
                     {/* ------ FIRST PAGE ------ */}
                     {pages.length > 0 && (
@@ -187,7 +194,9 @@ export default function TimelineContainer() {
                         );
                     })}
                 </div>
-                <AudioPlayer pxPerSecond={pxPerSecond} />
+                {uiSettings.showWaveform && (
+                    <AudioPlayer pxPerSecond={pxPerSecond} />
+                )}
                 <div
                     className="row-span-2 h-full min-h-0 whitespace-nowrap pl-[31px]"
                     id="counts measures"

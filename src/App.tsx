@@ -22,15 +22,21 @@ import {
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "./components/titlebar/TitleBar";
+import { useUiSettingsStore } from "./stores/UiSettingsStore";
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
+    const { fetchUiSettings } = useUiSettingsStore();
 
     useEffect(() => {
         window.electron.databaseIsReady().then((result) => {
             setDatabaseIsReady(result);
         });
     }, []);
+
+    useEffect(() => {
+        fetchUiSettings();
+    }, [fetchUiSettings]);
 
     return (
         <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 font-sans text-text outline-accent">
