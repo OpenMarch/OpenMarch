@@ -5,6 +5,7 @@ interface UiSettingsStoreState {
     uiSettings: Interfaces.UiSettings;
 }
 interface UiSettingsStoreActions {
+    fetchUiSettings: () => void;
     setUiSettings: (
         uiSettings: Interfaces.UiSettings,
         type?: keyof Interfaces.UiSettings,
@@ -27,6 +28,22 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>((set) => ({
         gridLines: true,
         /** Boolean to view lines for every four steps on the field */
         halfLines: true,
+        showWaveform: false,
+    },
+
+    /**
+     * Fetch the uiSettings
+     * TODO: there are other settings that need to be refactored into this action. right now it's a little scattered
+     */
+    fetchUiSettings: () => {
+        window.electron.getShowWaveform().then((showWaveform: boolean) => {
+            set((state) => ({
+                uiSettings: {
+                    ...state.uiSettings,
+                    showWaveform: showWaveform,
+                },
+            }));
+        });
     },
 
     /**
@@ -49,6 +66,7 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>((set) => ({
 
         window.electron.sendLockX(uiSettings.lockX);
         window.electron.sendLockY(uiSettings.lockY);
+        window.electron.setShowWaveform(uiSettings.showWaveform);
 
         set({ uiSettings: uiSettings });
     },

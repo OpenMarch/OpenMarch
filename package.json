@@ -81,6 +81,7 @@
         "rimraf": "^5.0.10",
         "sonner": "^1.7.4",
         "tailwind-merge": "^2.6.0",
+        "wavesurfer.js": "^7.9.4",
         "xml2abc": "file:external-packages/xml2abc.tgz",
         "zustand": "^4.5.6"
     },

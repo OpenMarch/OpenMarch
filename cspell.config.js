@@ -30,6 +30,7 @@ module.exports = {
         "unmaximize",
         "viewbox",
         "Vree",
+        "wavesurfer",
         "Zingali",
     ],
     ignorePaths: ["node_modules/**", "dist/**", "build/**", "src/assets"],
