@@ -5,7 +5,6 @@ import { Pathway } from "./Pathway";
 import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
-import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
@@ -15,6 +14,7 @@ import * as Selectable from "./interfaces/Selectable";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
+import { Settings } from "@/stores/UiSettingsStore";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -83,7 +83,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The timeout for when object caching should be re-enabled */
     private _zoomTimeout: NodeJS.Timeout | undefined;
     /** The UI settings for the canvas */
-    private _uiSettings: UiSettings;
+    private _uiSettings: Settings;
 
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
@@ -98,7 +98,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }: {
         canvasRef: HTMLCanvasElement | null;
         fieldProperties: FieldProperties;
-        uiSettings: UiSettings;
+        uiSettings: Settings;
         currentPage?: Page;
         listeners?: CanvasListeners;
     }) {
@@ -183,8 +183,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @return — thisArg
      */
     setActiveObject(object: fabric.Object, e?: Event): fabric.Canvas {
-        object.lockMovementX = this.uiSettings.lockX;
-        object.lockMovementY = this.uiSettings.lockY;
+        object.lockMovementX = this.uiSettings.lockMovementX;
+        object.lockMovementY = this.uiSettings.lockMovementY;
         return super.setActiveObject(object, e);
     }
 
@@ -516,8 +516,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param halfLines Whether or not to include half lines (every 4 steps)
      */
     renderFieldGrid = () => {
-        const gridLines = this.uiSettings?.gridLines ?? true;
-        const halfLines = this.uiSettings?.halfLines ?? true;
+        const gridLines = this.uiSettings?.showGridLines ?? true;
+        const halfLines = this.uiSettings?.showHalfLines ?? true;
         if (this.staticGridRef) this.remove(this.staticGridRef);
         this.staticGridRef = this.createFieldGrid({
             gridLines,
@@ -1132,18 +1132,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /*********************** SETTERS ***********************/
     /** Set the UI settings and make all of the changes in this canvas that correspond to it */
-    setUiSettings(uiSettings: UiSettings) {
+    setUiSettings(uiSettings: Settings) {
         const activeObject = this.getActiveObject();
         const oldUiSettings = this._uiSettings;
         this._uiSettings = uiSettings;
         if (activeObject) {
-            activeObject.lockMovementX = uiSettings.lockX;
-            activeObject.lockMovementY = uiSettings.lockY;
+            activeObject.lockMovementX = uiSettings.lockMovementX;
+            activeObject.lockMovementY = uiSettings.lockMovementY;
         }
 
         if (
-            oldUiSettings.gridLines !== uiSettings.gridLines ||
-            oldUiSettings.halfLines !== uiSettings.halfLines
+            oldUiSettings.showGridLines !== uiSettings.showGridLines ||
+            oldUiSettings.showHalfLines !== uiSettings.showHalfLines
         ) {
             this.renderFieldGrid();
         }

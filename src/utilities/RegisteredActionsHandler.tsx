@@ -3,7 +3,7 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { usePageStore } from "@/stores/PageStore";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { uiSettingsSelector, useSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -413,7 +413,8 @@ function RegisteredActionsHandler() {
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { fieldProperties } = useFieldProperties()!;
-    const { uiSettings, setUiSettings } = useUiSettingsStore()!;
+    const { setSetting } = useSettingsStore()!;
+    const uiSettings = useSettingsStore(uiSettingsSelector);
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const {
         resetAlignmentEvent,
@@ -668,24 +669,18 @@ function RegisteredActionsHandler() {
                             marcherPages: getSelectedMarcherPages(),
                             fieldProperties: fieldProperties,
                             denominator: 1,
-                            xAxis: !uiSettings.lockX,
-                            yAxis: !uiSettings.lockY,
+                            xAxis: !uiSettings.lockMovementX,
+                            yAxis: !uiSettings.lockMovementY,
                         },
                     );
                     MarcherPage.updateMarcherPages(roundedCoords);
                     break;
                 }
                 case RegisteredActionsEnum.lockX:
-                    setUiSettings(
-                        { ...uiSettings, lockX: !uiSettings.lockX },
-                        "lockX",
-                    );
+                    setSetting("lockMovementX", !uiSettings.lockMovementX);
                     break;
                 case RegisteredActionsEnum.lockY:
-                    setUiSettings(
-                        { ...uiSettings, lockY: !uiSettings.lockY },
-                        "lockY",
-                    );
+                    setSetting("lockMovementY", uiSettings.lockMovementY);
                     break;
                 case RegisteredActionsEnum.alignVertically: {
                     const alignedCoords = CoordinateActions.alignVertically({
@@ -757,16 +752,13 @@ function RegisteredActionsHandler() {
 
                 /****************** UI settings ******************/
                 case RegisteredActionsEnum.toggleNextPagePaths:
-                    setUiSettings({
-                        ...uiSettings,
-                        nextPaths: !uiSettings.nextPaths,
-                    });
+                    setSetting("showNextPaths", !uiSettings.showNextPaths);
                     break;
                 case RegisteredActionsEnum.togglePreviousPagePaths:
-                    setUiSettings({
-                        ...uiSettings,
-                        previousPaths: !uiSettings.previousPaths,
-                    });
+                    setSetting(
+                        "showPreviousPaths",
+                        !uiSettings.showPreviousPaths,
+                    );
                     break;
 
                 /****************** Cursor Mode ******************/
@@ -854,8 +846,11 @@ function RegisteredActionsHandler() {
             setSelectedMarcherShapes,
             setSelectedMarchers,
             setSelectedPage,
-            setUiSettings,
-            uiSettings,
+            setSetting,
+            uiSettings.lockMovementX,
+            uiSettings.lockMovementY,
+            uiSettings.showPreviousPaths,
+            uiSettings.showNextPaths,
         ],
     );
 

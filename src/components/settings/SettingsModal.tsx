@@ -8,19 +8,6 @@ import {
 import { GearSix } from "@phosphor-icons/react";
 
 export default function SettingsModal() {
-    function SettingsModalContents() {
-        return (
-            <div className="flex flex-col gap-48">
-                <div className="flex flex-col gap-16">
-                    <div className="flex w-full items-center justify-between gap-16">
-                        <p className="text-body">Theme</p>
-                        <ThemeSwitcher />
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <Dialog>
             <DialogTrigger
@@ -31,7 +18,14 @@ export default function SettingsModal() {
             </DialogTrigger>
             <DialogContent className="w-[10rem]">
                 <DialogTitle>Settings</DialogTitle>
-                <SettingsModalContents />
+                <div className="flex flex-col gap-48">
+                    <div className="flex flex-col gap-16">
+                        <div className="flex w-full items-center justify-between gap-16">
+                            <p className="text-body">Theme</p>
+                            <ThemeSwitcher />
+                        </div>
+                    </div>
+                </div>
             </DialogContent>
         </Dialog>
     );

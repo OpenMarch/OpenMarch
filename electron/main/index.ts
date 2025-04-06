@@ -1,5 +1,4 @@
 import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from "electron";
-import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
 import { join } from "node:path";
@@ -19,6 +18,7 @@ import {
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
 import { FIRST_PAGE_ID } from "../database/tables/PageTable";
+import { SettingsService } from "./services/settings-service";
 
 // The built directory structure
 //
@@ -31,7 +31,8 @@ import { FIRST_PAGE_ID } from "../database/tables/PageTable";
 // │ └── index.html    > Electron-Renderer
 //
 
-const store = new Store();
+const settingsService = SettingsService.getService();
+
 const enableSentry = process.env.NODE_ENV !== "development";
 console.log("Sentry error reporting enabled:", enableSentry);
 init({
@@ -135,7 +136,7 @@ app.whenReady().then(async () => {
 
     Menu.setApplicationMenu(applicationMenu);
 
-    let pathToOpen = store.get("databasePath") as string;
+    let pathToOpen = settingsService.getSetting("databasePath") as string;
     if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
         pathToOpen = process.argv[1];
     }
@@ -170,36 +171,32 @@ app.whenReady().then(async () => {
     );
     ipcMain.handle(
         "selectedPageId:get",
-        async () => store.get("selectedPageId") || FIRST_PAGE_ID,
+        async () =>
+            settingsService.getSetting("selectedPageId") || FIRST_PAGE_ID,
     );
 
     // Getters
     initGetters();
 
-    await createWindow("OpenMarch - " + store.get("databasePath"));
+    await createWindow(
+        "OpenMarch - " + settingsService.getSetting("databasePath"),
+    );
 });
 
 function initGetters() {
     // Store selected page and marchers
     ipcMain.on("send:selectedPage", async (_, selectedPageId: number) => {
-        store.set("selectedPageId", selectedPageId);
+        settingsService.setSetting("selectedPageId", selectedPageId);
     });
     ipcMain.on(
         "send:selectedMarchers",
         async (_, selectedMarchersId: number[]) => {
-            store.set("selectedMarchersId", selectedMarchersId);
+            settingsService.setSetting(
+                "selectedMarchersId",
+                selectedMarchersId,
+            );
         },
     );
-
-    // Store locked x or y axis
-    store.set("lockX", false);
-    store.set("lockY", false);
-    ipcMain.on("send:lockX", async (_, lockX: boolean) => {
-        store.set("lockX", lockX as boolean);
-    });
-    ipcMain.on("send:lockY", async (_, lockY: boolean) => {
-        store.set("lockY", lockY as boolean);
-    });
 
     // Exports
     ipcMain.handle("export:pdf", async (_, params) => {
@@ -208,14 +205,6 @@ function initGetters() {
             params.organizeBySection,
         );
     });
-
-    // Export Full Charts
-    // ipcMain.handle(
-
-    //    "send:exportCanvas",
-    //   async (_, dataUrl: string) =>
-    //       await exportCanvas(dataUrl)
-    //);
 }
 
 app.on("window-all-closed", () => {
@@ -227,20 +216,6 @@ app.on("open-file", (event, path) => {
     event.preventDefault();
     setActiveDb(path);
 });
-
-// Handle instances where the app is already running and a file is opened
-// const gotTheLock = app.requestSingleInstanceLock();
-// if (!gotTheLock) {
-//   app.quit();
-// } else {
-//   app.on('second-instance', (event, argv) => {
-//     // Handle the file path passed when a second instance is opened
-//     const filePath = argv.find(arg => !arg.startsWith('--') && path.extname(arg));
-//     if (mainWindow && filePath) {
-//       mainWindow.webContents.send('open-file', filePath);
-//     }
-//   });
-// }
 
 app.on("second-instance", () => {
     if (win) {
@@ -270,29 +245,9 @@ ipcMain.on("window:close", () => {
     win?.close();
 });
 
-ipcMain.on(`menu:open`, () => {
+ipcMain.on("menu:open", () => {
     if (!isMacOS) {
         applicationMenu.popup();
-    }
-});
-
-// Theme stores
-
-ipcMain.handle("get-theme", () => {
-    return store.get("theme", "light");
-});
-
-ipcMain.handle("set-theme", (event, theme) => {
-    store.set("theme", theme);
-});
-
-//
-
-app.on("second-instance", () => {
-    if (win) {
-        // Focus on the main window if the user tried to open another
-        if (win.isMinimized()) win.restore();
-        win.focus();
     }
 });
 
@@ -407,7 +362,7 @@ export async function loadDatabaseFile() {
         })
         .then((path) => {
             DatabaseServices.setDbPath(path.filePaths[0]);
-            store.set("databasePath", path.filePaths[0]); // Save the path for next time
+            settingsService.setSetting("databasePath", path.filePaths[0]); // Save the path for next time
 
             // If the user cancels the dialog, and there is no previous path, return -1
             if (path.canceled || !path.filePaths[0]) return -1;
@@ -433,7 +388,7 @@ export async function closeCurrentFile() {
 
     // Close the current file
     DatabaseServices.setDbPath("", false);
-    store.set("databasePath", "");
+    settingsService.setSetting("databasePath", "");
 
     win?.webContents.reload();
 
@@ -738,10 +693,11 @@ function setActiveDb(path: string, isNewFile = false) {
     try {
         // Get the current path from the store if the path is "."
         // I.e. last opened file
-        if (path === ".") path = store.get("databasePath") as string;
+        if (path === ".")
+            path = settingsService.getSetting("databasePath") as string;
 
         if (!fs.existsSync(path) && !isNewFile) {
-            store.delete("databasePath");
+            settingsService.deleteSetting("databasePath");
             console.error("Database file does not exist:", path);
             return;
         }
@@ -798,11 +754,11 @@ function setActiveDb(path: string, isNewFile = false) {
             migrator.migrateToThisVersion();
         }
 
-        store.set("databasePath", path); // Save current db path
+        settingsService.setSetting("databasePath", path); // Save current db path
         win?.webContents.reload();
     } catch (error) {
         captureException(error);
-        store.delete("databasePath"); // Reset database path
+        settingsService.deleteSetting("databasePath"); // Reset database path
         DatabaseServices.setDbPath("", false);
         dialog.showErrorBox("Error Loading Database", (error as Error).message);
         win?.webContents.reload();
