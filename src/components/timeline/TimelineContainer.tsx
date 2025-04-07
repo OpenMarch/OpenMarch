@@ -67,8 +67,8 @@ export default function TimelineContainer() {
             ref={timelineRef}
             id="timeline"
             className={
-                (uiSettings.showWaveform ? "min-h-[12rem]" : "min-h-[8rem]") +
-                " relative flex w-full min-w-0 gap-6 overflow-x-auto overflow-y-hidden rounded-6 border border-stroke bg-fg-1 p-8"
+                (uiSettings.showWaveform ? "min-h-[10rem]" : "min-h-[8rem]") +
+                " relative flex w-full min-w-0 rounded-6 border border-stroke bg-fg-1 p-8"
             }
         >
             <div
@@ -90,28 +90,15 @@ export default function TimelineContainer() {
                     <Plus size={16} />
                 </button>
             </div>
-            <div id="legend" className="grid gap-6">
-                <div className="flex h-full items-center">
+            <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_30px_2em_2em] gap-6 overflow-x-auto overflow-y-hidden">
+                <div className="flex h-[2em] items-center">
                     <p className="text-sub leading-none">Pages</p>
                 </div>
-                {uiSettings.showWaveform && (
-                    <div className="row-span-2 flex h-full items-center">
-                        <p className="text-sub leading-none">Audio</p>
-                    </div>
-                )}
-                <div className="flex h-full items-center">
-                    <p className="text-sub leading-none">Measures</p>
-                </div>
-                <div className="flex h-full items-center">
-                    <p className="text-sub leading-none">Counts</p>
-                </div>
-            </div>
-            <div id="timeline" className="grid gap-6">
-                <div className="flex gap-0" id="pages">
+                <div className="flex h-[2em] gap-0" id="pages">
                     {/* ------ FIRST PAGE ------ */}
                     {pages.length > 0 && (
                         <div
-                            className={`flex h-full w-[25px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
+                            className={`flex h-full w-[2em] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
                                 !isPlaying && "cursor-pointer"
                             } ${
                                 pages[0].id === selectedPage?.id
@@ -194,11 +181,27 @@ export default function TimelineContainer() {
                         );
                     })}
                 </div>
-                {uiSettings.showWaveform && (
-                    <AudioPlayer pxPerSecond={pxPerSecond} />
-                )}
                 <div
-                    className="row-span-2 h-full min-h-0 whitespace-nowrap pl-[31px]"
+                    className={
+                        (uiSettings.showWaveform ? "" : "hidden") +
+                        " flex h-[30px] items-center"
+                    }
+                >
+                    <p className="text-sub leading-none">Audio</p>
+                </div>
+                <div
+                    className={
+                        (uiSettings.showWaveform ? "" : "hidden") + " h-[30px]"
+                    }
+                >
+                    <AudioPlayer pxPerSecond={pxPerSecond} />
+                </div>
+                <div className="row-span-2 flex h-full flex-col place-content-around">
+                    <p className="text-sub leading-none">Measures</p>
+                    <p className="text-sub leading-none">Counts</p>
+                </div>
+                <div
+                    className="row-span-2 h-full min-h-0 whitespace-nowrap pl-[40px]"
                     id="counts measures"
                 >
                     {measures.map((measure, index) => {
@@ -234,7 +237,6 @@ export default function TimelineContainer() {
                                             <div
                                                 key={i}
                                                 className="col-span-1 h-full w-full select-none self-center rounded-[12px] border-[1.5px] border-text/25"
-                                                // style={{ width: `${width / page.counts}` }}
                                             />
                                         ),
                                     )}

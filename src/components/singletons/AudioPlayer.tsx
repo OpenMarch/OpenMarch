@@ -58,7 +58,7 @@ export default function AudioPlayer({ pxPerSecond }: { pxPerSecond: number }) {
                     container: waveformRef.current,
 
                     // this should be dynamic, but the parent is given height through tailwind currently
-                    height: 50,
+                    height: 30,
                     width: audioDuration * 40,
 
                     // hide the default cursor
@@ -71,6 +71,7 @@ export default function AudioPlayer({ pxPerSecond }: { pxPerSecond: number }) {
                     barWidth: 2,
                     barGap: 1,
                     barRadius: 2,
+                    barHeight: 1.2,
                     // TODO: share this with the theme and react to light/dark mode
                     waveColor: "rgb(150, 150, 150)",
                     progressColor: "rgb(100, 66, 255)",
@@ -104,7 +105,7 @@ export default function AudioPlayer({ pxPerSecond }: { pxPerSecond: number }) {
     };
 
     return (
-        <div className="row-span-2 h-full min-h-0 whitespace-nowrap pl-[31px]">
+        <div className="pl-[40px]">
             {audioFileUrl && (
                 <audio
                     ref={audioRef}
