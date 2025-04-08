@@ -18,7 +18,7 @@ import {
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
 import { FIRST_PAGE_ID } from "../database/tables/PageTable";
-import { SettingsService } from "./services/settings-service";
+import { settingsService } from "./services/settings-service";
 
 // The built directory structure
 //
@@ -30,8 +30,6 @@ import { SettingsService } from "./services/settings-service";
 // ├─┬ dist
 // │ └── index.html    > Electron-Renderer
 //
-
-const settingsService = SettingsService.getService();
 
 const enableSentry = process.env.NODE_ENV !== "development";
 console.log("Sentry error reporting enabled:", enableSentry);

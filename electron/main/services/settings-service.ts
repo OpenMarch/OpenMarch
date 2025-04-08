@@ -29,8 +29,11 @@ export const DefaultSettings: Settings = {
     snapToGrid: false,
 };
 
-export class SettingsService {
-    static instance: SettingsService;
+/**
+ * Provides and persists settings
+ */
+class SettingsService {
+    private static instance: SettingsService;
 
     private store = new Store({ name: "settings", defaults: DefaultSettings });
 
@@ -69,3 +72,5 @@ export class SettingsService {
         this.store.delete(key);
     };
 }
+
+export const settingsService = SettingsService.getService();
