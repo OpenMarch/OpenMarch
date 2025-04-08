@@ -160,6 +160,11 @@ const APP_API = {
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 
+    // Settings
+    getShowWaveform: () => ipcRenderer.invoke("get:showWaveform"),
+    setShowWaveform: (showWaveform: boolean) =>
+        ipcRenderer.invoke("set:showWaveform", showWaveform),
+
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
@@ -177,6 +182,8 @@ const APP_API = {
         ipcRenderer.send("send:selectedMarchers", selectedMarchersId),
     sendLockX: (lockX: boolean) => ipcRenderer.send("send:lockX", lockX),
     sendLockY: (lockY: boolean) => ipcRenderer.send("send:lockY", lockY),
+    sendShowWaveform: (showWaveform: boolean) =>
+        ipcRenderer.send("send:showWaveform", showWaveform),
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
 

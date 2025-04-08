@@ -14,6 +14,8 @@ export interface UiSettings {
     gridLines: boolean;
     /** Boolean to view lines for every four steps on the field */
     halfLines: boolean;
+    /** Boolean to view audio waveform */
+    showWaveform: boolean;
 }
 
 /*********************** Other ***********************/
