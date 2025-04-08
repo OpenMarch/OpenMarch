@@ -9,6 +9,7 @@ import * as Sentry from "@sentry/electron/renderer";
 import i18next from "i18next";
 
 import enUS from "../translations/en-US.json";
+import ja from "../translations/ja.json";
 
 i18next.init({
     fallbackLng: "enUS",
@@ -16,6 +17,9 @@ i18next.init({
     resources: {
         enUS: {
             translation: enUS,
+        },
+        ja: {
+            translation: ja,
         },
     },
 });

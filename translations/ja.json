@@ -1,0 +1,85 @@
+{
+  "actions": {
+    "alignment": {
+      "alignHorizontally": "水平方向に整列",
+      "alignVertically": "垂直方向に整列",
+      "evenlyDistributeHorizontally": "行進者を水平に均等に配置",
+      "evenlyDistributeVertically": "行進者を垂直に均等に分布",
+      "lockX": {
+        "description": "X 軸をロック",
+        "toggleOff": "X 移動を有効にする",
+        "toggleOn": "X 軸の動きをロック"
+      },
+      "lockY": {
+        "description": "Y 軸をロック",
+        "toggleOff": "Y 軸の移動を有効にする",
+        "toggleOn": "Y 軸の動きをロック"
+      },
+      "snapToNearestWhole": "最も近い整数にスナップ",
+      "swapMarchers": "マーチャーを交換"
+    },
+    "batchEditing": {
+      "setAllMarchersToNextPage": "すべてのマーチャーの座標を次のページに設定",
+      "setAllMarchersToPreviousPage": "すべての marcher 座標を前のページに設定",
+      "setSelectedMarchersToNextPage": "選択した marcher の座標を次のページに設定",
+      "setSelectedMarchersToPreviousPage": "選択した marcher の座標を前のページに設定"
+    },
+    "cursorMode": {
+      "alignmentEventDefault": "カーソルモードをデフォルトに設定",
+      "alignmentEventLine": "選択した marcher からラインを作成",
+      "applyQuickShape": "編集可能なオブジェクトを作成せずにスナップ マーチャーを形にする",
+      "cancelAlignmentUpdates": "マーチャーへの更新をキャンセル",
+      "createMarcherShape": "ページをまたいで編集できる線や曲線で新しい形状を作成します",
+      "deleteMarcherShape": "現在選択されているシェイプを削除"
+    },
+    "electronInteractions": {
+      "launchImportMusicXmlFileDialogue": "MusicXML ファイルをインポートして小節を取得",
+      "launchInsertAudioFileDialogue": "新しいオーディオファイルをショーにロード",
+      "launchLoadFileDialogue": "ファイル読み込みダイアログを起動",
+      "launchNewFileDialogue": "新しいファイル ダイアログを起動",
+      "launchSaveFileDialogue": "保存ファイルダイアログを起動",
+      "performRedo": "やり直しを実行",
+      "performUndo": "元に戻すを実行"
+    },
+    "navigationAndPlayback": {
+      "firstPage": "最初のページ",
+      "lastPage": "最後のページ",
+      "nextPage": "次のページ",
+      "playPause": {
+        "description": "再生 または 一時停止",
+        "toggleOff": "一時停止",
+        "toggleOn": "再生"
+      },
+      "previousPage": "前のページ"
+    },
+    "select": {
+      "selectAllMarchers": "すべての marcher を選択"
+    },
+    "UI": {
+      "toggleNextPagePaths": {
+        "description": "次のページパスの表示を切り替え",
+        "toggleOff": "次のページのドット/パスを非表示",
+        "toggleOn": "次のページのドット/パスを表示"
+      },
+      "togglePreviousPagePaths": {
+        "description": "前のページパスの表示を切り替える",
+        "toggleOff": "前のページのドット/パスを非表示",
+        "toggleOn": "前のページのドット/パスを表示"
+      }
+    }
+  },
+  "launch": {
+    "bugNote": "匿名のエラーログおよびクラッシュレポートの収集にも同意します。",
+    "createNew": "新規作成",
+    "openExisting": "既存のファイルを開く",
+    "subtitle": "オープンソースの drill 作成アプリ",
+    "warning": "OpenMarch はまだ開発中です。使用することで、潜在的な不具合やバグがあることを受け入れることになります。",
+    "welcome": "OpenMarch へようこそ"
+  },
+  "sentry": {
+    "bugReport": {
+      "button": "バグを報告",
+      "messagePlaceholder": "何が問題でしたか？\n何を期待していましたか？\nどのようにして問題を再現できますか？"
+    }
+  }
+}
