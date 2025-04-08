@@ -4,6 +4,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 /**
  * The audio player handles the playback of the audio file.
@@ -12,7 +13,8 @@ import AudioFile from "@/global/classes/AudioFile";
  *
  * @returns An empty <> element
  */
-export default function AudioPlayer({ pxPerSecond }: { pxPerSecond: number }) {
+export default function AudioPlayer() {
+    const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
     const { selectedAudioFile } = useSelectedAudioFile()!;
@@ -94,10 +96,10 @@ export default function AudioPlayer({ pxPerSecond }: { pxPerSecond: number }) {
         if (waveSurfer == null) return;
 
         waveSurfer.setOptions({
-            minPxPerSec: pxPerSecond,
-            width: audioDuration * pxPerSecond,
+            minPxPerSec: uiSettings.timelinePixelsPerSecond,
+            width: audioDuration * uiSettings.timelinePixelsPerSecond,
         });
-    }, [pxPerSecond, audioDuration, waveSurfer]);
+    }, [audioDuration, waveSurfer, uiSettings.timelinePixelsPerSecond]);
 
     const handleAudioLoaded = (event: SyntheticEvent<HTMLAudioElement>) => {
         let audioElement = event.target as HTMLAudioElement;

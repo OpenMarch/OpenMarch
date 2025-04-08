@@ -1,73 +1,100 @@
 import { create } from "zustand";
-import * as Interfaces from "../global/Interfaces";
+
+export interface UiSettings {
+    lockX: boolean;
+    lockY: boolean;
+    isPlaying: boolean;
+    /** Boolean to view previous page's paths/dots */
+    previousPaths: boolean;
+    /** Boolean to view next page's paths/dots */
+    nextPaths: boolean;
+    /** Boolean to view lines for every step on the field */
+    gridLines: boolean;
+    /** Boolean to view lines for every four steps on the field */
+    halfLines: boolean;
+    /** Boolean to view audio waveform */
+    showWaveform: boolean;
+    /** The number of pixels per second in the timeline */
+    timelinePixelsPerSecond: number;
+}
 
 interface UiSettingsStoreState {
-    uiSettings: Interfaces.UiSettings;
+    uiSettings: UiSettings;
 }
 interface UiSettingsStoreActions {
     fetchUiSettings: () => void;
-    setUiSettings: (
-        uiSettings: Interfaces.UiSettings,
-        type?: keyof Interfaces.UiSettings,
-    ) => void;
+    setUiSettings: (uiSettings: UiSettings, type?: keyof UiSettings) => void;
+    setPixelsPerSecond: (pixelsPerSecond: number) => void;
 }
 interface UiSettingsStoreInterface
     extends UiSettingsStoreState,
         UiSettingsStoreActions {}
 
-export const useUiSettingsStore = create<UiSettingsStoreInterface>((set) => ({
-    uiSettings: {
-        isPlaying: false,
-        lockX: false,
-        lockY: false,
-        /** Boolean to view previous page's paths/dots */
-        previousPaths: false,
-        /** Boolean to view next page's paths/dots */
-        nextPaths: false,
-        /** Boolean to view lines for every step on the field */
-        gridLines: true,
-        /** Boolean to view lines for every four steps on the field */
-        halfLines: true,
-        showWaveform: false,
-    },
+export const useUiSettingsStore = create<UiSettingsStoreInterface>(
+    (set, state) => ({
+        uiSettings: {
+            isPlaying: false,
+            lockX: false,
+            lockY: false,
+            /** Boolean to view previous page's paths/dots */
+            previousPaths: false,
+            /** Boolean to view next page's paths/dots */
+            nextPaths: false,
+            /** Boolean to view lines for every step on the field */
+            gridLines: true,
+            /** Boolean to view lines for every four steps on the field */
+            halfLines: true,
+            showWaveform: false,
+            /** The number of pixels per second in the timeline */
+            timelinePixelsPerSecond: 40,
+        },
 
-    /**
-     * Fetch the uiSettings
-     * TODO: there are other settings that need to be refactored into this action. right now it's a little scattered
-     */
-    fetchUiSettings: () => {
-        window.electron.getShowWaveform().then((showWaveform: boolean) => {
-            set((state) => ({
+        /**
+         * Fetch the uiSettings
+         * TODO: there are other settings that need to be refactored into this action. right now it's a little scattered
+         */
+        fetchUiSettings: () => {
+            window.electron.getShowWaveform().then((showWaveform: boolean) => {
+                set((state) => ({
+                    uiSettings: {
+                        ...state.uiSettings,
+                        showWaveform: showWaveform,
+                    },
+                }));
+            });
+        },
+
+        /**
+         * Set the uiSettings
+         *
+         * @param newUiSettings the new uiSettings
+         * @param type the ui setting that is being changed. E.g. "lockX" if changing lockX, "lockY", if changing lockY
+         * This must be passed to keep lockX and lockY from being true at the same time
+         */
+        setUiSettings: (newUiSettings, type) => {
+            const uiSettings = { ...newUiSettings };
+
+            if (uiSettings.lockX && type === "lockX") {
+                uiSettings.lockY = false;
+            }
+
+            if (uiSettings.lockY && type === "lockY") {
+                uiSettings.lockX = false;
+            }
+
+            window.electron.sendLockX(uiSettings.lockX);
+            window.electron.sendLockY(uiSettings.lockY);
+            window.electron.setShowWaveform(uiSettings.showWaveform);
+
+            set({ uiSettings: uiSettings });
+        },
+        setPixelsPerSecond: (pixelsPerSecond: number) => {
+            set({
                 uiSettings: {
-                    ...state.uiSettings,
-                    showWaveform: showWaveform,
+                    ...state().uiSettings,
+                    timelinePixelsPerSecond: pixelsPerSecond,
                 },
-            }));
-        });
-    },
-
-    /**
-     * Set the uiSettings
-     *
-     * @param newUiSettings the new uiSettings
-     * @param type the ui setting that is being changed. E.g. "lockX" if changing lockX, "lockY", if changing lockY
-     * This must be passed to keep lockX and lockY from being true at the same time
-     */
-    setUiSettings: (newUiSettings, type) => {
-        const uiSettings = { ...newUiSettings };
-
-        if (uiSettings.lockX && type === "lockX") {
-            uiSettings.lockY = false;
-        }
-
-        if (uiSettings.lockY && type === "lockY") {
-            uiSettings.lockX = false;
-        }
-
-        window.electron.sendLockX(uiSettings.lockX);
-        window.electron.sendLockY(uiSettings.lockY);
-        window.electron.setShowWaveform(uiSettings.showWaveform);
-
-        set({ uiSettings: uiSettings });
-    },
-}));
+            });
+        },
+    }),
+);

@@ -1,7 +1,7 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { UiSettings } from "@/global/Interfaces";
+import { UiSettings } from "@/stores/UiSettingsStore";
 
 /**
  * A separate mock file than global mocks since the canvas will likely be quite large and have many mocks.
@@ -15,6 +15,8 @@ export const falsyUiSettings: UiSettings = {
     nextPaths: false,
     gridLines: false,
     halfLines: false,
+    showWaveform: false,
+    timelinePixelsPerSecond: 40,
 };
 
 export const mockMarchers: Marcher[] = [

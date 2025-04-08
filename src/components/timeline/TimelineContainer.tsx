@@ -1,7 +1,7 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 import AudioPlayer from "../singletons/AudioPlayer";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -12,8 +12,7 @@ export default function TimelineContainer() {
     const { measures, pages, beats } = useTimingObjectsStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
-    const { uiSettings } = useUiSettingsStore();
-    const [pxPerSecond, setPxPerSecond] = useState(40); // scale of the timeline
+    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
     const timelineRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -75,15 +74,23 @@ export default function TimelineContainer() {
             >
                 <button
                     className="m-4 text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 active:hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => setPxPerSecond(pxPerSecond * 0.8)}
-                    disabled={pxPerSecond <= 25}
+                    onClick={() =>
+                        setPixelsPerSecond(
+                            uiSettings.timelinePixelsPerSecond * 0.8,
+                        )
+                    }
+                    disabled={uiSettings.timelinePixelsPerSecond <= 25}
                 >
                     <Minus size={16} />
                 </button>
                 <button
                     className="m-4 text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 active:hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => setPxPerSecond(pxPerSecond * 1.2)}
-                    disabled={pxPerSecond >= 100}
+                    onClick={() =>
+                        setPixelsPerSecond(
+                            uiSettings.timelinePixelsPerSecond * 1.2,
+                        )
+                    }
+                    disabled={uiSettings.timelinePixelsPerSecond >= 100}
                 >
                     <Plus size={16} />
                 </button>
@@ -124,7 +131,8 @@ export default function TimelineContainer() {
                     )}
                     {pages.map((page, index) => {
                         if (index === 0) return null;
-                        const width = page.duration * pxPerSecond;
+                        const width =
+                            page.duration * uiSettings.timelinePixelsPerSecond;
                         const selectedIndex = pages.findIndex(
                             (p) => p.id === selectedPage?.id,
                         );
@@ -168,10 +176,16 @@ export default function TimelineContainer() {
                                             index === pages.length)) &&
                                         isPlaying && (
                                             <div
-                                                className="absolute left-0 top-0 z-0 h-full w-full bg-accent/25"
-                                                style={{
-                                                    animation: `progress ${page.duration}s linear forwards`,
-                                                }}
+                                                className="absolute left-0 top-0 z-0 h-full w-full"
+                                                style={
+                                                    !uiSettings.showWaveform
+                                                        ? {
+                                                              backgroundColor:
+                                                                  "rgba(var(--accent), 0.25)",
+                                                              animation: `progress ${page.duration}s linear forwards`,
+                                                          }
+                                                        : {}
+                                                }
                                             />
                                         )}
                                 </div>
@@ -192,7 +206,7 @@ export default function TimelineContainer() {
                         (uiSettings.showWaveform ? "" : "hidden") + " h-[30px]"
                     }
                 >
-                    <AudioPlayer pxPerSecond={pxPerSecond} />
+                    <AudioPlayer />
                 </div>
                 <div className="row-span-2 flex h-full flex-col place-content-around">
                     <p className="text-sub leading-none">Measures</p>
@@ -204,7 +218,9 @@ export default function TimelineContainer() {
                 >
                     {measures.map((measure, index) => {
                         const countsToUse = measure.counts;
-                        const width = measure.duration * pxPerSecond;
+                        const width =
+                            measure.duration *
+                            uiSettings.timelinePixelsPerSecond;
                         const metadata = `m${measure.number} - ${
                             measure.duration
                         } seconds - ${measure.counts} counts - rehearsalMark ${measure.rehearsalMark}`;
@@ -246,7 +262,8 @@ export default function TimelineContainer() {
                     id="counts measures"
                 >
                     {beats.slice(1).map((beat, index) => {
-                        const width = beat.duration * pxPerSecond;
+                        const width =
+                            beat.duration * uiSettings.timelinePixelsPerSecond;
                         const metadata = `Beat ${beat.id} - ${beat.duration} seconds`;
                         return (
                             <div
