@@ -1,11 +1,11 @@
 import { useEffect } from "react";
 import * as Sentry from "@sentry/electron/renderer";
+import i18next from "i18next";
 
 export const feedbackObj = Sentry.feedbackIntegration({
     autoInject: false,
     showBranding: false,
-    messagePlaceholder:
-        "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
+    messagePlaceholder: i18next.t("sentry.bugReport.messagePlaceholder"),
     enableScreenshot: false,
 });
 export default function ErrorReport() {
@@ -22,7 +22,7 @@ export default function ErrorReport() {
             className="cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
             id="feedback-button"
         >
-            Report a bug
+            {i18next.t("sentry.bugReport.button")}
         </div>
     );
 }
