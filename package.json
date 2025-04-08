@@ -70,6 +70,7 @@
         "electron-store": "^8.2.0",
         "electron-updater": "^6.3.9",
         "fabric": "^5.5.1",
+        "i18next": "^24.2.3",
         "jquery": "^3.7.1",
         "nan": "^2.22.2",
         "postcss": "^8.5.3",

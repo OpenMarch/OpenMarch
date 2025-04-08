@@ -19,6 +19,10 @@
         },
     ],
 
+    extraFiles: [
+        "./translations"
+    ],
+
     mac: {
         target: "dmg",
         hardenedRuntime: true,

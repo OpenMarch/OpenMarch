@@ -3,6 +3,8 @@ import { BugNote, WarningNote } from "./ui/Note";
 import BugReport from "./ui/BugReport";
 import ThemeSwitcher from "./titlebar/ThemeSwitcher";
 import TitleBar from "./titlebar/TitleBar";
+import i18next from "i18next";
+
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
 }
@@ -24,30 +26,24 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
             <div className="flex h-full min-h-0 w-full min-w-0 gap-6 p-6">
                 <div className="flex h-full w-full flex-col items-start justify-center gap-32 p-32 font-bold text-text">
                     <h1 className="text-[4rem] leading-none">
-                        Welcome to OpenMarch
+                        {i18next.t("launch.welcome")}
                     </h1>
-                    <h4 className="text-h4">
-                        The open source drill writing app
-                    </h4>
+                    <h4 className="text-h4">{i18next.t("launch.subtitle")}</h4>
                     <div className="flex gap-12">
-                        <Button onClick={handleCreateNew}>Create New</Button>
+                        <Button onClick={handleCreateNew}>
+                            {i18next.t("launch.createNew")}
+                        </Button>
                         <Button
                             onClick={handleOpenExisting}
                             variant="secondary"
                         >
-                            Open Existing
+                            {i18next.t("launch.openExisting")}
                         </Button>
                     </div>
 
-                    <WarningNote>
-                        OpenMarch is still in development. By using it, you
-                        accept there may be potential glitches and bugs.
-                    </WarningNote>
+                    <WarningNote>{i18next.t("launch.warning")}</WarningNote>
 
-                    <BugNote>
-                        You also agree to the collecting of anonymous error logs
-                        and crash reports.
-                    </BugNote>
+                    <BugNote>{i18next.t("launch.bugNote")}</BugNote>
 
                     <div className="rounded-full border border-stroke bg-fg-1 px-16 py-8">
                         <BugReport />

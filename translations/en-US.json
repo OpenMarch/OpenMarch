@@ -1,0 +1,10 @@
+{
+  "launch": {
+    "bugNote": "You also agree to the collection of anonymous error logs and crash reports.",
+    "createNew": "Create New",
+    "openExisting": "Open Existing",
+    "subtitle": "The open-source drill writing app",
+    "warning": "OpenMarch is still in development. By using it, you accept that there may be potential glitches and bugs.",
+    "welcome": "Welcome to OpenMarch"
+  }
+}
