@@ -1,4 +1,73 @@
 {
+  "actions": {
+    "alignment": {
+      "alignHorizontally": "Align horizontally",
+      "alignVertically": "Align vertically",
+      "evenlyDistributeHorizontally": "Evenly distribute marchers horizontally",
+      "evenlyDistributeVertically": "Evenly distribute marchers vertically",
+      "lockX": {
+        "description": "Lock X axis",
+        "toggleOff": "Enable X movement",
+        "toggleOn": "Lock X movement"
+      },
+      "lockY": {
+        "description": "Lock Y axis",
+        "toggleOff": "Enable Y movement",
+        "toggleOn": "Lock Y movement"
+      },
+      "snapToNearestWhole": "Snap to nearest whole",
+      "swapMarchers": "Swap marchers"
+    },
+    "batchEditing": {
+      "setAllMarchersToNextPage": "Set all marcher coordinates to next page",
+      "setAllMarchersToPreviousPage": "Set all marcher coordinates to previous page",
+      "setSelectedMarchersToNextPage": "Set selected marcher(s) coordinates to next page",
+      "setSelectedMarchersToPreviousPage": "Set selected marcher(s) coordinates to previous page"
+    },
+    "cursorMode": {
+      "alignmentEventDefault": "Set cursor mode to default",
+      "alignmentEventLine": "Create a line out of the selected marchers",
+      "applyQuickShape": "Snaps marchers to shape without creating an editable object",
+      "cancelAlignmentUpdates": "Cancel updates to marchers",
+      "createMarcherShape": "Creates a new shape with lines or curves that can be edited across pages",
+      "deleteMarcherShape": "Deletes the currently selected shapes"
+    },
+    "electronInteractions": {
+      "launchImportMusicXmlFileDialogue": "Import MusicXML file to get measures",
+      "launchInsertAudioFileDialogue": "Load new audio file into the show",
+      "launchLoadFileDialogue": "Launch load file dialogue",
+      "launchNewFileDialogue": "Launch new file dialogue",
+      "launchSaveFileDialogue": "Launch save file dialogue",
+      "performRedo": "Perform redo",
+      "performUndo": "Perform undo"
+    },
+    "navigationAndPlayback": {
+      "firstPage": "First page",
+      "lastPage": "Last page",
+      "nextPage": "Next page",
+      "playPause": {
+        "description": "Play or pause",
+        "toggleOff": "Pause",
+        "toggleOn": "Play"
+      },
+      "previousPage": "Previous page"
+    },
+    "select": {
+      "selectAllMarchers": "Select all marchers"
+    },
+    "UI": {
+      "toggleNextPagePaths": {
+        "description": "Toggle viewing next page paths",
+        "toggleOff": "Hide next page dots/paths",
+        "toggleOn": "Show next page dots/paths"
+      },
+      "togglePreviousPagePaths": {
+        "description": "Toggle viewing previous page paths",
+        "toggleOff": "Hide previous page dots/paths",
+        "toggleOn": "Show previous page dots/paths"
+      }
+    }
+  },
   "launch": {
     "bugNote": "You also agree to the collection of anonymous error logs and crash reports.",
     "createNew": "Create New",
@@ -11,75 +80,6 @@
     "bugReport": {
       "button": "Report a bug",
       "messagePlaceholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?"
-    }
-  },
-  "actions": {
-    "electronInteractions": {
-      "launchLoadFileDialogue": "Launch load file dialogue",
-      "launchSaveFileDialogue": "Launch save file dialogue",
-      "launchNewFileDialogue": "Launch new file dialogue",
-      "launchInsertAudioFileDialogue": "Load new audio file into the show",
-      "launchImportMusicXmlFileDialogue": "Import MusicXML file to get measures",
-      "performUndo": "Perform undo",
-      "performRedo": "Perform redo"
-    },
-    "navigationAndPlayback": {
-      "nextPage": "Next page",
-      "lastPage": "Last page",
-      "previousPage": "Previous page",
-      "firstPage": "First page",
-      "playPause": {
-        "description": "Play or pause",
-        "toggleOn": "Play",
-        "toggleOff": "Pause"
-      }
-    },
-    "batchEditing": {
-      "setAllMarchersToPreviousPage": "Set all marcher coordinates to previous page",
-      "setSelectedMarchersToPreviousPage": "Set selected marcher(s) coordinates to previous page",
-      "setAllMarchersToNextPage": "Set all marcher coordinates to next page",
-      "setSelectedMarchersToNextPage": "Set selected marcher(s) coordinates to next page"
-    },
-    "alignment": {
-      "snapToNearestWhole": "Snap to nearest whole",
-      "lockX": {
-        "description": "Lock X axis",
-        "toggleOn": "Lock X movement",
-        "toggleOff": "Enable X movement"
-      },
-      "lockY": {
-        "description": "Lock Y axis",
-        "toggleOn": "Lock Y movement",
-        "toggleOff": "Enable Y movement"
-      },
-      "alignVertically": "Align vertically",
-      "alignHorizontally": "Align horizontally",
-      "evenlyDistributeVertically": "Evenly distribute marchers vertically",
-      "evenlyDistributeHorizontally": "Evenly distribute marchers horizontally",
-      "swapMarchers": "Swap marchers"
-    },
-    "UI":{
-      "togglePreviousPagePaths": {
-        "description": "Toggle viewing previous page paths",
-        "toggleOn": "Show previous page dots/paths",
-        "toggleOff": "Hide previous page dots/paths"
-      },
-      "toggleNextPagePaths": {
-        "description": "Toggle viewing next page paths",
-        "toggleOn": "Show next page dots/paths",
-        "toggleOff": "Hide next page dots/paths"
-      }
-    },
-    "cursorMode": {
-      "applyQuickShape": "Snaps marchers to shape without creating an editable object",
-      "createMarcherShape": "Creates a new shape with lines or curves that can be edited across pages",
-      "deleteMarcherShape": "Deletes the currently selected shapes",
-      "cancelAlignmentUpdates": "Cancel updates to marchers",
-      "alignmentEventDefault": "Set cursor mode to default",
-      "alignmentEventLine": "Create a line out of the selected marchers"
-    },
-    "select": {
-      "selectAllMarchers": "Select all marchers"
     }
   }
 }
