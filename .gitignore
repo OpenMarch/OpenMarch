@@ -48,3 +48,7 @@ coverage/
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Translation files (except for English)
+translations/*.json
+!translations/en-US.json
