@@ -1,55 +1,63 @@
 import { create } from "zustand";
-import * as Interfaces from "../global/Interfaces";
 
-interface UiSettingsStoreState {
-    uiSettings: Interfaces.UiSettings;
+export interface Settings {
+    showLaunchPage: boolean;
+    databasePath: string;
+    theme: string;
+    showWaveform: boolean;
+    showGridLines: boolean;
+    showHalfLines: boolean;
+    showPreviousPaths: boolean;
+    showNextPaths: boolean;
+    lockMovementX: boolean;
+    lockMovementY: boolean;
+    snapToGrid: boolean;
 }
-interface UiSettingsStoreActions {
-    setUiSettings: (
-        uiSettings: Interfaces.UiSettings,
-        type?: keyof Interfaces.UiSettings,
-    ) => void;
+
+interface SettingsStoreActions {
+    hydrateSettings: () => void;
+    setSetting: (key: keyof Settings, value: any) => void;
 }
-interface UiSettingsStoreInterface
-    extends UiSettingsStoreState,
-        UiSettingsStoreActions {}
 
-export const useUiSettingsStore = create<UiSettingsStoreInterface>((set) => ({
-    uiSettings: {
-        isPlaying: false,
-        lockX: false,
-        lockY: false,
-        /** Boolean to view previous page's paths/dots */
-        previousPaths: false,
-        /** Boolean to view next page's paths/dots */
-        nextPaths: false,
-        /** Boolean to view lines for every step on the field */
-        gridLines: true,
-        /** Boolean to view lines for every four steps on the field */
-        halfLines: true,
-    },
+export const useSettingsStore = create<Settings & SettingsStoreActions>(
+    (set) => ({
+        showLaunchPage: true,
+        databasePath: "",
+        theme: "light",
+        showWaveform: true,
+        showGridLines: true,
+        showHalfLines: true,
+        showPreviousPaths: false,
+        showNextPaths: false,
+        lockMovementX: false,
+        lockMovementY: false,
+        snapToGrid: false,
 
-    /**
-     * Set the uiSettings
-     *
-     * @param newUiSettings the new uiSettings
-     * @param type the ui setting that is being changed. E.g. "lockX" if changing lockX, "lockY", if changing lockY
-     * This must be passed to keep lockX and lockY from being true at the same time
-     */
-    setUiSettings: (newUiSettings, type) => {
-        const uiSettings = { ...newUiSettings };
+        hydrateSettings: () => {
+            window.electron.getAllSettings().then((settings) => {
+                set(settings);
+                console.log("hydratedSettings", settings);
+            });
+        },
 
-        if (uiSettings.lockX && type === "lockX") {
-            uiSettings.lockY = false;
-        }
+        setSetting: (key, value) => {
+            window.electron.setSetting(key, value);
 
-        if (uiSettings.lockY && type === "lockY") {
-            uiSettings.lockX = false;
-        }
+            set({ [key]: value });
+        },
+    }),
+);
 
-        window.electron.sendLockX(uiSettings.lockX);
-        window.electron.sendLockY(uiSettings.lockY);
-
-        set({ uiSettings: uiSettings });
-    },
-}));
+export const uiSettingsSelector = (state: Settings) => ({
+    showLaunchPage: state.showLaunchPage,
+    databasePath: state.databasePath,
+    theme: state.theme,
+    showWaveform: state.showWaveform,
+    showGridLines: state.showGridLines,
+    showHalfLines: state.showHalfLines,
+    showPreviousPaths: state.showPreviousPaths,
+    showNextPaths: state.showNextPaths,
+    lockMovementX: state.lockMovementX,
+    lockMovementY: state.lockMovementY,
+    snapToGrid: state.snapToGrid,
+});

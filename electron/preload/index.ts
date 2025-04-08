@@ -139,9 +139,11 @@ const APP_API = {
     openMenu: () => ipcRenderer.send("menu:open"),
     isMacOS: process.platform === "darwin",
 
-    // Themes
-    getTheme: () => ipcRenderer.invoke("get-theme"),
-    setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
+    // Settings
+    getAllSettings: () => ipcRenderer.invoke("settings:getAll"),
+    getSetting: (key: string) => ipcRenderer.invoke("settings:get", key),
+    setSetting: (key: string, value: any) =>
+        ipcRenderer.invoke("settings:set", key, value),
 
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
@@ -158,8 +160,10 @@ const APP_API = {
         ipcRenderer.send("send:selectedPage", selectedPageId),
     sendSelectedMarchers: (selectedMarchersId: number[]) =>
         ipcRenderer.send("send:selectedMarchers", selectedMarchersId),
-    sendLockX: (lockX: boolean) => ipcRenderer.send("send:lockX", lockX),
-    sendLockY: (lockY: boolean) => ipcRenderer.send("send:lockY", lockY),
+    sendLockX: (lockX: boolean) =>
+        ipcRenderer.invoke("settings:set", "lockMovementX", lockX),
+    sendLockY: (lockY: boolean) =>
+        ipcRenderer.invoke("settings:set", "lockMovementY", lockY),
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
 

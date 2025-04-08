@@ -1,4 +1,4 @@
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { uiSettingsSelector, useSettingsStore } from "@/stores/UiSettingsStore";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
     ArrowsHorizontal,
@@ -13,27 +13,29 @@ import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
 export default function UiSettingsToolbar() {
-    const { uiSettings } = useUiSettingsStore();
+    const uiSettings = useSettingsStore(uiSettingsSelector);
 
     return (
         <>
             <ToolbarSection aria-label="Cursor movement and marcher snap">
                 <RegisteredActionButton
                     instructionalString={
-                        uiSettings.lockX
+                        uiSettings.lockMovementX
                             ? RegisteredActionsObjects.lockX
                                   .instructionalStringToggleOff
                             : RegisteredActionsObjects.lockX
                                   .instructionalStringToggleOn
                     }
                     registeredAction={RegisteredActionsObjects.lockX}
-                    className={uiSettings.lockX ? "text-accent" : "text-text"}
+                    className={
+                        uiSettings.lockMovementX ? "text-accent" : "text-text"
+                    }
                 >
                     <ArrowsVertical size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     instructionalString={
-                        uiSettings.lockY
+                        uiSettings.lockMovementY
                             ? RegisteredActionsObjects.lockY
                                   .instructionalStringToggleOff
                             : RegisteredActionsObjects.lockY
@@ -41,7 +43,7 @@ export default function UiSettingsToolbar() {
                     }
                     registeredAction={RegisteredActionsObjects.lockY}
                     className={`rounded-none rounded-r ${
-                        uiSettings.lockY ? "text-accent" : "text-text"
+                        uiSettings.lockMovementY ? "text-accent" : "text-text"
                     }`}
                 >
                     <ArrowsHorizontal size={24} />

@@ -25,14 +25,16 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const [theme, setTheme] = useState<string>("light");
 
     useEffect(() => {
-        window.electron.getTheme().then((storedTheme: string | null) => {
-            if (storedTheme) {
-                applyTheme(storedTheme);
-            } else {
-                const preferredTheme = getSystemTheme();
-                applyTheme(preferredTheme);
-            }
-        });
+        window.electron
+            .getSetting("theme")
+            .then((storedTheme: string | null) => {
+                if (storedTheme) {
+                    applyTheme(storedTheme);
+                } else {
+                    const preferredTheme = getSystemTheme();
+                    applyTheme(preferredTheme);
+                }
+            });
     }, []);
 
     const getSystemTheme = () => {
@@ -43,7 +45,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     const applyTheme = (theme: string) => {
         setTheme(theme);
-        window.electron.setTheme(theme);
+        window.electron.setSetting("theme", theme);
         if (theme === "dark") {
             document.documentElement.classList.add("dark");
         } else {

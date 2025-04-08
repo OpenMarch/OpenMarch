@@ -1,10 +1,10 @@
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { uiSettingsSelector, useSettingsStore } from "@/stores/UiSettingsStore";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
 export default function UiSettingsToolbar() {
-    const { uiSettings } = useUiSettingsStore();
+    const uiSettings = useSettingsStore(uiSettingsSelector);
 
     return (
         <ToolbarSection aria-label="Ui Settings Toolbar">
@@ -13,26 +13,26 @@ export default function UiSettingsToolbar() {
                     RegisteredActionsObjects.togglePreviousPagePaths
                 }
                 instructionalString={
-                    uiSettings.previousPaths
+                    uiSettings.showPreviousPaths
                         ? RegisteredActionsObjects.togglePreviousPagePaths
                               .instructionalStringToggleOff
                         : RegisteredActionsObjects.togglePreviousPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.previousPaths ? "text-accent" : "text-text"}`}
+                className={`outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.showPreviousPaths ? "text-accent" : "text-text"}`}
             >
                 Prev paths
             </RegisteredActionButton>
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.toggleNextPagePaths}
                 instructionalString={
-                    uiSettings.nextPaths
+                    uiSettings.showNextPaths
                         ? RegisteredActionsObjects.toggleNextPagePaths
                               .instructionalStringToggleOff
                         : RegisteredActionsObjects.toggleNextPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.nextPaths ? "text-accent" : "text-text"}`}
+                className={`outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.showNextPaths ? "text-accent" : "text-text"}`}
             >
                 Next paths
             </RegisteredActionButton>
