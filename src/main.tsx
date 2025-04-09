@@ -26,7 +26,6 @@ i18next.use(initReactI18next).init({
     },
 });
 
-i18next.changeLanguage("ja");
 Sentry.init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
 });
