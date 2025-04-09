@@ -3,13 +3,13 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useEffect, useRef } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
-import AudioPlayer from "../singletons/AudioPlayer";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import AudioPlayer from "./AudioPlayer";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures, pages, beats } = useTimingObjectsStore()!;
+    const { measures, pages } = useTimingObjectsStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
@@ -95,7 +95,7 @@ export default function TimelineContainer() {
                     <Plus size={16} />
                 </button>
             </div>
-            <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_30px_2em_2em] gap-6 overflow-x-auto overflow-y-hidden">
+            <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_30px_2em_2em] gap-6 overflow-x-auto overflow-y-auto">
                 <div className="flex h-[2em] items-center">
                     <p className="text-sub leading-none">Pages</p>
                 </div>
@@ -126,7 +126,7 @@ export default function TimelineContainer() {
                             title="First page"
                             aria-label="First page"
                         >
-                            <div>1</div>
+                            <div>0</div>
                         </div>
                     )}
                     {pages.map((page, index) => {
@@ -207,79 +207,6 @@ export default function TimelineContainer() {
                     }
                 >
                     <AudioPlayer />
-                </div>
-                <div className="row-span-2 flex h-full flex-col place-content-around">
-                    <p className="text-sub leading-none">Measures</p>
-                    <p className="text-sub leading-none">Counts</p>
-                </div>
-                <div
-                    className="row-span-2 h-full min-h-0 whitespace-nowrap pl-[40px]"
-                    id="counts measures"
-                >
-                    {measures.map((measure, index) => {
-                        const countsToUse = measure.counts;
-                        const width =
-                            measure.duration *
-                            uiSettings.timelinePixelsPerSecond;
-                        const metadata = `m${measure.number} - ${
-                            measure.duration
-                        } seconds - ${measure.counts} counts - rehearsalMark ${measure.rehearsalMark}`;
-                        return (
-                            <div
-                                key={index}
-                                className="inline-block h-full pr-6"
-                                style={{ width: `${width}px` }}
-                                title={metadata}
-                                aria-label={metadata}
-                            >
-                                <div
-                                    className="absolute right-0 top-0 h-full w-2 cursor-ew-resize hover:bg-accent/50"
-                                    style={{
-                                        gridTemplateColumns: "1fr ".repeat(
-                                            countsToUse,
-                                        ),
-                                    }}
-                                >
-                                    <div className="col-span-full flex h-full items-center justify-start rounded-6 border border-stroke bg-fg-2 px-8 py-4 text-body leading-none">
-                                        {measure.number}
-                                    </div>
-                                    {/* {Array.from(
-                                        { length: countsToUse },
-                                        (_, i) => (
-                                            <div
-                                                key={i}
-                                                className="col-span-1 h-full w-full select-none self-center rounded-[12px] border-[1.5px] border-text/25"
-                                            />
-                                        ),
-                                    )} */}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-                <div
-                    className="row-span-1 h-full min-h-0 whitespace-nowrap pl-[31px]"
-                    id="counts measures"
-                >
-                    {beats.slice(1).map((beat, index) => {
-                        const width =
-                            beat.duration * uiSettings.timelinePixelsPerSecond;
-                        const metadata = `Beat ${beat.id} - ${beat.duration} seconds`;
-                        return (
-                            <div
-                                key={index}
-                                className="inline-block h-full pr-6"
-                                style={{ width: `${width}px` }}
-                                title={metadata}
-                                aria-label={metadata}
-                            >
-                                <div
-                                    className="col-span-1 h-full w-full select-none self-center rounded-[12px] border-[1.5px] border-text/25"
-                                    // style={{ width: `${width / page.counts}` }}
-                                />
-                            </div>
-                        );
-                    })}
                 </div>
             </div>
         </div>
