@@ -41,13 +41,13 @@ export default function AudioSelector() {
 
     return (
         <div className="flex flex-col gap-12">
-            <h5 className="text-h5 leading-none">Audio</h5>
+            <h5 className="text-h5 leading-none">{t("music.audio.label")}</h5>
             <div className="flex items-center justify-between gap-8 px-12">
                 <label
                     htmlFor="audio-selector"
                     className="w-full text-body text-text/80"
                 >
-                    Audio File
+                    {t("music.audio.audioFile.label")}
                 </label>
                 <div id="audio-selector" onClick={refreshAudioFiles}>
                     <Select
@@ -66,7 +66,7 @@ export default function AudioSelector() {
                                 showTooltip={false}
                                 className="text-text"
                             >
-                                {t("audio-selector.import")}
+                                {t("music.audio.audioFile.import")}
                             </RegisteredActionButton>
                             {audioFiles.length > 0 && <SelectSeparator />}
                             {audioFiles.map((audioFile) => (

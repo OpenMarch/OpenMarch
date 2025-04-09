@@ -22,6 +22,7 @@ import { Checkbox } from "../ui/Checkbox";
 import * as Form from "@radix-ui/react-form";
 import { Input } from "../ui/Input";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 function ExportModalContents() {
     const [isTerse, setIsTerse] = useState(false);
@@ -35,6 +36,7 @@ function ExportModalContents() {
     const { fieldProperties } = useFieldProperties()!;
     const [isLoading, setIsLoading] = useState(false);
     const [, setProgress] = useState(0);
+    const { t } = useTranslation();
 
     // Debug logging
     useEffect(() => {
@@ -56,21 +58,23 @@ function ExportModalContents() {
                     if (prevProgress >= 100) {
                         clearInterval(interval);
                         setIsLoading(false);
-                        toast.success("Export complete!");
+                        toast.success(
+                            t("exportCoordinatesModal.toast.exportComplete"),
+                        );
                         return 100;
                     }
                     return prevProgress + 10;
                 });
             }, 500);
         }
-    }, [isLoading]);
+    }, [isLoading, t]);
 
     const handleExport = useCallback(async () => {
         setIsLoading(true);
         setProgress(0);
 
         if (!fieldProperties) {
-            toast.error("Field properties are required for export");
+            toast.error(t("exportCoordinatesModal.toast.noFieldProperties"));
             setIsLoading(false);
             return;
         }
@@ -84,7 +88,9 @@ function ExportModalContents() {
             const coordinateSheets = processedMarchers.map((marcher) => ({
                 name: marcher.name,
                 drillNumber: marcher.drill_number,
-                section: marcher.section || "Unsorted",
+                section:
+                    marcher.section ||
+                    t("exportCoordinatesModal.unsortedSection"),
                 renderedPage: ReactDOMServer.renderToString(
                     <StaticMarcherCoordinateSheet
                         marcher={marcher}
@@ -110,7 +116,12 @@ function ExportModalContents() {
         } catch (error) {
             console.error("Export failed:", error);
             toast.error(
-                `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+                t("exportCoordinatesModal.toast.exportFailed", {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error",
+                }),
             );
         } finally {
             setIsLoading(false);
@@ -126,6 +137,7 @@ function ExportModalContents() {
         useXY,
         roundingDenominator,
         organizeBySection,
+        t,
     ]);
 
     return (
@@ -145,7 +157,7 @@ function ExportModalContents() {
                     </Form.Control>
                     <Form.Label className="text-body">
                         {" "}
-                        Include measures{" "}
+                        {t("exportCoordinatesModal.form.includeMeasures") + " "}
                     </Form.Label>
                 </Form.Field>
                 <Form.Field
@@ -162,7 +174,9 @@ function ExportModalContents() {
                     </Form.Control>
                     <Form.Label className="text-body">
                         {" "}
-                        Abbreviate coordinate descriptions{" "}
+                        {t(
+                            "exportCoordinatesModal.form.abbreviateCoordinateDescriptions",
+                        ) + " "}
                     </Form.Label>
                 </Form.Field>
                 <Form.Field
@@ -179,7 +193,7 @@ function ExportModalContents() {
                     </Form.Control>
                     <Form.Label className="text-body">
                         {" "}
-                        Use X/Y headers{" "}
+                        {t("exportCoordinatesModal.form.useXYHeaders") + " "}
                     </Form.Label>
                 </Form.Field>
                 <Form.Field
@@ -188,7 +202,8 @@ function ExportModalContents() {
                 >
                     <Form.Label className="text-body">
                         {" "}
-                        Rounding denominator:{" "}
+                        {t("exportCoordinatesModal.form.roundingDenominator") +
+                            " "}
                     </Form.Label>
                     <Form.Control asChild className="w-[6rem]">
                         <Input
@@ -219,7 +234,8 @@ function ExportModalContents() {
                     </Form.Control>
                     <Form.Label className="text-body">
                         {" "}
-                        Organize by Section{" "}
+                        {t("exportCoordinatesModal.form.organizeBySection") +
+                            " "}
                     </Form.Label>
 
                     <Tooltip.TooltipProvider>
@@ -229,13 +245,14 @@ function ExportModalContents() {
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16">
                                 <div>
-                                    Create PDF files for each individual marcher
-                                    organized in folders by section.
+                                    {t(
+                                        "exportCoordinatesModal.form.individualPDFs.label",
+                                    )}
                                 </div>
                                 <div>
-                                    If this is not checked, one large PDF file
-                                    will be created with every coordinate sheet
-                                    in score order.
+                                    {t(
+                                        "exportCoordinatesModal.form.individualPDFs.description",
+                                    )}
                                 </div>
                             </TooltipContents>
                         </Tooltip.Root>
@@ -246,10 +263,11 @@ function ExportModalContents() {
             {/* Preview Section */}
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
-                    <h5 className="text-h5">Preview</h5>
+                    <h5 className="text-h5">
+                        {t("exportCoordinatesModal.preview.label")}
+                    </h5>
                     <p className="text-sub text-text/75">
-                        {"4 -> 1/4 = nearest quarter step"} {" | "}{" "}
-                        {"10 -> 1/10 = nearest tenth step"}
+                        {t("exportCoordinatesModal.preview.subtext")}
                     </p>
                 </div>
                 <div>
@@ -272,12 +290,14 @@ function ExportModalContents() {
                     onClick={handleExport}
                     disabled={isLoading || marchers.length === 0}
                 >
-                    {isLoading ? "Exporting... Please wait" : "Export"}
+                    {isLoading
+                        ? t("exportCoordinatesModal.submit.loading")
+                        : t("exportCoordinatesModal.submit.label")}
                 </Button>
                 <DialogClose>
                     <Button size="compact" variant="secondary">
                         {" "}
-                        Cancel{" "}
+                        {t("exportCoordinatesModal.submit.cancel") + " "}
                     </Button>
                 </DialogClose>
             </div>
@@ -286,6 +306,7 @@ function ExportModalContents() {
 }
 
 export default function ExportCoordinatesModal() {
+    const { t } = useTranslation();
     return (
         <Dialog>
             <DialogTrigger
@@ -297,7 +318,7 @@ export default function ExportCoordinatesModal() {
 
             {/* Dialog Setup */}
             <DialogContent className="w-[48rem]">
-                <DialogTitle>Export Individual Coordinate Sheets</DialogTitle>
+                <DialogTitle>{t("exportCoordinatesModal.label")}</DialogTitle>
                 <ExportModalContents />
             </DialogContent>
         </Dialog>

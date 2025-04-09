@@ -68,6 +68,39 @@
       }
     }
   },
+  "exportCoordinatesModal": {
+    "form": {
+      "abbreviateCoordinateDescriptions": "Abbreviate coordinate descriptions",
+      "includeMeasures": "Include measures",
+      "individualPDFs": {
+        "description": "If this is not checked, one large PDF file will be created with every coordinate sheet in score order.",
+        "label": "Create PDF files for each individual marcher organized in folders by section"
+      },
+      "organizeBySection": "Organize by Section",
+      "roundingDenominator": "Rounding denominator:",
+      "useXYHeaders": "Use X/Y headers"
+    },
+    "label": "Export Individual Coordinate Sheets",
+    "preview": {
+      "label": "Preview",
+      "subtext": "4 -> 1/4 = nearest quarter step | 10 -> 1/10 = nearest tenth step"
+    },
+    "submit": {
+      "cancel": "Cancel",
+      "label": "Export",
+      "loading": "Exporting... Please wait"
+    },
+    "toast": {
+      "exportComplete": "Export complete!",
+      "exportFailed": "Export failed: {{error}}",
+      "noFieldProperties": "Field properties are required for export"
+    },
+    "unsortedSection": "Unsorted"
+  },
+  "formButtons": {
+    "cancel": "Cancel",
+    "save": "Save Changes"
+  },
   "launch": {
     "bugNote": "You also agree to the collection of anonymous error logs and crash reports.",
     "createNew": "Create New",
@@ -76,13 +109,19 @@
     "warning": "OpenMarch is still in development. By using it, you accept that there may be potential glitches and bugs.",
     "welcome": "Welcome to OpenMarch"
   },
+  "music": {
+    "audio": {
+      "audioFile": {
+        "import": "Import audio file",
+        "label": "Audio File"
+      },
+      "label": "Audio"
+    }
+  },
   "sentry": {
     "bugReport": {
       "button": "Report a bug",
       "messagePlaceholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?"
     }
-  },
-  "audio-selector": {
-    "import" : "Import audio file"
   }
 }

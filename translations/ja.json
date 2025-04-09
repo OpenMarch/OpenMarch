@@ -68,6 +68,39 @@
       }
     }
   },
+  "exportCoordinatesModal": {
+    "form": {
+      "abbreviateCoordinateDescriptions": "座標の説明を省略する",
+      "includeMeasures": "測定値を含める",
+      "individualPDFs": {
+        "description": "これをチェックしない場合、すべての座標シートがスコア順に並んだ大きな PDF ファイルが作成されます。",
+        "label": "各セクションごとにフォルダーに整理された各個人の行進者のための PDF ファイルを作成"
+      },
+      "organizeBySection": "セクション別に整理",
+      "roundingDenominator": "丸め分母:",
+      "useXYHeaders": "X/Y ヘッダーを使用"
+    },
+    "label": "個別座標シートをエクスポート",
+    "preview": {
+      "label": "プレビュー",
+      "subtext": "4 -> 1/4 = 最寄りの 1/4 ステップ | 10 -> 1/10 = 最寄りの 1/10 ステップ"
+    },
+    "submit": {
+      "cancel": "キャンセル",
+      "label": "エクスポート",
+      "loading": "エクスポートしています... お待ちください"
+    },
+    "toast": {
+      "exportComplete": "エクスポート完了！",
+      "exportFailed": "エクスポート失敗: {{error}}",
+      "noFieldProperties": "エクスポートには Field プロパティが必要です"
+    },
+    "unsortedSection": "未分類"
+  },
+  "formButtons": {
+    "cancel": "キャンセル",
+    "save": "変更を保存"
+  },
   "launch": {
     "bugNote": "匿名のエラーログおよびクラッシュレポートの収集にも同意します。",
     "createNew": "新規作成",
@@ -75,6 +108,15 @@
     "subtitle": "オープンソースの drill 作成アプリ",
     "warning": "OpenMarch はまだ開発中です。使用することで、潜在的な不具合やバグがあることを受け入れることになります。",
     "welcome": "OpenMarch へようこそ"
+  },
+  "music": {
+    "audio": {
+      "audioFile": {
+        "import": "オーディオファイルをインポート",
+        "label": "オーディオ ファイル"
+      },
+      "label": "オーディオ"
+    }
   },
   "sentry": {
     "bugReport": {

@@ -6,6 +6,7 @@ import {
     AlertDialogTrigger,
     AlertDialogDescription,
 } from "./ui/AlertDialog";
+import { useTranslation } from "react-i18next";
 
 interface FormButtonsProps extends ButtonProps {
     isEditingProp?: boolean;
@@ -51,6 +52,7 @@ export default function FormButtons({
     alertDialogActions,
     ...rest
 }: FormButtonsProps) {
+    const { t } = useTranslation();
     return (
         <>
             {!isEditingProp ? (
@@ -68,7 +70,9 @@ export default function FormButtons({
                             {isDangerButton ? (
                                 <AlertDialog>
                                     <AlertDialogTrigger>
-                                        <Button {...rest}>Save Changes</Button>
+                                        <Button {...rest}>
+                                            {t("formButtons.save")}
+                                        </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogTitle>
@@ -88,19 +92,19 @@ export default function FormButtons({
                                     onClick={handleSubmit}
                                     variant="primary"
                                 >
-                                    Save Changes
+                                    {t("formButtons.save")}
                                 </Button>
                             )}
                         </>
                     ) : (
-                        <Button {...rest}>Save Changes</Button>
+                        <Button {...rest}>{t("formButtons.save")}</Button>
                     )}
                     <Button
                         {...rest}
                         variant="secondary"
                         onClick={handleCancel}
                     >
-                        Cancel
+                        {t("formButtons.cancel")}
                     </Button>
                 </>
             )}
