@@ -9,16 +9,16 @@ import * as Sentry from "@sentry/electron/renderer";
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
 
-import enUS from "../translations/en-US.json";
+import en from "../translations/en.json";
 import ja from "../translations/ja.json";
 
 i18next.use(initReactI18next).init({
-    fallbackLng: "enUS",
+    fallbackLng: "en",
     debug: true,
     initAsync: false,
     resources: {
-        enUS: {
-            translation: enUS,
+        en: {
+            translation: en,
         },
         ja: {
             translation: ja,
