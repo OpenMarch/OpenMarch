@@ -10,8 +10,10 @@ import {
 } from "../ui/Select";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
+import { useTranslation } from "react-i18next";
 
 export default function AudioSelector() {
+    const { t } = useTranslation();
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
 
@@ -64,7 +66,7 @@ export default function AudioSelector() {
                                 showTooltip={false}
                                 className="text-text"
                             >
-                                Import audio file
+                                {t("audio-selector.import")}
                             </RegisteredActionButton>
                             {audioFiles.length > 0 && <SelectSeparator />}
                             {audioFiles.map((audioFile) => (

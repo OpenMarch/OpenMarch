@@ -6,7 +6,7 @@ import {
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "./ui/Tooltip";
-
+import { useTranslation } from "react-i18next";
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     registeredAction: RegisteredAction;
@@ -33,6 +33,7 @@ export default function RegisteredActionButton({
     showTooltip = true,
     ...rest
 }: registeredActionButtonProps) {
+    const { t } = useTranslation();
     const { linkRegisteredAction, removeRegisteredAction } =
         useRegisteredActionsStore();
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -74,9 +75,8 @@ export default function RegisteredActionButton({
                     {children}
                 </RadixTooltip.Trigger>
                 <TooltipContents side="bottom">
-                    {instructionalString
-                        ? instructionalString
-                        : registeredAction.instructionalString}
+                    {t(registeredAction.desc) +
+                        registeredAction.keyboardShortcutString}
                 </TooltipContents>
             </RadixTooltip.Root>
         );

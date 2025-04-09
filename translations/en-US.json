@@ -81,5 +81,8 @@
       "button": "Report a bug",
       "messagePlaceholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?"
     }
+  },
+  "audio-selector": {
+    "import" : "Import audio file"
   }
 }
