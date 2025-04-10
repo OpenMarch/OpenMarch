@@ -181,7 +181,7 @@ export default function AudioPlayer() {
                 />
             )}
 
-            <div ref={waveformRef}></div>
+            <div id="waveform" ref={waveformRef}></div>
         </div>
     );
 }

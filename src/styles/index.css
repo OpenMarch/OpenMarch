@@ -157,4 +157,33 @@ textarea,
     transition: all 0.3s ease;
 }
 
-/* Wavesurfer */
+/****** Wavesurfer *******/
+
+/* MEASURES */
+#waveform ::part(measure) {
+    background-color: rgba(var(--text)) !important;
+}
+
+#waveform ::part(rehearsalMark) {
+    background-color: rgba(var(--accent)) !important;
+    width: 4px !important;
+    border: 1px solid rgb(var(--text)) !important;
+}
+
+/* Measure labels */
+#waveform ::part(region-content) {
+    margin-left: 6px;
+    width: auto;
+    text-align: center;
+    padding: 0 4px;
+    border: 1px solid rgb(var(--text)) !important;
+    background-color: rgba(var(--bg-1));
+    border-radius: 6px;
+}
+
+/* BEATS */
+
+#waveform ::part(beat) {
+    background-color: rgb(var(--text)) !important;
+    height: 10% !important;
+}

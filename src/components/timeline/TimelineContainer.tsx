@@ -95,7 +95,7 @@ export default function TimelineContainer() {
                     <Plus size={16} />
                 </button>
             </div>
-            <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_30px_2em_2em] gap-6 overflow-x-auto overflow-y-auto">
+            <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_90px] gap-6 overflow-x-auto overflow-y-hidden">
                 <div className="flex h-[2em] items-center">
                     <p className="text-sub leading-none">Pages</p>
                 </div>
