@@ -97,6 +97,63 @@
     },
     "unsortedSection": "Unsorted"
   },
+  "field": {
+    "fieldIoButtons": {
+      "exportField": "Export field",
+      "importField": "Import field"
+    },
+    "fieldPropertiesCustomizer": {
+      "checkpoint": {
+        "deleteButton": "Delete",
+        "deleteTooltip": "Delete this checkpoint from the field",
+        "distance": "{{steps}} steps",
+        "fieldLabelLabel": "Field label",
+        "fieldLabelTooltip": "The label to appear on the field (i.e. yard markers)",
+        "nameLabel": "Name",
+        "nameTooltip": "The primary name of the checkpoint.",
+        "referenceLabel": "Use as reference",
+        "referenceTooltip": "If this checkpoint should be used as a reference for coordinates.",
+        "shortNameLabel": "Short Name",
+        "shortNameTooltip": "The short name of the checkpoint.",
+        "stepsFromCenterLabel": "Steps from center",
+        "stepsFromFrontLabel": "Steps from front",
+        "stepsTooltip": "The number of steps away from the front of the field that this checkpoint is.",
+        "stepsTooltip2": "A negative number is pointed towards the back",
+        "valueMissingText": "Please enter a value.",
+        "visibleLabel": "Visible",
+        "visibleTooltip": "If this checkpoint should be visible on the field"
+      },
+      "displayColorPicker": {
+        "apply": "Apply",
+        "discard": "Discard",
+        "resetTooltip": "Reset to default"
+      },
+      "toast": {
+        "addCheckpoint": "{{axis}}-checkpoint at {{steps}} steps created",
+        "deleteCheckpoint": "{{axis}}-checkpoint at {{steps}} steps deleted - \"{{name}}\"",
+        "invalidColor": "Invalid color",
+        "noColorSelected": "No color selected",
+        "noThemeProperty": "No theme property provided"
+      }
+    },
+    "fieldPropertiesSelector": {
+      "applyFieldType": "Apply Field Type",
+      "customField": "Custom",
+      "differentSizeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
+      "fieldTypeLabel": "Field Type",
+      "noFieldProperties": "FieldProperties not defined. This should never happen",
+      "templateLabel": "Field Template"
+    },
+    "fieldPropertiesSettings": {
+      "customizationLabel": "Customization",
+      "customize": "Customize",
+      "generalLabel": "General",
+      "gridLinesLabel": "Grid lines",
+      "halfLinesLabel": "Half lines",
+      "noFieldProperties": "No field properties to load! This should never happen, please reach out to support!"
+    },
+    "label": "Field"
+  },
   "formButtons": {
     "cancel": "Cancel",
     "save": "Save Changes"

@@ -6,27 +6,28 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldIoButtons from "./FieldIoButtons";
 import { Button } from "../ui/Button";
 import FieldProperties from "@/global/classes/FieldProperties";
+import { useTranslation } from "react-i18next";
 
 export default function FieldPropertiesSettings() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const { t } = useTranslation();
 
     if (!fieldProperties)
         return (
-            <div>
-                No field properties to load! This should never happen, please
-                reach out to support
-            </div>
+            <div>{t("field.fieldPropertiesSettings.noFieldProperties")}</div>
         );
 
     return (
         <div className="flex flex-col">
             <div className="flex w-full min-w-0 flex-col gap-16">
-                <h4 className="text-h5 leading-none">General</h4>
+                <h4 className="text-h5 leading-none">
+                    {t("field.fieldPropertiesSettings.generalLabel")}
+                </h4>
                 <div className="flex flex-col gap-16 px-12">
                     <div className="flex w-full items-center justify-between gap-16">
                         <label htmlFor="gridLines" className="text-body">
-                            Grid lines
+                            {t("field.fieldPropertiesSettings.gridLinesLabel")}
                         </label>
                         <Switch
                             id="gridLines"
@@ -41,7 +42,7 @@ export default function FieldPropertiesSettings() {
                     </div>
                     <div className="flex w-full items-center justify-between gap-16">
                         <label htmlFor="halfLines" className="text-body">
-                            Half lines
+                            {t("field.fieldPropertiesSettings.halfLinesLabel")}
                         </label>
                         <Switch
                             id="halfLines"
@@ -60,7 +61,9 @@ export default function FieldPropertiesSettings() {
                 </div>
 
                 <div className="flex w-full min-w-0 flex-col gap-16">
-                    <h4 className="text-h5 leading-none">Customization</h4>
+                    <h4 className="text-h5 leading-none">
+                        {t("field.fieldPropertiesSettings.customizationLabel")}
+                    </h4>
                     <FieldPropertiesSelector />
                     {fieldProperties?.isCustom ? (
                         <FieldPropertiesCustomizer />
@@ -78,7 +81,7 @@ export default function FieldPropertiesSettings() {
                             className="w-[50%] self-end"
                             variant="secondary"
                         >
-                            Customize
+                            {t("field.fieldPropertiesSettings.customize")}
                         </Button>
                     )}
                 </div>

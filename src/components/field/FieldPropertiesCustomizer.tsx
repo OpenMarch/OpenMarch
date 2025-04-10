@@ -32,6 +32,7 @@ import {
 } from "@uiw/react-color";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
 import { RxReset } from "react-icons/rx";
+import { useTranslation } from "react-i18next";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -75,6 +76,7 @@ function CheckpointEditor({
      * ensuring that the focus is removed from the input.
      **/
     const blurOnEnter = useCallback(blurOnEnterFunc, []);
+    const { t } = useTranslation();
 
     return (
         <RadixCollapsible.Root
@@ -85,7 +87,12 @@ function CheckpointEditor({
             <RadixCollapsible.Trigger className="flex w-full justify-between gap-8 rounded-full border border-stroke px-16 py-6 duration-150 ease-out focus-visible:text-accent">
                 <div className="flex w-full justify-between">
                     <div>{checkpoint.name}</div>
-                    <div>{checkpoint.stepsFromCenterFront} steps</div>
+                    <div>
+                        {t(
+                            "field.fieldPropertiesCustomizer.checkpoint.distance",
+                            { steps: checkpoint.stepsFromCenterFront },
+                        )}
+                    </div>
                 </div>
                 {open ? <CaretUp size={24} /> : <CaretDown size={24} />}
             </RadixCollapsible.Trigger>
@@ -94,7 +101,13 @@ function CheckpointEditor({
                     <Form.Field name="Steps from center">
                         <div className={formFieldClassname}>
                             <Form.Label className={requiredLabelClassname}>
-                                Steps from{axis === "x" ? " center" : " front"}
+                                {axis === "x"
+                                    ? t(
+                                          "field.fieldPropertiesCustomizer.checkpoint.stepsFromCenterLabel",
+                                      )
+                                    : t(
+                                          "field.fieldPropertiesCustomizer.checkpoint.stepsFromFrontLabel",
+                                      )}
                             </Form.Label>
                             <Form.Control asChild>
                                 <Input
@@ -157,10 +170,13 @@ function CheckpointEditor({
                                         className="p-16 text-center"
                                         side="right"
                                     >
-                                        The number of steps away from the front
-                                        of the field that this checkpoint is.{" "}
+                                        {t(
+                                            "field.fieldPropertiesCustomizer.checkpoint.stepsTooltip",
+                                        ) + " "}
                                         <br />
-                                        Negative is towards the back.
+                                        {t(
+                                            "field.fieldPropertiesCustomizer.checkpoint.stepsTooltip2",
+                                        ) + " "}
                                     </TooltipContents>
                                 </Tooltip.Root>
                             </Tooltip.TooltipProvider>
@@ -169,13 +185,17 @@ function CheckpointEditor({
                             match={"valueMissing"}
                             className={errorClassname}
                         >
-                            Please enter a value.
+                            {t(
+                                "field.fieldPropertiesCustomizer.checkpoint.valueMissingText",
+                            )}
                         </Form.Message>
                     </Form.Field>
                     <Form.Field name="Name">
                         <div className={formFieldClassname}>
                             <Form.Label className={requiredLabelClassname}>
-                                Name
+                                {t(
+                                    "field.fieldPropertiesCustomizer.checkpoint.nameLabel",
+                                )}
                             </Form.Label>
                             <Form.Control asChild>
                                 <Input
@@ -214,10 +234,13 @@ function CheckpointEditor({
                                         />
                                     </Tooltip.Trigger>
                                     <TooltipContents
-                                        className="p-16"
+                                        className="p-16 text-center"
                                         side="right"
                                     >
-                                        The primary name of the checkpoint.
+                                        {t(
+                                            "field.fieldPropertiesCustomizer.checkpoint.nameTooltip",
+                                        )}
+                                        <br />
                                         (E.g. &quot;45 Yard Line - Side 1&quot;)
                                     </TooltipContents>
                                 </Tooltip.Root>
@@ -227,7 +250,9 @@ function CheckpointEditor({
                             match={"valueMissing"}
                             className={errorClassname}
                         >
-                            Please enter a value.
+                            {t(
+                                "field.fieldPropertiesCustomizer.checkpoint.valueMissingText",
+                            )}
                         </Form.Message>
                     </Form.Field>
                     <Form.Field
@@ -235,7 +260,9 @@ function CheckpointEditor({
                         className={formFieldClassname}
                     >
                         <Form.Label className={requiredLabelClassname}>
-                            Short Name
+                            {t(
+                                "field.fieldPropertiesCustomizer.checkpoint.shortNameLabel",
+                            )}
                         </Form.Label>
                         <Form.Control asChild>
                             <Input
@@ -265,7 +292,9 @@ function CheckpointEditor({
                             match={"valueMissing"}
                             className={errorClassname}
                         >
-                            Please enter a value.
+                            {t(
+                                "field.fieldPropertiesCustomizer.checkpoint.valueMissingText",
+                            )}
                         </Form.Message>
 
                         <Tooltip.TooltipProvider>
@@ -274,8 +303,9 @@ function CheckpointEditor({
                                     <Info size={18} className="text-text/60" />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
-                                    The primary name of the checkpoint. (E.g.
-                                    &quot;45 Yard Line - Side 1&quot;)
+                                    {t(
+                                        "field.fieldPropertiesCustomizer.checkpoint.shortNameTooltip",
+                                    )}
                                 </TooltipContents>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
@@ -286,7 +316,9 @@ function CheckpointEditor({
                             className={formFieldClassname}
                         >
                             <Form.Label className={labelClassname}>
-                                Field label
+                                {t(
+                                    "field.fieldPropertiesCustomizer.checkpoint.fieldLabelLabel",
+                                )}
                             </Form.Label>
                             <Form.Control asChild>
                                 <Input
@@ -329,8 +361,9 @@ function CheckpointEditor({
                                         className="p-16"
                                         side="right"
                                     >
-                                        The label to appear on the field. I.e.
-                                        the yard markers
+                                        {t(
+                                            "field.fieldPropertiesCustomizer.checkpoint.fieldLabelTooltip",
+                                        )}
                                     </TooltipContents>
                                 </Tooltip.Root>
                             </Tooltip.TooltipProvider>
@@ -338,7 +371,9 @@ function CheckpointEditor({
                     )}
                     <Form.Field name="Visible" className={formFieldClassname}>
                         <Form.Label className={labelClassname}>
-                            Visible
+                            {t(
+                                "field.fieldPropertiesCustomizer.checkpoint.visibleLabel",
+                            )}
                         </Form.Label>
                         <Form.Control asChild>
                             <Switch
@@ -363,8 +398,9 @@ function CheckpointEditor({
                                     <Info size={18} className="text-text/60" />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
-                                    If this checkpoint should be visible on the
-                                    field
+                                    {t(
+                                        "field.fieldPropertiesCustomizer.checkpoint.visibleTooltip",
+                                    )}
                                 </TooltipContents>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
@@ -374,7 +410,9 @@ function CheckpointEditor({
                         className={formFieldClassname}
                     >
                         <Form.Label className={labelClassname}>
-                            Use as reference
+                            {t(
+                                "field.fieldPropertiesCustomizer.checkpoint.referenceLabel",
+                            )}
                         </Form.Label>
                         <Form.Control asChild>
                             <Switch
@@ -400,8 +438,9 @@ function CheckpointEditor({
                                     <Info size={18} className="text-text/60" />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
-                                    If this checkpoint should be used as a
-                                    reference for coordinates.
+                                    {t(
+                                        "field.fieldPropertiesCustomizer.checkpoint.referenceTooltip",
+                                    )}
                                 </TooltipContents>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
@@ -410,14 +449,18 @@ function CheckpointEditor({
                         variant="red"
                         size="compact"
                         className="self-end text-white"
-                        tooltipText="Delete this checkpoint from the field"
+                        tooltipText={t(
+                            "field.fieldPropertiesCustomizer.checkpoint.deleteTooltip",
+                        )}
                         tooltipSide="right"
                         type="button"
                         onClick={() => {
                             deleteCheckpoint(checkpoint);
                         }}
                     >
-                        Delete
+                        {t(
+                            "field.fieldPropertiesCustomizer.checkpoint.deleteButton",
+                        )}
                     </Button>
                 </div>
             </RadixCollapsible.Content>
@@ -432,6 +475,7 @@ export default function FieldPropertiesCustomizer() {
     const [measurementSystem, setMeasurementSystem] =
         useState<MeasurementSystem>(currentFieldProperties.measurementSystem);
     const stepSizeInputRef = useRef<HTMLInputElement>(null);
+    const { t } = useTranslation();
 
     const blurOnEnter = useCallback(blurOnEnterFunc, []);
 
@@ -508,10 +552,14 @@ export default function FieldPropertiesCustomizer() {
                 );
             }
             toast.success(
-                `${checkpoint.axis.toUpperCase()}-checkpoint at ${checkpoint.stepsFromCenterFront} steps deleted - "${checkpoint.name}"`,
+                t("field.fieldPropertiesCustomizer.toast.deleteCheckpoint", {
+                    axis: checkpoint.axis.toUpperCase(),
+                    steps: checkpoint.stepsFromCenterFront,
+                    name: checkpoint.name,
+                }),
             );
         },
-        [currentFieldProperties, setFieldProperties],
+        [currentFieldProperties, setFieldProperties, t],
     );
 
     const addCheckpoint = useCallback(
@@ -591,10 +639,13 @@ export default function FieldPropertiesCustomizer() {
                 );
             }
             toast.success(
-                `${axis.toUpperCase()}-checkpoint at ${newSteps} steps created`,
+                t("field.fieldPropertiesCustomizer.toast.addCheckpoint", {
+                    axis: axis.toUpperCase(),
+                    steps: newSteps,
+                }),
             );
         },
-        [currentFieldProperties, setFieldProperties],
+        [currentFieldProperties, setFieldProperties, t],
     );
 
     const sorter = (a: Checkpoint, b: Checkpoint) => {
@@ -661,7 +712,9 @@ export default function FieldPropertiesCustomizer() {
                     color.b !== undefined &&
                     color.a !== undefined;
                 if (!isRgba) {
-                    toast.error("Invalid color");
+                    toast.error(
+                        t("field.fieldPropertiesCustomizer.toast.invalidColor"),
+                    );
                     return false;
                 }
                 return true;
@@ -673,7 +726,11 @@ export default function FieldPropertiesCustomizer() {
             (color?: RgbaColor) => {
                 if (!currentColor) {
                     console.error("No color selected");
-                    toast.error("No color selected");
+                    toast.error(
+                        t(
+                            "field.fieldPropertiesCustomizer.toast.noColorSelected",
+                        ),
+                    );
                     return;
                 }
                 if (updateColorProp) {
@@ -697,7 +754,11 @@ export default function FieldPropertiesCustomizer() {
                     );
                 } else {
                     console.error("No theme property provided");
-                    toast.error("No theme property provided");
+                    toast.error(
+                        t(
+                            "field.fieldPropertiesCustomizer.toast.noThemeProperty",
+                        ),
+                    );
                     return;
                 }
             },
@@ -745,7 +806,9 @@ export default function FieldPropertiesCustomizer() {
                 newColor = DEFAULT_FIELD_THEME[themeProperty] as RgbaColor;
             } else {
                 console.error("No theme property provided");
-                toast.error("No theme property provided");
+                toast.error(
+                    t("field.fieldPropertiesCustomizer.toast.noThemeProperty"),
+                );
                 return;
             }
             handleClose();
@@ -801,7 +864,9 @@ export default function FieldPropertiesCustomizer() {
                                     setDisplayColorPicker(false);
                                 }}
                             >
-                                Discard
+                                {t(
+                                    "field.fieldPropertiesCustomizer.displayColorPicker.discard",
+                                )}
                             </Button>
                             <Button
                                 size="compact"
@@ -809,7 +874,9 @@ export default function FieldPropertiesCustomizer() {
                                 className="w-full"
                                 onClick={handleClose}
                             >
-                                Apply
+                                {t(
+                                    "field.fieldPropertiesCustomizer.displayColorPicker.apply",
+                                )}
                             </Button>
                         </div>
                         <Sketch
@@ -825,7 +892,9 @@ export default function FieldPropertiesCustomizer() {
                 <Button
                     tooltipSide="right"
                     size="compact"
-                    tooltipText={"Reset to default"}
+                    tooltipText={t(
+                        "field.fieldPropertiesCustomizer.displayColorPicker.resetTooltip",
+                    )}
                     variant="secondary"
                     onClick={resetToDefault}
                     className="col-span-1 bg-transparent"

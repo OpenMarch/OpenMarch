@@ -11,8 +11,10 @@ import {
 } from "../ui/Select";
 import { Button } from "../ui/Button";
 import { DangerNote } from "../ui/Note";
+import { useTranslation } from "react-i18next";
 
 export default function FieldPropertiesSelector() {
+    const { t } = useTranslation();
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
     const [currentTemplate, setCurrentTemplate] = useState<
         FieldProperties | undefined
@@ -37,13 +39,17 @@ export default function FieldPropertiesSelector() {
     }, [fieldProperties]);
 
     if (!fieldProperties)
-        return <div>FieldProperties not defined. This should never happen</div>;
+        return (
+            <div>{t("field.fieldPropertiesSelector.noFieldProperties")}</div>
+        );
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
                 <div className="flex w-full items-center justify-between gap-16 px-12">
-                    <p className="text-body">Field Template</p>
+                    <p className="text-body">
+                        {t("field.fieldPropertiesSelector.templateLabel")}
+                    </p>
                     <div className="flex gap-8">
                         <Select
                             onValueChange={handleFieldTypeChange}
@@ -55,7 +61,12 @@ export default function FieldPropertiesSelector() {
                             ref={selectRef}
                         >
                             <SelectTriggerButton
-                                label={fieldProperties.name || "Field type"}
+                                label={
+                                    fieldProperties.name ||
+                                    t(
+                                        "field.fieldPropertiesSelector.fieldTypeLabel",
+                                    )
+                                }
                             />
                             <SelectContent>
                                 <SelectGroup>
@@ -74,7 +85,9 @@ export default function FieldPropertiesSelector() {
                                             key={"custom"}
                                             value={"Custom"}
                                         >
-                                            Custom
+                                            {t(
+                                                "field.fieldPropertiesSelector.customField",
+                                            )}
                                         </SelectItem>
                                     )}
                                 </SelectGroup>
@@ -86,7 +99,7 @@ export default function FieldPropertiesSelector() {
                     className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
                     onClick={applyChanges}
                 >
-                    Apply Field Type
+                    {t("field.fieldPropertiesSelector.applyFieldType")}
                 </Button>
             </div>
             <div
@@ -101,9 +114,7 @@ export default function FieldPropertiesSelector() {
                 }
             >
                 <DangerNote>
-                    Marchers will not move to the new field type size, they will
-                    stay where they are on the canvas. You can always change
-                    back the field type.
+                    {t("field.fieldPropertiesSelector.differentSizeWarning")}
                 </DangerNote>
             </div>
         </div>

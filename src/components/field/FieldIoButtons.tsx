@@ -1,6 +1,8 @@
 import { Button } from "../ui/Button";
+import { useTranslation } from "react-i18next";
 
 export default function FieldIoButtons() {
+    const { t } = useTranslation();
     return (
         <div className="grid grid-cols-2 gap-8">
             <Button
@@ -9,7 +11,7 @@ export default function FieldIoButtons() {
                 variant="primary"
                 onClick={window.electron.importFieldPropertiesFile}
             >
-                Import Field
+                {t("field.fieldIoButtons.importField")}
             </Button>
             <Button
                 className="w-full"
@@ -17,7 +19,7 @@ export default function FieldIoButtons() {
                 variant="secondary"
                 onClick={window.electron.exportFieldPropertiesFile}
             >
-                Export Field
+                {t("field.fieldIoButtons.exportField")}
             </Button>
         </div>
     );
