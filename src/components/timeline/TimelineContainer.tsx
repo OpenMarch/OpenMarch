@@ -1,17 +1,334 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Plus, Minus } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import AudioPlayer from "./AudioPlayer";
+import Page, { createLastPage } from "@/global/classes/Page";
+import clsx from "clsx";
+import Beat from "@/global/classes/Beat";
+
+export const getAvailableOffsets = ({
+    currentPage,
+    nextPage,
+}: {
+    currentPage: Page;
+    nextPage: Page | null;
+    allBeats: Beat[];
+}): number[] => {
+    const offsets: number[] = [];
+
+    // Get the current page's total duration
+    const currentPageDuration = currentPage.beats.reduce(
+        (acc, beat) => acc + beat.duration,
+        0,
+    );
+
+    // Add all possible negative offsets from the current page
+    let runningTime = -currentPageDuration;
+    for (let i = 0; i < currentPage.beats.length; i++) {
+        offsets.push(runningTime);
+        runningTime += currentPage.beats[i].duration;
+    }
+
+    // Add 0 (current position)
+    offsets.push(0);
+
+    // If there's a next page, add all possible positive offsets
+    if (nextPage) {
+        runningTime = 0;
+        for (let i = 0; i < nextPage.beats.length; i++) {
+            runningTime += nextPage.beats[i].duration;
+            offsets.push(runningTime);
+        }
+    }
+
+    // Remove -0 if it exists
+    return offsets.map((offset) => (Object.is(offset, -0) ? 0 : offset));
+};
+
+export function PageTimeline() {
+    const { uiSettings } = useUiSettingsStore();
+    const { isPlaying } = useIsPlaying()!;
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { setSelectedMarcherShapes } = useShapePageStore()!;
+
+    const { pages, beats, fetchTimingObjects } = useTimingObjectsStore()!;
+    // Page clicking and dragging
+    const resizingPage = useRef<Page | null>(null);
+    const startX = useRef(0);
+    const startWidth = useRef(0);
+
+    const getWidth = (page: Page) =>
+        page.duration * uiSettings.timelinePixelsPerSecond; // pxPerSecond;
+
+    // Function to handle the start of resizing
+    const handlePageResizeStart = (e: MouseEvent, page: Page) => {
+        if (isPlaying) return; // Don't allow resizing during playback
+
+        e.preventDefault();
+        e.stopPropagation(); // Prevent triggering page selection
+
+        resizingPage.current = page;
+        startX.current = e.clientX;
+        startWidth.current = getWidth(page);
+
+        // Add event listeners for mouse move and mouse up
+        document.addEventListener("mousemove", handlePageResizeMove);
+        document.addEventListener("mouseup", handlePageResizeEnd);
+    };
+
+    // Function to handle resizing movement
+    const handlePageResizeMove = useCallback(
+        (e: MouseEvent) => {
+            if (!resizingPage.current) return;
+
+            const deltaX = e.clientX - startX.current;
+            const newWidth = Math.max(100, startWidth.current + deltaX); // Minimum width of 100px
+
+            // Calculate new duration based on the new width
+            const newDuration = newWidth / uiSettings.timelinePixelsPerSecond;
+
+            // Update the visual width immediately for smooth dragging
+            const pageElement = document.querySelector(
+                `[timeline-page-id="${resizingPage.current.id}"]`,
+            );
+            if (pageElement instanceof HTMLElement) {
+                pageElement.style.width = `${newWidth}px`;
+                // Store the new duration as a data attribute for later use
+                pageElement.dataset.newDuration = newDuration.toString();
+            }
+        },
+        [uiSettings.timelinePixelsPerSecond],
+    );
+
+    // Function to update page duration in the database
+    const updatePageDuration = useCallback(
+        async (pageId: number, newDuration: number) => {
+            // Get the latest pages and beats from the store
+            const { pages, beats } = useTimingObjectsStore.getState();
+
+            // Find the current page and the next page
+            const currentPageIndex = pages.findIndex(
+                (page) => page.id === pageId,
+            );
+            if (currentPageIndex === -1) return;
+
+            const currentPage = pages[currentPageIndex];
+            const nextPageIndex = currentPageIndex + 1;
+
+            // If there's no next page, we can't adjust the duration
+            if (nextPageIndex >= pages.length) return;
+
+            const nextPage = pages[nextPageIndex];
+
+            // Calculate how many beats to include in the current page based on the new duration
+            let cumulativeDuration = 0;
+            let targetBeatIndex = -1;
+
+            // Find all beats in the show
+            const allBeats = [...beats].sort((a, b) => a.position - b.position);
+
+            // Find the index of the first beat of the current page
+            const currentPageStartBeatIndex = allBeats.findIndex(
+                (beat) => beat.id === currentPage.beats[0].id,
+            );
+
+            // Calculate how many beats should be included to match the new duration
+            for (let i = currentPageStartBeatIndex; i < allBeats.length; i++) {
+                cumulativeDuration += allBeats[i].duration;
+                if (
+                    cumulativeDuration >= newDuration ||
+                    i === allBeats.length - 1
+                ) {
+                    targetBeatIndex = i + 1; // The next beat after the last one we want to include
+                    break;
+                }
+            }
+
+            // If we couldn't find a suitable beat, don't update
+            if (targetBeatIndex === -1 || targetBeatIndex >= allBeats.length)
+                return;
+
+            // Get the beat ID that should be the start of the next page
+            const newNextPageStartBeatId = allBeats[targetBeatIndex].id;
+
+            // Update the next page's start beat
+            try {
+                await window.electron.updatePages([
+                    {
+                        id: nextPage.id,
+                        start_beat: newNextPageStartBeatId,
+                    },
+                ]);
+
+                // Refresh the timing objects to update everything
+                await fetchTimingObjects();
+            } catch (error) {
+                console.error("Failed to update page duration:", error);
+            }
+        },
+        [fetchTimingObjects],
+    );
+
+    // Function to handle the end of resizing
+    const handlePageResizeEnd = useCallback(() => {
+        const pageElement = document.querySelector(
+            `[timeline-page-id="${resizingPage.current?.id}"]`,
+        );
+
+        if (
+            resizingPage.current &&
+            pageElement instanceof HTMLElement &&
+            pageElement.dataset.newDuration
+        ) {
+            const newDuration = parseFloat(pageElement.dataset.newDuration);
+
+            // Update the page in the database
+            updatePageDuration(resizingPage.current.id, newDuration);
+
+            // Clean up the data attribute
+            delete pageElement.dataset.newDuration;
+        }
+
+        resizingPage.current = null;
+        startX.current = 0;
+        startWidth.current = 0;
+
+        // Remove event listeners
+        document.removeEventListener("mousemove", handlePageResizeMove);
+        document.removeEventListener("mouseup", handlePageResizeEnd);
+    }, [handlePageResizeMove, updatePageDuration]);
+
+    // Clean up event listeners when component unmounts
+    useEffect(() => {
+        return () => {
+            document.removeEventListener("mousemove", handlePageResizeMove);
+            document.removeEventListener("mouseup", handlePageResizeEnd);
+        };
+    }, [handlePageResizeEnd, handlePageResizeMove]);
+
+    return (
+        <div className="flex gap-0" id="pages">
+            {/* ------ FIRST PAGE ------ */}
+            {pages.length > 0 && (
+                <div
+                    className={`flex h-full w-[25px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
+                        !isPlaying && "cursor-pointer"
+                    } ${
+                        pages[0].id === selectedPage?.id
+                            ? // if the page is selected
+                              `border-accent ${
+                                  isPlaying
+                                      ? "pointer-events-none text-text/75"
+                                      : ""
+                              }`
+                            : `border-stroke ${
+                                  isPlaying
+                                      ? "pointer-events-none text-text/75"
+                                      : ""
+                              }`
+                    }`}
+                    onClick={() => {
+                        setSelectedPage(pages[0]);
+                        setSelectedMarcherShapes([]);
+                    }}
+                    title="First page"
+                    aria-label="First page"
+                >
+                    <div>{pages[0].name}</div>
+                </div>
+            )}
+            {pages.map((page, index) => {
+                if (index === 0) return null;
+                const width = getWidth(page);
+                const selectedIndex = pages.findIndex(
+                    (p) => p.id === selectedPage?.id,
+                );
+                return (
+                    <div
+                        key={index}
+                        className="relative inline-block"
+                        timeline-page-id={page.id}
+                        style={{ width: `${width}px` }}
+                        title={`Page ${page.name}`}
+                        aria-label={`Page ${page.name}`}
+                    >
+                        {/* ------ PAGES ------ */}
+                        <div
+                            className={`relative ml-6 flex h-full items-center justify-end overflow-clip rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
+                                !isPlaying && "cursor-pointer"
+                            } ${
+                                page.id === selectedPage?.id
+                                    ? // if the page is selected
+                                      `border-accent ${
+                                          isPlaying
+                                              ? "pointer-events-none text-text/75"
+                                              : ""
+                                      }`
+                                    : `border-stroke ${
+                                          isPlaying
+                                              ? "pointer-events-none text-text/75"
+                                              : ""
+                                      }`
+                            }`}
+                            onClick={() => {
+                                if (!isPlaying) setSelectedPage(page);
+                                setSelectedMarcherShapes([]);
+                            }}
+                        >
+                            <div className="rig static z-10">{page.name}</div>
+                            {(selectedIndex === index - 1 ||
+                                (selectedIndex === 0 &&
+                                    index === pages.length)) &&
+                                isPlaying && (
+                                    <div
+                                        className="absolute left-0 top-0 z-0 h-full w-full bg-accent/25"
+                                        style={{
+                                            animation: `progress ${page.duration}s linear forwards`,
+                                        }}
+                                    />
+                                )}
+                        </div>
+                        <div
+                            className={clsx(
+                                "w-3 rounded absolute right-0 top-0 z-20 h-full cursor-ew-resize transition-colors",
+                                resizingPage.current?.id === page.id
+                                    ? "bg-accent/50"
+                                    : "bg-transparent hover:bg-accent/30",
+                            )}
+                            onMouseDown={(e) =>
+                                handlePageResizeStart(e.nativeEvent, page)
+                            }
+                        >
+                            &nbsp;
+                        </div>
+                    </div>
+                );
+            })}
+            <div
+                className="ml-8 flex h-24 w-24 cursor-pointer items-center justify-center self-center rounded-full bg-accent text-sub text-text-invert"
+                onClick={() =>
+                    createLastPage({
+                        currentLastPage: pages[pages.length - 1],
+                        allBeats: beats,
+                        counts: 8,
+                        fetchPagesFunction: fetchTimingObjects,
+                    })
+                }
+            >
+                <Plus />
+            </div>
+        </div>
+    );
+}
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures, pages } = useTimingObjectsStore()!;
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { measures } = useTimingObjectsStore()!;
+    const { selectedPage } = useSelectedPage()!;
     const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
     const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -99,100 +416,8 @@ export default function TimelineContainer() {
                 <div className="flex h-[2em] items-center">
                     <p className="text-sub leading-none">Pages</p>
                 </div>
-                <div className="flex h-[2em] gap-0" id="pages">
-                    {/* ------ FIRST PAGE ------ */}
-                    {pages.length > 0 && (
-                        <div
-                            className={`flex h-full w-[2em] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
-                                !isPlaying && "cursor-pointer"
-                            } ${
-                                pages[0].id === selectedPage?.id
-                                    ? // if the page is selected
-                                      `border-accent ${
-                                          isPlaying
-                                              ? "pointer-events-none text-text/75"
-                                              : ""
-                                      }`
-                                    : `border-stroke ${
-                                          isPlaying
-                                              ? "pointer-events-none text-text/75"
-                                              : ""
-                                      }`
-                            }`}
-                            onClick={() => {
-                                setSelectedPage(pages[0]);
-                                setSelectedMarcherShapes([]);
-                            }}
-                            title="First page"
-                            aria-label="First page"
-                        >
-                            <div>0</div>
-                        </div>
-                    )}
-                    {pages.map((page, index) => {
-                        if (index === 0) return null;
-                        const width =
-                            page.duration * uiSettings.timelinePixelsPerSecond;
-                        const selectedIndex = pages.findIndex(
-                            (p) => p.id === selectedPage?.id,
-                        );
-                        return (
-                            <div
-                                key={index}
-                                className="inline-block"
-                                data-page-id={page.id}
-                                style={{ width: `${width}px` }}
-                                title={`Page ${page.name}`}
-                                aria-label={`Page ${page.name}`}
-                            >
-                                {/* ------ PAGES ------ */}
-                                <div
-                                    className={`relative ml-6 flex h-full items-center justify-end overflow-clip rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
-                                        !isPlaying && "cursor-pointer"
-                                    } ${
-                                        page.id === selectedPage?.id
-                                            ? // if the page is selected
-                                              `border-accent ${
-                                                  isPlaying
-                                                      ? "pointer-events-none text-text/75"
-                                                      : ""
-                                              }`
-                                            : `border-stroke ${
-                                                  isPlaying
-                                                      ? "pointer-events-none text-text/75"
-                                                      : ""
-                                              }`
-                                    }`}
-                                    onClick={() => {
-                                        if (!isPlaying) setSelectedPage(page);
-                                        setSelectedMarcherShapes([]);
-                                    }}
-                                >
-                                    <div className="rig static z-10">
-                                        {page.name}
-                                    </div>
-                                    {(selectedIndex === index - 1 ||
-                                        (selectedIndex === 0 &&
-                                            index === pages.length)) &&
-                                        isPlaying && (
-                                            <div
-                                                className="absolute left-0 top-0 z-0 h-full w-full"
-                                                style={
-                                                    !uiSettings.showWaveform
-                                                        ? {
-                                                              backgroundColor:
-                                                                  "rgba(var(--accent), 0.25)",
-                                                              animation: `progress ${page.duration}s linear forwards`,
-                                                          }
-                                                        : {}
-                                                }
-                                            />
-                                        )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+
+                <PageTimeline />
                 <div
                     className={
                         (uiSettings.showWaveform ? "" : "hidden") +

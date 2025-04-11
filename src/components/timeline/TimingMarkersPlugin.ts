@@ -51,8 +51,33 @@ export class TimingMarkersPlugin {
      * Removes all timing markers from the waveform
      */
     clearTimingMarkers = () => {
-        this.beatRegions.values().forEach((region) => region.remove());
-        this.measureRegions.values().forEach((region) => region.remove());
+        try {
+            // Remove beat regions and clear the map
+            Array.from(this.beatRegions.values()).forEach((region) => {
+                try {
+                    if (region?.remove) {
+                        region.remove();
+                    }
+                } catch (e) {
+                    console.warn("Failed to remove beat region:", e);
+                }
+            });
+            this.beatRegions.clear();
+
+            // Remove measure regions and clear the map
+            Array.from(this.measureRegions.values()).forEach((region) => {
+                try {
+                    if (region?.remove) {
+                        region.remove();
+                    }
+                } catch (e) {
+                    console.warn("Failed to remove measure region:", e);
+                }
+            });
+            this.measureRegions.clear();
+        } catch (e) {
+            console.warn("Error clearing timing markers:", e);
+        }
     };
 
     /**
@@ -62,6 +87,7 @@ export class TimingMarkersPlugin {
      * @param measures Array of Measure objects to update markers for
      */
     updateTimingMarkers = (beats: Beat[], measures: Measure[]) => {
+        console.log("Updating timing markers", beats, measures);
         this.beats = beats;
         this.measures = measures;
 
