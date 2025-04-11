@@ -24,6 +24,7 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
 
     // Send the selected page to the electron main process
     useEffect(() => {
+        console.log(selectedPage);
         if (selectedPage) window.electron.sendSelectedPage(selectedPage.id);
     }, [selectedPage]);
 

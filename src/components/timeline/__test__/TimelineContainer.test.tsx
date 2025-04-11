@@ -48,7 +48,7 @@ describe("getAvailableOffsets", () => {
         // 0 (current position)
         // 3 (after first beat of next page)
         // 4 (after second beat of next page)
-        expect(result).toEqual([-4, -2, 0, 3, 4]);
+        expect(result).toEqual([-4, -2, 0, 3]);
     });
 
     it("should handle empty beats array", () => {
@@ -95,6 +95,6 @@ describe("getAvailableOffsets", () => {
         });
 
         // Should return [0, 0, 0, 0]
-        expect(result).toEqual([0, 0, 0, 0]);
+        expect(result).toEqual([0, 0, 0]);
     });
 });

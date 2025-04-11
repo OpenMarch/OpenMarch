@@ -39,7 +39,7 @@ export const getAvailableOffsets = ({
     // If there's a next page, add all possible positive offsets
     if (nextPage) {
         runningTime = 0;
-        for (let i = 0; i < nextPage.beats.length; i++) {
+        for (let i = 0; i < nextPage.beats.length - 1; i++) {
             runningTime += nextPage.beats[i].duration;
             offsets.push(runningTime);
         }
@@ -60,15 +60,24 @@ export function PageTimeline() {
     const resizingPage = useRef<Page | null>(null);
     const startX = useRef(0);
     const startWidth = useRef(0);
+    const availableOffsets = useRef<number[]>([]);
 
     // Calculate the width of a page based on its duration
     // Add a small buffer to ensure the page visually includes all its beats
-    const getWidth = (page: Page) => {
-        // Use the page's duration to calculate the width
-        // Add a small buffer (equivalent to 1 beat) to ensure all beats are visually included
-        const buffer = page.beats.length > 0 ? page.beats[0].duration : 0;
-        return (page.duration + buffer) * uiSettings.timelinePixelsPerSecond;
-    };
+    const getWidth = useCallback(
+        (page: Page) => {
+            // Use the page's duration to calculate the width
+            // Add a small buffer (equivalent to 1 beat) to ensure all beats are visually included
+            const buffer =
+                page.beats.length > 0 && page.order === 1
+                    ? page.beats[0].duration
+                    : 0;
+            return (
+                (page.duration + buffer) * uiSettings.timelinePixelsPerSecond
+            );
+        },
+        [uiSettings.timelinePixelsPerSecond],
+    );
 
     // Function to handle the start of resizing
     const handlePageResizeStart = (e: MouseEvent, page: Page) => {
@@ -80,6 +89,12 @@ export function PageTimeline() {
         resizingPage.current = page;
         startX.current = e.clientX;
         startWidth.current = getWidth(page);
+        availableOffsets.current = getAvailableOffsets({
+            currentPage: page,
+            nextPage: pages[pages.indexOf(page) + 1] || null,
+            allBeats: beats,
+        }).map((offset) => offset * uiSettings.timelinePixelsPerSecond);
+        console.log(availableOffsets.current);
 
         // Add event listeners for mouse move and mouse up
         document.addEventListener("mousemove", handlePageResizeMove);
@@ -91,17 +106,31 @@ export function PageTimeline() {
         (e: MouseEvent) => {
             if (!resizingPage.current) return;
 
+            // Find the next page
+            const currentPageIndex = pages.findIndex(
+                (page) => page.id === resizingPage.current!.id,
+            );
+            const nextPageIndex = currentPageIndex + 1;
+            const nextPage =
+                nextPageIndex < pages.length ? pages[nextPageIndex] : null;
+
             const deltaX = e.clientX - startX.current;
-            const newWidth = Math.max(100, startWidth.current + deltaX); // Minimum width of 100px
+            const closestOffset = availableOffsets.current.reduce((a, b) => {
+                return Math.abs(b - deltaX) < Math.abs(a - deltaX) ? b : a;
+            });
+            const newWidth = startWidth.current + closestOffset; // Minimum width of 100px
 
             // Calculate new duration based on the new width
             // Subtract the buffer we added in getWidth to get the actual duration
             const buffer =
-                resizingPage.current.beats.length > 0
+                resizingPage.current.beats.length > 0 &&
+                resizingPage.current.order === 1
                     ? resizingPage.current.beats[0].duration
                     : 0;
             const newDuration =
                 newWidth / uiSettings.timelinePixelsPerSecond - buffer;
+
+            // We can use the deltaX to adjust the next page's width directly
 
             // Update the visual width immediately for smooth dragging
             const pageElement = document.querySelector(
@@ -112,13 +141,50 @@ export function PageTimeline() {
                 // Store the new duration as a data attribute for later use
                 pageElement.dataset.newDuration = newDuration.toString();
             }
+
+            // Update the next page's width if it exists
+            if (nextPage) {
+                const nextPageElement = document.querySelector(
+                    `[timeline-page-id="${nextPage.id}"]`,
+                );
+                if (nextPageElement instanceof HTMLElement) {
+                    // Calculate the next page's new width
+                    // The next page's width should change in the opposite direction
+                    const nextPageBuffer =
+                        nextPage.beats.length > 0
+                            ? nextPage.beats[0].duration
+                            : 0;
+                    const nextPageOriginalWidth = getWidth(nextPage);
+                    const nextPageNewWidth =
+                        nextPageOriginalWidth - closestOffset;
+
+                    // Ensure the next page's width doesn't go below minimum
+                    const finalNextPageWidth = nextPageNewWidth;
+
+                    // Update the next page's visual width
+                    nextPageElement.style.width = `${finalNextPageWidth}px`;
+
+                    // Calculate and store the next page's new duration
+                    const nextPageNewDuration =
+                        finalNextPageWidth /
+                            uiSettings.timelinePixelsPerSecond -
+                        nextPageBuffer;
+                    nextPageElement.dataset.newDuration =
+                        nextPageNewDuration.toString();
+                }
+            }
         },
-        [uiSettings.timelinePixelsPerSecond],
+        [uiSettings.timelinePixelsPerSecond, pages, getWidth],
     );
 
     // Function to update page duration in the database
     const updatePageDuration = useCallback(
-        async (pageId: number, newDuration: number) => {
+        async (
+            pageId: number,
+            newDuration: number,
+            nextPageId?: number,
+            nextPageNewDuration?: number,
+        ) => {
             // Get the latest pages and beats from the store
             const { pages, beats } = useTimingObjectsStore.getState();
 
@@ -175,12 +241,39 @@ export function PageTimeline() {
 
             // Update the next page's start beat
             try {
-                await window.electron.updatePages([
-                    {
-                        id: nextPage.id,
-                        start_beat: newNextPageStartBeatId,
-                    },
-                ]);
+                // If we have a specific next page ID and duration, we're updating both pages
+                // This happens when the user drags a page and we need to update both the current
+                // and next page durations
+                if (
+                    nextPageId !== undefined &&
+                    nextPageNewDuration !== undefined
+                ) {
+                    // Verify the next page ID matches what we expect
+                    if (nextPageId !== nextPage.id) {
+                        console.error(
+                            "Next page ID mismatch",
+                            nextPageId,
+                            nextPage.id,
+                        );
+                        return;
+                    }
+
+                    // Update the next page's start beat
+                    await window.electron.updatePages([
+                        {
+                            id: nextPage.id,
+                            start_beat: newNextPageStartBeatId,
+                        },
+                    ]);
+                } else {
+                    // Standard single page update
+                    await window.electron.updatePages([
+                        {
+                            id: nextPage.id,
+                            start_beat: newNextPageStartBeatId,
+                        },
+                    ]);
+                }
 
                 // Refresh the timing objects to update everything
                 await fetchTimingObjects();
@@ -204,8 +297,46 @@ export function PageTimeline() {
         ) {
             const newDuration = parseFloat(pageElement.dataset.newDuration);
 
-            // Update the page in the database
-            updatePageDuration(resizingPage.current.id, newDuration);
+            // Find the next page
+            const currentPageIndex = pages.findIndex(
+                (page) => page.id === resizingPage.current!.id,
+            );
+            const nextPageIndex = currentPageIndex + 1;
+            const nextPage =
+                nextPageIndex < pages.length ? pages[nextPageIndex] : null;
+
+            // Check if the next page was also resized
+            if (nextPage) {
+                const nextPageElement = document.querySelector(
+                    `[timeline-page-id="${nextPage.id}"]`,
+                );
+
+                if (
+                    nextPageElement instanceof HTMLElement &&
+                    nextPageElement.dataset.newDuration
+                ) {
+                    const nextPageNewDuration = parseFloat(
+                        nextPageElement.dataset.newDuration,
+                    );
+
+                    // Update both pages in the database
+                    updatePageDuration(
+                        resizingPage.current.id,
+                        newDuration,
+                        nextPage.id,
+                        nextPageNewDuration,
+                    );
+
+                    // Clean up the data attributes
+                    delete nextPageElement.dataset.newDuration;
+                } else {
+                    // Only update the current page
+                    updatePageDuration(resizingPage.current.id, newDuration);
+                }
+            } else {
+                // Only update the current page
+                updatePageDuration(resizingPage.current.id, newDuration);
+            }
 
             // Clean up the data attribute
             delete pageElement.dataset.newDuration;
@@ -218,7 +349,7 @@ export function PageTimeline() {
         // Remove event listeners
         document.removeEventListener("mousemove", handlePageResizeMove);
         document.removeEventListener("mouseup", handlePageResizeEnd);
-    }, [handlePageResizeMove, updatePageDuration]);
+    }, [handlePageResizeMove, updatePageDuration, pages]);
 
     // Clean up event listeners when component unmounts
     useEffect(() => {

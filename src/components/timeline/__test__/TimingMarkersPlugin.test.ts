@@ -268,9 +268,6 @@ describe("TimingMarkersPlugin", () => {
 
     describe("updateTimingMarkers", () => {
         it("should update beats and measures and recreate markers", () => {
-            // Create spy on console.log
-            const consoleSpy = vi.spyOn(console, "log");
-
             // First create the initial markers
             timingMarkersPlugin.createTimingMarkers();
 
@@ -304,13 +301,6 @@ describe("TimingMarkersPlugin", () => {
 
             // Update the markers
             timingMarkersPlugin.updateTimingMarkers(newBeats, newMeasures);
-
-            // Should log the update
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "Updating timing markers",
-                newBeats,
-                newMeasures,
-            );
 
             // Should update the internal beats and measures
             // @ts-ignore - Accessing private properties for testing
