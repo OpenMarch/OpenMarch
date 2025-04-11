@@ -285,8 +285,6 @@ export function fromDatabasePages({
         const aBeat = beatMap.get(a.start_beat);
         const bBeat = beatMap.get(b.start_beat);
         if (!aBeat || !bBeat) {
-            console.log("aBeat", a.start_beat, aBeat);
-            console.log("bBeat", b.start_beat, bBeat);
             throw new Error(
                 `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
             );

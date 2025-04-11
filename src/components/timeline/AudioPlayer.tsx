@@ -38,7 +38,9 @@ export default function AudioPlayer() {
         if (isPlaying) {
             audio.play();
         } else {
-            audio.currentTime = selectedPage?.timestamp || 0;
+            audio.currentTime = selectedPage
+                ? selectedPage.timestamp + selectedPage.duration
+                : 0;
             audio.pause();
         }
     }, [audioFileUrl, isPlaying, selectedPage, selectedPage?.timestamp]);

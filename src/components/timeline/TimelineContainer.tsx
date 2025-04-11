@@ -434,10 +434,19 @@ export function PageTimeline() {
                                     index === pages.length)) &&
                                 isPlaying && (
                                     <div
-                                        className="absolute left-0 top-0 z-0 h-full w-full bg-accent/25"
-                                        style={{
-                                            animation: `progress ${page.duration}s linear forwards`,
-                                        }}
+                                        className={clsx(
+                                            "absolute left-0 top-0 z-0 h-full w-full",
+                                            uiSettings.showWaveform
+                                                ? ""
+                                                : "bg-accent/25",
+                                        )}
+                                        style={
+                                            uiSettings.showWaveform
+                                                ? {}
+                                                : {
+                                                      animation: `progress ${page.duration}s linear forwards`,
+                                                  }
+                                        }
                                     />
                                 )}
                         </div>
