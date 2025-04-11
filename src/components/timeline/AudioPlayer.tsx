@@ -9,7 +9,6 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
-import Measure from "@/global/classes/Measure";
 /**
  * The audio player handles the playback of the audio file.
  * There are no controls here for the audio player, it is controlled by isPlaying and selectedPage stores/contexts.
@@ -96,44 +95,7 @@ export default function AudioPlayer() {
             const timelineMarkersPlugin = new TimingMarkersPlugin(
                 regions,
                 beats,
-                measures.length > 0
-                    ? measures
-                    : [
-                          {
-                              id: 1,
-                              startBeat: {
-                                  id: 0,
-                                  position: 0,
-                                  duration: 4,
-                                  includeInMeasure: true,
-                                  notes: null,
-                                  i: 0,
-                              },
-                              number: 1,
-                              rehearsalMark: null,
-                              notes: null,
-                              duration: 4,
-                              counts: 4,
-                              beats: [],
-                          } satisfies Measure,
-                          {
-                              id: 2,
-                              startBeat: {
-                                  id: 9,
-                                  position: 0,
-                                  duration: 4,
-                                  includeInMeasure: true,
-                                  notes: null,
-                                  i: 0,
-                              },
-                              number: 2,
-                              rehearsalMark: "A",
-                              notes: null,
-                              duration: 4,
-                              counts: 4,
-                              beats: [],
-                          } satisfies Measure,
-                      ],
+                measures,
             );
             timingMarkersPlugin.current = timelineMarkersPlugin;
             // Create regions when the audio is decoded

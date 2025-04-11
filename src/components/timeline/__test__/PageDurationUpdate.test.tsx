@@ -127,7 +127,7 @@ const updatePageDuration = async (
     for (let i = currentPageStartBeatIndex; i < allBeats.length; i++) {
         cumulativeDuration += allBeats[i].duration;
         if (cumulativeDuration >= newDuration || i === allBeats.length - 1) {
-            targetBeatIndex = i + 1; // The next beat after the last one we want to include
+            targetBeatIndex = i; // The last beat we want to include in the current page
             break;
         }
     }
@@ -136,7 +136,13 @@ const updatePageDuration = async (
     if (targetBeatIndex === -1 || targetBeatIndex >= allBeats.length) return;
 
     // Get the beat ID that should be the start of the next page
-    const newNextPageStartBeatId = allBeats[targetBeatIndex].id;
+    // We need the beat after the last one we included in the current page
+    const nextBeatIndex = targetBeatIndex + 1;
+
+    // If there's no next beat, don't update
+    if (nextBeatIndex >= allBeats.length) return;
+
+    const newNextPageStartBeatId = allBeats[nextBeatIndex].id;
 
     // Update the next page's start beat
     await window.electron.updatePages([

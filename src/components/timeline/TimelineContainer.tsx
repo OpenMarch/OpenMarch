@@ -61,8 +61,14 @@ export function PageTimeline() {
     const startX = useRef(0);
     const startWidth = useRef(0);
 
-    const getWidth = (page: Page) =>
-        page.duration * uiSettings.timelinePixelsPerSecond; // pxPerSecond;
+    // Calculate the width of a page based on its duration
+    // Add a small buffer to ensure the page visually includes all its beats
+    const getWidth = (page: Page) => {
+        // Use the page's duration to calculate the width
+        // Add a small buffer (equivalent to 1 beat) to ensure all beats are visually included
+        const buffer = page.beats.length > 0 ? page.beats[0].duration : 0;
+        return (page.duration + buffer) * uiSettings.timelinePixelsPerSecond;
+    };
 
     // Function to handle the start of resizing
     const handlePageResizeStart = (e: MouseEvent, page: Page) => {
@@ -89,7 +95,13 @@ export function PageTimeline() {
             const newWidth = Math.max(100, startWidth.current + deltaX); // Minimum width of 100px
 
             // Calculate new duration based on the new width
-            const newDuration = newWidth / uiSettings.timelinePixelsPerSecond;
+            // Subtract the buffer we added in getWidth to get the actual duration
+            const buffer =
+                resizingPage.current.beats.length > 0
+                    ? resizingPage.current.beats[0].duration
+                    : 0;
+            const newDuration =
+                newWidth / uiSettings.timelinePixelsPerSecond - buffer;
 
             // Update the visual width immediately for smooth dragging
             const pageElement = document.querySelector(
@@ -143,7 +155,7 @@ export function PageTimeline() {
                     cumulativeDuration >= newDuration ||
                     i === allBeats.length - 1
                 ) {
-                    targetBeatIndex = i + 1; // The next beat after the last one we want to include
+                    targetBeatIndex = i; // The last beat we want to include in the current page
                     break;
                 }
             }
@@ -153,7 +165,13 @@ export function PageTimeline() {
                 return;
 
             // Get the beat ID that should be the start of the next page
-            const newNextPageStartBeatId = allBeats[targetBeatIndex].id;
+            // We need the beat after the last one we included in the current page
+            const nextBeatIndex = targetBeatIndex + 1;
+
+            // If there's no next beat, don't update
+            if (nextBeatIndex >= allBeats.length) return;
+
+            const newNextPageStartBeatId = allBeats[nextBeatIndex].id;
 
             // Update the next page's start beat
             try {

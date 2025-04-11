@@ -87,7 +87,6 @@ export class TimingMarkersPlugin {
      * @param measures Array of Measure objects to update markers for
      */
     updateTimingMarkers = (beats: Beat[], measures: Measure[]) => {
-        console.log("Updating timing markers", beats, measures);
         this.beats = beats;
         this.measures = measures;
 

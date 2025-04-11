@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import Page from "@/global/classes/Page";
+import Beat from "@/global/classes/Beat";
 import { ElectronApi } from "electron/preload";
 
 // Mock the hooks
@@ -17,7 +18,10 @@ const mockPage: Page = {
     order: 1,
     isSubset: false,
     duration: 2,
-    beats: [],
+    beats: [
+        { id: 1, position: 10, duration: 1 } as Beat,
+        { id: 2, position: 20, duration: 1 } as Beat,
+    ],
     measures: null,
     measureBeatToStartOn: null,
     measureBeatToEndOn: null,
@@ -42,7 +46,10 @@ const handlePageResizeMove = (
     const newWidth = Math.max(100, startWidth + deltaX); // Minimum width of 100px
 
     // Calculate new duration based on the new width
-    const newDuration = newWidth / pixelsPerSecond;
+    // Subtract the buffer we added in getWidth to get the actual duration
+    const buffer =
+        resizingPage.beats.length > 0 ? resizingPage.beats[0].duration : 0;
+    const newDuration = newWidth / pixelsPerSecond - buffer;
 
     return { newWidth, newDuration };
 };
@@ -88,7 +95,7 @@ describe("handlePageResizeMove function", () => {
         // Check the results
         expect(result).not.toBeNull();
         expect(result?.newWidth).toBe(250); // 200 + (150 - 100)
-        expect(result?.newDuration).toBe(2.5); // 250 / 100
+        expect(result?.newDuration).toBe(1.5); // (250 / 100) - 1 (buffer)
     });
 
     it("calculates correct new width and duration when dragging left", () => {
@@ -107,7 +114,7 @@ describe("handlePageResizeMove function", () => {
         // Check the results
         expect(result).not.toBeNull();
         expect(result?.newWidth).toBe(150); // 200 + (50 - 100)
-        expect(result?.newDuration).toBe(1.5); // 150 / 100
+        expect(result?.newDuration).toBe(0.5); // (150 / 100) - 1 (buffer)
     });
 
     it("enforces minimum width of 100px", () => {
@@ -126,7 +133,7 @@ describe("handlePageResizeMove function", () => {
         // Check the results
         expect(result).not.toBeNull();
         expect(result?.newWidth).toBe(100); // Minimum width
-        expect(result?.newDuration).toBe(1); // 100 / 100
+        expect(result?.newDuration).toBe(0); // (100 / 100) - 1 (buffer)
     });
 
     it("returns null if resizingPage is null", () => {
@@ -162,6 +169,6 @@ describe("handlePageResizeMove function", () => {
         // Check the results
         expect(result).not.toBeNull();
         expect(result?.newWidth).toBe(250); // 200 + (150 - 100)
-        expect(result?.newDuration).toBe(5); // 250 / 50
+        expect(result?.newDuration).toBe(4); // (250 / 50) - 1 (buffer)
     });
 });
