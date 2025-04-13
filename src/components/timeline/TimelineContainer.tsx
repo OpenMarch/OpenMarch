@@ -194,7 +194,6 @@ export function PageTimeline() {
             pageElement.dataset.newDuration
         ) {
             const newDuration = parseFloat(pageElement.dataset.newDuration);
-            console.log("newDuration", newDuration);
 
             // Find the next page
             const currentPageIndex = pages.findIndex(
@@ -206,7 +205,6 @@ export function PageTimeline() {
 
             // Check if the next page was also resized
             let updateArgs: ModifyPagesRequest;
-            console.log("beats", resizingPage.current.beats);
             const newBeats = durationToBeats({
                 newDuration,
                 allBeats: beats,
