@@ -76,3 +76,37 @@ export const getPreviousBeat = (
 ): Beat | null => {
     return beats[currentBeat.i - 1] ?? null;
 };
+
+/**
+ * Converts a duration to a subset of beats starting from a given beat. This does not round to the nearest beat,
+ * rather it includes all beats that cumulatively match or exceed the new duration.
+ *
+ * @param newDuration - The target duration to calculate beats for.
+ * @param allBeats - The complete array of beats to select from.
+ * @param startBeat - The beat from which to start selecting beats.
+ * @returns An array of beats that cumulatively match or exceed the new duration.
+ */
+export const durationToBeats = ({
+    newDuration,
+    allBeats,
+    startBeat,
+}: {
+    newDuration: number;
+    allBeats: Beat[];
+    startBeat: Beat;
+}): Beat[] => {
+    if (newDuration <= 0) {
+        console.warn("durationToBeats: newDuration must be greater than 0");
+        return [];
+    }
+
+    let cumulativeDuration = 0;
+    let beatIndex = startBeat.i;
+
+    while (cumulativeDuration < newDuration && beatIndex < allBeats.length) {
+        cumulativeDuration += allBeats[beatIndex].duration;
+        beatIndex++;
+    }
+
+    return allBeats.slice(startBeat.i, beatIndex);
+};

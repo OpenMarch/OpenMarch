@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { compareBeats, beatsDuration, fromDatabaseBeat } from "../Beat";
+import {
+    compareBeats,
+    beatsDuration,
+    fromDatabaseBeat,
+    durationToBeats,
+} from "../Beat";
 import type Beat from "../Beat";
 import { DatabaseBeat } from "electron/database/tables/BeatTable";
 
@@ -224,6 +229,140 @@ describe("Beat", () => {
 
             // Assert
             expect(result.notes).toBeNull();
+        });
+    });
+
+    describe("durationToBeats", () => {
+        // Create a mock array of beats for testing
+        const mockBeats: Beat[] = [
+            {
+                id: 1,
+                position: 1,
+                duration: 2,
+                includeInMeasure: true,
+                notes: null,
+                i: 0,
+            },
+            {
+                id: 2,
+                position: 2,
+                duration: 3,
+                includeInMeasure: true,
+                notes: null,
+                i: 1,
+            },
+            {
+                id: 3,
+                position: 3,
+                duration: 1,
+                includeInMeasure: true,
+                notes: null,
+                i: 2,
+            },
+            {
+                id: 4,
+                position: 4,
+                duration: 4,
+                includeInMeasure: true,
+                notes: null,
+                i: 3,
+            },
+            {
+                id: 5,
+                position: 5,
+                duration: 2,
+                includeInMeasure: true,
+                notes: null,
+                i: 4,
+            },
+        ];
+
+        it("should return beats that cumulatively match or exceed the given duration", () => {
+            const startBeat = mockBeats[1]; // Beat with i=1
+            const result = durationToBeats({
+                newDuration: 4,
+                allBeats: mockBeats,
+                startBeat,
+            });
+
+            // Should include beats at index 1 and 2 (durations 3 + 1 = 4)
+            expect(result).toHaveLength(2);
+            expect(result[0].id).toBe(2);
+            expect(result[1].id).toBe(3);
+        });
+
+        it("should return beats that exceed the given duration if exact match is not possible", () => {
+            const startBeat = mockBeats[0]; // Beat with i=0
+            const result = durationToBeats({
+                newDuration: 4.5,
+                allBeats: mockBeats,
+                startBeat,
+            });
+
+            // Should include beats at index 0 and 1 (durations 2 + 3 = 5 > 4.5)
+            expect(result).toHaveLength(2);
+            expect(result[0].id).toBe(1);
+            expect(result[1].id).toBe(2);
+        });
+
+        it("should handle a duration of 0", () => {
+            const startBeat = mockBeats[2]; // Beat with i=2
+            const result = durationToBeats({
+                newDuration: 0,
+                allBeats: mockBeats,
+                startBeat,
+            });
+
+            // Should include at least the start beat itself
+            expect(result).toHaveLength(0);
+        });
+
+        it("should handle a duration larger than all available beats", () => {
+            const startBeat = mockBeats[0]; // Beat with i=0
+            const result = durationToBeats({
+                newDuration: 20,
+                allBeats: mockBeats,
+                startBeat,
+            });
+
+            // Should include all beats from the start beat to the end
+            expect(result).toHaveLength(5);
+            expect(result[0].id).toBe(1);
+            expect(result[4].id).toBe(5);
+        });
+
+        it("should handle starting from the last beat", () => {
+            const startBeat = mockBeats[4]; // Beat with i=4 (last beat)
+            const result = durationToBeats({
+                newDuration: 3,
+                allBeats: mockBeats,
+                startBeat,
+            });
+
+            // Should include only the last beat
+            expect(result).toHaveLength(1);
+            expect(result[0].id).toBe(5);
+        });
+
+        it("should handle an empty beats array", () => {
+            const emptyBeats: Beat[] = [];
+            const mockStartBeat: Beat = {
+                id: 1,
+                position: 1,
+                duration: 2,
+                includeInMeasure: true,
+                notes: null,
+                i: 0,
+            };
+
+            const result = durationToBeats({
+                newDuration: 5,
+                allBeats: emptyBeats,
+                startBeat: mockStartBeat,
+            });
+
+            // Should return an empty array
+            expect(result).toHaveLength(0);
         });
     });
 });

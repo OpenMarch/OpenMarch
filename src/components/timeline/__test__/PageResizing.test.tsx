@@ -237,7 +237,7 @@ describe("PageTimeline Resizing", () => {
         expect(window.electron.updatePages).toHaveBeenCalledWith([
             {
                 id: 2,
-                start_beat: 3,
+                start_beat: 6,
             },
         ] satisfies ModifiedPageArgs[]);
     });

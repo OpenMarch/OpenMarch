@@ -404,10 +404,14 @@ export function initHandlers() {
     );
     ipcMain.handle(
         "utility:updateRecord",
-        async (_, utilityRecord: UtilityTable.ModifiedUtilityRecord) =>
+        async (
+            _,
+            utilityRecord: UtilityTable.ModifiedUtilityRecord,
+            useNextUndoGroup: boolean,
+        ) =>
             connectWrapper<UtilityTable.UtilityRecord>(
                 UtilityTable.updateUtilityRecord,
-                { utilityRecord },
+                { utilityRecord, useNextUndoGroup },
             ),
     );
 

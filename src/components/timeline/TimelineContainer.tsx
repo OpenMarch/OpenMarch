@@ -6,13 +6,19 @@ import { Plus, Minus } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import AudioPlayer from "./AudioPlayer";
-import Page, { createLastPage } from "@/global/classes/Page";
+import Page, {
+    createLastPage,
+    ModifyPagesRequest,
+    updatePageCountRequest,
+    updatePages,
+} from "@/global/classes/Page";
 import clsx from "clsx";
-import Beat from "@/global/classes/Beat";
+import Beat, { durationToBeats } from "@/global/classes/Beat";
 
 export const getAvailableOffsets = ({
     currentPage,
     nextPage,
+    allBeats,
 }: {
     currentPage: Page;
     nextPage: Page | null;
@@ -27,8 +33,8 @@ export const getAvailableOffsets = ({
     );
 
     // Add all possible negative offsets from the current page
-    let runningTime = -currentPageDuration;
-    for (let i = 0; i < currentPage.beats.length; i++) {
+    let runningTime = -currentPageDuration + currentPage.beats[0].duration;
+    for (let i = 1; i < currentPage.beats.length; i++) {
         offsets.push(runningTime);
         runningTime += currentPage.beats[i].duration;
     }
@@ -41,6 +47,16 @@ export const getAvailableOffsets = ({
         runningTime = 0;
         for (let i = 0; i < nextPage.beats.length - 1; i++) {
             runningTime += nextPage.beats[i].duration;
+            offsets.push(runningTime);
+        }
+    } else {
+        // If there's no next page, use all of the following beats
+        runningTime = 0;
+        const lastBeat = currentPage.beats[currentPage.beats.length - 1];
+        for (const beat of allBeats) {
+            if (beat.position <= lastBeat.position) continue;
+            console.log(beat);
+            runningTime += beat.duration;
             offsets.push(runningTime);
         }
     }
@@ -94,7 +110,6 @@ export function PageTimeline() {
             nextPage: pages[pages.indexOf(page) + 1] || null,
             allBeats: beats,
         }).map((offset) => offset * uiSettings.timelinePixelsPerSecond);
-        console.log(availableOffsets.current);
 
         // Add event listeners for mouse move and mouse up
         document.addEventListener("mousemove", handlePageResizeMove);
@@ -177,113 +192,6 @@ export function PageTimeline() {
         [uiSettings.timelinePixelsPerSecond, pages, getWidth],
     );
 
-    // Function to update page duration in the database
-    const updatePageDuration = useCallback(
-        async (
-            pageId: number,
-            newDuration: number,
-            nextPageId?: number,
-            nextPageNewDuration?: number,
-        ) => {
-            // Get the latest pages and beats from the store
-            const { pages, beats } = useTimingObjectsStore.getState();
-
-            // Find the current page and the next page
-            const currentPageIndex = pages.findIndex(
-                (page) => page.id === pageId,
-            );
-            if (currentPageIndex === -1) return;
-
-            const currentPage = pages[currentPageIndex];
-            const nextPageIndex = currentPageIndex + 1;
-
-            // If there's no next page, we can't adjust the duration
-            if (nextPageIndex >= pages.length) return;
-
-            const nextPage = pages[nextPageIndex];
-
-            // Calculate how many beats to include in the current page based on the new duration
-            let cumulativeDuration = 0;
-            let targetBeatIndex = -1;
-
-            // Find all beats in the show
-            const allBeats = [...beats].sort((a, b) => a.position - b.position);
-
-            // Find the index of the first beat of the current page
-            const currentPageStartBeatIndex = allBeats.findIndex(
-                (beat) => beat.id === currentPage.beats[0].id,
-            );
-
-            // Calculate how many beats should be included to match the new duration
-            for (let i = currentPageStartBeatIndex; i < allBeats.length; i++) {
-                cumulativeDuration += allBeats[i].duration;
-                if (
-                    cumulativeDuration >= newDuration ||
-                    i === allBeats.length - 1
-                ) {
-                    targetBeatIndex = i; // The last beat we want to include in the current page
-                    break;
-                }
-            }
-
-            // If we couldn't find a suitable beat, don't update
-            if (targetBeatIndex === -1 || targetBeatIndex >= allBeats.length)
-                return;
-
-            // Get the beat ID that should be the start of the next page
-            // We need the beat after the last one we included in the current page
-            const nextBeatIndex = targetBeatIndex + 1;
-
-            // If there's no next beat, don't update
-            if (nextBeatIndex >= allBeats.length) return;
-
-            const newNextPageStartBeatId = allBeats[nextBeatIndex].id;
-
-            // Update the next page's start beat
-            try {
-                // If we have a specific next page ID and duration, we're updating both pages
-                // This happens when the user drags a page and we need to update both the current
-                // and next page durations
-                if (
-                    nextPageId !== undefined &&
-                    nextPageNewDuration !== undefined
-                ) {
-                    // Verify the next page ID matches what we expect
-                    if (nextPageId !== nextPage.id) {
-                        console.error(
-                            "Next page ID mismatch",
-                            nextPageId,
-                            nextPage.id,
-                        );
-                        return;
-                    }
-
-                    // Update the next page's start beat
-                    await window.electron.updatePages([
-                        {
-                            id: nextPage.id,
-                            start_beat: newNextPageStartBeatId,
-                        },
-                    ]);
-                } else {
-                    // Standard single page update
-                    await window.electron.updatePages([
-                        {
-                            id: nextPage.id,
-                            start_beat: newNextPageStartBeatId,
-                        },
-                    ]);
-                }
-
-                // Refresh the timing objects to update everything
-                await fetchTimingObjects();
-            } catch (error) {
-                console.error("Failed to update page duration:", error);
-            }
-        },
-        [fetchTimingObjects],
-    );
-
     // Function to handle the end of resizing
     const handlePageResizeEnd = useCallback(() => {
         const pageElement = document.querySelector(
@@ -292,6 +200,7 @@ export function PageTimeline() {
 
         if (
             resizingPage.current &&
+            resizingPage.current.beats.length > 0 &&
             pageElement instanceof HTMLElement &&
             pageElement.dataset.newDuration
         ) {
@@ -306,37 +215,20 @@ export function PageTimeline() {
                 nextPageIndex < pages.length ? pages[nextPageIndex] : null;
 
             // Check if the next page was also resized
-            if (nextPage) {
-                const nextPageElement = document.querySelector(
-                    `[timeline-page-id="${nextPage.id}"]`,
-                );
+            let updateArgs: ModifyPagesRequest;
+            const newBeats = durationToBeats({
+                newDuration,
+                allBeats: beats,
+                startBeat: resizingPage.current.beats[0],
+            });
+            updateArgs = updatePageCountRequest({
+                pages,
+                beats,
+                pageToUpdate: resizingPage.current,
+                newCounts: newBeats.length - (nextPage ? 0 : 1),
+            });
 
-                if (
-                    nextPageElement instanceof HTMLElement &&
-                    nextPageElement.dataset.newDuration
-                ) {
-                    const nextPageNewDuration = parseFloat(
-                        nextPageElement.dataset.newDuration,
-                    );
-
-                    // Update both pages in the database
-                    updatePageDuration(
-                        resizingPage.current.id,
-                        newDuration,
-                        nextPage.id,
-                        nextPageNewDuration,
-                    );
-
-                    // Clean up the data attributes
-                    delete nextPageElement.dataset.newDuration;
-                } else {
-                    // Only update the current page
-                    updatePageDuration(resizingPage.current.id, newDuration);
-                }
-            } else {
-                // Only update the current page
-                updatePageDuration(resizingPage.current.id, newDuration);
-            }
+            updatePages(updateArgs, fetchTimingObjects);
 
             // Clean up the data attribute
             delete pageElement.dataset.newDuration;
@@ -349,7 +241,7 @@ export function PageTimeline() {
         // Remove event listeners
         document.removeEventListener("mousemove", handlePageResizeMove);
         document.removeEventListener("mouseup", handlePageResizeEnd);
-    }, [handlePageResizeMove, updatePageDuration, pages]);
+    }, [handlePageResizeMove, pages, beats, fetchTimingObjects]);
 
     // Clean up event listeners when component unmounts
     useEffect(() => {

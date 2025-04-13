@@ -439,10 +439,15 @@ const APP_API = {
         ipcRenderer.invoke("utility:getRecord") as Promise<
             DatabaseResponse<UtilityRecord | null>
         >,
-    updateUtilityRecord: (utilityRecord: ModifiedUtilityRecord) =>
-        ipcRenderer.invoke("utility:updateRecord", utilityRecord) as Promise<
-            DatabaseResponse<UtilityRecord>
-        >,
+    updateUtilityRecord: (
+        utilityRecord: ModifiedUtilityRecord,
+        useNextUndoGroup: boolean = true,
+    ) =>
+        ipcRenderer.invoke(
+            "utility:updateRecord",
+            utilityRecord,
+            useNextUndoGroup,
+        ) as Promise<DatabaseResponse<UtilityRecord>>,
 
     /******************************/
 

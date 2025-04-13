@@ -26,6 +26,8 @@ export const useTimingObjectsStore = create<TimingObjectStoreInterface>(
         /**
          * Fetch the pages from the database and updates the store.
          * This is the only way to update retrieve the pages from the database that ensures the UI is updated.
+         *
+         * The objects are constructed in the order of Beats -> Measures -> Pages.
          */
         fetchTimingObjects: async (): Promise<void> => {
             const pagesResponse = await window.electron.getPages();

@@ -2,6 +2,7 @@ import Page, {
     createLastPage,
     fromDatabasePages,
     generatePageNames,
+    updatePageCountRequest,
 } from "../Page";
 import Measure from "../Measure";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +13,8 @@ import {
 } from "../../../../electron/database/tables/PageTable";
 import { ElectronApi } from "../../../../electron/preload";
 import { FIRST_BEAT_ID } from "../../../../electron/database/tables/BeatTable";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 
 describe("Page", () => {
     describe("generatePageNames", () => {
@@ -749,7 +752,7 @@ describe("Page", () => {
             expect(fetchPagesFunction).toHaveBeenCalledTimes(1);
             expect(result).toEqual({
                 success: true,
-                data: [{ id: 3, start_beat: 3, is_subset: false }],
+                data: { id: 3, start_beat: 3, is_subset: false },
             });
         });
 
@@ -782,7 +785,7 @@ describe("Page", () => {
             expect(window.electron.createPages).not.toHaveBeenCalled();
             expect(window.electron.updateUtilityRecord).not.toHaveBeenCalled();
             expect(fetchPagesFunction).not.toHaveBeenCalled();
-            expect(result).toBeNull();
+            expect(result.success).toBeFalsy();
         });
 
         it("should handle page creation failure", async () => {
@@ -885,7 +888,215 @@ describe("Page", () => {
             expect(fetchPagesFunction).toHaveBeenCalledTimes(1);
             expect(result).toEqual({
                 success: true,
-                data: [{ id: 3, start_beat: 3, is_subset: false }],
+                data: { id: 3, start_beat: 3, is_subset: false },
+            });
+        });
+    });
+
+    describe("page duration update", () => {
+        // Mock the hooks
+        vi.mock("@/stores/TimingObjectsStore");
+        vi.mock("@/stores/UiSettingsStore");
+        vi.mock("@/context/IsPlayingContext");
+        vi.mock("@/context/SelectedPageContext");
+        vi.mock("@/stores/ShapePageStore");
+        vi.mock("@/context/SelectedAudioFileContext");
+
+        // Create mock data
+        const mockBeats: Beat[] = [
+            { id: 1, position: 1, duration: 0 } as Beat,
+            { id: 2, position: 2, duration: 1 } as Beat,
+            { id: 3, position: 3, duration: 1 } as Beat,
+            { id: 4, position: 4, duration: 1 } as Beat,
+            { id: 5, position: 5, duration: 1 } as Beat,
+            { id: 6, position: 6, duration: 1 } as Beat,
+            { id: 7, position: 7, duration: 1 } as Beat,
+        ];
+
+        const mockPages: Page[] = [
+            {
+                id: 0,
+                name: "0",
+                counts: 0,
+                notes: null,
+                order: 0,
+                isSubset: false,
+                duration: 0,
+                beats: [mockBeats[0]],
+                measures: null,
+                measureBeatToStartOn: null,
+                measureBeatToEndOn: null,
+                timestamp: 0,
+                previousPageId: null,
+                nextPageId: 1,
+            } as Page,
+            {
+                id: 1,
+                name: "1",
+                counts: 2,
+                notes: null,
+                order: 1,
+                isSubset: false,
+                duration: 2,
+                beats: [mockBeats[0], mockBeats[1]],
+                measures: null,
+                measureBeatToStartOn: null,
+                measureBeatToEndOn: null,
+                timestamp: 0,
+                previousPageId: 0,
+                nextPageId: 2,
+            } as Page,
+            {
+                id: 2,
+                name: "2",
+                counts: 2,
+                notes: null,
+                order: 2,
+                isSubset: false,
+                duration: 2,
+                beats: [mockBeats[2], mockBeats[3]],
+                measures: null,
+                measureBeatToStartOn: null,
+                measureBeatToEndOn: null,
+                timestamp: 2,
+                previousPageId: 1,
+                nextPageId: 3,
+            } as Page,
+            {
+                id: 3,
+                name: "3",
+                counts: 2,
+                notes: null,
+                order: 3,
+                isSubset: false,
+                duration: 2,
+                beats: [mockBeats[4], mockBeats[5]],
+                measures: null,
+                measureBeatToStartOn: null,
+                measureBeatToEndOn: null,
+                timestamp: 4,
+                previousPageId: 2,
+                nextPageId: null,
+            } as Page,
+        ];
+
+        describe("updatePageCountRequest function", () => {
+            // Mock the window.electron object
+            beforeEach(() => {
+                window.electron = {
+                    updatePages: vi.fn().mockResolvedValue({ success: true }),
+                    updateUtilityRecord: vi
+                        .fn()
+                        .mockResolvedValue({ success: true }),
+                    getSelectedAudioFile: vi.fn().mockResolvedValue(null),
+                } as Partial<ElectronApi> as ElectronApi;
+
+                // Mock the useTimingObjectsStore hook
+                vi.mocked(useTimingObjectsStore).mockReturnValue({
+                    pages: mockPages,
+                    beats: mockBeats,
+                    measures: [],
+                    fetchTimingObjects: vi.fn().mockResolvedValue(undefined),
+                });
+
+                // Mock the useSelectedAudioFile hook
+                vi.mocked(useSelectedAudioFile).mockReturnValue({
+                    selectedAudioFile: null,
+                    setSelectedAudioFile: vi.fn(),
+                });
+
+                // Create a mock for getState to return the current state
+                useTimingObjectsStore.getState = vi.fn().mockReturnValue({
+                    pages: mockPages,
+                    beats: mockBeats,
+                    measures: [],
+                });
+            });
+
+            afterEach(() => {
+                vi.clearAllMocks();
+            });
+
+            it("updates the next page's start beat when increasing duration", () => {
+                // Test increasing the duration of page 1
+                const result = updatePageCountRequest({
+                    pageToUpdate: mockPages[0],
+                    newCounts: 3,
+                    pages: mockPages,
+                    beats: mockBeats,
+                });
+
+                expect(result).toEqual({
+                    modifiedPagesArgs: [
+                        {
+                            id: 1,
+                            start_beat: 4,
+                        },
+                    ],
+                });
+            });
+
+            it("updates the next page's start beat when decreasing duration", () => {
+                // Test decreasing the duration of page 1
+                const result = updatePageCountRequest({
+                    pageToUpdate: mockPages[1],
+                    newCounts: mockPages[1].duration - 1,
+                    pages: mockPages,
+                    beats: mockBeats,
+                });
+
+                expect(result).toEqual({
+                    modifiedPagesArgs: [
+                        {
+                            id: mockPages[2].id,
+                            start_beat:
+                                mockPages[1].beats[
+                                    mockPages[1].beats.length - 1
+                                ].id,
+                        },
+                    ],
+                });
+            });
+
+            it("updates the last page's counts when the next page is the last page", () => {
+                const pageToUpdate = mockPages[mockPages.length - 2];
+                const nextPage = mockPages[mockPages.length - 1];
+                const newCounts = pageToUpdate.duration - 1;
+
+                const result = updatePageCountRequest({
+                    pageToUpdate,
+                    newCounts,
+                    pages: mockPages,
+                    beats: mockBeats,
+                });
+
+                expect(result).toEqual({
+                    modifiedPagesArgs: [
+                        {
+                            id: nextPage.id,
+                            start_beat:
+                                pageToUpdate.beats[
+                                    pageToUpdate.beats.length - 1
+                                ].id,
+                        },
+                    ],
+                    lastPageCounts: 3,
+                });
+            });
+
+            it("updates utility record when there is no next page", () => {
+                // Test with the last page
+                const result = updatePageCountRequest({
+                    pageToUpdate: mockPages[3],
+                    newCounts: 3,
+                    pages: mockPages,
+                    beats: mockBeats,
+                });
+
+                expect(result).toEqual({
+                    modifiedPagesArgs: [],
+                    lastPageCounts: 3,
+                });
             });
         });
     });
