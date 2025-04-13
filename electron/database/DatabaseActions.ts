@@ -346,7 +346,6 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
         History.performUndo(db);
         History.clearMostRecentRedo(db);
     } finally {
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
     }
@@ -499,7 +498,6 @@ export function updateItems<
     } finally {
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }
@@ -626,7 +624,6 @@ export function deleteItems<DatabaseItemType>({
     } finally {
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }
