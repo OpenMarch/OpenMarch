@@ -13,10 +13,16 @@ describe("getAvailableOffsets", () => {
             ],
         } as Page;
 
+        const allBeats = [
+            { duration: 2 } as Beat,
+            { duration: 3 } as Beat,
+            { duration: 1 } as Beat,
+        ];
+
         const result = getAvailableOffsets({
             currentPage,
             nextPage: null,
-            allBeats: [],
+            allBeats,
         });
 
         // Expected offsets:
@@ -24,7 +30,7 @@ describe("getAvailableOffsets", () => {
         // -4 (after first beat)
         // -1 (after second beat)
         // 0 (current position)
-        expect(result).toEqual([-6, -4, -1, 0]);
+        expect(result).toEqual([-4, -1, 0, 2, 5, 6]);
     });
 
     it("should return correct offsets with both current and next page", () => {
@@ -36,10 +42,17 @@ describe("getAvailableOffsets", () => {
             beats: [{ duration: 3 } as Beat, { duration: 1 } as Beat],
         } as Page;
 
+        const allBeats = [
+            { duration: 2 } as Beat,
+            { duration: 2 } as Beat,
+            { duration: 3 } as Beat,
+            { duration: 1 } as Beat,
+        ];
+
         const result = getAvailableOffsets({
             currentPage,
             nextPage,
-            allBeats: [],
+            allBeats,
         });
 
         // Expected offsets:
@@ -48,7 +61,7 @@ describe("getAvailableOffsets", () => {
         // 0 (current position)
         // 3 (after first beat of next page)
         // 4 (after second beat of next page)
-        expect(result).toEqual([-4, -2, 0, 3]);
+        expect(result).toEqual([-2, 0, 3]);
     });
 
     it("should handle empty beats array", () => {
@@ -69,14 +82,16 @@ describe("getAvailableOffsets", () => {
             nextPageId: null,
         } as Page;
 
+        const allBeats: Beat[] = [];
+
         const result = getAvailableOffsets({
             currentPage,
             nextPage: null,
-            allBeats: [],
+            allBeats,
         });
 
         // Should only return 0 since there are no beats
-        expect(result).toEqual([0]);
+        expect(result).toEqual([]);
     });
 
     it("should handle zero duration beats", () => {
@@ -88,13 +103,19 @@ describe("getAvailableOffsets", () => {
             beats: [{ duration: 0 } as Beat],
         } as Page;
 
+        const allBeats = [
+            { duration: 0 } as Beat,
+            { duration: 0 } as Beat,
+            { duration: 0 } as Beat,
+        ];
+
         const result = getAvailableOffsets({
             currentPage,
             nextPage,
-            allBeats: [],
+            allBeats,
         });
 
         // Should return [0, 0, 0, 0]
-        expect(result).toEqual([0, 0, 0]);
+        expect(result).toEqual([0, 0]);
     });
 });

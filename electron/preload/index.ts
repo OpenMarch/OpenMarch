@@ -241,6 +241,8 @@ const APP_API = {
 
     onImportFieldPropertiesFile: (callback: () => void) =>
         ipcRenderer.on("field_properties:onImport", (event) => callback()),
+    removeImportFieldPropertiesFileListener: () =>
+        ipcRenderer.removeAllListeners("field_properties:onImport"),
 
     // Marcher
     /**

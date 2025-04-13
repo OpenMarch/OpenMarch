@@ -24,6 +24,7 @@ export const getAvailableOffsets = ({
     nextPage: Page | null;
     allBeats: Beat[];
 }): number[] => {
+    if (!allBeats.length) return [];
     const offsets: number[] = [];
 
     // Get the current page's total duration
@@ -55,7 +56,6 @@ export const getAvailableOffsets = ({
         const lastBeat = currentPage.beats[currentPage.beats.length - 1];
         for (const beat of allBeats) {
             if (beat.position <= lastBeat.position) continue;
-            console.log(beat);
             runningTime += beat.duration;
             offsets.push(runningTime);
         }
@@ -84,13 +84,7 @@ export function PageTimeline() {
         (page: Page) => {
             // Use the page's duration to calculate the width
             // Add a small buffer (equivalent to 1 beat) to ensure all beats are visually included
-            const buffer =
-                page.beats.length > 0 && page.order === 1
-                    ? page.beats[0].duration
-                    : 0;
-            return (
-                (page.duration + buffer) * uiSettings.timelinePixelsPerSecond
-            );
+            return page.duration * uiSettings.timelinePixelsPerSecond;
         },
         [uiSettings.timelinePixelsPerSecond],
     );
@@ -137,13 +131,8 @@ export function PageTimeline() {
 
             // Calculate new duration based on the new width
             // Subtract the buffer we added in getWidth to get the actual duration
-            const buffer =
-                resizingPage.current.beats.length > 0 &&
-                resizingPage.current.order === 1
-                    ? resizingPage.current.beats[0].duration
-                    : 0;
-            const newDuration =
-                newWidth / uiSettings.timelinePixelsPerSecond - buffer;
+
+            const newDuration = newWidth / uiSettings.timelinePixelsPerSecond;
 
             // We can use the deltaX to adjust the next page's width directly
 
@@ -205,6 +194,7 @@ export function PageTimeline() {
             pageElement.dataset.newDuration
         ) {
             const newDuration = parseFloat(pageElement.dataset.newDuration);
+            console.log("newDuration", newDuration);
 
             // Find the next page
             const currentPageIndex = pages.findIndex(
@@ -216,6 +206,7 @@ export function PageTimeline() {
 
             // Check if the next page was also resized
             let updateArgs: ModifyPagesRequest;
+            console.log("beats", resizingPage.current.beats);
             const newBeats = durationToBeats({
                 newDuration,
                 allBeats: beats,
@@ -225,6 +216,7 @@ export function PageTimeline() {
                 pages,
                 beats,
                 pageToUpdate: resizingPage.current,
+                // The last page is a special case and should be adjusted accordingly
                 newCounts: newBeats.length - (nextPage ? 0 : 1),
             });
 
@@ -256,7 +248,7 @@ export function PageTimeline() {
             {/* ------ FIRST PAGE ------ */}
             {pages.length > 0 && (
                 <div
-                    className={`flex h-full w-[25px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
+                    className={`flex h-full w-[40px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
                         !isPlaying && "cursor-pointer"
                     } ${
                         pages[0].id === selectedPage?.id
