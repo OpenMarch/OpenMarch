@@ -1,6 +1,5 @@
 # OpenMarch
 
-![GitHub Release](https://img.shields.io/github/v/release/OpenMarch/OpenMarch)
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/OpenMarch/OpenMarch/total)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/OpenMarch/OpenMarch)
 ![GitHub License](https://img.shields.io/github/license/OpenMarch/OpenMarch)
