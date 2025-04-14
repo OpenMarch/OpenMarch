@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+export type FocusableComponents = "canvas" | "timeline";
 export interface UiSettings {
     lockX: boolean;
     lockY: boolean;
@@ -16,6 +17,8 @@ export interface UiSettings {
     showWaveform: boolean;
     /** The number of pixels per second in the timeline */
     timelinePixelsPerSecond: number;
+    /** The component that is currently focussed */
+    focussedComponent: FocusableComponents;
 }
 
 interface UiSettingsStoreState {
@@ -47,6 +50,8 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             showWaveform: false,
             /** The number of pixels per second in the timeline */
             timelinePixelsPerSecond: 40,
+            /** The component that is currently focussed */
+            focussedComponent: "canvas",
         },
 
         /**

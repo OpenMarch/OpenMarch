@@ -57,6 +57,8 @@ export enum RegisteredActionsEnum {
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
     togglePreviousPagePaths = "togglePreviousPagePaths",
+    focusCanvas = "focusCanvas",
+    focusTimeline = "focusTimeline",
 
     // Cursor Mode
     applyQuickShape = "applyQuickShape",
@@ -353,6 +355,16 @@ export const RegisteredActionsObjects: {
         toggleOffStr: "Hide next page dots/paths",
         keyboardShortcut: new KeyboardShortcut({ key: "m" }),
         enumString: "toggleNextPagePaths",
+    }),
+    focusCanvas: new RegisteredAction({
+        desc: "Focus the canvas",
+        enumString: "focusCanvas",
+        keyboardShortcut: new KeyboardShortcut({ key: "c", alt: true }),
+    }),
+    focusTimeline: new RegisteredAction({
+        desc: "Focus the timeline",
+        enumString: "focusTimeline",
+        keyboardShortcut: new KeyboardShortcut({ key: "t", alt: true }),
     }),
 
     // Cursor Mode
@@ -750,6 +762,18 @@ function RegisteredActionsHandler() {
                         previousPaths: !uiSettings.previousPaths,
                     });
                     break;
+                case RegisteredActionsEnum.focusCanvas:
+                    setUiSettings({
+                        ...uiSettings,
+                        focussedComponent: "canvas",
+                    });
+                    break;
+                case RegisteredActionsEnum.focusTimeline:
+                    setUiSettings({
+                        ...uiSettings,
+                        focussedComponent: "timeline",
+                    });
+                    break;
 
                 /****************** Cursor Mode ******************/
                 case RegisteredActionsEnum.cancelAlignmentUpdates: {
@@ -870,6 +894,7 @@ function RegisteredActionsHandler() {
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
             if (
+                uiSettings.focussedComponent === "canvas" &&
                 !document.activeElement?.matches(
                     "input, textarea, select, [contenteditable]",
                 ) &&
@@ -913,9 +938,14 @@ function RegisteredActionsHandler() {
                     );
                     e.preventDefault();
                 }
+            } else if (e.key === "Escape") {
+                setUiSettings({
+                    ...uiSettings,
+                    focussedComponent: "canvas",
+                });
             }
         },
-        [triggerAction],
+        [setUiSettings, triggerAction, uiSettings],
     );
 
     /**

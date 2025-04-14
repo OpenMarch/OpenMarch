@@ -14,6 +14,9 @@ import Page, {
 } from "@/global/classes/Page";
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
+import RegisteredActionButton from "../RegisteredActionButton";
+import { FaEdit } from "react-icons/fa";
+import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -461,10 +464,17 @@ export default function TimelineContainer() {
                 <div
                     className={
                         (uiSettings.showWaveform ? "" : "hidden") +
-                        " flex h-[30px] items-center"
+                        " flex h-[30px] items-center justify-between"
                     }
                 >
                     <p className="text-sub leading-none">Audio</p>
+                    <RegisteredActionButton
+                        registeredAction={
+                            RegisteredActionsObjects.focusTimeline
+                        }
+                    >
+                        <FaEdit />
+                    </RegisteredActionButton>
                 </div>
                 <div
                     className={
