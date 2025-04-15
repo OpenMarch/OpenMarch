@@ -18,7 +18,7 @@ describe("Beat", () => {
                 duration: 1.0,
                 includeInMeasure: true,
                 notes: null,
-                i: 0,
+                index: 0,
             };
             const beatB: Beat = {
                 id: 2,
@@ -26,7 +26,7 @@ describe("Beat", () => {
                 duration: 1.0,
                 includeInMeasure: true,
                 notes: null,
-                i: 1,
+                index: 1,
             };
 
             // Act
@@ -44,7 +44,7 @@ describe("Beat", () => {
                 duration: 1.0,
                 includeInMeasure: true,
                 notes: null,
-                i: 0,
+                index: 0,
             };
             const beatB: Beat = {
                 id: 1,
@@ -52,7 +52,7 @@ describe("Beat", () => {
                 duration: 1.0,
                 includeInMeasure: true,
                 notes: null,
-                i: 1,
+                index: 1,
             };
 
             // Act
@@ -70,7 +70,7 @@ describe("Beat", () => {
                 duration: 1.0,
                 includeInMeasure: true,
                 notes: null,
-                i: 0,
+                index: 0,
             };
             const beatB: Beat = {
                 id: 2,
@@ -78,7 +78,7 @@ describe("Beat", () => {
                 duration: 2.0,
                 includeInMeasure: false,
                 notes: "Different beat, same position",
-                i: 1,
+                index: 1,
             };
 
             // Act
@@ -99,7 +99,7 @@ describe("Beat", () => {
                     duration: 1.5,
                     includeInMeasure: true,
                     notes: null,
-                    i: 0,
+                    index: 0,
                 },
                 {
                     id: 2,
@@ -107,7 +107,7 @@ describe("Beat", () => {
                     duration: 2.5,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
                 },
                 {
                     id: 3,
@@ -115,7 +115,7 @@ describe("Beat", () => {
                     duration: 3.0,
                     includeInMeasure: false,
                     notes: null,
-                    i: 2,
+                    index: 2,
                 },
             ];
 
@@ -146,7 +146,7 @@ describe("Beat", () => {
                     duration: 2.0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 0,
+                    index: 0,
                 },
                 {
                     id: 2,
@@ -154,7 +154,7 @@ describe("Beat", () => {
                     duration: -1.0, // Edge case: negative duration
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
                 },
             ];
 
@@ -185,7 +185,7 @@ describe("Beat", () => {
             // Assert
             expect(result).toEqual({
                 id: 1,
-                i: 0,
+                index: 0,
                 position: 10,
                 duration: 2.5,
                 includeInMeasure: true,
@@ -241,7 +241,7 @@ describe("Beat", () => {
                 duration: 2,
                 includeInMeasure: true,
                 notes: null,
-                i: 0,
+                index: 0,
             },
             {
                 id: 2,
@@ -249,7 +249,7 @@ describe("Beat", () => {
                 duration: 3,
                 includeInMeasure: true,
                 notes: null,
-                i: 1,
+                index: 1,
             },
             {
                 id: 3,
@@ -257,7 +257,7 @@ describe("Beat", () => {
                 duration: 1,
                 includeInMeasure: true,
                 notes: null,
-                i: 2,
+                index: 2,
             },
             {
                 id: 4,
@@ -265,7 +265,7 @@ describe("Beat", () => {
                 duration: 4,
                 includeInMeasure: true,
                 notes: null,
-                i: 3,
+                index: 3,
             },
             {
                 id: 5,
@@ -273,7 +273,7 @@ describe("Beat", () => {
                 duration: 2,
                 includeInMeasure: true,
                 notes: null,
-                i: 4,
+                index: 4,
             },
         ];
 
@@ -352,7 +352,7 @@ describe("Beat", () => {
                 duration: 2,
                 includeInMeasure: true,
                 notes: null,
-                i: 0,
+                index: 0,
             };
 
             const result = durationToBeats({

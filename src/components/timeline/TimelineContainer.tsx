@@ -15,8 +15,9 @@ import Page, {
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
 import RegisteredActionButton from "../RegisteredActionButton";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaCheck } from "react-icons/fa";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import EditableAudioPlayer from "./EditableAudioPlayer";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -423,10 +424,14 @@ export default function TimelineContainer() {
         <div
             ref={timelineRef}
             id="timeline"
-            className={
-                (uiSettings.showWaveform ? "min-h-[10rem]" : "min-h-[8rem]") +
-                " relative flex w-full min-w-0 rounded-6 border border-stroke bg-fg-1 p-8"
-            }
+            className={clsx(
+                "relative flex w-full min-w-0 rounded-6 border border-stroke bg-fg-1 p-8 transition-all duration-200",
+                uiSettings.focussedComponent === "timeline"
+                    ? "h-[48rem]"
+                    : uiSettings.showWaveform
+                      ? "h-[13rem]"
+                      : "h-[4rem]",
+            )}
         >
             <div
                 className="fixed bottom-0 right-0 m-16 flex gap-6 drop-shadow-md"
@@ -439,7 +444,7 @@ export default function TimelineContainer() {
                             uiSettings.timelinePixelsPerSecond * 0.8,
                         )
                     }
-                    disabled={uiSettings.timelinePixelsPerSecond <= 25}
+                    disabled={uiSettings.timelinePixelsPerSecond <= 10}
                 >
                     <Minus size={16} />
                 </button>
@@ -450,7 +455,7 @@ export default function TimelineContainer() {
                             uiSettings.timelinePixelsPerSecond * 1.2,
                         )
                     }
-                    disabled={uiSettings.timelinePixelsPerSecond >= 100}
+                    disabled={uiSettings.timelinePixelsPerSecond >= 200}
                 >
                     <Plus size={16} />
                 </button>
@@ -468,21 +473,32 @@ export default function TimelineContainer() {
                     }
                 >
                     <p className="text-sub leading-none">Audio</p>
-                    <RegisteredActionButton
-                        registeredAction={
-                            RegisteredActionsObjects.focusTimeline
-                        }
-                    >
-                        <FaEdit />
-                    </RegisteredActionButton>
+                    {uiSettings.showWaveform &&
+                    uiSettings.focussedComponent !== "timeline" ? (
+                        <RegisteredActionButton
+                            registeredAction={
+                                RegisteredActionsObjects.focusTimeline
+                            }
+                        >
+                            <FaEdit />
+                        </RegisteredActionButton>
+                    ) : (
+                        <RegisteredActionButton
+                            registeredAction={
+                                RegisteredActionsObjects.focusCanvas
+                            }
+                        >
+                            <FaCheck />
+                        </RegisteredActionButton>
+                    )}
                 </div>
-                <div
-                    className={
-                        (uiSettings.showWaveform ? "" : "hidden") + " h-[30px]"
-                    }
-                >
-                    <AudioPlayer />
-                </div>
+                {uiSettings.focussedComponent === "timeline" ? (
+                    <EditableAudioPlayer />
+                ) : (
+                    <div className={uiSettings.showWaveform ? "" : "hidden"}>
+                        <AudioPlayer />
+                    </div>
+                )}
             </div>
         </div>
     );

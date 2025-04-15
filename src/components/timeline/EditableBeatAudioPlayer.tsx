@@ -8,30 +8,26 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
-import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
-
-export const waveColor = "rgb(180, 180, 180)";
-export const lightProgressColor = "rgb(100, 66, 255)";
-export const darkProgressColor = "rgb(150, 126, 255)";
+import { EditableTimingMarkersPlugin } from "./EditableTimingMarkersPlugin";
 
 /**
- * The audio player handles the playback of the audio file.
- * There are no controls here for the audio player, it is controlled by isPlaying and selectedPage stores/contexts.
- *
+ * An audio player with editable beat markers.
+ * Allows users to resize beats to adjust their duration.
  */
-export default function AudioPlayer({ theme }: { theme?: string }) {
+export default function EditableBeatAudioPlayer() {
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
-    // We'll use beats later for creating regions based on timing objects
-    const { beats, measures } = useTimingObjectsStore();
+    const { beats, measures, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
     const [waveSurfer, setWaveSurfer] = useState<WaveSurfer | null>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLDivElement>(null);
-    const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
+    const timingMarkersPlugin = useRef<EditableTimingMarkersPlugin | null>(
+        null,
+    );
 
     useEffect(() => {
         if (!audioRef.current) return;
@@ -70,7 +66,7 @@ export default function AudioPlayer({ theme }: { theme?: string }) {
                 container: waveformRef.current,
 
                 // this should be dynamic, but the parent is given height through tailwind currently
-                height: 80,
+                height: 160,
                 width: audioDuration * 40,
 
                 // hide the default cursor
@@ -84,9 +80,9 @@ export default function AudioPlayer({ theme }: { theme?: string }) {
                 barGap: 1,
                 barRadius: 2,
                 barHeight: 1.2,
-                waveColor,
-                progressColor:
-                    theme === "dark" ? darkProgressColor : lightProgressColor,
+                // TODO: share this with the theme and react to light/dark mode
+                waveColor: "rgb(150, 150, 150)",
+                progressColor: "rgb(100, 66, 255)",
 
                 // make it dumb
                 interact: false,
@@ -97,15 +93,18 @@ export default function AudioPlayer({ theme }: { theme?: string }) {
             // Initialize regions plugin
             const regions = ws.registerPlugin(RegionsPlugin.create());
 
-            const timelineMarkersPlugin = new TimingMarkersPlugin(
+            // Use our editable timing markers plugin
+            const editableMarkersPlugin = new EditableTimingMarkersPlugin(
                 regions,
                 beats,
                 measures,
+                fetchTimingObjects,
             );
-            timingMarkersPlugin.current = timelineMarkersPlugin;
+            timingMarkersPlugin.current = editableMarkersPlugin;
+
             // Create regions when the audio is decoded
             ws.on("decode", () => {
-                timelineMarkersPlugin.createTimingMarkers();
+                editableMarkersPlugin.createTimingMarkers();
             });
 
             setWaveSurfer(ws);
@@ -139,6 +138,9 @@ export default function AudioPlayer({ theme }: { theme?: string }) {
 
     return (
         <div className="pl-[40px]">
+            <div className="text-sm mb-2 text-text/70">
+                Drag the right edge of any beat to adjust its duration
+            </div>
             {audioFileUrl && (
                 <audio
                     ref={audioRef}

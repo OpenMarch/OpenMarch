@@ -9,22 +9,24 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
-
-export const waveColor = "rgb(180, 180, 180)";
-export const lightProgressColor = "rgb(100, 66, 255)";
-export const darkProgressColor = "rgb(150, 126, 255)";
-
+import { EditableTimingMarkersPlugin } from "./EditableTimingMarkersPlugin";
+import {
+    darkProgressColor,
+    lightProgressColor,
+    waveColor,
+} from "./AudioPlayer";
 /**
  * The audio player handles the playback of the audio file.
  * There are no controls here for the audio player, it is controlled by isPlaying and selectedPage stores/contexts.
+ * TODO: add the ability to turn off the waveform visualizer
  *
  */
-export default function AudioPlayer({ theme }: { theme?: string }) {
-    const { uiSettings } = useUiSettingsStore();
+export default function EditableAudioPlayer({ theme }: { theme?: string }) {
+    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
     // We'll use beats later for creating regions based on timing objects
-    const { beats, measures } = useTimingObjectsStore();
+    const { beats, measures, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
@@ -32,6 +34,10 @@ export default function AudioPlayer({ theme }: { theme?: string }) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLDivElement>(null);
     const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
+
+    useEffect(() => {
+        setPixelsPerSecond(120);
+    }, [setPixelsPerSecond]);
 
     useEffect(() => {
         if (!audioRef.current) return;
@@ -70,11 +76,11 @@ export default function AudioPlayer({ theme }: { theme?: string }) {
                 container: waveformRef.current,
 
                 // this should be dynamic, but the parent is given height through tailwind currently
-                height: 80,
+                height: 160,
                 width: audioDuration * 40,
 
                 // hide the default cursor
-                cursorWidth: 0,
+                cursorWidth: 4,
 
                 // this should be dynamic, and not hardcoded in the parent. this probably belongs in a store
                 minPxPerSec: 40,
@@ -97,10 +103,11 @@ export default function AudioPlayer({ theme }: { theme?: string }) {
             // Initialize regions plugin
             const regions = ws.registerPlugin(RegionsPlugin.create());
 
-            const timelineMarkersPlugin = new TimingMarkersPlugin(
+            const timelineMarkersPlugin = new EditableTimingMarkersPlugin(
                 regions,
                 beats,
                 measures,
+                fetchTimingObjects,
             );
             timingMarkersPlugin.current = timelineMarkersPlugin;
             // Create regions when the audio is decoded

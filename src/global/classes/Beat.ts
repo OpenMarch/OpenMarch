@@ -1,4 +1,9 @@
-import { DatabaseBeat } from "electron/database/tables/BeatTable";
+import { DatabaseResponse } from "electron/database/DatabaseActions";
+import {
+    DatabaseBeat,
+    ModifiedBeatArgs,
+    NewBeatArgs,
+} from "electron/database/tables/BeatTable";
 
 /**
  * A Beat represents a specific point in time in the show.
@@ -16,9 +21,58 @@ interface Beat {
     /** Human readable notes */
     readonly notes: string | null;
     /** The index of this beat in the array of beats in the show */
-    readonly i: number;
+    readonly index: number;
 }
 export default Beat;
+
+/**
+ * Creates multiple beats in the database and optionally refreshes the beats data.
+ * @param beats - An array of new beat arguments to be created.
+ * @param fetchBeatsFunction - A function to fetch updated beats after successful creation. This should update the stores
+ * @returns A promise resolving to the database response containing created beats.
+ */
+export const createBeats = async (
+    beats: NewBeatArgs[],
+    fetchBeatsFunction: () => Promise<void>,
+): Promise<DatabaseResponse<DatabaseBeat[]>> => {
+    const response = await window.electron.createBeats(beats);
+    if (response.success) fetchBeatsFunction();
+    else console.error("Failed to create beats", response.error);
+    return response;
+};
+
+/**
+ * Updates multiple beats in the database and optionally refreshes the beats data.
+ * @param beats - An array of beat modifications to be applied.
+ * @param fetchBeatsFunction - A function to fetch updated beats after successful update. This should update the stores
+ * @returns A promise resolving to the database response containing updated beats.
+ */
+export const updateBeats = async (
+    beats: ModifiedBeatArgs[],
+    fetchBeatsFunction: () => Promise<void>,
+): Promise<DatabaseResponse<DatabaseBeat[]>> => {
+    const response = await window.electron.updateBeats(beats);
+    if (response.success) fetchBeatsFunction();
+    else console.error("Failed to update beats", response.error);
+
+    return response;
+};
+
+/**
+ * Deletes multiple beats from the database and optionally refreshes the beats data.
+ * @param beatIds - A set of beat IDs to be deleted.
+ * @param fetchBeatsFunction - A function to fetch updated beats after successful deletion. This should update the stores
+ * @returns A promise resolving to the database response containing deleted beats.
+ */
+export const deleteBeats = async (
+    beatIds: Set<number>,
+    fetchBeatsFunction: () => Promise<void>,
+): Promise<DatabaseResponse<DatabaseBeat[]>> => {
+    const response = await window.electron.deleteBeats(beatIds);
+    if (response.success) fetchBeatsFunction();
+    else console.error("Failed to delete beats", response.error);
+    return response;
+};
 
 /**
  * Compares two Beat objects by their position property. Use this to sort the beats in a show in ascending order.
@@ -43,14 +97,14 @@ export const beatsDuration = (beats: Beat[]): number =>
  * @param i - The index of the beat in the array of beats in the show.
  * @returns A new Beat object with the same properties as the input DatabaseBeat.
  */
-export const fromDatabaseBeat = (beat: DatabaseBeat, i: number): Beat => {
+export const fromDatabaseBeat = (beat: DatabaseBeat, index: number): Beat => {
     return {
         id: beat.id,
         position: beat.position,
         duration: beat.duration,
         includeInMeasure: beat.include_in_measure >= 1,
         notes: beat.notes,
-        i,
+        index,
     };
 };
 
@@ -61,7 +115,7 @@ export const fromDatabaseBeat = (beat: DatabaseBeat, i: number): Beat => {
  * @returns The next Beat object in the array, or null if there is no next beat.
  */
 export const getNextBeat = (currentBeat: Beat, beats: Beat[]): Beat | null => {
-    return beats[currentBeat.i + 1] ?? null;
+    return beats[currentBeat.index + 1] ?? null;
 };
 
 /**
@@ -74,7 +128,7 @@ export const getPreviousBeat = (
     currentBeat: Beat,
     beats: Beat[],
 ): Beat | null => {
-    return beats[currentBeat.i - 1] ?? null;
+    return beats[currentBeat.index - 1] ?? null;
 };
 
 /**
@@ -101,12 +155,12 @@ export const durationToBeats = ({
     }
 
     let cumulativeDuration = 0;
-    let beatIndex = startBeat.i;
+    let beatIndex = startBeat.index;
 
     while (cumulativeDuration < newDuration && beatIndex < allBeats.length) {
         cumulativeDuration += allBeats[beatIndex].duration;
         beatIndex++;
     }
 
-    return allBeats.slice(startBeat.i, beatIndex);
+    return allBeats.slice(startBeat.index, beatIndex);
 };

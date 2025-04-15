@@ -20,7 +20,7 @@ export default function SettingsModal() {
             >
                 <GearSix size={18} />
             </DialogTrigger>
-            <DialogContent className="w-[10rem]">
+            <DialogContent className="w-[10rem]" aria-describedby="Settings">
                 <DialogTitle>Settings</DialogTitle>
                 <div className="flex flex-col gap-48">
                     <div className="flex flex-col gap-16">

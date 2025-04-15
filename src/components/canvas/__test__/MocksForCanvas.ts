@@ -17,6 +17,7 @@ export const falsyUiSettings: UiSettings = {
     halfLines: false,
     showWaveform: false,
     timelinePixelsPerSecond: 40,
+    focussedComponent: "canvas",
 };
 
 export const mockMarchers: Marcher[] = [

@@ -192,7 +192,7 @@ describe("Page", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 0,
+                    index: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -200,7 +200,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -208,7 +208,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 2,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -216,7 +216,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 3,
+                    index: 3,
                 } satisfies Beat,
                 {
                     id: 4,
@@ -224,7 +224,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 4,
+                    index: 4,
                 } satisfies Beat,
             ];
 
@@ -304,7 +304,7 @@ describe("Page", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 0,
+                    index: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -312,7 +312,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -320,7 +320,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 2,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -328,7 +328,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 3,
+                    index: 3,
                 } satisfies Beat,
                 {
                     id: 4,
@@ -336,7 +336,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 4,
+                    index: 4,
                 } satisfies Beat,
             ];
 
@@ -415,7 +415,7 @@ describe("Page", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 0,
+                    index: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -423,7 +423,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -431,7 +431,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 2,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -439,7 +439,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 3,
+                    index: 3,
                 } satisfies Beat,
                 {
                     id: 4,
@@ -447,7 +447,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 4,
+                    index: 4,
                 } satisfies Beat,
             ];
 
@@ -527,7 +527,7 @@ describe("Page", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 0,
+                    index: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -535,7 +535,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -543,7 +543,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 2,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -551,7 +551,7 @@ describe("Page", () => {
                     duration: 1000,
                     includeInMeasure: true,
                     notes: null,
-                    i: 3,
+                    index: 3,
                 } satisfies Beat,
             ];
 

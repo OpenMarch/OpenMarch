@@ -2,11 +2,11 @@ import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 
 export class TimingMarkersPlugin {
-    private wsRegions: any;
-    private beats: Beat[];
-    private measures: Measure[];
-    private measureRegions: Map<number, any> = new Map();
-    private beatRegions: Map<number, any> = new Map();
+    protected wsRegions: any;
+    protected beats: Beat[];
+    protected measures: Measure[];
+    protected measureRegions: Map<number, any> = new Map();
+    protected beatRegions: Map<number, any> = new Map();
 
     constructor(wsRegions: any, beats: Beat[], measures: Measure[]) {
         this.wsRegions = wsRegions;
@@ -35,7 +35,7 @@ export class TimingMarkersPlugin {
         curTimestamp = 0;
         this.measures.forEach((measure) => {
             const newRegion = this.wsRegions.addRegion({
-                id: `${measure.rehearsalMark ? "rehearsalMark" : "measure"} measure-${measure.id}`,
+                id: `measure measure-${measure.id}`,
                 start: curTimestamp,
                 // color: "rgba(100, 66, 255, 1)",
                 content: measure.rehearsalMark ?? measure.number.toString(),

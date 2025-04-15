@@ -168,9 +168,19 @@ textarea,
     background-color: rgba(var(--accent)) !important;
     width: 4px !important;
     border: 1px solid rgb(var(--text)) !important;
+    font-size: 24px;
 }
 
-/* Measure labels */
+#waveform ::part(editable-measure) {
+    background-color: transparent !important;
+}
+
+#waveform ::part(editable-rehearsalMark) {
+    background-color: transparent !important;
+    font-size: 24px;
+}
+
+/* Keep the region content visible */
 #waveform ::part(region-content) {
     margin-left: 6px;
     width: auto;
@@ -179,6 +189,7 @@ textarea,
     border: 1px solid rgb(var(--text)) !important;
     background-color: rgba(var(--bg-1));
     border-radius: 6px;
+    opacity: 1 !important; /* Ensure content stays visible */
 }
 
 /* BEATS */
@@ -186,4 +197,25 @@ textarea,
 #waveform ::part(beat) {
     background-color: rgb(var(--text)) !important;
     height: 10% !important;
+}
+#waveform ::part(editable-beat) {
+    background-color: rgb(var(--bg-1)) !important;
+    border: 1px solid rgb(var(--text)) !important;
+    height: 100% !important;
+    width: 6px !important;
+    cursor: ew-resize;
+}
+#waveform ::part(editable-beat)::after {
+    content: "•";
+    position: absolute;
+    bottom: -21px;
+    left: -1px;
+    transform: translateX(-50%);
+    color: rgb(var(--text));
+    font-size: 24px;
+}
+
+/* CURSOR */
+#waveform ::part(cursor) {
+    background-color: rgb(var(--accent)) !important;
 }
