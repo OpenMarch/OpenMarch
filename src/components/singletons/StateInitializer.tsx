@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { Constants, TablesWithHistory } from "@/global/Constants";
+import { Constants } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
@@ -194,29 +194,6 @@ function StateInitializer() {
         fetchShapePages,
         fetchFieldProperties,
     ]);
-
-    // Listen for fetch actions from the main process
-    useEffect(() => {
-        const handler = (type: (typeof TablesWithHistory)[number][number]) => {
-            switch (type) {
-                case Constants.MarcherTableName:
-                    fetchMarchers();
-                    break;
-                case Constants.PageTableName:
-                    fetchPages();
-                    break;
-                case Constants.MarcherPageTableName:
-                    fetchMarcherPages();
-                    break;
-            }
-        };
-
-        window.electron.onFetch(handler);
-
-        return () => {
-            window.electron.removeFetchListener(); // Remove the event listener
-        };
-    }, [fetchMarchers, fetchMarcherPages, fetchPages]);
 
     // Listen for when measures or pages change so that the pages can be aligned to the measures
     useEffect(() => {

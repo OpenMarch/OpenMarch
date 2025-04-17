@@ -22,11 +22,6 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     const { pages } = usePageStore();
     const [selectedPage, setSelectedPage] = useState<Page | null>(null);
 
-    // Send the selected page to the electron main process
-    useEffect(() => {
-        if (selectedPage) window.electron.sendSelectedPage(selectedPage.id);
-    }, [selectedPage]);
-
     // Update the selected page if the pages list changes. This refreshes the information of the selected page
     useEffect(() => {
         if (selectedPage)

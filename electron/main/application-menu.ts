@@ -1,6 +1,7 @@
 import * as mainProcess from "./index";
 import { MenuItem } from "electron";
 import { app, dialog, Menu, shell } from "electron";
+import { fileService } from "./services/file-service";
 
 const isMacOS = process.platform === "darwin";
 
@@ -35,7 +36,7 @@ template.push(
                     label: "Open File",
                     accelerator: "CommandOrControl+O",
                     click(item: any, focusedWindow: any) {
-                        mainProcess.loadDatabaseFile();
+                        fileService.loadDatabaseFile();
                     },
                 },
                 { type: "separator" },
@@ -43,7 +44,7 @@ template.push(
                     label: "Create New",
                     accelerator: "CommandOrControl+N",
                     click() {
-                        mainProcess.newFile();
+                        fileService.newFile();
                     },
                 },
                 {
@@ -56,14 +57,14 @@ template.push(
                                 "There is currently no active document to save or export.",
                             );
                         }
-                        mainProcess.saveFile();
+                        fileService.saveFile();
                     },
                 },
                 {
                     label: "Close File",
                     accelerator: "CommandOrControl+Q",
                     click(item: any, focusedWindow: any) {
-                        mainProcess.closeCurrentFile();
+                        fileService.closeCurrentFile();
                     },
                 },
             ],

@@ -29,19 +29,16 @@ export const DefaultSettings: Settings = {
     snapToGrid: false,
 };
 
-/**
- * Provides and persists settings
- */
-class SettingsService {
-    private static instance: SettingsService;
+let instance: SettingsService;
 
+class SettingsService {
     private store = new Store({ name: "settings", defaults: DefaultSettings });
 
     static getService() {
-        if (!this.instance) {
-            this.instance = new SettingsService();
+        if (!instance) {
+            instance = new SettingsService();
         }
-        return this.instance;
+        return instance;
     }
 
     private constructor() {
