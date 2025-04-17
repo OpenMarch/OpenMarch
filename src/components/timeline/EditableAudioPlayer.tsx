@@ -24,29 +24,53 @@ import Beat, { deleteBeats } from "@/global/classes/Beat";
 import { toast } from "sonner";
 import { Button } from "../ui/Button";
 
+/**
+ * Creates new temporary beats by subdividing the time between the last existing beat and the current time.
+ *
+ * @param currentTime The current timestamp where a new beat will be created
+ * @param totalDuration The total duration of the audio
+ * @param existingTemporaryBeats Array of existing temporary beats
+ * @param numNewBeats Number of beats to create between the last beat and current time
+ * @returns An object containing updated beats and a flag indicating whether the display should be updated
+ */
 export const createNewTemporaryBeat = (
     currentTime: number,
     totalDuration: number,
     existingTemporaryBeats: Beat[],
+    numNewBeats: number,
 ): { updatedBeats: Beat[]; shouldUpdateDisplay: boolean } => {
     // If no existing beats, we can't update anything
     if (existingTemporaryBeats.length === 0) {
         return { updatedBeats: [], shouldUpdateDisplay: false };
     }
 
-    const lastBeat = existingTemporaryBeats[existingTemporaryBeats.length - 1];
+    if (numNewBeats <= 0) {
+        console.warn(
+            "createNewTemporaryBeat: numNewBeats must be greater than 0",
+        );
+        return { updatedBeats: [], shouldUpdateDisplay: false };
+    }
 
-    // Update the previous beat's duration
-    const newPreviousBeat = {
-        ...lastBeat,
-        duration: currentTime - lastBeat.timestamp,
-    } satisfies Beat;
+    // Create an array of new beats with the last beat as the first beat
+    const lastBeat = existingTemporaryBeats[existingTemporaryBeats.length - 1];
+    const newDuration = currentTime - lastBeat.timestamp;
+    const newBeats: Beat[] = existingTemporaryBeats.slice(0, -1);
+
+    for (let i = 0; i < numNewBeats; i++) {
+        const durationToUse = newDuration / numNewBeats;
+        // Update the previous beat's duration
+        newBeats.push({
+            ...lastBeat,
+            duration: durationToUse,
+            timestamp: lastBeat.timestamp + durationToUse * i,
+        });
+    }
 
     // Calculate remaining duration for the new beat
     const tempDuration = totalDuration - currentTime;
 
     // Create a new temporary beat at the current timestamp
-    const newBeat = {
+    newBeats.push({
         id: -Date.now(), // Negative ID to indicate temporary
         position: existingTemporaryBeats.length,
         duration: tempDuration,
@@ -54,17 +78,10 @@ export const createNewTemporaryBeat = (
         notes: null,
         index: existingTemporaryBeats.length,
         timestamp: currentTime,
-    } satisfies Beat;
-
-    // Create updated beats array
-    const updatedBeats = [
-        ...existingTemporaryBeats.slice(0, -1),
-        newPreviousBeat,
-        newBeat,
-    ];
+    });
 
     return {
-        updatedBeats,
+        updatedBeats: newBeats,
         shouldUpdateDisplay: true,
     };
 };
@@ -168,7 +185,8 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
     // Then in the component:
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
-            if (event.key === "1" && waveSurfer) {
+            const eventNum = Number(event.key);
+            if (!isNaN(eventNum) && eventNum > 0 && waveSurfer) {
                 const currentTime = waveSurfer.getCurrentTime();
                 const totalDuration = waveSurfer.getDuration();
 
@@ -177,7 +195,10 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
                         currentTime,
                         totalDuration,
                         temporaryBeats,
+                        eventNum,
                     );
+
+                console.log("updatedBeats", updatedBeats);
 
                 if (updatedBeats.length > 0) {
                     setTemporaryBeats(updatedBeats);
