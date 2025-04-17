@@ -1,7 +1,9 @@
-import { dialog, BrowserWindow, app } from "electron";
+import { dialog, BrowserWindow, app, ipcMain } from "electron";
 import * as path from "path";
 import * as fs from "fs";
 import sanitize from "sanitize-filename";
+
+let instance: PDFExportService;
 
 interface ExportSheet {
     name: string;
@@ -70,6 +72,14 @@ const footerHtml = `
 `;
 
 export class PDFExportService {
+    static getService() {
+        if (instance === undefined) {
+            instance = new PDFExportService();
+        }
+
+        return instance;
+    }
+
     private static async generateSinglePDF(pages: string[]) {
         return new Promise<Buffer>((resolve, reject) => {
             const win = new BrowserWindow({
@@ -265,4 +275,15 @@ export class PDFExportService {
             `${currentFileName}-${date}-coordinate-sheets`,
         );
     }
+
+    constructor() {
+        ipcMain.handle("export:pdf", async (_, params) => {
+            return await PDFExportService.export(
+                params.sheets,
+                params.organizeBySection,
+            );
+        });
+    }
 }
+
+export const exportService = PDFExportService.getService();

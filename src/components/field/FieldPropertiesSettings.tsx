@@ -1,4 +1,4 @@
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useSettingsStore } from "@/stores/UiSettingsStore";
 import FieldPropertiesSelector from "./FieldPropertiesSelector";
 import FieldPropertiesCustomizer from "./FieldPropertiesCustomizer";
 import { Switch } from "../ui/Switch";
@@ -9,7 +9,11 @@ import FieldProperties from "@/global/classes/FieldProperties";
 
 export default function FieldPropertiesSettings() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
-    const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const {
+        showGridLines,
+        showHalfLines,
+        setSetting: set,
+    } = useSettingsStore();
 
     if (!fieldProperties)
         return (
@@ -30,12 +34,9 @@ export default function FieldPropertiesSettings() {
                         </label>
                         <Switch
                             id="gridLines"
-                            checked={uiSettings.gridLines}
+                            checked={showGridLines}
                             onCheckedChange={() =>
-                                setUiSettings({
-                                    ...uiSettings,
-                                    gridLines: !uiSettings.gridLines,
-                                })
+                                set("showGridLines", !showGridLines)
                             }
                         />
                     </div>
@@ -45,12 +46,9 @@ export default function FieldPropertiesSettings() {
                         </label>
                         <Switch
                             id="halfLines"
-                            checked={uiSettings.halfLines}
+                            checked={showHalfLines}
                             onCheckedChange={() =>
-                                setUiSettings({
-                                    ...uiSettings,
-                                    halfLines: !uiSettings.halfLines,
-                                })
+                                set("showHalfLines", !showHalfLines)
                             }
                         />
                     </div>

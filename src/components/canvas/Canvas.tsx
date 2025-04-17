@@ -1,5 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { useUiSettingsStore } from "../../stores/UiSettingsStore";
+import {
+    uiSettingsSelector,
+    useSettingsStore,
+} from "../../stores/UiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
@@ -42,7 +45,7 @@ export default function Canvas({
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
-    const { uiSettings } = useUiSettingsStore()!;
+    const uiSettings = useSettingsStore(uiSettingsSelector)!;
     const {
         alignmentEvent,
         alignmentEventMarchers,
@@ -396,14 +399,14 @@ export default function Canvas({
 
             // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
             let selectedPageMarcherPages: MarcherPage[] = [];
-            if (uiSettings.previousPaths || uiSettings.nextPaths)
+            if (uiSettings.showPreviousPaths || uiSettings.showNextPaths)
                 selectedPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.id,
                 );
 
             if (
-                uiSettings.previousPaths &&
+                uiSettings.showPreviousPaths &&
                 selectedPage.previousPageId !== null
             ) {
                 const prevPageMarcherPages = MarcherPage.filterByPageId(
@@ -423,7 +426,7 @@ export default function Canvas({
                 });
                 pagePathways.current.push(...renderedPathways);
             }
-            if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
+            if (uiSettings.showNextPaths && selectedPage.nextPageId !== null) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.nextPageId,
@@ -451,8 +454,8 @@ export default function Canvas({
         marchers,
         pages,
         selectedPage,
-        uiSettings.nextPaths,
-        uiSettings.previousPaths,
+        uiSettings.showNextPaths,
+        uiSettings.showPreviousPaths,
     ]);
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change

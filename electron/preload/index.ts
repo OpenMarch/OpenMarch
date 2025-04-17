@@ -9,7 +9,6 @@ import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
 import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
-import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
@@ -139,9 +138,11 @@ const APP_API = {
     openMenu: () => ipcRenderer.send("menu:open"),
     isMacOS: process.platform === "darwin",
 
-    // Themes
-    getTheme: () => ipcRenderer.invoke("get-theme"),
-    setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
+    // Settings
+    getAllSettings: () => ipcRenderer.invoke("settings:getAll"),
+    getSetting: (key: string) => ipcRenderer.invoke("settings:get", key),
+    setSetting: (key: string, value: any) =>
+        ipcRenderer.invoke("settings:set", key, value),
 
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
@@ -151,15 +152,13 @@ const APP_API = {
     databaseCreate: () => ipcRenderer.invoke("database:create"),
 
     // Triggers
-    onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>
-        ipcRenderer.on("fetch:all", (event, type) => callback(type)),
-    removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
-    sendSelectedPage: (selectedPageId: number) =>
-        ipcRenderer.send("send:selectedPage", selectedPageId),
-    sendSelectedMarchers: (selectedMarchersId: number[]) =>
-        ipcRenderer.send("send:selectedMarchers", selectedMarchersId),
-    sendLockX: (lockX: boolean) => ipcRenderer.send("send:lockX", lockX),
-    sendLockY: (lockY: boolean) => ipcRenderer.send("send:lockY", lockY),
+    // onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>
+    //     ipcRenderer.on("fetch:all", (event, type) => callback(type)),
+    // removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
+    sendLockX: (lockX: boolean) =>
+        ipcRenderer.invoke("settings:set", "lockMovementX", lockX),
+    sendLockY: (lockY: boolean) =>
+        ipcRenderer.invoke("settings:set", "lockMovementY", lockY),
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
 

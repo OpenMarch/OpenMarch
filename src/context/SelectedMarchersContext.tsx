@@ -26,14 +26,6 @@ export function SelectedMarchersProvider({
     const { marchers } = useMarcherStore();
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
 
-    // Send the selected marcher to the electron main process
-    useEffect(() => {
-        if (selectedMarchers)
-            window.electron.sendSelectedMarchers(
-                selectedMarchers.map((m) => m.id),
-            );
-    }, [selectedMarchers]);
-
     // Update the selected marcher if the marchers list changes. This refreshes the information of the selected marcher
     useEffect(() => {
         if (selectedMarchers) {
