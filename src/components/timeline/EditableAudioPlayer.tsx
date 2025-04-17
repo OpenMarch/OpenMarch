@@ -1,7 +1,11 @@
 import WaveSurfer from "wavesurfer.js";
-import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useSelectedPage } from "@/context/SelectedPageContext";
-import { SyntheticEvent, useEffect, useRef, useState } from "react";
+import {
+    SyntheticEvent,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -15,16 +19,62 @@ import {
     lightProgressColor,
     waveColor,
 } from "./AudioPlayer";
+import { Pause, Play } from "@phosphor-icons/react";
+import Beat, { deleteBeats } from "@/global/classes/Beat";
+import { toast } from "sonner";
+import { Button } from "../ui/Button";
+
+export const createNewTemporaryBeat = (
+    currentTime: number,
+    totalDuration: number,
+    existingTemporaryBeats: Beat[],
+): { updatedBeats: Beat[]; shouldUpdateDisplay: boolean } => {
+    // If no existing beats, we can't update anything
+    if (existingTemporaryBeats.length === 0) {
+        return { updatedBeats: [], shouldUpdateDisplay: false };
+    }
+
+    const lastBeat = existingTemporaryBeats[existingTemporaryBeats.length - 1];
+
+    // Update the previous beat's duration
+    const newPreviousBeat = {
+        ...lastBeat,
+        duration: currentTime - lastBeat.timestamp,
+    } satisfies Beat;
+
+    // Calculate remaining duration for the new beat
+    const tempDuration = totalDuration - currentTime;
+
+    // Create a new temporary beat at the current timestamp
+    const newBeat = {
+        id: -Date.now(), // Negative ID to indicate temporary
+        position: existingTemporaryBeats.length,
+        duration: tempDuration,
+        includeInMeasure: false,
+        notes: null,
+        index: existingTemporaryBeats.length,
+        timestamp: currentTime,
+    } satisfies Beat;
+
+    // Create updated beats array
+    const updatedBeats = [
+        ...existingTemporaryBeats.slice(0, -1),
+        newPreviousBeat,
+        newBeat,
+    ];
+
+    return {
+        updatedBeats,
+        shouldUpdateDisplay: true,
+    };
+};
+
 /**
  * The audio player handles the playback of the audio file.
  * There are no controls here for the audio player, it is controlled by isPlaying and selectedPage stores/contexts.
- * TODO: add the ability to turn off the waveform visualizer
- *
  */
 export default function EditableAudioPlayer({ theme }: { theme?: string }) {
     const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
-    const { selectedPage } = useSelectedPage()!;
-    const { isPlaying } = useIsPlaying()!;
     // We'll use beats later for creating regions based on timing objects
     const { beats, measures, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
@@ -34,25 +84,16 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLDivElement>(null);
     const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
+    const [isAudioPlaying, setIsAudioPlaying] = useState<boolean>(false);
+
+    const [beatsToDisplay, setBeatsToDisplay] = useState<"real" | "temporary">(
+        "real",
+    );
+    const [temporaryBeats, setTemporaryBeats] = useState<Beat[]>([]);
 
     useEffect(() => {
         setPixelsPerSecond(120);
     }, [setPixelsPerSecond]);
-
-    useEffect(() => {
-        if (!audioRef.current) return;
-
-        const audio = audioRef.current;
-
-        if (isPlaying) {
-            audio.play();
-        } else {
-            audio.currentTime = selectedPage
-                ? selectedPage.timestamp + selectedPage.duration
-                : 0;
-            audio.pause();
-        }
-    }, [audioFileUrl, isPlaying, selectedPage, selectedPage?.timestamp]);
 
     useEffect(() => {
         if (!selectedAudioFile) return;
@@ -95,7 +136,7 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
                     theme === "dark" ? darkProgressColor : lightProgressColor,
 
                 // make it dumb
-                interact: false,
+                interact: true,
                 hideScrollbar: true,
                 autoScroll: false,
             });
@@ -124,11 +165,51 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [audioRef, waveformRef, audioDuration]);
 
+    // Then in the component:
+    const handleKeyDown = useCallback(
+        (event: KeyboardEvent) => {
+            if (event.key === "1" && waveSurfer) {
+                const currentTime = waveSurfer.getCurrentTime();
+                const totalDuration = waveSurfer.getDuration();
+
+                const { updatedBeats, shouldUpdateDisplay } =
+                    createNewTemporaryBeat(
+                        currentTime,
+                        totalDuration,
+                        temporaryBeats,
+                    );
+
+                if (updatedBeats.length > 0) {
+                    setTemporaryBeats(updatedBeats);
+
+                    if (beatsToDisplay === "real" && shouldUpdateDisplay) {
+                        setBeatsToDisplay("temporary");
+                    }
+                }
+            }
+        },
+        [waveSurfer, temporaryBeats, beatsToDisplay],
+    );
+
+    // Add event listener for keyboard shortcuts
+    useEffect(() => {
+        // Add the event listener when the component mounts
+        window.addEventListener("keydown", handleKeyDown);
+
+        // Remove the event listener when the component unmounts
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [handleKeyDown]);
+
     // Update measures and beats when they change
     useEffect(() => {
         if (timingMarkersPlugin.current == null) return;
-        timingMarkersPlugin.current.updateTimingMarkers(beats, measures);
-    }, [beats, measures]);
+        timingMarkersPlugin.current.updateTimingMarkers(
+            beatsToDisplay === "real" ? beats : temporaryBeats,
+            measures,
+        );
+    }, [beats, beatsToDisplay, measures, temporaryBeats]);
 
     useEffect(() => {
         if (waveSurfer == null) return;
@@ -144,6 +225,36 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
         setAudioDuration(audioElement.duration);
     };
 
+    const togglePlayPause = () => {
+        if (!waveSurfer) return;
+
+        if (isAudioPlaying) {
+            waveSurfer.pause();
+        } else {
+            waveSurfer.play();
+        }
+        setIsAudioPlaying(!isAudioPlaying);
+    };
+
+    /**
+     * Deletes all beats from the current audio timeline.
+     * Collects beat IDs, calls the deletion API, and displays a success or error toast notification.
+     */
+    const deleteAllBeats = async () => {
+        const beatIds = new Set(beats.map((beat) => beat.id));
+        const response = await deleteBeats(beatIds, fetchTimingObjects);
+        if (response.success) {
+            toast.success("Beats deleted successfully");
+        } else {
+            toast.error("Failed to delete beats");
+        }
+    };
+
+    const triggerRedoBeatMapping = async () => {
+        setTemporaryBeats([beats[0]]);
+        setBeatsToDisplay("temporary");
+    };
+
     return (
         <div className="pl-[40px]">
             {audioFileUrl && (
@@ -156,6 +267,33 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
             )}
 
             <div id="waveform" ref={waveformRef}></div>
+            <div className="mb-2 flex items-center">
+                <button
+                    onClick={togglePlayPause}
+                    className="bg-blue-500 hover:bg-blue-600 rounded-md mr-2 px-4 py-2 font-medium text-white transition-colors"
+                    disabled={!waveSurfer || !audioFileUrl}
+                >
+                    {isAudioPlaying ? <Pause size={24} /> : <Play size={24} />}
+                </button>
+            </div>
+
+            <div id="timeline-editor-button-container">
+                {beatsToDisplay === "real" ? (
+                    <Button onClick={triggerRedoBeatMapping} size={"compact"}>
+                        Redo Beat Mapping
+                    </Button>
+                ) : (
+                    <Button>Save New Beats</Button>
+                )}
+
+                <Button
+                    variant={"red"}
+                    onClick={deleteAllBeats}
+                    size={"compact"}
+                >
+                    Delete All Beats
+                </Button>
+            </div>
         </div>
     );
 }

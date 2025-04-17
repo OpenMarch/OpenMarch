@@ -22,6 +22,8 @@ interface Beat {
     readonly notes: string | null;
     /** The index of this beat in the array of beats in the show */
     readonly index: number;
+    /** The timestamp of this beat in seconds from the start of the show */
+    readonly timestamp: number;
 }
 export default Beat;
 
@@ -94,10 +96,15 @@ export const beatsDuration = (beats: Beat[]): number =>
 /**
  * Converts a DatabaseBeat object to a Beat object.
  * @param beat - The DatabaseBeat object to convert.
- * @param i - The index of the beat in the array of beats in the show.
+ * @param index - The index of the beat in the array of beats in the show.
+ * @param timestamp - The timestamp of this beat in seconds from the start of the show.
  * @returns A new Beat object with the same properties as the input DatabaseBeat.
  */
-export const fromDatabaseBeat = (beat: DatabaseBeat, index: number): Beat => {
+export const fromDatabaseBeat = (
+    beat: DatabaseBeat,
+    index: number,
+    timestamp: number = 0,
+): Beat => {
     return {
         id: beat.id,
         position: beat.position,
@@ -105,6 +112,7 @@ export const fromDatabaseBeat = (beat: DatabaseBeat, index: number): Beat => {
         includeInMeasure: beat.include_in_measure >= 1,
         notes: beat.notes,
         index,
+        timestamp,
     };
 };
 
@@ -140,6 +148,33 @@ export const getPreviousBeat = (
  * @param startBeat - The beat from which to start selecting beats.
  * @returns An array of beats that cumulatively match or exceed the new duration.
  */
+/**
+ * Calculates the timestamp for each beat in an array based on their durations.
+ * The first beat starts at timestamp 0, and each subsequent beat's timestamp is the sum of
+ * all previous beats' durations.
+ *
+ * @param beats - An array of Beat objects to calculate timestamps for.
+ * @returns A new array of Beat objects with updated timestamps.
+ */
+export const calculateTimestamps = (beats: Beat[]): Beat[] => {
+    if (beats.length === 0) return [];
+
+    let currentTimestamp = 0;
+    return beats.map((beat, index) => {
+        const newBeat = {
+            ...beat,
+            timestamp: currentTimestamp,
+        };
+
+        // For all beats except the last one, add its duration to the running timestamp
+        if (index < beats.length - 1) {
+            currentTimestamp += beat.duration;
+        }
+
+        return newBeat;
+    });
+};
+
 export const durationToBeats = ({
     newDuration,
     allBeats,

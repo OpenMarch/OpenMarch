@@ -1,4 +1,7 @@
-import Beat, { fromDatabaseBeat } from "@/global/classes/Beat";
+import Beat, {
+    fromDatabaseBeat,
+    calculateTimestamps,
+} from "@/global/classes/Beat";
 import Measure, { fromDatabaseMeasures } from "@/global/classes/Measure";
 import Page, { fromDatabasePages } from "@/global/classes/Page";
 import { create } from "zustand";
@@ -52,7 +55,12 @@ export const useTimingObjectsStore = create<TimingObjectStoreInterface>(
                         "Could not fetch measures",
                 );
             }
-            const createdBeats = beatsResponse.data.map(fromDatabaseBeat);
+            // First create beats with default timestamps
+            const rawBeats = beatsResponse.data.map((beat, index) =>
+                fromDatabaseBeat(beat, index),
+            );
+            // Then calculate the actual timestamps based on durations
+            const createdBeats = calculateTimestamps(rawBeats);
             const createdMeasures = fromDatabaseMeasures({
                 databaseMeasures: measuresResponse.data,
                 allBeats: createdBeats,

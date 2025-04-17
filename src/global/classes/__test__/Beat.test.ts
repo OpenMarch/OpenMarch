@@ -4,6 +4,7 @@ import {
     beatsDuration,
     fromDatabaseBeat,
     durationToBeats,
+    calculateTimestamps,
 } from "../Beat";
 import type Beat from "../Beat";
 import { DatabaseBeat } from "electron/database/tables/BeatTable";
@@ -19,6 +20,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 0,
+                timestamp: 0,
             };
             const beatB: Beat = {
                 id: 2,
@@ -27,6 +29,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 1,
+                timestamp: 1.0,
             };
 
             // Act
@@ -45,6 +48,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 0,
+                timestamp: 0,
             };
             const beatB: Beat = {
                 id: 1,
@@ -53,6 +57,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 1,
+                timestamp: 1.0,
             };
 
             // Act
@@ -71,6 +76,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 0,
+                timestamp: 0,
             };
             const beatB: Beat = {
                 id: 2,
@@ -79,6 +85,7 @@ describe("Beat", () => {
                 includeInMeasure: false,
                 notes: "Different beat, same position",
                 index: 1,
+                timestamp: 1.0,
             };
 
             // Act
@@ -100,6 +107,7 @@ describe("Beat", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
+                    timestamp: 0,
                 },
                 {
                     id: 2,
@@ -108,6 +116,7 @@ describe("Beat", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
+                    timestamp: 1.5,
                 },
                 {
                     id: 3,
@@ -116,6 +125,7 @@ describe("Beat", () => {
                     includeInMeasure: false,
                     notes: null,
                     index: 2,
+                    timestamp: 4.0,
                 },
             ];
 
@@ -147,6 +157,7 @@ describe("Beat", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
+                    timestamp: 0,
                 },
                 {
                     id: 2,
@@ -155,6 +166,7 @@ describe("Beat", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
+                    timestamp: 2.0,
                 },
             ];
 
@@ -190,6 +202,7 @@ describe("Beat", () => {
                 duration: 2.5,
                 includeInMeasure: true,
                 notes: "Test note",
+                timestamp: 0,
             });
         });
 
@@ -242,6 +255,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 0,
+                timestamp: 0,
             },
             {
                 id: 2,
@@ -250,6 +264,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 1,
+                timestamp: 2,
             },
             {
                 id: 3,
@@ -258,6 +273,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 2,
+                timestamp: 5,
             },
             {
                 id: 4,
@@ -266,6 +282,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 3,
+                timestamp: 6,
             },
             {
                 id: 5,
@@ -274,6 +291,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 4,
+                timestamp: 10,
             },
         ];
 
@@ -353,6 +371,7 @@ describe("Beat", () => {
                 includeInMeasure: true,
                 notes: null,
                 index: 0,
+                timestamp: 0,
             };
 
             const result = durationToBeats({
@@ -363,6 +382,130 @@ describe("Beat", () => {
 
             // Should return an empty array
             expect(result).toHaveLength(0);
+        });
+    });
+
+    describe("calculateTimestamps", () => {
+        it("should calculate timestamps for an array of beats", () => {
+            // Arrange
+            const beats: Beat[] = [
+                {
+                    id: 1,
+                    position: 10,
+                    duration: 1.5,
+                    includeInMeasure: true,
+                    notes: null,
+                    index: 0,
+                    timestamp: 0, // This will be overwritten
+                },
+                {
+                    id: 2,
+                    position: 20,
+                    duration: 2.5,
+                    includeInMeasure: true,
+                    notes: null,
+                    index: 1,
+                    timestamp: 0, // This will be overwritten
+                },
+                {
+                    id: 3,
+                    position: 30,
+                    duration: 3.0,
+                    includeInMeasure: false,
+                    notes: null,
+                    index: 2,
+                    timestamp: 0, // This will be overwritten
+                },
+            ];
+
+            // Act
+            const result = calculateTimestamps(beats);
+
+            // Assert
+            expect(result).toHaveLength(3);
+            expect(result[0].timestamp).toBe(0);
+            expect(result[1].timestamp).toBe(1.5);
+            expect(result[2].timestamp).toBe(4.0);
+        });
+
+        it("should return an empty array when given an empty array", () => {
+            // Arrange
+            const beats: Beat[] = [];
+
+            // Act
+            const result = calculateTimestamps(beats);
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it("should handle a single beat correctly", () => {
+            // Arrange
+            const beats: Beat[] = [
+                {
+                    id: 1,
+                    position: 10,
+                    duration: 2.0,
+                    includeInMeasure: true,
+                    notes: null,
+                    index: 0,
+                    timestamp: 5.0, // This will be overwritten
+                },
+            ];
+
+            // Act
+            const result = calculateTimestamps(beats);
+
+            // Assert
+            expect(result).toHaveLength(1);
+            expect(result[0].timestamp).toBe(0);
+        });
+
+        it("should preserve all other properties of the beats", () => {
+            // Arrange
+            const beats: Beat[] = [
+                {
+                    id: 1,
+                    position: 10,
+                    duration: 1.0,
+                    includeInMeasure: true,
+                    notes: "Test note",
+                    index: 0,
+                    timestamp: 0,
+                },
+                {
+                    id: 2,
+                    position: 20,
+                    duration: 2.0,
+                    includeInMeasure: false,
+                    notes: null,
+                    index: 1,
+                    timestamp: 0,
+                },
+            ];
+
+            // Act
+            const result = calculateTimestamps(beats);
+
+            // Assert
+            expect(result[0]).toEqual({
+                id: 1,
+                position: 10,
+                duration: 1.0,
+                includeInMeasure: true,
+                notes: "Test note",
+                index: 0,
+                timestamp: 0,
+            });
+            expect(result[1]).toEqual({
+                id: 2,
+                position: 20,
+                duration: 2.0,
+                includeInMeasure: false,
+                notes: null,
+                index: 1,
+                timestamp: 1.0,
+            });
         });
     });
 });
