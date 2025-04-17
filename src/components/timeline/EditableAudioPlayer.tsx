@@ -20,8 +20,7 @@ import {
     waveColor,
 } from "./AudioPlayer";
 import { Pause, Play } from "@phosphor-icons/react";
-import Beat, { deleteBeats } from "@/global/classes/Beat";
-import { toast } from "sonner";
+import Beat from "@/global/classes/Beat";
 import { Button } from "../ui/Button";
 
 /**
@@ -38,26 +37,33 @@ export const createNewTemporaryBeat = (
     totalDuration: number,
     existingTemporaryBeats: Beat[],
     numNewBeats: number,
-): { updatedBeats: Beat[]; shouldUpdateDisplay: boolean } => {
+): Beat[] => {
     // If no existing beats, we can't update anything
     if (existingTemporaryBeats.length === 0) {
-        return { updatedBeats: [], shouldUpdateDisplay: false };
+        return [];
     }
 
     if (numNewBeats <= 0) {
         console.warn(
             "createNewTemporaryBeat: numNewBeats must be greater than 0",
         );
-        return { updatedBeats: [], shouldUpdateDisplay: false };
+        return [];
     }
 
     // Create an array of new beats with the last beat as the first beat
     const lastBeat = existingTemporaryBeats[existingTemporaryBeats.length - 1];
     const newDuration = currentTime - lastBeat.timestamp;
+
+    // If the new duration is less than or equal to 0.05 seconds, don't create any new beats
+    // This is to prevent overload
+    const durationToUse = newDuration / numNewBeats;
+    if (durationToUse <= 0.05) {
+        return [];
+    }
+
     const newBeats: Beat[] = existingTemporaryBeats.slice(0, -1);
 
     for (let i = 0; i < numNewBeats; i++) {
-        const durationToUse = newDuration / numNewBeats;
         // Update the previous beat's duration
         newBeats.push({
             ...lastBeat,
@@ -80,10 +86,7 @@ export const createNewTemporaryBeat = (
         timestamp: currentTime,
     });
 
-    return {
-        updatedBeats: newBeats,
-        shouldUpdateDisplay: true,
-    };
+    return newBeats;
 };
 
 /**
@@ -111,6 +114,17 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
     useEffect(() => {
         setPixelsPerSecond(120);
     }, [setPixelsPerSecond]);
+
+    const togglePlayPause = useCallback(() => {
+        if (!waveSurfer) return;
+
+        if (isAudioPlaying) {
+            waveSurfer.pause();
+        } else {
+            waveSurfer.play();
+        }
+        setIsAudioPlaying(!isAudioPlaying);
+    }, [waveSurfer, isAudioPlaying]);
 
     useEffect(() => {
         if (!selectedAudioFile) return;
@@ -186,26 +200,26 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
             const eventNum = Number(event.key);
-            if (!isNaN(eventNum) && eventNum > 0 && waveSurfer) {
+            if (
+                !isNaN(eventNum) &&
+                beatsToDisplay === "temporary" &&
+                eventNum > 0 &&
+                waveSurfer
+            ) {
                 const currentTime = waveSurfer.getCurrentTime();
                 const totalDuration = waveSurfer.getDuration();
 
-                const { updatedBeats, shouldUpdateDisplay } =
-                    createNewTemporaryBeat(
-                        currentTime,
-                        totalDuration,
-                        temporaryBeats,
-                        eventNum,
-                    );
+                const updatedBeats = createNewTemporaryBeat(
+                    currentTime,
+                    totalDuration,
+                    temporaryBeats,
+                    eventNum,
+                );
 
                 console.log("updatedBeats", updatedBeats);
 
                 if (updatedBeats.length > 0) {
                     setTemporaryBeats(updatedBeats);
-
-                    if (beatsToDisplay === "real" && shouldUpdateDisplay) {
-                        setBeatsToDisplay("temporary");
-                    }
                 }
             }
         },
@@ -246,33 +260,20 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
         setAudioDuration(audioElement.duration);
     };
 
-    const togglePlayPause = () => {
-        if (!waveSurfer) return;
-
-        if (isAudioPlaying) {
-            waveSurfer.pause();
-        } else {
-            waveSurfer.play();
-        }
-        setIsAudioPlaying(!isAudioPlaying);
-    };
-
-    /**
-     * Deletes all beats from the current audio timeline.
-     * Collects beat IDs, calls the deletion API, and displays a success or error toast notification.
-     */
-    const deleteAllBeats = async () => {
-        const beatIds = new Set(beats.map((beat) => beat.id));
-        const response = await deleteBeats(beatIds, fetchTimingObjects);
-        if (response.success) {
-            toast.success("Beats deleted successfully");
-        } else {
-            toast.error("Failed to delete beats");
-        }
-    };
-
     const triggerRedoBeatMapping = async () => {
-        setTemporaryBeats([beats[0]]);
+        if (!waveSurfer) return;
+        setTemporaryBeats([
+            beats[0],
+            {
+                id: -1,
+                position: 1,
+                duration: waveSurfer.getCurrentTime(),
+                includeInMeasure: true,
+                notes: null,
+                index: 1,
+                timestamp: 0,
+            },
+        ]);
         setBeatsToDisplay("temporary");
     };
 
@@ -298,23 +299,25 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
                 </button>
             </div>
 
-            <div id="timeline-editor-button-container">
-                {beatsToDisplay === "real" ? (
-                    <Button onClick={triggerRedoBeatMapping} size={"compact"}>
-                        Redo Beat Mapping
-                    </Button>
-                ) : (
-                    <Button>Save New Beats</Button>
-                )}
-
-                <Button
-                    variant={"red"}
-                    onClick={deleteAllBeats}
-                    size={"compact"}
-                >
-                    Delete All Beats
+            {beatsToDisplay === "real" ? (
+                <Button onClick={triggerRedoBeatMapping} size={"compact"}>
+                    Redo Beat Mapping
                 </Button>
-            </div>
+            ) : (
+                <div
+                    id="timeline-editor-button-container"
+                    className="flex gap-4"
+                >
+                    <Button size={"compact"}>Save New Beats</Button>
+                    <Button
+                        variant={"red"}
+                        onClick={() => triggerRedoBeatMapping()}
+                        size={"compact"}
+                    >
+                        Restart
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
