@@ -237,8 +237,7 @@ export default class v6 extends v5 {
             db.exec(`
                     CREATE TABLE IF NOT EXISTS "${tableName}" (
                         id                      INTEGER PRIMARY KEY CHECK (id = 0),
-                        last_page_counts        INTEGER CHECK (last_page_counts >= 1),
-                        FOREIGN KEY (last_page_counts) REFERENCES "${Constants.BeatsTableName}" ("id")
+                        last_page_counts        INTEGER CHECK (last_page_counts >= 1)
                     );
                 `);
             db.prepare(

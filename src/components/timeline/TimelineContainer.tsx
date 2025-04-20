@@ -493,7 +493,7 @@ export default function TimelineContainer() {
                     )}
                 </div>
                 {uiSettings.focussedComponent === "timeline" ? (
-                    <EditableAudioPlayer />
+                    <EditableAudioPlayer timelineRef={timelineRef} />
                 ) : (
                     <div className={uiSettings.showWaveform ? "" : "hidden"}>
                         <AudioPlayer />

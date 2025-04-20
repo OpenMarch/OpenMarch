@@ -20,83 +20,33 @@ import {
     waveColor,
 } from "./AudioPlayer";
 import { Pause, Play } from "@phosphor-icons/react";
-import Beat from "@/global/classes/Beat";
+import Beat, {
+    createBeats,
+    deleteBeats,
+    updateBeats,
+} from "@/global/classes/Beat";
 import { Button } from "../ui/Button";
+import {
+    createNewTemporaryBeat,
+    getNewBeatObjects,
+} from "./EditableAudioPlayerUtils";
+import { useTheme } from "@/context/ThemeContext";
+import { conToastError } from "@/utilities/utils";
 
 /**
- * Creates new temporary beats by subdividing the time between the last existing beat and the current time.
- *
- * @param currentTime The current timestamp where a new beat will be created
- * @param totalDuration The total duration of the audio
- * @param existingTemporaryBeats Array of existing temporary beats
- * @param numNewBeats Number of beats to create between the last beat and current time
- * @returns An object containing updated beats and a flag indicating whether the display should be updated
+ * Editable version of the AudioPlayer component.
+ * Pass the ref of the timeline container so this component can scroll
  */
-export const createNewTemporaryBeat = (
-    currentTime: number,
-    totalDuration: number,
-    existingTemporaryBeats: Beat[],
-    numNewBeats: number,
-): Beat[] => {
-    // If no existing beats, we can't update anything
-    if (existingTemporaryBeats.length === 0) {
-        return [];
-    }
-
-    if (numNewBeats <= 0) {
-        console.warn(
-            "createNewTemporaryBeat: numNewBeats must be greater than 0",
-        );
-        return [];
-    }
-
-    // Create an array of new beats with the last beat as the first beat
-    const lastBeat = existingTemporaryBeats[existingTemporaryBeats.length - 1];
-    const newDuration = currentTime - lastBeat.timestamp;
-
-    // If the new duration is less than or equal to 0.05 seconds, don't create any new beats
-    // This is to prevent overload
-    const durationToUse = newDuration / numNewBeats;
-    if (durationToUse <= 0.05) {
-        return [];
-    }
-
-    const newBeats: Beat[] = existingTemporaryBeats.slice(0, -1);
-
-    for (let i = 0; i < numNewBeats; i++) {
-        // Update the previous beat's duration
-        newBeats.push({
-            ...lastBeat,
-            duration: durationToUse,
-            timestamp: lastBeat.timestamp + durationToUse * i,
-        });
-    }
-
-    // Calculate remaining duration for the new beat
-    const tempDuration = totalDuration - currentTime;
-
-    // Create a new temporary beat at the current timestamp
-    newBeats.push({
-        id: -Date.now(), // Negative ID to indicate temporary
-        position: existingTemporaryBeats.length,
-        duration: tempDuration,
-        includeInMeasure: false,
-        notes: null,
-        index: existingTemporaryBeats.length,
-        timestamp: currentTime,
-    });
-
-    return newBeats;
-};
-
-/**
- * The audio player handles the playback of the audio file.
- * There are no controls here for the audio player, it is controlled by isPlaying and selectedPage stores/contexts.
- */
-export default function EditableAudioPlayer({ theme }: { theme?: string }) {
+export default function EditableAudioPlayer({
+    timelineRef,
+}: {
+    timelineRef: React.RefObject<HTMLDivElement>;
+}) {
+    const { theme } = useTheme();
     const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
     // We'll use beats later for creating regions based on timing objects
-    const { beats, measures, fetchTimingObjects } = useTimingObjectsStore();
+    const { beats, pages, measures, fetchTimingObjects } =
+        useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
@@ -199,6 +149,7 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
     // Then in the component:
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
+            event.preventDefault();
             const eventNum = Number(event.key);
             if (
                 !isNaN(eventNum) &&
@@ -216,14 +167,14 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
                     eventNum,
                 );
 
-                console.log("updatedBeats", updatedBeats);
-
                 if (updatedBeats.length > 0) {
                     setTemporaryBeats(updatedBeats);
                 }
+            } else if (event.key === " ") {
+                togglePlayPause();
             }
         },
-        [waveSurfer, temporaryBeats, beatsToDisplay],
+        [beatsToDisplay, waveSurfer, temporaryBeats, togglePlayPause],
     );
 
     // Add event listener for keyboard shortcuts
@@ -260,8 +211,21 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
         setAudioDuration(audioElement.duration);
     };
 
-    const triggerRedoBeatMapping = async () => {
+    const triggerRedoBeatMapping = () => {
         if (!waveSurfer) return;
+
+        console.log("triggerRedoBeatMapping", [
+            beats[0],
+            {
+                id: -1,
+                position: 1,
+                duration: waveSurfer.getCurrentTime(),
+                includeInMeasure: true,
+                notes: null,
+                index: 1,
+                timestamp: 0,
+            },
+        ]);
         setTemporaryBeats([
             beats[0],
             {
@@ -275,6 +239,53 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
             },
         ]);
         setBeatsToDisplay("temporary");
+    };
+
+    const handleSave = async () => {
+        const pageUpdates = getNewBeatObjects({
+            newBeats: temporaryBeats,
+            oldBeats: beats,
+            pages: pages,
+        });
+
+        // update the beats First
+        console.log("pageUpdates", pageUpdates);
+
+        const updateResponse = await updateBeats(
+            pageUpdates.beatsToUpdate,
+            async () => {}, // no need to re-fetch yet
+        );
+        if (!updateResponse.success) {
+            conToastError("Error updating beats", updateResponse.error);
+            return;
+        }
+
+        const deleteResponse = await deleteBeats(
+            pageUpdates.beatIdsToDelete,
+            async () => {},
+        );
+        if (!deleteResponse.success) {
+            conToastError("Error deleting old beats", deleteResponse.error);
+            // Undo the update
+            window.electron.undo();
+            fetchTimingObjects();
+            return;
+        }
+
+        const newBeatsResponse = await createBeats(
+            pageUpdates.beatsToCreate,
+            fetchTimingObjects, // now we need to re-fetch
+        );
+        if (!newBeatsResponse.success) {
+            conToastError("Error creating beats", newBeatsResponse.error);
+            // Undo the deletion
+            window.electron.undo();
+            // Undo the update
+            window.electron.undo();
+            fetchTimingObjects();
+
+            return;
+        }
     };
 
     return (
@@ -308,10 +319,16 @@ export default function EditableAudioPlayer({ theme }: { theme?: string }) {
                     id="timeline-editor-button-container"
                     className="flex gap-4"
                 >
-                    <Button size={"compact"}>Save New Beats</Button>
+                    <Button
+                        size={"compact"}
+                        disabled={isAudioPlaying}
+                        onClick={handleSave}
+                    >
+                        Save New Beats
+                    </Button>
                     <Button
                         variant={"red"}
-                        onClick={() => triggerRedoBeatMapping()}
+                        onClick={triggerRedoBeatMapping}
                         size={"compact"}
                     >
                         Restart

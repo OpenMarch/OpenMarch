@@ -5,7 +5,6 @@ import { Pathway } from "./Pathway";
 import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
-import { UiSettings } from "@/global/Interfaces";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
@@ -15,6 +14,7 @@ import * as Selectable from "./interfaces/Selectable";
 import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
+import { UiSettings } from "@/stores/UiSettingsStore";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.

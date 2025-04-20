@@ -607,12 +607,12 @@ export function deleteItems<DatabaseItemType>({
             error: {
                 message:
                     error.message ||
-                    `Error deleting item ${currentId} while trying to delete items ${idColumn}"=${ids}`,
+                    `Error deleting item with id="${currentId}" while trying to delete items "${idColumn}"="${Array.from(ids)}"`,
                 stack: error.stack || "Unable to get error stack",
             },
         };
         console.error(
-            `Failed to delete item ${currentId} while trying to delete items ${idColumn}"=${ids}:`,
+            `Failed to delete item with id="${currentId}" while trying to delete items "${idColumn}"="${Array.from(ids)}":`,
             error,
         );
 

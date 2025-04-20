@@ -9,6 +9,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
+import { useTheme } from "@/context/ThemeContext";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -19,7 +20,8 @@ export const darkProgressColor = "rgb(150, 126, 255)";
  * There are no controls here for the audio player, it is controlled by isPlaying and selectedPage stores/contexts.
  *
  */
-export default function AudioPlayer({ theme }: { theme?: string }) {
+export default function AudioPlayer() {
+    const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
