@@ -549,6 +549,20 @@ export function getCurrentUndoGroup(db: Database.Database) {
 }
 
 /**
+ * @param db database connection
+ * @returns The current redo group number in the history stats table
+ */
+export function getCurrentRedoGroup(db: Database.Database) {
+    return (
+        db
+            .prepare(
+                `SELECT cur_redo_group FROM ${Constants.HistoryStatsTableName};`,
+            )
+            .get() as { cur_redo_group: number }
+    ).cur_redo_group;
+}
+
+/**
  * Decrement all of the undo actions in the most recent group down by one.
  *
  * This should be used when a database action should not create its own group, but the group number
@@ -583,4 +597,57 @@ export function decrementLastUndoGroup(db: Database.Database) {
         ).run(previousGroup);
     }
     console.log(`-------- Done decrementing last undo group --------`);
+}
+
+/**
+ * Flatten all of the undo groups above the given group number.
+ *
+ * This is used when subsequent undo groups are created, but they should be part of the same group.
+ *
+ * @param db database connection
+ * @param group the group number to flatten above
+ */
+export function flattenUndoGroupsAbove(db: Database.Database, group: number) {
+    console.log(`-------- Flattening undo groups above ${group} --------`);
+    db.prepare(
+        `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group > ?`,
+    ).run(group, group);
+    console.log(`-------- Done flattening undo groups above ${group} --------`);
+}
+
+/**
+ * Calculate the size of the undo and redo history tables in bytes.
+ *
+ * @param db database connection
+ * @returns the size of the undo and redo history tables in bytes
+ */
+/**
+ * Calculate the approximate size of the undo and redo history tables in bytes.
+ * This method estimates size based on row count and average row size.
+ *
+ * @param db database connection
+ * @returns the estimated size of the undo and redo history tables in bytes
+ */
+export function calculateHistorySize(db: Database.Database) {
+    // Get average SQL statement length
+    const getSqlLength = (tableName: string): number => {
+        const rows = db
+            .prepare(`SELECT sql FROM ${tableName}`)
+            .all() as HistoryTableRow[];
+
+        if (rows.length === 0) return 0;
+
+        const totalLength = rows.reduce((sum, row) => sum + row.sql.length, 0);
+        return totalLength;
+    };
+
+    const undoAvgLength = getSqlLength(Constants.UndoHistoryTableName);
+    const redoAvgLength = getSqlLength(Constants.RedoHistoryTableName);
+
+    // Estimate size: row count * (avg SQL length + overhead for other columns)
+    // Assuming 2 bytes per character for SQL
+    const undoSize = undoAvgLength * 2;
+    const redoSize = redoAvgLength * 2;
+
+    return undoSize + redoSize;
 }

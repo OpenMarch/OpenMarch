@@ -1,9 +1,18 @@
-import Beat from "@/global/classes/Beat";
-import Page from "@/global/classes/Page";
+import Beat, {
+    createBeats,
+    deleteBeats,
+    fromDatabaseBeat,
+} from "@/global/classes/Beat";
+import Measure from "@/global/classes/Measure";
+import Page, { updatePages } from "@/global/classes/Page";
+import { GroupFunction } from "@/utilities/ApiFunctions";
+import { conToastError } from "@/utilities/utils";
 import {
+    DatabaseBeat,
     ModifiedBeatArgs,
-    NewBeatArgs,
 } from "electron/database/tables/BeatTable";
+import { ModifiedMeasureArgs } from "electron/database/tables/MeasureTable";
+import { ModifiedPageArgs } from "electron/database/tables/PageTable";
 
 /**
  * Creates new temporary beats by subdividing the time between the last existing beat and the current time.
@@ -144,55 +153,126 @@ export const getUpdatedBeatObjects = (
 };
 
 /**
- * Generates beat objects for creating and updating beats based on new and old beats and associated pages.
+ * Creates new beat objects and updates associated pages and measures with the new beats.
  *
- * When updating beats after changing them in the show, be sure to call updateBeats() then createBeats() in that order.
- *
- * @param newBeats - The new set of beats to process
- * @param oldBeats - The original set of beats
- * @param pages - All pages in the project
- * @returns An object containing the ModifiedBeatArgs and NewBeatArgs arrays
+ * @param newBeats - The new beats to be created
+ * @param oldBeats - The existing beats to be replaced
+ * @param pages - Pages associated with the old beats
+ * @param measures - Measures associated with the old beats
+ * @param refreshFunction - Function to refresh the UI after updates
+ * @returns An object indicating whether the beat creation and update was successful
  */
-export const getNewBeatObjects = ({
+export const createNewBeatObjects = async ({
     newBeats,
     oldBeats,
     pages,
+    measures,
+    refreshFunction,
 }: {
     newBeats: Beat[];
     oldBeats: Beat[];
     pages: Page[];
-}): {
-    beatsToCreate: NewBeatArgs[];
-    beatsToUpdate: ModifiedBeatArgs[];
-    beatIdsToDelete: Set<number>;
-} => {
-    // Update the beats attached to pages so pages always have a beat
-    // Otherwise, we violate the FOREIGN KEY constraint
-    const beatIdsWithPages = new Set(pages.map((page) => page.beats[0].id));
-    const { beatsToUpdate, newBeatIdsUsed } = getUpdatedBeatObjects(
-        oldBeats,
-        newBeats,
-        beatIdsWithPages,
-    );
-    const usedBeatIds = new Set<number>(beatsToUpdate.map((beat) => beat.id));
-    // Delete all other beats that are not attached to any pages
-    const beatIdsToDelete = new Set(
-        oldBeats
-            .filter(
-                (beat) =>
-                    !usedBeatIds.has(beat.id) && !beatIdsWithPages.has(beat.id),
-            )
-            .map((beat) => beat.id),
-    );
-
-    const newBeatsToCreate = newBeats.filter(
-        (beat) => !newBeatIdsUsed.has(beat.id),
-    );
-
-    const beatsToCreate = newBeatsToCreate.map((beat) => ({
+    measures: Measure[];
+    refreshFunction: () => Promise<void>;
+}): Promise<{ success: boolean }> => {
+    const beatsToCreate = newBeats.map((beat) => ({
         duration: beat.duration,
         include_in_measure: 1 as 0 | 1,
     }));
 
-    return { beatsToCreate, beatsToUpdate, beatIdsToDelete };
+    const createBeatsResponse = await GroupFunction({
+        refreshFunction: () => {},
+        functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
+        useNextUndoGroup: true,
+    });
+
+    if (!createBeatsResponse.success) {
+        conToastError("Error creating beats", createBeatsResponse);
+        return {
+            success: false,
+        };
+    }
+
+    let timeStamp = 0;
+    const createdBeats: Beat[] = (
+        createBeatsResponse.responses[0] as {
+            success: boolean;
+            data: DatabaseBeat[];
+        }
+    ).data.map((dbBeat: DatabaseBeat, i: number) => {
+        const newBeat = fromDatabaseBeat(dbBeat, i, timeStamp);
+        timeStamp += dbBeat.duration;
+        return newBeat;
+    });
+    try {
+        // Update the pages to use the new beats
+        const oldBeatsMap = new Map(oldBeats.map((beat) => [beat.id, beat]));
+        const pagesToUpdate: ModifiedPageArgs[] = [];
+        const usedCreatedBeatIdsForPages = new Set<number>();
+        for (const page of pages) {
+            if (page.beats.length === 0) continue;
+            const oldBeat = oldBeatsMap.get(page.beats[0].id);
+            if (oldBeat) {
+                const closestNewBeat = findClosestUnusedBeatByTimestamp(
+                    page.timestamp,
+                    createdBeats,
+                    usedCreatedBeatIdsForPages,
+                );
+                if (!closestNewBeat) {
+                    throw new Error("No unused beat found");
+                }
+                pagesToUpdate.push({
+                    id: page.id,
+                    start_beat: closestNewBeat.id,
+                });
+                usedCreatedBeatIdsForPages.add(closestNewBeat.id);
+            } else {
+                throw new Error(
+                    `Could not find beat with id ${page.beats[0].id} in created beats`,
+                );
+            }
+        }
+        const measuresToUpdate: ModifiedMeasureArgs[] = [];
+        const usedCreatedBeatIdsForMeasures = new Set<number>();
+        for (const measure of measures) {
+            const oldBeat = oldBeatsMap.get(measure.beats[0].id);
+            if (oldBeat) {
+                const closestNewBeat = findClosestUnusedBeatByTimestamp(
+                    measure.timestamp,
+                    createdBeats,
+                    usedCreatedBeatIdsForMeasures,
+                );
+                if (!closestNewBeat) {
+                    throw new Error("No unused beat found");
+                }
+                measuresToUpdate.push({
+                    id: measure.id,
+                    start_beat: closestNewBeat.id,
+                });
+                usedCreatedBeatIdsForMeasures.add(closestNewBeat.id);
+            } else {
+                throw new Error(
+                    `Could not find beat with id ${measure.beats[0].id} in created beats`,
+                );
+            }
+        }
+
+        const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
+
+        const updateAndDeleteResponse = GroupFunction({
+            functionsToExecute: [
+                () => updatePages(pagesToUpdate, async () => {}),
+                () => window.electron.updateMeasures(measuresToUpdate),
+                () => deleteBeats(beatIdsToDelete, async () => {}),
+            ],
+            useNextUndoGroup: false,
+            refreshFunction,
+        });
+
+        return updateAndDeleteResponse;
+    } catch (error) {
+        console.error("Error creating new beats", error);
+        window.electron.undo();
+        return { success: false };
+    }
 };

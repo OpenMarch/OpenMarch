@@ -1,9 +1,12 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import Database from "better-sqlite3";
 import { Constants } from "../../../src/global/Constants";
 import {
+    calculateHistorySize,
     createHistoryTables,
     createUndoTriggers,
+    flattenUndoGroupsAbove,
+    getCurrentUndoGroup,
     HistoryStatsRow,
     HistoryTableRow,
     incrementUndoGroup,
@@ -1642,7 +1645,6 @@ describe("History Tables and Triggers", () => {
         });
 
         it("removes the oldest undo group when the undo limit of 2000 is reached", () => {
-            createHistoryTables(db);
             db.prepare(
                 "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();
@@ -1702,7 +1704,6 @@ describe("History Tables and Triggers", () => {
         });
 
         it("adds more undo groups when the limit is increased", () => {
-            createHistoryTables(db);
             db.prepare(
                 "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();
@@ -1983,6 +1984,313 @@ describe("History Tables and Triggers", () => {
                 .all();
             expect(reservedResult.length).toBe(1); // One row should be deleted
             expect(specialResult.length).toBe(1); // One row should be deleted
+        });
+    });
+
+    describe("flattenUndoGroupsAbove", () => {
+        let db: Database.Database;
+        const testDbPath = ":memory:";
+
+        // Mock console.log to avoid cluttering test output
+        beforeEach(() => {
+            vi.spyOn(console, "log").mockImplementation(() => {});
+
+            // Create a new in-memory database for each test
+            db = new Database(testDbPath);
+            createHistoryTables(db);
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+            db.close();
+        });
+
+        it("should flatten all undo groups above the specified group", () => {
+            // Setup: Create multiple undo groups
+            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
+
+            // Insert records with different group numbers
+            db.prepare(insertSql).run(1, 1, "SQL 1");
+            db.prepare(insertSql).run(2, 2, "SQL 2");
+            db.prepare(insertSql).run(3, 3, "SQL 3");
+            db.prepare(insertSql).run(4, 4, "SQL 4");
+            db.prepare(insertSql).run(5, 5, "SQL 5");
+
+            // Execute the function to flatten groups above 2
+            flattenUndoGroupsAbove(db, 2);
+
+            // Verify: All groups above 2 should now be 2
+            const result = db
+                .prepare(
+                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
+                )
+                .all() as { history_group: number }[];
+
+            expect(result).toHaveLength(5);
+            expect(result[0].history_group).toBe(1); // Group 1 should remain unchanged
+            expect(result[1].history_group).toBe(2); // Group 2 should remain unchanged
+            expect(result[2].history_group).toBe(2); // Group 3 should be flattened to 2
+            expect(result[3].history_group).toBe(2); // Group 4 should be flattened to 2
+            expect(result[4].history_group).toBe(2); // Group 5 should be flattened to 2
+        });
+
+        it("should do nothing when there are no groups above the specified group", () => {
+            // Setup: Create undo groups all below or equal to the target
+            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
+
+            db.prepare(insertSql).run(1, 1, "SQL 1");
+            db.prepare(insertSql).run(2, 2, "SQL 2");
+            db.prepare(insertSql).run(3, 3, "SQL 3");
+
+            // Execute the function to flatten groups above 3
+            flattenUndoGroupsAbove(db, 3);
+
+            // Verify: No groups should change
+            const result = db
+                .prepare(
+                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
+                )
+                .all() as { history_group: number }[];
+
+            expect(result).toHaveLength(3);
+            expect(result[0].history_group).toBe(1);
+            expect(result[1].history_group).toBe(2);
+            expect(result[2].history_group).toBe(3);
+        });
+
+        it("should work with an empty undo history table", () => {
+            // Execute the function on an empty table
+            flattenUndoGroupsAbove(db, 5);
+
+            // Verify: No errors should occur
+            const result = db
+                .prepare(
+                    `SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName}`,
+                )
+                .get() as { count: number };
+            expect(result.count).toBe(0);
+        });
+
+        it("should handle negative group numbers correctly", () => {
+            // Setup: Create undo groups with negative numbers
+            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
+
+            db.prepare(insertSql).run(1, -3, "SQL 1");
+            db.prepare(insertSql).run(2, -2, "SQL 2");
+            db.prepare(insertSql).run(3, -1, "SQL 3");
+            db.prepare(insertSql).run(4, 0, "SQL 4");
+            db.prepare(insertSql).run(5, 1, "SQL 5");
+
+            // Execute the function to flatten groups above -2
+            flattenUndoGroupsAbove(db, -2);
+
+            // Verify: All groups above -2 should now be -2
+            const result = db
+                .prepare(
+                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
+                )
+                .all() as { history_group: number }[];
+
+            expect(result).toHaveLength(5);
+            expect(result[0].history_group).toBe(-3); // Group -3 should remain unchanged
+            expect(result[1].history_group).toBe(-2); // Group -2 should remain unchanged
+            expect(result[2].history_group).toBe(-2); // Group -1 should be flattened to -2
+            expect(result[3].history_group).toBe(-2); // Group 0 should be flattened to -2
+            expect(result[4].history_group).toBe(-2); // Group 1 should be flattened to -2
+        });
+
+        it("should work with incrementUndoGroup to flatten newly created groups", () => {
+            // Setup: Create initial undo group
+            incrementUndoGroup(db); // Group 1
+
+            // Insert a record in group 1
+            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
+            db.prepare(insertSql).run(1, 1, "SQL 1");
+
+            // Create more undo groups
+            incrementUndoGroup(db); // Group 2
+            db.prepare(insertSql).run(2, 2, "SQL 2");
+
+            incrementUndoGroup(db); // Group 3
+            db.prepare(insertSql).run(3, 3, "SQL 3");
+
+            // Flatten groups above 1
+            flattenUndoGroupsAbove(db, 1);
+
+            // Verify: All groups above 1 should now be 1
+            const result = db
+                .prepare(
+                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
+                )
+                .all() as { history_group: number }[];
+
+            expect(result).toHaveLength(3);
+            expect(result[0].history_group).toBe(1);
+            expect(result[1].history_group).toBe(1); // Group 2 should be flattened to 1
+            expect(result[2].history_group).toBe(1); // Group 3 should be flattened to 1
+
+            // Verify the current undo group in stats table is unchanged
+            const currentGroup = getCurrentUndoGroup(db);
+            expect(currentGroup).toBe(3); // The current group in stats should still be 3
+        });
+
+        it("should log appropriate messages when flattening groups", () => {
+            // Setup
+            const consoleSpy = vi.spyOn(console, "log");
+
+            // Execute the function
+            flattenUndoGroupsAbove(db, 5);
+
+            // Verify console.log was called with the expected messages
+            expect(consoleSpy).toHaveBeenCalledWith(
+                "-------- Flattening undo groups above 5 --------",
+            );
+            expect(consoleSpy).toHaveBeenCalledWith(
+                "-------- Done flattening undo groups above 5 --------",
+            );
+        });
+
+        it("should handle large group numbers and many records efficiently", () => {
+            // Setup: Create many undo groups with large group numbers
+            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
+
+            // Insert 100 records with increasing group numbers
+            for (let i = 1; i <= 100; i++) {
+                db.prepare(insertSql).run(i, i * 100, `SQL ${i}`);
+            }
+
+            // Execute the function to flatten groups above 3000
+            flattenUndoGroupsAbove(db, 3000);
+
+            // Verify: All groups above 3000 should now be 3000
+            const result = db
+                .prepare(
+                    `
+      SELECT
+        CASE
+          WHEN history_group <= 3000 THEN 'below_or_equal'
+          ELSE 'above'
+        END as group_category,
+        COUNT(*) as count
+      FROM ${Constants.UndoHistoryTableName}
+      GROUP BY group_category
+    `,
+                )
+                .all() as { group_category: string; count: number }[];
+
+            const belowOrEqual = result.find(
+                (r) => r.group_category === "below_or_equal",
+            );
+            const above = result.find((r) => r.group_category === "above");
+
+            expect(belowOrEqual?.count || 0).toBe(100);
+            expect(above).toBeUndefined(); // No groups should be above 3000
+        });
+    });
+
+    describe("calculateHistorySize", () => {
+        let db: Database.Database;
+
+        beforeEach(() => {
+            // Create an in-memory SQLite database for each test
+            db = new Database(":memory:");
+            // Create the history tables
+            createHistoryTables(db);
+
+            // Try to create dbstat virtual table, but don't fail if it's not supported
+            try {
+                db.prepare(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS dbstat USING dbstat",
+                ).run();
+            } catch (e) {
+                console.log(
+                    "dbstat not available, tests will use fallback methods",
+                );
+            }
+        });
+
+        afterEach(() => {
+            // Close the database connection after each test
+            db.close();
+        });
+
+        it("should return 0 for empty history tables", () => {
+            const size = calculateHistorySize(db);
+            expect(size).toBe(0);
+        });
+
+        it("should calculate size after adding history entries", () => {
+            // Create a test table to generate history entries
+            db.prepare(
+                "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)",
+            ).run();
+            createUndoTriggers(db, "test_table");
+
+            // Get initial size
+            const initialSize = calculateHistorySize(db);
+
+            // Add some data to generate history entries
+            incrementUndoGroup(db);
+            db.prepare("INSERT INTO test_table (value) VALUES ('test1')").run();
+            db.prepare("INSERT INTO test_table (value) VALUES ('test2')").run();
+            db.prepare(
+                "UPDATE test_table SET value = 'updated' WHERE id = 1",
+            ).run();
+
+            // Get size after adding data
+            const sizeAfterAdding = calculateHistorySize(db);
+
+            // Size should have increased
+            expect(sizeAfterAdding).toBeGreaterThan(initialSize);
+        });
+
+        it("should handle large amounts of history data", () => {
+            // Create a test table to generate history entries
+            db.prepare(
+                "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)",
+            ).run();
+            createUndoTriggers(db, "test_table");
+
+            // Get initial size
+            const initialSize = calculateHistorySize(db);
+
+            // Add a significant amount of data
+            for (let i = 0; i < 10; i++) {
+                incrementUndoGroup(db);
+                for (let j = 0; j < 10; j++) {
+                    db.prepare("INSERT INTO test_table (value) VALUES (?)").run(
+                        `test-${i}-${j}`,
+                    );
+                }
+            }
+
+            // Get size after adding data
+            const sizeAfterAdding = calculateHistorySize(db);
+
+            // Size should have increased significantly
+            expect(sizeAfterAdding).toBeGreaterThan(initialSize);
+            console.log(
+                `History size increased from ${initialSize} to ${sizeAfterAdding} bytes`,
+            );
+        });
+
+        it("should return consistent results when called multiple times", () => {
+            // Create a test table and add some history
+            db.prepare(
+                "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)",
+            ).run();
+            createUndoTriggers(db, "test_table");
+            incrementUndoGroup(db);
+            db.prepare("INSERT INTO test_table (value) VALUES ('test')").run();
+
+            // Calculate size multiple times
+            const size1 = calculateHistorySize(db);
+            const size2 = calculateHistorySize(db);
+            const size3 = calculateHistorySize(db);
+
+            // All calculations should return the same value
+            expect(size1).toBe(size2);
+            expect(size2).toBe(size3);
         });
     });
 });

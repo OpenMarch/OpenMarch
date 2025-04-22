@@ -215,6 +215,16 @@ const APP_API = {
         ipcRenderer.removeAllListeners("history:action"),
     undo: () => ipcRenderer.invoke("history:undo"),
     redo: () => ipcRenderer.invoke("history:redo"),
+    flattenUndoGroupsAbove: (group: number) =>
+        ipcRenderer.invoke("history:flattenUndoGroupsAbove", group),
+    getCurrentUndoGroup: () =>
+        ipcRenderer.invoke("history:getCurrentUndoGroup") as Promise<
+            DatabaseResponse<number>
+        >,
+    getCurrentRedoGroup: () =>
+        ipcRenderer.invoke("history:getCurrentRedoGroup") as Promise<
+            DatabaseResponse<number>
+        >,
 
     // FieldProperties
     /** Get the FieldProperties associated with this file */

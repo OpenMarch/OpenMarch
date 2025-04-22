@@ -18,6 +18,8 @@ interface Measure {
     readonly counts: number;
     /** The beats that belong to this measure */
     readonly beats: Beat[];
+    /** The timestamp of the first beat in the measure */
+    readonly timestamp: number;
 }
 
 export default Measure;
@@ -56,6 +58,7 @@ export const fromDatabaseMeasures = (args: {
         }
         return aBeat.position - bBeat.position;
     });
+    let timestamp = 0;
     const createdMeasures = sortedDbMeasures.map((measure, i) => {
         const startBeat = beatMap.get(measure.start_beat);
         if (!startBeat) {
@@ -71,7 +74,7 @@ export const fromDatabaseMeasures = (args: {
         const beats = nextBeat
             ? sortedBeats.slice(startBeat.index, nextBeat.index)
             : sortedBeats.slice(startBeat.index);
-        return {
+        const output = {
             ...measure,
             startBeat: startBeat,
             beats,
@@ -79,7 +82,10 @@ export const fromDatabaseMeasures = (args: {
             rehearsalMark: measure.rehearsal_mark,
             duration: beatsDuration(beats),
             counts: beats.length,
+            timestamp,
         } satisfies Measure;
+        timestamp += output.duration;
+        return output;
     });
     return createdMeasures;
 };

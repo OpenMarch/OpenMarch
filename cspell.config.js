@@ -9,6 +9,7 @@ module.exports = {
         "BFSL",
         "Bilby",
         "customizer",
+        "dbstat",
         "evented",
         "frontfield",
         "fieldots",

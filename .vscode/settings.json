@@ -20,6 +20,7 @@
     "cSpell.words": [
         "Classname",
         "customizer",
+        "dbstat",
         "Dumouchelle",
         "fieldots",
         "Frontfield",
@@ -28,6 +29,7 @@
         "spms",
         "testid",
         "Topbar",
+        "undoable",
         "zustand"
     ],
     "[typescriptreact]": {

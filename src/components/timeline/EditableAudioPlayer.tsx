@@ -20,18 +20,15 @@ import {
     waveColor,
 } from "./AudioPlayer";
 import { Pause, Play } from "@phosphor-icons/react";
-import Beat, {
-    createBeats,
-    deleteBeats,
-    updateBeats,
-} from "@/global/classes/Beat";
+import Beat from "@/global/classes/Beat";
 import { Button } from "../ui/Button";
 import {
+    createNewBeatObjects,
     createNewTemporaryBeat,
-    getNewBeatObjects,
 } from "./EditableAudioPlayerUtils";
 import { useTheme } from "@/context/ThemeContext";
 import { conToastError } from "@/utilities/utils";
+import { toast } from "sonner";
 
 /**
  * Editable version of the AudioPlayer component.
@@ -211,6 +208,11 @@ export default function EditableAudioPlayer({
         setAudioDuration(audioElement.duration);
     };
 
+    /**
+     * Resets beat mapping by creating a new temporary beat configuration
+     * based on the first existing beat and the current audio playback time.
+     * Sets the display mode to show temporary beats.
+     */
     const triggerRedoBeatMapping = () => {
         if (!waveSurfer) return;
 
@@ -242,49 +244,18 @@ export default function EditableAudioPlayer({
     };
 
     const handleSave = async () => {
-        const pageUpdates = getNewBeatObjects({
+        const pageUpdates = await createNewBeatObjects({
             newBeats: temporaryBeats,
             oldBeats: beats,
             pages: pages,
+            measures: measures,
+            refreshFunction: fetchTimingObjects,
         });
-
-        // update the beats First
-        console.log("pageUpdates", pageUpdates);
-
-        const updateResponse = await updateBeats(
-            pageUpdates.beatsToUpdate,
-            async () => {}, // no need to re-fetch yet
-        );
-        if (!updateResponse.success) {
-            conToastError("Error updating beats", updateResponse.error);
+        if (!pageUpdates.success) {
+            conToastError("Error creating new beats", pageUpdates);
             return;
-        }
-
-        const deleteResponse = await deleteBeats(
-            pageUpdates.beatIdsToDelete,
-            async () => {},
-        );
-        if (!deleteResponse.success) {
-            conToastError("Error deleting old beats", deleteResponse.error);
-            // Undo the update
-            window.electron.undo();
-            fetchTimingObjects();
-            return;
-        }
-
-        const newBeatsResponse = await createBeats(
-            pageUpdates.beatsToCreate,
-            fetchTimingObjects, // now we need to re-fetch
-        );
-        if (!newBeatsResponse.success) {
-            conToastError("Error creating beats", newBeatsResponse.error);
-            // Undo the deletion
-            window.electron.undo();
-            // Undo the update
-            window.electron.undo();
-            fetchTimingObjects();
-
-            return;
+        } else {
+            toast.success("Beats saved successfully");
         }
     };
 

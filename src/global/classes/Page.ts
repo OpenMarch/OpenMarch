@@ -122,6 +122,7 @@ export async function updatePages(
                 // fetch the pages to update the store
                 fetchPagesFunction();
             }
+            return updatePagesResponse;
         } else if (modifiedPagesArgs.lastPageCounts !== undefined) {
             // No modifiedPages were provided, but last page counts were
 
@@ -131,10 +132,12 @@ export async function updatePages(
                 useNextUndoGroup: true,
                 fetchPagesFunction,
             });
+            return { success: true };
         } else {
             console.warn(
                 "No modified pages or last page counts provided. Doing nothing",
             );
+            return { success: false };
         }
     }
 }
@@ -401,9 +404,6 @@ export function fromDatabasePages({
                 // If both are true, ensure that the beat is actually in the measure
                 measure.beats.some((beat) => beatIdSet.has(beat.id)),
         );
-        if (measures.length === 0) {
-            console.log(`No measures found for page ${dbPage.id}`);
-        }
         const duration = beats.reduce((acc, beat) => acc + beat.duration, 0);
         const output = {
             id: dbPage.id,
