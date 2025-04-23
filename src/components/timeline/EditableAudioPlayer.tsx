@@ -24,11 +24,13 @@ import Beat from "@/global/classes/Beat";
 import { Button } from "../ui/Button";
 import {
     createNewBeatObjects,
-    createNewTemporaryBeat,
+    createNewTemporaryBeats,
+    createNewTemporaryMeasures,
 } from "./EditableAudioPlayerUtils";
 import { useTheme } from "@/context/ThemeContext";
 import { conToastError } from "@/utilities/utils";
 import { toast } from "sonner";
+import Measure from "@/global/classes/Measure";
 
 /**
  * Editable version of the AudioPlayer component.
@@ -57,6 +59,7 @@ export default function EditableAudioPlayer({
         "real",
     );
     const [temporaryBeats, setTemporaryBeats] = useState<Beat[]>([]);
+    const [temporaryMeasures, setTemporaryMeasures] = useState<Measure[]>([]);
 
     useEffect(() => {
         setPixelsPerSecond(120);
@@ -157,21 +160,41 @@ export default function EditableAudioPlayer({
                 const currentTime = waveSurfer.getCurrentTime();
                 const totalDuration = waveSurfer.getDuration();
 
-                const updatedBeats = createNewTemporaryBeat(
+                const updatedBeats = createNewTemporaryBeats({
                     currentTime,
                     totalDuration,
-                    temporaryBeats,
-                    eventNum,
-                );
+                    existingTemporaryBeats: temporaryBeats,
+                    numNewBeats: eventNum,
+                });
 
                 if (updatedBeats.length > 0) {
                     setTemporaryBeats(updatedBeats);
                 }
+
+                const updatedMeasures = createNewTemporaryMeasures({
+                    currentBeats: updatedBeats,
+                    currentMeasures: temporaryMeasures,
+                    newCounts: eventNum,
+                    currentTime,
+                });
+                console.log("temporary measures", updatedMeasures);
+                setTemporaryMeasures(updatedMeasures);
+
+                timingMarkersPlugin.current?.updateTimingMarkers(
+                    updatedBeats,
+                    updatedMeasures,
+                );
             } else if (event.key === " ") {
                 togglePlayPause();
             }
         },
-        [beatsToDisplay, waveSurfer, temporaryBeats, togglePlayPause],
+        [
+            beatsToDisplay,
+            waveSurfer,
+            temporaryBeats,
+            temporaryMeasures,
+            togglePlayPause,
+        ],
     );
 
     // Add event listener for keyboard shortcuts
@@ -187,11 +210,9 @@ export default function EditableAudioPlayer({
 
     // Update measures and beats when they change
     useEffect(() => {
-        if (timingMarkersPlugin.current == null) return;
-        timingMarkersPlugin.current.updateTimingMarkers(
-            beatsToDisplay === "real" ? beats : temporaryBeats,
-            measures,
-        );
+        if (timingMarkersPlugin.current == null || beatsToDisplay !== "real")
+            return;
+        timingMarkersPlugin.current.updateTimingMarkers(beats, measures);
     }, [beats, beatsToDisplay, measures, temporaryBeats]);
 
     useEffect(() => {
@@ -213,10 +234,10 @@ export default function EditableAudioPlayer({
      * based on the first existing beat and the current audio playback time.
      * Sets the display mode to show temporary beats.
      */
-    const triggerRedoBeatMapping = () => {
+    const triggerTapNewTempo = () => {
         if (!waveSurfer) return;
 
-        console.log("triggerRedoBeatMapping", [
+        const temporaryBeats = [
             beats[0],
             {
                 id: -1,
@@ -227,28 +248,22 @@ export default function EditableAudioPlayer({
                 index: 1,
                 timestamp: 0,
             },
-        ]);
-        setTemporaryBeats([
-            beats[0],
-            {
-                id: -1,
-                position: 1,
-                duration: waveSurfer.getCurrentTime(),
-                includeInMeasure: true,
-                notes: null,
-                index: 1,
-                timestamp: 0,
-            },
-        ]);
+        ];
+        const temporaryMeasures: Measure[] = [];
+        setTemporaryBeats(temporaryBeats);
+        setTemporaryMeasures(temporaryMeasures);
         setBeatsToDisplay("temporary");
+        timingMarkersPlugin.current?.updateTimingMarkers(
+            temporaryBeats,
+            temporaryMeasures,
+        );
     };
 
     const handleSave = async () => {
         const pageUpdates = await createNewBeatObjects({
             newBeats: temporaryBeats,
             oldBeats: beats,
-            pages: pages,
-            measures: measures,
+            pages,
             refreshFunction: fetchTimingObjects,
         });
         if (!pageUpdates.success) {
@@ -257,6 +272,12 @@ export default function EditableAudioPlayer({
         } else {
             toast.success("Beats saved successfully");
         }
+    };
+
+    const handleCancel = () => {
+        setBeatsToDisplay("real");
+        setTemporaryBeats([]);
+        setTemporaryMeasures([]);
     };
 
     return (
@@ -282,8 +303,8 @@ export default function EditableAudioPlayer({
             </div>
 
             {beatsToDisplay === "real" ? (
-                <Button onClick={triggerRedoBeatMapping} size={"compact"}>
-                    Redo Beat Mapping
+                <Button onClick={triggerTapNewTempo} size={"compact"}>
+                    Tap New Tempo
                 </Button>
             ) : (
                 <div
@@ -299,10 +320,17 @@ export default function EditableAudioPlayer({
                     </Button>
                     <Button
                         variant={"red"}
-                        onClick={triggerRedoBeatMapping}
+                        onClick={triggerTapNewTempo}
                         size={"compact"}
                     >
-                        Restart
+                        Discard All
+                    </Button>
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        onClick={handleCancel}
+                    >
+                        Cancel
                     </Button>
                 </div>
             )}

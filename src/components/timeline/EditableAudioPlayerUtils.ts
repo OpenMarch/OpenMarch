@@ -11,7 +11,6 @@ import {
     DatabaseBeat,
     ModifiedBeatArgs,
 } from "electron/database/tables/BeatTable";
-import { ModifiedMeasureArgs } from "electron/database/tables/MeasureTable";
 import { ModifiedPageArgs } from "electron/database/tables/PageTable";
 
 /**
@@ -23,12 +22,17 @@ import { ModifiedPageArgs } from "electron/database/tables/PageTable";
  * @param numNewBeats Number of beats to create between the last beat and current time
  * @returns An object containing updated beats and a flag indicating whether the display should be updated
  */
-export const createNewTemporaryBeat = (
-    currentTime: number,
-    totalDuration: number,
-    existingTemporaryBeats: Beat[],
-    numNewBeats: number,
-): Beat[] => {
+export const createNewTemporaryBeats = ({
+    currentTime,
+    totalDuration,
+    existingTemporaryBeats,
+    numNewBeats,
+}: {
+    currentTime: number;
+    totalDuration: number;
+    existingTemporaryBeats: Beat[];
+    numNewBeats: number;
+}): Beat[] => {
     // If no existing beats, we can't update anything
     if (existingTemporaryBeats.length === 0) {
         return [];
@@ -36,7 +40,7 @@ export const createNewTemporaryBeat = (
 
     if (numNewBeats <= 0) {
         console.warn(
-            "createNewTemporaryBeat: numNewBeats must be greater than 0",
+            "createNewTemporaryBeats: numNewBeats must be greater than 0",
         );
         return [];
     }
@@ -54,11 +58,14 @@ export const createNewTemporaryBeat = (
 
     const newBeats: Beat[] = existingTemporaryBeats.slice(0, -1);
 
+    let curId = lastBeat.id;
     for (let i = 0; i < numNewBeats; i++) {
         // Update the previous beat's duration
         newBeats.push({
             ...lastBeat,
             duration: durationToUse,
+            // This is not always unique
+            id: curId--,
             timestamp: lastBeat.timestamp + durationToUse * i,
         });
     }
@@ -68,7 +75,7 @@ export const createNewTemporaryBeat = (
 
     // Create a new temporary beat at the current timestamp
     newBeats.push({
-        id: -Date.now(), // Negative ID to indicate temporary
+        id: curId--, // xwNegative ID to indicate temporary
         position: existingTemporaryBeats.length,
         duration: tempDuration,
         includeInMeasure: true,
@@ -78,6 +85,45 @@ export const createNewTemporaryBeat = (
     });
 
     return newBeats;
+};
+
+/**
+ * Creates new temporary measures based on the current beats and measures.
+ *
+ * @param currentBeats - The existing beats in the timeline
+ * @param currentMeasures - The existing measures in the timeline
+ * @param newCounts - The number of counts for the new measure
+ * @returns An array of measures with the new temporary measure appended
+ */
+export const createNewTemporaryMeasures = ({
+    currentBeats,
+    currentMeasures,
+    newCounts,
+    currentTime,
+}: {
+    currentBeats: Beat[];
+    currentMeasures: Measure[];
+    newCounts: number;
+    currentTime: number;
+}): Measure[] => {
+    const lastMeasure = currentMeasures.length
+        ? currentMeasures[currentMeasures.length - 1]
+        : undefined;
+    const newMeasure = {
+        id: lastMeasure ? lastMeasure.id - 1 : -1,
+        startBeat: currentBeats[currentBeats.length - newCounts],
+        number: lastMeasure ? lastMeasure.number + 1 : 1,
+        rehearsalMark: null,
+        notes: null,
+        duration: lastMeasure
+            ? currentTime - lastMeasure.timestamp
+            : currentTime, // We don't really need to know the duration
+        counts: newCounts,
+        beats: [], // Don't need to know the beats
+        timestamp: currentTime, // Don't need to know the timestamp
+    } satisfies Measure;
+
+    return [...currentMeasures, newMeasure];
 };
 
 /**
@@ -153,12 +199,11 @@ export const getUpdatedBeatObjects = (
 };
 
 /**
- * Creates new beat objects and updates associated pages and measures with the new beats.
+ * Creates new beat objects and updates associated pages
  *
  * @param newBeats - The new beats to be created
  * @param oldBeats - The existing beats to be replaced
  * @param pages - Pages associated with the old beats
- * @param measures - Measures associated with the old beats
  * @param refreshFunction - Function to refresh the UI after updates
  * @returns An object indicating whether the beat creation and update was successful
  */
@@ -166,13 +211,11 @@ export const createNewBeatObjects = async ({
     newBeats,
     oldBeats,
     pages,
-    measures,
     refreshFunction,
 }: {
     newBeats: Beat[];
     oldBeats: Beat[];
     pages: Page[];
-    measures: Measure[];
     refreshFunction: () => Promise<void>;
 }): Promise<{ success: boolean }> => {
     const beatsToCreate = newBeats.map((beat) => ({
@@ -232,37 +275,12 @@ export const createNewBeatObjects = async ({
                 );
             }
         }
-        const measuresToUpdate: ModifiedMeasureArgs[] = [];
-        const usedCreatedBeatIdsForMeasures = new Set<number>();
-        for (const measure of measures) {
-            const oldBeat = oldBeatsMap.get(measure.beats[0].id);
-            if (oldBeat) {
-                const closestNewBeat = findClosestUnusedBeatByTimestamp(
-                    measure.timestamp,
-                    createdBeats,
-                    usedCreatedBeatIdsForMeasures,
-                );
-                if (!closestNewBeat) {
-                    throw new Error("No unused beat found");
-                }
-                measuresToUpdate.push({
-                    id: measure.id,
-                    start_beat: closestNewBeat.id,
-                });
-                usedCreatedBeatIdsForMeasures.add(closestNewBeat.id);
-            } else {
-                throw new Error(
-                    `Could not find beat with id ${measure.beats[0].id} in created beats`,
-                );
-            }
-        }
 
         const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
 
         const updateAndDeleteResponse = GroupFunction({
             functionsToExecute: [
                 () => updatePages(pagesToUpdate, async () => {}),
-                () => window.electron.updateMeasures(measuresToUpdate),
                 () => deleteBeats(beatIdsToDelete, async () => {}),
             ],
             useNextUndoGroup: false,

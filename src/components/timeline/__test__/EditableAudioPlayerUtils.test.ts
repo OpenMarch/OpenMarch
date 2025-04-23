@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import {
-    createNewTemporaryBeat,
+    createNewTemporaryBeats,
     findClosestUnusedBeatByTimestamp,
     getUpdatedBeatObjects,
 } from "../EditableAudioPlayerUtils";
 import Beat from "@/global/classes/Beat";
 
-describe("createNewTemporaryBeat", () => {
+describe("createNewTemporaryBeats", () => {
     // Test case 1: Empty beats array
     it("should return empty beats array when existingTemporaryBeats is empty", () => {
         const currentTime = 10;
@@ -14,12 +14,12 @@ describe("createNewTemporaryBeat", () => {
         const existingTemporaryBeats: Beat[] = [];
         const numBeats = 2;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         expect(result).toEqual([]);
     });
@@ -41,12 +41,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 0;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         expect(result).toEqual([]);
     });
@@ -68,12 +68,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 1;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         expect(result.length).toBe(2);
         expect(result[0]).toEqual(existingTemporaryBeats[0]);
@@ -100,12 +100,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 3;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         expect(result.length).toBe(4); // Original beat + 3 new beats
         expect(result[1].duration).toBe(10 / 3);
@@ -130,12 +130,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 2;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         // First beat is the original beat
         expect(result[0].timestamp).toBe(10);
@@ -164,12 +164,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 2;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         // Intermediate beat should have duration of (20-10)/2 = 5
         expect(result[1].duration).toBe(5);
@@ -195,12 +195,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 2;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         expect(Array.isArray(result)).toBe(true);
     });
@@ -222,12 +222,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 2;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         const lastBeat = result[result.length - 1];
 
@@ -266,12 +266,12 @@ describe("createNewTemporaryBeat", () => {
         ];
         const numBeats = 1;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
             existingTemporaryBeats,
-            numBeats,
-        );
+            numNewBeats: numBeats,
+        });
 
         expect(result).toHaveLength(3);
         expect(result[0].duration).toBe(5);
@@ -586,21 +586,36 @@ const createMockBeat = (
     timestamp,
 });
 
-describe("createNewTemporaryBeat", () => {
+describe("createNewTemporaryBeats", () => {
     it("should return empty array when no existing beats", () => {
-        const result = createNewTemporaryBeat(10, 60, [], 4);
+        const result = createNewTemporaryBeats({
+            currentTime: 10,
+            totalDuration: 60,
+            existingTemporaryBeats: [],
+            numNewBeats: 4,
+        });
         expect(result).toEqual([]);
     });
 
     it("should return empty array when numNewBeats is less than or equal to 0", () => {
         const existingBeats = [createMockBeat(1, 0, 2, 0)];
-        const result = createNewTemporaryBeat(10, 60, existingBeats, 0);
+        const result = createNewTemporaryBeats({
+            currentTime: 10,
+            totalDuration: 60,
+            existingTemporaryBeats: existingBeats,
+            numNewBeats: 0,
+        });
         expect(result).toEqual([]);
     });
 
     it("should return empty array when duration per beat is too small", () => {
         const existingBeats = [createMockBeat(1, 0, 2, 9.95)];
-        const result = createNewTemporaryBeat(10, 60, existingBeats, 4);
+        const result = createNewTemporaryBeats({
+            currentTime: 10,
+            totalDuration: 60,
+            existingTemporaryBeats: existingBeats,
+            numNewBeats: 4,
+        });
         expect(result).toEqual([]);
     });
 
@@ -610,12 +625,12 @@ describe("createNewTemporaryBeat", () => {
         const totalDuration = 60;
         const numNewBeats = 4;
 
-        const result = createNewTemporaryBeat(
+        const result = createNewTemporaryBeats({
             currentTime,
             totalDuration,
-            existingBeats,
+            existingTemporaryBeats: existingBeats,
             numNewBeats,
-        );
+        });
 
         // Should create numNewBeats + 1 beats (including the final beat)
         expect(result.length).toBe(numNewBeats + 1);
