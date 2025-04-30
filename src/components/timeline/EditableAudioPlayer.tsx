@@ -42,7 +42,7 @@ export default function EditableAudioPlayer({
     timelineRef: React.RefObject<HTMLDivElement>;
 }) {
     const { theme } = useTheme();
-    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
+    const { uiSettings } = useUiSettingsStore();
     // We'll use beats later for creating regions based on timing objects
     const { beats, pages, measures, fetchTimingObjects } =
         useTimingObjectsStore();
@@ -60,10 +60,6 @@ export default function EditableAudioPlayer({
     );
     const [temporaryBeats, setTemporaryBeats] = useState<Beat[]>([]);
     const [temporaryMeasures, setTemporaryMeasures] = useState<Measure[]>([]);
-
-    useEffect(() => {
-        setPixelsPerSecond(120);
-    }, [setPixelsPerSecond]);
 
     const togglePlayPause = useCallback(() => {
         if (!waveSurfer) return;
@@ -263,6 +259,8 @@ export default function EditableAudioPlayer({
         const pageUpdates = await createNewBeatObjects({
             newBeats: temporaryBeats,
             oldBeats: beats,
+            newMeasures: temporaryMeasures,
+            oldMeasures: measures,
             pages,
             refreshFunction: fetchTimingObjects,
         });
@@ -271,6 +269,7 @@ export default function EditableAudioPlayer({
             return;
         } else {
             toast.success("Beats saved successfully");
+            setBeatsToDisplay("real");
         }
     };
 

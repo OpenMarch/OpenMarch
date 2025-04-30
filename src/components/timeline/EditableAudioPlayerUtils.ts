@@ -3,7 +3,10 @@ import Beat, {
     deleteBeats,
     fromDatabaseBeat,
 } from "@/global/classes/Beat";
-import Measure from "@/global/classes/Measure";
+import Measure, {
+    createMeasures,
+    deleteMeasures,
+} from "@/global/classes/Measure";
 import Page, { updatePages } from "@/global/classes/Page";
 import { GroupFunction } from "@/utilities/ApiFunctions";
 import { conToastError } from "@/utilities/utils";
@@ -11,6 +14,7 @@ import {
     DatabaseBeat,
     ModifiedBeatArgs,
 } from "electron/database/tables/BeatTable";
+import { NewMeasureArgs } from "electron/database/tables/MeasureTable";
 import { ModifiedPageArgs } from "electron/database/tables/PageTable";
 
 /**
@@ -210,11 +214,15 @@ export const getUpdatedBeatObjects = (
 export const createNewBeatObjects = async ({
     newBeats,
     oldBeats,
+    newMeasures,
+    oldMeasures,
     pages,
     refreshFunction,
 }: {
     newBeats: Beat[];
     oldBeats: Beat[];
+    newMeasures: Measure[];
+    oldMeasures: Measure[];
     pages: Page[];
     refreshFunction: () => Promise<void>;
 }): Promise<{ success: boolean }> => {
@@ -276,11 +284,35 @@ export const createNewBeatObjects = async ({
             }
         }
 
+        // Find the IDs of the beats from the temporary ones that map to the new one
+        const measuresToCreate: NewMeasureArgs[] = [];
+        console.log(newMeasures);
+        for (const measure of newMeasures) {
+            // Get the index of the beat in the new beats array
+            const beatIndex = newBeats.findIndex(
+                (b) => b.id === measure.startBeat.id,
+            );
+            if (beatIndex === -1) {
+                throw new Error(
+                    `Could not find beat with id ${measure.beats[0].id} in created beats`,
+                );
+            }
+            // Using the index of beat from the newBeats array, find the actual created beat in the createdBeats array
+            measuresToCreate.push({
+                start_beat: createdBeats[beatIndex].id,
+            });
+        }
+
+        const measureIdsToDelete = new Set(
+            oldMeasures.map((measure) => measure.id),
+        );
         const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
 
         const updateAndDeleteResponse = GroupFunction({
             functionsToExecute: [
                 () => updatePages(pagesToUpdate, async () => {}),
+                () => createMeasures(measuresToCreate, async () => {}),
+                () => deleteMeasures(measureIdsToDelete, async () => {}),
                 () => deleteBeats(beatIdsToDelete, async () => {}),
             ],
             useNextUndoGroup: false,
