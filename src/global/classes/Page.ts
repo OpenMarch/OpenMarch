@@ -2,10 +2,11 @@ import Measure from "./Measure";
 import Beat from "./Beat";
 import {
     DatabasePage,
+    FIRST_PAGE_ID,
     ModifiedPageArgs,
     NewPageArgs,
-} from "electron/database/tables/PageTable";
-import { DatabaseResponse } from "electron/database/DatabaseActions";
+} from "../../../electron/database/tables/PageTable";
+import { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
 
 interface Page {
@@ -51,6 +52,22 @@ interface Page {
 }
 export default Page;
 
+// interface CreatePagesRequest {
+//     newPagesArg: NewPageArgs[];
+//     lastPageCounts?: number;
+// }
+
+/**
+ * Represents a request to modify multiple pages with optional last page count tracking.
+ *
+ * @param modifiedPagesArgs - An array of page modification arguments to be applied.
+ * @param lastPageCounts - Optional number of counts for the last page, used for tracking page modifications.
+ */
+export interface ModifyPagesRequest {
+    modifiedPagesArgs: ModifiedPageArgs[];
+    lastPageCounts?: number;
+}
+
 /**
  * Creates one or more new pages in the database and updates the store.
  *
@@ -67,78 +84,62 @@ export async function createPages(
     if (createResponse.success) fetchPagesFunction();
     return createResponse;
 }
-/**
- * Creates a new page at the next available beat after the current last page.
- *
- * @param currentLastPage - The last page in the current sequence.
- * @param allBeats - The complete list of beats in the show.
- * @param counts - The number of counts for the new page.
- * @param fetchPagesFunction - Function to update the pages store after creation.
- * @returns A DatabaseResponse with the newly created page, or null if no more beats are available.
- */
-export async function createLastPage({
-    currentLastPage,
-    allBeats,
-    counts,
-    fetchPagesFunction,
-}: {
-    currentLastPage: Page;
-    allBeats: Beat[];
-    counts: number;
-    fetchPagesFunction: () => Promise<void>;
-}) {
-    const lastPageLastBeat =
-        currentLastPage.beats[currentLastPage.beats.length - 1];
-
-    const nextBeat = allBeats.find(
-        (beat) => beat.position > lastPageLastBeat.position,
-    );
-
-    if (!nextBeat) {
-        console.error("The show is already up to the last beat ");
-        return null;
-    }
-
-    // Create the page
-    const createResponse = await createPages(
-        [
-            {
-                start_beat: nextBeat.id,
-                is_subset: false,
-            },
-        ],
-        fetchPagesFunction,
-    );
-
-    if (!createResponse.success) {
-        return createResponse;
-    }
-
-    // Update the last page counts
-    const lastPageCountsResponse = await window.electron.updateUtilityRecord({
-        last_page_counts: counts,
-    });
-    if (!lastPageCountsResponse.success) {
-        console.error("Error updating last page counts:");
-        console.error(lastPageCountsResponse.error);
-    }
-    return createResponse;
-}
 
 /**
  * Update one or many pages with the provided arguments.
  *
- * @param modifiedPagesArg - The objects to update the pages with.
+ * @param modifiedPagesArgs - The objects to update the pages with.
  * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
  */
 export async function updatePages(
-    modifiedPagesArg: ModifiedPageArgs[],
+    modifiedPagesArgs: ModifiedPageArgs[] | ModifyPagesRequest,
     fetchPagesFunction: () => Promise<void>,
 ) {
-    const response = await window.electron.updatePages(modifiedPagesArg);
-    // fetch the pages to update the store
-    if (response.success) fetchPagesFunction();
-    return response;
+    if (Array.isArray(modifiedPagesArgs)) {
+        const response = await window.electron.updatePages(modifiedPagesArgs);
+        // fetch the pages to update the store
+        if (response.success) fetchPagesFunction();
+        return response;
+    } else {
+        // ModifyPagesRequest object was provided
+
+        // Check if any modifiedPages were provided
+        if (modifiedPagesArgs.modifiedPagesArgs.length > 0) {
+            const updatePagesResponse = await window.electron.updatePages(
+                modifiedPagesArgs.modifiedPagesArgs,
+            );
+            if (updatePagesResponse.success) {
+                // Check if lastPageCounts were provided
+                if (modifiedPagesArgs.lastPageCounts !== undefined) {
+                    updateLastPageCounts({
+                        counts: modifiedPagesArgs.lastPageCounts,
+                        useNextUndoGroup: false,
+                        // Do not fetch because we will fetch at the end of this function
+                        fetchPagesFunction: async () => {},
+                    });
+                }
+
+                // fetch the pages to update the store
+                fetchPagesFunction();
+            }
+            return updatePagesResponse;
+        } else if (modifiedPagesArgs.lastPageCounts !== undefined) {
+            // No modifiedPages were provided, but last page counts were
+
+            // Update the last page counts
+            updateLastPageCounts({
+                counts: modifiedPagesArgs.lastPageCounts,
+                useNextUndoGroup: true,
+                fetchPagesFunction,
+            });
+            return { success: true };
+        } else {
+            console.warn(
+                "No modified pages or last page counts provided. Doing nothing",
+            );
+            return { success: false };
+        }
+    }
 }
 
 /**
@@ -341,8 +342,6 @@ export function fromDatabasePages({
         const aBeat = beatMap.get(a.start_beat);
         const bBeat = beatMap.get(b.start_beat);
         if (!aBeat || !bBeat) {
-            console.log("aBeat", a.start_beat, aBeat);
-            console.log("bBeat", b.start_beat, bBeat);
             throw new Error(
                 `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
             );
@@ -355,18 +354,37 @@ export function fromDatabasePages({
 
     let curTimestamp = 0;
     const createdPages: Page[] = sortedDbPages.map((dbPage, i) => {
-        const isLastPage = i === sortedDbPages.length - 1;
-
         // Get the beats that belong to this page
         const startBeat = beatMap.get(dbPage.start_beat);
-        if (!startBeat) {
+
+        if (!startBeat)
             throw new Error(`Start beat not found: ${dbPage.start_beat}`);
-        }
+
+        const isLastPage = i === sortedDbPages.length - 1;
         const nextPage = isLastPage ? null : sortedDbPages[i + 1];
         const nextPageBeat = nextPage ? beatMap.get(nextPage.start_beat) : null;
-        if (!nextPageBeat && nextPage) {
+        if (!nextPageBeat && nextPage)
             throw new Error(`Next beat not found: ${nextPage.start_beat}`);
-        }
+
+        // If this is the first page, return that special case
+        if (dbPage.id === FIRST_PAGE_ID)
+            return {
+                id: dbPage.id,
+                name: pageNames[i],
+                counts: 0,
+                notes: dbPage.notes,
+                order: i,
+                isSubset: dbPage.is_subset,
+                duration: 0,
+                beats: [startBeat],
+                measures: null,
+                measureBeatToStartOn: null,
+                measureBeatToEndOn: null,
+                timestamp: curTimestamp,
+                previousPageId: null,
+                nextPageId: nextPage ? nextPage.id : null,
+            };
+
         const lastBeatIndex = nextPage
             ? nextPageBeat!.index
             : startBeat.index + lastPageCounts > sortedBeats.length
@@ -386,9 +404,6 @@ export function fromDatabasePages({
                 // If both are true, ensure that the beat is actually in the measure
                 measure.beats.some((beat) => beatIdSet.has(beat.id)),
         );
-        if (measures.length === 0) {
-            console.log(`No measures found for page ${dbPage.id}`);
-        }
         const duration = beats.reduce((acc, beat) => acc + beat.duration, 0);
         const output = {
             id: dbPage.id,
@@ -413,7 +428,7 @@ export function fromDatabasePages({
                       ) + 1
                     : null,
             timestamp: curTimestamp,
-            previousPageId: sortedDbPages[i - 1]?.id || null,
+            previousPageId: i > 0 ? sortedDbPages[i - 1].id : null,
             nextPageId: nextPage ? nextPage.id : null,
         } satisfies Page;
         curTimestamp += duration;
@@ -567,4 +582,186 @@ export const getPreviousPage = (
         return null;
     }
     return prevPage;
+};
+
+/**
+ * Creates a new page at the next available beat after the current last page.
+ *
+ * @param currentLastPage - The last page in the current sequence.
+ * @param allBeats - The complete list of beats in the show.
+ * @param counts - The number of counts for the new page.
+ * @param fetchPagesFunction - Function to update the pages store after creation.
+ * @returns A DatabaseResponse with the newly created page, or null if no more beats are available.
+ */
+export async function createLastPage({
+    currentLastPage,
+    allBeats,
+    counts,
+    fetchPagesFunction,
+}: {
+    currentLastPage: Page;
+    allBeats: Beat[];
+    counts: number;
+    fetchPagesFunction: () => Promise<void>;
+}): Promise<DatabaseResponse<DatabasePage | undefined>> {
+    const lastPageLastBeat =
+        currentLastPage.beats[currentLastPage.beats.length - 1];
+
+    const nextBeat = allBeats.find(
+        (beat) => beat.position > lastPageLastBeat.position,
+    );
+
+    if (!nextBeat) {
+        const message =
+            "Cannot create a new last page! The show has no beats left";
+        console.log(message);
+        toast.warning(message);
+        return {
+            success: false,
+            error: { message },
+            data: undefined,
+        };
+    }
+
+    // Create the page
+    const createResponse = await createPages(
+        [
+            {
+                start_beat: nextBeat.id,
+                is_subset: false,
+            },
+        ],
+        fetchPagesFunction,
+    );
+
+    if (!createResponse.success) {
+        return { ...createResponse, data: undefined };
+    }
+
+    // Update the last page counts
+    const lastPageCountsResponse = await window.electron.updateUtilityRecord({
+        last_page_counts: counts,
+    });
+    if (!lastPageCountsResponse.success) {
+        console.error("Error updating last page counts:");
+        console.error(lastPageCountsResponse.error);
+    }
+    return { ...createResponse, data: createResponse.data[0] };
+}
+
+/**
+ * Updates the last page counts in the utility record and triggers a page fetch.
+ * @param counts The number of counts to update
+ * @param fetchPagesFunction A function to fetch pages after updating the counts
+ */
+export const updateLastPageCounts = async ({
+    counts,
+    useNextUndoGroup,
+    fetchPagesFunction,
+}: {
+    counts: number;
+    useNextUndoGroup: boolean;
+    fetchPagesFunction: () => Promise<void>;
+}) => {
+    const response = await window.electron.updateUtilityRecord(
+        {
+            last_page_counts: counts,
+        },
+        useNextUndoGroup,
+    );
+    if (!response.success) {
+        console.error("Error updating last page counts:");
+        console.error(response.error);
+    }
+    fetchPagesFunction();
+};
+
+// Function to update page duration in the database
+/**
+ * Updates the duration of a page by adjusting its beats and the start beat of the next page.
+ * @param pageToUpdate The page whose duration is being modified
+ * @param newCounts The target duration (in counts) for the page
+ * @param pages Array of all pages in the project
+ * @param beats Array of all beats in the project
+ * @param fetchPagesFunction Callback to refresh pages after updating
+ * @returns {Promise<void>} Resolves after updating page duration or handling update failure
+ */
+export const updatePageCountRequest = ({
+    pageToUpdate,
+    newCounts,
+    pages,
+    beats,
+}: {
+    pages: Page[];
+    beats: Beat[];
+    pageToUpdate: Page;
+    newCounts: number;
+}): ModifyPagesRequest => {
+    // If there's no next page, we can't adjust the duration
+    const nextPage = pages.find((page) => page.id === pageToUpdate.nextPageId);
+    let output: ModifyPagesRequest = { modifiedPagesArgs: [] };
+
+    // Calculate how many beats to include in the current page based on the new duration
+    let targetBeatIndex = -1;
+
+    // Find the index of the first beat of the current page
+    const currentPageStartBeatIndex = beats.findIndex(
+        (beat) => beat.id === pageToUpdate.beats[0].id,
+    );
+
+    // Calculate how many beats should be included to match the new duration
+    for (let i = currentPageStartBeatIndex; i < beats.length; i++) {
+        if (
+            i - currentPageStartBeatIndex >= newCounts ||
+            i === beats.length - 1
+        ) {
+            targetBeatIndex = i; // The last beat we want to include in the current page
+            break;
+        }
+    }
+
+    // If we couldn't find a suitable beat, don't update
+    if (targetBeatIndex === -1 || targetBeatIndex >= beats.length) {
+        const message =
+            "Failed to update page duration. No suitable beat found.";
+        toast.error(message);
+        console.error(message);
+        return output;
+    }
+
+    // Update the next page's start beat
+    try {
+        // If we have a specific next page ID and duration, we're updating both pages
+        // This happens when the user drags a page and we need to update both the current
+        // and next page durations
+        if (nextPage) {
+            const newNextPageStartBeatId = beats[targetBeatIndex].id;
+
+            // Update the next page's start beat
+            output = {
+                modifiedPagesArgs: [
+                    {
+                        id: nextPage.id,
+                        start_beat: newNextPageStartBeatId,
+                    },
+                ],
+            };
+
+            if (nextPage.nextPageId === null) {
+                // The next page is the last page. Update its counts to adjust for the offset created by the drag
+                output.lastPageCounts =
+                    pageToUpdate.counts - newCounts + nextPage.counts;
+            }
+        } else {
+            // There is no next page. Update the last page's duration
+            output = {
+                modifiedPagesArgs: [],
+                lastPageCounts: targetBeatIndex - currentPageStartBeatIndex + 1,
+            };
+        }
+    } catch (error) {
+        toast.error("Failed to update page duration");
+        console.error("Failed to update page duration:", error);
+    }
+    return output;
 };

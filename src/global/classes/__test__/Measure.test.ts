@@ -21,7 +21,8 @@ describe("Measure", () => {
                 duration: 1000,
                 includeInMeasure: true,
                 notes: null,
-                i: 0,
+                index: 0,
+                timestamp: 0,
             } satisfies Beat;
             const databaseMeasure: DatabaseMeasure = {
                 id: 1,
@@ -54,7 +55,8 @@ describe("Measure", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 0,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     position: 2,
@@ -62,7 +64,8 @@ describe("Measure", () => {
                     duration: 100,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 2,
+                    timestamp: 100,
                 } satisfies Beat,
                 {
                     position: 3,
@@ -70,7 +73,8 @@ describe("Measure", () => {
                     duration: 200,
                     includeInMeasure: true,
                     notes: null,
-                    i: 3,
+                    index: 3,
+                    timestamp: 200,
                 } satisfies Beat,
                 {
                     position: 4,
@@ -78,7 +82,8 @@ describe("Measure", () => {
                     duration: 300,
                     includeInMeasure: true,
                     notes: null,
-                    i: 4,
+                    index: 4,
+                    timestamp: 300,
                 } satisfies Beat,
             ];
 
@@ -123,7 +128,8 @@ describe("Measure", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     position: 2,
@@ -131,7 +137,8 @@ describe("Measure", () => {
                     duration: 100,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 2,
+                    timestamp: 100,
                 } satisfies Beat,
             ];
 
@@ -165,7 +172,8 @@ describe("Measure", () => {
                     duration: 200,
                     includeInMeasure: true,
                     notes: null,
-                    i: 3,
+                    index: 3,
+                    timestamp: 200,
                 } satisfies Beat, // Intentionally out of order
                 {
                     position: 1,
@@ -173,7 +181,8 @@ describe("Measure", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 0,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     position: 2,
@@ -181,7 +190,8 @@ describe("Measure", () => {
                     duration: 100,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 1,
+                    timestamp: 100,
                 } satisfies Beat,
                 {
                     position: 4,
@@ -189,7 +199,8 @@ describe("Measure", () => {
                     duration: 300,
                     includeInMeasure: true,
                     notes: null,
-                    i: 4,
+                    index: 4,
+                    timestamp: 300,
                 } satisfies Beat,
             ];
 
@@ -232,7 +243,8 @@ describe("Measure", () => {
                     duration: 0,
                     includeInMeasure: true,
                     notes: null,
-                    i: 1,
+                    index: 1,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     position: 2,
@@ -240,7 +252,8 @@ describe("Measure", () => {
                     duration: 100,
                     includeInMeasure: true,
                     notes: null,
-                    i: 2,
+                    index: 2,
+                    timestamp: 100,
                 } satisfies Beat,
                 {
                     position: 3,
@@ -248,7 +261,8 @@ describe("Measure", () => {
                     duration: 200,
                     includeInMeasure: true,
                     notes: null,
-                    i: 3,
+                    index: 3,
+                    timestamp: 200,
                 } satisfies Beat,
                 {
                     position: 4,
@@ -256,7 +270,8 @@ describe("Measure", () => {
                     duration: 300,
                     includeInMeasure: true,
                     notes: null,
-                    i: 4,
+                    index: 4,
+                    timestamp: 300,
                 } satisfies Beat,
             ];
 

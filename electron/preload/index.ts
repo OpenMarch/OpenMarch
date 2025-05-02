@@ -160,6 +160,11 @@ const APP_API = {
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 
+    // Settings
+    getShowWaveform: () => ipcRenderer.invoke("get:showWaveform"),
+    setShowWaveform: (showWaveform: boolean) =>
+        ipcRenderer.invoke("set:showWaveform", showWaveform),
+
     // Database
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
@@ -177,6 +182,8 @@ const APP_API = {
         ipcRenderer.send("send:selectedMarchers", selectedMarchersId),
     sendLockX: (lockX: boolean) => ipcRenderer.send("send:lockX", lockX),
     sendLockY: (lockY: boolean) => ipcRenderer.send("send:lockY", lockY),
+    sendShowWaveform: (showWaveform: boolean) =>
+        ipcRenderer.send("send:showWaveform", showWaveform),
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
 
@@ -208,6 +215,16 @@ const APP_API = {
         ipcRenderer.removeAllListeners("history:action"),
     undo: () => ipcRenderer.invoke("history:undo"),
     redo: () => ipcRenderer.invoke("history:redo"),
+    flattenUndoGroupsAbove: (group: number) =>
+        ipcRenderer.invoke("history:flattenUndoGroupsAbove", group),
+    getCurrentUndoGroup: () =>
+        ipcRenderer.invoke("history:getCurrentUndoGroup") as Promise<
+            DatabaseResponse<number>
+        >,
+    getCurrentRedoGroup: () =>
+        ipcRenderer.invoke("history:getCurrentRedoGroup") as Promise<
+            DatabaseResponse<number>
+        >,
 
     // FieldProperties
     /** Get the FieldProperties associated with this file */
@@ -234,6 +251,8 @@ const APP_API = {
 
     onImportFieldPropertiesFile: (callback: () => void) =>
         ipcRenderer.on("field_properties:onImport", (event) => callback()),
+    removeImportFieldPropertiesFileListener: () =>
+        ipcRenderer.removeAllListeners("field_properties:onImport"),
 
     // Marcher
     /**
@@ -432,10 +451,15 @@ const APP_API = {
         ipcRenderer.invoke("utility:getRecord") as Promise<
             DatabaseResponse<UtilityRecord | null>
         >,
-    updateUtilityRecord: (utilityRecord: ModifiedUtilityRecord) =>
-        ipcRenderer.invoke("utility:updateRecord", utilityRecord) as Promise<
-            DatabaseResponse<UtilityRecord>
-        >,
+    updateUtilityRecord: (
+        utilityRecord: ModifiedUtilityRecord,
+        useNextUndoGroup: boolean = true,
+    ) =>
+        ipcRenderer.invoke(
+            "utility:updateRecord",
+            utilityRecord,
+            useNextUndoGroup,
+        ) as Promise<DatabaseResponse<UtilityRecord>>,
 
     /******************************/
 

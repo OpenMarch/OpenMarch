@@ -22,7 +22,7 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    const [theme, setTheme] = useState<string>("light");
+    const [theme, setTheme] = useState<string>("dark");
 
     useEffect(() => {
         window.electron.getTheme().then((storedTheme: string | null) => {
@@ -36,9 +36,9 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const getSystemTheme = () => {
-        return window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
+        return window.matchMedia("(prefers-color-scheme: light)").matches
+            ? "light"
+            : "dark";
     };
 
     const applyTheme = (theme: string) => {

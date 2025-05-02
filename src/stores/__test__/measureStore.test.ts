@@ -35,7 +35,7 @@ describe("measureStore", () => {
     // L:1/4
     // Q:1/4=100
     // M:4/4
-    // I:linebreak  $
+    // index:linebreak  $
     // K:C
     // V:1 treble nm="Oboe" snm="Ob."
     // V:1 G z z2   | z4

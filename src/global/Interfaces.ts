@@ -1,21 +1,5 @@
 /** A collection of interfaces and types used throughout the application */
 
-/*********************** Canvas ***********************/
-
-export interface UiSettings {
-    lockX: boolean;
-    lockY: boolean;
-    isPlaying: boolean;
-    /** Boolean to view previous page's paths/dots */
-    previousPaths: boolean;
-    /** Boolean to view next page's paths/dots */
-    nextPaths: boolean;
-    /** Boolean to view lines for every step on the field */
-    gridLines: boolean;
-    /** Boolean to view lines for every four steps on the field */
-    halfLines: boolean;
-}
-
 /*********************** Other ***********************/
 /**
  * This interface should be used when you want a form to be controlled by buttons in a parent component.

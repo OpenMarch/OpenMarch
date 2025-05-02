@@ -404,11 +404,37 @@ export function initHandlers() {
     );
     ipcMain.handle(
         "utility:updateRecord",
-        async (_, utilityRecord: UtilityTable.ModifiedUtilityRecord) =>
+        async (
+            _,
+            utilityRecord: UtilityTable.ModifiedUtilityRecord,
+            useNextUndoGroup: boolean,
+        ) =>
             connectWrapper<UtilityTable.UtilityRecord>(
                 UtilityTable.updateUtilityRecord,
-                { utilityRecord },
+                { utilityRecord, useNextUndoGroup },
             ),
+    );
+
+    // History utilities
+    ipcMain.handle("history:flattenUndoGroupsAbove", async (_, group: number) =>
+        connectWrapper(({ db }) => {
+            History.flattenUndoGroupsAbove(db, group);
+            return { success: true, data: null };
+        }),
+    );
+
+    ipcMain.handle("history:getCurrentRedoGroup", async () =>
+        connectWrapper(({ db }) => {
+            const redoGroup = History.getCurrentRedoGroup(db);
+            return { success: true, data: redoGroup };
+        }),
+    );
+
+    ipcMain.handle("history:getCurrentUndoGroup", async () =>
+        connectWrapper(({ db }) => {
+            const undoGroup = History.getCurrentUndoGroup(db);
+            return { success: true, data: undoGroup };
+        }),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {

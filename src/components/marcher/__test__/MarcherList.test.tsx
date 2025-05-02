@@ -53,8 +53,6 @@ describe("MarcherList", () => {
     let updateMarchersSpy: MockInstance;
 
     beforeEach(async () => {
-        vi.mock("@/stores/marcher/useMarcherStore");
-
         // Mock the getMarchers function to return the mockMarchers array
         vi.spyOn(Marcher, "getMarchers").mockResolvedValue(mockMarchers);
 

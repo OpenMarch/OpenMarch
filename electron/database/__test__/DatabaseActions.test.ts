@@ -330,7 +330,6 @@ describe("Database Actions", () => {
                     );`,
                 ).run();
 
-                createHistoryTables(db);
                 createUndoTriggers(db, table1);
                 createUndoTriggers(db, table2);
 

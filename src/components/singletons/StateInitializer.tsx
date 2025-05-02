@@ -174,6 +174,7 @@ function StateInitializer() {
 
         return () => {
             window.electron.removeHistoryActionListener(); // Remove the event listener
+            window.electron.removeImportFieldPropertiesFileListener();
         };
     }, [
         getMarcher,

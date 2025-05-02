@@ -346,7 +346,6 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
         History.performUndo(db);
         History.clearMostRecentRedo(db);
     } finally {
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
     }
@@ -499,7 +498,6 @@ export function updateItems<
     } finally {
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }
@@ -609,12 +607,12 @@ export function deleteItems<DatabaseItemType>({
             error: {
                 message:
                     error.message ||
-                    `Error deleting item ${currentId} while trying to delete items ${idColumn}"=${ids}`,
+                    `Error deleting item with id="${currentId}" while trying to delete items "${idColumn}"="${Array.from(ids)}"`,
                 stack: error.stack || "Unable to get error stack",
             },
         };
         console.error(
-            `Failed to delete item ${currentId} while trying to delete items ${idColumn}"=${ids}:`,
+            `Failed to delete item with id="${currentId}" while trying to delete items "${idColumn}"="${Array.from(ids)}":`,
             error,
         );
 
@@ -626,7 +624,6 @@ export function deleteItems<DatabaseItemType>({
     } finally {
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
-        if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }

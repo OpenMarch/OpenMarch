@@ -1,4 +1,7 @@
-import Beat, { fromDatabaseBeat } from "@/global/classes/Beat";
+import Beat, {
+    fromDatabaseBeat,
+    calculateTimestamps,
+} from "@/global/classes/Beat";
 import Measure, { fromDatabaseMeasures } from "@/global/classes/Measure";
 import Page, { fromDatabasePages } from "@/global/classes/Page";
 import { create } from "zustand";
@@ -26,6 +29,8 @@ export const useTimingObjectsStore = create<TimingObjectStoreInterface>(
         /**
          * Fetch the pages from the database and updates the store.
          * This is the only way to update retrieve the pages from the database that ensures the UI is updated.
+         *
+         * The objects are constructed in the order of Beats -> Measures -> Pages.
          */
         fetchTimingObjects: async (): Promise<void> => {
             const pagesResponse = await window.electron.getPages();
@@ -50,7 +55,12 @@ export const useTimingObjectsStore = create<TimingObjectStoreInterface>(
                         "Could not fetch measures",
                 );
             }
-            const createdBeats = beatsResponse.data.map(fromDatabaseBeat);
+            // First create beats with default timestamps
+            const rawBeats = beatsResponse.data.map((beat, index) =>
+                fromDatabaseBeat(beat, index),
+            );
+            // Then calculate the actual timestamps based on durations
+            const createdBeats = calculateTimestamps(rawBeats);
             const createdMeasures = fromDatabaseMeasures({
                 databaseMeasures: measuresResponse.data,
                 allBeats: createdBeats,

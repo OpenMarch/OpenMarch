@@ -50,7 +50,6 @@ export interface NewPageArgs {
     start_beat: number;
     notes?: string | null;
     is_subset: boolean;
-    last_page_counts?: number;
 }
 
 interface RealNewPageArgs {

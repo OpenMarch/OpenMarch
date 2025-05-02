@@ -3,11 +3,15 @@ import { BugNote, WarningNote } from "./ui/Note";
 import BugReport from "./ui/BugReport";
 import ThemeSwitcher from "./titlebar/ThemeSwitcher";
 import TitleBar from "./titlebar/TitleBar";
+import { useTheme } from "@/context/ThemeContext";
+import clsx from "clsx";
+        
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
 }
 
 export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
+    const { theme } = useTheme();
     async function handleCreateNew() {
         const dataBaseIsReady = await window.electron.databaseCreate();
         setDatabaseIsReady(dataBaseIsReady > 0);
@@ -21,8 +25,13 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     return (
         <div className="bg-launch-gradient flex h-screen w-screen flex-col content-between">
             <TitleBar noControls />
-            <div className="flex h-full min-h-0 w-full min-w-0 gap-6 p-6">
-                <div className="flex h-full w-full flex-col items-start justify-center gap-32 p-32 font-bold text-text">
+            <div
+                className={clsx(
+                    "flex h-full min-h-0 w-full min-w-0 gap-6 p-6",
+                    theme === "dark" ? "text-white" : "text-black",
+                )}
+            >
+                <div className="flex h-full w-full flex-col items-start justify-center gap-32 p-32 font-bold">
                     <h1 className="text-[4rem] leading-none">
                         Welcome to OpenMarch
                     </h1>
