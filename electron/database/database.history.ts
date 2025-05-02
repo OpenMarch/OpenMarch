@@ -85,7 +85,7 @@ export type HistoryTableRow = {
  */
 export function createHistoryTables(db: Database.Database) {
     const sqlStr = (tableName: string) => `
-    CREATE TABLE IF NOT EXISTS ${tableName} (
+    CREATE TABLE ${tableName} (
         "sequence" INTEGER PRIMARY KEY,
         "history_group" INTEGER NOT NULL,
         "sql" TEXT NOT NULL
@@ -95,7 +95,7 @@ export function createHistoryTables(db: Database.Database) {
     db.prepare(sqlStr(Constants.RedoHistoryTableName)).run();
 
     db.prepare(
-        `CREATE TABLE IF NOT EXISTS ${Constants.HistoryStatsTableName} (
+        `CREATE TABLE ${Constants.HistoryStatsTableName} (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         cur_undo_group INTEGER NOT NULL,
         cur_redo_group INTEGER NOT NULL,

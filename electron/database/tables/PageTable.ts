@@ -1,102 +1,94 @@
 import Constants from "../../../src/global/Constants";
 import * as History from "../database.history";
 import Database from "better-sqlite3";
-import {
-    ModifiedPageArgs,
-    NewPageArgs,
-} from "../../../src/global/classes/Page";
 import * as DbActions from "../DatabaseActions";
-import * as MarcherTable from "./MarcherTable";
 import * as MarcherPageTable from "./MarcherPageTable";
-import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
-
-/** How a page is represented in the database */
-export interface DatabasePage {
-    id: number;
-    counts: number;
-    next_page_id: number | null;
-    is_subset: boolean;
-    notes: string | null;
-}
+import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
+import { DatabaseBeat, getBeat } from "./BeatTable";
+import { getMarchers } from "./MarcherTable";
+import { updateUtilityRecord, UtilityRecord } from "./UtilityTable";
 
 export const FIRST_PAGE_ID = 0;
 
-interface NewPage {
-    next_page_id: number | null;
-    notes?: string;
-    counts: number;
+/** How a page is represented in the database */
+/** Represents a page in the database */
+export interface DatabasePage {
+    /** Unique identifier for the page */
+    id: number;
+    /** Indicates if this page is a subset of another page */
+    is_subset: boolean;
+    /** Optional notes or description for the page */
+    notes: string | null;
+    /** The beat number where this page starts */
+    start_beat: number;
+}
+interface RealDatabasePage {
+    /** Unique identifier for the page */
+    id: number;
+    /** Indicates if this page is a subset of another page */
+    is_subset: 0 | 1;
+    /** Optional notes or description for the page */
+    notes: string | null;
+    /** The beat number where this page starts */
+    start_beat: number;
+    /** Timestamp of when the page was created */
+    created_at: string;
+    /** Timestamp of when the page was last updated */
+    updated_at: string;
+}
+
+const realDatabasePageToDatabasePage = (
+    page: RealDatabasePage,
+): DatabasePage => {
+    return {
+        ...page,
+        is_subset: page.is_subset === 1,
+    };
+};
+
+export interface NewPageArgs {
+    start_beat: number;
+    notes?: string | null;
+    is_subset: boolean;
+    last_page_counts?: number;
+}
+
+interface RealNewPageArgs {
+    start_beat: number;
+    notes?: string | null;
     is_subset: 0 | 1;
 }
-
-/* ============================ Page ============================ */
-/**
- * processes the response from the database to convert from a DatabasePage[] to a Page[].
- *
- * @param response The response from the database with an array of pages
- * @returns The processed response
- */
-function processPageTableResponse(
-    response: DbActions.DatabaseResponse<DatabasePage[]>,
-): DbActions.DatabaseResponse<DatabasePage[]> {
-    if (
-        !response.success ||
-        response.data === undefined ||
-        response.data === null
-    ) {
-        console.error("Failed to get pages:", response.error);
-        return response;
-    }
-    let processedData;
-    processedData = response.data.map((page: any) => {
-        return {
-            ...page,
-            is_subset: page.is_subset === 1, // Convert to boolean
-        };
-    });
-    return { ...response, data: processedData };
-}
-
-/**
- * Gets the first page in the database linked list.
- *
- * This will throw an error if the first page is not found and there are pages in the database.
- *
- * @param db The database connection, or undefined to create a new connection
- * @returns DatabaseResponse with the first page in the database
- */
-export function getFirstPage({
-    db,
-}: {
-    db: Database.Database;
-}): DbActions.DatabaseResponse<DatabasePage | undefined> {
-    const allPages = getPages({ db }).data;
-    const nextPageIds = new Set(allPages.map((page) => page.next_page_id));
-    const firstPage = allPages.find((page) => !nextPageIds.has(page.id));
-    if (!firstPage && allPages.length > 0) {
-        const message = "Failed to find first page! The linked list is broken.";
-        console.error(message);
-        return {
-            success: false,
-            error: { message },
-            data: undefined,
-        };
-    } else if (!firstPage) {
-        console.log("No pages found in the database");
-        // There are no pages in the database
-        return {
-            success: true,
-            data: undefined,
-        };
-    }
-    const response = processPageTableResponse({
-        success: true,
-        data: [firstPage],
-    });
+const newPageArgsToRealNewPageArgs = (args: NewPageArgs): RealNewPageArgs => {
     return {
-        ...response,
-        data: response.data[0],
+        ...args,
+        is_subset: args.is_subset ? 1 : 0,
     };
+};
+
+export interface ModifiedPageArgs {
+    id: number;
+    start_beat?: number;
+    notes?: string | null;
+    is_subset?: boolean;
+    last_page_counts?: number;
 }
+
+interface RealModifiedPageArgs {
+    id: number;
+    start_beat?: number;
+    notes?: string | null;
+    is_subset?: 0 | 1;
+}
+const modifiedPageArgsToRealModifiedPageArgs = (
+    args: ModifiedPageArgs,
+): RealModifiedPageArgs => {
+    return {
+        ...args,
+        ...(args.is_subset === undefined
+            ? {}
+            : { is_subset: (args.is_subset ? 1 : 0) as 0 | 1 }),
+    } as RealModifiedPageArgs;
+};
 
 /**
  * Gets all of the pages in the database.
@@ -109,23 +101,95 @@ export function getPages({
 }: {
     db: Database.Database;
 }): DbActions.DatabaseResponse<DatabasePage[]> {
-    const response = DbActions.getAllItems<DatabasePage>({
+    const response = DbActions.getAllItems<RealDatabasePage>({
         tableName: Constants.PageTableName,
         db,
     });
-    return processPageTableResponse(response);
+    return {
+        success: response.success,
+        data: response.data.map(realDatabasePageToDatabasePage),
+    };
 }
 
-interface ModifiedDatabasePageArgs {
-    /**
-     * The id of the page to update.
-     */
-    id: number;
-    /** If a page is a subset, its name will have an alphabetical letter appended. */
-    is_subset?: 0 | 1;
-    counts?: number;
-    notes?: string | null;
+/**
+ * Fetches the previous or next page from the database based on a given page ID.
+ * @param pageId - The ID of the current page.
+ * @param direction - Either "previous" or "next".
+ * @returns The found page or null if no page is found.
+ */
+export function getAdjacentPage({
+    db,
+    pageId,
+    direction,
+}: {
+    db: Database.Database;
+    pageId: number;
+    direction: "previous" | "next";
+}): DatabasePage | null {
+    // Get the current page
+    const currentPageResponse = DbActions.getItem<RealDatabasePage>({
+        tableName: Constants.PageTableName,
+        db,
+        id: pageId,
+    });
+
+    if (!currentPageResponse.success || !currentPageResponse.data) {
+        throw new Error(`Page with ID ${pageId} not found.`);
+    }
+
+    // Get the beat for the current page to access its position
+    const currentBeatResponse = getBeat({
+        db,
+        beatId: currentPageResponse.data.start_beat,
+    });
+
+    if (!currentBeatResponse.success || !currentBeatResponse.data) {
+        throw new Error(
+            `Beat with ID ${currentPageResponse.data.start_beat} not found.`,
+        );
+    }
+
+    const currentBeatPosition = currentBeatResponse.data.position;
+
+    // Query that joins the Page and Beat tables to compare by beat position
+    const query = `
+        SELECT p.*
+        FROM "${Constants.PageTableName}" p
+        JOIN "${Constants.BeatsTableName}" b ON p.start_beat = b.id
+        WHERE b.position ${direction === "previous" ? "<" : ">"} ?
+        ORDER BY b.position ${direction === "previous" ? "DESC" : "ASC"}
+        LIMIT 1
+    `;
+
+    const adjacentPageStmt = db.prepare(query);
+    const adjacentPage = adjacentPageStmt.get(
+        currentBeatPosition,
+    ) as DatabasePage;
+
+    return adjacentPage || null;
 }
+
+/**
+ * Updates the last page counts in the utility record. Does not use the next undo group.
+ *
+ * @param db The database connection.
+ * @param lastPageCounts The number of last page counts to update.
+ * @returns A database response containing the updated utility record.
+ */
+export const updateLastPageCounts = ({
+    db,
+    lastPageCounts,
+}: {
+    db: Database.Database;
+    lastPageCounts: number;
+}): DbActions.DatabaseResponse<UtilityRecord> =>
+    updateUtilityRecord({
+        db,
+        utilityRecord: {
+            last_page_counts: lastPageCounts,
+        },
+        useNextUndoGroup: false,
+    });
 
 /**
  * Create one or many new pages.
@@ -140,7 +204,13 @@ export function createPages({
     newPages: NewPageArgs[];
     db: Database.Database;
 }): DbActions.DatabaseResponse<DatabasePage[]> {
-    const createdPages: DatabasePage[] = [];
+    if (newPages.length === 0) {
+        console.log("No new pages to create");
+        return {
+            success: true,
+            data: [],
+        };
+    }
     let output: DbActions.DatabaseResponse<DatabasePage[]>;
     console.log("\n=========== start createPages ===========");
 
@@ -149,125 +219,115 @@ export function createPages({
     let actionWasPerformed = false;
 
     // Reverse the order of the new pages so that they are created in the correct order
-    const reversedNewPages = [...newPages].reverse();
     try {
-        for (const newPage of reversedNewPages) {
-            let itemToInsert: NewPage;
-            const { previousPageId, isSubset, ...rest } = newPage;
-
-            // Get the previous page from the database
-            const previousPage = DbActions.getItem<DatabasePage>({
-                db,
-                tableName: Constants.PageTableName,
-                id: previousPageId,
-            }).data;
-
-            if (previousPage === undefined) {
+        const createPagesResponse = DbActions.createItems<
+            RealDatabasePage,
+            RealNewPageArgs
+        >({
+            db,
+            tableName: Constants.PageTableName,
+            items: newPages.map(newPageArgsToRealNewPageArgs),
+            functionName: "createPages",
+            useNextUndoGroup: false,
+        });
+        if (
+            !createPagesResponse.success ||
+            createPagesResponse.data.length === 0
+        ) {
+            console.error("Failed to create pages:", createPagesResponse.error);
+            return { ...createPagesResponse, data: [] };
+        }
+        actionWasPerformed = true;
+        const pageBeatMap = new Map<number, DatabaseBeat>();
+        for (const page of createPagesResponse.data) {
+            const startBeatResponse = getBeat({ db, beatId: page.start_beat });
+            if (!startBeatResponse.success || !startBeatResponse.data) {
+                console.error(
+                    `Failed to get start beat ${page.start_beat.toString()}:`,
+                    startBeatResponse.error,
+                );
                 throw new Error(
-                    `CreatePages: Could not find page with id ${previousPageId} to use as a previous page.`,
+                    "Failed to get start beat " + page.start_beat.toString(),
                 );
             }
+            pageBeatMap.set(page.id, startBeatResponse.data);
+        }
+        const sortedNewPages = createPagesResponse.data.sort(
+            (a, b) =>
+                pageBeatMap.get(a.id)!.position -
+                pageBeatMap.get(b.id)!.position,
+        );
 
-            // Define the new page by getting the next_page_id from the previous page
-            itemToInsert = {
-                ...rest,
-                next_page_id: previousPage?.next_page_id || null,
-                is_subset: isSubset ? 1 : 0,
-            };
-
-            const createPageResponse = processPageTableResponse(
-                DbActions.createItems<DatabasePage, NewPage>({
+        // Create the marcher pages
+        const marchersResponse = getMarchers({ db });
+        if (!marchersResponse.success) {
+            console.error("Failed to get marchers:", marchersResponse.error);
+            throw new Error("Failed to get marchers");
+        }
+        if (marchersResponse.data.length > 0) {
+            for (const page of sortedNewPages) {
+                const newMarcherPages: ModifiedMarcherPageArgs[] = [];
+                const previousPage = getAdjacentPage({
                     db,
-                    tableName: Constants.PageTableName,
-                    items: [itemToInsert],
-                    useNextUndoGroup: false,
-                    printHeaders: false,
-                }),
-            );
-
-            actionWasPerformed = true;
-            if (!createPageResponse.success) {
-                throw new Error(
-                    "Failed to create page: " +
-                        createPageResponse.error?.message || "",
-                );
-            }
-            createdPages.push(createPageResponse.data[0]);
-
-            // Update the previous page to point to the new page
-            if (previousPage) {
-                const updateResponse = DbActions.updateItems<
-                    DatabasePage,
-                    { id: number; next_page_id: number | null }
-                >({
-                    db,
-                    tableName: Constants.PageTableName,
-                    items: [
-                        {
-                            id: previousPage.id,
-                            next_page_id: createPageResponse.data[0].id,
-                        },
-                    ],
-                    useNextUndoGroup: false,
-                    printHeaders: false,
+                    pageId: page.id,
+                    direction: "previous",
                 });
+                if (previousPage) {
+                    const previousPageMarcherPages =
+                        MarcherPageTable.getMarcherPages({
+                            db,
+                            page_id: previousPage.id,
+                        });
 
-                if (!updateResponse.success) {
-                    throw new Error(
-                        "Failed to update previous page's next_page_id: " +
-                            updateResponse.error?.message || "",
+                    if (
+                        !previousPageMarcherPages.success ||
+                        !previousPageMarcherPages.data
+                    ) {
+                        console.error(
+                            "Failed to get marcher pages:",
+                            previousPageMarcherPages.error,
+                        );
+                        throw new Error("Failed to get marcher pages");
+                    }
+                    for (const marcherPage of previousPageMarcherPages.data)
+                        newMarcherPages.push({
+                            ...marcherPage,
+                            page_id: page.id,
+                        });
+                } else {
+                    for (const marcher of marchersResponse.data) {
+                        newMarcherPages.push({
+                            marcher_id: marcher.id,
+                            page_id: page.id,
+                            x: 100,
+                            y: 100,
+                        });
+                    }
+                }
+
+                const marcherPagesResponse =
+                    MarcherPageTable.createMarcherPages({
+                        db,
+                        newMarcherPages,
+                        useNextUndoGroup: false,
+                    });
+                if (
+                    !marcherPagesResponse.success ||
+                    !marcherPagesResponse.data
+                ) {
+                    console.error(
+                        "Failed to create marcher pages:",
+                        marcherPagesResponse.error,
                     );
+                    throw new Error("Failed to create marcher pages");
                 }
-            }
-
-            // Add a marcherPage for this page for each marcher
-            // Get all existing marchers
-            const marchers = MarcherTable.getMarchers({ db }).data;
-            const previousPageMarcherPages = MarcherPageTable.getMarcherPages({
-                db,
-                page_id: previousPage?.id || 0,
-            }).data;
-            /** A map that contains all of the coordinates of the previous page with the marcher_id as the key */
-            const previousPageMarcherPageCoordsMap = new Map<
-                number,
-                { x: number; y: number }
-            >(
-                previousPageMarcherPages.map((marcherPage) => [
-                    marcherPage.marcher_id,
-                    { x: marcherPage.x, y: marcherPage.y },
-                ]),
-            );
-            // For each marcher, create a new MarcherPage
-            const newMarcherPages: ModifiedMarcherPageArgs[] = [];
-            for (const marcher of marchers) {
-                let coords = previousPageMarcherPageCoordsMap.get(marcher.id);
-                if (!coords) {
-                    coords = {
-                        x: 100,
-                        y: 100,
-                    };
-                }
-
-                newMarcherPages.push({
-                    marcher_id: marcher.id,
-                    page_id: createPageResponse.data[0].id,
-                    ...coords,
-                });
-            }
-            const createMarcherPageResponse =
-                MarcherPageTable.createMarcherPages({
-                    db,
-                    newMarcherPages,
-                    useNextUndoGroup: false,
-                });
-            if (!createMarcherPageResponse.success) {
-                throw new Error(
-                    `Failed to create marcherPage for page_id=${createPageResponse.data[0].id}: ` +
-                        createMarcherPageResponse.error?.message || "",
-                );
             }
         }
-        output = { success: true, data: createdPages };
+
+        output = {
+            ...createPagesResponse,
+            data: createPagesResponse.data.map(realDatabasePageToDatabasePage),
+        };
         History.incrementUndoGroup(db);
     } catch (error: any) {
         console.error("Error creating page. Rolling back changes.", error);
@@ -304,48 +364,31 @@ export function updatePages({
     modifiedPages: ModifiedPageArgs[];
 }): DbActions.DatabaseResponse<DatabasePage[]> {
     console.log("\n=========== start updatePages ===========");
+    // Ensure the first page is not updated
+    modifiedPages = modifiedPages.filter((page) => page.id !== FIRST_PAGE_ID);
     const pages = getPages({ db });
     if (!pages.success) {
         throw new Error("error getting pages");
     }
-    const pagesMap = new Map<number, DatabasePage>(
-        pages.data.map((page) => [page.id, page]),
+    const realModifiedPages = modifiedPages.map(
+        modifiedPageArgsToRealModifiedPageArgs,
     );
-    const newModifiedPages: ModifiedDatabasePageArgs[] = modifiedPages.map(
-        (modifiedPage) => {
-            let output: ModifiedDatabasePageArgs;
-            // Do not modify counts or is_subset in first_page
-            if (modifiedPage.id === FIRST_PAGE_ID) {
-                output = { ...modifiedPage, counts: 0, is_subset: 0 };
-            } else {
-                let isSubset = modifiedPage.is_subset;
-                if (isSubset === undefined) {
-                    const oldPage = pagesMap.get(modifiedPage.id);
-                    if (!oldPage) {
-                        throw new Error(
-                            `Could not find page with id ${modifiedPage.id}`,
-                        );
-                    }
-                    isSubset = oldPage.is_subset;
-                }
-                output = {
-                    ...modifiedPage,
-                    is_subset: isSubset ? 1 : 0,
-                };
-            }
-            return output;
-        },
-    );
-    const response = processPageTableResponse(
-        DbActions.updateItems<DatabasePage, ModifiedDatabasePageArgs>({
-            db,
-            items: newModifiedPages,
-            tableName: Constants.PageTableName,
-            printHeaders: false,
-        }),
-    );
+    const response = DbActions.updateItems<
+        RealDatabasePage,
+        RealModifiedPageArgs
+    >({
+        db,
+        items: realModifiedPages,
+        tableName: Constants.PageTableName,
+        printHeaders: false,
+        useNextUndoGroup: true,
+    });
+
     console.log("=========== end updatePages ===========\n");
-    return response;
+    return {
+        ...response,
+        data: response.data.map(realDatabasePageToDatabasePage),
+    };
 }
 
 /**
@@ -362,102 +405,18 @@ export function deletePages({
     pageIds: Set<number>;
     db: Database.Database;
 }): DbActions.DatabaseResponse<DatabasePage[]> {
-    console.log("\n=========== start deletePages ===========");
-    let output: DbActions.DatabaseResponse<DatabasePage[]>;
-
-    // Do not delete the first page
+    // Ensure the first page is not deleted
     pageIds.delete(FIRST_PAGE_ID);
-
-    History.incrementUndoGroup(db);
-    try {
-        // Update the next_page_id of the previous page to point to the next page
-        const pages = getPages({ db }).data;
-        const pagesMap = new Map(pages.map((page) => [page.id, page]));
-        const modifiedPages: { id: number; next_page_id: number | null }[] = [];
-        const firstPageResponse = getFirstPage({ db });
-        if (!firstPageResponse.success) {
-            throw new Error(
-                firstPageResponse.error?.message || "No first page found",
-            );
-        }
-        const pageIdsToDelete = pageIds;
-        let currentPage = firstPageResponse.data || null;
-
-        // Iterate through the pages linked list and update the next_page_id
-        // to point to the next page that is not being deleted
-        while (currentPage?.next_page_id) {
-            if (pageIdsToDelete.has(currentPage.id)) {
-                // Set the next_page_id of the page that will be deleted to null to avoid FOREIGN KEY constraint
-                modifiedPages.push({
-                    id: currentPage.id,
-                    next_page_id: null,
-                });
-            } else if (
-                currentPage.next_page_id !== null &&
-                pageIdsToDelete.has(currentPage.next_page_id)
-            ) {
-                // If the next page is being deleted, find the next page that is not being deleted
-                let nextPage: DatabasePage | null =
-                    pagesMap.get(currentPage.next_page_id) || null;
-
-                // Find the next page that is not being deleted
-                while (
-                    nextPage !== null &&
-                    nextPage.next_page_id !== null &&
-                    pageIdsToDelete.has(nextPage.next_page_id)
-                ) {
-                    nextPage = pagesMap.get(nextPage.next_page_id) || null;
-                }
-
-                // Update the next_page_id of the current page to the next page that is not being deleted
-                modifiedPages.push({
-                    id: currentPage.id,
-                    next_page_id: nextPage?.next_page_id || null,
-                });
-            }
-            currentPage = pagesMap.get(currentPage.next_page_id) || null;
-        }
-
-        const updateResponse = DbActions.updateItems<DatabasePage, any>({
-            db,
-            items: modifiedPages,
-            tableName: Constants.PageTableName,
-            useNextUndoGroup: false,
-            printHeaders: false,
-        });
-        if (!updateResponse.success) {
-            throw new Error(
-                "Failed to update the next_page_id while deleting pages\n" +
-                    (updateResponse.error?.message || ""),
-            );
-        }
-
-        const deletePagesResponse = processPageTableResponse(
-            DbActions.deleteItems<DatabasePage>({
-                ids: pageIds,
-                tableName: Constants.PageTableName,
-                db,
-                useNextUndoGroup: false, // Don't do this
-                printHeaders: false,
-            }),
-        );
-        if (!deletePagesResponse.success)
-            throw new Error(
-                "Failed to delete pages " +
-                    (deletePagesResponse.error?.message || ""),
-            );
-        output = deletePagesResponse;
-    } catch (error: any) {
-        console.error("Failed to delete pages.  Rolling back changes", error);
-        History.performUndo(db);
-        History.clearMostRecentRedo(db);
-        output = {
-            success: false,
-            error: { message: error, stack: error.stack },
-            data: [],
-        };
-    } finally {
-        console.log("=========== end deletePages ===========\n");
-    }
-    return output;
+    const response = DbActions.deleteItems<RealDatabasePage>({
+        db,
+        ids: pageIds,
+        functionName: "deletePages",
+        tableName: Constants.PageTableName,
+        printHeaders: false,
+        useNextUndoGroup: true,
+    });
+    return {
+        ...response,
+        data: response.data.map(realDatabasePageToDatabasePage),
+    };
 }

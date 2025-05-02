@@ -1,83 +1,25 @@
+import * as UtilityTable from "../UtilityTable";
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import * as PageTable from "../PageTable";
 import * as MarcherTable from "../MarcherTable";
 import * as MarcherPageTable from "../MarcherPageTable";
-import * as History from "../../database.history";
-import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
-import { NewMarcherArgs } from "@/global/classes/Marcher";
-import MarcherPage from "@/global/classes/MarcherPage";
-import Constants from "@/global/Constants";
+import { NewMarcherArgs } from "../../../../src/global/classes/Marcher";
+import MarcherPage from "../../../../src/global/classes/MarcherPage";
+import Constants from "../../../../src/global/Constants";
 import { initTestDatabase } from "./testUtils";
-
-const sorter = (a: any, b: any) => a.id - b.id;
-const sort = (items: PageTable.DatabasePage[]): PageTable.DatabasePage[] => {
-    // Create a map to access items by their id
-    const itemMap = new Map<number, PageTable.DatabasePage>();
-    const nextIdMap = new Map<number, number>(); // Map from id to next_page_id
-
-    // Populate maps
-    for (const item of items) {
-        itemMap.set(item.id, item);
-        if (item.next_page_id) {
-            nextIdMap.set(item.id, item.next_page_id);
-        }
-    }
-
-    // Find the starting item (it has no previous reference as next_page_id)
-    const startItem = items.find(
-        (item) => !Array.from(nextIdMap.values()).includes(item.id),
-    );
-
-    if (!startItem) {
-        throw new Error("Could not find the start of the linked list.");
-    }
-
-    // Build the sorted list by following the `next_page_id` links
-    const sortedList: PageTable.DatabasePage[] = [];
-    let currentItem: PageTable.DatabasePage | undefined = startItem;
-
-    while (currentItem) {
-        sortedList.push(currentItem);
-        currentItem = currentItem.next_page_id
-            ? itemMap.get(currentItem.next_page_id)
-            : undefined;
-    }
-
-    return sortedList;
-};
-
-const trimData = (data: any[]) =>
-    data.map((page: any) => {
-        const { created_at, updated_at, ...rest } = page;
-        return { ...rest, notes: rest.notes ? rest.notes : null };
-    });
-
-function firstPage(nextPageId: number | null = null): PageTable.DatabasePage {
-    return {
-        id: 0,
-        counts: 0,
-        is_subset: false,
-        notes: null,
-        next_page_id: nextPageId,
-    };
-}
-
-function trimAndSort(pages: PageTable.DatabasePage[]) {
-    return trimData(sort(pages));
-}
-
-function addFirstPage(
-    currentPages: PageTable.DatabasePage[],
-): PageTable.DatabasePage[] {
-    const sortedPages = trimAndSort(currentPages);
-    return [firstPage(sortedPages[0].id), ...sortedPages];
-}
+import { NewPageArgs } from "../PageTable";
+import { DatabaseBeat, FIRST_BEAT_ID, getBeats } from "../BeatTable";
+import * as History from "../../database.history";
 
 describe("PageTable", () => {
     describe("createPageTable", () => {
         let db: Database.Database;
-
+        const trimData = (data: any[]) =>
+            data.map((page: any) => {
+                const { created_at, updated_at, ...rest } = page;
+                return { ...rest, notes: rest.notes ? rest.notes : null };
+            });
         beforeEach(() => {
             db = initTestDatabase();
         });
@@ -87,17 +29,12 @@ describe("PageTable", () => {
             let tableInfo = db
                 .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
                 .all() as { name: string }[];
-            expect(tableInfo.length).toBe(7);
             // Expect the page table to be created
-            tableInfo = db
-                .prepare(`PRAGMA table_info(${Constants.PageTableName})`)
-                .all() as { name: string }[];
             const expectedColumns = [
                 "id",
                 "is_subset",
-                "next_page_id",
                 "notes",
-                "counts",
+                "start_beat",
                 "created_at",
                 "updated_at",
             ];
@@ -105,7 +42,7 @@ describe("PageTable", () => {
             expect(columnNames.sort()).toEqual(expectedColumns.sort());
         });
 
-        it("Page 1 should exist at table creation with zero counts", () => {
+        it("Page 1 should exist at table creation with zero start_beat", () => {
             const allPages = PageTable.getPages({ db });
             expect(allPages.success).toBeTruthy();
             expect(trimData(allPages.data)).toEqual([
@@ -113,8 +50,7 @@ describe("PageTable", () => {
                     id: 0,
                     is_subset: false,
                     notes: null,
-                    counts: 0,
-                    next_page_id: null,
+                    start_beat: FIRST_BEAT_ID,
                 },
             ]);
         });
@@ -122,6 +58,56 @@ describe("PageTable", () => {
 
     describe("database interactions", () => {
         let db: Database.Database;
+        const sort = (
+            items: PageTable.DatabasePage[],
+        ): PageTable.DatabasePage[] => {
+            // Create a map to access items by their id
+            const beats = getBeats({ db });
+            const beatMap = new Map<number, DatabaseBeat>(
+                beats.data.map((beat) => [beat.id, beat]),
+            );
+
+            return items.sort((a, b) => {
+                const aBeat = beatMap.get(a.start_beat);
+                const bBeat = beatMap.get(b.start_beat);
+                if (!aBeat || !bBeat) {
+                    console.log("aBeat", a.start_beat, aBeat);
+                    console.log("bBeat", b.start_beat, bBeat);
+                    throw new Error(
+                        `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
+                    );
+                }
+                return aBeat!.position - bBeat!.position;
+            });
+        };
+
+        const trimData = (data: any[]) =>
+            data.map((page: any) => {
+                const { created_at, updated_at, ...rest } = page;
+                return { ...rest, notes: rest.notes ? rest.notes : null };
+            });
+
+        function firstPage(
+            nextPageId: number | null = null,
+        ): PageTable.DatabasePage {
+            return {
+                id: 0,
+                start_beat: FIRST_BEAT_ID,
+                is_subset: false,
+                notes: null,
+            };
+        }
+
+        function trimAndSort(pages: PageTable.DatabasePage[]) {
+            return trimData(sort(pages));
+        }
+
+        function addFirstPage(
+            currentPages: PageTable.DatabasePage[],
+        ): PageTable.DatabasePage[] {
+            const sortedPages = trimAndSort(currentPages);
+            return [firstPage(sortedPages[0].id), ...sortedPages];
+        }
 
         beforeEach(() => {
             db = initTestDatabase();
@@ -129,15 +115,18 @@ describe("PageTable", () => {
 
         describe("createPages", () => {
             it("should insert a new page into the database", () => {
-                const newPages = [
-                    { counts: 10, isSubset: false, previousPageId: 0 },
+                const newPages: NewPageArgs[] = [
+                    {
+                        is_subset: false,
+                        notes: null,
+                        start_beat: 8,
+                    },
                 ];
                 const expectedCreatedPages = [
                     {
                         id: 1,
-                        counts: 10,
+                        start_beat: 8,
                         is_subset: false,
-                        next_page_id: null,
                         notes: null,
                     },
                 ];
@@ -145,11 +134,7 @@ describe("PageTable", () => {
                 const result = PageTable.createPages({ newPages, db });
 
                 expect(result.success).toBe(true);
-                const trimmedData = result.data.map((page: any, index) => {
-                    const { created_at, updated_at, ...rest } = page;
-                    return { ...rest, id: index + 1 };
-                });
-                expect(trimmedData).toEqual(expectedCreatedPages);
+                expect(trimData(result.data)).toEqual(expectedCreatedPages);
 
                 const allMarchers = PageTable.getPages({ db });
                 expect(allMarchers.success).toBe(true);
@@ -157,14 +142,13 @@ describe("PageTable", () => {
 
             it("should insert sequential pages into the database with previous page defined", () => {
                 let newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
+                    { start_beat: 12, is_subset: false },
                 ];
                 let expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
                         id: 1,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: null,
                         notes: null,
                     },
                 ];
@@ -183,24 +167,21 @@ describe("PageTable", () => {
                 // NEW PAGE 2
                 newPages = [
                     {
-                        counts: 10,
-                        isSubset: true,
-                        previousPageId: 1,
+                        start_beat: 15,
+                        is_subset: true,
                     },
                 ];
                 expectedCreatedPages = [
                     {
                         id: 1,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 15,
                         is_subset: true,
-                        next_page_id: null,
                         notes: null,
                     },
                 ];
@@ -217,38 +198,35 @@ describe("PageTable", () => {
                 // NEW PAGE 3
                 newPages = [
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 2,
+                        start_beat: 16,
+                        is_subset: false,
                         notes: "jeff notes",
                     },
                 ];
                 expectedCreatedPages = [
                     {
                         id: 1,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 15,
                         is_subset: true,
-                        next_page_id: 3,
                         notes: null,
                     },
                     {
                         id: 3,
-                        counts: 16,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "jeff notes",
                     },
                 ];
 
                 createResult = PageTable.createPages({ newPages, db });
                 getResult = PageTable.getPages({ db });
+                expect(createResult.success).toBe(true);
                 expect(trimAndSort(createResult.data)).toEqual([
                     expectedCreatedPages[2],
                 ]);
@@ -257,16 +235,48 @@ describe("PageTable", () => {
                 );
             });
 
+            it("should fail to insert a page with duplicate start_beat", () => {
+                const firstPage: NewPageArgs[] = [
+                    {
+                        start_beat: 5,
+                        is_subset: false,
+                        notes: null,
+                    },
+                ];
+
+                // Insert first page successfully
+                const firstResult = PageTable.createPages({
+                    newPages: firstPage,
+                    db,
+                });
+                expect(firstResult.success).toBe(true);
+
+                // Attempt to insert page with same start_beat
+                const duplicatePage: NewPageArgs[] = [
+                    {
+                        start_beat: 5,
+                        is_subset: true,
+                        notes: "This should fail",
+                    },
+                ];
+
+                const duplicateResult = PageTable.createPages({
+                    newPages: duplicatePage,
+                    db,
+                });
+                expect(duplicateResult.success).toBe(false);
+                expect(duplicateResult.error).toBeDefined();
+            });
+
             it("should insert new pages at the start of the database with no previous page defined", () => {
                 let newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
+                    { start_beat: 12, is_subset: false },
                 ];
                 let expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
                         id: 1,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: null,
                         notes: null,
                     },
                 ];
@@ -285,24 +295,21 @@ describe("PageTable", () => {
                 // NEW PAGE 2
                 newPages = [
                     {
-                        counts: 10,
-                        isSubset: true,
-                        previousPageId: 0,
+                        start_beat: 10,
+                        is_subset: true,
                     },
                 ];
                 expectedCreatedPages = [
                     {
                         id: 1,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: null,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 1,
                         notes: null,
                     },
                 ];
@@ -321,32 +328,28 @@ describe("PageTable", () => {
                 // NEW PAGE 3
                 newPages = [
                     {
-                        counts: 16,
-                        isSubset: false,
+                        start_beat: 16,
+                        is_subset: false,
                         notes: "jeff notes",
-                        previousPageId: 0,
                     },
                 ];
                 expectedCreatedPages = [
                     {
                         id: 1,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: null,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 1,
                         notes: null,
                     },
                     {
                         id: 3,
-                        counts: 16,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: "jeff notes",
                     },
                 ];
@@ -365,35 +368,31 @@ describe("PageTable", () => {
 
             it("should insert new pages into the database at the same time", () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    { start_beat: 12, is_subset: false },
+                    { start_beat: 10, is_subset: true },
                     {
-                        counts: 16,
-                        isSubset: false,
+                        start_beat: 16,
+                        is_subset: false,
                         notes: "jeff notes",
-                        previousPageId: 0,
                     },
                 ];
-                const expectedCreatedPages = [
+                const expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
-                        id: 1,
-                        counts: 16,
+                        id: 3,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "jeff notes",
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 1,
                         notes: null,
                     },
                     {
-                        id: 3,
-                        counts: 12,
+                        id: 1,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: null,
                     },
                 ];
@@ -412,35 +411,32 @@ describe("PageTable", () => {
 
             it("should insert new pages into the middle of the database at the same time", () => {
                 let newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    { start_beat: 12, is_subset: false },
+                    { start_beat: 10, is_subset: true },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: false,
+
                         notes: "jeff notes",
                     },
                 ];
                 let expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
-                        id: 1,
-                        counts: 16,
+                        id: 3,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "jeff notes",
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 1,
                         notes: null,
                     },
                     {
-                        id: 3,
-                        counts: 12,
+                        id: 1,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: null,
                     },
                 ];
@@ -463,65 +459,58 @@ describe("PageTable", () => {
                         notes: rest.notes ? rest.notes : null,
                     };
                 });
-                expect(trimmedCreateData.sort(sorter)).toEqual(
-                    expectedCreatedPages.sort(sorter),
+                expect(sort(trimmedCreateData)).toEqual(
+                    sort(expectedCreatedPages),
                 );
                 expect(sort(trimmedGetData)).toEqual(
-                    addFirstPage(expectedCreatedPages.sort(sorter)),
+                    addFirstPage(sort(expectedCreatedPages)),
                 );
 
                 // NEW PAGES IN MIDDLE
                 newPages = [
-                    { counts: 13, isSubset: false, previousPageId: 2 },
-                    { counts: 11, isSubset: true, previousPageId: 2 },
+                    { start_beat: 13, is_subset: false },
+                    { start_beat: 11, is_subset: true },
                     {
-                        counts: 17,
-                        isSubset: false,
+                        start_beat: 9,
+                        is_subset: false,
                         notes: "jeff notes 2",
-                        previousPageId: 1,
                     },
                 ];
                 expectedCreatedPages = [
                     {
-                        id: 4,
-                        counts: 17,
+                        id: 6,
+                        start_beat: 9,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "jeff notes 2",
                     },
                     {
-                        id: 1,
-                        counts: 16,
+                        id: 3,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: 4,
                         notes: "jeff notes",
                     },
                     {
                         id: 5,
-                        counts: 11,
+                        start_beat: 11,
                         is_subset: true,
-                        next_page_id: 1,
                         notes: null,
                     },
                     {
-                        id: 6,
-                        counts: 13,
+                        id: 4,
+                        start_beat: 13,
                         is_subset: false,
-                        next_page_id: 5,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 6,
                         notes: null,
                     },
                     {
-                        id: 3,
-                        counts: 12,
+                        id: 1,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: null,
                     },
                 ];
@@ -549,11 +538,9 @@ describe("PageTable", () => {
                     expectedCreatedPages[2],
                     expectedCreatedPages[3],
                 ];
-                expect(trimmedCreateData.sort(sorter)).toEqual(
-                    expectedCreated.sort(sorter),
-                );
+                expect(sort(trimmedCreateData)).toEqual(sort(expectedCreated));
                 expect(sort(trimmedGetData)).toEqual(
-                    addFirstPage(expectedCreatedPages.sort(sorter)),
+                    addFirstPage(sort(expectedCreatedPages)),
                 );
             });
 
@@ -594,36 +581,33 @@ describe("PageTable", () => {
                 expect(allMarcherPages().data.length).toBe(4);
 
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    { start_beat: 12, is_subset: false },
+                    { start_beat: 10, is_subset: true },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: false,
+
                         notes: "jeff notes",
                     },
                 ];
-                const expectedCreatedPages = [
+                const expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
                         id: 1,
-                        counts: 16,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: null,
-                        notes: "jeff notes",
+                        notes: null,
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 1,
                         notes: null,
                     },
                     {
                         id: 3,
-                        counts: 12,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: 2,
-                        notes: null,
+                        notes: "jeff notes",
                     },
                 ];
 
@@ -637,8 +621,8 @@ describe("PageTable", () => {
                         notes: rest.notes ? rest.notes : null,
                     };
                 });
-                expect(trimmedCreateData.sort(sorter)).toEqual(
-                    expectedCreatedPages.sort(sorter),
+                expect(sort(trimmedCreateData)).toEqual(
+                    sort(expectedCreatedPages),
                 );
 
                 const marcherPages = MarcherPageTable.getMarcherPages({ db });
@@ -674,52 +658,48 @@ describe("PageTable", () => {
             it("updates multiple pages", () => {
                 const newPages: NewPageArgs[] = [
                     {
-                        counts: 32,
-                        isSubset: true,
-                        previousPageId: 0,
+                        start_beat: 8,
+                        is_subset: true,
+
                         notes: "do not touch",
                     },
                     {
-                        counts: 12,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 12,
+                        is_subset: false,
+
                         notes: "notes jeff",
                     },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    { start_beat: 10, is_subset: true },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: false,
+
                         notes: "jeff notes",
                     },
                 ];
-                const expectedCreatedPages = [
+                const expectedCreatedPages: PageTable.DatabasePage[] = [
                     {
-                        id: 1,
-                        counts: 16,
+                        id: 4,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "jeff notes",
                     },
                     {
                         id: 2,
-                        counts: 10,
-                        is_subset: true,
-                        next_page_id: 1,
-                        notes: null,
-                    },
-                    {
-                        id: 3,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: "notes jeff",
                     },
                     {
-                        id: 4,
-                        counts: 32,
+                        id: 3,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 3,
+                        notes: null,
+                    },
+                    {
+                        id: 1,
+                        start_beat: 8,
+                        is_subset: true,
                         notes: "do not touch",
                     },
                 ];
@@ -727,61 +707,51 @@ describe("PageTable", () => {
                 const createResult = PageTable.createPages({ newPages, db });
 
                 expect(createResult.success).toBe(true);
-                const trimmedCreateData = createResult.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
-                    return {
-                        ...rest,
-                        notes: rest.notes ? rest.notes : null,
-                    };
-                });
-                expect(trimmedCreateData.sort(sorter)).toEqual(
-                    expectedCreatedPages.sort(sorter),
+                expect(trimAndSort(createResult.data)).toEqual(
+                    sort(expectedCreatedPages),
                 );
 
-                const updatedPages: ModifiedPageArgs[] = [
+                const updatedPages: PageTable.ModifiedPageArgs[] = [
                     {
                         id: 1,
-                        counts: 17,
+                        start_beat: 15,
                         is_subset: true,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 11,
+                        start_beat: 11,
                         is_subset: false,
                         notes: "new note",
                     },
                     {
-                        id: 3,
+                        id: 4,
                     },
                 ];
 
-                const expectedUpdatedPages = [
+                const expectedUpdatedPages: PageTable.DatabasePage[] = [
                     {
                         id: 1,
-                        counts: 17,
+                        start_beat: 15,
                         is_subset: true,
-                        next_page_id: null,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 11,
+                        start_beat: 11,
                         is_subset: false,
-                        next_page_id: 1,
                         notes: "new note",
                     },
                     {
-                        id: 3,
-                        counts: 12,
+                        id: 4,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: 2,
-                        notes: "notes jeff",
+                        notes: "jeff notes",
                     },
                 ];
-                const expectedAllPages = [
+                const expectedAllPages: PageTable.DatabasePage[] = [
                     ...expectedUpdatedPages,
-                    expectedCreatedPages[3],
+                    expectedCreatedPages.find((page) => page.id === 3)!,
                 ];
 
                 const updateResult = PageTable.updatePages({
@@ -796,8 +766,8 @@ describe("PageTable", () => {
                         notes: rest.notes ? rest.notes : null,
                     };
                 });
-                expect(trimmedUpdateData.sort(sorter)).toEqual(
-                    expectedUpdatedPages.sort(sorter),
+                expect(sort(trimmedUpdateData)).toEqual(
+                    sort(expectedUpdatedPages),
                 );
 
                 const allPages = PageTable.getPages({ db });
@@ -810,18 +780,18 @@ describe("PageTable", () => {
                     };
                 });
                 expect(sort(trimmedAllData)).toEqual(
-                    addFirstPage(expectedAllPages.sort(sorter)),
+                    addFirstPage(sort(expectedAllPages)),
                 );
             });
 
-            it("should only update notes or next_page_id on page with id 0", () => {
+            it("should not update values if it is undefined in the updatedPageArgs", () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    { start_beat: 12, is_subset: true },
+                    { start_beat: 10, is_subset: true },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: true,
+
                         notes: "jeff notes",
                     },
                 ];
@@ -830,11 +800,8 @@ describe("PageTable", () => {
                 expect(createResult.success).toBe(true);
                 expect(createResult.data.length).toBe(3);
 
-                const updatedPage: ModifiedPageArgs = {
-                    id: 0,
-                    notes: "updated notes",
-                    counts: 100, // Should not be updated
-                    is_subset: true, // Should not be updated
+                const updatedPage: PageTable.ModifiedPageArgs = {
+                    id: 3,
                 };
 
                 const updateResult = PageTable.updatePages({
@@ -845,83 +812,75 @@ describe("PageTable", () => {
                 expect(updateResult.data.length).toBe(1);
 
                 const updatedPageResult = updateResult.data[0];
-                expect(updatedPageResult.id).toBe(0);
-                expect(updatedPageResult.notes).toBe("updated notes");
-                expect(updatedPageResult.next_page_id).toBe(3);
-                expect(updatedPageResult.counts).toBe(0); // Should remain unchanged
-                expect(updatedPageResult.is_subset).toBe(false); // Should remain unchanged
-            });
-
-            it("should not update is_subset if it is undefined in the updatedPageArgs", () => {
-                const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: true, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
-                    {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
-                        notes: "jeff notes",
-                    },
-                ];
-
-                const createResult = PageTable.createPages({ newPages, db });
-                expect(createResult.success).toBe(true);
-                expect(createResult.data.length).toBe(3);
-
-                const updatedPage: ModifiedPageArgs = {
-                    id: 1,
-                    notes: "updated notes",
-                    counts: 100, // Should not be updated
-                    is_subset: true, // Should not be updated
-                };
-
-                const updateResult = PageTable.updatePages({
-                    modifiedPages: [updatedPage],
-                    db,
-                });
-                expect(updateResult.success).toBe(true);
-                expect(updateResult.data.length).toBe(1);
-
-                const updatedPageResult = updateResult.data[0];
-                expect(updatedPageResult.id).toBe(1);
-                expect(updatedPageResult.notes).toBe("updated notes");
-                expect(updatedPageResult.counts).toBe(100); // Should update
+                expect(updatedPageResult.id).toBe(3);
+                expect(updatedPageResult.notes).toBe("jeff notes");
+                expect(updatedPageResult.start_beat).toBe(16); // Should update
                 expect(updatedPageResult.is_subset).toBe(true); // Should update
             });
+        });
+
+        it("should fail to create pages with duplicate start_beat values", () => {
+            const newPages: NewPageArgs[] = [
+                { start_beat: 12, is_subset: true },
+                { start_beat: 12, is_subset: false }, // Duplicate start_beat
+            ];
+
+            const createResult = PageTable.createPages({ newPages, db });
+            expect(createResult.success).toBe(false);
+            expect(createResult.error).toBeDefined();
+        });
+
+        it("should fail to update page with existing start_beat value", () => {
+            const newPages: NewPageArgs[] = [
+                { start_beat: 12, is_subset: true },
+                { start_beat: 14, is_subset: true },
+            ];
+
+            const createResult = PageTable.createPages({ newPages, db });
+            expect(createResult.success).toBe(true);
+
+            const updatedPage: PageTable.ModifiedPageArgs = {
+                id: 2,
+                start_beat: 12, // Trying to update to existing start_beat
+            };
+
+            const updateResult = PageTable.updatePages({
+                modifiedPages: [updatedPage],
+                db,
+            });
+            expect(updateResult.success).toBe(false);
+            expect(updateResult.error).toBeDefined();
         });
 
         describe("deletePage", () => {
             it("should delete a page by id from the database", async () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: false,
+
                         notes: "jeff notes",
                     },
+                    { start_beat: 10, is_subset: true },
+                    { start_beat: 12, is_subset: false },
                 ];
                 const expectedCreatedPages = [
                     {
                         id: 1,
-                        counts: 16,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "jeff notes",
                     },
                     {
                         id: 2,
-                        counts: 10,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 1,
                         notes: null,
                     },
                     {
                         id: 3,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 2,
                         notes: null,
                     },
                 ];
@@ -931,29 +890,26 @@ describe("PageTable", () => {
 
                 expect(createResult.success).toBe(true);
                 expect(trimAndSort(getResult.data)).toEqual(
-                    addFirstPage(expectedCreatedPages.sort(sorter)),
+                    addFirstPage(sort(expectedCreatedPages)),
                 );
 
                 let expectedDeletedPage = {
                     id: 2,
-                    counts: 10,
+                    start_beat: 10,
                     is_subset: true,
-                    next_page_id: null,
                     notes: null,
                 };
                 let expectedPages = [
                     {
                         id: 1,
-                        counts: 16,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "jeff notes",
                     },
                     {
                         id: 3,
-                        counts: 12,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 1,
                         notes: null,
                     },
                 ];
@@ -980,123 +936,111 @@ describe("PageTable", () => {
             });
             it("should delete multiple pages by id from the database", async () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    { start_beat: 12, is_subset: false },
+                    { start_beat: 10, is_subset: true },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: false,
+
                         notes: "jeff notes",
                     },
-                    { counts: 45, isSubset: true, previousPageId: 0 },
+                    { start_beat: 13, is_subset: true },
                     {
-                        counts: 14,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 14,
+                        is_subset: false,
+
                         notes: "bad notes",
                     },
                     {
-                        counts: 90,
-                        isSubset: true,
-                        previousPageId: 0,
+                        start_beat: 11,
+                        is_subset: true,
+
                         notes: "nice notes",
                     },
                 ];
 
                 const expectedCreatedPages = [
                     {
-                        id: 6,
-                        counts: 12,
+                        id: 1,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 5,
-                        notes: null,
-                    },
-                    {
-                        id: 5,
-                        counts: 10,
-                        is_subset: true,
-                        next_page_id: 4,
-                        notes: null,
-                    },
-                    {
-                        id: 4,
-                        counts: 16,
-                        is_subset: false,
-                        next_page_id: 3,
-                        notes: "jeff notes",
-                    },
-                    {
-                        id: 3,
-                        counts: 45,
-                        is_subset: true,
-                        next_page_id: 2,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 14,
+                        start_beat: 10,
+                        is_subset: true,
+                        notes: null,
+                    },
+                    {
+                        id: 3,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: 1,
+                        notes: "jeff notes",
+                    },
+                    {
+                        id: 4,
+                        start_beat: 13,
+                        is_subset: true,
+                        notes: null,
+                    },
+                    {
+                        id: 5,
+                        start_beat: 14,
+                        is_subset: false,
                         notes: "bad notes",
                     },
                     {
-                        id: 1,
-                        counts: 90,
+                        id: 6,
+                        start_beat: 11,
                         is_subset: true,
-                        next_page_id: null,
                         notes: "nice notes",
                     },
                 ];
 
                 const createResult = PageTable.createPages({ newPages, db });
                 expect(createResult.success).toBe(true);
-                expect(trimData(createResult.data).sort(sorter)).toEqual(
-                    expectedCreatedPages.sort(sorter),
+                expect(trimData(createResult.data)).toEqual(
+                    sort(expectedCreatedPages),
                 );
 
                 const expectedDeletedPages = [
                     {
-                        id: 6,
-                        counts: 12,
+                        id: 1,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: null,
                         notes: null,
-                    },
-                    {
-                        id: 4,
-                        counts: 16,
-                        is_subset: false,
-                        next_page_id: null,
-                        notes: "jeff notes",
                     },
                     {
                         id: 3,
-                        counts: 45,
+                        start_beat: 16,
+                        is_subset: false,
+                        notes: "jeff notes",
+                    },
+                    {
+                        id: 4,
+                        start_beat: 13,
                         is_subset: true,
-                        next_page_id: null,
                         notes: null,
                     },
                     {
-                        id: 1,
-                        counts: 90,
+                        id: 6,
+                        start_beat: 11,
                         is_subset: true,
-                        next_page_id: null,
                         notes: "nice notes",
                     },
                 ];
                 const expectedPages = [
                     {
-                        id: 5,
-                        counts: 10,
+                        id: 2,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 2,
                         notes: null,
                     },
                     {
-                        id: 2,
-                        counts: 14,
+                        id: 5,
+                        start_beat: 14,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "bad notes",
                     },
                 ];
@@ -1105,8 +1049,8 @@ describe("PageTable", () => {
                     db,
                 });
                 expect(deletePageResponse.success).toBe(true);
-                expect(trimData(deletePageResponse.data).sort(sorter)).toEqual(
-                    trimData(expectedDeletedPages).sort(sorter),
+                expect(trimData(deletePageResponse.data)).toEqual(
+                    trimData(expectedDeletedPages),
                 );
                 const allPages = PageTable.getPages({ db });
                 expect(allPages.success).toBe(true);
@@ -1158,78 +1102,72 @@ describe("PageTable", () => {
                 expectMarcherPagesLengthToBe(0);
 
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
+                    { start_beat: 12, is_subset: false },
+                    { start_beat: 10, is_subset: true },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: false,
+
                         notes: "jeff notes",
                     },
-                    { counts: 45, isSubset: true, previousPageId: 0 },
+                    { start_beat: 4, is_subset: true },
                     {
-                        counts: 14,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 14,
+                        is_subset: false,
+
                         notes: "bad notes",
                     },
                     {
-                        counts: 90,
-                        isSubset: true,
-                        previousPageId: 0,
+                        start_beat: 9,
+                        is_subset: true,
+
                         notes: "nice notes",
                     },
                 ];
 
                 const expectedCreatedPages = [
                     {
-                        id: 6,
-                        counts: 12,
+                        id: 1,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: 5,
-                        notes: null,
-                    },
-                    {
-                        id: 5,
-                        counts: 10,
-                        is_subset: true,
-                        next_page_id: 4,
-                        notes: null,
-                    },
-                    {
-                        id: 4,
-                        counts: 16,
-                        is_subset: false,
-                        next_page_id: 3,
-                        notes: "jeff notes",
-                    },
-                    {
-                        id: 3,
-                        counts: 45,
-                        is_subset: true,
-                        next_page_id: 2,
                         notes: null,
                     },
                     {
                         id: 2,
-                        counts: 14,
+                        start_beat: 10,
+                        is_subset: true,
+                        notes: null,
+                    },
+                    {
+                        id: 3,
+                        start_beat: 16,
                         is_subset: false,
-                        next_page_id: 1,
+                        notes: "jeff notes",
+                    },
+                    {
+                        id: 4,
+                        start_beat: 4,
+                        is_subset: true,
+                        notes: null,
+                    },
+                    {
+                        id: 5,
+                        start_beat: 14,
+                        is_subset: false,
                         notes: "bad notes",
                     },
                     {
-                        id: 1,
-                        counts: 90,
+                        id: 6,
+                        start_beat: 9,
                         is_subset: true,
-                        next_page_id: null,
                         notes: "nice notes",
                     },
                 ];
 
                 const createResult = PageTable.createPages({ newPages, db });
                 expect(createResult.success).toBe(true);
-                expect(trimData(createResult.data).sort(sorter)).toEqual(
-                    expectedCreatedPages.sort(sorter),
+                expect(trimData(createResult.data)).toEqual(
+                    sort(expectedCreatedPages),
                 );
 
                 expectMarcherPagesLengthToBe(
@@ -1238,47 +1176,41 @@ describe("PageTable", () => {
 
                 const expectedDeletedPages = [
                     {
-                        id: 6,
-                        counts: 12,
+                        id: 1,
+                        start_beat: 12,
                         is_subset: false,
-                        next_page_id: null,
                         notes: null,
-                    },
-                    {
-                        id: 4,
-                        counts: 16,
-                        is_subset: false,
-                        next_page_id: null,
-                        notes: "jeff notes",
                     },
                     {
                         id: 3,
-                        counts: 45,
+                        start_beat: 16,
+                        is_subset: false,
+                        notes: "jeff notes",
+                    },
+                    {
+                        id: 4,
+                        start_beat: 4,
                         is_subset: true,
-                        next_page_id: null,
                         notes: null,
                     },
                     {
-                        id: 1,
-                        counts: 90,
+                        id: 6,
+                        start_beat: 9,
                         is_subset: true,
-                        next_page_id: null,
                         notes: "nice notes",
                     },
                 ];
                 const expectedPages = [
                     {
-                        id: 5,
-                        counts: 10,
+                        id: 2,
+                        start_beat: 10,
                         is_subset: true,
-                        next_page_id: 2,
                         notes: null,
                     },
                     {
-                        id: 2,
-                        counts: 14,
+                        id: 5,
+                        start_beat: 14,
                         is_subset: false,
-                        next_page_id: null,
                         notes: "bad notes",
                     },
                 ];
@@ -1287,8 +1219,8 @@ describe("PageTable", () => {
                     db,
                 });
                 expect(deletePageResponse.success).toBe(true);
-                expect(trimData(deletePageResponse.data).sort(sorter)).toEqual(
-                    trimData(expectedDeletedPages).sort(sorter),
+                expect(trimData(deletePageResponse.data)).toEqual(
+                    trimData(expectedDeletedPages),
                 );
                 const allPages = PageTable.getPages({ db });
                 expect(allPages.success).toBe(true);
@@ -1324,57 +1256,33 @@ describe("PageTable", () => {
                 }
                 expect(marcherPagesMap.size).toBe(0);
             });
-
-            it("should not delete the page with id of 0", () => {
-                const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
-                    {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
-                        notes: "jeff notes",
-                    },
-                ];
-
-                // Create new pages
-                const createResult = PageTable.createPages({
-                    newPages,
-                    db,
-                });
-                expect(createResult.success).toBe(true);
-                expect(createResult.data.length).toBe(3);
-
-                const createdPages = createResult.data;
-
-                // Attempt to delete the page with id 0
-                const deleteResult = PageTable.deletePages({
-                    pageIds: new Set<number>([
-                        0,
-                        ...createdPages.map((page) => page.id),
-                    ]),
-                    db,
-                });
-                expect(deleteResult.success).toBe(true);
-                expect(deleteResult.data.length).toBe(3); // Only 3 pages should be deleted
-
-                const deletedPages = deleteResult.data;
-                expect(deletedPages.map((page) => page.id).sort()).toEqual(
-                    createdPages.map((page) => page.id).sort(),
-                );
-
-                // Verify the page with id 0 still exists
-                const allPages = PageTable.getPages({ db });
-                expect(allPages.success).toBe(true);
-                const remainingPages = allPages.data;
-                expect(remainingPages.length).toBe(1);
-                expect(remainingPages[0].id).toBe(0);
-            });
         });
     });
 
     describe("undo/redo", () => {
         let db: Database.Database;
+        const sort = (
+            items: PageTable.DatabasePage[],
+        ): PageTable.DatabasePage[] => {
+            // Create a map to access items by their id
+            const beats = getBeats({ db });
+            const beatMap = new Map<number, DatabaseBeat>(
+                beats.data.map((beat) => [beat.id, beat]),
+            );
+
+            return items.sort((a, b) => {
+                const aBeat = beatMap.get(a.start_beat);
+                const bBeat = beatMap.get(b.start_beat);
+                if (!aBeat || !bBeat) {
+                    console.log("aBeat", a.start_beat, aBeat);
+                    console.log("bBeat", b.start_beat, bBeat);
+                    throw new Error(
+                        `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
+                    );
+                }
+                return aBeat!.position - bBeat!.position;
+            });
+        };
 
         beforeEach(() => {
             db = initTestDatabase();
@@ -1383,9 +1291,8 @@ describe("PageTable", () => {
             describe("without any marchers", () => {
                 it("should undo and redo a single created page correctly", () => {
                     const newPage: NewPageArgs = {
-                        counts: 12,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 12,
+                        is_subset: false,
                     };
 
                     // Create a new page
@@ -1397,7 +1304,7 @@ describe("PageTable", () => {
                     expect(createResult.data.length).toBe(1);
 
                     const createdPage = createResult.data[0];
-                    expect(createdPage.counts).toBe(12);
+                    expect(createdPage.start_beat).toBe(12);
                     expect(createdPage.is_subset).toBe(false);
 
                     // Undo the creation
@@ -1417,8 +1324,8 @@ describe("PageTable", () => {
                     const getPagesAfterRedo = PageTable.getPages({ db });
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(getPagesAfterRedo.data.length).toBe(2);
-                    const redonePage = getPagesAfterRedo.data.sort(sorter)[1];
-                    expect(redonePage.counts).toBe(12);
+                    const redonePage = sort(getPagesAfterRedo.data)[1];
+                    expect(redonePage.start_beat).toBe(12);
                     expect(redonePage.is_subset).toBe(false);
 
                     // Undo the creation again
@@ -1433,14 +1340,14 @@ describe("PageTable", () => {
 
                 it("should undo and redo multiple created pages correctly", () => {
                     const newPages: NewPageArgs[] = [
-                        { counts: 12, isSubset: false, previousPageId: 0 },
-                        { counts: 10, isSubset: true, previousPageId: 0 },
                         {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
+                            start_beat: 16,
+                            is_subset: false,
+
                             notes: "jeff notes",
                         },
+                        { start_beat: 10, is_subset: true },
+                        { start_beat: 12, is_subset: false },
                     ];
 
                     // Create new pages
@@ -1451,13 +1358,15 @@ describe("PageTable", () => {
                     expect(createResult.success).toBe(true);
                     expect(createResult.data.length).toBe(3);
 
-                    const createdPages = createResult.data;
-                    expect(createdPages[0].counts).toBe(16);
+                    const createdPages = createResult.data.sort(
+                        (a, b) => a.id - b.id,
+                    );
+                    expect(createdPages[0].start_beat).toBe(16);
                     expect(createdPages[0].is_subset).toBe(false);
                     expect(createdPages[0].notes).toBe("jeff notes");
-                    expect(createdPages[1].counts).toBe(10);
+                    expect(createdPages[1].start_beat).toBe(10);
                     expect(createdPages[1].is_subset).toBe(true);
-                    expect(createdPages[2].counts).toBe(12);
+                    expect(createdPages[2].start_beat).toBe(12);
                     expect(createdPages[2].is_subset).toBe(false);
 
                     // Undo the creation
@@ -1480,12 +1389,12 @@ describe("PageTable", () => {
                     const redonePages = getPagesAfterRedo.data.filter(
                         (p) => p.id !== PageTable.FIRST_PAGE_ID,
                     );
-                    expect(redonePages[0].counts).toBe(16);
+                    expect(redonePages[0].start_beat).toBe(16);
                     expect(redonePages[0].is_subset).toBe(false);
                     expect(redonePages[0].notes).toBe("jeff notes");
-                    expect(redonePages[1].counts).toBe(10);
+                    expect(redonePages[1].start_beat).toBe(10);
                     expect(redonePages[1].is_subset).toBe(true);
-                    expect(redonePages[2].counts).toBe(12);
+                    expect(redonePages[2].start_beat).toBe(12);
                     expect(redonePages[2].is_subset).toBe(false);
 
                     // Undo the creation again
@@ -1500,8 +1409,8 @@ describe("PageTable", () => {
 
                 it("can undo, redo, and undo the creation of multiple pages while other pages exist in the database", () => {
                     const existingPages: NewPageArgs[] = [
-                        { counts: 5, isSubset: false, previousPageId: 0 },
-                        { counts: 8, isSubset: true, previousPageId: 0 },
+                        { start_beat: 5, is_subset: false },
+                        { start_beat: 8, is_subset: true },
                     ];
 
                     // Create existing pages
@@ -1513,14 +1422,14 @@ describe("PageTable", () => {
                     expect(createExistingResult.data.length).toBe(2);
 
                     const newPages: NewPageArgs[] = [
-                        { counts: 12, isSubset: false, previousPageId: 0 },
-                        { counts: 10, isSubset: true, previousPageId: 0 },
                         {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
+                            start_beat: 16,
+                            is_subset: false,
+
                             notes: "jeff notes",
                         },
+                        { start_beat: 10, is_subset: true },
+                        { start_beat: 12, is_subset: false },
                     ];
 
                     // Create new pages
@@ -1531,13 +1440,15 @@ describe("PageTable", () => {
                     expect(createResult.success).toBe(true);
                     expect(createResult.data.length).toBe(3);
 
-                    const createdPages = createResult.data;
-                    expect(createdPages[0].counts).toBe(16);
+                    const createdPages = createResult.data.sort(
+                        (a, b) => a.id - b.id,
+                    );
+                    expect(createdPages[0].start_beat).toBe(16);
                     expect(createdPages[0].is_subset).toBe(false);
                     expect(createdPages[0].notes).toBe("jeff notes");
-                    expect(createdPages[1].counts).toBe(10);
+                    expect(createdPages[1].start_beat).toBe(10);
                     expect(createdPages[1].is_subset).toBe(true);
-                    expect(createdPages[2].counts).toBe(12);
+                    expect(createdPages[2].start_beat).toBe(12);
                     expect(createdPages[2].is_subset).toBe(false);
 
                     // Undo the creation
@@ -1560,12 +1471,12 @@ describe("PageTable", () => {
                     const redonePages = getPagesAfterRedo.data
                         .filter((p) => p.id !== PageTable.FIRST_PAGE_ID)
                         .slice(2);
-                    expect(redonePages[0].counts).toBe(16);
+                    expect(redonePages[0].start_beat).toBe(16);
                     expect(redonePages[0].is_subset).toBe(false);
                     expect(redonePages[0].notes).toBe("jeff notes");
-                    expect(redonePages[1].counts).toBe(10);
+                    expect(redonePages[1].start_beat).toBe(10);
                     expect(redonePages[1].is_subset).toBe(true);
-                    expect(redonePages[2].counts).toBe(12);
+                    expect(redonePages[2].start_beat).toBe(12);
                     expect(redonePages[2].is_subset).toBe(false);
 
                     // Undo the creation again
@@ -1610,9 +1521,8 @@ describe("PageTable", () => {
                     expect(createMarchersResponse.data.length).toBe(3);
 
                     const newPage: NewPageArgs = {
-                        counts: 12,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 12,
+                        is_subset: false,
                     };
 
                     // Create a new page
@@ -1624,7 +1534,7 @@ describe("PageTable", () => {
                     expect(createResult.data.length).toBe(1);
 
                     const createdPage = createResult.data[0];
-                    expect(createdPage.counts).toBe(12);
+                    expect(createdPage.start_beat).toBe(12);
                     expect(createdPage.is_subset).toBe(false);
 
                     // Verify marcher pages are created
@@ -1636,6 +1546,7 @@ describe("PageTable", () => {
 
                     // Undo the creation
                     const undoResult = History.performUndo(db);
+                    // History.performUndo(db);
                     expect(undoResult.success).toBe(true);
 
                     // Verify the page and marcher pages are no longer in the database
@@ -1659,7 +1570,7 @@ describe("PageTable", () => {
                     const redonePage = getPagesAfterRedo.data.filter(
                         (p) => p.id !== PageTable.FIRST_PAGE_ID,
                     )[0];
-                    expect(redonePage.counts).toBe(12);
+                    expect(redonePage.start_beat).toBe(12);
                     expect(redonePage.is_subset).toBe(false);
 
                     const marcherPagesAfterRedo =
@@ -1717,14 +1628,14 @@ describe("PageTable", () => {
                     expect(createMarchersResponse.data.length).toBe(3);
 
                     const newPages: NewPageArgs[] = [
-                        { counts: 12, isSubset: false, previousPageId: 0 },
-                        { counts: 10, isSubset: true, previousPageId: 0 },
                         {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
+                            start_beat: 16,
+                            is_subset: false,
+
                             notes: "jeff notes",
                         },
+                        { start_beat: 10, is_subset: true },
+                        { start_beat: 12, is_subset: false },
                     ];
 
                     // Create new pages
@@ -1735,13 +1646,15 @@ describe("PageTable", () => {
                     expect(createResult.success).toBe(true);
                     expect(createResult.data.length).toBe(3);
 
-                    const createdPages = createResult.data;
-                    expect(createdPages[0].counts).toBe(16);
+                    const createdPages = createResult.data.sort(
+                        (a, b) => a.id - b.id,
+                    );
+                    expect(createdPages[0].start_beat).toBe(16);
                     expect(createdPages[0].is_subset).toBe(false);
                     expect(createdPages[0].notes).toBe("jeff notes");
-                    expect(createdPages[1].counts).toBe(10);
+                    expect(createdPages[1].start_beat).toBe(10);
                     expect(createdPages[1].is_subset).toBe(true);
-                    expect(createdPages[2].counts).toBe(12);
+                    expect(createdPages[2].start_beat).toBe(12);
                     expect(createdPages[2].is_subset).toBe(false);
 
                     // Verify marcher pages are created
@@ -1780,12 +1693,12 @@ describe("PageTable", () => {
                     const redonePages = getPagesAfterRedo.data.filter(
                         (p) => p.id !== PageTable.FIRST_PAGE_ID,
                     );
-                    expect(redonePages[0].counts).toBe(16);
+                    expect(redonePages[0].start_beat).toBe(16);
                     expect(redonePages[0].is_subset).toBe(false);
                     expect(redonePages[0].notes).toBe("jeff notes");
-                    expect(redonePages[1].counts).toBe(10);
+                    expect(redonePages[1].start_beat).toBe(10);
                     expect(redonePages[1].is_subset).toBe(true);
-                    expect(redonePages[2].counts).toBe(12);
+                    expect(redonePages[2].start_beat).toBe(12);
                     expect(redonePages[2].is_subset).toBe(false);
 
                     const marcherPagesAfterRedo =
@@ -1817,9 +1730,9 @@ describe("PageTable", () => {
         describe("updatePages", () => {
             it("can undo, redo, and undo the updating of a single page", () => {
                 const newPage: NewPageArgs = {
-                    counts: 12,
-                    isSubset: false,
-                    previousPageId: 0,
+                    start_beat: 12,
+                    is_subset: false,
+                    notes: null,
                 };
 
                 // Create a new page
@@ -1831,13 +1744,13 @@ describe("PageTable", () => {
                 expect(createResult.data.length).toBe(1);
 
                 const createdPage = createResult.data[0];
-                expect(createdPage.counts).toBe(12);
+                expect(createdPage.start_beat).toBe(12);
                 expect(createdPage.is_subset).toBe(false);
 
                 // Update the page
-                const updatedPage: ModifiedPageArgs = {
+                const updatedPage: PageTable.ModifiedPageArgs = {
                     id: createdPage.id,
-                    counts: 15,
+                    start_beat: 15,
                     is_subset: true,
                     notes: "updated notes",
                 };
@@ -1850,7 +1763,7 @@ describe("PageTable", () => {
                 expect(updateResult.data.length).toBe(1);
 
                 const updatedPageResult = updateResult.data[0];
-                expect(updatedPageResult.counts).toBe(15);
+                expect(updatedPageResult.start_beat).toBe(15);
                 expect(updatedPageResult.is_subset).toBe(true);
                 expect(updatedPageResult.notes).toBe("updated notes");
 
@@ -1865,7 +1778,7 @@ describe("PageTable", () => {
                 const revertedPage = getPagesAfterUndo.data.filter(
                     (p) => p.id !== PageTable.FIRST_PAGE_ID,
                 )[0];
-                expect(revertedPage.counts).toBe(12);
+                expect(revertedPage.start_beat).toBe(12);
                 expect(revertedPage.is_subset).toBe(false);
                 expect(revertedPage.notes).toBeNull();
 
@@ -1884,7 +1797,7 @@ describe("PageTable", () => {
                 const redonePage = getPagesAfterRedo.data.filter(
                     (p) => p.id !== PageTable.FIRST_PAGE_ID,
                 )[0];
-                expect(redonePage.counts).toBe(15);
+                expect(redonePage.start_beat).toBe(15);
                 expect(redonePage.is_subset).toBe(true);
                 expect(redonePage.notes).toBe("updated notes");
 
@@ -1903,21 +1816,20 @@ describe("PageTable", () => {
                 const revertedPage2 = getPagesAfterUndo2.data.filter(
                     (p) => p.id !== PageTable.FIRST_PAGE_ID,
                 )[0];
-                expect(revertedPage2.counts).toBe(12);
+                expect(revertedPage2.start_beat).toBe(12);
                 expect(revertedPage2.is_subset).toBe(false);
                 expect(revertedPage2.notes).toBeNull();
             });
-
             it("can undo, redo, and undo the updating of multiple pages at once", () => {
                 const newPages: NewPageArgs[] = [
-                    { counts: 12, isSubset: false, previousPageId: 0 },
-                    { counts: 10, isSubset: true, previousPageId: 0 },
                     {
-                        counts: 16,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 16,
+                        is_subset: false,
+
                         notes: "jeff notes",
                     },
+                    { start_beat: 10, is_subset: true },
+                    { start_beat: 12, is_subset: false },
                 ];
 
                 // Create new pages
@@ -1928,25 +1840,27 @@ describe("PageTable", () => {
                 expect(createResult.success).toBe(true);
                 expect(createResult.data.length).toBe(3);
 
-                const createdPages = createResult.data;
+                const createdPages = createResult.data.sort(
+                    (a, b) => a.id - b.id,
+                );
 
                 // Update the pages
-                const updatedPages: ModifiedPageArgs[] = [
+                const updatedPages: PageTable.ModifiedPageArgs[] = [
                     {
                         id: createdPages[0].id,
-                        counts: 15,
+                        start_beat: 15,
                         is_subset: true,
                         notes: "updated notes 1",
                     },
                     {
                         id: createdPages[1].id,
-                        counts: 11,
+                        start_beat: 11,
                         is_subset: false,
                         notes: "updated notes 2",
                     },
                     {
                         id: createdPages[2].id,
-                        counts: 17,
+                        start_beat: 8,
                         is_subset: true,
                         notes: "updated notes 3",
                     },
@@ -1959,14 +1873,16 @@ describe("PageTable", () => {
                 expect(updateResult.success).toBe(true);
                 expect(updateResult.data.length).toBe(3);
 
-                const updatedPageResults = updateResult.data;
-                expect(updatedPageResults[0].counts).toBe(15);
+                const updatedPageResults = updateResult.data.sort(
+                    (a, b) => a.id - b.id,
+                );
+                expect(updatedPageResults[0].start_beat).toBe(15);
                 expect(updatedPageResults[0].is_subset).toBe(true);
                 expect(updatedPageResults[0].notes).toBe("updated notes 1");
-                expect(updatedPageResults[1].counts).toBe(11);
+                expect(updatedPageResults[1].start_beat).toBe(11);
                 expect(updatedPageResults[1].is_subset).toBe(false);
                 expect(updatedPageResults[1].notes).toBe("updated notes 2");
-                expect(updatedPageResults[2].counts).toBe(17);
+                expect(updatedPageResults[2].start_beat).toBe(8);
                 expect(updatedPageResults[2].is_subset).toBe(true);
                 expect(updatedPageResults[2].notes).toBe("updated notes 3");
 
@@ -1981,13 +1897,13 @@ describe("PageTable", () => {
                 const revertedPages = getPagesAfterUndo.data.filter(
                     (p) => p.id !== PageTable.FIRST_PAGE_ID,
                 );
-                expect(revertedPages[0].counts).toBe(16);
+                expect(revertedPages[0].start_beat).toBe(16);
                 expect(revertedPages[0].is_subset).toBe(false);
                 expect(revertedPages[0].notes).toBe("jeff notes");
-                expect(revertedPages[1].counts).toBe(10);
+                expect(revertedPages[1].start_beat).toBe(10);
                 expect(revertedPages[1].is_subset).toBe(true);
                 expect(revertedPages[1].notes).toBeNull();
-                expect(revertedPages[2].counts).toBe(12);
+                expect(revertedPages[2].start_beat).toBe(12);
                 expect(revertedPages[2].is_subset).toBe(false);
                 expect(revertedPages[2].notes).toBeNull();
 
@@ -2006,13 +1922,13 @@ describe("PageTable", () => {
                 const redonePages = getPagesAfterRedo.data.filter(
                     (p) => p.id !== PageTable.FIRST_PAGE_ID,
                 );
-                expect(redonePages[0].counts).toBe(15);
+                expect(redonePages[0].start_beat).toBe(15);
                 expect(redonePages[0].is_subset).toBe(true);
                 expect(redonePages[0].notes).toBe("updated notes 1");
-                expect(redonePages[1].counts).toBe(11);
+                expect(redonePages[1].start_beat).toBe(11);
                 expect(redonePages[1].is_subset).toBe(false);
                 expect(redonePages[1].notes).toBe("updated notes 2");
-                expect(redonePages[2].counts).toBe(17);
+                expect(redonePages[2].start_beat).toBe(8);
                 expect(redonePages[2].is_subset).toBe(true);
                 expect(redonePages[2].notes).toBe("updated notes 3");
 
@@ -2031,13 +1947,13 @@ describe("PageTable", () => {
                 const revertedPages2 = getPagesAfterUndo2.data.filter(
                     (p) => p.id !== PageTable.FIRST_PAGE_ID,
                 );
-                expect(revertedPages2[0].counts).toBe(16);
+                expect(revertedPages2[0].start_beat).toBe(16);
                 expect(revertedPages2[0].is_subset).toBe(false);
                 expect(revertedPages2[0].notes).toBe("jeff notes");
-                expect(revertedPages2[1].counts).toBe(10);
+                expect(revertedPages2[1].start_beat).toBe(10);
                 expect(revertedPages2[1].is_subset).toBe(true);
                 expect(revertedPages2[1].notes).toBeNull();
-                expect(revertedPages2[2].counts).toBe(12);
+                expect(revertedPages2[2].start_beat).toBe(12);
                 expect(revertedPages2[2].is_subset).toBe(false);
                 expect(revertedPages2[2].notes).toBeNull();
             });
@@ -2047,9 +1963,9 @@ describe("PageTable", () => {
             describe("without any marchers", () => {
                 it("should undo, redo, and undo a single page being deleted", () => {
                     const newPage: NewPageArgs = {
-                        counts: 12,
-                        isSubset: false,
-                        previousPageId: 0,
+                        start_beat: 12,
+                        is_subset: false,
+                        notes: "jeff notes",
                     };
 
                     // Create a new page
@@ -2061,7 +1977,7 @@ describe("PageTable", () => {
                     expect(createResult.data.length).toBe(1);
 
                     const createdPage = createResult.data[0];
-                    expect(createdPage.counts).toBe(12);
+                    expect(createdPage.start_beat).toBe(12);
                     expect(createdPage.is_subset).toBe(false);
 
                     // Delete the page
@@ -2086,7 +2002,7 @@ describe("PageTable", () => {
                     const undonePage = getPagesAfterUndo.data.filter(
                         (p) => p.id !== PageTable.FIRST_PAGE_ID,
                     )[0];
-                    expect(undonePage.counts).toBe(12);
+                    expect(undonePage.start_beat).toBe(12);
                     expect(undonePage.is_subset).toBe(false);
 
                     // Redo the deletion
@@ -2117,18 +2033,18 @@ describe("PageTable", () => {
                     const undonePage2 = getPagesAfterUndo2.data.filter(
                         (p) => p.id !== PageTable.FIRST_PAGE_ID,
                     )[0];
-                    expect(undonePage2.counts).toBe(12);
+                    expect(undonePage2.start_beat).toBe(12);
                     expect(undonePage2.is_subset).toBe(false);
                 });
 
                 it("should undo, redo, and undo multiple pages being deleted", () => {
                     const newPages: NewPageArgs[] = [
-                        { counts: 12, isSubset: false, previousPageId: 0 },
-                        { counts: 10, isSubset: true, previousPageId: 0 },
+                        { start_beat: 12, is_subset: false },
+                        { start_beat: 10, is_subset: true },
                         {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
+                            start_beat: 16,
+                            is_subset: false,
+
                             notes: "jeff notes",
                         },
                     ];
@@ -2208,8 +2124,8 @@ describe("PageTable", () => {
 
                 it("should undo, redo, and undo multiple pages being deleted while other pages already exist", () => {
                     const existingPages: NewPageArgs[] = [
-                        { counts: 5, isSubset: false, previousPageId: 0 },
-                        { counts: 8, isSubset: true, previousPageId: 0 },
+                        { start_beat: 5, is_subset: false },
+                        { start_beat: 8, is_subset: true },
                     ];
 
                     // Create existing pages
@@ -2221,12 +2137,12 @@ describe("PageTable", () => {
                     expect(createExistingResult.data.length).toBe(2);
 
                     const newPages: NewPageArgs[] = [
-                        { counts: 12, isSubset: false, previousPageId: 0 },
-                        { counts: 10, isSubset: true, previousPageId: 0 },
+                        { start_beat: 12, is_subset: false },
+                        { start_beat: 10, is_subset: true },
                         {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
+                            start_beat: 16,
+                            is_subset: false,
+
                             notes: "jeff notes",
                         },
                     ];
@@ -2337,12 +2253,12 @@ describe("PageTable", () => {
                     expect(createMarchersResponse.data.length).toBe(3);
 
                     const newPages: NewPageArgs[] = [
-                        { counts: 12, isSubset: false, previousPageId: 0 },
-                        { counts: 10, isSubset: true, previousPageId: 0 },
+                        { start_beat: 12, is_subset: false },
+                        { start_beat: 10, is_subset: true },
                         {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
+                            start_beat: 16,
+                            is_subset: false,
+
                             notes: "jeff notes",
                         },
                     ];
@@ -2483,12 +2399,12 @@ describe("PageTable", () => {
                     expect(createMarchersResponse.data.length).toBe(3);
 
                     const newPages: NewPageArgs[] = [
-                        { counts: 12, isSubset: false, previousPageId: 0 },
-                        { counts: 10, isSubset: true, previousPageId: 0 },
+                        { start_beat: 12, is_subset: false },
+                        { start_beat: 10, is_subset: true },
                         {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
+                            start_beat: 16,
+                            is_subset: false,
+
                             notes: "jeff notes",
                         },
                     ];
@@ -2598,6 +2514,79 @@ describe("PageTable", () => {
                     expect(marcherPagesAfterUndo2.data.length).toBe(12);
                 });
             });
+        });
+    });
+
+    describe("updateLastPageCounts", () => {
+        let db: Database.Database;
+
+        beforeEach(() => {
+            db = initTestDatabase();
+        });
+
+        it("should update the last page counts in the utility record", () => {
+            // Initial value should be default (likely 0 or null)
+            const initialUtilityRecord = UtilityTable.getUtilityRecord({ db });
+            expect(initialUtilityRecord.success).toBe(true);
+
+            // Update the last page counts
+            const lastPageCounts = 5;
+            const updateResult = PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts,
+            });
+
+            // Verify the update was successful
+            expect(updateResult.success).toBe(true);
+            expect(updateResult.data.last_page_counts).toBe(lastPageCounts);
+
+            // Verify the utility record was updated in the database
+            const updatedUtilityRecord = UtilityTable.getUtilityRecord({ db });
+            expect(updatedUtilityRecord.success).toBe(true);
+            expect(updatedUtilityRecord.data!.last_page_counts).toBe(
+                lastPageCounts,
+            );
+        });
+
+        it("should update the last page counts with a different value", () => {
+            // Update with an initial value
+            PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts: 3,
+            });
+
+            // Update with a new value
+            const newLastPageCounts = 10;
+            const updateResult = PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts: newLastPageCounts,
+            });
+
+            // Verify the update was successful
+            expect(updateResult.success).toBe(true);
+            expect(updateResult.data.last_page_counts).toBe(newLastPageCounts);
+
+            // Verify the utility record was updated in the database
+            const updatedUtilityRecord = UtilityTable.getUtilityRecord({ db });
+            expect(updatedUtilityRecord.success).toBe(true);
+            expect(updatedUtilityRecord.data!.last_page_counts).toBe(
+                newLastPageCounts,
+            );
+        });
+
+        it("should not use the next undo group", () => {
+            // Get the current undo group
+            const initialUndoGroup = History.incrementUndoGroup(db);
+
+            // Update the last page counts
+            PageTable.updateLastPageCounts({
+                db,
+                lastPageCounts: 7,
+            });
+
+            // Verify the undo group hasn't changed
+            const currentUndoGroup = History.getCurrentUndoGroup(db);
+            expect(currentUndoGroup).toBe(initialUndoGroup);
         });
     });
 

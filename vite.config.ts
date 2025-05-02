@@ -26,16 +26,6 @@ export default defineConfig(({ command }) => {
             setupFiles: ["./vitest.setup.ts"],
             include: ["**/__test__/**.test.ts?(x)"],
             environment: "jsdom",
-            deps: {
-                // vitest < 0.34
-                inline: ["vitest-canvas-mock"],
-                // >= 0.34
-                optimizer: {
-                    web: {
-                        include: ["vitest-canvas-mock"],
-                    },
-                },
-            },
             coverage: {
                 reporter: ["text", "json", "json-summary", "html"],
                 reportOnFailure: true,

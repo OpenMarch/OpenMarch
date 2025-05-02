@@ -4,7 +4,6 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import { usePageStore } from "@/stores/PageStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -18,6 +17,7 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import { CircleNotch } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 /**
  * The field/stage UI of OpenMarch
@@ -35,7 +35,7 @@ export default function Canvas({
 }) {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marchers } = useMarcherStore()!;
-    const { pages } = usePageStore()!;
+    const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
@@ -564,8 +564,8 @@ export default function Canvas({
             if (isPlaying) {
                 const nextPageId = selectedPage.nextPageId;
                 if (nextPageId === null) return;
-                const nextPage = selectedPage.getNextPage(pages);
-                if (nextPage === null) return;
+                const nextPage = pages.find((page) => page.id === nextPageId);
+                if (!nextPage) return;
 
                 const nextPageMarcherPages = marcherPages.filter(
                     (marcherPage) => marcherPage.page_id === nextPageId,
@@ -595,7 +595,7 @@ export default function Canvas({
                 canvas.requestRenderAll();
                 // Set the selected page after the animation is done and set isPlaying to false
                 timeoutID.current = setTimeout(() => {
-                    const isLastPage = nextPage.getNextPage(pages) === null;
+                    const isLastPage = nextPage.nextPageId === null;
                     setSelectedPage(nextPage);
                     if (isLastPage) setIsPlaying(false);
                 }, nextPage.duration * 1000);

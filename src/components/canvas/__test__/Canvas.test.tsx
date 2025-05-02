@@ -45,9 +45,9 @@ describe("Canvas", () => {
             getMarcherPages: vi.fn().mockResolvedValue(Mocks.mockMarcherPages),
         } as Partial<ElectronApi> as ElectronApi;
 
-        vi.mock("@/stores/page/usePageStore", () => {
+        vi.mock("@/stores/page/useTimingObjectsStore", () => {
             return {
-                usePageStore: () => ({
+                useTimingObjectsStore: () => ({
                     pages: Mocks.mockPages,
                     fetchPages: vi.fn(),
                 }),

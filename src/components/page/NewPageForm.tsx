@@ -6,8 +6,7 @@ import {
     SelectTriggerButton,
 } from "../ui/Select";
 import { useEffect, useRef, useState } from "react";
-import { usePageStore } from "@/stores/PageStore";
-import Page, { NewPageArgs } from "@/global/classes/Page";
+import Page, { createPages } from "@/global/classes/Page";
 import {
     ArrowUp,
     ArrowDown,
@@ -23,6 +22,9 @@ import { toast } from "sonner";
 import { TooltipContents } from "../ui/Tooltip";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { PageListContents } from "./PagesModal";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { NewPageArgs } from "electron/database/tables/PageTable";
+import Beat, { getNextBeat } from "@/global/classes/Beat";
 
 interface NewPageFormProps {
     hasHeader?: boolean;
@@ -40,7 +42,10 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
     const [previousPage, setPreviousPage] = useState<Page | undefined>(
         undefined,
     );
-    const [lastCreatedPage, setLastCreatedPage] = useState<Page | null>(null);
+    const [startBeat, setStartBeat] = useState<Beat | null>(null);
+    const [lastCreatedPageId, setLastCreatedPageId] = useState<number | null>(
+        null,
+    );
     const [counts, setCounts] = useState<number>(8);
     const [formCounts, setFormCounts] = useState<string>(
         counts.toString() || "8",
@@ -48,10 +53,20 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
     const [quantity, setQuantity] = useState<number>(1);
     const [isSubset, setIsSubset] = useState<boolean>(false);
     const [typing, setTyping] = useState<boolean>(false);
-    const { pages } = usePageStore!();
+    const { pages, beats, fetchTimingObjects } = useTimingObjectsStore();
     const formRef = useRef<HTMLFormElement>(null);
 
     const { setContent } = useSidebarModalStore();
+
+    useEffect(() => {
+        let newStartBeat = null;
+        console.log("previousPage", previousPage);
+        if (previousPage) {
+            const lastBeat = previousPage.beats[previousPage.beats.length - 1];
+            newStartBeat = getNextBeat(lastBeat, beats);
+        }
+        setStartBeat(newStartBeat);
+    }, [beats, previousPage]);
 
     useEffect(() => {
         if (!typing) {
@@ -102,30 +117,37 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setContent(<PageListContents />);
+        if (!startBeat) {
+            toast.error("There is no start beat");
+            return;
+        }
         if (counts && quantity) {
             const newPageArgs: NewPageArgs[] = [];
             for (let i = 0; i < quantity; i++) {
                 const newPageArg: NewPageArgs = {
-                    previousPageId: previousPage?.id || 0,
-                    isSubset: isSubset,
-                    counts: counts,
+                    start_beat: startBeat.id,
+                    is_subset: isSubset,
                 };
                 newPageArgs.push(newPageArg);
             }
 
-            const response = await Page.createPages(newPageArgs);
+            const response = await createPages(newPageArgs, fetchTimingObjects);
 
             if (response.success && response.data) {
                 response.data.forEach((page) => {
-                    toast.success(`Page ${page.name} created successfully`);
+                    toast.success(`New page created successfully`);
                 });
-                setLastCreatedPage(Page.getLastPage(response.data));
+                setLastCreatedPageId(
+                    response.data.reduce((prev, curr) => {
+                        return prev.id > curr.id ? prev : curr;
+                    }).id,
+                );
             } else {
                 console.error(
                     `Error creating pages:`,
                     response.error?.message || "",
                 );
-                setLastCreatedPage(null);
+                setLastCreatedPageId(null);
                 toast.error(`Error creating pages: ${response.error?.message}`);
             }
 
@@ -144,13 +166,15 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
 
     // Set the previous page to the last page by default when all pages change
     useEffect(() => {
-        if (lastCreatedPage) {
-            setPreviousPage(lastCreatedPage);
+        if (lastCreatedPageId !== null) {
+            const pageObj =
+                pages.find((page) => page.id === lastCreatedPageId) ?? null;
+            setPreviousPage(pageObj ?? undefined);
         } else {
-            const lastPage = Page.getLastPage(pages) ?? undefined;
+            const lastPage = pages[pages.length - 1];
             setPreviousPage(lastPage);
         }
-    }, [lastCreatedPage, pages]);
+    }, [lastCreatedPageId, pages]);
 
     const handleCountsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.value === "") {

@@ -1,14 +1,14 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
-import { usePageStore } from "@/stores/PageStore";
-import Page from "@/global/classes/Page";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
 import { Input } from "../ui/Input";
 import { Switch } from "../ui/Switch";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { measureRangeString, updatePages } from "@/global/classes/Page";
 
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
-    const { pages } = usePageStore()!;
+    const { pages, fetchTimingObjects } = useTimingObjectsStore()!;
     const [isFirstPage, setIsFirstPage] = useState(false);
 
     const countsInputId = "page-counts";
@@ -22,9 +22,10 @@ function PageEditor() {
         const subset = form[subsetInputId].checked;
 
         if (selectedPage) {
-            Page.updatePages([
-                { id: selectedPage.id, counts: counts, is_subset: subset },
-            ]);
+            updatePages(
+                [{ id: selectedPage.id, is_subset: subset }],
+                fetchTimingObjects,
+            );
         }
 
         // Remove focus from the input field
@@ -87,7 +88,7 @@ function PageEditor() {
 
     useEffect(() => {
         if (pages.length > 0) {
-            const firstPage = Page.getFirstPage(pages);
+            const firstPage = pages[0];
             setIsFirstPage(selectedPage === firstPage);
         }
     }, [pages, selectedPage]);
@@ -137,12 +138,16 @@ function PageEditor() {
                             disabled={isFirstPage}
                             onClick={(e) => {
                                 if (selectedPage) {
-                                    Page.updatePages([
-                                        {
-                                            id: selectedPage.id,
-                                            is_subset: !selectedPage.isSubset,
-                                        },
-                                    ]);
+                                    updatePages(
+                                        [
+                                            {
+                                                id: selectedPage.id,
+                                                is_subset:
+                                                    !selectedPage.isSubset,
+                                            },
+                                        ],
+                                        fetchTimingObjects,
+                                    );
                                 }
                             }}
                             checked={selectedPage?.isSubset || false}
@@ -154,7 +159,7 @@ function PageEditor() {
                             Measures
                         </label>
                         <p className="text-body leading-none text-text">
-                            {selectedPage.measureRangeString()}
+                            {measureRangeString(selectedPage)}
                         </p>
                     </div>
                     {/* <div>

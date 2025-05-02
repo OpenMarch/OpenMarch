@@ -4,11 +4,14 @@ import * as PageTable from "../PageTable";
 import * as MarcherTable from "../MarcherTable";
 import * as MarcherPageTable from "../MarcherPageTable";
 import * as History from "../../database.history";
-import { NewPageArgs } from "@/global/classes/Page";
-import { ModifiedMarcherArgs, NewMarcherArgs } from "@/global/classes/Marcher";
-import MarcherPage from "@/global/classes/MarcherPage";
-import Constants from "@/global/Constants";
+import {
+    ModifiedMarcherArgs,
+    NewMarcherArgs,
+} from "../../../../src/global/classes/Marcher";
+import MarcherPage from "../../../../src/global/classes/MarcherPage";
+import Constants from "../../../../src/global/Constants";
 import { initTestDatabase } from "./testUtils";
+import { NewPages } from "../../../database/__test__/DatabaseMocks";
 
 describe("MarcherTable", () => {
     describe("createMarcherTable", () => {
@@ -162,14 +165,7 @@ describe("MarcherTable", () => {
             });
 
             it("inserts marchers and their marcherPages when there are pages in the database", () => {
-                const pages: NewPageArgs[] = [
-                    {
-                        counts: 32,
-                        isSubset: true,
-                        previousPageId: 0,
-                        notes: "Page 1",
-                    },
-                ];
+                const pages: PageTable.NewPageArgs[] = [NewPages[0]];
 
                 const createPagesResponse = PageTable.createPages({
                     newPages: pages,
@@ -644,14 +640,7 @@ describe("MarcherTable", () => {
             });
 
             it("should delete multiple but not all marchers and their marcherPages when 2 pages exist", () => {
-                const pages: NewPageArgs[] = [
-                    {
-                        counts: 32,
-                        isSubset: true,
-                        previousPageId: 0,
-                        notes: "Page 1",
-                    },
-                ];
+                const pages: PageTable.NewPageArgs[] = [NewPages[0]];
 
                 const createPagesResponse = PageTable.createPages({
                     newPages: pages,
@@ -1009,14 +998,7 @@ describe("MarcherTable", () => {
 
             describe("with pages in the database", () => {
                 it("should undo, redo, and undo the creation of multiple marchers and their MarcherPages when pages exist", () => {
-                    const pages: NewPageArgs[] = [
-                        {
-                            counts: 32,
-                            isSubset: true,
-                            previousPageId: 0,
-                            notes: "Page 1",
-                        },
-                    ];
+                    const pages: PageTable.NewPageArgs[] = [NewPages[0]];
 
                     const createPagesResponse = PageTable.createPages({
                         newPages: pages,
@@ -1106,13 +1088,8 @@ describe("MarcherTable", () => {
                 });
 
                 it("should undo, redo, and undo the creation of multiple marchers and their MarcherPages when pages and marchers exist", () => {
-                    const existingPages: NewPageArgs[] = [
-                        {
-                            counts: 32,
-                            isSubset: true,
-                            previousPageId: 0,
-                            notes: "Existing Page 1",
-                        },
+                    const existingPages: PageTable.NewPageArgs[] = [
+                        NewPages[0],
                     ];
 
                     const createExistingPagesResponse = PageTable.createPages({
@@ -1670,14 +1647,7 @@ describe("MarcherTable", () => {
 
             describe("with pages in the database", () => {
                 it("should undo, redo, and undo the deletion of multiple pages and their MarcherPages when marchers exist", () => {
-                    const pages: NewPageArgs[] = [
-                        {
-                            counts: 32,
-                            isSubset: true,
-                            previousPageId: 0,
-                            notes: "Page 1",
-                        },
-                    ];
+                    const pages: PageTable.NewPageArgs[] = [NewPages[0]];
 
                     const createPagesResponse = PageTable.createPages({
                         newPages: pages,
@@ -1784,13 +1754,8 @@ describe("MarcherTable", () => {
                 });
 
                 it("should undo, redo, and undo the deletion of multiple marchers and their MarcherPages when pages and marchers exist", () => {
-                    const existingPages: NewPageArgs[] = [
-                        {
-                            counts: 16,
-                            isSubset: false,
-                            previousPageId: 0,
-                            notes: "Existing Page 2",
-                        },
+                    const existingPages: PageTable.NewPageArgs[] = [
+                        NewPages[0],
                     ];
 
                     const createExistingPagesResponse = PageTable.createPages({

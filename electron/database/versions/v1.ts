@@ -2,10 +2,8 @@ import { createHistoryTables, createUndoTriggers } from "../database.history";
 import DatabaseMigrator from "./DatabaseMigrator";
 import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
-import Measure from "../../../src/global/classes/Measure";
 import type FieldProperties from "../../../src/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
-import { FIRST_PAGE_ID } from "../tables/PageTable";
 
 export default class v1 extends DatabaseMigrator {
     get version() {
@@ -73,7 +71,7 @@ export default class v1 extends DatabaseMigrator {
             // Create page 1 with 0 counts. Page 1 should always exist
             // It is safe to assume there are no marchers in the database at this point, so MarcherPages do not need to be created
             db.prepare(
-                `INSERT INTO ${Constants.PageTableName} ("counts", "id") VALUES (0, ${FIRST_PAGE_ID})`,
+                `INSERT INTO ${Constants.PageTableName} ("counts", "id") VALUES (0, 0)`,
             ).run();
 
             // Make the undo triggers after so the creation of the first page cannot be undone
@@ -171,9 +169,16 @@ export default class v1 extends DatabaseMigrator {
                     @updated_at
                 );
             `);
+            const defaultMeasure = `X:1
+Q:1/4=120
+M:4/4
+V:1 baritone
+V:1
+z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
+`;
             const created_at = new Date().toISOString();
             stmt.run({
-                abc_data: Measure.defaultMeasures,
+                abc_data: defaultMeasure,
                 created_at,
                 updated_at: created_at,
             });

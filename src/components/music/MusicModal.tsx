@@ -1,5 +1,4 @@
 import AudioSelector from "./AudioSelector";
-import MeasureEditor from "./MeasureEditor";
 import { SidebarModalLauncher } from "../sidebar/SidebarModal";
 import { X } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
@@ -26,9 +25,9 @@ function MusicModalContents() {
                     <X size={24} />
                 </button>
             </header>
-            <div id="measure editing container">
+            {/* <div id="measure editing container">
                 <MeasureEditor />
-            </div>
+            </div> */}
             <div className="flex flex-col gap-16">
                 <AudioSelector />
             </div>

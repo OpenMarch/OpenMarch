@@ -723,6 +723,8 @@ export function deleteShapePageMarchers({
 }): DbActions.DatabaseResponse<ShapePageMarcher[]> {
     console.log("=========== begin deleteShapePageMarchers ===========");
     let output: DbActions.DatabaseResponse<ShapePageMarcher[]>;
+    let actionWasPerformed = false;
+    History.incrementUndoGroup(db);
 
     try {
         output = DbActions.deleteItems<ShapePageMarcher>({
@@ -730,7 +732,9 @@ export function deleteShapePageMarchers({
             tableName: Constants.ShapePageMarcherTableName,
             ids,
             printHeaders: false,
+            useNextUndoGroup: true,
         });
+        actionWasPerformed = true;
 
         // Flatten the order of the shape page marchers
         const shapePageIdsThatWereModified = new Set<number>();
@@ -744,6 +748,10 @@ export function deleteShapePageMarchers({
             "Error deleting ShapePageMarcher. Rolling back changes.",
             error,
         );
+        if (actionWasPerformed) {
+            History.performUndo(db);
+            History.clearMostRecentRedo(db);
+        }
         output = {
             success: false,
             error: {

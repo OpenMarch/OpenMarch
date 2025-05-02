@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
-import { usePageStore } from "@/stores/PageStore";
-import Page, { ModifiedPageArgs } from "@/global/classes/Page";
+import Page, { deletePages, updatePages } from "@/global/classes/Page";
 import { Trash } from "@phosphor-icons/react";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { AlertDialogAction, AlertDialogCancel } from "../ui/AlertDialog";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { ModifiedPageArgs } from "electron/database/tables/PageTable";
 
 function PageList({
     hasHeader = false,
@@ -27,7 +28,7 @@ function PageList({
         false,
         undefined,
     ];
-    const { pages } = usePageStore();
+    const { pages, fetchTimingObjects } = useTimingObjectsStore();
 
     // localPages are the Pages that are displayed in the table
     const [localPages, setLocalPages] = useState<Page[]>();
@@ -41,13 +42,13 @@ function PageList({
         const modifiedPages: ModifiedPageArgs[] = [];
 
         if (deletionsRef.current.length > 0) {
-            await Page.deletePages(new Set(deletionsRef.current));
+            await deletePages(new Set(deletionsRef.current), async () => {});
         }
 
         for (const [pageId, changes] of Object.entries(changesRef.current))
             modifiedPages.push({ id: Number(pageId), ...changes });
 
-        const result = await Page.updatePages(modifiedPages);
+        const result = await updatePages(modifiedPages, fetchTimingObjects);
         deletionsRef.current = [];
         changesRef.current = {};
         return result;
@@ -81,11 +82,11 @@ function PageList({
     const setLocalPagesModified = useCallback((pages: Page[] | undefined) => {
         if (!pages || pages.length === 0) return;
         const pagesCopy = [...pages];
-        pagesCopy[0] = new Page({
+        pagesCopy[0] = {
             ...pagesCopy[0],
             counts: 0,
             name: pagesCopy[0].name,
-        });
+        };
         setLocalPages(pagesCopy);
     }, []);
 

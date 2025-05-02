@@ -4,18 +4,15 @@ import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
-import { usePageStore } from "@/stores/PageStore";
-import { useMeasureStore } from "../../stores/MeasureStore";
 import Marcher from "../../global/classes/Marcher";
-import Page from "../../global/classes/Page";
 import MarcherPage from "../../global/classes/MarcherPage";
-import Measure from "../../global/classes/Measure";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 /**
  * A component that initializes the state of the application.
@@ -24,12 +21,10 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 function StateInitializer() {
     const { marchers, fetchMarchers } = useMarcherStore();
     const { fetchMarcherPages } = useMarcherPageStore()!;
-    const { pages, setPages, fetchPages } = usePageStore();
+    const { pages, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { measures } = useMeasureStore()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
-    const { fetchMeasures } = useMeasureStore()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
     const { fetchFieldProperties } = useFieldProperties()!;
@@ -51,19 +46,13 @@ function StateInitializer() {
     }, [fetchMarchers]);
 
     useEffect(() => {
-        Page.fetchPages = fetchPages;
-        Page.fetchPages();
-    }, [fetchPages]);
-
-    useEffect(() => {
         MarcherPage.fetchMarcherPages = fetchMarcherPages;
         MarcherPage.fetchMarcherPages();
     }, [fetchMarcherPages, pages, marchers]);
 
     useEffect(() => {
-        Measure.fetchMeasures = fetchMeasures;
-        Measure.fetchMeasures();
-    }, [fetchMeasures]);
+        fetchTimingObjects();
+    }, [fetchTimingObjects]);
 
     useEffect(() => {
         MarcherShape.fetchShapePages = fetchShapePages;
@@ -163,9 +152,13 @@ function StateInitializer() {
                         fetchShapePages();
                         break;
                     case Constants.PageTableName:
-                        fetchPages();
+                        fetchTimingObjects();
                         if (args.pageId && args.pageId > 0)
                             setSelectedPage(getPage(args.pageId));
+                        break;
+                    case Constants.BeatsTableName:
+                    case Constants.MeasureTableName:
+                        fetchTimingObjects();
                         break;
                     case Constants.FieldPropertiesTableName:
                         fetchFieldProperties();
@@ -187,12 +180,12 @@ function StateInitializer() {
         getPage,
         fetchMarchers,
         fetchMarcherPages,
-        fetchPages,
         setSelectedPage,
         setSelectedMarchers,
         marchers,
         fetchShapePages,
         fetchFieldProperties,
+        fetchTimingObjects,
     ]);
 
     // Listen for fetch actions from the main process
@@ -203,7 +196,9 @@ function StateInitializer() {
                     fetchMarchers();
                     break;
                 case Constants.PageTableName:
-                    fetchPages();
+                case Constants.BeatsTableName:
+                case Constants.MeasureTableName:
+                    fetchTimingObjects();
                     break;
                 case Constants.MarcherPageTableName:
                     fetchMarcherPages();
@@ -216,19 +211,7 @@ function StateInitializer() {
         return () => {
             window.electron.removeFetchListener(); // Remove the event listener
         };
-    }, [fetchMarchers, fetchMarcherPages, fetchPages]);
-
-    // Listen for when measures or pages change so that the pages can be aligned to the measures
-    useEffect(() => {
-        if (
-            pages.length > 0 &&
-            measures.length > 0 &&
-            pages[0].hasBeenAligned === false
-        ) {
-            const newPages = Page.alignWithMeasures(pages, measures);
-            setPages(newPages);
-        }
-    }, [measures, pages, setPages]);
+    }, [fetchMarchers, fetchMarcherPages, fetchTimingObjects]);
 
     return <></>; // Empty fragment
 }

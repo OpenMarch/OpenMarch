@@ -5,17 +5,21 @@ import * as fs from "fs";
 import * as History from "./database.history";
 import * as Utilities from "./utilities";
 import FieldProperties from "../../src/global/classes/FieldProperties";
-import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
+import AudioFile, {
+    ModifiedAudioFileArgs,
+} from "../../src/global/classes/AudioFile";
 import * as MarcherTable from "./tables/MarcherTable";
 import * as PageTable from "./tables/PageTable";
 import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
-import { DatabaseMarcher } from "@/global/classes/Marcher";
-import { ModifiedPageArgs } from "@/global/classes/Page";
+import { DatabaseMarcher } from "../../src/global/classes/Marcher";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
 import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
+import * as MeasureTable from "./tables/MeasureTable";
+import * as BeatTable from "./tables/BeatTable";
+import * as UtilityTable from "./tables/UtilityTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -56,12 +60,25 @@ let DB_PATH = "";
  * @returns 200 if successful, -1 if the file does not exist
  */
 export function setDbPath(path: string, isNewFile = false) {
-    if (!fs.existsSync(path) && !isNewFile) {
-        console.error(`setDbPath: File does not exist at path: ${path}`);
+    const failedDb = (message: string) => {
+        console.error(message);
         DB_PATH = "";
         return -1;
+    };
+    if (!fs.existsSync(path) && !isNewFile) {
+        return failedDb(`setDbPath: File does not exist at path: ${path}`);
     }
+
     DB_PATH = path;
+    const db = connect();
+
+    const user_version = db.pragma("user_version", { simple: true });
+    if (user_version === -1) {
+        return failedDb(
+            `setDbPath: user_version is -1, meaning the database was not created successfully`,
+        );
+    }
+
     return 200;
 }
 
@@ -165,26 +182,6 @@ export function initHandlers() {
         }),
     );
 
-    // Page
-    ipcMain.handle("page:getAll", async () =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages),
-    );
-    ipcMain.handle("page:insert", async (_, args) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
-            newPages: args,
-        }),
-    );
-    ipcMain.handle("page:update", async (_, pages: ModifiedPageArgs[]) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
-            modifiedPages: pages,
-        }),
-    );
-    ipcMain.handle("page:delete", async (_, pageIds) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
-            pageIds,
-        }),
-    );
-
     // MarcherPage
     ipcMain.handle("marcher_page:getAll", async (_, args) =>
         connectWrapper(MarcherPageTable.getMarcherPages, args),
@@ -198,10 +195,68 @@ export function initHandlers() {
         }),
     );
 
-    // Measure
-    ipcMain.handle("measure:getAll", async () => getMeasures());
-    ipcMain.handle("measure:update", async (_, abcString: string) =>
-        updateMeasuresAbcString(abcString),
+    // **** Timing Objects ****
+
+    // Page
+    ipcMain.handle("page:getAll", async () =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages),
+    );
+    ipcMain.handle("page:insert", async (_, args) =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
+            newPages: args,
+        }),
+    );
+    ipcMain.handle(
+        "page:update",
+        async (_, pages: PageTable.ModifiedPageArgs[]) =>
+            connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
+                modifiedPages: pages,
+            }),
+    );
+    ipcMain.handle("page:delete", async (_, pageIds) =>
+        connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
+            pageIds,
+        }),
+    );
+
+    // Beats
+    ipcMain.handle("beat:getAll", async () =>
+        connectWrapper(BeatTable.getBeats),
+    );
+    ipcMain.handle("beat:insert", async (_, newBeats) =>
+        connectWrapper(BeatTable.createBeats, {
+            newBeats,
+        }),
+    );
+    ipcMain.handle("beat:update", async (_, modifiedBeats) =>
+        connectWrapper(BeatTable.updateBeats, {
+            modifiedBeats,
+        }),
+    );
+    ipcMain.handle("beat:delete", async (_, beatIds) =>
+        connectWrapper(BeatTable.deleteBeats, {
+            beatIds,
+        }),
+    );
+
+    // Measures
+    ipcMain.handle("measure:getAll", async () =>
+        connectWrapper(MeasureTable.getMeasures),
+    );
+    ipcMain.handle("measure:insert", async (_, newMeasures) =>
+        connectWrapper(MeasureTable.createMeasures, {
+            newMeasures,
+        }),
+    );
+    ipcMain.handle("measure:update", async (_, modifiedMeasures) =>
+        connectWrapper(MeasureTable.updateMeasures, {
+            modifiedMeasures,
+        }),
+    );
+    ipcMain.handle("measure:delete", async (_, measureIds) =>
+        connectWrapper(MeasureTable.deleteMeasures, {
+            measureIds,
+        }),
     );
 
     // Audio Files
@@ -341,6 +396,21 @@ export function initHandlers() {
             connectWrapper(Utilities.swapMarchers, args),
     );
 
+    ipcMain.handle("utility:getRecord", async () =>
+        connectWrapper<UtilityTable.UtilityRecord | null>(
+            UtilityTable.getUtilityRecord,
+            {},
+        ),
+    );
+    ipcMain.handle(
+        "utility:updateRecord",
+        async (_, utilityRecord: UtilityTable.ModifiedUtilityRecord) =>
+            connectWrapper<UtilityTable.UtilityRecord>(
+                UtilityTable.updateUtilityRecord,
+                { utilityRecord },
+            ),
+    );
+
     // for (const tableController of Object.values(ALL_TABLES)) {
     //     tableController.ipcCrudHandlers();
     // }
@@ -443,75 +513,6 @@ export function performHistoryAction(
     }
 
     return { ...response, marcherIds, pageId };
-}
-/* ============================ Measures ============================ */
-const defaultMeasures = `X:1
-Q:1/4=120
-M:4/4
-V:1 baritone
-V:1
-z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
-`;
-/***** NOTE - Measures are currently not part of the history table *****/
-
-/**
- * Gets all of the measures from the database.
- *
- * @param db The database connection
- * @returns Array of measures
- */
-async function getMeasures(db?: Database.Database): Promise<string> {
-    const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.MeasureTableName} WHERE id = 1`,
-    );
-    const response = stmt.all() as {
-        abc_data: string;
-        created_at: string;
-        updated_at: string;
-    }[];
-    if (response.length === 0 || response[0].abc_data.length < 20) {
-        response[0].abc_data = defaultMeasures;
-        updateMeasuresAbcString(defaultMeasures);
-    }
-    if (!db) dbToUse.close();
-    return response[0].abc_data;
-}
-
-/**
- * Updates the ABC representation of the measures in the database.
- *
- * @param abcString The new ABC string to put into the database
- * @returns LegacyDatabaseResponse
- */
-async function updateMeasuresAbcString(
-    abcString: string,
-): Promise<LegacyDatabaseResponse<string>> {
-    const db = connect();
-    let output: LegacyDatabaseResponse<string> = { success: false };
-    try {
-        History.incrementUndoGroup(db);
-        const stmt = db.prepare(`
-                UPDATE ${Constants.MeasureTableName}
-                SET abc_data = @abc_data, updated_at = @new_updated_at
-                WHERE id = 1
-            `);
-        await stmt.run({
-            abc_data: abcString,
-            new_updated_at: new Date().toISOString(),
-        });
-        output = { success: true };
-    } catch (error: any) {
-        console.error(error);
-        output = {
-            success: false,
-            error: { message: error.message, stack: error.stack },
-        };
-    } finally {
-        History.incrementUndoGroup(db);
-        db.close();
-    }
-    return output;
 }
 
 /* ============================ Audio Files ============================ */

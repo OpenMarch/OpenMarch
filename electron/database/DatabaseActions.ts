@@ -242,6 +242,7 @@ function insertClause<NewItemArgs extends Object>(args: NewItemArgs) {
  * @param tableName The name of the table to get the item from
  * @param useNextUndoGroup Whether to increment the undo group, default is true
  * @param printHeaders Whether to print the headers for the action, default is true
+ * @param functionName The name of the function being called, default is "createItems"
  * @returns The id of the inserted item
  */
 export function createItems<DatabaseItemType, NewItemArgs extends Object>({
@@ -250,12 +251,14 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
     tableName,
     useNextUndoGroup = true,
     printHeaders = true,
+    functionName = "createItems",
 }: {
     db: Database.Database;
     items: NewItemArgs[];
     tableName: string;
-    useNextUndoGroup?: boolean;
+    useNextUndoGroup: boolean;
     printHeaders?: boolean;
+    functionName?: string;
 }): DatabaseResponse<DatabaseItemType[]> {
     if (items.length === 0) {
         console.log("CREATE ITEMS - No items to create were provided");
@@ -265,7 +268,7 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
         };
     }
     if (printHeaders)
-        console.log("\n=========== start createItems ===========");
+        console.log(`\n=========== start ${functionName} ===========`);
     let output: DatabaseResponse<DatabaseItemType[]>;
     // Track if an action was performed so the undo group can be decremented if needed
     let actionWasPerformed = false;
@@ -345,15 +348,21 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
     } finally {
         if (useNextUndoGroup) History.incrementUndoGroup(db);
         if (printHeaders)
-            console.log("============ end createItems ============\n");
+            console.log(`============ end ${functionName} ============\n`);
     }
     return output;
 }
 
 /**
- * @param db The database connection
- * @param items The items to update
- * @returns A DatabaseResponse with the updated items
+ * Updates items in the specified database table.
+ *
+ * @param db - The database connection.
+ * @param items - An array of objects containing the updated item data, including the item's id.
+ * @param tableName - The name of the table to update the items in.
+ * @param useNextUndoGroup - Whether to increment the undo group after the action is performed. Defaults to true.
+ * @param printHeaders - Whether to print headers for the start and end of the function. Defaults to true.
+ * @param functionName - The name of the function. Defaults to "updateItems".
+ * @returns A DatabaseResponse object containing the updated items.
  */
 export function updateItems<
     DatabaseItemType,
@@ -364,11 +373,13 @@ export function updateItems<
     tableName,
     useNextUndoGroup = true,
     printHeaders = true,
+    functionName = "updateItems",
 }: {
     items: UpdatedItemArgs[];
     db: Database.Database;
     tableName: string;
-    useNextUndoGroup?: boolean;
+    useNextUndoGroup: boolean;
+    functionName?: string;
     printHeaders?: boolean;
 }): DatabaseResponse<DatabaseItemType[]> {
     if (items.length === 0) {
@@ -379,13 +390,13 @@ export function updateItems<
         };
     }
     if (printHeaders)
-        console.log("\n=========== start updateItems ===========");
+        console.log(`\n=========== start ${functionName} ===========`);
     // Check if all of the items exist
     const notFoundIds: number[] = [];
     const ids = new Set<number>(items.map((item) => item.id));
     let actionWasPerformed = false;
 
-    // Verify all of the items exist before deleting any of them
+    // Verify all of the items exist before updating any of them
     for (const id of ids) {
         if (
             getItem<DatabaseItemType>({ id, db, tableName }).data === undefined
@@ -487,19 +498,23 @@ export function updateItems<
         }
     } finally {
         if (printHeaders)
-            console.log("============ end updateItems ============\n");
+            console.log(`============ end ${functionName} ============\n`);
         if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;
 }
 
 /**
- * @param db The database connection
- * @param ids The ids of the items to delete
- * @param tableName The name of the table to get the item from
- * @param idColumn The column to check with WHERE to delete the row. By default "rowid"
- * @param useNextUndoGroup Whether to increment the undo group after the action is performed, default is true
- * @returns A DatabaseResponse with the deleted item
+ * Deletes items from the specified database table.
+ * @param {Object} params - The parameters for the delete operation.
+ * @param {Set<number>} params.ids - The IDs of the items to delete.
+ * @param {Database.Database} params.db - The database instance.
+ * @param {string} params.tableName - The name of the table to delete from.
+ * @param {boolean} [params.useNextUndoGroup] - Whether to use the next undo group for this operation.
+ * @param {string} [params.idColumn] - The name of the column that contains the item IDs.
+ * @param {boolean} [params.printHeaders] - Whether to print headers for the function.
+ * @param {string} [params.functionName] - The name of the function.
+ * @returns {DatabaseResponse<DatabaseItemType[]>} - The response from the delete operation.
  */
 export function deleteItems<DatabaseItemType>({
     ids,
@@ -508,13 +523,15 @@ export function deleteItems<DatabaseItemType>({
     useNextUndoGroup,
     idColumn = "rowid",
     printHeaders = true,
+    functionName = "deleteItems",
 }: {
     ids: Set<number>;
     db: Database.Database;
     tableName: string;
-    useNextUndoGroup?: boolean;
+    useNextUndoGroup: boolean;
     idColumn?: string;
     printHeaders?: boolean;
+    functionName?: string;
 }): DatabaseResponse<DatabaseItemType[]> {
     if (ids.size === 0) {
         console.log("DELETE ITEMS - No items to delete were provided");
@@ -524,7 +541,7 @@ export function deleteItems<DatabaseItemType>({
         };
     }
     if (printHeaders)
-        console.log("\n=========== start deleteItems ===========");
+        console.log(`\n=========== start ${functionName} ===========`);
     const deletedObjects: DatabaseItemType[] = [];
     let output: DatabaseResponse<DatabaseItemType[]>;
     let currentId: number | undefined;
@@ -608,7 +625,7 @@ export function deleteItems<DatabaseItemType>({
         }
     } finally {
         if (printHeaders)
-            console.log("============ end deleteItems ============\n");
+            console.log(`============ end ${functionName} ============\n`);
         if (useNextUndoGroup) History.incrementUndoGroup(db);
     }
     return output;

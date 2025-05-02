@@ -7,7 +7,7 @@ import {
     deleteShapePages,
     copyShapePageToPage,
 } from "../ShapePageTable";
-import Constants from "@/global/Constants";
+import Constants from "../../../../src/global/Constants";
 import { createPages, deletePages } from "../PageTable";
 import * as DbMocks from "../../__test__/DatabaseMocks";
 import { createShapes, deleteShapes } from "../ShapeTable";

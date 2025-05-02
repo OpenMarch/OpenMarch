@@ -10,7 +10,7 @@ import {
 import * as PageTable from "./PageTable";
 import * as MarcherPageTable from "./MarcherPageTable";
 import { DatabaseResponse } from "../DatabaseActions";
-import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
+import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage";
 
 /**
  * @param db The database connection, or undefined to create a new connection
@@ -127,7 +127,6 @@ export function updateMarchers({
     modifiedMarchers: ModifiedMarcherArgs[];
     db: Database.Database;
 }): DatabaseResponse<DatabaseMarcher[]> {
-    console.log("\n=========== start updatePages ===========");
     const updateResponse = DbActions.updateItems<
         DatabaseMarcher,
         ModifiedMarcherArgs
@@ -135,9 +134,9 @@ export function updateMarchers({
         db,
         items: modifiedMarchers,
         tableName: Constants.MarcherTableName,
-        printHeaders: false,
+        functionName: "updateMarchers",
+        useNextUndoGroup: true,
     });
-    console.log("=========== end updatePages ===========\n");
     return updateResponse;
 }
 

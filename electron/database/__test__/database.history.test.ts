@@ -152,7 +152,6 @@ describe("History Tables and Triggers", () => {
                 it("should undo groups of inserts correctly", () => {
                     type Row = { id: number; value: string };
                     // Create history tables and test table
-                    createHistoryTables(db);
                     db.prepare(
                         "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
@@ -694,7 +693,6 @@ describe("History Tables and Triggers", () => {
                 it("should undo groups of inserts correctly", () => {
                     type Row = { id: number; value: string };
                     // Create history tables and test table
-                    createHistoryTables(db);
                     db.prepare(
                         "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
@@ -777,7 +775,6 @@ describe("History Tables and Triggers", () => {
                 });
 
                 it("should have no redo operations after inserting a new undo entry after INSERT", () => {
-                    createHistoryTables(db);
                     db.prepare(
                         "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
                     ).run();
@@ -1586,7 +1583,6 @@ describe("History Tables and Triggers", () => {
                     .all() as HistoryTableRow[]
             ).map((row) => row.history_group);
         it("removes the oldest undo group when the undo limit of 100 is reached", () => {
-            createHistoryTables(db);
             db.prepare(
                 "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();
@@ -1760,7 +1756,6 @@ describe("History Tables and Triggers", () => {
         });
 
         it("removes groups when the limit is decreased", () => {
-            createHistoryTables(db);
             db.prepare(
                 "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
             ).run();

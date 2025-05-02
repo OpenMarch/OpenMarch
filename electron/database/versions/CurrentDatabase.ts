@@ -1,3 +1,3 @@
-import v5 from "./v5";
+import v6 from "./v6";
 
-export default v5;
+export default v6;

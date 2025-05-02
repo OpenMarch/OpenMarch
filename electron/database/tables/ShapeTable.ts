@@ -60,6 +60,7 @@ export function createShapes({
         tableName: Constants.ShapeTableName,
         items: args,
         printHeaders: !isChildAction,
+        useNextUndoGroup: true,
     });
 }
 
@@ -80,6 +81,7 @@ export function updateShapes({
         db,
         tableName: Constants.ShapeTableName,
         items: args,
+        useNextUndoGroup: true,
     });
 }
 
@@ -101,5 +103,6 @@ export function deleteShapes({
         db,
         tableName: Constants.ShapeTableName,
         ids,
+        useNextUndoGroup: true,
     });
 }

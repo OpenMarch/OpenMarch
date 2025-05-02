@@ -95,6 +95,7 @@ describe("Database Actions", () => {
                 tableName: mockTableName,
                 items: [item],
                 db,
+                useNextUndoGroup: true,
             });
             // sleep for 5ms to ensure the created_at field is different
             await new Promise((resolve) => setTimeout(resolve, 5));
@@ -126,6 +127,7 @@ describe("Database Actions", () => {
                 db,
                 tableName: mockTableName,
                 items,
+                useNextUndoGroup: true,
             });
             const after = Date.now();
 
@@ -162,6 +164,7 @@ describe("Database Actions", () => {
                 tableName: mockTableName,
                 items,
                 db,
+                useNextUndoGroup: true,
             });
             const after = Date.now();
 
@@ -197,6 +200,7 @@ describe("Database Actions", () => {
                 tableName: mockTableName,
                 items,
                 db,
+                useNextUndoGroup: true,
             });
 
             expect(result.success).toBe(true);
@@ -218,6 +222,7 @@ describe("Database Actions", () => {
                     tableName: mockTableName,
                     items: [item],
                     db,
+                    useNextUndoGroup: true,
                 });
 
                 expect(result.success).toBe(true);
@@ -262,6 +267,7 @@ describe("Database Actions", () => {
                     tableName: mockTableName,
                     items,
                     db,
+                    useNextUndoGroup: true,
                 });
 
                 expect(result.success).toBe(true);
@@ -456,6 +462,7 @@ describe("Database Actions", () => {
                 items,
                 db,
                 tableName: mockTableName,
+                useNextUndoGroup: true,
             });
 
             const result = DbActions.getAllItems<Row>({
@@ -480,7 +487,12 @@ describe("Database Actions", () => {
                 { name: "jeff", id: 23 },
                 { name: "bob", age: 23, id: 1 },
             ];
-            DbActions.createItems({ items, db, tableName: mockTableName });
+            DbActions.createItems({
+                items,
+                db,
+                tableName: mockTableName,
+                useNextUndoGroup: true,
+            });
 
             let result = DbActions.getItem<Row>({
                 id: 1,
@@ -539,6 +551,7 @@ describe("Database Actions", () => {
                 items,
                 db,
                 tableName: mockTableName,
+                useNextUndoGroup: true,
             });
 
             const result = DbActions.getItemsByColValue<Row>({
@@ -564,6 +577,7 @@ describe("Database Actions", () => {
             ];
             DbActions.createItems<Row, NewRow>({
                 items,
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
@@ -591,6 +605,7 @@ describe("Database Actions", () => {
                 items,
                 db,
                 tableName: mockTableName,
+                useNextUndoGroup: true,
             });
 
             const result = DbActions.getItemsByColValue<Row>({
@@ -615,6 +630,7 @@ describe("Database Actions", () => {
                 items,
                 db,
                 tableName: mockTableName,
+                useNextUndoGroup: true,
             });
 
             const result = DbActions.getItemsByColValue<Row>({
@@ -638,6 +654,7 @@ describe("Database Actions", () => {
                 items,
                 db,
                 tableName: mockTableName,
+                useNextUndoGroup: true,
             });
 
             const result = DbActions.getItemsByColValue<Row>({
@@ -659,6 +676,7 @@ describe("Database Actions", () => {
             const insertResult = DbActions.createItems<Row, NewRow>({
                 tableName: mockTableName,
                 items: [item],
+                useNextUndoGroup: true,
                 db,
             });
             const updatedItem: UpdateRowArgs = { id: 1, name: "bob" };
@@ -668,6 +686,7 @@ describe("Database Actions", () => {
             const updateResult = DbActions.updateItems<Row, UpdateRowArgs>({
                 items: [updatedItem],
                 db,
+                useNextUndoGroup: true,
                 tableName: mockTableName,
             });
             const after = Date.now();
@@ -724,6 +743,7 @@ describe("Database Actions", () => {
             const insertResult = DbActions.createItems<Row, NewRow>({
                 tableName: mockTableName,
                 items: newItems,
+                useNextUndoGroup: true,
                 db,
             });
             const expectedItems = [
@@ -736,6 +756,7 @@ describe("Database Actions", () => {
             await new Promise((resolve) => setTimeout(resolve, 1));
             const updateResult = DbActions.updateItems<Row, UpdateRowArgs>({
                 items: expectedItems,
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
@@ -829,6 +850,7 @@ describe("Database Actions", () => {
                     { id: 1, name: "john" },
                     { id: 2, name: "qwerty" },
                 ],
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
@@ -849,12 +871,14 @@ describe("Database Actions", () => {
             ];
             DbActions.createItems<Row, NewRow>({
                 items,
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
 
             const removeResult = DbActions.deleteItems<Row>({
                 ids: new Set([1]),
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
@@ -893,12 +917,14 @@ describe("Database Actions", () => {
             ];
             DbActions.createItems<Row, NewRow>({
                 items,
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
 
             const removeResult = DbActions.deleteItems<Row>({
                 ids: new Set([1, 3]),
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
@@ -932,12 +958,14 @@ describe("Database Actions", () => {
             ];
             DbActions.createItems<Row, NewRow>({
                 items,
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });
 
             const removeResult = DbActions.deleteItems({
                 ids: new Set([1, 2, 3, 5]),
+                useNextUndoGroup: true,
                 db,
                 tableName: mockTableName,
             });

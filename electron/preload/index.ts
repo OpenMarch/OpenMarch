@@ -8,12 +8,25 @@ import {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
-import { ModifiedPageArgs, NewPageArgs } from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
-import { DatabasePage } from "electron/database/tables/PageTable";
+import {
+    DatabaseBeat,
+    NewBeatArgs,
+    ModifiedBeatArgs,
+} from "electron/database/tables/BeatTable";
+import {
+    DatabaseMeasure,
+    NewMeasureArgs,
+    ModifiedMeasureArgs,
+} from "electron/database/tables/MeasureTable";
+import {
+    DatabasePage,
+    ModifiedPageArgs,
+    NewPageArgs,
+} from "electron/database/tables/PageTable";
 import {
     ModifiedShapePageMarcherArgs,
     NewShapePageMarcherArgs,
@@ -29,6 +42,10 @@ import {
     NewShapeArgs,
     Shape,
 } from "electron/database/tables/ShapeTable";
+import {
+    UtilityRecord,
+    ModifiedUtilityRecord,
+} from "electron/database/tables/UtilityTable";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -240,11 +257,23 @@ const APP_API = {
             DatabaseResponse<DatabaseMarcher[]>
         >,
 
+    // MarcherPage
+    getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
+        ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
+            DatabaseResponse<MarcherPage[]>
+        >,
+    getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
+        ipcRenderer.invoke("marcher_page:get", id) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
+    updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
+        ipcRenderer.invoke("marcher_page:update", args) as Promise<
+            DatabaseResponse<MarcherPage>
+        >,
+
+    // **** Timing Objects ****
+
     // Page
-    /**
-     * @returns A serialized array of all pages in the database.
-     * This means you must call `new Page(page)` on each page or else the instance methods will not work.
-     */
     getPages: () =>
         ipcRenderer.invoke("page:getAll") as Promise<
             DatabaseResponse<DatabasePage[]>
@@ -269,33 +298,41 @@ const APP_API = {
             DatabaseResponse<DatabasePage[]>
         >,
 
-    // MarcherPage
-    getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
-        ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            DatabaseResponse<MarcherPage[]>
+    // Beat
+    getBeats: () =>
+        ipcRenderer.invoke("beat:getAll") as Promise<
+            DatabaseResponse<DatabaseBeat[]>
         >,
-    getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
-        ipcRenderer.invoke("marcher_page:get", id) as Promise<
-            DatabaseResponse<MarcherPage>
+    createBeats: (newBeats: NewBeatArgs[]) =>
+        ipcRenderer.invoke("beat:insert", newBeats) as Promise<
+            DatabaseResponse<DatabaseBeat[]>
         >,
-    updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
-        ipcRenderer.invoke("marcher_page:update", args) as Promise<
-            DatabaseResponse<MarcherPage>
+    updateBeats: (modifiedBeats: ModifiedBeatArgs[]) =>
+        ipcRenderer.invoke("beat:update", modifiedBeats) as Promise<
+            DatabaseResponse<DatabaseBeat[]>
+        >,
+    deleteBeats: (beatIds: Set<number>) =>
+        ipcRenderer.invoke("beat:delete", beatIds) as Promise<
+            DatabaseResponse<DatabaseBeat[]>
         >,
 
     // Measure
-    /**
-     * @returns A serialized array of all measures in the database.
-     * This means you must call `new Measure(measure)` on each measure or else the instance methods will not work.
-     */
-    getMeasuresAbcString: () =>
-        ipcRenderer.invoke("measure:getAll") as Promise<string>,
-    updateMeasureAbcString: (abcString: string) =>
-        ipcRenderer.invoke("measure:update", abcString) as Promise<
-            DbServices.LegacyDatabaseResponse<string>
+    getMeasures: () =>
+        ipcRenderer.invoke("measure:getAll") as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
         >,
-    launchImportMusicXmlFileDialogue: () =>
-        ipcRenderer.invoke("measure:insert") as Promise<string | undefined>,
+    createMeasures: (newMeasures: NewMeasureArgs[]) =>
+        ipcRenderer.invoke("measure:insert", newMeasures) as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
+        >,
+    updateMeasures: (modifiedMeasures: ModifiedMeasureArgs[]) =>
+        ipcRenderer.invoke("measure:update", modifiedMeasures) as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
+        >,
+    deleteMeasures: (measureIds: Set<number>) =>
+        ipcRenderer.invoke("measure:delete", measureIds) as Promise<
+            DatabaseResponse<DatabaseMeasure[]>
+        >,
 
     // Audio File
     launchInsertAudioFileDialogue: () =>
@@ -390,6 +427,14 @@ const APP_API = {
     deleteShapePageMarchers: (idsToDelete: Set<number>) =>
         ipcRenderer.invoke("shape_page_marcher:delete", idsToDelete) as Promise<
             DatabaseResponse<void>
+        >,
+    getUtilityRecord: () =>
+        ipcRenderer.invoke("utility:getRecord") as Promise<
+            DatabaseResponse<UtilityRecord | null>
+        >,
+    updateUtilityRecord: (utilityRecord: ModifiedUtilityRecord) =>
+        ipcRenderer.invoke("utility:updateRecord", utilityRecord) as Promise<
+            DatabaseResponse<UtilityRecord>
         >,
 
     /******************************/
