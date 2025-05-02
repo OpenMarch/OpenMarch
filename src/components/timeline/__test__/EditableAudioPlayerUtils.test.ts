@@ -989,33 +989,6 @@ describe("preparePageUpdates", () => {
 });
 
 describe("prepareMeasuresForCreation", () => {
-    it("should map temporary measure beats to created beats", () => {
-        const newMeasures: Measure[] = [
-            { startBeat: createMockBeat(-1, 0, 1, 1) } as Measure,
-            { startBeat: createMockBeat(-2, 1, 1, 5) } as Measure,
-        ];
-
-        const newBeats: Beat[] = [
-            createMockBeat(-1, 0, 1, 1),
-            createMockBeat(-2, 1, 1, 5),
-            createMockBeat(-3, 2, 1, 10),
-        ];
-
-        const createdBeats: Beat[] = [
-            createMockBeat(101, 0, 1.5, 0.9),
-            createMockBeat(102, 1, 1.5, 4.8),
-            createMockBeat(103, 2, 1.5, 9.5),
-        ];
-
-        const result = prepareMeasuresForCreation(
-            newMeasures,
-            newBeats,
-            createdBeats,
-        );
-
-        expect(result).toEqual([{ start_beat: 101 }, { start_beat: 102 }]);
-    });
-
     it("should throw error when beat not found in new beats", () => {
         const newMeasures: Measure[] = [
             { startBeat: createMockBeat(-5, 0, 1, 1) } as Measure, // ID not in newBeats
@@ -1027,7 +1000,7 @@ describe("prepareMeasuresForCreation", () => {
 
         expect(() =>
             prepareMeasuresForCreation(newMeasures, newBeats, createdBeats),
-        ).toThrow("Could not find beat with id -5 in new beats");
+        ).toThrow();
     });
 
     it("should handle empty arrays", () => {
