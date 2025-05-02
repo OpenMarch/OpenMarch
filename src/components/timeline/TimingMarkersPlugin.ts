@@ -20,30 +20,46 @@ export class TimingMarkersPlugin {
      * Markers are non-draggable and non-resizable point regions
      */
     createTimingMarkers = () => {
-        let curTimestamp = 0;
+        console.log(
+            this.measures.map((measure) => {
+                return {
+                    id: measure.id,
+                    timeStamp: measure.timestamp,
+                    duration: measure.duration,
+                    number: measure.number,
+                    start_beat: measure.startBeat.id,
+                };
+            }),
+        );
+        console.log(
+            this.beats.map((beat) => {
+                return {
+                    id: beat.id,
+                    timeStamp: beat.timestamp,
+                    duration: beat.duration,
+                };
+            }),
+        );
         this.beats.forEach((beat) => {
             const newRegion = this.wsRegions.addRegion({
                 id: `beat beat-${beat.id}`,
-                start: curTimestamp,
+                start: beat.timestamp,
                 // color: "rgba(255, 0, 0, 1)",
                 drag: false,
                 resize: false,
             });
             this.beatRegions.set(beat.id, newRegion);
-            curTimestamp += beat.duration;
         });
-        curTimestamp = 0;
         this.measures.forEach((measure) => {
             const newRegion = this.wsRegions.addRegion({
                 id: `measure measure-${measure.id}`,
-                start: curTimestamp,
+                start: measure.timestamp,
                 // color: "rgba(100, 66, 255, 1)",
                 content: measure.rehearsalMark ?? measure.number.toString(),
                 drag: false,
                 resize: false,
             });
             this.measureRegions.set(measure.id, newRegion);
-            curTimestamp += measure.duration;
         });
     };
 

@@ -131,7 +131,7 @@ export function PageTimeline() {
             const closestOffset = availableOffsets.current.reduce((a, b) => {
                 return Math.abs(b - deltaX) < Math.abs(a - deltaX) ? b : a;
             });
-            const newWidth = startWidth.current + closestOffset; // Minimum width of 100px
+            const newWidth = startWidth.current + closestOffset;
 
             // Calculate new duration based on the new width
             // Subtract the buffer we added in getWidth to get the actual duration

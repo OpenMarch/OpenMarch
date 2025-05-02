@@ -63,7 +63,6 @@ export const fromDatabaseMeasures = (args: {
         }
         return aBeat.position - bBeat.position;
     });
-    let timestamp = 0;
     const createdMeasures = sortedDbMeasures.map((measure, i) => {
         const startBeat = beatMap.get(measure.start_beat);
         if (!startBeat) {
@@ -87,9 +86,8 @@ export const fromDatabaseMeasures = (args: {
             rehearsalMark: measure.rehearsal_mark,
             duration: beatsDuration(beats),
             counts: beats.length,
-            timestamp,
+            timestamp: startBeat.timestamp,
         } satisfies Measure;
-        timestamp += output.duration;
         return output;
     });
     return createdMeasures;

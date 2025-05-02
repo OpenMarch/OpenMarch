@@ -19,7 +19,24 @@ module.exports = {
         "react/jsx-key": "warn",
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "warn",
+        "max-lines-per-function": [
+            "warn",
+            {
+                max: 70,
+                skipBlankLines: true,
+                skipComments: true,
+            },
+        ],
     },
+    overrides: [
+        {
+            // Disable for tests and React components
+            files: ["*.test.ts*", "src/components/**/*.tsx"],
+            rules: {
+                "max-lines-per-function": "off",
+            },
+        },
+    ],
     settings: {
         react: {
             version: "detect",

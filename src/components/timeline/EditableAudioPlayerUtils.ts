@@ -13,6 +13,7 @@ import { conToastError } from "@/utilities/utils";
 import {
     DatabaseBeat,
     ModifiedBeatArgs,
+    NewBeatArgs,
 } from "electron/database/tables/BeatTable";
 import { NewMeasureArgs } from "electron/database/tables/MeasureTable";
 import { ModifiedPageArgs } from "electron/database/tables/PageTable";
@@ -203,10 +204,164 @@ export const getUpdatedBeatObjects = (
 };
 
 /**
+ * Prepares beat objects for database creation
+ *
+ * @param beats - The beats to prepare for creation
+ * @returns An array of objects with the necessary properties for creating beats in the database
+ */
+export const prepareBeatsForCreation = (beats: Beat[]): NewBeatArgs[] => {
+    const output: NewBeatArgs[] = [];
+    for (const beat of beats) {
+        if (beat.duration > 0)
+            output.push({
+                duration: beat.duration,
+                include_in_measure: 1 as 0 | 1,
+            });
+    }
+    return output;
+};
+
+/**
+ * Converts database beats to Beat objects with calculated timestamps
+ *
+ * @param databaseBeats - The database beats to convert
+ * @returns An array of Beat objects with calculated timestamps
+ */
+export const convertDatabaseBeatsToBeats = (
+    databaseBeats: DatabaseBeat[],
+): Beat[] => {
+    let timeStamp = 0;
+    return databaseBeats.map((dbBeat: DatabaseBeat, i: number) => {
+        const newBeat = fromDatabaseBeat(dbBeat, i, timeStamp);
+        timeStamp += dbBeat.duration;
+        return newBeat;
+    });
+};
+
+/**
+ * Prepares page updates based on old beats and newly created beats
+ *
+ * @param pages - The pages to update
+ * @param oldBeats - The existing beats being replaced
+ * @param createdBeats - The newly created beats
+ * @returns An object containing the pages to update and the set of used beat IDs
+ */
+export const preparePageUpdates = (
+    pages: Page[],
+    oldBeats: Beat[],
+    createdBeats: Beat[],
+): { pagesToUpdate: ModifiedPageArgs[]; usedBeatIds: Set<number> } => {
+    const oldBeatsMap = new Map(oldBeats.map((beat) => [beat.id, beat]));
+    const pagesToUpdate: ModifiedPageArgs[] = [];
+    const usedBeatIds = new Set<number>();
+
+    for (const page of pages) {
+        if (page.beats.length === 0) continue;
+
+        const oldBeat = oldBeatsMap.get(page.beats[0].id);
+        if (!oldBeat) {
+            throw new Error(
+                `Could not find beat with id ${page.beats[0].id} in old beats`,
+            );
+        }
+
+        const closestNewBeat = findClosestUnusedBeatByTimestamp(
+            page.timestamp,
+            createdBeats,
+            usedBeatIds,
+        );
+
+        if (!closestNewBeat) {
+            throw new Error("No unused beat found");
+        }
+
+        pagesToUpdate.push({
+            id: page.id,
+            start_beat: closestNewBeat.id,
+        });
+
+        usedBeatIds.add(closestNewBeat.id);
+    }
+
+    return { pagesToUpdate, usedBeatIds };
+};
+
+/**
+ * Prepares measure updates based on old and new measures and beats
+ *
+ * @param newMeasures - The new measures to create
+ * @param newBeats - The temporary beats used to create the measures
+ * @param createdBeats - The newly created beats in the database
+ * @returns An array of new measure arguments for database creation
+ */
+export const prepareMeasuresForCreation = (
+    newMeasures: Measure[],
+    newBeats: Beat[],
+    createdBeats: Beat[],
+): NewMeasureArgs[] => {
+    const measuresToCreate: NewMeasureArgs[] = [];
+
+    for (const measure of newMeasures) {
+        // Get the index of the beat in the new beats array
+        const beatIndex =
+            newBeats.findIndex((b) => b.id === measure.startBeat.id) - 2; // Not sure why -2 is needed but it is
+
+        if (beatIndex === -1) {
+            throw new Error(
+                `Could not find beat with id ${measure.startBeat.id} in new beats`,
+            );
+        }
+
+        // Using the index of beat from the newBeats array, find the actual created beat in the createdBeats array
+        measuresToCreate.push({
+            start_beat: createdBeats[beatIndex].id,
+        });
+    }
+
+    return measuresToCreate;
+};
+
+/**
+ * Performs database operations to update pages, create measures, and delete old data
+ *
+ * @param pagesToUpdate - The pages to update
+ * @param measuresToCreate - The measures to create
+ * @param oldMeasures - The old measures to delete
+ * @param oldBeats - The old beats to delete
+ * @param refreshFunction - Function to refresh the UI after updates
+ * @returns A promise resolving to the result of the database operations
+ */
+export const performDatabaseOperations = async (
+    pagesToUpdate: ModifiedPageArgs[],
+    measuresToCreate: NewMeasureArgs[],
+    oldMeasures: Measure[],
+    oldBeats: Beat[],
+    refreshFunction: () => Promise<void>,
+): Promise<{ success: boolean }> => {
+    const measureIdsToDelete = new Set(
+        oldMeasures.map((measure) => measure.id),
+    );
+    const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
+
+    return GroupFunction({
+        functionsToExecute: [
+            () => updatePages(pagesToUpdate, async () => {}),
+            () => createMeasures(measuresToCreate, async () => {}),
+            () => deleteMeasures(measureIdsToDelete, async () => {}),
+            () => deleteBeats(beatIdsToDelete, async () => {}),
+        ],
+        useNextUndoGroup: false,
+        refreshFunction,
+    });
+};
+
+/**
  * Creates new beat objects and updates associated pages
  *
  * @param newBeats - The new beats to be created
  * @param oldBeats - The existing beats to be replaced
+ * @param newMeasures - The new measures to be created
+ * @param oldMeasures - The existing measures to be replaced
  * @param pages - Pages associated with the old beats
  * @param refreshFunction - Function to refresh the UI after updates
  * @returns An object indicating whether the beat creation and update was successful
@@ -226,100 +381,61 @@ export const createNewBeatObjects = async ({
     pages: Page[];
     refreshFunction: () => Promise<void>;
 }): Promise<{ success: boolean }> => {
-    const beatsToCreate = newBeats.map((beat) => ({
-        duration: beat.duration,
-        include_in_measure: 1 as 0 | 1,
-    }));
+    console.log("newBeatsJson", JSON.stringify(newBeats));
+    console.log("oldBeatsJson", JSON.stringify(oldBeats));
+    console.log("newMeasuresJson", JSON.stringify(newMeasures));
+    console.log("oldMeasuresJson", JSON.stringify(oldMeasures));
+    console.log("pagesJson", JSON.stringify(pages));
 
-    const createBeatsResponse = await GroupFunction({
-        refreshFunction: () => {},
-        functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
-        useNextUndoGroup: true,
-    });
-
-    if (!createBeatsResponse.success) {
-        conToastError("Error creating beats", createBeatsResponse);
-        return {
-            success: false,
-        };
-    }
-
-    let timeStamp = 0;
-    const createdBeats: Beat[] = (
-        createBeatsResponse.responses[0] as {
-            success: boolean;
-            data: DatabaseBeat[];
-        }
-    ).data.map((dbBeat: DatabaseBeat, i: number) => {
-        const newBeat = fromDatabaseBeat(dbBeat, i, timeStamp);
-        timeStamp += dbBeat.duration;
-        return newBeat;
-    });
     try {
-        // Update the pages to use the new beats
-        const oldBeatsMap = new Map(oldBeats.map((beat) => [beat.id, beat]));
-        const pagesToUpdate: ModifiedPageArgs[] = [];
-        const usedCreatedBeatIdsForPages = new Set<number>();
-        for (const page of pages) {
-            if (page.beats.length === 0) continue;
-            const oldBeat = oldBeatsMap.get(page.beats[0].id);
-            if (oldBeat) {
-                const closestNewBeat = findClosestUnusedBeatByTimestamp(
-                    page.timestamp,
-                    createdBeats,
-                    usedCreatedBeatIdsForPages,
-                );
-                if (!closestNewBeat) {
-                    throw new Error("No unused beat found");
-                }
-                pagesToUpdate.push({
-                    id: page.id,
-                    start_beat: closestNewBeat.id,
-                });
-                usedCreatedBeatIdsForPages.add(closestNewBeat.id);
-            } else {
-                throw new Error(
-                    `Could not find beat with id ${page.beats[0].id} in created beats`,
-                );
-            }
-        }
+        // Step 1: Prepare beats for creation
+        const beatsToCreate = prepareBeatsForCreation(newBeats);
 
-        // Find the IDs of the beats from the temporary ones that map to the new one
-        const measuresToCreate: NewMeasureArgs[] = [];
-        console.log(newMeasures);
-        for (const measure of newMeasures) {
-            // Get the index of the beat in the new beats array
-            const beatIndex = newBeats.findIndex(
-                (b) => b.id === measure.startBeat.id,
-            );
-            if (beatIndex === -1) {
-                throw new Error(
-                    `Could not find beat with id ${measure.beats[0].id} in created beats`,
-                );
-            }
-            // Using the index of beat from the newBeats array, find the actual created beat in the createdBeats array
-            measuresToCreate.push({
-                start_beat: createdBeats[beatIndex].id,
-            });
-        }
-
-        const measureIdsToDelete = new Set(
-            oldMeasures.map((measure) => measure.id),
-        );
-        const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
-
-        const updateAndDeleteResponse = GroupFunction({
+        // Step 2: Create beats in the database
+        const createBeatsResponse = await GroupFunction({
+            refreshFunction: () => {},
             functionsToExecute: [
-                () => updatePages(pagesToUpdate, async () => {}),
-                () => createMeasures(measuresToCreate, async () => {}),
-                () => deleteMeasures(measureIdsToDelete, async () => {}),
-                () => deleteBeats(beatIdsToDelete, async () => {}),
+                () => createBeats(beatsToCreate, async () => {}),
             ],
-            useNextUndoGroup: false,
-            refreshFunction,
+            useNextUndoGroup: true,
         });
 
-        return updateAndDeleteResponse;
+        if (!createBeatsResponse.success) {
+            conToastError("Error creating beats", createBeatsResponse);
+            return { success: false };
+        }
+
+        // Step 3: Convert database beats to Beat objects
+        const databaseBeats = (
+            createBeatsResponse.responses[0] as {
+                success: boolean;
+                data: DatabaseBeat[];
+            }
+        ).data;
+        const createdBeats = convertDatabaseBeatsToBeats(databaseBeats);
+
+        // Step 4: Prepare page updates
+        const { pagesToUpdate } = preparePageUpdates(
+            pages,
+            oldBeats,
+            createdBeats,
+        );
+
+        // Step 5: Prepare measure updates
+        const measuresToCreate = prepareMeasuresForCreation(
+            newMeasures,
+            newBeats,
+            createdBeats,
+        );
+
+        // Step 6: Perform database operations
+        return await performDatabaseOperations(
+            pagesToUpdate,
+            measuresToCreate,
+            oldMeasures,
+            oldBeats,
+            refreshFunction,
+        );
     } catch (error) {
         console.error("Error creating new beats", error);
         window.electron.undo();

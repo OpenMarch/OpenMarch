@@ -1,10 +1,19 @@
 import { describe, it, expect, vi } from "vitest";
 import {
+    convertDatabaseBeatsToBeats,
     createNewTemporaryBeats,
     findClosestUnusedBeatByTimestamp,
     getUpdatedBeatObjects,
+    performDatabaseOperations,
+    prepareBeatsForCreation,
+    prepareMeasuresForCreation,
+    preparePageUpdates,
 } from "../EditableAudioPlayerUtils";
 import Beat from "@/global/classes/Beat";
+import Measure from "@/global/classes/Measure";
+import Page from "@/global/classes/Page";
+import { GroupFunction } from "@/utilities/ApiFunctions";
+import { DatabaseBeat } from "electron/database/tables/BeatTable";
 
 describe("createNewTemporaryBeats", () => {
     // Test case 1: Empty beats array
@@ -768,6 +777,287 @@ describe("getUpdatedBeatObjects", () => {
         expect(result).toEqual({
             beatsToUpdate: [],
             newBeatIdsUsed: new Set<number>(),
+        });
+    });
+});
+
+// Mock the necessary functions
+vi.mock("@/global/classes/Page", () => ({
+    updatePages: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+vi.mock("@/global/classes/Measure", () => ({
+    createMeasures: vi.fn().mockResolvedValue({ success: true }),
+    deleteMeasures: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+vi.mock("@/global/classes/Beat", async () => {
+    const actual = await vi.importActual("@/global/classes/Beat");
+    return {
+        ...actual,
+        deleteBeats: vi.fn().mockResolvedValue({ success: true }),
+        createBeats: vi.fn().mockResolvedValue({ success: true }),
+    };
+});
+
+vi.mock("@/utilities/ApiFunctions", () => ({
+    GroupFunction: vi
+        .fn()
+        .mockImplementation(({ functionsToExecute, refreshFunction }) => {
+            functionsToExecute.forEach((fn: () => void) => fn());
+            if (refreshFunction) refreshFunction();
+            return { success: true };
+        }),
+}));
+
+// Helper function to create mock pages
+const createMockPage = (
+    id: number,
+    timestamp: number,
+    beats: Beat[],
+): Page => ({
+    id,
+    timestamp,
+    beats,
+    name: `Page ${id}`,
+    counts: beats.length,
+    notes: null,
+    order: id,
+    nextPageId: id + 1,
+    previousPageId: id > 1 ? id - 1 : null,
+    isSubset: false,
+    duration: beats.reduce((sum, beat) => sum + beat.duration, 0),
+    measures: null,
+    measureBeatToStartOn: null,
+    measureBeatToEndOn: null,
+});
+
+describe("prepareBeatsForCreation", () => {
+    it("should convert Beat objects to database format", () => {
+        const beats: Beat[] = [
+            createMockBeat(1, 0, 2.5, 0),
+            createMockBeat(2, 1, 1.75, 2.5),
+        ];
+
+        const result = prepareBeatsForCreation(beats);
+
+        expect(result).toEqual([
+            { duration: 2.5, include_in_measure: 1 },
+            { duration: 1.75, include_in_measure: 1 },
+        ]);
+    });
+
+    it("should handle empty array", () => {
+        const result = prepareBeatsForCreation([]);
+        expect(result).toEqual([]);
+    });
+});
+
+describe("convertDatabaseBeatsToBeats", () => {
+    it("should convert database beats to Beat objects with calculated timestamps", () => {
+        const databaseBeats: DatabaseBeat[] = [
+            {
+                id: 1,
+                position: 1,
+                duration: 2,
+                include_in_measure: 1,
+                notes: null,
+            } as DatabaseBeat,
+            {
+                id: 2,
+                position: 2,
+                duration: 3,
+                include_in_measure: 1,
+                notes: null,
+            } as DatabaseBeat,
+            {
+                id: 3,
+                position: 3,
+                duration: 1,
+                include_in_measure: 0,
+                notes: "test",
+            } as DatabaseBeat,
+        ];
+
+        const result = convertDatabaseBeatsToBeats(databaseBeats);
+
+        expect(result.length).toBe(3);
+        expect(result[0].timestamp).toBe(0);
+        expect(result[1].timestamp).toBe(2);
+        expect(result[2].timestamp).toBe(5);
+        expect(result[2].duration).toBe(1);
+        expect(result[2].includeInMeasure).toBe(false);
+        expect(result[2].notes).toBe("test");
+    });
+
+    it("should handle empty array", () => {
+        const result = convertDatabaseBeatsToBeats([]);
+        expect(result).toEqual([]);
+    });
+});
+
+describe("preparePageUpdates", () => {
+    it("should match pages with closest beats", () => {
+        const beat1 = createMockBeat(10, 0, 1, 1);
+        const beat2 = createMockBeat(11, 1, 1, 5);
+
+        const pages: Page[] = [
+            createMockPage(1, 1, [beat1]),
+            createMockPage(2, 5, [beat2]),
+        ];
+
+        const oldBeats: Beat[] = [beat1, beat2];
+
+        const createdBeats: Beat[] = [
+            createMockBeat(20, 0, 1.5, 0.9),
+            createMockBeat(21, 1, 1.5, 4.8),
+            createMockBeat(22, 2, 1.5, 7),
+        ];
+
+        const { pagesToUpdate, usedBeatIds } = preparePageUpdates(
+            pages,
+            oldBeats,
+            createdBeats,
+        );
+
+        expect(pagesToUpdate).toEqual([
+            { id: 1, start_beat: 20 },
+            { id: 2, start_beat: 21 },
+        ]);
+        expect(usedBeatIds).toEqual(new Set([20, 21]));
+    });
+
+    it("should throw error when beat not found in old beats", () => {
+        const beat1 = createMockBeat(10, 0, 1, 1);
+        const pages: Page[] = [createMockPage(1, 1, [beat1])];
+
+        const oldBeats: Beat[] = [
+            createMockBeat(11, 1, 1, 5), // Different ID than the one in page
+        ];
+
+        const createdBeats: Beat[] = [createMockBeat(20, 0, 1.5, 0.9)];
+
+        expect(() => preparePageUpdates(pages, oldBeats, createdBeats)).toThrow(
+            "Could not find beat with id 10 in old beats",
+        );
+    });
+
+    it("should throw error when no unused beat found", () => {
+        const beat1 = createMockBeat(10, 0, 1, 1);
+        const beat2 = createMockBeat(11, 1, 1, 5);
+
+        const pages: Page[] = [
+            createMockPage(1, 1, [beat1]),
+            createMockPage(2, 5, [beat2]),
+        ];
+
+        const oldBeats: Beat[] = [beat1, beat2];
+
+        const createdBeats: Beat[] = [
+            createMockBeat(20, 0, 1.5, 0.9), // Only one beat for two pages
+        ];
+
+        expect(() => preparePageUpdates(pages, oldBeats, createdBeats)).toThrow(
+            "No unused beat found",
+        );
+    });
+
+    it("should skip pages with no beats", () => {
+        const beat1 = createMockBeat(11, 1, 1, 5);
+
+        const pages: Page[] = [
+            createMockPage(1, 1, []),
+            createMockPage(2, 5, [beat1]),
+        ];
+
+        const oldBeats: Beat[] = [beat1];
+
+        const createdBeats: Beat[] = [
+            createMockBeat(20, 0, 1.5, 0.9),
+            createMockBeat(21, 1, 1.5, 4.8),
+        ];
+
+        const { pagesToUpdate, usedBeatIds } = preparePageUpdates(
+            pages,
+            oldBeats,
+            createdBeats,
+        );
+
+        expect(pagesToUpdate).toEqual([{ id: 2, start_beat: 21 }]);
+        expect(usedBeatIds).toEqual(new Set([21]));
+    });
+});
+
+describe("prepareMeasuresForCreation", () => {
+    it("should map temporary measure beats to created beats", () => {
+        const newMeasures: Measure[] = [
+            { startBeat: createMockBeat(-1, 0, 1, 1) } as Measure,
+            { startBeat: createMockBeat(-2, 1, 1, 5) } as Measure,
+        ];
+
+        const newBeats: Beat[] = [
+            createMockBeat(-1, 0, 1, 1),
+            createMockBeat(-2, 1, 1, 5),
+            createMockBeat(-3, 2, 1, 10),
+        ];
+
+        const createdBeats: Beat[] = [
+            createMockBeat(101, 0, 1.5, 0.9),
+            createMockBeat(102, 1, 1.5, 4.8),
+            createMockBeat(103, 2, 1.5, 9.5),
+        ];
+
+        const result = prepareMeasuresForCreation(
+            newMeasures,
+            newBeats,
+            createdBeats,
+        );
+
+        expect(result).toEqual([{ start_beat: 101 }, { start_beat: 102 }]);
+    });
+
+    it("should throw error when beat not found in new beats", () => {
+        const newMeasures: Measure[] = [
+            { startBeat: createMockBeat(-5, 0, 1, 1) } as Measure, // ID not in newBeats
+        ];
+
+        const newBeats: Beat[] = [createMockBeat(-1, 0, 1, 1)];
+
+        const createdBeats: Beat[] = [createMockBeat(101, 0, 1.5, 0.9)];
+
+        expect(() =>
+            prepareMeasuresForCreation(newMeasures, newBeats, createdBeats),
+        ).toThrow("Could not find beat with id -5 in new beats");
+    });
+
+    it("should handle empty arrays", () => {
+        const result = prepareMeasuresForCreation([], [], []);
+        expect(result).toEqual([]);
+    });
+});
+
+describe("performDatabaseOperations", () => {
+    it("should call all database functions with correct parameters", async () => {
+        const pagesToUpdate = [{ id: 1, start_beat: 101 }];
+        const measuresToCreate = [{ start_beat: 101 }];
+        const oldMeasures = [{ id: 1 } as Measure];
+        const oldBeats = [createMockBeat(1, 0, 1, 1)];
+        const refreshFunction = vi.fn();
+
+        const result = await performDatabaseOperations(
+            pagesToUpdate,
+            measuresToCreate,
+            oldMeasures,
+            oldBeats,
+            refreshFunction,
+        );
+
+        expect(result.success).toBe(true);
+        expect(refreshFunction).toHaveBeenCalled();
+        expect(GroupFunction).toHaveBeenCalledWith({
+            functionsToExecute: expect.any(Array),
+            useNextUndoGroup: false,
+            refreshFunction,
         });
     });
 });
