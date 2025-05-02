@@ -5,6 +5,7 @@ import ThemeSwitcher from "./titlebar/ThemeSwitcher";
 import TitleBar from "./titlebar/TitleBar";
 import { useTheme } from "@/context/ThemeContext";
 import clsx from "clsx";
+        
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
 }
