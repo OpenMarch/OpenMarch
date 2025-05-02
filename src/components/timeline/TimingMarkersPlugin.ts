@@ -20,26 +20,6 @@ export class TimingMarkersPlugin {
      * Markers are non-draggable and non-resizable point regions
      */
     createTimingMarkers = () => {
-        console.log(
-            this.measures.map((measure) => {
-                return {
-                    id: measure.id,
-                    timeStamp: measure.timestamp,
-                    duration: measure.duration,
-                    number: measure.number,
-                    start_beat: measure.startBeat.id,
-                };
-            }),
-        );
-        console.log(
-            this.beats.map((beat) => {
-                return {
-                    id: beat.id,
-                    timeStamp: beat.timestamp,
-                    duration: beat.duration,
-                };
-            }),
-        );
         this.beats.forEach((beat) => {
             const newRegion = this.wsRegions.addRegion({
                 id: `beat beat-${beat.id}`,
