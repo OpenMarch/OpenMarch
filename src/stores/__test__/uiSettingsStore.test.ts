@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { useUiSettingsStore } from "../UiSettingsStore";
+import { FocusableComponents, useUiSettingsStore } from "../UiSettingsStore";
 import { ElectronApi } from "electron/preload";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -17,6 +17,9 @@ describe("uiSettings Store", () => {
         nextPaths: true,
         gridLines: true,
         halfLines: true,
+        showWaveform: true,
+        timelinePixelsPerSecond: 100,
+        focussedComponent: "canvas" as FocusableComponents,
     };
 
     beforeEach(() => {

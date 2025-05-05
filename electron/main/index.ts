@@ -772,34 +772,39 @@ function setActiveDb(path: string, isNewFile = false) {
             CurrentDatabase.getVersion(db);
             // Create backup before migration
             if (CurrentDatabase.getVersion(db) !== migrator.version) {
-                const backupDir = join(app.getPath("userData"), "backups");
-                if (!fs.existsSync(backupDir)) {
-                    fs.mkdirSync(backupDir);
-                }
-                const timestamp = new Date()
-                    .toISOString()
-                    .replace(/[:.]/g, "-");
-                const originalName = path.split(/[\\/]/).pop();
-                const backupPath = join(
-                    backupDir,
-                    `backup_${timestamp}_${originalName}`,
+                // TEMPORARILY DON'T ALLOW OLDER VERSIONS
+                throw new Error(
+                    "File is not yet compatible with 0.0.9-a. Please create a new project for now.",
                 );
-                console.log("Creating backup of database in " + backupPath);
-                fs.copyFileSync(path, backupPath);
 
-                console.log("Deleting backups older than 30 days");
-                // Delete backups older than 30 days
-                const files = fs.readdirSync(backupDir);
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                // const backupDir = join(app.getPath("userData"), "backups");
+                // if (!fs.existsSync(backupDir)) {
+                //     fs.mkdirSync(backupDir);
+                // }
+                // const timestamp = new Date()
+                //     .toISOString()
+                //     .replace(/[:.]/g, "-");
+                // const originalName = path.split(/[\\/]/).pop();
+                // const backupPath = join(
+                //     backupDir,
+                //     `backup_${timestamp}_${originalName}`,
+                // );
+                // console.log("Creating backup of database in " + backupPath);
+                // fs.copyFileSync(path, backupPath);
 
-                files.forEach((file) => {
-                    const filePath = join(backupDir, file);
-                    const stats = fs.statSync(filePath);
-                    if (stats.birthtime < thirtyDaysAgo) {
-                        fs.unlinkSync(filePath);
-                    }
-                });
+                // console.log("Deleting backups older than 30 days");
+                // // Delete backups older than 30 days
+                // const files = fs.readdirSync(backupDir);
+                // const thirtyDaysAgo = new Date();
+                // thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                // files.forEach((file) => {
+                //     const filePath = join(backupDir, file);
+                //     const stats = fs.statSync(filePath);
+                //     if (stats.birthtime < thirtyDaysAgo) {
+                //         fs.unlinkSync(filePath);
+                //     }
+                // });
             }
             migrator.migrateToThisVersion();
         }
@@ -811,7 +816,7 @@ function setActiveDb(path: string, isNewFile = false) {
         store.delete("databasePath"); // Reset database path
         DatabaseServices.setDbPath("", false);
         dialog.showErrorBox("Error Loading Database", (error as Error).message);
-        win?.webContents.reload();
-        throw error;
+        if (win) win.webContents.reload();
+        else throw error;
     }
 }

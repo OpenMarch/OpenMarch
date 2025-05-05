@@ -74,7 +74,8 @@ export default function MarcherCoordinateSheet({
                     duration: 4,
                     includeInMeasure: true,
                     notes: null,
-                    i,
+                    index: i,
+                    timestamp: 0 + i * 16,
                 } satisfies Beat,
                 number: i + 1,
                 rehearsalMark: null,
@@ -82,6 +83,7 @@ export default function MarcherCoordinateSheet({
                 duration: 16,
                 counts: 8,
                 beats: [],
+                timestamp: 0 + i * 16,
             } satisfies Measure;
         });
         if (example && fieldProperties) {

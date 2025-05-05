@@ -193,7 +193,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 1,
                     position: 1,
@@ -201,7 +201,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 2,
                     position: 2,
@@ -209,7 +209,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 3,
                     position: 3,
@@ -217,7 +217,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 4,
                     position: 4,
@@ -225,7 +225,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 4,
-                } satisfies Beat,
+                } as Beat,
             ];
 
             const mockMeasures: Measure[] = [
@@ -305,7 +305,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 1,
                     position: 1,
@@ -313,7 +313,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 2,
                     position: 2,
@@ -321,7 +321,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 3,
                     position: 3,
@@ -329,7 +329,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 4,
                     position: 4,
@@ -337,7 +337,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 4,
-                } satisfies Beat,
+                } as Beat,
             ];
 
             const mockMeasures: Measure[] = [
@@ -416,7 +416,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 1,
                     position: 1,
@@ -424,7 +424,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 2,
                     position: 2,
@@ -432,7 +432,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 3,
                     position: 3,
@@ -440,7 +440,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 4,
                     position: 4,
@@ -448,7 +448,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 4,
-                } satisfies Beat,
+                } as Beat,
             ];
 
             const mockMeasures: Measure[] = [
@@ -528,7 +528,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 1,
                     position: 0,
@@ -536,7 +536,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 2,
                     position: 1,
@@ -544,7 +544,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
-                } satisfies Beat,
+                } as Beat,
                 {
                     id: 3,
                     position: 2,
@@ -552,7 +552,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
-                } satisfies Beat,
+                } as Beat,
             ];
 
             const mockMeasures: Measure[] = [
@@ -565,7 +565,7 @@ describe("Page", () => {
                     notes: null,
                     rehearsalMark: null,
                     duration: 3000,
-                } satisfies Measure,
+                } as Measure,
             ];
 
             const mockDatabasePages: DatabasePage[] = [

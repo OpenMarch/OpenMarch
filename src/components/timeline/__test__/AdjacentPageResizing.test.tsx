@@ -169,8 +169,8 @@ describe("Adjacent Page Resizing", () => {
         const page2Element = container.querySelector(`[timeline-page-id="2"]`);
 
         // Store initial widths
-        const initialPage1Width = page1Element?.style.width;
-        const initialPage2Width = page2Element?.style.width;
+        const initialPage1Width = (page1Element as HTMLElement)?.style.width;
+        const initialPage2Width = (page2Element as HTMLElement)?.style.width;
 
         // Initial setup - mousedown on resize handle
         fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
@@ -183,8 +183,12 @@ describe("Adjacent Page Resizing", () => {
 
         // Check if both page widths are updated
         // Page 1 should be wider, Page 2 should be narrower
-        expect(page1Element?.style.width).not.toEqual(initialPage1Width);
-        expect(page2Element?.style.width).not.toEqual(initialPage2Width);
+        expect((page1Element as HTMLElement)?.style.width).not.toEqual(
+            initialPage1Width,
+        );
+        expect((page2Element as HTMLElement)?.style.width).not.toEqual(
+            initialPage2Width,
+        );
 
         // Simulate mouse up to end resizing
         const mouseUpEvent = new MouseEvent("mouseup");
@@ -215,8 +219,8 @@ describe("Adjacent Page Resizing", () => {
         });
 
         // Check if page 2 width is at least the minimum (100px)
-        expect(page2Element?.style.width).toBeDefined();
-        const page2Width = page2Element?.style.width;
+        expect((page2Element as HTMLElement)?.style.width).toBeDefined();
+        const page2Width = (page2Element as HTMLElement)?.style.width;
         const numericWidth = parseInt(page2Width?.replace("px", "") || "0");
         expect(numericWidth).toBeGreaterThanOrEqual(100);
 

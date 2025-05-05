@@ -251,6 +251,9 @@ export const preparePageUpdates = (
     oldBeats: Beat[],
     createdBeats: Beat[],
 ): { pagesToUpdate: ModifiedPageArgs[]; usedBeatIds: Set<number> } => {
+    if (pages.length === 0)
+        return { pagesToUpdate: [], usedBeatIds: new Set() };
+
     const oldBeatsMap = new Map(oldBeats.map((beat) => [beat.id, beat]));
     const pagesToUpdate: ModifiedPageArgs[] = [];
     const usedBeatIds = new Set<number>();
@@ -356,7 +359,8 @@ export const performDatabaseOperations = async (
 };
 
 /**
- * Creates new beat objects and updates associated pages
+ * Creates new beat objects and updates associated pages.
+ * Pages are updated by finding the new beats that have the closest timestamp to the page's timestamp.
  *
  * @param newBeats - The new beats to be created
  * @param oldBeats - The existing beats to be replaced
@@ -381,12 +385,6 @@ export const createNewBeatObjects = async ({
     pages: Page[];
     refreshFunction: () => Promise<void>;
 }): Promise<{ success: boolean }> => {
-    console.log("newBeatsJson", JSON.stringify(newBeats));
-    console.log("oldBeatsJson", JSON.stringify(oldBeats));
-    console.log("newMeasuresJson", JSON.stringify(newMeasures));
-    console.log("oldMeasuresJson", JSON.stringify(oldMeasures));
-    console.log("pagesJson", JSON.stringify(pages));
-
     try {
         // Step 1: Prepare beats for creation
         const beatsToCreate = prepareBeatsForCreation(newBeats);

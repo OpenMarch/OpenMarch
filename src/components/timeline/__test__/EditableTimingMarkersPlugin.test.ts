@@ -26,6 +26,7 @@ describe("EditableTimingMarkersPlugin", () => {
             includeInMeasure: true,
             notes: null,
             index: 0,
+            timestamp: 0,
         },
         {
             id: 1,
@@ -34,6 +35,7 @@ describe("EditableTimingMarkersPlugin", () => {
             includeInMeasure: true,
             notes: null,
             index: 0,
+            timestamp: 1,
         },
         {
             id: 2,
@@ -42,6 +44,7 @@ describe("EditableTimingMarkersPlugin", () => {
             includeInMeasure: true,
             notes: null,
             index: 1,
+            timestamp: 2.5,
         },
     ];
 
@@ -55,6 +58,7 @@ describe("EditableTimingMarkersPlugin", () => {
             duration: 1.0,
             counts: 1,
             beats: [mockBeats[0]],
+            timestamp: 0,
         },
     ];
 
