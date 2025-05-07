@@ -73,12 +73,12 @@ export function createMarchers({
         }
         // Create a marcherPage for each marcher
         const newMarcherPages: ModifiedMarcherPageArgs[] = [];
-        for (const marcher of marcherInsertResponse.data) {
+        for (const [index, marcher] of marcherInsertResponse.data.entries()) {
             for (const page of allPages.data) {
                 newMarcherPages.push({
                     marcher_id: marcher.id,
                     page_id: page.id,
-                    x: 100,
+                    x: 100 + index * 20,
                     y: 100,
                 });
             }
