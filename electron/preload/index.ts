@@ -43,6 +43,11 @@ import {
     Shape,
 } from "electron/database/tables/ShapeTable";
 import {
+    SectionAppearance,
+    NewSectionAppearanceArgs,
+    ModifiedSectionAppearanceArgs,
+} from "electron/database/tables/SectionAppearanceTable";
+import {
     UtilityRecord,
     ModifiedUtilityRecord,
 } from "electron/database/tables/UtilityTable";
@@ -461,7 +466,23 @@ const APP_API = {
             useNextUndoGroup,
         ) as Promise<DatabaseResponse<UtilityRecord>>,
 
-    /******************************/
+    // Section Appearances
+    getSectionAppearances: (
+        section?: string
+    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
+        ipcRenderer.invoke("section_appearances:getSectionAppearances", section),
+    createSectionAppearances: (
+        newSectionAppearances: NewSectionAppearanceArgs[]
+    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
+        ipcRenderer.invoke("section_appearances:createSectionAppearances", newSectionAppearances),
+    updateSectionAppearances: (
+        modifiedSectionAppearances: ModifiedSectionAppearanceArgs[]
+    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
+        ipcRenderer.invoke("section_appearances:updateSectionAppearances", modifiedSectionAppearances),
+    deleteSectionAppearances: (
+        sectionAppearanceIds: number[]
+    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
+        ipcRenderer.invoke("section_appearances:deleteSectionAppearances", sectionAppearanceIds),
 
     // Utilities
     swapMarchers: (args: {

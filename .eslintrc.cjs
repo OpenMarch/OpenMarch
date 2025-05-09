@@ -20,7 +20,7 @@ module.exports = {
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "warn",
         "max-lines-per-function": [
-            "warn",
+            "off",
             {
                 max: 80,
                 skipBlankLines: true,

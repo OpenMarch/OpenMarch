@@ -13,6 +13,7 @@ export const Constants = {
     ShapePageMarcherTableName: "shape_page_marchers",
     BeatsTableName: "beats",
     UtilityTableName: "utility",
+    SectionAppearancesTableName: "section_appearances",
 
     PagePrefix: "page",
     NewPageId: "NEW_PAGE", // deprecated?
@@ -33,6 +34,7 @@ export const TablesWithHistory = [
     Constants.ShapePageMarcherTableName,
     Constants.FieldPropertiesTableName,
     Constants.MeasureTableName,
+    Constants.SectionAppearancesTableName,
 ] as const;
 
 export default Constants;
