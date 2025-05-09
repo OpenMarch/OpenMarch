@@ -1,57 +1,72 @@
 import { useState, useRef, useEffect } from "react";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
-import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { Button } from "../ui/Button";
-import { Trash } from "@phosphor-icons/react";
-import { ModifiedSectionAppearanceArgs } from "electron/database/tables/SectionAppearanceTable";
-import { AlertDialogAction, AlertDialogCancel } from "../ui/AlertDialog";
-import FormButtons from "../FormButtons";
-import { ColorPicker } from "../ui/ColorPicker";
+import { Trash, Info, Plus } from "@phosphor-icons/react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "../ui/AlertDialog";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTriggerText,
+    SelectGroup,
 } from "../ui/Select";
-import { SectionAppearance } from "@/global/classes/SectionAppearance";
+import {
+    SectionAppearance,
+    ModifiedSectionAppearanceArgs,
+    NewSectionAppearanceArgs,
+} from "@/global/classes/SectionAppearance";
+import * as Form from "@radix-ui/react-form";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { TooltipContents } from "../ui/Tooltip";
+import ColorPicker from "../ui/ColorPicker";
+import clsx from "clsx";
+import { SECTIONS } from "@/global/classes/Sections";
+import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import { toast } from "sonner";
+
+const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px] ml-16");
+const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
+const inputClassname = clsx("col-span-6 self-center");
 
 export default function SectionAppearanceList() {
-    const { isOpen } = useSidebarModalStore();
-    const [isEditingLocal, setIsEditingLocal] = useState(false);
-    const [isEditing, setIsEditing] = [isEditingLocal, setIsEditingLocal];
     const { sectionAppearances, fetchSectionAppearances } =
         useSectionAppearanceStore();
-
-    // Local state for appearance data
     const [localAppearances, setLocalAppearances] = useState<
         SectionAppearance[]
     >([]);
     const changesRef = useRef<{ [key: number]: any }>({});
     const deletionsRef = useRef<number[]>([]);
 
-    // Shape options
+    function clearChanges() {
+        changesRef.current = {};
+        deletionsRef.current = [];
+    }
+
+    const defaultFillColor = CanvasMarcher.theme.defaultMarcher.fill;
+    const defaultOutlineColor = CanvasMarcher.theme.defaultMarcher.outline;
+    const defaultShapeType = "circle";
+
     const shapeOptions = ["circle", "square", "triangle"];
 
-    // Get all section appearances on mount
     useEffect(() => {
         fetchSectionAppearances();
     }, [fetchSectionAppearances]);
 
-    // Update local appearances when section appearances change
+    // Reset change tracking when source data changes
     useEffect(() => {
         setLocalAppearances(sectionAppearances);
+        clearChanges();
     }, [sectionAppearances]);
 
-    // Turn off editing if the modal closes
-    useEffect(() => {
-        setIsEditing(false);
-    }, [isOpen, setIsEditing]);
-
-    // Handle form submission (saving changes)
     async function handleSubmit() {
-        setIsEditing(false);
-
-        // Process modifications
         const modifiedAppearances: ModifiedSectionAppearanceArgs[] = [];
         for (const [appearanceId, changes] of Object.entries(
             changesRef.current,
@@ -68,30 +83,21 @@ export default function SectionAppearanceList() {
             );
         }
 
-        // Process deletions
         if (deletionsRef.current.length > 0) {
             await SectionAppearance.deleteSectionAppearances(
                 deletionsRef.current,
             );
         }
 
-        // Refresh data
         await fetchSectionAppearances();
-
-        // Reset change tracking
-        changesRef.current = {};
-        deletionsRef.current = [];
     }
 
     // Handle canceling edits
     function handleCancel() {
-        setIsEditing(false);
         setLocalAppearances(sectionAppearances);
-        deletionsRef.current = [];
-        changesRef.current = {};
+        clearChanges();
     }
 
-    // Handle deleting a section appearance
     function handleDeleteAppearance(appearanceId: number) {
         deletionsRef.current.push(appearanceId);
         setLocalAppearances(
@@ -101,7 +107,6 @@ export default function SectionAppearanceList() {
         );
     }
 
-    // Handle changing a section appearance property
     function handleChange(value: any, attribute: string, appearanceId: number) {
         // Create an entry for the appearance if it doesn't exist
         if (!changesRef.current[appearanceId])
@@ -120,30 +125,56 @@ export default function SectionAppearanceList() {
         );
     }
 
-    // Function to determine text color based on background
-    const getTextColor = (bgColor: string) => {
-        try {
-            const match = bgColor.match(
-                /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d*\.?\d+))?\)/,
-            );
-            if (!match) return "#000000";
+    const hasPendingChanges =
+        Object.keys(changesRef.current).length > 0 ||
+        deletionsRef.current.length > 0;
 
-            const r = parseInt(match[1], 10);
-            const g = parseInt(match[2], 10);
-            const b = parseInt(match[3], 10);
+    function getDeletedSectionNames() {
+        return deletionsRef.current
+            .map((id) => {
+                const sectionName = sectionAppearances.find(
+                    (appearance) => appearance.id === id,
+                )?.section;
+                return sectionName || "Unknown";
+            })
+            .join(", ");
+    }
 
-            // Calculate luminance - if bright background, use dark text
-            return r * 0.299 + g * 0.587 + b * 0.114 > 186
-                ? "#000000"
-                : "#ffffff";
-        } catch {
-            return "#000000";
+    // Get available sections (sections without appearances)
+    const availableSections = Object.values(SECTIONS)
+        .map((section) => section.name)
+        .filter(
+            (sectionName) =>
+                !sectionAppearances.some(
+                    (appearance) => appearance.section === sectionName,
+                ),
+        )
+        .sort();
+
+    async function handleCreateNewAppearance(sectionName: string) {
+        if (!sectionName) {
+            return;
         }
-    };
+
+        const newAppearance: NewSectionAppearanceArgs = {
+            section: sectionName,
+            fill_color: defaultFillColor,
+            outline_color: defaultOutlineColor,
+            shape_type: defaultShapeType,
+        };
+
+        try {
+            await SectionAppearance.createSectionAppearances([newAppearance]);
+            await fetchSectionAppearances();
+            toast.success(`Added style for ${sectionName}`);
+        } catch (error) {
+            toast.error("Failed to create section appearance");
+            console.error("Error creating section appearance:", error);
+        }
+    }
 
     return (
-        <form
-            id="sectionAppearanceListForm"
+        <Form.Root
             onSubmit={(event) => {
                 event.preventDefault();
                 handleSubmit();
@@ -151,39 +182,43 @@ export default function SectionAppearanceList() {
             className="flex flex-col gap-16 text-body text-text"
         >
             <div className="flex w-full items-center justify-between">
-                <p className="text-body text-text">Section Styles</p>
-                <div className="flex gap-8">
-                    {localAppearances && localAppearances.length > 0 ? (
-                        <>
+                {localAppearances &&
+                    localAppearances.length > 0 &&
+                    hasPendingChanges && (
+                        <div className="flex w-full justify-between gap-8">
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                onClick={handleCancel}
+                            >
+                                Discard Changes
+                            </Button>
                             {deletionsRef.current.length > 0 ? (
-                                <FormButtons
-                                    variant="primary"
-                                    size="compact"
-                                    handleCancel={handleCancel}
-                                    editButton="Edit Styles"
-                                    isEditingProp={isEditing}
-                                    setIsEditingProp={setIsEditing}
-                                    handleSubmit={handleSubmit}
-                                    isDangerButton={true}
-                                    alertDialogTitle="Warning"
-                                    alertDialogDescription={`
-                                        You are about to delete these section styles:
-                                        ${deletionsRef.current
-                                            .map((id) => {
-                                                const sectionName =
-                                                    sectionAppearances.find(
-                                                        (appearance) =>
-                                                            appearance.id ===
-                                                            id,
-                                                    )?.section;
-                                                return sectionName || "Unknown";
-                                            })
-                                            .join(
-                                                ", ",
-                                            )}. This can be undone with [Ctrl/Cmd+Z].
-                                    `}
-                                    alertDialogActions={
-                                        <>
+                                <AlertDialog>
+                                    <AlertDialogTrigger>
+                                        <Button variant="red" size="compact">
+                                            Save Changes
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogTitle>
+                                            Warning
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            You are about to delete these
+                                            section styles:{" "}
+                                            {getDeletedSectionNames()}. This can
+                                            be undone with [Ctrl/Cmd+Z].
+                                        </AlertDialogDescription>
+                                        <div className="flex w-full justify-end gap-8">
+                                            <AlertDialogCancel>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="compact"
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </AlertDialogCancel>
                                             <AlertDialogAction>
                                                 <Button
                                                     variant="red"
@@ -193,146 +228,103 @@ export default function SectionAppearanceList() {
                                                     Delete
                                                 </Button>
                                             </AlertDialogAction>
-                                            <AlertDialogCancel>
-                                                <Button
-                                                    variant="secondary"
-                                                    size="compact"
-                                                    onClick={handleCancel}
-                                                >
-                                                    Cancel
-                                                </Button>
-                                            </AlertDialogCancel>
-                                        </>
-                                    }
-                                />
-                            ) : (
-                                <FormButtons
-                                    variant="secondary"
+                                        </div>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            ) : hasPendingChanges ? (
+                                <Button
+                                    variant="primary"
                                     size="compact"
-                                    handleCancel={handleCancel}
-                                    editButton="Edit Styles"
-                                    isEditingProp={isEditing}
-                                    setIsEditingProp={setIsEditing}
-                                    handleSubmit={handleSubmit}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        <button type="submit" hidden={true} />
+                                    onClick={handleSubmit}
+                                >
+                                    Save Changes
+                                </Button>
+                            ) : null}
+                        </div>
                     )}
-                </div>
             </div>
 
-            <div className="flex h-fit w-full min-w-0 flex-col gap-6">
-                {localAppearances && localAppearances.length > 0 && (
+            <div className="flex h-fit w-full min-w-0 flex-col gap-16">
+                {localAppearances && localAppearances.length > 0 ? (
                     <>
                         {localAppearances.map((appearance) => (
                             <div
                                 key={appearance.id}
-                                className="flex flex-col gap-4"
+                                className="flex flex-col gap-12"
                             >
                                 <div className="flex items-center justify-between">
-                                    <h4 className="font-medium">
+                                    <h4 className="text-h4 font-medium">
                                         {appearance.section}
                                     </h4>
-                                    {isEditing && (
-                                        <Button
-                                            variant="primary"
-                                            size="compact"
-                                            onClick={() =>
-                                                handleDeleteAppearance(
-                                                    appearance.id,
-                                                )
-                                            }
-                                        >
-                                            <Trash className="text-red-500" />
-                                        </Button>
-                                    )}
+                                    <Button
+                                        variant="red"
+                                        size="compact"
+                                        content="icon"
+                                        onClick={() =>
+                                            handleDeleteAppearance(
+                                                appearance.id,
+                                            )
+                                        }
+                                        tooltipText="Delete this section style"
+                                        tooltipSide="left"
+                                    >
+                                        <Trash size={18} />
+                                    </Button>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-sm text-text/70">
-                                            Fill Color
-                                        </label>
-                                        {isEditing ? (
-                                            <ColorPicker
-                                                color={appearance.fill_color}
-                                                onChange={(color) =>
-                                                    handleChange(
-                                                        color,
-                                                        "fill_color",
-                                                        appearance.id,
-                                                    )
-                                                }
-                                            />
-                                        ) : (
-                                            <div
-                                                className="text-xs flex h-10 w-full cursor-pointer items-center justify-center rounded-full border border-stroke font-mono tracking-wider"
-                                                style={{
-                                                    backgroundColor:
-                                                        appearance.fill_color,
-                                                    color: getTextColor(
-                                                        appearance.fill_color,
-                                                    ),
-                                                }}
-                                            >
-                                                {appearance.fill_color}
-                                            </div>
-                                        )}
-                                    </div>
+                                <ColorPicker
+                                    label="Fill Color"
+                                    tooltip="The fill color of the section marker"
+                                    initialColor={appearance.fill_color}
+                                    onChange={(color) => {
+                                        handleChange(
+                                            color,
+                                            "fill_color",
+                                            appearance.id,
+                                        );
+                                    }}
+                                    defaultColor={{ r: 0, g: 0, b: 0, a: 1 }}
+                                />
 
-                                    <div className="flex flex-col gap-2">
-                                        <label className="text-sm text-text/70">
-                                            Outline Color
-                                        </label>
-                                        {isEditing ? (
-                                            <ColorPicker
-                                                color={appearance.outline_color}
-                                                onChange={(color) =>
-                                                    handleChange(
-                                                        color,
-                                                        "outline_color",
-                                                        appearance.id,
-                                                    )
-                                                }
-                                            />
-                                        ) : (
-                                            <div
-                                                className="text-xs flex h-10 w-full cursor-pointer items-center justify-center rounded-full border border-stroke font-mono tracking-wider"
-                                                style={{
-                                                    backgroundColor:
-                                                        appearance.outline_color,
-                                                    color: getTextColor(
-                                                        appearance.outline_color,
-                                                    ),
-                                                }}
-                                            >
-                                                {appearance.outline_color}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                <ColorPicker
+                                    label="Outline Color"
+                                    tooltip="The outline color of the section marker"
+                                    initialColor={appearance.outline_color}
+                                    onChange={(color) => {
+                                        handleChange(
+                                            color,
+                                            "outline_color",
+                                            appearance.id,
+                                        );
+                                    }}
+                                    defaultColor={{
+                                        r: 255,
+                                        g: 255,
+                                        b: 255,
+                                        a: 1,
+                                    }}
+                                />
 
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-sm text-text/70">
-                                        Shape
-                                    </label>
-                                    {isEditing ? (
-                                        <Select
-                                            value={appearance.shape_type}
-                                            onValueChange={(value) =>
-                                                handleChange(
-                                                    value,
-                                                    "shape_type",
-                                                    appearance.id,
-                                                )
-                                            }
+                                <div className={formFieldClassname}>
+                                    <div className={labelClassname}>Shape</div>
+                                    <Select
+                                        value={appearance.shape_type}
+                                        onValueChange={(value) =>
+                                            handleChange(
+                                                value,
+                                                "shape_type",
+                                                appearance.id,
+                                            )
+                                        }
+                                    >
+                                        <SelectTriggerText
+                                            label="Shape"
+                                            className={inputClassname}
                                         >
-                                            <SelectTriggerText label="Shape">
-                                                {appearance.shape_type}
-                                            </SelectTriggerText>
-                                            <SelectContent>
+                                            {appearance.shape_type}
+                                        </SelectTriggerText>
+                                        <SelectContent>
+                                            <SelectGroup>
                                                 {shapeOptions.map((shape) => (
                                                     <SelectItem
                                                         key={shape}
@@ -341,28 +333,66 @@ export default function SectionAppearanceList() {
                                                         {shape}
                                                     </SelectItem>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <div className="flex h-10 w-full cursor-pointer items-center rounded-full border border-stroke px-4">
-                                            {appearance.shape_type}
-                                        </div>
-                                    )}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <Tooltip.TooltipProvider>
+                                        <Tooltip.Root>
+                                            <Tooltip.Trigger type="button">
+                                                <Info
+                                                    size={18}
+                                                    className="text-text/60"
+                                                />
+                                            </Tooltip.Trigger>
+                                            <TooltipContents
+                                                className="p-16"
+                                                side="right"
+                                            >
+                                                The shape used to represent the
+                                                section
+                                            </TooltipContents>
+                                        </Tooltip.Root>
+                                    </Tooltip.TooltipProvider>
                                 </div>
 
                                 <div className="h-px w-full bg-stroke/30"></div>
                             </div>
                         ))}
                     </>
-                )}
-
-                {(!localAppearances || localAppearances.length === 0) && (
+                ) : (
                     <p className="text-body text-text/50">
                         No section styles defined yet. Add one to customize how
                         sections appear.
                     </p>
                 )}
+
+                <div className="mt-8 self-end">
+                    <Select
+                        value=""
+                        onValueChange={handleCreateNewAppearance}
+                        disabled={availableSections.length === 0}
+                    >
+                        <SelectTriggerText label="Add Section">
+                            <div className="flex items-center gap-2">
+                                <Plus size={16} />
+                                <span>New Section Style</span>
+                            </div>
+                        </SelectTriggerText>
+                        <SelectContent>
+                            <SelectGroup>
+                                {availableSections.map((sectionName) => (
+                                    <SelectItem
+                                        key={sectionName}
+                                        value={sectionName}
+                                    >
+                                        {sectionName}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-        </form>
+        </Form.Root>
     );
 }

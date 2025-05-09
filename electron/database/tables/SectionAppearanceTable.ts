@@ -20,8 +20,8 @@ export interface SectionAppearance {
  */
 export interface NewSectionAppearanceArgs {
     section: string;
-    fill_color: string;
-    outline_color: string;
+    fill_color?: string;
+    outline_color?: string;
     shape_type?: string;
 }
 
@@ -98,7 +98,10 @@ export function updateSectionAppearances({
     db: Database.Database;
     modifiedSectionAppearances: ModifiedSectionAppearanceArgs[];
 }): DbActions.DatabaseResponse<SectionAppearance[]> {
-    return DbActions.updateItems<SectionAppearance, ModifiedSectionAppearanceArgs>({
+    return DbActions.updateItems<
+        SectionAppearance,
+        ModifiedSectionAppearanceArgs
+    >({
         db,
         tableName: Constants.SectionAppearancesTableName,
         items: modifiedSectionAppearances,
@@ -127,4 +130,4 @@ export function deleteSectionAppearances({
         useNextUndoGroup: true,
         functionName: "deleteSectionAppearances",
     });
-} 
+}
