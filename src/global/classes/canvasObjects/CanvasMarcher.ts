@@ -5,8 +5,31 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
 import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
+import { SectionAppearance } from "@/global/classes/SectionAppearance";
 
 export const DEFAULT_DOT_RADIUS = 5;
+
+// Cache for section appearances to avoid repeated lookups
+let sectionAppearancesCache: SectionAppearance[] = [];
+
+/**
+ * Sets the cache of section appearances for the CanvasMarcher
+ * @param appearances Section appearances to cache
+ */
+export function setSectionAppearancesCache(appearances: SectionAppearance[]) {
+    sectionAppearancesCache = appearances;
+}
+
+/**
+ * Get section appearance for a marcher based on section
+ * @param section The section name to find appearance for
+ * @returns The section appearance if found, or undefined
+ */
+function getSectionAppearance(section: string): SectionAppearance | undefined {
+    return sectionAppearancesCache.find(
+        (appearance) => appearance.section === section,
+    );
+}
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
@@ -42,26 +65,68 @@ export default class CanvasMarcher
         marcher,
         marcherPage,
         dotRadius = CanvasMarcher.dotRadius,
-        color = rgbaToString(CanvasMarcher.theme.defaultMarcher.fill),
+        color,
     }: {
         marcher: Marcher;
         marcherPage: MarcherPage;
         dotRadius?: number;
         color?: string;
     }) {
+        // Check for section-specific appearance
+        const sectionAppearance = getSectionAppearance(marcher.section);
+
+        // Use section-specific colors if available
+        const fillColor =
+            sectionAppearance?.fill_color ||
+            (color
+                ? color
+                : rgbaToString(CanvasMarcher.theme.defaultMarcher.fill));
+        const outlineColor =
+            sectionAppearance?.outline_color ||
+            rgbaToString(CanvasMarcher.theme.defaultMarcher.outline);
+
+        // Determine shape type from section appearance
+        const shapeType = sectionAppearance?.shape_type || "circle";
+
+        // Create the appropriate shape based on shapeType
+        let markerShape: fabric.Object;
+
+        const commonShapeProps = {
+            left: marcherPage.x,
+            top: marcherPage.y,
+            originX: "center",
+            originY: "center",
+            stroke: outlineColor,
+            fill: fillColor,
+        };
+
+        if (shapeType === "square") {
+            // Create a square with the same area as the circle
+            const sideLength = dotRadius * Math.sqrt(Math.PI);
+            markerShape = new fabric.Rect({
+                ...commonShapeProps,
+                width: sideLength * 2,
+                height: sideLength * 2,
+            });
+        } else if (shapeType === "triangle") {
+            // Create an equilateral triangle
+            const triangleRadius = dotRadius * 1.2; // Slightly larger to maintain visual weight
+            markerShape = new fabric.Triangle({
+                ...commonShapeProps,
+                width: triangleRadius * 2,
+                height: triangleRadius * Math.sqrt(3), // Height of equilateral triangle
+            });
+        } else {
+            // Default to circle
+            markerShape = new fabric.Circle({
+                ...commonShapeProps,
+                radius: dotRadius,
+            });
+        }
+
         super(
             [
-                new fabric.Circle({
-                    left: marcherPage.x,
-                    top: marcherPage.y,
-                    originX: "center",
-                    originY: "center",
-                    stroke: rgbaToString(
-                        CanvasMarcher.theme.defaultMarcher.outline,
-                    ),
-                    fill: color,
-                    radius: dotRadius,
-                }),
+                markerShape,
                 new fabric.Text(marcher.drill_number, {
                     left: marcherPage.x,
                     top: marcherPage.y - CanvasMarcher.dotRadius * 2.2,
@@ -127,23 +192,29 @@ export default class CanvasMarcher
      * The offset that the center of the dot is from the fabric group coordinate.
      */
     private getDotOffset(): { x: number; y: number } {
-        const dot = this._objects.find(
-            (obj) => "radius" in obj,
-        ) as fabric.Circle;
+        // Get the first object, which should be the marker shape (circle, square, or triangle)
+        const shape = this._objects[0] as fabric.Object;
 
-        if (dot.originX !== "center" || dot.originY !== "center")
+        if (!shape) {
             throw new Error(
-                "Dot origin is not center, this will lead to incorrect coords - setCoords: CanvasMarcher.ts",
+                "Marker shape not found - getDotOffset: CanvasMarcher.ts",
             );
-        if (dot.left === undefined || dot.top === undefined)
+        }
+
+        if (shape.originX !== "center" || shape.originY !== "center")
+            throw new Error(
+                "Shape origin is not center, this will lead to incorrect coords - getDotOffset: CanvasMarcher.ts",
+            );
+
+        if (shape.left === undefined || shape.top === undefined)
             // 0 can lead to false negative, so need to check for undefined
             throw new Error(
-                "Dot does not have left or top properties - setCoords: CanvasMarcher.ts",
+                "Shape does not have left or top properties - getDotOffset: CanvasMarcher.ts",
             );
 
         return {
-            x: dot.left,
-            y: dot.top,
+            x: shape.left,
+            y: shape.top,
         };
     }
 

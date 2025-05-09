@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import CanvasMarcher from "./CanvasMarcher";
+import CanvasMarcher, { setSectionAppearancesCache } from "./CanvasMarcher";
 import StaticCanvasMarcher from "./StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
 import FieldProperties from "@/global/classes/FieldProperties";
@@ -15,6 +15,7 @@ import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
 import { UiSettings } from "@/stores/UiSettingsStore";
+import { SectionAppearance } from "@/global/classes/SectionAppearance";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -269,7 +270,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param currentMarcherPages All of the marcher pages (must be filtered by the intended page)
      * @param allMarchers All marchers in the drill
      */
-    renderMarchers = ({
+    renderMarchers = async ({
         currentMarcherPages,
         allMarchers,
     }: {
@@ -277,6 +278,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         allMarchers: Marcher[];
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
+
+        // Fetch and cache section appearances
+        try {
+            const sectionAppearances =
+                await SectionAppearance.getSectionAppearances();
+            setSectionAppearancesCache(sectionAppearances);
+        } catch (error) {
+            console.error(
+                "Failed to load section appearances for marchers:",
+                error,
+            );
+        }
 
         // Get the canvas marchers on the canvas
         const canvasMarchersMap = new Map<number, CanvasMarcher>(

@@ -5,6 +5,7 @@ import PagesModal from "@/components/page/PagesModal";
 import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
+import SectionAppearanceModal from "@/components/section/SectionAppearanceModal";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import BugReport from "../ui/BugReport";
 import TipsAndTricks from "../guides/TipsAndTricks";
@@ -15,6 +16,7 @@ export default function Topbar() {
             <PlaybackControls />
             <ToolbarSection>
                 <MarchersModal />
+                <SectionAppearanceModal />
                 <PagesModal />
                 <MusicModal />
                 <FieldModal />
