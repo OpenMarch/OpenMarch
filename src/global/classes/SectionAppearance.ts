@@ -2,7 +2,7 @@ import { RgbaColor } from "@uiw/react-color";
 import { SectionAppearance as DatabaseSectionAppearance } from "electron/database/tables/SectionAppearanceTable";
 import { rgbaToString } from "./FieldTheme";
 
-// Parse rbga(0, 0, 0, 1) string color to RGBA color
+// Parse rgba(0, 0, 0, 1) string color to RGBA color
 function parseColor(colorStr: string): RgbaColor {
     // Extract r, g, b, a values from rgba string
     const match = colorStr.match(
@@ -56,6 +56,19 @@ export interface ModifiedSectionAppearanceArgs {
     shape_type?: string;
 }
 
+/**
+ * Get section appearance for a marcher based on section
+ * @param section The section name to find appearance for
+ * @returns The section appearance if found, or undefined
+ */
+export function getSectionAppearance(
+    section: string,
+    sectionAppearances: SectionAppearance[],
+): SectionAppearance | undefined {
+    return sectionAppearances.find(
+        (appearance) => appearance.section === section,
+    );
+}
 export class SectionAppearance {
     readonly id: number;
     readonly section: string;

@@ -5,31 +5,9 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
 import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
-import { SectionAppearance } from "@/global/classes/SectionAppearance";
+import { SectionAppearance } from "../SectionAppearance";
 
 export const DEFAULT_DOT_RADIUS = 5;
-
-// Cache for section appearances to avoid repeated lookups
-let sectionAppearancesCache: SectionAppearance[] = [];
-
-/**
- * Sets the cache of section appearances for the CanvasMarcher
- * @param appearances Section appearances to cache
- */
-export function setSectionAppearancesCache(appearances: SectionAppearance[]) {
-    sectionAppearancesCache = appearances;
-}
-
-/**
- * Get section appearance for a marcher based on section
- * @param section The section name to find appearance for
- * @returns The section appearance if found, or undefined
- */
-function getSectionAppearance(section: string): SectionAppearance | undefined {
-    return sectionAppearancesCache.find(
-        (appearance) => appearance.section === section,
-    );
-}
 
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
@@ -65,16 +43,15 @@ export default class CanvasMarcher
         marcher,
         marcherPage,
         dotRadius = CanvasMarcher.dotRadius,
+        sectionAppearance,
         color,
     }: {
         marcher: Marcher;
         marcherPage: MarcherPage;
         dotRadius?: number;
         color?: string;
+        sectionAppearance?: SectionAppearance;
     }) {
-        // Check for section-specific appearance
-        const sectionAppearance = getSectionAppearance(marcher.section);
-
         // Use section-specific colors if available
         const fillColor =
             color ||

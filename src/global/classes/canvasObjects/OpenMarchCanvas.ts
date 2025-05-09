@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import CanvasMarcher, { setSectionAppearancesCache } from "./CanvasMarcher";
+import CanvasMarcher from "./CanvasMarcher";
 import StaticCanvasMarcher from "./StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
 import FieldProperties from "@/global/classes/FieldProperties";
@@ -15,7 +15,10 @@ import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import { SectionAppearance } from "@/global/classes/SectionAppearance";
+import {
+    SectionAppearance,
+    getSectionAppearance,
+} from "@/global/classes/SectionAppearance";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -279,17 +282,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
-        // Fetch and cache section appearances
-        try {
-            const sectionAppearances =
-                await SectionAppearance.getSectionAppearances();
-            setSectionAppearancesCache(sectionAppearances);
-        } catch (error) {
-            console.error(
-                "Failed to load section appearances for marchers:",
-                error,
-            );
-        }
+        const sectionAppearances =
+            await SectionAppearance.getSectionAppearances();
 
         // Get the canvas marchers on the canvas
         const canvasMarchersMap = new Map<number, CanvasMarcher>(
@@ -314,8 +308,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     continue;
                 }
 
+                const sectionAppearance = getSectionAppearance(
+                    curMarcher.section,
+                    sectionAppearances,
+                );
+
                 this.add(
-                    new CanvasMarcher({ marcher: curMarcher, marcherPage }),
+                    new CanvasMarcher({
+                        marcher: curMarcher,
+                        marcherPage,
+                        sectionAppearance,
+                    }),
                 );
             }
             // Marcher exists on the Canvas, move it to the new location if it has changed

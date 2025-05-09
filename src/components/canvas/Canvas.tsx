@@ -375,20 +375,13 @@ export default function Canvas({
     useEffect(() => {
         if (canvas && selectedPage && marchers && marcherPages) {
             canvas.currentPage = selectedPage;
-
-            // Create an async function to handle the awaiting
-            const renderMarchersAsync = async () => {
-                await canvas.renderMarchers({
-                    currentMarcherPages: MarcherPage.filterByPageId(
-                        marcherPages,
-                        selectedPage.id,
-                    ),
-                    allMarchers: marchers,
-                });
-            };
-
-            // Call the async function
-            renderMarchersAsync();
+            canvas.renderMarchers({
+                currentMarcherPages: MarcherPage.filterByPageId(
+                    marcherPages,
+                    selectedPage.id,
+                ),
+                allMarchers: marchers,
+            });
         }
     }, [canvas, marcherPages, marchers, selectedPage]);
 
