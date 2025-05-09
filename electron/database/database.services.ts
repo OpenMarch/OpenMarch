@@ -20,6 +20,7 @@ import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
+import * as SectionAppearanceTable from "./tables/SectionAppearanceTable";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -435,6 +436,37 @@ export function initHandlers() {
             const undoGroup = History.getCurrentUndoGroup(db);
             return { success: true, data: undoGroup };
         }),
+    );
+
+    // Section Appearances
+    ipcMain.handle(
+        "section_appearances:getSectionAppearances",
+        async (_event, section?: string) => 
+            connectWrapper(SectionAppearanceTable.getSectionAppearances, { section }),
+    );
+    
+    ipcMain.handle(
+        "section_appearances:createSectionAppearances",
+        async (_event, newSectionAppearances) =>
+            connectWrapper(SectionAppearanceTable.createSectionAppearances, {
+                newSectionAppearances,
+            }),
+    );
+    
+    ipcMain.handle(
+        "section_appearances:updateSectionAppearances",
+        async (_event, modifiedSectionAppearances) =>
+            connectWrapper(SectionAppearanceTable.updateSectionAppearances, {
+                modifiedSectionAppearances,
+            }),
+    );
+    
+    ipcMain.handle(
+        "section_appearances:deleteSectionAppearances",
+        async (_event, sectionAppearanceIds) =>
+            connectWrapper(SectionAppearanceTable.deleteSectionAppearances, {
+                sectionAppearanceIds: new Set(sectionAppearanceIds),
+            }),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {

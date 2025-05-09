@@ -60,6 +60,7 @@ export default class v6 extends v5 {
         this.createShapeTable(db);
         this.createShapePageTable(db);
         this.createShapePageMarcherTable(db);
+        this.createSectionAppearancesTable(db);
         this.createUtilityTable(db);
         db.pragma("user_version = " + this.version);
         console.log("\nDatabase created successfully.");
@@ -216,6 +217,35 @@ export default class v6 extends v5 {
                         FOREIGN KEY (start_beat) REFERENCES "${Constants.BeatsTableName}" ("id")
                     );
                 `);
+        } catch (error) {
+            throw new Error(`Failed to create ${tableName} table: ${error}`);
+        }
+        createUndoTriggers(db, tableName);
+    }
+
+    /**
+     * A table for storing default appearance settings for each section.
+     * @param db Database object to use
+     */
+    createSectionAppearancesTable(db: Database.Database) {
+        const tableName = Constants.SectionAppearancesTableName;
+        if (this.tableAlreadyExists(tableName, db))
+            return {
+                success: true,
+                data: tableName,
+            };
+        try {
+            db.exec(`
+                CREATE TABLE IF NOT EXISTS "${tableName}" (
+                    "id"            INTEGER PRIMARY KEY,
+                    "section"       TEXT NOT NULL UNIQUE,
+                    "fill_color"    TEXT NOT NULL DEFAULT 'rgba(0, 0, 0, 1)',
+                    "outline_color" TEXT NOT NULL DEFAULT 'rgba(0, 0, 0, 1)',
+                    "shape_type"    TEXT NOT NULL DEFAULT 'circle',
+                    "created_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at"    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+            `);
         } catch (error) {
             throw new Error(`Failed to create ${tableName} table: ${error}`);
         }
