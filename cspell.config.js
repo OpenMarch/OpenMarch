@@ -20,6 +20,7 @@ module.exports = {
         "pagewidth",
         "Rcoords",
         "ritardandos",
+        "rbga",
         "rootfile",
         "sonner",
         "spms",

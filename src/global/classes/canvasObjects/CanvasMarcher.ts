@@ -77,13 +77,15 @@ export default class CanvasMarcher
 
         // Use section-specific colors if available
         const fillColor =
-            sectionAppearance?.fill_color ||
-            (color
-                ? color
-                : rgbaToString(CanvasMarcher.theme.defaultMarcher.fill));
-        const outlineColor =
+            color ||
+            rgbaToString(
+                sectionAppearance?.fill_color ||
+                    CanvasMarcher.theme.defaultMarcher.fill,
+            );
+        const outlineColor = rgbaToString(
             sectionAppearance?.outline_color ||
-            rgbaToString(CanvasMarcher.theme.defaultMarcher.outline);
+                CanvasMarcher.theme.defaultMarcher.outline,
+        );
 
         // Determine shape type from section appearance
         const shapeType = sectionAppearance?.shape_type || "circle";
@@ -101,12 +103,11 @@ export default class CanvasMarcher
         };
 
         if (shapeType === "square") {
-            // Create a square with the same area as the circle
             const sideLength = dotRadius * Math.sqrt(Math.PI);
             markerShape = new fabric.Rect({
                 ...commonShapeProps,
-                width: sideLength * 2,
-                height: sideLength * 2,
+                width: sideLength * 1.2,
+                height: sideLength * 1.2,
             });
         } else if (shapeType === "triangle") {
             // Create an equilateral triangle
