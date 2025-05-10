@@ -38,7 +38,6 @@ export const BugNote = ({ children }: { children: React.ReactNode }) => {
         <div className="flex h-fit w-fit items-center gap-8 px-4 py-2">
             <BugBeetle size={24} />
             <p className="text-body leading-none">{children}</p>
-
         </div>
     );
 };
