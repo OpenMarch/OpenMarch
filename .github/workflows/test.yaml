@@ -23,8 +23,6 @@ jobs:
             - uses: actions/checkout@v4
             - name: Install project dependencies
               run: npm ci
-            - name: Install canvas dependencies
-              run: npm install canvas
             - name: Test Prepare
               run: npm run test:prepare
             - name: Test
