@@ -13,6 +13,7 @@ describe("TimingMarkersPlugin", () => {
             includeInMeasure: true,
             notes: null,
             index: 0,
+            timestamp: 0,
         },
         {
             id: 2,
@@ -21,6 +22,7 @@ describe("TimingMarkersPlugin", () => {
             includeInMeasure: true,
             notes: null,
             index: 1,
+            timestamp: 1,
         },
         {
             id: 3,
@@ -29,6 +31,7 @@ describe("TimingMarkersPlugin", () => {
             includeInMeasure: true,
             notes: null,
             index: 2,
+            timestamp: 2.5,
         },
     ];
 
@@ -42,6 +45,7 @@ describe("TimingMarkersPlugin", () => {
             duration: 2.5,
             counts: 4,
             beats: [mockBeats[0], mockBeats[1]],
+            timestamp: 0,
         },
         {
             id: 2,
@@ -52,6 +56,7 @@ describe("TimingMarkersPlugin", () => {
             duration: 2,
             counts: 4,
             beats: [mockBeats[2]],
+            timestamp: 2.5,
         },
     ];
 
@@ -283,6 +288,7 @@ describe("TimingMarkersPlugin", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
+                    timestamp: 0,
                 },
             ];
 
@@ -296,6 +302,7 @@ describe("TimingMarkersPlugin", () => {
                     duration: 1,
                     counts: 2,
                     beats: [newBeats[0]],
+                    timestamp: 0,
                 },
             ];
 

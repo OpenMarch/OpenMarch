@@ -1,4 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import {
+    describe,
+    expect,
+    it,
+    vi,
+    beforeEach,
+    afterEach,
+    beforeAll,
+} from "vitest";
 import {
     act,
     cleanup,
@@ -17,6 +25,14 @@ import Beat from "@/global/classes/Beat";
 import Page from "@/global/classes/Page";
 import PageTimeline from "../TimelineContainer";
 import { ModifiedPageArgs } from "electron/database/tables/PageTable";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { ThemeProvider } from "@/context/ThemeContext";
+
+const Providers = ({ children }: { children: React.ReactNode }) => (
+    <ThemeProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+    </ThemeProvider>
+);
 
 // Mock the hooks
 vi.mock("@/stores/TimingObjectsStore");
@@ -104,11 +120,22 @@ const mockPages: Page[] = [
 ];
 
 describe("PageTimeline Resizing", () => {
+    beforeAll(() => {
+        window.matchMedia = vi.fn().mockImplementation((query) => {
+            return {
+                matches: query === "(prefers-color-scheme: light)",
+                media: query,
+                onchange: null,
+            };
+        });
+    });
     // Mock the window.electron object
     beforeEach(() => {
         window.electron = {
             updatePages: vi.fn().mockResolvedValue({ success: true }),
             getSelectedAudioFile: vi.fn().mockResolvedValue(null),
+            setTheme: vi.fn(),
+            getTheme: vi.fn().mockResolvedValue(null),
         } as Partial<ElectronApi> as ElectronApi;
 
         // Mock the useTimingObjectsStore hook
@@ -165,7 +192,11 @@ describe("PageTimeline Resizing", () => {
     });
 
     it("renders the PageTimeline component", () => {
-        render(<PageTimeline />);
+        render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
         // Check if the pages are rendered
         expect(screen.getByText("0")).toBeInTheDocument();
         expect(screen.getByText("1")).toBeInTheDocument();
@@ -174,7 +205,11 @@ describe("PageTimeline Resizing", () => {
     });
 
     it("starts page resizing when mouse down on resize handle", async () => {
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
@@ -189,7 +224,11 @@ describe("PageTimeline Resizing", () => {
     });
 
     it("updates page width during resize movement", async () => {
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
@@ -211,7 +250,11 @@ describe("PageTimeline Resizing", () => {
     });
 
     it("calls updatePages when resizing ends", async () => {
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
@@ -249,7 +292,11 @@ describe("PageTimeline Resizing", () => {
             setIsPlaying: vi.fn(),
         });
 
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");

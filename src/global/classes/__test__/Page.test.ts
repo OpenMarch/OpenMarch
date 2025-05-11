@@ -193,6 +193,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -201,6 +202,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
+                    timestamp: 1000,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -209,6 +211,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
+                    timestamp: 2000,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -217,6 +220,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
+                    timestamp: 3000,
                 } satisfies Beat,
                 {
                     id: 4,
@@ -225,6 +229,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 4,
+                    timestamp: 4000,
                 } satisfies Beat,
             ];
 
@@ -305,6 +310,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -313,6 +319,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -321,6 +328,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
+                    timestamp: 1000,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -329,6 +337,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
+                    timestamp: 2000,
                 } satisfies Beat,
                 {
                     id: 4,
@@ -337,6 +346,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 4,
+                    timestamp: 3000,
                 } satisfies Beat,
             ];
 
@@ -416,6 +426,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -424,6 +435,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -432,6 +444,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
+                    timestamp: 100,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -440,6 +453,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
+                    timestamp: 2000,
                 } satisfies Beat,
                 {
                     id: 4,
@@ -448,6 +462,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 4,
+                    timestamp: 3000,
                 } satisfies Beat,
             ];
 
@@ -528,6 +543,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 0,
+                    timestamp: 0,
                 } satisfies Beat,
                 {
                     id: 1,
@@ -536,6 +552,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 1,
+                    timestamp: 1000,
                 } satisfies Beat,
                 {
                     id: 2,
@@ -544,6 +561,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 2,
+                    timestamp: 2000,
                 } satisfies Beat,
                 {
                     id: 3,
@@ -552,6 +570,7 @@ describe("Page", () => {
                     includeInMeasure: true,
                     notes: null,
                     index: 3,
+                    timestamp: 3000,
                 } satisfies Beat,
             ];
 
@@ -565,6 +584,7 @@ describe("Page", () => {
                     notes: null,
                     rehearsalMark: null,
                     duration: 3000,
+                    timestamp: 0,
                 } satisfies Measure,
             ];
 

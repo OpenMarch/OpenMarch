@@ -1,4 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import {
+    describe,
+    expect,
+    it,
+    vi,
+    beforeEach,
+    afterEach,
+    beforeAll,
+} from "vitest";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -10,6 +18,8 @@ import { ElectronApi } from "electron/preload";
 import Beat from "@/global/classes/Beat";
 import Page from "@/global/classes/Page";
 import PageTimeline from "../TimelineContainer";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 // Mock the hooks
 vi.mock("@/stores/TimingObjectsStore");
@@ -96,12 +106,29 @@ const mockPages: Page[] = [
     } as Page,
 ];
 
+const Providers = ({ children }: { children: React.ReactNode }) => (
+    <ThemeProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+    </ThemeProvider>
+);
+
 describe("Adjacent Page Resizing", () => {
+    beforeAll(() => {
+        window.matchMedia = vi.fn().mockImplementation((query) => {
+            return {
+                matches: query === "(prefers-color-scheme: light)",
+                media: query,
+                onchange: null,
+            };
+        });
+    });
     // Mock the window.electron object
     beforeEach(() => {
         window.electron = {
             updatePages: vi.fn().mockResolvedValue({ success: true }),
             getSelectedAudioFile: vi.fn().mockResolvedValue(null),
+            setTheme: vi.fn(),
+            getTheme: vi.fn().mockResolvedValue(null),
         } as Partial<ElectronApi> as ElectronApi;
 
         // Mock the useTimingObjectsStore hook
@@ -158,7 +185,11 @@ describe("Adjacent Page Resizing", () => {
     });
 
     it("updates both current and next page widths during resize", async () => {
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
@@ -169,8 +200,8 @@ describe("Adjacent Page Resizing", () => {
         const page2Element = container.querySelector(`[timeline-page-id="2"]`);
 
         // Store initial widths
-        const initialPage1Width = page1Element?.style.width;
-        const initialPage2Width = page2Element?.style.width;
+        const initialPage1Width = (page1Element as HTMLElement)?.style.width;
+        const initialPage2Width = (page2Element as HTMLElement)?.style.width;
 
         // Initial setup - mousedown on resize handle
         fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
@@ -183,8 +214,12 @@ describe("Adjacent Page Resizing", () => {
 
         // Check if both page widths are updated
         // Page 1 should be wider, Page 2 should be narrower
-        expect(page1Element?.style.width).not.toEqual(initialPage1Width);
-        expect(page2Element?.style.width).not.toEqual(initialPage2Width);
+        expect((page1Element as HTMLElement)?.style.width).not.toEqual(
+            initialPage1Width,
+        );
+        expect((page2Element as HTMLElement)?.style.width).not.toEqual(
+            initialPage2Width,
+        );
 
         // Simulate mouse up to end resizing
         const mouseUpEvent = new MouseEvent("mouseup");
@@ -197,7 +232,11 @@ describe("Adjacent Page Resizing", () => {
     });
 
     it("ensures next page width doesn't go below minimum when dragging", async () => {
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
@@ -215,8 +254,8 @@ describe("Adjacent Page Resizing", () => {
         });
 
         // Check if page 2 width is at least the minimum (100px)
-        expect(page2Element?.style.width).toBeDefined();
-        const page2Width = page2Element?.style.width;
+        expect((page2Element as HTMLElement)?.style.width).toBeDefined();
+        const page2Width = (page2Element as HTMLElement)?.style.width;
         const numericWidth = parseInt(page2Width?.replace("px", "") || "0");
         expect(numericWidth).toBeGreaterThanOrEqual(100);
 

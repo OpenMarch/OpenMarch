@@ -1,11 +1,12 @@
 import { renderHook, act } from "@testing-library/react";
-import { useUiSettingsStore } from "../UiSettingsStore";
+import { UiSettings, useUiSettingsStore } from "../UiSettingsStore";
 import { ElectronApi } from "electron/preload";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 window.electron = {
     sendLockX: vi.fn(),
     sendLockY: vi.fn(),
+    setShowWaveform: vi.fn(),
 } as Partial<ElectronApi> as ElectronApi;
 
 describe("uiSettings Store", () => {
@@ -17,7 +18,10 @@ describe("uiSettings Store", () => {
         nextPaths: true,
         gridLines: true,
         halfLines: true,
-    };
+        showWaveform: true,
+        timelinePixelsPerSecond: 16,
+        focussedComponent: "canvas",
+    } satisfies UiSettings;
 
     beforeEach(() => {
         const { result } = renderHook(() => useUiSettingsStore());
