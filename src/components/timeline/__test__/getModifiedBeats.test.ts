@@ -29,6 +29,7 @@ describe("getModifiedBeats", () => {
             includeInMeasure: true,
             notes: null,
             index: 0,
+            timestamp: 0,
         },
         {
             id: 2,
@@ -37,6 +38,7 @@ describe("getModifiedBeats", () => {
             includeInMeasure: true,
             notes: null,
             index: 1,
+            timestamp: 1,
         },
         {
             id: 3,
@@ -45,6 +47,7 @@ describe("getModifiedBeats", () => {
             includeInMeasure: true,
             notes: null,
             index: 2,
+            timestamp: 2,
         },
         {
             id: 4,
@@ -53,6 +56,7 @@ describe("getModifiedBeats", () => {
             includeInMeasure: true,
             notes: null,
             index: 3,
+            timestamp: 4,
         },
     ];
 

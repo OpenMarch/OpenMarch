@@ -23,8 +23,10 @@
 // import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 // import { NewPageArgs } from "electron/database/tables/PageTable";
 
-// // TODO - fix this component. Getting error: `Tooltip` must be used within `TooltipProvider`
-// describe("NewPageForm", () => {
+import { describe } from "vitest";
+
+describe.skip("NewPageForm", () => {});
+// TODO - fix this component. Getting error: `Tooltip` must be used within `TooltipProvider`
 //     let createPagesSpy: MockInstance;
 
 //     beforeAll(() => {});
