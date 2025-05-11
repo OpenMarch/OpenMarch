@@ -41,8 +41,8 @@ export default class v1 extends DatabaseMigrator {
                 "notes"	        TEXT,
                 "drill_prefix"	TEXT NOT NULL,
                 "drill_order"	INTEGER NOT NULL,
-                "created_at"	TEXT NOT NULL,
-                "updated_at"	TEXT NOT NULL,
+                "created_at"	TEXT DEFAULT CURRENT_TIMESTAMP,
+                "updated_at"	TEXT DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE ("drill_prefix", "drill_order")
             );
             `,
@@ -60,8 +60,8 @@ export default class v1 extends DatabaseMigrator {
                 "is_subset"	        INTEGER NOT NULL DEFAULT 0 CHECK (is_subset IN (0, 1)),
                 "notes"	            TEXT,
                 "counts"	        INTEGER NOT NULL CHECK (counts >= 0),
-                "created_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                "updated_at"	    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                "created_at"	    TEXT DEFAULT CURRENT_TIMESTAMP,
+                "updated_at"	    TEXT DEFAULT CURRENT_TIMESTAMP,
                 "next_page_id"	    INTEGER,
                 FOREIGN KEY ("next_page_id") REFERENCES "${Constants.PageTableName}" ("id")
                 );
@@ -93,8 +93,8 @@ export default class v1 extends DatabaseMigrator {
                 "page_id"       INTEGER NOT NULL,
                 "x"             REAL,
                 "y"             REAL,
-                "created_at"    TEXT NOT NULL,
-                "updated_at"    TEXT NOT NULL,
+                "created_at"    TEXT DEFAULT CURRENT_TIMESTAMP,
+                "updated_at"    TEXT DEFAULT CURRENT_TIMESTAMP,
                 "notes"         TEXT,
                 FOREIGN KEY ("marcher_id") REFERENCES "${Constants.MarcherTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
                 FOREIGN KEY ("page_id") REFERENCES "${Constants.PageTableName}" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
@@ -151,8 +151,8 @@ export default class v1 extends DatabaseMigrator {
                 CREATE TABLE IF NOT EXISTS "${Constants.MeasureTableName}" (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
                     abc_data TEXT,
-                    "created_at"	TEXT NOT NULL,
-                    "updated_at"	TEXT NOT NULL
+                    "created_at"	TEXT DEFAULT CURRENT_TIMESTAMP,
+                    "updated_at"	TEXT DEFAULT CURRENT_TIMESTAMP
                 );
             `);
             // Create a default entry
@@ -198,8 +198,8 @@ z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
                 nickname TEXT,
                 data BLOB,
                 selected INTEGER NOT NULL DEFAULT 0,
-                "created_at"	TEXT NOT NULL,
-                "updated_at"	TEXT NOT NULL
+                "created_at"	TEXT DEFAULT CURRENT_TIMESTAMP,
+                "updated_at"	TEXT DEFAULT CURRENT_TIMESTAMP
             );
             `,
             tableName: Constants.AudioFilesTableName,
