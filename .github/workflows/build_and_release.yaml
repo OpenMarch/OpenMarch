@@ -35,9 +35,6 @@ jobs:
               if: startsWith(matrix.os, 'ubuntu')
               run: sudo snap install snapcraft --classic
 
-            - name: Remove canvas
-              run: rm -rf node_modules/canvas
-
             - name: Prepare for app notarization
               if: startsWith(matrix.os, 'macos')
               run: |

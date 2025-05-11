@@ -32,7 +32,7 @@
         "clean": "rm -rf node_modules dist-electron release",
         "lint": "eslint . --max-warnings 0",
         "lint-fix": "npm run lint -- --fix",
-        "postinstall": "electron-builder install-app-deps && electron-rebuild",
+        "postinstall": "rimraf node_modules/canvas && electron-builder install-app-deps && electron-rebuild",
         "prepare": "husky",
         "prettier": "prettier --check .",
         "prettier-fix": "prettier --write .",
