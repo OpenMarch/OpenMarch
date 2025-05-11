@@ -253,6 +253,54 @@ describe("MarcherTable", () => {
                 }
                 expect(marcherPagesMap.size).toBe(5);
             });
+            it("should create marchers with correct initial positions", () => {
+                const newMarchers: NewMarcherArgs[] = [
+                    {
+                        name: "Test Marcher 1",
+                        section: "Brass",
+                        year: "Senior",
+                        drill_prefix: "T",
+                        drill_order: 1,
+                    },
+                    {
+                        name: "Test Marcher 2",
+                        section: "Woodwind",
+                        year: "Junior",
+                        drill_prefix: "W",
+                        drill_order: 2,
+                    },
+                ];
+
+                const createMarchersResponse = MarcherTable.createMarchers({
+                    newMarchers,
+                    db,
+                });
+                expect(createMarchersResponse.success).toBe(true);
+                expect(createMarchersResponse.data.length).toBe(2);
+
+                const marcherPages = MarcherPageTable.getMarcherPages({
+                    db,
+                });
+                expect(marcherPages.success).toBe(true);
+
+                const marcher1Pages = marcherPages.data.filter(
+                    (mp) => mp.marcher_id === createMarchersResponse.data[0].id,
+                );
+                expect(marcher1Pages.length).toBe(1);
+                marcher1Pages.forEach((mp) => {
+                    expect(mp.x).toBe(100); // First marcher at x=100
+                    expect(mp.y).toBe(100);
+                });
+
+                const marcher2Pages = marcherPages.data.filter(
+                    (mp) => mp.marcher_id === createMarchersResponse.data[1].id,
+                );
+                expect(marcher2Pages.length).toBe(1);
+                marcher2Pages.forEach((mp) => {
+                    expect(mp.x).toBe(120); // Second marcher at x=120 (100 + 20)
+                    expect(mp.y).toBe(100);
+                });
+            });
         });
 
         describe("updateMarchers", () => {
