@@ -19,15 +19,14 @@ module.exports = {
         "react/jsx-key": "warn",
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "warn",
-        // Put this back at some point
-        // "max-lines-per-function": [
-        //     "warn",
-        //     {
-        //         max: 70,
-        //         skipBlankLines: true,
-        //         skipComments: true,
-        //     },
-        // ],
+        "max-lines-per-function": [
+            "off",
+            {
+                max: 80,
+                skipBlankLines: true,
+                skipComments: true,
+            },
+        ],
     },
     overrides: [
         {
