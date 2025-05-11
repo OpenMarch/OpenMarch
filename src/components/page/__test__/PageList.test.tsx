@@ -23,7 +23,9 @@
 //     afterEach,
 // } from "vitest";
 // import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { describe } from "vitest";
 
+describe.skip("PageList", () => {});
 // function validatePageRows(pageRows: HTMLElement[], expectedPages: Page[]) {
 //     const sortedExpectedPages = sortPagesByOrder(expectedPages);
 //     for (let i = 0; i < sortedExpectedPages.length; i++) {

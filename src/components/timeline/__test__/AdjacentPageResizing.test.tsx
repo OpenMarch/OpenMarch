@@ -1,4 +1,12 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import {
+    describe,
+    expect,
+    it,
+    vi,
+    beforeEach,
+    afterEach,
+    beforeAll,
+} from "vitest";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -10,6 +18,8 @@ import { ElectronApi } from "electron/preload";
 import Beat from "@/global/classes/Beat";
 import Page from "@/global/classes/Page";
 import PageTimeline from "../TimelineContainer";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 // Mock the hooks
 vi.mock("@/stores/TimingObjectsStore");
@@ -96,12 +106,29 @@ const mockPages: Page[] = [
     } as Page,
 ];
 
+const Providers = ({ children }: { children: React.ReactNode }) => (
+    <ThemeProvider>
+        <TooltipProvider>{children}</TooltipProvider>
+    </ThemeProvider>
+);
+
 describe("Adjacent Page Resizing", () => {
+    beforeAll(() => {
+        window.matchMedia = vi.fn().mockImplementation((query) => {
+            return {
+                matches: query === "(prefers-color-scheme: light)",
+                media: query,
+                onchange: null,
+            };
+        });
+    });
     // Mock the window.electron object
     beforeEach(() => {
         window.electron = {
             updatePages: vi.fn().mockResolvedValue({ success: true }),
             getSelectedAudioFile: vi.fn().mockResolvedValue(null),
+            setTheme: vi.fn(),
+            getTheme: vi.fn().mockResolvedValue(null),
         } as Partial<ElectronApi> as ElectronApi;
 
         // Mock the useTimingObjectsStore hook
@@ -158,7 +185,11 @@ describe("Adjacent Page Resizing", () => {
     });
 
     it("updates both current and next page widths during resize", async () => {
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
@@ -197,7 +228,11 @@ describe("Adjacent Page Resizing", () => {
     });
 
     it("ensures next page width doesn't go below minimum when dragging", async () => {
-        const { container } = render(<PageTimeline />);
+        const { container } = render(
+            <Providers>
+                <PageTimeline />
+            </Providers>,
+        );
 
         // Find the resize handle for page 1
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
