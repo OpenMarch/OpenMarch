@@ -468,21 +468,33 @@ const APP_API = {
 
     // Section Appearances
     getSectionAppearances: (
-        section?: string
+        section?: string,
     ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke("section_appearances:getSectionAppearances", section),
+        ipcRenderer.invoke(
+            "section_appearances:getSectionAppearances",
+            section,
+        ),
     createSectionAppearances: (
-        newSectionAppearances: NewSectionAppearanceArgs[]
+        newSectionAppearances: NewSectionAppearanceArgs[],
     ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke("section_appearances:createSectionAppearances", newSectionAppearances),
+        ipcRenderer.invoke(
+            "section_appearances:createSectionAppearances",
+            newSectionAppearances,
+        ),
     updateSectionAppearances: (
-        modifiedSectionAppearances: ModifiedSectionAppearanceArgs[]
+        modifiedSectionAppearances: ModifiedSectionAppearanceArgs[],
     ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke("section_appearances:updateSectionAppearances", modifiedSectionAppearances),
+        ipcRenderer.invoke(
+            "section_appearances:updateSectionAppearances",
+            modifiedSectionAppearances,
+        ),
     deleteSectionAppearances: (
-        sectionAppearanceIds: number[]
+        sectionAppearanceIds: number[],
     ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke("section_appearances:deleteSectionAppearances", sectionAppearanceIds),
+        ipcRenderer.invoke(
+            "section_appearances:deleteSectionAppearances",
+            sectionAppearanceIds,
+        ),
 
     // Utilities
     swapMarchers: (args: {

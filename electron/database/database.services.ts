@@ -441,10 +441,12 @@ export function initHandlers() {
     // Section Appearances
     ipcMain.handle(
         "section_appearances:getSectionAppearances",
-        async (_event, section?: string) => 
-            connectWrapper(SectionAppearanceTable.getSectionAppearances, { section }),
+        async (_event, section?: string) =>
+            connectWrapper(SectionAppearanceTable.getSectionAppearances, {
+                section,
+            }),
     );
-    
+
     ipcMain.handle(
         "section_appearances:createSectionAppearances",
         async (_event, newSectionAppearances) =>
@@ -452,7 +454,7 @@ export function initHandlers() {
                 newSectionAppearances,
             }),
     );
-    
+
     ipcMain.handle(
         "section_appearances:updateSectionAppearances",
         async (_event, modifiedSectionAppearances) =>
@@ -460,7 +462,7 @@ export function initHandlers() {
                 modifiedSectionAppearances,
             }),
     );
-    
+
     ipcMain.handle(
         "section_appearances:deleteSectionAppearances",
         async (_event, sectionAppearanceIds) =>
