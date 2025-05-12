@@ -242,10 +242,12 @@ export default function SectionAppearanceList() {
                             ) : null}
                         </div>
                     )}
+            </div>
+            {hasPendingChanges && (
                 <div className="rounded-full bg-fg-2 py-4 text-center text-[14px] text-text">
                     Below values may not be applied until after a refresh
                 </div>
-            </div>
+            )}
 
             <div className="flex h-fit w-full min-w-0 flex-col gap-16">
                 {localAppearances && localAppearances.length > 0 ? (
