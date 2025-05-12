@@ -2,7 +2,7 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { UiSettings } from "@/stores/UiSettingsStore";
-
+import { SectionAppearance } from "@/global/classes/SectionAppearance";
 /**
  * A separate mock file than global mocks since the canvas will likely be quite large and have many mocks.
  */
@@ -218,5 +218,17 @@ export const mockMarcherPages: MarcherPage[] = [
         x: -200,
         y: -500,
         notes: undefined,
+    },
+] as const;
+
+export const mockSectionAppearances: SectionAppearance[] = [
+    {
+        id: 1,
+        section: "Flute",
+        fill_color: { r: 1, g: 0, b: 0, a: 1 },
+        outline_color: { r: 0, g: 1, b: 0, a: 1 },
+        created_at: "2021-01-01",
+        updated_at: "2021-01-01",
+        shape_type: "circle",
     },
 ] as const;
