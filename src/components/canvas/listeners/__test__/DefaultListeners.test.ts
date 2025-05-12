@@ -7,6 +7,7 @@ import {
     mockMarcherPages,
     mockMarchers,
     mockPages,
+    mockSectionAppearances,
 } from "../../__test__/MocksForCanvas";
 import { cleanup } from "@testing-library/react";
 import { fabric } from "fabric";
@@ -25,6 +26,9 @@ describe("DefaultListeners", () => {
                 success: true,
                 data: [1, 2, 3] as any as Buffer,
             }),
+            getSectionAppearances: vi
+                .fn()
+                .mockResolvedValue(mockSectionAppearances),
         } as Partial<ElectronApi> as ElectronApi;
         global.URL.createObjectURL = vi.fn(() => "mock-url");
         canvas = new OpenMarchCanvas({
