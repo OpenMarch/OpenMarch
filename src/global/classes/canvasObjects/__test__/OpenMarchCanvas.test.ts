@@ -22,9 +22,10 @@ describe("OpenMarchCanvas", () => {
                 success: true,
                 data: [1, 2, 3] as any as Buffer,
             }),
-            getSectionAppearances: vi
-                .fn()
-                .mockResolvedValue(mockSectionAppearances),
+            getSectionAppearances: vi.fn().mockResolvedValue({
+                success: true,
+                data: mockSectionAppearances,
+            }),
         } as Partial<ElectronApi> as ElectronApi;
         global.URL.createObjectURL = vi.fn(() => "mock-url");
     });
@@ -35,14 +36,14 @@ describe("OpenMarchCanvas", () => {
     });
 
     describe("renderMarchers", () => {
-        it("Canvas renders and contains marchers in the correct position", () => {
+        it("Canvas renders and contains marchers in the correct position", async () => {
             const canvas = new OpenMarchCanvas({
                 canvasRef: null,
                 fieldProperties: NCAAFieldProperties,
                 uiSettings: falsyUiSettings,
             });
             const selectedPage = mockPages[0];
-            canvas.renderMarchers({
+            await canvas.renderMarchers({
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
@@ -84,7 +85,7 @@ describe("OpenMarchCanvas", () => {
     });
 
     describe("uiSettings", () => {
-        it("has the correct initial settings", () => {
+        it("has the correct initial settings", async () => {
             const selectedPage = mockPages[0];
             const canvas = new OpenMarchCanvas({
                 canvasRef: null,
@@ -95,7 +96,7 @@ describe("OpenMarchCanvas", () => {
                     lockY: false,
                 },
             });
-            canvas.renderMarchers({
+            await canvas.renderMarchers({
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
@@ -115,7 +116,7 @@ describe("OpenMarchCanvas", () => {
             expect(activeObject?.lockMovementY).toBe(false);
         });
 
-        it("changing settings modifies the current active object", () => {
+        it("changing settings modifies the current active object", async () => {
             const selectedPage = mockPages[0];
             const canvas = new OpenMarchCanvas({
                 canvasRef: null,
@@ -126,7 +127,7 @@ describe("OpenMarchCanvas", () => {
                     lockY: true,
                 },
             });
-            canvas.renderMarchers({
+            await canvas.renderMarchers({
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
@@ -161,7 +162,7 @@ describe("OpenMarchCanvas", () => {
             expect(activeObject?.lockMovementY).toBe(true);
         });
 
-        it("UI settings persist when setting a new active object", () => {
+        it("UI settings persist when setting a new active object", async () => {
             const selectedPage = mockPages[0];
             const canvas = new OpenMarchCanvas({
                 canvasRef: null,
@@ -172,7 +173,7 @@ describe("OpenMarchCanvas", () => {
                     lockY: true,
                 },
             });
-            canvas.renderMarchers({
+            await canvas.renderMarchers({
                 allMarchers: mockMarchers,
                 currentMarcherPages: MarcherPage.filterByPageId(
                     mockMarcherPages,
