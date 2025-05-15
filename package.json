@@ -27,7 +27,7 @@
     },
     "scripts": {
         "dev": "vite",
-        "app:prepare": "npx electron-rebuild -f -w better-sqlite3 && vite",
+        "app:prepare": "npm uninstall canvas && rimraf node_modules/canvas && npx electron-rebuild -f -w better-sqlite3 && vite",
         "build": "tsc && vite build",
         "clean": "rm -rf node_modules dist-electron release",
         "lint": "eslint . --max-warnings 0",
@@ -38,7 +38,7 @@
         "prettier-fix": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest",
-        "test:prepare": "npm rebuild better-sqlite3",
+        "test:prepare": "npm i canvas --no-save && npm rebuild better-sqlite3",
         "test:run": "vitest run",
         "test:coverage": "npm run test:run -- --coverage",
         "test:clearCache": "vitest --clearCache"

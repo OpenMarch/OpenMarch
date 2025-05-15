@@ -2,7 +2,7 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { UiSettings } from "@/stores/UiSettingsStore";
-
+import type { SectionAppearance } from "electron/database/tables/SectionAppearanceTable";
 /**
  * A separate mock file than global mocks since the canvas will likely be quite large and have many mocks.
  */
@@ -218,5 +218,17 @@ export const mockMarcherPages: MarcherPage[] = [
         x: -200,
         y: -500,
         notes: undefined,
+    },
+] as const;
+
+export const mockSectionAppearances: SectionAppearance[] = [
+    {
+        id: 1,
+        section: "Flute",
+        fill_color: "rgba(1, 0, 0, 1)",
+        outline_color: "rgba(0, 1, 0, 1)",
+        created_at: "2021-01-01",
+        updated_at: "2021-01-01",
+        shape_type: "circle",
     },
 ] as const;

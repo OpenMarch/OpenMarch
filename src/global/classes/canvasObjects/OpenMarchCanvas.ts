@@ -15,6 +15,10 @@ import { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
 import { UiSettings } from "@/stores/UiSettingsStore";
+import {
+    SectionAppearance,
+    getSectionAppearance,
+} from "@/global/classes/SectionAppearance";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -269,7 +273,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param currentMarcherPages All of the marcher pages (must be filtered by the intended page)
      * @param allMarchers All marchers in the drill
      */
-    renderMarchers = ({
+    renderMarchers = async ({
         currentMarcherPages,
         allMarchers,
     }: {
@@ -277,6 +281,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         allMarchers: Marcher[];
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
+
+        const sectionAppearances =
+            await SectionAppearance.getSectionAppearances();
 
         // Get the canvas marchers on the canvas
         const canvasMarchersMap = new Map<number, CanvasMarcher>(
@@ -301,8 +308,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     continue;
                 }
 
+                const sectionAppearance = getSectionAppearance(
+                    curMarcher.section,
+                    sectionAppearances,
+                );
+
                 this.add(
-                    new CanvasMarcher({ marcher: curMarcher, marcherPage }),
+                    new CanvasMarcher({
+                        marcher: curMarcher,
+                        marcherPage,
+                        sectionAppearance,
+                    }),
                 );
             }
             // Marcher exists on the Canvas, move it to the new location if it has changed

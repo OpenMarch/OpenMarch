@@ -1,8 +1,11 @@
 name: Build/release
 
 on:
+    pull_request:
+        branches: [main, develop, prerelease/*]
     push:
         tags: [v*]
+        branches: [main]
 
 permissions:
     contents: write # Required for creating releases
