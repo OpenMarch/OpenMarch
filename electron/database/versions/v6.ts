@@ -160,6 +160,20 @@ export default class v6 extends v5 {
                 )
                 .all() as PageBackup[];
 
+            const marcherPagesBackup = dbToUse
+                .prepare(
+                    `
+                SELECT * FROM marcher_pages ORDER BY id
+            `,
+                )
+                .all() as {
+                id: number;
+                marcher_id: number;
+                page_id: number;
+                x: number;
+                y: number;
+            }[];
+
             // Drop and recreate pages table
             dbToUse.exec(`
                 DROP TABLE pages;
@@ -208,6 +222,11 @@ export default class v6 extends v5 {
                 )?.id;
             };
 
+            const insertMarcherPage = dbToUse.prepare(`
+                INSERT INTO marcher_pages (marcher_id, page_id, x, y, created_at, updated_at)
+                VALUES (@marcher_id, @page_id, @x, @y, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            `);
+
             // Migrate each page
             let latestBeatId = numBeats;
             const lastExistingBeatId =
@@ -241,89 +260,33 @@ export default class v6 extends v5 {
                     }
                 }
 
-                insertPage.run({
+                const newPageId = insertPage.run({
                     id: page.id,
                     is_subset: page.is_subset,
                     notes: page.notes,
                     created_at: page.created_at,
                     updated_at: page.updated_at,
                     start_beat: startBeat,
-                });
+                }).lastInsertRowid;
+
+                // add old marcher pages
+                // Migrate all marcher pages for this page
+                const relevantMarcherPages = marcherPagesBackup.filter(
+                    (p) => p.page_id === page.id,
+                );
+                for (const oldMarcherPage of relevantMarcherPages) {
+                    insertMarcherPage.run({
+                        marcher_id: oldMarcherPage.marcher_id,
+                        page_id: newPageId,
+                        x: oldMarcherPage.x,
+                        y: oldMarcherPage.y,
+                    });
+                }
             }
 
             // Clean up
             dbToUse.exec("DROP TABLE pages_backup");
-
-            // Update timestamp defaults for affected tables
-            const tablesToUpdate = ["audio_files", "marcher_pages", "marchers"];
-            for (const table of tablesToUpdate) {
-                dbToUse.exec(`
-                    BEGIN TRANSACTION;
-
-                    -- Create temporary table
-                    CREATE TEMPORARY TABLE ${table}_backup AS SELECT * FROM ${table};
-
-                    -- Drop existing table
-                    DROP TABLE ${table};
-
-                    -- Recreate table with new defaults (table creation from v6.sql)
-                    ${this.getTableCreationSQL(table)};
-
-                    -- Restore data
-                    INSERT INTO ${table} SELECT * FROM ${table}_backup;
-
-                    -- Clean up
-                    DROP TABLE ${table}_backup;
-
-                    COMMIT;
-                `);
-            }
         });
-    }
-
-    private getTableCreationSQL(tableName: string): string {
-        // Return the appropriate CREATE TABLE statement from v6 schema
-        const tableCreationMap: { [key: string]: string } = {
-            audio_files: `
-                CREATE TABLE "audio_files" (
-                    id INTEGER PRIMARY KEY,
-                    path TEXT NOT NULL,
-                    nickname TEXT,
-                    data BLOB,
-                    selected INTEGER NOT NULL DEFAULT 0,
-                    "created_at" TEXT DEFAULT CURRENT_TIMESTAMP,
-                    "updated_at" TEXT DEFAULT CURRENT_TIMESTAMP
-                )`,
-            marcher_pages: `
-                CREATE TABLE "marcher_pages" (
-                    "id" INTEGER PRIMARY KEY,
-                    "id_for_html" TEXT UNIQUE,
-                    "marcher_id" INTEGER NOT NULL,
-                    "page_id" INTEGER NOT NULL,
-                    "x" REAL,
-                    "y" REAL,
-                    "created_at" TEXT DEFAULT CURRENT_TIMESTAMP,
-                    "updated_at" TEXT DEFAULT CURRENT_TIMESTAMP,
-                    "notes" TEXT,
-                    FOREIGN KEY ("marcher_id") REFERENCES "marchers" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-                    FOREIGN KEY ("page_id") REFERENCES "pages" ("id") ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED,
-                    UNIQUE ("marcher_id", "page_id")
-                )`,
-            marchers: `
-                CREATE TABLE "marchers" (
-                    "id" INTEGER PRIMARY KEY,
-                    "name" TEXT,
-                    "section" TEXT NOT NULL,
-                    "year" TEXT,
-                    "notes" TEXT,
-                    "drill_prefix" TEXT NOT NULL,
-                    "drill_order" INTEGER NOT NULL,
-                    "created_at" TEXT DEFAULT CURRENT_TIMESTAMP,
-                    "updated_at" TEXT DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE ("drill_prefix", "drill_order")
-                )`,
-        };
-        return tableCreationMap[tableName] || "";
     }
 
     tableAlreadyExists = (tableName: string, db: Database.Database) => {
