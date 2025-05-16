@@ -19,7 +19,6 @@ export default class v6 extends v5 {
             // Create new tables first, but don't create initial beats since we'll create them from ABC data
             this.createBeatsTable(dbToUse, false);
             this.createUtilityTable(dbToUse);
-            this.createSectionAppearancesTable(dbToUse);
 
             // Create section appearances table
             dbToUse.exec(`
