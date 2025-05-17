@@ -22,15 +22,6 @@ export default defineConfig(({ command }) => {
             },
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
-        test: {
-            setupFiles: ["./vitest.setup.ts"],
-            include: ["**/__test__/**.test.ts?(x)"],
-            environment: "jsdom",
-            coverage: {
-                reporter: ["text", "json", "json-summary", "html"],
-                reportOnFailure: true,
-            },
-        },
         plugins: [
             react(),
             sentryVitePlugin({

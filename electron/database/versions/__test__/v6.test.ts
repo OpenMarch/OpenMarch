@@ -40,9 +40,9 @@ describe("Database v6 Migration Tests", () => {
             );
         });
 
-        it("Should not modify database when pragma value is already at version 5", () => {
+        it("Should not modify database when pragma value is already at version 6", () => {
             // Setup v6 database with pixelsPerStep
-            db.pragma("user_version = 5");
+            db.pragma("user_version = 6");
             CurrentMigration.migrateToThisVersion(db);
             expect(hasImageColumn(db)).toBe(true);
         });

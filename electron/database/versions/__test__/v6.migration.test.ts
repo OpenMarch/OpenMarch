@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import path from "path";
+import * as path from "node:path";
 import v6 from "../v6";
 import fs from "fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
