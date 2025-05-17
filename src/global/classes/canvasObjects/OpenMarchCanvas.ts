@@ -151,9 +151,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         this.fieldProperties = fieldProperties;
 
-        // The mouse wheel event should never be changed
-        this.on("mouse:wheel", this.handleMouseWheel);
-
         // Set the UI settings
         this._uiSettings = uiSettings;
 
