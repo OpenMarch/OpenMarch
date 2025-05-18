@@ -4,7 +4,7 @@
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/OpenMarch/OpenMarch)
 ![GitHub License](https://img.shields.io/github/license/OpenMarch/OpenMarch)
 
-![Banner](public/githubbanner.png)
+![Banner](/.github/assets/githubbanner.png)
 
 OpenMarch is a free, open-source, fast and intuitive drill writing app for the marching arts. This repository is the entire OpenMarch codebase.
 
@@ -28,12 +28,15 @@ pnpm desktop dev
 # Run the website's astro dev server
 pnpm site dev
 
+# Run the design system playground
+pnpm design dev
+
 # Fix
+pnpm fix
+# or individually:
 pnpm format
 pnpm lint
 pnpm spellcheck
-# do all in 1 command
-pnpm fix
 
 # can also run tasks in specific packages
 pnpm desktop lint

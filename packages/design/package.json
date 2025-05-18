@@ -1,0 +1,19 @@
+{
+    "name": "@openmarch/design",
+    "type": "module",
+    "version": "0.0.0",
+    "license": "GPL-3.0",
+    "scripts": {
+        "dev": "astro dev",
+        "build": "astro check && astro build",
+        "preview": "astro preview",
+        "astro": "astro",
+        "lint": "eslint . --fix",
+        "format": "prettier --write .",
+        "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
+        "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'"
+    },
+    "dependencies": {
+        "astro": "^5.7.13"
+    }
+}
