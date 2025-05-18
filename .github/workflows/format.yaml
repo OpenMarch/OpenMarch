@@ -9,7 +9,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
             - name: Install project dependencies
-              run: npm ci
+              run: pnpm install --no-frozen-lockfile
             - name: Format
-              run: npm run prettier
+              run: pnpm run format

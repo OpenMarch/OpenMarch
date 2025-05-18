@@ -7,13 +7,15 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.turbo
+.astro
+
 node_modules
 dist
 dist-ssr
 dist-electron
 release
 *.local
-.zed
 
 # Editor directories and files
 .vscode/.debug.env

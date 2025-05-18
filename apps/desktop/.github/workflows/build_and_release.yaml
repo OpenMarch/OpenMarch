@@ -1,0 +1,79 @@
+name: Build/release
+
+on:
+    pull_request:
+        branches: [main, develop, prerelease/*, monorepo]
+    push:
+        tags: [v*]
+        branches: [main]
+
+permissions:
+    contents: write # Required for creating releases
+
+jobs:
+    build-and-release:
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            matrix:
+                os:
+                    - macos-latest
+                    - macos-13 # x86 (Intel) macOS
+                    - ubuntu-latest
+                    - windows-latest
+
+        steps:
+            - name: Check out Git repository
+              uses: actions/checkout@v1
+
+            - name: Install Node.js
+              uses: actions/setup-node@v1
+              with:
+                  node-version: 18
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
+
+            - name: Install Snapcraft (Ubuntu)
+              if: startsWith(matrix.os, 'ubuntu')
+              run: sudo snap install snapcraft --classic
+
+            - name: Prepare for app notarization
+              if: startsWith(matrix.os, 'macos')
+              run: |
+                  mkdir -p ~/private_keys/
+                  echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
+
+            - name: Create Sentry env file
+              run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+
+            # The OpenMarch/builder action should handle pnpm install internally
+            # if it detects pnpm is used in the project.
+            # If not, you might need to add a manual pnpm install step here.
+
+            - name: Build/release Electron app
+              uses: OpenMarch/builder@v5
+              with:
+                  # GitHub token, automatically provided to the action
+                  # (No need to define this secret in the repo settings)
+                  github_token: ${{ secrets.github_token }}
+
+                  # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
+                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
+                  mac_certs: ${{ secrets.mac_certs }}
+                  mac_certs_password: ${{ secrets.mac_certs_password }}
+                  max_attempts: 5
+              env:
+                  # Not needed since not building on windows
+                  # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
+                  APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
+                  APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
+                  APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
+                  # also put in camelCase for electron/notarize
+                  appleApiKey: "~/private_keys/apple_api_key.p8"
+                  appleApiKeyId: ${{ secrets.apple_api_key_id }}
+                  appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
+                  # For releasing
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+                  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

@@ -6,17 +6,42 @@
 
 ![Banner](public/githubbanner.png)
 
-OpenMarch is a free, open-source, fast and intuitive drill writing experience for the marching arts.
+OpenMarch is a free, open-source, fast and intuitive drill writing app for the marching arts. This repository is the entire OpenMarch codebase.
 
 ## Our goal
 
 To be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles. OpenMarch hopes to be enough for 90% of ensembles with reasonable design needs. We want to make drill writing effortless.
 
-## Developers
+## Development
 
-Learn about contributing and running the development server [here](https://openmarch.com/developers/contributing/). Also have a look at our stack on the developer docs.
+We are using a monorepo with Turbo, pnpm, and Node.js 22. Here are the main commands you need to know:
 
-Join our [Discord](https://discord.gg/eTsQ98uZzq) to interact with the other contributors and to get support!
+```bash
+# Install packages
+pnpm install
+
+# Prepare electron app
+pnpm desktop app:prepare
+# Run electron & vite
+pnpm desktop dev
+
+# Run the website's astro dev server
+pnpm site dev
+
+# Fix
+pnpm format
+pnpm lint
+pnpm spellcheck
+# do all in 1 command
+pnpm fix
+
+# can also run tasks in specific packages
+pnpm desktop lint
+```
+
+See all commands in each project's `package.json`.
+
+Join our [Discord](https://discord.gg/eTsQ98uZzq) to interact with the other contributors and to get support.
 
 ### Stack
 
@@ -41,8 +66,3 @@ If you're wanting to test the latest and **_unstable_** features, go to the [rel
 > Always keep in mind, OpenMarch is still in development. You probably will encounter bugs, issues, and missing features. Help support us grow by contributing or donating!
 
 <div align="center"><img width="700" src="https://github.com/user-attachments/assets/7a744b9e-a3ea-4bb1-a120-6067288c2280" alt="OpenMarch app" /></div>
-
-## License
-
-OpenMarch is written under the [GPL-3.0 license](LICENSE).
-All code written for this project will forever and always be open and accessible.

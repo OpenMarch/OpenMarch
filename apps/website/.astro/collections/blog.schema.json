@@ -1,0 +1,41 @@
+{
+    "$ref": "#/definitions/blog",
+    "definitions": {
+        "blog": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "date": {
+                    "anyOf": [
+                        {
+                            "type": "string",
+                            "format": "date-time"
+                        },
+                        {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        {
+                            "type": "integer",
+                            "format": "unix-time"
+                        }
+                    ]
+                },
+                "image": {
+                    "type": "string"
+                },
+                "$schema": {
+                    "type": "string"
+                }
+            },
+            "required": ["title", "author", "date", "image"],
+            "additionalProperties": false
+        }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#"
+}

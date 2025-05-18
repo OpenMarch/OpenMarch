@@ -1,0 +1,99 @@
+---
+title: "Music Troubleshooting"
+description: "Solutions to OpenMarch music importing bugs"
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import { YouTube } from "astro-embed";
+
+The music integration in OpenMarch is currently extremely minimal.
+The best think we can ask for right now is your patience as we work through it. 😊
+
+We have many plans to fix and improve the experience so that it can work for many different types of projects.
+It's not a trivial issue.
+There's lots of different tempo combinations and syncing methods to think about.
+We want to make sure our next crack at it is done right.
+In the meantime, here is a list of tips and tricks to get music to work for you.
+
+This video walks through the steps if you prefer not to read.
+
+<YouTube
+  id="https://youtu.be/2HjLimsxUxQ?si=tPmBEZMKTE6O-IY_"
+  params="start=972"
+/>
+
+> If OpenMarch ever seems broken, refreshing the page `Ctrl + R` will often fix it.
+
+## Current limitations
+
+Since the music integration is so bare bones, keep in mind the following limitations:
+
+- Accelerandos, ritardandos and other gradual tempo changes are not supported
+  - If you must change the tempo gradually, only change the tempo at the **start of the measure**
+- The less information the MusicXML has, the better (with one exception)
+  - The parser OpenMarch uses to extract the tempo information from MusicXML files is not perfect
+  - Remove all notes from the staff and only have one part. Then, add a single note to the first beat.
+  - If it's still not working, try removing all staff notes and other markings
+- If you have a count-in, the MusicXML must also include that
+
+## Creating your MusicXML
+
+### If you have the sheet music file
+
+Follow these steps if you have the sheet music to open in Musescore, Dorico, etc.
+
+<Steps>
+
+1. Open your score in your notation software
+   - If you don't have any notation software, [Musescore](https://musescore.com) is free and is what this project is tested on
+1. Save a copy of the file
+1. Create a **new part** that has no notes in it
+1. Delete all of the other parts
+1. Add a single note to the first beat of the first measure of the new part
+   - This is important, as if there are no notes at all, the parser will ignore it
+1. Ensure that you have a tempo defined on at least on the first note
+1. Click `File` → `Export`
+1. Ensure you have **Main Score** checked
+1. Import this file into OpenMarch by clicking `Music` → `Import MusicXML`
+1. If nothing seems to have happened try refreshing the page with `Ctrl + R`
+   - If it's still not working, reach out on the [community Discord](https://github.com/OpenMarch/OpenMarch) or [dev@openmarch.com](mailto:dev@openmarch.com) for troubleshooting
+
+</Steps>
+
+### If you don't have the sheet music file
+
+If you only have an audio file and no sheet music file, this is a lot trickier, but possible!
+I have done this personally.
+It's annoying and not clean, but it works.
+
+The TLDR is that you need to find some way to convert the tempo information in your audio file (`.mp3` or `.wav`) into a `.midi` file.
+Once you have a `.midi` file, you can import it into a music notation software (like [Musescore](https://musescore.com)) and create your MusicXML.
+
+> I've only done this in MacOS. Try to find a Windows/Linux alternative of GarageBand or Logic Pro that is free
+>
+> It needs to be able to import audio files and also support midi instruments.
+> [Audacity](https://www.audacityteam.org/) comes to mind, but I've never used it for this.
+
+<Steps>
+
+1. Open a [DAW](https://en.wikipedia.org/wiki/Digital_audio_workstation) of some kind that can support audio files and software MIDI instruments.
+1. Get the project's tempo to align with the audio file's.
+1. **Make sure that if there are tempo changes, they only happen once at the start of a measure**
+   - Gradual tempo changes will not work
+1. Add a MIDI software instrument track
+1. Add a single note at the start of each measure
+   - This is to make sure the MIDI that we export uses the whole project
+1. Validate that the tempo lines up as intended
+1. Export the project as a `.midi` file
+1. Import the `.midi` file into Musescore
+1. Follow [the steps above](#if-you-have-the-sheet-music-file)
+
+</Steps>
+
+## Disclaimer
+
+Please know that we are aware of the shortcomings of the current system and are working hard to fix them.
+I invite you to use OpenMarch's many shortcomings as opportunities to hack your way through and figure out how you can make it work 🙂.
+
+As always, this project is made up entirely of volunteers doing the best they can with the free time they can spare.
+Please consider donating to the [Patreon](https://www.patreon.com/c/openmarch) to show your support for our team.
