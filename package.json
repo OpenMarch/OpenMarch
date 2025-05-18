@@ -17,6 +17,7 @@
     },
     "scripts": {
         "desktop": "turbo run --filter=@openmarch/desktop",
+        "site": "turbo run --filter=@openmarch/website",
         "test": "turbo run test",
         "lint": "turbo run lint",
         "format": "turbo run format",

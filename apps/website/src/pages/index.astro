@@ -1,7 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { Button } from "@/components/ui/Button";
-import LinkButton from "@/components/ui/LinkButton.astro";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
 import FeatureSelector from "@/components/home/FeatureSelector";
@@ -180,6 +179,7 @@ type Blog = CollectionEntry<"blog">;
                     class="grid grid-cols-4"
                     href="https://store.openmarch.com"
                     target="_blank"
+                    rel="noreferrer"
                 >
                     <Image
                         src={"/merch/MerchLaunch-02.png"}
@@ -232,7 +232,7 @@ type Blog = CollectionEntry<"blog">;
                             .sort(
                                 (a, b) =>
                                     new Date(b.data.date).getTime() -
-                                    new Date(a.data.date).getTime()
+                                    new Date(a.data.date).getTime(),
                             )
                             .slice(0, 3)
                             .map((blog: Blog) => (
@@ -262,7 +262,7 @@ type Blog = CollectionEntry<"blog">;
                                                     month: "long",
                                                     day: "numeric",
                                                     timeZone: "UTC",
-                                                }
+                                                },
                                             )}
                                         </p>
                                     </div>
