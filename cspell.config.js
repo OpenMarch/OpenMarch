@@ -59,6 +59,7 @@ module.exports = {
         "viewbox",
         "Vree",
         "wavesurfer",
+        "unpreview",
         "Zingali",
     ],
     ignorePaths: [
@@ -68,6 +69,7 @@ module.exports = {
         "dist/**",
         "**/build/**",
         "**/src/assets",
+        "**/package.json",
         "**/.astro/**",
         "**/.turbo/**",
     ],
