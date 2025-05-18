@@ -3,13 +3,9 @@ name: Build/release
 on:
     pull_request:
         branches: ["main"]
-        paths:
-            - "apps/desktop/**"
     push:
         tags: [v*]
         branches: ["main"]
-        paths:
-            - "apps/desktop/**"
 
 permissions:
     contents: write # Required for creating releases
