@@ -19,11 +19,8 @@ jobs:
               with:
                   github-token: ${{ secrets.GITHUB_TOKEN }}
                   run-id: ${{ github.event.workflow_run.id }}
-            - name: Setup Node.js and pnpm
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 18
-                  cache: "pnpm" # Caching might not be strictly necessary for this job, but doesn't hurt
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
             - name: Install project dependencies
               # While the action itself might have dependencies, if this workflow
               # needs project-specific dependencies (e.g., for processing the report),

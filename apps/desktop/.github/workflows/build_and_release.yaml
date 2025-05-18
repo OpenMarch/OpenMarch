@@ -26,11 +26,13 @@ jobs:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            - name: Install Node.js, pnpm
+            - name: Install Node.js
               uses: actions/setup-node@v1
               with:
                   node-version: 18
-                  cache: "pnpm" # Add pnpm caching
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
 
             - name: Install Snapcraft (Ubuntu)
               if: startsWith(matrix.os, 'ubuntu')
