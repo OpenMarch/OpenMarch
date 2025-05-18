@@ -4,11 +4,13 @@
     "version": "0.0.0",
     "scripts": {
         "dev": "astro dev",
-        "start": "astro dev",
         "build": "astro check && astro build",
         "preview": "astro preview",
         "astro": "astro",
-        "prettier": "prettier . --write"
+        "lint": "eslint . --fix",
+        "format": "prettier --write .",
+        "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
+        "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'"
     },
     "dependencies": {
         "@astrojs/check": "^0.9.4",

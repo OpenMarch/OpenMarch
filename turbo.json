@@ -40,6 +40,9 @@
         "lint": {
             "outputs": []
         },
+        "preview": {
+            "outputs": []
+        },
         "dev": {
             "persistent": true,
             "cache": false

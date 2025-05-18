@@ -1,11 +1,12 @@
 packages:
-  - apps/*
-  - packages/*
+    - apps/*
+    - packages/*
 ignoredBuiltDependencies:
-  - esbuild
+    - esbuild
 onlyBuiltDependencies:
-  - '@sentry/cli'
-  - better-sqlite3
-  - canvas
-  - electron
-  - esbuild
+    - "@sentry/cli"
+    - better-sqlite3
+    - canvas
+    - electron
+    - esbuild
+    - sharp
