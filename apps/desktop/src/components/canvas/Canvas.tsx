@@ -630,12 +630,12 @@ export default function Canvas({
     ]);
 
     return (
-        <div className={`h-full overflow-hidden rounded-6 ${className}`}>
+        <div className={`rounded-6 h-full overflow-hidden ${className}`}>
             {pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
-                    <CircleNotch size={32} className="animate-spin text-text" />
+                    <CircleNotch size={32} className="text-text animate-spin" />
                 </div>
             )}
         </div>

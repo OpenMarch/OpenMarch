@@ -82,7 +82,7 @@ function CheckpointEditor({
             open={open}
             onOpenChange={setOpen}
         >
-            <RadixCollapsible.Trigger className="flex w-full justify-between gap-8 rounded-full border border-stroke px-16 py-6 duration-150 ease-out focus-visible:text-accent">
+            <RadixCollapsible.Trigger className="border-stroke focus-visible:text-accent flex w-full justify-between gap-8 rounded-full border px-16 py-6 duration-150 ease-out">
                 <div className="flex w-full justify-between">
                     <div>{checkpoint.name}</div>
                     <div>{checkpoint.stepsFromCenterFront} steps</div>
@@ -764,7 +764,7 @@ export default function FieldPropertiesCustomizer() {
                 {/* Color Preview Box */}
                 <div
                     className={
-                        "flex-between font border-fg-2 col-span-5 flex h-24 w-full cursor-pointer items-center justify-center rounded-full border-2 py-16 font-mono text-h5 tracking-wider"
+                        "flex-between font border-fg-2 text-h5 col-span-5 flex h-24 w-full cursor-pointer items-center justify-center rounded-full border-2 py-16 font-mono tracking-wider"
                     }
                     style={{
                         backgroundColor: rgbaToHex(currentColor),
@@ -790,7 +790,7 @@ export default function FieldPropertiesCustomizer() {
 
                 {/* Color Picker Popover */}
                 {displayColorPicker && (
-                    <div className="rounded rounded absolute left-[50%] z-10 mt-32 bg-bg-1 p-2 shadow-lg">
+                    <div className="bg-bg-1 absolute left-[50%] z-10 mt-32 rounded p-2 shadow-lg">
                         <div className="z-50 my-8 flex justify-between gap-8">
                             <Button
                                 size="compact"
@@ -855,7 +855,7 @@ export default function FieldPropertiesCustomizer() {
         >
             <div className="flex flex-col gap-16">
                 <div className="flex flex-col gap-12">
-                    <h4 className="mb-8 text-h4">General</h4>
+                    <h4 className="text-h4 mb-8">General</h4>
                     <Form.Field
                         name="Field Name"
                         className={formFieldClassname}
@@ -1220,7 +1220,7 @@ export default function FieldPropertiesCustomizer() {
                     </Form.Field>
                 </div>
                 <div className="flex flex-col gap-12">
-                    <h4 className="mb-8 text-h4">Image Rendering</h4>
+                    <h4 className="text-h4 mb-8">Image Rendering</h4>
                     <Form.Field
                         name="Left"
                         className={clsx(
@@ -1326,23 +1326,23 @@ export default function FieldPropertiesCustomizer() {
                     >
                         Import Image
                     </Button>
-                    <div className="text-end text-sub">
+                    <div className="text-sub text-end">
                         Refresh the page after import [Ctrl + R]
                     </div>
                 </div>
 
                 <div className="flex flex-col gap-12">
-                    <h4 className="mb-8 text-h4">Stats</h4>
+                    <h4 className="text-h4 mb-8">Stats</h4>
                     <div className={clsx(formFieldClassname, "items-center")}>
                         <div className={clsx("col-span-2 align-middle")}>
                             Width
                         </div>
-                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-5 rounded-full px-1 py-2 text-center font-mono">
                             {currentFieldProperties.width /
                                 currentFieldProperties.pixelsPerStep}{" "}
                             steps
                         </div>
-                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-5 rounded-full px-1 py-2 text-center font-mono">
                             {currentFieldProperties.prettyWidth}
                         </div>
                     </div>
@@ -1350,12 +1350,12 @@ export default function FieldPropertiesCustomizer() {
                         <div className={clsx("col-span-2 align-middle")}>
                             Height
                         </div>
-                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-5 rounded-full px-1 py-2 text-center font-mono">
                             {currentFieldProperties.height /
                                 currentFieldProperties.pixelsPerStep}{" "}
                             steps
                         </div>
-                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-5 rounded-full px-1 py-2 text-center font-mono">
                             {currentFieldProperties.prettyHeight}
                         </div>
                     </div>
@@ -1363,7 +1363,7 @@ export default function FieldPropertiesCustomizer() {
                         <div className={clsx("col-span-5 align-middle")}>
                             Field Ratio
                         </div>
-                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-5 rounded-full px-1 py-2 text-center font-mono">
                             {(() => {
                                 const w = currentFieldProperties.width;
                                 const h = currentFieldProperties.height;
@@ -1379,7 +1379,7 @@ export default function FieldPropertiesCustomizer() {
                                 }
                             })()}
                         </div>
-                        <div className="px-1 col-span-2 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-2 rounded-full px-1 py-2 text-center font-mono">
                             w/h
                         </div>
                     </div>
@@ -1387,7 +1387,7 @@ export default function FieldPropertiesCustomizer() {
                         <div className={clsx("col-span-5 align-middle")}>
                             Background Image Ratio
                         </div>
-                        <div className="px-1 col-span-5 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-5 rounded-full px-1 py-2 text-center font-mono">
                             {(() => {
                                 if (!FieldProperties.imageDimensions) {
                                     return "N/A";
@@ -1407,20 +1407,20 @@ export default function FieldPropertiesCustomizer() {
                                 }
                             })()}
                         </div>
-                        <div className="px-1 col-span-2 rounded-full bg-fg-1 py-2 text-center font-mono">
+                        <div className="bg-fg-1 col-span-2 rounded-full px-1 py-2 text-center font-mono">
                             w/h
                         </div>
                     </div>
-                    <div className="mx-16 text-pretty rounded-full py-4 text-end text-sub text-text">
+                    <div className="text-sub text-text mx-16 text-pretty rounded-full py-4 text-end">
                         These values can be modified by adjusting the X and Y
                         coordinates, the step size and the background image
                     </div>
                 </div>
 
                 <div>
-                    <h4 className="mb-16 text-h4">X-Checkpoints</h4>
+                    <h4 className="text-h4 mb-16">X-Checkpoints</h4>
                     <div
-                        className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
+                        className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
                         hidden={
                             Math.abs(
                                 Math.min(
@@ -1467,9 +1467,9 @@ export default function FieldPropertiesCustomizer() {
                     </div>
                 </div>
                 <div>
-                    <h4 className="mb-16 text-h4">Y-Checkpoints</h4>
+                    <h4 className="text-h4 mb-16">Y-Checkpoints</h4>
                     <div
-                        className="mx-4 my-8 rounded-6 bg-red p-6 text-center text-white"
+                        className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
                         hidden={
                             Math.max(
                                 ...currentFieldProperties.yCheckpoints.map(
@@ -1550,7 +1550,7 @@ export default function FieldPropertiesCustomizer() {
                     </div>
                 </div>
                 <div className="flex flex-col gap-12">
-                    <h4 className="mb-8 text-h4">Side Descriptions</h4>
+                    <h4 className="text-h4 mb-8">Side Descriptions</h4>
                     <Form.Field
                         name="Director's left"
                         className={formFieldClassname}
@@ -1784,7 +1784,7 @@ export default function FieldPropertiesCustomizer() {
                 </div>
                 <div className="flex flex-col gap-12">
                     {/* <div className="mb-16">Field </div> */}
-                    <h4 className="mb-8 text-h4">Field Labels</h4>
+                    <h4 className="text-h4 mb-8">Field Labels</h4>
                     <Form.Field
                         name="Steps from front to home label bottom"
                         className={formFieldClassname}
@@ -2140,7 +2140,7 @@ export default function FieldPropertiesCustomizer() {
                 </div>
                 <div className="flex flex-col gap-12">
                     {/* <div className="mb-16">Field </div> */}
-                    <h4 className="mb-8 text-h4">External Labels</h4>
+                    <h4 className="text-h4 mb-8">External Labels</h4>
                     <div className="grid grid-cols-4">
                         <Form.Field
                             name="Left"
@@ -2275,7 +2275,7 @@ export default function FieldPropertiesCustomizer() {
             </div>
 
             <div className="flex flex-col gap-12">
-                <h4 className="mb-8 text-h4">Theme</h4>
+                <h4 className="text-h4 mb-8">Theme</h4>
                 <ColorPicker
                     themeProperty="background"
                     label="Background"
@@ -2324,7 +2324,7 @@ export default function FieldPropertiesCustomizer() {
                     tooltip="Color of paths showing upcoming movement"
                     initialColor={currentFieldProperties.theme.nextPath}
                 />
-                <div className="rounded-full bg-fg-2 py-4 text-center text-[14px] text-text">
+                <div className="bg-fg-2 text-text rounded-full py-4 text-center text-[14px]">
                     Below values may not be applied until after a refresh
                 </div>
                 <ColorPicker

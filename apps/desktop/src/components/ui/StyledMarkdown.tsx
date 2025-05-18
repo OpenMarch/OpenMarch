@@ -43,7 +43,7 @@ export default function StyledMarkdown({ children }: { children: string }) {
                 ),
                 code: ({ node, ...props }) => (
                     <code
-                        className="py-1 rounded-6 bg-stroke px-4"
+                        className="rounded-6 bg-stroke px-4 py-1"
                         {...props}
                     />
                 ),

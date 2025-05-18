@@ -181,7 +181,7 @@ function MarcherEditor() {
                             title={`${selectedMarchers.length} Marchers`}
                             className="mt-12 flex flex-col gap-16"
                         >
-                            <p className="w-full px-6 font-mono text-sub text-text/80">
+                            <p className="text-sub text-text/80 w-full px-6 font-mono">
                                 {selectedMarchers
                                     .map((marcher) => marcher.drill_number)
                                     .join(", ")}
@@ -284,7 +284,7 @@ function MarcherEditor() {
                                     <div className="flex flex-col gap-8">
                                         <label
                                             htmlFor="xInput"
-                                            className="mx-6 w-full text-body leading-none opacity-80"
+                                            className="text-body mx-6 w-full leading-none opacity-80"
                                         >
                                             X
                                         </label>
@@ -296,7 +296,7 @@ function MarcherEditor() {
                                                     disabled
                                                     type="number"
                                                     value={rCoords?.xSteps}
-                                                    className="w-full disabled:cursor-auto disabled:placeholder-text disabled:opacity-100"
+                                                    className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                                 />
                                             </span>
                                             <Select
@@ -395,7 +395,7 @@ function MarcherEditor() {
                                     <div className="flex flex-col gap-8">
                                         <label
                                             htmlFor="yInput"
-                                            className="mx-6 w-full text-body leading-none opacity-80"
+                                            className="text-body mx-6 w-full leading-none opacity-80"
                                         >
                                             Y
                                         </label>
@@ -406,7 +406,7 @@ function MarcherEditor() {
                                                     disabled
                                                     type="number"
                                                     value={rCoords?.ySteps}
-                                                    className="w-full disabled:cursor-auto disabled:placeholder-text disabled:opacity-100"
+                                                    className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                                 />
                                             </span>
                                             <Select
@@ -467,7 +467,7 @@ function MarcherEditor() {
                                                 Step Size
                                             </label>
 
-                                            <p className="bg-transparent text-body leading-none">
+                                            <p className="text-body bg-transparent leading-none">
                                                 {stepSize.displayString()}
                                             </p>
                                         </div>
@@ -507,7 +507,7 @@ function MarcherEditor() {
                                                     ? "-"
                                                     : selectedMarchers[0].name
                                             }
-                                            className="w-full disabled:cursor-auto disabled:placeholder-text disabled:opacity-100"
+                                            className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                         />
                                     </span>
                                 </div>
@@ -523,7 +523,7 @@ function MarcherEditor() {
                                             compact
                                             disabled
                                             value={selectedMarchers[0].section}
-                                            className="w-full disabled:cursor-auto disabled:placeholder-text disabled:opacity-100"
+                                            className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                         />
                                     </span>
                                 </div>
@@ -541,7 +541,7 @@ function MarcherEditor() {
                                             value={
                                                 selectedMarchers[0].drill_number
                                             }
-                                            className="w-full disabled:cursor-auto disabled:placeholder-text disabled:opacity-100"
+                                            className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                         />
                                     </span>
                                 </div>

@@ -237,7 +237,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     name="Quantity"
                     className="flex items-center justify-between"
                 >
-                    <Form.Label className="w-full text-body text-text/80">
+                    <Form.Label className="text-body text-text/80 w-full">
                         Quantity
                     </Form.Label>
                     <Form.Control asChild>
@@ -252,7 +252,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     </Form.Control>
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>
@@ -283,7 +283,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     </Form.Control>
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>
@@ -307,7 +307,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     </Form.Control>
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>
@@ -332,7 +332,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     </Form.Control>
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>

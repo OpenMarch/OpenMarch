@@ -141,7 +141,7 @@ export default function VersionChecker() {
 
                     {/* Displays the changelog if available */}
                     {changelog ? (
-                        <div className="text-sm mt-4 max-h-[400px] overflow-auto">
+                        <div className="mt-4 max-h-[400px] overflow-auto text-sm">
                             <StyledMarkdown>{changelog}</StyledMarkdown>
                         </div>
                     ) : (
@@ -222,7 +222,7 @@ export default function VersionChecker() {
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger
                     asChild
-                    className="titlebar-button flex cursor-pointer items-center gap-6 text-sub outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                    className="titlebar-button text-sub hover:text-accent flex cursor-pointer items-center gap-6 outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     New Version Available!
                 </DialogTrigger>

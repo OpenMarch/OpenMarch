@@ -19,7 +19,7 @@ export default function UiSettingsToolbar() {
                         : RegisteredActionsObjects.togglePreviousPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.previousPaths ? "text-accent" : "text-text"}`}
+                className={`hover:text-accent outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.previousPaths ? "text-accent" : "text-text"}`}
             >
                 Prev paths
             </RegisteredActionButton>
@@ -32,7 +32,7 @@ export default function UiSettingsToolbar() {
                         : RegisteredActionsObjects.toggleNextPagePaths
                               .instructionalStringToggleOn
                 }
-                className={`outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.nextPaths ? "text-accent" : "text-text"}`}
+                className={`hover:text-accent outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50 ${uiSettings.nextPaths ? "text-accent" : "text-text"}`}
             >
                 Next paths
             </RegisteredActionButton>

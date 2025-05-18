@@ -16,20 +16,20 @@ export default function TinyFormButtons({
             {!isEditing ? (
                 <button
                     onClick={() => setIsEditing(!isEditing)}
-                    className="text-sm btn-secondary"
+                    className="btn-secondary text-sm"
                 >
                     <FaEdit />
                 </button>
             ) : (
                 <>
                     <button // Cancel button
-                        className="text-sm btn-secondary"
+                        className="btn-secondary text-sm"
                         onClick={() => handleCancel()}
                     >
                         <FaTimes />
                     </button>
                     <button // Submit button
-                        className="text-sm btn-primary"
+                        className="btn-primary text-sm"
                         type="submit"
                     >
                         <FaCheck />

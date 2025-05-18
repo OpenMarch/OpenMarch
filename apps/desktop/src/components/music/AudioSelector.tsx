@@ -43,7 +43,7 @@ export default function AudioSelector() {
             <div className="flex items-center justify-between gap-8 px-12">
                 <label
                     htmlFor="audio-selector"
-                    className="w-full text-body text-text/80"
+                    className="text-body text-text/80 w-full"
                 >
                     Audio File
                 </label>

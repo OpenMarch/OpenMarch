@@ -27,13 +27,13 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
     }, []);
 
     return (
-        <div className="main-app-titlebar relative flex h-fit w-full items-center justify-between text-text">
+        <div className="main-app-titlebar text-text relative flex h-fit w-full items-center justify-between">
             <div
                 className={`flex items-center gap-20 px-24 py-8 ${isMacOS && "ml-64"}`}
             >
                 {!isMacOS && (
                     <button
-                        className="titlebar-button cursor-pointer outline-none duration-150 ease-out hover:text-accent focus-visible:-translate-y-4"
+                        className="titlebar-button hover:text-accent cursor-pointer outline-none duration-150 ease-out focus-visible:-translate-y-4"
                         onClick={() => {
                             window.electron.openMenu();
                         }}
@@ -55,13 +55,13 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                     </>
                 )}
             </div>
-            <p className="absolute left-1/2 top-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center text-sub">
+            <p className="text-sub absolute left-1/2 top-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">
                 {dbPath}
             </p>
             {!isMacOS && (
                 <div className="titlebar-button flex">
                     <button
-                        className="cursor-pointer px-16 py-8 outline-none duration-150 ease-out hover:text-accent focus-visible:text-accent"
+                        className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-none duration-150 ease-out"
                         onClick={() => {
                             window.electron.minimizeWindow();
                         }}
@@ -69,7 +69,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                         <Minus size={20} />
                     </button>
                     <button
-                        className="cursor-pointer px-16 py-8 outline-none duration-150 ease-out hover:text-accent focus-visible:text-accent"
+                        className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-none duration-150 ease-out"
                         onClick={() => {
                             window.electron.maximizeWindow();
                         }}
@@ -77,7 +77,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                         <Square size={20} />
                     </button>
                     <button
-                        className="cursor-pointer px-16 py-8 pr-24 outline-none duration-150 ease-out hover:text-red focus-visible:text-red"
+                        className="hover:text-red focus-visible:text-red cursor-pointer px-16 py-8 pr-24 outline-none duration-150 ease-out"
                         onClick={() => {
                             window.electron.closeWindow();
                         }}

@@ -85,7 +85,7 @@ export default function ColorPicker({
             <div className={labelClassname}>{label}</div>
             {/* Color Preview Box */}
             <div
-                className="flex-between font border-fg-2 col-span-5 flex h-24 w-full cursor-pointer items-center justify-center rounded-full border-2 py-16 font-mono text-h5 tracking-wider"
+                className="flex-between font border-fg-2 text-h5 col-span-5 flex h-24 w-full cursor-pointer items-center justify-center rounded-full border-2 py-16 font-mono tracking-wider"
                 style={{
                     backgroundColor: rgbaToHex(currentColor),
                     color: getContrastingColor(currentColor),
@@ -104,7 +104,7 @@ export default function ColorPicker({
 
             {/* Color Picker Popover */}
             {displayColorPicker && (
-                <div className="rounded rounded absolute left-[50%] z-10 mt-32 bg-bg-1 p-2 shadow-lg">
+                <div className="bg-bg-1 absolute left-[50%] z-10 mt-32 rounded p-2 shadow-lg">
                     <div className="z-50 my-8 flex justify-between gap-8">
                         <Button
                             size="compact"

@@ -6,7 +6,7 @@ export default function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
     return (
         <div
-            className={clsx("h-full w-full animate-pulse bg-fg-2", className)}
+            className={clsx("bg-fg-2 h-full w-full animate-pulse", className)}
             style={{
                 borderRadius: "0.5rem",
             }}

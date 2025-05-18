@@ -227,7 +227,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     className="flex items-center justify-between gap-32"
                 >
                     <Form.Label
-                        className="w-full text-body text-text/80"
+                        className="text-body text-text/80 w-full"
                         htmlFor="quantityForm"
                     >
                         Quantity
@@ -246,7 +246,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     </Form.Control>
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>
@@ -256,7 +256,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     name="Previous Page"
                     className="flex items-center justify-between gap-32"
                 >
-                    <Form.Label className="w-full text-body text-text/80">
+                    <Form.Label className="text-body text-text/80 w-full">
                         Previous Page
                     </Form.Label>
                     <Form.Control asChild>
@@ -282,7 +282,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     </Form.Control>
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>
@@ -294,7 +294,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                 >
                     <div className="flex gap-8">
                         <Form.Label
-                            className="w-full text-body text-text/80"
+                            className="text-body text-text/80 w-full"
                             htmlFor="countsForm"
                         >
                             Counts
@@ -342,7 +342,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     </Form.Control>
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>
@@ -355,7 +355,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     <div className="flex gap-8">
                         <Form.Label
                             htmlFor="subsetForm"
-                            className="w-full text-body text-text/80"
+                            className="text-body text-text/80 w-full"
                         >
                             Subset
                         </Form.Label>
@@ -365,7 +365,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                                     <Info size={18} className="text-text/60" />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16">
-                                    <code className="text-text3 rounded-6 border border-stroke p-4 font-mono">
+                                    <code className="text-text3 rounded-6 border-stroke border p-4 font-mono">
                                         S
                                     </code>{" "}
                                     to toggle subset.
@@ -380,7 +380,7 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                     />
                     <Form.Message
                         match={"valueMissing"}
-                        className="text-sub leading-none text-red"
+                        className="text-sub text-red leading-none"
                     >
                         Please enter a value.
                     </Form.Message>

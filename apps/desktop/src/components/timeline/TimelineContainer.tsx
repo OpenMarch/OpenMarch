@@ -250,19 +250,19 @@ export function PageTimeline() {
             {/* ------ FIRST PAGE ------ */}
             {pages.length > 0 && (
                 <div
-                    className={`flex h-full w-[40px] items-center justify-center rounded-6 border bg-fg-2 px-10 py-4 ${
+                    className={`rounded-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 ${
                         !isPlaying && "cursor-pointer"
                     } ${
                         pages[0].id === selectedPage?.id
                             ? // if the page is selected
                               `border-accent ${
                                   isPlaying
-                                      ? "pointer-events-none text-text/75"
+                                      ? "text-text/75 pointer-events-none"
                                       : ""
                               }`
                             : `border-stroke ${
                                   isPlaying
-                                      ? "pointer-events-none text-text/75"
+                                      ? "text-text/75 pointer-events-none"
                                       : ""
                               }`
                     }`}
@@ -293,19 +293,19 @@ export function PageTimeline() {
                     >
                         {/* ------ PAGES ------ */}
                         <div
-                            className={`relative ml-6 flex h-full items-center justify-end overflow-clip rounded-6 border bg-fg-2 px-8 py-4 text-body text-text ${
+                            className={`rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end overflow-clip border px-8 py-4 ${
                                 !isPlaying && "cursor-pointer"
                             } ${
                                 page.id === selectedPage?.id
                                     ? // if the page is selected
                                       `border-accent ${
                                           isPlaying
-                                              ? "pointer-events-none text-text/75"
+                                              ? "text-text/75 pointer-events-none"
                                               : ""
                                       }`
                                     : `border-stroke ${
                                           isPlaying
-                                              ? "pointer-events-none text-text/75"
+                                              ? "text-text/75 pointer-events-none"
                                               : ""
                                       }`
                             }`}
@@ -338,10 +338,10 @@ export function PageTimeline() {
                         </div>
                         <div
                             className={clsx(
-                                "w-3 rounded absolute right-0 top-0 z-20 h-full cursor-ew-resize transition-colors",
+                                "absolute right-0 top-0 z-20 h-full w-3 cursor-ew-resize rounded transition-colors",
                                 resizingPage.current?.id === page.id
                                     ? "bg-accent/50"
-                                    : "bg-transparent hover:bg-accent/30",
+                                    : "hover:bg-accent/30 bg-transparent",
                             )}
                             onMouseDown={(e) =>
                                 handlePageResizeStart(e.nativeEvent, page)
@@ -353,7 +353,7 @@ export function PageTimeline() {
                 );
             })}
             <div
-                className="ml-8 flex h-24 w-24 cursor-pointer items-center justify-center self-center rounded-full bg-accent text-sub text-text-invert"
+                className="bg-accent text-sub text-text-invert ml-8 flex h-24 w-24 cursor-pointer items-center justify-center self-center rounded-full"
                 onClick={() =>
                     createLastPage({
                         currentLastPage: pages[pages.length - 1],
@@ -425,7 +425,7 @@ export default function TimelineContainer() {
             ref={timelineRef}
             id="timeline"
             className={clsx(
-                "relative flex w-full min-w-0 rounded-6 border border-stroke bg-fg-1 p-8 transition-all duration-200",
+                "rounded-6 border-stroke bg-fg-1 relative flex w-full min-w-0 border p-8 transition-all duration-200",
                 uiSettings.focussedComponent === "timeline"
                     ? "h-[48rem]"
                     : uiSettings.showWaveform
@@ -438,7 +438,7 @@ export default function TimelineContainer() {
                 id="zoomIcons"
             >
                 <button
-                    className="m-4 text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 active:hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    className="text-text active:hover:text-accent m-4 outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() =>
                         setPixelsPerSecond(
                             uiSettings.timelinePixelsPerSecond * 0.8,
@@ -449,7 +449,7 @@ export default function TimelineContainer() {
                     <Minus size={16} />
                 </button>
                 <button
-                    className="m-4 text-text outline-none duration-150 ease-out focus-visible:-translate-y-4 active:hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                    className="text-text active:hover:text-accent m-4 outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() =>
                         setPixelsPerSecond(
                             uiSettings.timelinePixelsPerSecond * 1.2,

@@ -310,7 +310,7 @@ export default function ShapeEditor() {
                         {marcherShape.canvasMarchers.length} Marchers
                     </h5>
                     {marcherShape.canvasMarchers.length > 0 && (
-                        <p className="max-h-64 overflow-y-auto font-mono text-sub text-text/80">
+                        <p className="text-sub text-text/80 max-h-64 overflow-y-auto font-mono">
                             {marcherShape.canvasMarchers
                                 .map((cm) => cm.marcherObj.drill_number)
                                 .join(", ")}

@@ -15,12 +15,12 @@ export default function MusicModal() {
 function MusicModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     return (
-        <div className="flex w-fit animate-scale-in flex-col gap-16 text-text">
+        <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
             <header className="flex justify-between gap-24">
                 <h4 className="text-h4 leading-none">Music</h4>
                 <button
                     onClick={toggleOpen}
-                    className="duration-150 ease-out hover:text-red"
+                    className="hover:text-red duration-150 ease-out"
                 >
                     <X size={24} />
                 </button>

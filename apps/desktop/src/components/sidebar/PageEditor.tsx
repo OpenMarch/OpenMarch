@@ -73,7 +73,7 @@ function PageEditor() {
                 </div> */}
                     <div className="flex w-full items-center justify-between">
                         <label
-                            className="w-full text-body text-text/80"
+                            className="text-body text-text/80 w-full"
                             htmlFor={countsInputId}
                         >
                             Counts
@@ -113,7 +113,7 @@ function PageEditor() {
                         <label className="text-body text-text/80">
                             Measures
                         </label>
-                        <p className="text-body leading-none text-text">
+                        <p className="text-body text-text leading-none">
                             {measureRangeString(selectedPage)}
                         </p>
                     </div>

@@ -46,7 +46,7 @@ export const DangerNote = ({ children }: { children: React.ReactNode }) => {
     return (
         <div className="flex h-fit w-full items-center gap-8 px-4 py-2">
             <SealWarning size={24} className="text-red" />
-            <p className="w-full text-body leading-none">{children}</p>
+            <p className="text-body w-full leading-none">{children}</p>
         </div>
     );
 };

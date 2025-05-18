@@ -125,7 +125,7 @@ export default function MarcherList({
                     event.preventDefault();
                     handleSubmit();
                 }}
-                className="flex flex-col gap-16 text-body text-text"
+                className="text-body text-text flex flex-col gap-16"
             >
                 <div className="flex w-full items-center justify-between">
                     <p className="text-body text-text">List</p>
@@ -212,7 +212,7 @@ export default function MarcherList({
                         <>
                             <div id="key" className="flex items-center gap-4">
                                 <div className="w-[13%]">
-                                    <p className="font-mono text-sub text-text/90">
+                                    <p className="text-sub text-text/90 font-mono">
                                         #
                                     </p>
                                 </div>
@@ -238,7 +238,7 @@ export default function MarcherList({
                                         className="w-[13%]"
                                         data-testid="marcher-drill-number"
                                     >
-                                        <p className="font-mono text-body text-text">
+                                        <p className="text-body text-text font-mono">
                                             {marcher.drill_prefix +
                                                 marcher.drill_order}
                                         </p>

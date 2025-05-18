@@ -17,12 +17,12 @@ function TipsAndTricksContents() {
     const { toggleOpen } = useSidebarModalStore();
 
     return (
-        <div className="flex w-fit animate-scale-in flex-col gap-16 text-text">
+        <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
             <div className="flex items-center justify-between">
                 <h4 className="text-h4 leading-none">Tips and Tricks</h4>
                 <button
                     onClick={toggleOpen}
-                    className="duration-150 ease-out hover:text-red"
+                    className="hover:text-red duration-150 ease-out"
                 >
                     <X size={24} />
                 </button>

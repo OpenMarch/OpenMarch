@@ -45,7 +45,7 @@ export const SelectTriggerButton = forwardRef<
         <RadixSelect.Trigger
             className={twMerge(
                 clsx(
-                    "flex h-[2.5rem] w-fit items-center justify-between gap-12 overflow-clip rounded-6 border border-stroke bg-fg-2 px-22 text-body text-text duration-150 ease-out focus-visible:border-accent focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "rounded-6 border-stroke bg-fg-2 px-22 text-body text-text focus-visible:border-accent flex h-[2.5rem] w-fit items-center justify-between gap-12 overflow-clip border duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -68,7 +68,7 @@ export const SelectTriggerText = forwardRef<
             ref={ref}
             className={twMerge(
                 clsx(
-                    "flex h-fit w-fit items-center justify-center gap-2 p-0 text-body leading-none text-text outline-1 duration-150 ease-out enabled:hover:text-accent data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "text-body text-text enabled:hover:text-accent flex h-fit w-fit items-center justify-center gap-2 p-0 leading-none outline-1 duration-150 ease-out data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -91,7 +91,7 @@ export const SelectTriggerCompact = forwardRef<
             ref={ref}
             className={twMerge(
                 clsx(
-                    "flex h-[1.625rem] min-h-0 w-fit min-w-0 items-center justify-center rounded-6 border border-stroke bg-fg-2 px-8 py-[4px] text-body text-text placeholder-text/50 placeholder:text-body focus:border-accent focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                    "rounded-6 border-stroke bg-fg-2 text-body text-text placeholder-text/50 placeholder:text-body focus:border-accent flex h-[1.625rem] min-h-0 w-fit min-w-0 items-center justify-center border px-8 py-[4px] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                     className,
                 ),
             )}
@@ -107,15 +107,15 @@ export const SelectContent = ({ children }: RadixSelectContentProps) => {
         <RadixSelect.Portal>
             <RadixSelect.Content
                 position="popper"
-                className="relative z-50 mt-4 max-h-[512px] w-full max-w-[384px] overflow-hidden rounded-6 border border-stroke bg-modal px-22 font-sans backdrop-blur-3xl data-[state='open']:animate-scale-in"
+                className="rounded-6 border-stroke bg-modal px-22 data-[state='open']:animate-scale-in relative z-50 mt-4 max-h-[512px] w-full max-w-[384px] overflow-hidden border font-sans backdrop-blur-3xl"
             >
-                <RadixSelect.ScrollUpButton className="flex h-fit cursor-default items-center justify-center border-b border-stroke py-2 text-text">
+                <RadixSelect.ScrollUpButton className="border-stroke text-text flex h-fit cursor-default items-center justify-center border-b py-2">
                     <CaretUp size={18} />
                 </RadixSelect.ScrollUpButton>
                 <RadixSelect.Viewport className="flex w-full flex-col gap-12 py-16">
                     {children}
                 </RadixSelect.Viewport>
-                <RadixSelect.ScrollDownButton className="flex h-fit cursor-default items-center justify-center border-t border-stroke py-2 text-text">
+                <RadixSelect.ScrollDownButton className="border-stroke text-text flex h-fit cursor-default items-center justify-center border-t py-2">
                     <CaretDown size={18} />
                 </RadixSelect.ScrollDownButton>
             </RadixSelect.Content>
@@ -130,11 +130,11 @@ export const SelectItem = React.forwardRef<
 >(({ children, ...props }, forwardedRef) => {
     return (
         <RadixSelect.Item
-            className="flex h-fit w-full cursor-pointer select-none items-center justify-between gap-12 font-sans text-body leading-none text-text outline-none duration-150 ease-out data-[disabled]:pointer-events-none data-[highlighted]:translate-x-2 data-[state='checked']:text-accent data-[disabled]:opacity-50"
+            className="text-body text-text data-[state='checked']:text-accent flex h-fit w-full cursor-pointer select-none items-center justify-between gap-12 font-sans leading-none outline-none duration-150 ease-out data-[disabled]:pointer-events-none data-[highlighted]:translate-x-2 data-[disabled]:opacity-50"
             {...props}
             ref={forwardedRef}
         >
-            <RadixSelect.ItemText className="w-full truncate whitespace-nowrap text-body leading-none text-text">
+            <RadixSelect.ItemText className="text-body text-text w-full truncate whitespace-nowrap leading-none">
                 {children}
             </RadixSelect.ItemText>
             <RadixSelect.ItemIndicator>
@@ -154,12 +154,12 @@ export const SelectGroup = ({ children }: { children: ReactNode }) => {
 
 export const SelectLabel = ({ children }: { children: ReactNode }) => {
     return (
-        <RadixSelect.Label className="px-24 text-sub text-text/90">
+        <RadixSelect.Label className="text-sub text-text/90 px-24">
             {children}
         </RadixSelect.Label>
     );
 };
 
 export const SelectSeparator = () => {
-    return <RadixSelect.Separator className="h-[1px] w-full bg-stroke" />;
+    return <RadixSelect.Separator className="bg-stroke h-[1px] w-full" />;
 };

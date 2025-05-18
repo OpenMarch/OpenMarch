@@ -9,7 +9,7 @@ export function TooltipContents({ children, ...rest }: TooltipContentProps) {
                 {...rest}
                 className={clsx(
                     rest.className,
-                    "z-[99] m-8 rounded-6 border border-stroke bg-modal p-4 text-text shadow-modal backdrop-blur-32",
+                    "rounded-6 border-stroke bg-modal text-text shadow-modal backdrop-blur-32 z-[99] m-8 border p-4",
                 )}
             >
                 {children}

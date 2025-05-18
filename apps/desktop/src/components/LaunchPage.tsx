@@ -58,7 +58,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                         and crash reports.
                     </BugNote>
 
-                    <div className="rounded-full border border-stroke bg-fg-1 px-16 py-8">
+                    <div className="border-stroke bg-fg-1 rounded-full border px-16 py-8">
                         <BugReport />
                     </div>
                     <ThemeSwitcher />

@@ -4,5 +4,5 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 # This should only print or be visible if the pre-commit hooks fail.
 echo "Running pre-commit checks. Check the output of this command for more information."
-bunx --no-install lint-staged || (echo "❌ Linting failed. Please fix the issues and try again." && exit 1)
+pnpm dlx lint-staged || (echo "❌ Linting failed. Please fix the issues and try again." && exit 1)
 echo "✅ Pre-commit checks passed."

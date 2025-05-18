@@ -39,7 +39,7 @@ function App() {
     }, [fetchUiSettings]);
 
     return (
-        <main className="flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden bg-bg-1 font-sans text-text outline-accent">
+        <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
             {!databaseIsReady ? (
                 <>
                     <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />

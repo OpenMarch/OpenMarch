@@ -294,7 +294,7 @@ export default function EditableAudioPlayer({
             <div className="mb-2 flex items-center">
                 <button
                     onClick={togglePlayPause}
-                    className="bg-blue-500 hover:bg-blue-600 rounded-md mr-2 px-4 py-2 font-medium text-white transition-colors"
+                    className="mr-2 rounded-md bg-blue-500 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-600"
                     disabled={!waveSurfer || !audioFileUrl}
                 >
                     {isAudioPlaying ? <Pause size={24} /> : <Play size={24} />}

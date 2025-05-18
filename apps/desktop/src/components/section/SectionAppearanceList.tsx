@@ -179,7 +179,7 @@ export default function SectionAppearanceList() {
                 event.preventDefault();
                 handleSubmit();
             }}
-            className="flex flex-col gap-16 text-body text-text"
+            className="text-body text-text flex flex-col gap-16"
         >
             <div className="flex w-full items-center justify-between">
                 {localAppearances &&
@@ -244,7 +244,7 @@ export default function SectionAppearanceList() {
                     )}
             </div>
             {hasPendingChanges && (
-                <div className="rounded-full bg-fg-2 py-4 text-center text-[14px] text-text">
+                <div className="bg-fg-2 text-text rounded-full py-4 text-center text-[14px]">
                     Below values may not be applied until after a refresh
                 </div>
             )}
@@ -360,7 +360,7 @@ export default function SectionAppearanceList() {
                                     </Tooltip.TooltipProvider>
                                 </div>
 
-                                <div className="h-px w-full bg-stroke/30"></div>
+                                <div className="bg-stroke/30 h-px w-full"></div>
                             </div>
                         ))}
                     </>

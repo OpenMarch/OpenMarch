@@ -120,7 +120,7 @@ function PageList({
                 event.preventDefault();
                 handleSubmit();
             }}
-            className="flex flex-col gap-16 text-body text-text"
+            className="text-body text-text flex flex-col gap-16"
         >
             <div className="flex w-full items-center justify-between">
                 <p className="text-body text-text">List</p>
@@ -201,7 +201,7 @@ function PageList({
                     <>
                         <div id="key" className="flex items-center gap-4">
                             <div className="w-1/3">
-                                <p className="font-mono text-sub text-text/90">
+                                <p className="text-sub text-text/90 font-mono">
                                     Page #
                                 </p>
                             </div>
@@ -217,7 +217,7 @@ function PageList({
                             >
                                 <div className="w-1/3">
                                     <p
-                                        className="font-mono text-body text-text"
+                                        className="text-body text-text font-mono"
                                         data-testid="page-name"
                                     >
                                         {page.name}
