@@ -1,6 +1,6 @@
 import * as RadixCheckbox from "@radix-ui/react-checkbox";
 import type { CheckboxProps as RadixCheckboxProps } from "@radix-ui/react-checkbox";
-import { Check } from "@phosphor-icons/react";
+import { CheckIcon } from "@phosphor-icons/react";
 
 export type CheckboxProps = RadixCheckboxProps;
 
@@ -11,7 +11,7 @@ export const Checkbox = ({ ...props }: RadixCheckboxProps) => {
             {...props}
         >
             <RadixCheckbox.Indicator className="text-text-invert data-[state='checked']:animate-scale-in data-[state='unchecked']:animate-scale-out">
-                <Check size={24} />
+                <CheckIcon size={24} />
             </RadixCheckbox.Indicator>
         </RadixCheckbox.Root>
     );

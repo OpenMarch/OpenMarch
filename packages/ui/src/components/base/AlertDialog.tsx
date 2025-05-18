@@ -6,7 +6,7 @@ import type {
 } from "@radix-ui/react-alert-dialog";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 
 export type AlertDialogProps = {
     children: React.ReactNode;
@@ -35,7 +35,7 @@ export const AlertDialogTitle = ({
             {children}
         </RadixAlertDialog.Title>
         <RadixAlertDialog.Cancel asChild>
-            <X
+            <XIcon
                 size={24}
                 className="text-text hover:text-red cursor-pointer duration-150 ease-out"
             />

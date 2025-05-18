@@ -7,7 +7,7 @@ import type {
 } from "@radix-ui/react-dialog";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 
 export type DialogProps = {
     children: React.ReactNode;
@@ -34,7 +34,7 @@ export const DialogTitle = ({ children }: { children: React.ReactNode }) => (
             {children}
         </RadixDialog.Title>
         <RadixDialog.Close asChild>
-            <X
+            <XIcon
                 size={24}
                 className="text-text hover:text-red cursor-pointer duration-150 ease-out"
             />

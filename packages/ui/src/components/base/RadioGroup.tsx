@@ -3,7 +3,7 @@ import type {
     RadioGroupProps as RadixRadioGroupProps,
     RadioGroupItemProps as RadixRadioGroupItemProps,
 } from "@radix-ui/react-radio-group";
-import React, { type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 export type RadioGroupProps = RadixRadioGroupProps & { children: ReactNode };
 

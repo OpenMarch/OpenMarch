@@ -8,7 +8,7 @@ import type {
 } from "@radix-ui/react-select";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { CaretUp, CaretDown, Check } from "@phosphor-icons/react";
+import { CaretUpIcon, CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import { forwardRef } from "react";
 
 export type SelectProps = RadixSelectProps & {
@@ -53,7 +53,7 @@ export const SelectTriggerButton = forwardRef<
         >
             <RadixSelect.Value placeholder={label} />
             <RadixSelect.Icon>
-                <CaretDown size={24} />
+                <CaretDownIcon size={24} />
             </RadixSelect.Icon>
         </RadixSelect.Trigger>
     );
@@ -76,7 +76,7 @@ export const SelectTriggerText = forwardRef<
         >
             <RadixSelect.Value placeholder={label} />
             <RadixSelect.Icon>
-                <CaretDown size={16} />
+                <CaretDownIcon size={16} />
             </RadixSelect.Icon>
         </RadixSelect.Trigger>
     );
@@ -110,13 +110,13 @@ export const SelectContent = ({ children }: RadixSelectContentProps) => {
                 className="rounded-6 border-stroke bg-modal data-[state='open']:animate-scale-in relative z-50 mt-4 max-h-[512px] w-full max-w-[384px] overflow-hidden border px-22 font-sans backdrop-blur-3xl"
             >
                 <RadixSelect.ScrollUpButton className="border-stroke text-text flex h-fit cursor-default items-center justify-center border-b py-2">
-                    <CaretUp size={18} />
+                    <CaretUpIcon size={18} />
                 </RadixSelect.ScrollUpButton>
                 <RadixSelect.Viewport className="flex w-full flex-col gap-12 py-16">
                     {children}
                 </RadixSelect.Viewport>
                 <RadixSelect.ScrollDownButton className="border-stroke text-text flex h-fit cursor-default items-center justify-center border-t py-2">
-                    <CaretDown size={18} />
+                    <CaretDownIcon size={18} />
                 </RadixSelect.ScrollDownButton>
             </RadixSelect.Content>
         </RadixSelect.Portal>
@@ -138,7 +138,7 @@ export const SelectItem = React.forwardRef<
                 {children}
             </RadixSelect.ItemText>
             <RadixSelect.ItemIndicator>
-                <Check size={20} />
+                <CheckIcon size={20} />
             </RadixSelect.ItemIndicator>
         </RadixSelect.Item>
     );
