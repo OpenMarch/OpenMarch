@@ -1,6 +1,13 @@
 /* eslint-env node */
 module.exports = {
-    extends: ["eslint:recommended", "react-app"],
+    extends: ["eslint:recommended", "react-app", "plugin:astro/recommended"],
+    ignorePatterns: [
+        "**/node_modules/*",
+        "**/dist/*",
+        "**/dist-electron/*",
+        "**/build/*",
+        "**/src/styles/**/*.css",
+    ],
     parser: "@typescript-eslint/parser",
     root: true,
     globals: {
@@ -11,7 +18,7 @@ module.exports = {
         node: true,
         es6: true,
     },
-    plugins: ["eslint-plugin-react", "eslint-plugin-react-hooks"],
+    plugins: ["eslint-plugin-react"],
     rules: {
         "@typescript-eslint/no-var-requires": "off",
         "react/prop-types": "warn",
@@ -34,6 +41,22 @@ module.exports = {
             files: ["*.test.ts*", "src/components/**/*.tsx"],
             rules: {
                 "max-lines-per-function": "off",
+            },
+        },
+        {
+            // Define the configuration for `.astro` file.
+            files: ["*.astro"],
+            // Allows Astro components to be parsed.
+            parser: "astro-eslint-parser",
+            // Parse the script in `.astro` as TypeScript by adding the following configuration.
+            // It's the setting you need when using TypeScript.
+            parserOptions: {
+                parser: "@typescript-eslint/parser",
+                extraFileExtensions: [".astro"],
+            },
+            rules: {
+                // override/add rules settings here, such as:
+                // "astro/no-set-html-directive": "error"
             },
         },
     ],

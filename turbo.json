@@ -1,0 +1,48 @@
+{
+    "$schema": "https://turborepo.com/schema.json",
+    "tasks": {
+        "build": {
+            "outputs": ["dist/**"]
+        },
+        "test": {
+            "outputs": []
+        },
+        "test:prepare": {
+            "outputs": []
+        },
+        "test:run": {
+            "outputs": []
+        },
+        "test:coverage": {
+            "outputs": []
+        },
+        "test:clearCache": {
+            "outputs": []
+        },
+        "desktop#postinstall": {
+            "outputs": []
+        },
+        "clean": {
+            "outputs": []
+        },
+        "fix": {
+            "outputs": []
+        },
+        "spellcheck": {
+            "outputs": []
+        },
+        "app:prepare": {
+            "outputs": []
+        },
+        "format": {
+            "outputs": []
+        },
+        "lint": {
+            "outputs": []
+        },
+        "dev": {
+            "persistent": true,
+            "cache": false
+        }
+    }
+}
