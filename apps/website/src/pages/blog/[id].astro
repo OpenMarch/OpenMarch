@@ -1,0 +1,49 @@
+---
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import { Image } from "astro:assets";
+import Prose from "@/components/Prose.astro";
+
+export async function getStaticPaths() {
+    const blogEntries = await getCollection("blog");
+    return blogEntries.map((post) => ({
+        params: { id: post.id },
+        props: { post },
+    }));
+}
+
+interface Props {
+    post: CollectionEntry<"blog">;
+}
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<Layout title={post.data.title}>
+    <section class="m-16 flex flex-col items-center py-128">
+        <article class="flex w-full max-w-[48rem] flex-col items-center gap-16">
+            <Image
+                src={post.data.image}
+                width={1280}
+                height={720}
+                alt={post.data.title}
+                class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+            />
+            <h1 class="text-h1">{post.data.title}</h1>
+            <div class="flex gap-16">
+                <p class="text-body">{post.data.author}</p>
+                <p class="text-body">
+                    {
+                        post.data.date.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            timeZone: "UTC",
+                        })
+                    }
+                </p>
+            </div>
+            <Prose><Content /></Prose>
+        </article>
+    </section>
+</Layout>

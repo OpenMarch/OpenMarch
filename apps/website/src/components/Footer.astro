@@ -1,0 +1,110 @@
+---
+import { LogoTextMark } from "./LogoTextMark";
+import ThemeSwitcher from "./ThemeSwitcher.astro";
+---
+
+<footer
+    class="m-64 mt-0 flex justify-between gap-48 border-t border-t-stroke p-64 max-[920px]:flex-col max-[920px]:justify-start max-[750px]:p-0 max-[750px]:pt-32"
+>
+    <div class="flex w-[33%] flex-col gap-24 max-[920px]:w-full">
+        <div class="flex items-end gap-16">
+            <LogoTextMark />
+            <p class="text-body leading-none">GPL-3.0</p>
+            <p class="text-body leading-none">2025</p>
+        </div>
+        <p class="text-body leading-[150%]">
+            OpenMarch is a free, open-source, fast and intuitive drill writing
+            experience for all marching arts.
+        </p>
+        <a
+            class="text-body leading-[150%] hover:underline"
+            href="mailto:contact@openmarch.com"
+        >
+            contact@openmarch.com
+        </a>
+        <ThemeSwitcher />
+    </div>
+    <div class="flex flex-wrap gap-48">
+        <div class="flex flex-col gap-24">
+            <h4 class="text-h4">App</h4>
+            <a
+                href="/download"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Download
+            </a>
+            <a
+                href="/#features"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Features
+            </a>
+            <a
+                href="/guides/getting-started"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Guides
+            </a>
+            <a
+                href="/developers/contributing"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Developers
+            </a>
+        </div>
+        <div class="flex flex-col gap-24">
+            <h4 class="text-h4">Community</h4>
+            <a
+                href="https://discord.gg/eTsQ98uZzq"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Discord
+            </a>
+            <a
+                href="https://github.com/OpenMarch"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                GitHub
+            </a>
+            <a
+                href="https://www.instagram.com/openmarchapp/"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Instagram
+            </a>
+            <a
+                href="https://www.patreon.com/openmarch"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Patreon
+            </a>
+            <a
+                href="https://www.youtube.com/@OpenMarchApp"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                YouTube
+            </a>
+        </div>
+        <div class="flex flex-col gap-24">
+            <h4 class="text-h4">Organization</h4>
+            <a
+                href="/about"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                About
+            </a>
+            <a
+                href="https://store.openmarch.com"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Merch
+            </a>
+            <a
+                href="/blog"
+                class="text-body duration-150 ease-out hover:text-accent"
+            >
+                Blog
+            </a>
+        </div>
+    </div>
+</footer>

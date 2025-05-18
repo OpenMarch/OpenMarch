@@ -1,0 +1,198 @@
+---
+import { Button } from "@/components/ui/Button";
+import Layout from "@/layouts/Layout.astro";
+import { Image } from "astro:assets";
+---
+
+<Layout title="About">
+    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
+        <section
+            id="download"
+            class="relative flex h-fit w-full min-w-0 flex-col items-center gap-32"
+        >
+            <div
+                class="flex h-[50vh] min-h-0 w-full flex-col items-start justify-center px-64 max-[1000px]:p-32"
+            >
+                <h1 class="text-left text-[96px] max-[700px]:text-h1">
+                    About Us
+                </h1>
+            </div>
+            <div
+                class="flex h-fit w-full flex-col gap-64 rounded-6 border border-stroke bg-fg-1 px-128 py-128 max-[1000px]:p-32 xl:px-256"
+            >
+                <h1 class="text-h1">Our Mission</h1>
+                <div class="flex h-fit w-full flex-col gap-16">
+                    <p class="leading-loose text-text">
+                        OpenMarch is an open source drill writing software built
+                        on web app frameworks. Our goal is to be a free and easy
+                        drill writing solution for marching bands, indoor
+                        programs, and applicable performing ensembles. OpenMarch
+                        hopes to be enough for 90% of ensembles with reasonable
+                        design needs. We want to make drill writing effortless.
+                    </p>
+                    <p class="leading-loose text-text">
+                        OpenMarch is designed with three principles:
+                    </p>
+                    <ul class="list-disc pl-32 leading-loose text-text">
+                        <li>
+                            <strong>Stay free</strong> - All of the technologies
+                            OpenMarch uses have been intentionally chosen to minimize
+                            operation costs. This ensures that OpenMarch remains
+                            accessible to everyone, regardless of their financial
+                            situation.
+                        </li>
+                        <li>
+                            <strong>Stay fast</strong> - OpenMarch is built with
+                            performance in mind. We want to ensure that the software
+                            runs smoothly on any device, making the drill writing
+                            process efficient and enjoyable.
+                        </li>
+                        <li>
+                            <strong>Stay simple</strong> - We focus on providing
+                            essential features without unnecessary complexity. Our
+                            interface is intuitive and easy to use, allowing you
+                            to create drill without a steep learning curve.
+                        </li>
+                    </ul>
+
+                    <p class="leading-loose text-text">
+                        There may never be a day where OpenMarch has support for
+                        a 3D rendered marching band of 900 with live video feed
+                        jumbotron props. OpenMarch's current (and really only)
+                        focus is on the drill-writing experience. We hope you
+                        like our software.
+                    </p>
+                </div>
+                <h1 class="text-h1">The Team</h1>
+                <div class="grid grid-cols-3 gap-32 max-[920px]:grid-cols-1">
+                    <div class="flex flex-col gap-16">
+                        <h3 class="text-h3">Alex Dumouchelle</h3>
+                        <h4 class="text-h4">Founder & lead developer</h4>
+                        <p class="text-body">
+                            Alex, an alumni of The Cadets, oversees all of the
+                            project's operations and leads the development
+                            effort.
+                        </p>
+
+                        <div class="flex flex-wrap items-center gap-12">
+                            <a href="/about/alexdumo">
+                                <Button variant="secondary" size="compact">
+                                    More about Alex
+                                </Button>
+                            </a>
+                            <a href="https://github.com/AlexDumo">
+                                <i
+                                    class="ph ph-github-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                            <a href="https://www.linkedin.com/in/AlexDumo/">
+                                <i
+                                    class="ph ph-linkedin-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                            <a
+                                href="https://www.youtube.com/@alexdumouchelle3744"
+                            >
+                                <i
+                                    class="ph ph-youtube-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-16">
+                        <h3 class="text-h3">Ben Moulse</h3>
+                        <h4 class="text-h4">Graphic designer</h4>
+                        <p class="text-body">
+                            Ben creates the brand identity and assists with the
+                            marketing of the project.
+                        </p>
+                        <div class="flex flex-wrap items-center gap-12">
+                            <a href="https://www.linkedin.com/in/ben-moulse/">
+                                <i
+                                    class="ph ph-linkedin-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                            <a href="https://www.behance.net/Moulse">
+                                <i
+                                    class="ph ph-behance-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-16">
+                        <h3 class="text-h3">Aleksi Saario</h3>
+                        <h4 class="text-h4">Social media & marketing</h4>
+                        <p class="text-body">
+                            Aleksi helps with marketing and the social media
+                            acccounts for the project.
+                        </p>
+                    </div>
+                    <div class="flex flex-col gap-16">
+                        <h3 class="text-h3">Jacob Ehlert</h3>
+                        <h4 class="text-h4">
+                            UI designer & front-end developer
+                        </h4>
+                        <p class="text-body">
+                            Also known as dukc, Jacob makes the UI designs for
+                            the app and website, and helps with the front-end
+                            development.
+                        </p>
+                        <div class="flex flex-wrap items-center gap-12">
+                            <a href="https://dukc.dev">
+                                <Button variant="secondary" size="compact">
+                                    Website
+                                </Button>
+                            </a>
+                            <a href="https://github.com/dukcc">
+                                <i
+                                    class="ph ph-github-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                            <a href="https://www.youtube.com/@dukkcc">
+                                <i
+                                    class="ph ph-youtube-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-16">
+                        <h3 class="text-h3">John Bostick</h3>
+                        <h4 class="text-h4">
+                            Front-end and back-end developer
+                        </h4>
+                        <p class="text-body">
+                            John works to improve the design of the app and make it more
+                            accessible, while also helping with back-end development.
+                        </p>
+                        <div class="flex flex-wrap items-center gap-12">
+                            <a href="https://johnbostick.com">
+                                <Button variant="secondary" size="compact">
+                                    Website
+                                </Button>
+                            </a>
+                            <a href="https://github.com/JohnodonCode">
+                                <i
+                                    class="ph ph-github-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                            <a href="https://www.linkedin.com/in/john-bostick/">
+                                <i
+                                    class="ph ph-linkedin-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                            <a href="https://www.youtube.com/@johnodondev">
+                                <i
+                                    class="ph ph-youtube-logo text-[1.5rem] text-text"
+                                ></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div
+                class="absolute left-1/2 top-0 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px]"
+            >
+            </div>
+        </section>
+    </div>
+</Layout>

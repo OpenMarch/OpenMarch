@@ -1,0 +1,96 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { Button } from "@/components/ui/Button";
+import { Windows, MacOS, Linux } from "../components/OsLogos";
+import { CURRENT_VERSION } from "@/constants";
+---
+
+<Layout title="Download">
+    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
+        <section
+            id="download"
+            class="relative flex h-[95vh] w-full min-w-0 flex-col items-center gap-32 max-[1200px]:h-fit"
+        >
+            <div
+                class="flex h-full w-full flex-col items-center justify-center"
+            >
+                <h1
+                    class="text-center text-[72px] max-[900px]:text-h1 max-[450px]:text-h2"
+                >
+                    Download the Modern <br /> Drill Writing App
+                </h1>
+            </div>
+            <div
+                class="grid h-fit w-full min-w-0 grid-cols-3 gap-12 max-[1200px]:grid-cols-1"
+            >
+                <div
+                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
+                >
+                    <Windows />
+                    <h1 class="text-h1">Windows</h1>
+                    <div class="flex flex-wrap gap-12">
+                        <a
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}.exe`
+                        >
+                            <Button variant="secondary"> Download .exe </Button>
+                        </a>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
+                >
+                    <MacOS />
+                    <h1 class="text-h1">macOS</h1>
+                    <div
+                        class="flex flex-col items-center justify-center gap-12"
+                    >
+                        <a
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_arm64.dmg`
+                        >
+                            <Button variant="secondary">
+                                Download for Apple Silicon
+                            </Button>
+                        </a>
+                        <a
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_x64.dmg`
+                        >
+                            <Button variant="secondary">
+                                Download for Intel
+                            </Button>
+                        </a>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
+                >
+                    <Linux />
+                    <h1 class="text-h1">Linux</h1>
+                    <div
+                        class="flex flex-col items-center justify-center gap-12"
+                    >
+                        <a
+                            href=`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_x86_64.AppImage`
+                        >
+                            <Button variant="secondary">
+                                Download AppImage
+                            </Button>
+                        </a>
+                        <a href=`https://snapcraft.io/openmarch`>
+                            <Button variant="secondary">
+                                Go to Snapcraft
+                            </Button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <a href="https://github.com/OpenMarch/OpenMarch/releases">
+                <Button variant="secondary"> See all GitHub releases </Button>
+            </a>
+
+            <div
+                class="absolute left-1/2 top-0 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px]"
+            >
+            </div>
+        </section>
+    </div>
+</Layout>
