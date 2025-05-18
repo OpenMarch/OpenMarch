@@ -2,7 +2,7 @@ name: Build/release
 
 on:
     pull_request:
-        branches: [main, develop, prerelease/*]
+        branches: [main, develop, prerelease/*, monorepo]
     push:
         tags: [v*]
         branches: [main]

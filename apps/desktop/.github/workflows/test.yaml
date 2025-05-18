@@ -2,7 +2,7 @@ name: Test
 
 on:
     pull_request:
-        branches: [main, develop, prerelease/*]
+        branches: [main, develop, prerelease/*, monorepo]
 
 jobs:
     test:
