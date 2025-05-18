@@ -1,8 +1,8 @@
-name: Test
+name: Test Desktop
 
 on:
     pull_request:
-        branches: [main, develop, prerelease/*, monorepo]
+        branches: ["main"]
 
 jobs:
     test:

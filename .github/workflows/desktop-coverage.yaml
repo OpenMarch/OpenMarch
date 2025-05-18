@@ -2,9 +2,11 @@ name: Report Coverage
 
 on:
     workflow_run:
-        workflows: ["Test"]
+        workflows: ["Test Desktop"]
         types:
             - completed
+        paths:
+            - "apps/desktop/**"
 
 jobs:
     report:

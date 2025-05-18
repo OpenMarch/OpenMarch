@@ -2,10 +2,14 @@ name: Build/release
 
 on:
     pull_request:
-        branches: [main, develop, prerelease/*, monorepo]
+        branches: ["main"]
+        paths:
+            - "apps/desktop/**"
     push:
         tags: [v*]
-        branches: [main]
+        branches: ["main"]
+        paths:
+            - "apps/desktop/**"
 
 permissions:
     contents: write # Required for creating releases

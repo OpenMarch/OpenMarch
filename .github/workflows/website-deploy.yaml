@@ -6,11 +6,11 @@ on:
     push:
         paths:
             - 'apps/website/**'
-        branches: [main]
+        branches: ["main"]
     pull_request:
         paths:
             - 'apps/website/**'
-        branches: [main, develop, prerelease/*, monorepo]
+        branches: ["main"]
     # Allows you to run this workflow manually from the Actions tab on GitHub.
     workflow_dispatch:
 
