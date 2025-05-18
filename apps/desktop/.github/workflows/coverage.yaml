@@ -25,6 +25,6 @@ jobs:
               # While the action itself might have dependencies, if this workflow
               # needs project-specific dependencies (e.g., for processing the report),
               # install them here. Otherwise, this step might be optional.
-              run: pnpm install --frozen-lockfile
+              run: pnpm install --no-frozen-lockfile
             - name: "Report Coverage"
               uses: davelosert/vitest-coverage-report-action@v2

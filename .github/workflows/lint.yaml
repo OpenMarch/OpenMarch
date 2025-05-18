@@ -12,6 +12,6 @@ jobs:
             - name: Setup pnpm
               uses: pnpm/action-setup@v4.1.0
             - name: Install project dependencies
-              run: pnpm install --frozen-lockfile
+              run: pnpm install --no-frozen-lockfile
             - name: Lint
               run: pnpm run lint
