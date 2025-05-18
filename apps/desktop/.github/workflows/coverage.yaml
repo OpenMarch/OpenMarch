@@ -1,0 +1,33 @@
+name: Report Coverage
+
+on:
+    workflow_run:
+        workflows: ["Test"]
+        types:
+            - completed
+
+jobs:
+    report:
+        runs-on: ubuntu-latest
+
+        permissions:
+            pull-requests: write
+
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/download-artifact@v4
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  run-id: ${{ github.event.workflow_run.id }}
+            - name: Setup Node.js and pnpm
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 18
+                  cache: "pnpm" # Caching might not be strictly necessary for this job, but doesn't hurt
+            - name: Install project dependencies
+              # While the action itself might have dependencies, if this workflow
+              # needs project-specific dependencies (e.g., for processing the report),
+              # install them here. Otherwise, this step might be optional.
+              run: pnpm install --frozen-lockfile
+            - name: "Report Coverage"
+              uses: davelosert/vitest-coverage-report-action@v2

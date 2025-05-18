@@ -21,14 +21,21 @@ jobs:
 
         steps:
             - uses: actions/checkout@v4
+            - name: Setup Node.js and pnpm
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 18
+                  cache: "pnpm"
             - name: Install project dependencies
-              run: npm ci
+              run: pnpm install --frozen-lockfile
             - name: Install canvas dependencies
-              run: npm install canvas
+              # This step might not be needed if canvas is a project dependency
+              # If it's not a project dependency managed by pnpm, keep this.
+              run: pnpm install canvas
             - name: Test Prepare
-              run: npm run test:prepare
+              run: pnpm run test:prepare
             - name: Test
-              run: npm run test:coverage
+              run: pnpm run test:coverage
             - name: "Upload Coverage"
               uses: actions/upload-artifact@v4
               with:

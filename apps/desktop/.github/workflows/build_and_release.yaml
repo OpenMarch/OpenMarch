@@ -26,10 +26,11 @@ jobs:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
-            - name: Install Node.js, NPM
+            - name: Install Node.js, pnpm
               uses: actions/setup-node@v1
               with:
                   node-version: 18
+                  cache: "pnpm" # Add pnpm caching
 
             - name: Install Snapcraft (Ubuntu)
               if: startsWith(matrix.os, 'ubuntu')
@@ -43,6 +44,10 @@ jobs:
 
             - name: Create Sentry env file
               run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+
+            # The OpenMarch/builder action should handle pnpm install internally
+            # if it detects pnpm is used in the project.
+            # If not, you might need to add a manual pnpm install step here.
 
             - name: Build/release Electron app
               uses: OpenMarch/builder@v5
