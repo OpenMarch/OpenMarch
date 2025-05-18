@@ -1,15 +1,18 @@
 ---
 import { getCollection } from "astro:content";
 import SidebarTree from "@/components/playground/SidebarTree.astro";
+import ThemeSwitcher from "@/components/website/ThemeSwitcher.astro";
 
 const previews = await getCollection("previews");
+console.log(previews);
 ---
 
 <div
-    class="rounded-16 border-stroke bg-fg-1 col-span-1 flex h-full flex-col gap-3 border p-4"
+    class="rounded-6 border-stroke bg-fg-1 col-span-1 flex h-full flex-col gap-3 border p-16"
 >
     <div class="flex w-full items-center justify-between">
-        <a href="/"> OpenMarch UI </a>
+        <a href="/" class="text-h3"> OpenMarch UI </a>
+        <ThemeSwitcher />
     </div>
     <SidebarTree items={previews} />
 

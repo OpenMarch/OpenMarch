@@ -31,11 +31,11 @@ const allVariants = generateVariants(preview.data.variants ?? {});
     <div class="grid h-full grid-cols-5 gap-4 p-8">
         <Sidebar />
         <Playground>
-            <h1 class="text-2xl">{preview.data.title}</h1>
+            <h1 class="text-h3">{preview.data.title}</h1>
             {
                 allVariants.map((variants) => (
                     <div class="">
-                        <p class="my-4 text-xs text-neutral-400">
+                        <p class="my-4 text-sub text-text/50">
                             {variants[Object.keys(variants)[0]]}
                         </p>
                         <Content {...variants} />

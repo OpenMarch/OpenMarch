@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans:
+        "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono:
+        "DM Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+
+    --text-sub: 0.6875rem;
+    --text-body: 0.875rem;
+    --text-h5: 1.125rem;
+    --text-h4: 1.25rem;
+    --text-h3: 1.75rem;
+    --text-h2: 2.25rem;
+    --text-h1: 3rem;
+
+    --leading-p: 200%;
+
+    --shadow-skeuo:
+        0px 4px 17.4px 0px rgba(255, 255, 255, 0.05) inset,
+        0px -4px 11.5px -3px rgba(0, 0, 0, 0.22) inset;
+    --shadow-modal: 0px 10px 64px 0px var(--color-modal-shadow);
+
+    --animate-scale-in: scale-in 150ms ease-out;
+    --animate-scale-out: scale-out 150ms ease-out;
+    --animate-fade-in: fade-in 150ms ease-out;
+    --animate-fade-out: fade-out 150ms ease-out;
+    --animate-caret-blink: caret-blink 1.2s ease-out infinite;
+    --animate-spin: spin 1s linear infinite;
+    --animate-scroll-x: scroll-x 33s linear infinite;
+    --animate-scroll-y: scroll-y 33s linear infinite;
+    --animate-spin-slow: spin 15s linear infinite;
+
+    --blur-32: 32px;
+
+    /* LIGHT MODE */
+    --color-bg-1: rgb(236, 235, 240);
+    --color-modal-shadow: rgba(0, 0, 0, 0.15);
+    --color-modal-overlay: rgba(255, 255, 255, 0.25);
+    --color-stroke: rgba(0, 0, 0, 0.1);
+    --color-text: rgb(32, 32, 32);
+    --color-text-invert: rgb(255, 255, 255);
+    --color-accent: rgb(100, 66, 255);
+    --color-red: rgb(176, 51, 51);
+    --color-yellow: rgb(200, 170, 0);
+    --color-green: rgb(72, 158, 51);
+    --background-image-fg-1: linear-gradient(
+        rgba(0, 0, 0, 0.03),
+        rgba(0, 0, 0, 0.05)
+    );
+    --background-image-fg-2: linear-gradient(
+        rgba(255, 255, 255, 0.17),
+        rgba(255, 255, 255, 0.23)
+    );
+    --background-image-modal: linear-gradient(
+        rgba(236, 235, 240, 0.85),
+        rgba(236, 235, 240, 0.9)
+    );
+
+    --spacing-256: 256px;
+    --spacing-200: 200px;
+    --spacing-128: 128px;
+    --spacing-110: 110px;
+    --spacing-96: 96px;
+    --spacing-86: 86px;
+    --spacing-72: 72px;
+    --spacing-64: 64px;
+    --spacing-56: 56px;
+    --spacing-48: 48px;
+    --spacing-36: 36px;
+    --spacing-32: 32px;
+    --spacing-30: 30px;
+    --spacing-28: 28px;
+    --spacing-24: 24px;
+    --spacing-20: 20px;
+    --spacing-18: 18px;
+    --spacing-16: 16px;
+    --spacing-14: 14px;
+    --spacing-12: 12px;
+    --spacing-10: 10px;
+    --spacing-8: 8px;
+    --spacing-6: 6px;
+    --spacing-4: 4px;
+    --spacing-2: 2px;
+    --spacing-0: 0px;
+
+    --radius-4: 0.25rem;
+    --radius-6: 0.375rem;
+    --radius-8: 0.5rem;
+    --radius-12: 0.75rem;
+    --radius-16: 1rem;
+    --radius-20: 1.25rem;
+    --radius-24: 1.5rem;
+    --radius-32: 2rem;
+    --radius-full: calc(infinity * 1px);
+}
+
+/* ----------------- dark mode variant of the colors above ----------------- */
+[class="dark"] {
+    /* materials */
+    --color-bg-1: rgb(15, 14, 19);
+    --color-modal-shadow: rgba(0, 0, 0, 0.5);
+    --color-modal-overlay: rgba(0, 0, 0, 0.15);
+    --color-stroke: rgba(255, 255, 255, 0.06);
+    --color-text: rgb(208, 208, 208);
+    --color-text-invert: rgb(0, 0, 0);
+    --color-accent: rgb(150, 126, 255);
+    --color-red: rgb(227, 74, 74);
+    --color-yellow: rgb(236, 211, 71);
+    --color-green: rgb(113, 222, 86);
+    --background-image-fg-1: linear-gradient(
+        rgba(255, 255, 255, 0.02),
+        rgba(255, 255, 255, 0.04)
+    );
+    --background-image-fg-2: linear-gradient(
+        rgba(255, 255, 255, 0.03),
+        rrgba(255, 255, 255, 0.05)
+    );
+    --background-image-modal: linear-gradient(
+        rgba(15, 14, 19, 0.96),
+        rgba(15, 14, 19, 0.98)
+    );
+}
+
+button,
+a {
+    cursor: pointer;
+}
+
+button:disabled,
+a:disabled {
+    cursor: not-allowed;
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(var(--text), 0.075);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--text), 0.15);
+}
+
+::selection {
+    background-color: rgb(var(--accent));
+    color: rgb(var(--text-invert));
+}
+
+/* Animation keyframes */
+
+@keyframes scale-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes scale-out {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes spin {
+    from {
+        rotate: 0deg;
+    }
+    to {
+        rotate: 360deg;
+    }
+}
+
+@keyframes scroll-x {
+    from {
+        transform: translateX(0%);
+    }
+    to {
+        rotate: translateX(100%);
+    }
+}
+
+@keyframes scroll-y {
+    from {
+        transform: translateY(0%);
+    }
+    to {
+        rotate: translateY(100%);
+    }
+}
+
+@keyframes caret-blink {
+    0%,
+    70%,
+    100% {
+        opacity: 1;
+    }
+    20%,
+    50% {
+        opacity: 0;
+    }
+}
