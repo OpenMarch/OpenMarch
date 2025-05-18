@@ -29,7 +29,7 @@ pnpm desktop dev
 pnpm site dev
 
 # Run the design system playground
-pnpm design dev
+pnpm ui dev
 
 # Fix
 pnpm fix

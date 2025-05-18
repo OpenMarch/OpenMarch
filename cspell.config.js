@@ -63,11 +63,13 @@ module.exports = {
     ],
     ignorePaths: [
         "node_modules/**",
+        "**/node_modules/**",
+        "**/dist/**",
         "dist/**",
-        "build/**",
-        "src/assets",
-        ".astro/**",
-        ".turbo/**",
+        "**/build/**",
+        "**/src/assets",
+        "**/.astro/**",
+        "**/.turbo/**",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };
