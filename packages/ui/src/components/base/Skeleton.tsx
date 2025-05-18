@@ -1,20 +1,18 @@
 import clsx from "clsx";
 
-export default function Skeleton({
+export function Skeleton({
     className,
     ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
     return (
         <div
-            className={clsx("bg-fg-2 h-full w-full animate-pulse", className)}
-            style={{
-                borderRadius: "0.5rem",
-            }}
+            className={clsx(
+                "bg-fg-2 rounded-6 h-full w-full animate-pulse",
+                className,
+            )}
             {...props}
         >
             &nbsp;
         </div>
     );
 }
-
-Skeleton.displayName = "Skeleton";

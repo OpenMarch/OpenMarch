@@ -54,10 +54,10 @@
     );
     --background-image-fg-2: linear-gradient(
         rgba(255, 255, 255, 0.17),
-        rgba(255, 255, 255, 0.23)
+        rgba(250, 249, 251, 0.35)
     );
     --background-image-modal: linear-gradient(
-        rgba(236, 235, 240, 0.85),
+        rgba(250, 249, 251, 0.23),
         rgba(236, 235, 240, 0.9)
     );
 
@@ -76,6 +76,7 @@
     --spacing-30: 30px;
     --spacing-28: 28px;
     --spacing-24: 24px;
+    --spacing-22: 22px;
     --spacing-20: 20px;
     --spacing-18: 18px;
     --spacing-16: 16px;
@@ -118,11 +119,11 @@
     );
     --background-image-fg-2: linear-gradient(
         rgba(255, 255, 255, 0.03),
-        rrgba(255, 255, 255, 0.05)
+        rgba(255, 255, 255, 0.05)
     );
     --background-image-modal: linear-gradient(
-        rgba(15, 14, 19, 0.96),
-        rgba(15, 14, 19, 0.98)
+        rgba(21, 20, 26, 0.97),
+        rgba(21, 20, 26, 0.99)
     );
 }
 
