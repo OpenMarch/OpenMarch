@@ -56,7 +56,6 @@ export default class AudioFile {
         let response = await window.electron.getSelectedAudioFile();
         if (!response) {
             const silentAudio = createSilentAudio();
-            console.log(silentAudio);
             const silentAudioFile = new AudioFile({
                 id: -1,
                 data: silentAudio,
@@ -85,7 +84,7 @@ export interface ModifiedAudioFileArgs {
  * @param duration Duration in seconds. By default, 1 hour.
  * @returns A buffer containing the silent audio file
  */
-function createSilentAudio(duration: number = 60): ArrayBuffer {
+function createSilentAudio(duration: number = 60 * 10): ArrayBuffer {
     // Audio context setup
     const sampleRate = 44100;
     const numberOfChannels = 2;
