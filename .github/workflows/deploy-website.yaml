@@ -6,12 +6,10 @@ on:
     push:
         paths:
             - 'apps/website/**'
-            - '.github/workflows/deploy-website.yml'
         branches: [main]
     pull_request:
         paths:
             - 'apps/website/**'
-            - '.github/workflows/deploy-website.yml'
         branches: [main, develop, prerelease/*, monorepo]
     # Allows you to run this workflow manually from the Actions tab on GitHub.
     workflow_dispatch:
@@ -37,6 +35,7 @@ jobs:
 
     deploy:
         needs: build
+        if: github.event_name == 'push'
         runs-on: ubuntu-latest
         environment:
             name: github-pages
