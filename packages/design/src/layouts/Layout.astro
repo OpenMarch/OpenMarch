@@ -1,0 +1,21 @@
+---
+import "@/tailwind.css";
+import "@fontsource/dm-sans";
+import "@fontsource/dm-mono";
+
+const { title } = Astro.props;
+---
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content={Astro.generator} />
+        <link rel="sitemap" href="/sitemap-index.xml" />
+        <title>{title} | OpenMarch UI</title>
+    </head>
+    <body class="bg-bg-1 text-text h-screen overflow-x-hidden font-serif">
+        <slot />
+    </body>
+</html>

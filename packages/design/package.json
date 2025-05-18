@@ -16,7 +16,10 @@
     "dependencies": {
         "@astrojs/mdx": "^4.2.6",
         "@astrojs/react": "^4.2.7",
+        "@fontsource/dm-mono": "^5.2.5",
+        "@fontsource/dm-sans": "^5.2.5",
         "@korhq/unpreview": "0.1.2-alpha",
+        "@phosphor-icons/react": "^2.1.8",
         "@tailwindcss/vite": "^4.1.7",
         "@types/react": "^19.1.4",
         "@types/react-dom": "^19.1.5",

@@ -69,3 +69,8 @@ If you're wanting to test the latest and **_unstable_** features, go to the [rel
 > Always keep in mind, OpenMarch is still in development. You probably will encounter bugs, issues, and missing features. Help support us grow by contributing or donating!
 
 <div align="center"><img width="700" src="https://github.com/user-attachments/assets/7a744b9e-a3ea-4bb1-a120-6067288c2280" alt="OpenMarch app" /></div>
+
+## License
+
+OpenMarch is written under the [GPL-3.0 license](LICENSE).
+All code written for this project will forever and always be open and accessible.

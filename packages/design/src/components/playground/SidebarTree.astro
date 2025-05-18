@@ -1,0 +1,39 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getCurrentLevelItems } from "@korhq/unpreview";
+
+type PreviewType = CollectionEntry<"previews">;
+interface Props {
+    items: PreviewType[];
+    parentId?: string;
+}
+const { items, parentId } = Astro.props;
+
+const currentLevelItems = getCurrentLevelItems(items, parentId);
+---
+
+{
+    currentLevelItems.map((item) => {
+        if (item.data.directory) {
+            return (
+                <details open>
+                    <summary>{item.data.title}</summary>
+                    <div class="flex w-fit flex-col gap-6 pl-24 pt-6">
+                        <Astro.self items={items} parentId={item.id} />
+                    </div>
+                </details>
+            );
+        } else
+            return (
+                <a
+                    href={`/playground/${item.id}`}
+                    class={` ${
+                        Astro.url.pathname === `/playground/${item.id}` &&
+                        "text-red-500"
+                    }`}
+                >
+                    {item.data.title}
+                </a>
+            );
+    })
+}
