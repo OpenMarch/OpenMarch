@@ -34,7 +34,7 @@ If you need to modify it, you can click "Customize" to make changes to the field
 
 OpenMarch can save your custom field as a `.fielddots` file.
 
-- Any background image imported _will not_ be saved in the `.fieilddots` file
+- Any background image imported _will not_ be saved in the `.fielddots` file
 - The field is not saved to a file automatically and must be exported manually if you want to use it in other shows
   - This also includes any changes you make to the field after exporting it
 - For you hackers, this is just a JSON file with a `.fielddots` extension

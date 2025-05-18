@@ -54,10 +54,13 @@ module.exports = {
                 parser: "@typescript-eslint/parser",
                 extraFileExtensions: [".astro"],
             },
-            rules: {
-                // override/add rules settings here, such as:
-                // "astro/no-set-html-directive": "error"
-            },
+            rules: Object.keys(require("eslint-plugin-react").rules).reduce(
+                (acc, rule) => {
+                    acc[`react/${rule}`] = "off";
+                    return acc;
+                },
+                {},
+            ),
         },
     ],
     settings: {

@@ -18,7 +18,7 @@ export const ListItem = ({
     return (
         <div
             className={clsx(
-                `flex w-full items-center justify-between gap-x-10 ${selected && "rounded-6 border border-stroke bg-fg-2"} h-[2.5rem] px-22 text-text`,
+                `flex w-full items-center justify-between gap-x-10 ${selected && "rounded-6 border-stroke bg-fg-2 border"} px-22 text-text h-[2.5rem]`,
                 className,
             )}
         >
@@ -46,7 +46,7 @@ export const ListItemCollapsible = ({
         <RadixCollapsible.Root open={open} onOpenChange={setOpen} {...props}>
             <RadixCollapsible.Trigger
                 className={clsx(
-                    `flex w-full items-center justify-between gap-x-10 ${selected && "rounded-6 border border-stroke bg-fg-2"} h-[2.5rem] px-22 text-text`,
+                    `flex w-full items-center justify-between gap-x-10 ${selected && "rounded-6 border-stroke bg-fg-2 border"} px-22 text-text h-[2.5rem]`,
                     className,
                 )}
             >

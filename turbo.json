@@ -26,19 +26,23 @@
             "outputs": []
         },
         "fix": {
-            "outputs": []
+            "outputs": [],
+            "cache": false
         },
         "spellcheck": {
-            "outputs": []
+            "outputs": [],
+            "cache": false
         },
         "app:prepare": {
             "outputs": []
         },
         "format": {
-            "outputs": []
+            "outputs": [],
+            "cache": false
         },
         "lint": {
-            "outputs": []
+            "outputs": [],
+            "cache": false
         },
         "preview": {
             "outputs": []
