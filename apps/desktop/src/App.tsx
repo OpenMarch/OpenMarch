@@ -24,6 +24,8 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "./components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
 
+// app
+
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
     const { fetchUiSettings } = useUiSettingsStore();
