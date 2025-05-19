@@ -1,5 +1,5 @@
 const { execSync } = require("child_process");
-const { existsSync, readFileSync } = require("fs");
+const { existsSync } = require("fs");
 const { join } = require("path");
 
 /**
@@ -71,7 +71,6 @@ const runAction = () => {
     const platform = getPlatform();
     const release = getInput("release", true) === "true";
     const pkgRoot = "apps/desktop";
-    const buildScriptName = getInput("build_script_name", true);
     const maxAttempts = Number(getInput("max_attempts") || "1");
     const args = getInput("args") || "";
     let runtimeArgs = "";
@@ -84,6 +83,11 @@ const runAction = () => {
     // Make sure `package.json` file exists
     if (!existsSync(pkgJsonPath)) {
         exit(`\`package.json\` file not found at path "${pkgJsonPath}"`);
+    }
+
+    // Make sure `package-lock.json` file exists
+    if (!existsSync(pkgLockPath)) {
+        exit(`\`package-lock.json\` file not found at path "${pkgLockPath}"`);
     }
 
     // Copy "github_token" input variable to "GH_TOKEN" env variable (required by `electron-builder`)
@@ -116,7 +120,7 @@ const runAction = () => {
 
     // Run NPM build script if it exists
     log("Running the build script…");
-    run(`pnpm run build --if-present`, pkgRoot);
+    run(`pnpm run build`, pkgRoot);
 
     if (platform === "mac") {
         if (process.arch === "x64") {
