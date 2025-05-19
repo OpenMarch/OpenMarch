@@ -110,6 +110,9 @@ const runAction = () => {
 
     run("pnpm install", pkgRoot);
 
+    log("Deleting native canvas module…");
+    run("rimraf node_modules/canvas", pkgRoot);
+
     // Run NPM build script if it exists
     log("Running the build script…");
     run(`pnpm run build`, pkgRoot);
