@@ -60,6 +60,9 @@ module.exports = {
         "Vree",
         "wavesurfer",
         "Zingali",
+        "snapcraft",
+        "samuelmeuli",
+        "Meuli",
     ],
     ignorePaths: [
         "node_modules/**",

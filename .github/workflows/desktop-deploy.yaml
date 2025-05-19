@@ -52,7 +52,7 @@ jobs:
             # If not, you might need to add a manual pnpm install step here.
 
             - name: Build/release Electron app
-              uses: OpenMarch/builder@v5
+              uses: ./custom-actions/desktop-deploy
               with:
                   # GitHub token, automatically provided to the action
                   # (No need to define this secret in the repo settings)
