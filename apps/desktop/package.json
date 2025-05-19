@@ -12,18 +12,22 @@
             "VITE_DEV_SERVER_URL": "http://127.0.0.1:7777/"
         }
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenMarch/OpenMarch.git"
+    },
     "scripts": {
         "dev": "vite",
-        "app:prepare": "pnpm remove canvas && rimraf node_modules/canvas && pnpm dlx electron-rebuild -f -w better-sqlite3",
+        "app:prepare": "electron-rebuild && electron-rebuild -f -w better-sqlite3",
+        "postinstall": "rimraf ../../node_modules/canvas && electron-builder install-app-deps",
         "build": "tsc && vite build",
-        "postinstall": "rimraf node_modules/canvas && electron-builder install-app-deps && electron-rebuild",
         "clean": "rm -rf node_modules dist-electron release",
         "lint": "eslint . --fix",
         "format": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest",
-        "test:prepare": "pnpm add canvas && pnpm rebuild better-sqlite3",
+        "test:prepare": "pnpm rebuild better-sqlite3",
         "test:run": "vitest run",
         "test:coverage": "pnpm test:run -- --coverage",
         "test:clearCache": "vitest --clearCache"
@@ -50,7 +54,6 @@
         "adm-zip": "^0.5.16",
         "autoprefixer": "^10.4.20",
         "better-sqlite3": "^9.6.0",
-        "canvas": "^3.1.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "electron-store": "^8.2.0",
@@ -101,5 +104,10 @@
     },
     "engines": {
         "node": "22"
+    },
+    "pnpm": {
+        "ignoredOptionalDependencies": [
+            "canvas"
+        ]
     }
 }

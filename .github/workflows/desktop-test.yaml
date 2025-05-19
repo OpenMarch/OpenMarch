@@ -24,11 +24,11 @@ jobs:
             - name: Setup pnpm
               uses: pnpm/action-setup@v4.1.0
             - name: Install project dependencies
-              run: pnpm install --no-frozen-lockfile
-            - name: Install canvas dependencies
-              # This step might not be needed if canvas is a project dependency
-              # If it's not a project dependency managed by pnpm, keep this.
-              run: cd apps/desktop && pnpm install canvas
+              run: pnpm install
+            # - name: Install canvas dependencies
+            #   # This step might not be needed if canvas is a project dependency
+            #   # If it's not a project dependency managed by pnpm, keep this.
+            #   run: cd apps/desktop && pnpm install canvas && cd ..
             - name: Test Prepare
               run: pnpm desktop test:prepare
             - name: Test

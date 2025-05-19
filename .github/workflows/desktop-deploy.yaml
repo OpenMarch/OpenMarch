@@ -26,6 +26,11 @@ jobs:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
+            - name: Determine if releasing
+              id: release
+              run: |
+                  echo "RELEASE=${{ startsWith(github.ref, 'refs/tags/v') }}" >> $GITHUB_OUTPUT
+
             - name: Install Node.js
               uses: actions/setup-node@v1
               with:
@@ -35,11 +40,17 @@ jobs:
               uses: pnpm/action-setup@v4.1.0
 
             - name: Install Snapcraft (Ubuntu)
-              if: startsWith(matrix.os, 'ubuntu')
+              if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
               run: sudo snap install snapcraft --classic
 
+            - name: Validate Snapcraft credentials on Linux release
+              if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+              run: snapcraft whoami -q
+              env:
+                  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
             - name: Prepare for app notarization
-              if: startsWith(matrix.os, 'macos')
+              if: startsWith(matrix.os, 'macos') && steps.release.outputs.RELEASE == 'true'
               run: |
                   mkdir -p ~/private_keys/
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
@@ -47,17 +58,27 @@ jobs:
             - name: Create Sentry env file
               run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
 
-            # The OpenMarch/builder action should handle pnpm install internally
-            # if it detects pnpm is used in the project.
-            # If not, you might need to add a manual pnpm install step here.
+            - name: Install pnpm dependencies
+              run: pnpm install
+              env:
+                CI: true
+                ADBLOCK: true
+
+            - name: Build for production
+              run: pnpm desktop build
+
+            - name: Replace package name in package.json
+              if: startsWith(matrix.os, 'ubuntu')
+              # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
+              run: |
+                sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
 
             - name: Build/release Electron app
-              uses: ./custom-actions/desktop-deploy
+              uses: ./actions/desktop-deploy
               with:
                   # GitHub token, automatically provided to the action
                   # (No need to define this secret in the repo settings)
                   github_token: ${{ secrets.github_token }}
-
                   # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   mac_certs: ${{ secrets.mac_certs }}
@@ -76,4 +97,3 @@ jobs:
                   # For releasing
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-                  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
