@@ -100,5 +100,10 @@
     },
     "engines": {
         "node": "22"
+    },
+    "pnpm": {
+        "ignoredOptionalDependencies": [
+            "canvas"
+        ]
     }
 }
