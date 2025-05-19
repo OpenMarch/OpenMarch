@@ -69,7 +69,7 @@ jobs:
                 node -e "const fs = require('fs'); if (fs.existsSync('node_modules/canvas')) fs.rmSync('node_modules/canvas', { recursive: true, force: true });"
 
             - name: Build for production
-              run: pnpm run build --if-present
+              run: pnpm desktop build
 
             - name: Replace package name in package.json
               if: startsWith(matrix.os, 'ubuntu')
