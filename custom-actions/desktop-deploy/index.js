@@ -76,18 +76,10 @@ const runAction = () => {
     let runtimeArgs = "";
 
     const pkgJsonPath = join(pkgRoot, "package.json");
-    const pkgLockPath = join(pkgRoot, "package-lock.json");
-
-    // Determine whether NPM should be used to run commands (instead of Yarn, which is the default)
 
     // Make sure `package.json` file exists
     if (!existsSync(pkgJsonPath)) {
         exit(`\`package.json\` file not found at path "${pkgJsonPath}"`);
-    }
-
-    // Make sure `package-lock.json` file exists
-    if (!existsSync(pkgLockPath)) {
-        exit(`\`package-lock.json\` file not found at path "${pkgLockPath}"`);
     }
 
     // Copy "github_token" input variable to "GH_TOKEN" env variable (required by `electron-builder`)
