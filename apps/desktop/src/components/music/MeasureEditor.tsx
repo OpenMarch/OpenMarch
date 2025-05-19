@@ -143,7 +143,7 @@
 //                                     RegisteredActionsObjects.launchImportMusicXmlFileDialogue
 //                                 }
 //                                 showTooltip={false}
-//                                 className="hover:text-text focus-visible:outline-none"
+//                                 className="hover:text-text focus-visible:outline-hidden"
 //                             >
 //                                 Import MusicXML
 //                             </RegisteredActionButton>
@@ -298,7 +298,7 @@
 //                                         required
 //                                         type="number"
 //                                         id="measure-tempo-bpm"
-//                                         className="flex-grow"
+//                                         className="grow"
 //                                         value={tempoBpm}
 //                                         onChange={(e) => {
 //                                             setTempoBpm(

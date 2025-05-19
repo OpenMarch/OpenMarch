@@ -30,7 +30,7 @@ export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
             <input
                 className={twMerge(
                     clsx(
-                        `rounded-6 border-stroke bg-fg-2 box-border min-h-0 w-full items-center whitespace-nowrap border focus-visible:outline-none ${compact ? "h-[1.625rem] px-8 py-[4px]" : "px-22 h-[2.5rem]"} text-body text-text placeholder-text/50 placeholder:text-body focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
+                        `rounded-6 border-stroke bg-fg-2 box-border min-h-0 w-full items-center border whitespace-nowrap focus-visible:outline-hidden ${compact ? "h-[1.625rem] px-8 py-[4px]" : "h-[2.5rem] px-22"} text-body text-text placeholder-text/50 placeholder:text-body focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
                         "",
                         className,
                     ),

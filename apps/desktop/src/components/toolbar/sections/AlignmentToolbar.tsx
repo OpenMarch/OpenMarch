@@ -88,7 +88,7 @@ export default function UiSettingsToolbar() {
                     registeredAction={
                         RegisteredActionsObjects.setAllMarchersToPreviousPage
                     }
-                    className="hover:text-accent outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                    className="hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     Set all to prev
                 </RegisteredActionButton>
@@ -96,7 +96,7 @@ export default function UiSettingsToolbar() {
                     registeredAction={
                         RegisteredActionsObjects.setSelectedMarchersToPreviousPage
                     }
-                    className="hover:text-accent outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                    className="hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     Set selected to prev
                 </RegisteredActionButton>
@@ -104,7 +104,7 @@ export default function UiSettingsToolbar() {
                     registeredAction={
                         RegisteredActionsObjects.setAllMarchersToNextPage
                     }
-                    className="hover:text-accent outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                    className="hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     Set all to next
                 </RegisteredActionButton>
@@ -112,7 +112,7 @@ export default function UiSettingsToolbar() {
                     registeredAction={
                         RegisteredActionsObjects.setSelectedMarchersToNextPage
                     }
-                    className="hover:text-accent outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                    className="hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     Set selected to next
                 </RegisteredActionButton>

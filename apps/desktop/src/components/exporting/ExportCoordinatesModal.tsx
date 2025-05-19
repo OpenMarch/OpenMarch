@@ -290,13 +290,13 @@ export default function ExportCoordinatesModal() {
         <Dialog>
             <DialogTrigger
                 asChild
-                className="hover:text-accent cursor-pointer outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                className="hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
             >
                 <ArrowSquareOut size={18} />
             </DialogTrigger>
 
             {/* Dialog Setup */}
-            <DialogContent className="w-[48rem]">
+            <DialogContent className="w-3xl">
                 <DialogTitle>Export Individual Coordinate Sheets</DialogTitle>
                 <ExportModalContents />
             </DialogContent>

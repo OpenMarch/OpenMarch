@@ -1,4 +1,4 @@
-import { Button } from "./ui/Button.tsx";
+import { Button } from "@openmarch/ui";
 import { LogoTextMark } from "./LogoTextMark.tsx";
 import React, { useState } from "react";
 import { LogoGitHub, LogoDiscord, LogoPatreon } from "./Logos.tsx";
@@ -8,7 +8,7 @@ export default function Nav() {
 
     return (
         <nav className="sticky top-0 z-[99] flex h-[4rem] w-full flex-col">
-            <nav className="border-stroke bg-modal shadow-modal flex w-full items-center justify-between border-b px-64 py-16 backdrop-blur-md max-[750px]:px-24">
+            <nav className="border-stroke bg-modal flex w-full items-center justify-between border-b px-64 py-16 backdrop-blur-md max-[750px]:px-24">
                 <a href="/">
                     <LogoTextMark />
                 </a>

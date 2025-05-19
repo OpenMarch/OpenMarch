@@ -7,7 +7,7 @@ import { TooltipContents } from "./Tooltip";
 
 const variants = cva(
     [
-        "text-body w-fit flex gap-4 justify-center items-center rounded-full border border-stroke min-h-0 focus-visible:outline-none",
+        "text-body w-fit flex gap-4 justify-center items-center rounded-full border border-stroke min-h-0 focus-visible:outline-hidden",
         "enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out",
         "disabled:cursor-not-allowed disabled:opacity-50",
     ],

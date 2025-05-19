@@ -293,7 +293,7 @@ export default function SectionAppearanceList() {
 
                                 <ColorPicker
                                     label="Outline Color"
-                                    tooltip="The outline color of the section marker"
+                                    tooltip="The outline-solid color of the section marker"
                                     initialColor={appearance.outline_color}
                                     onChange={(color) => {
                                         handleChange(

@@ -222,7 +222,7 @@ export default function VersionChecker() {
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger
                     asChild
-                    className="titlebar-button text-sub hover:text-accent flex cursor-pointer items-center gap-6 outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                    className="titlebar-button text-sub hover:text-accent flex cursor-pointer items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
                     New Version Available!
                 </DialogTrigger>

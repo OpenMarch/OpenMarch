@@ -29,7 +29,7 @@ export const RadioGroupItem = ({
     return (
         <div className="flex items-center gap-8">
             <RadixRadioGroup.Item
-                className="border-stroke bg-fg-2 data-[state='checked']:bg-accent size-[28px] rounded-full border transition-colors duration-150 ease-out data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"
+                className="border-stroke bg-fg-2 data-[state='checked']:bg-accent size-[28px] rounded-full border transition-colors duration-150 ease-out data-disabled:cursor-not-allowed data-disabled:opacity-50"
                 id={value}
                 value={value}
                 {...props}

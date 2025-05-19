@@ -6,6 +6,7 @@ import electron from "vite-plugin-electron";
 import renderer from "vite-plugin-electron-renderer";
 import pkg from "./package.json";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => {
@@ -23,6 +24,7 @@ export default defineConfig(({ command }) => {
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
         plugins: [
+            tailwindcss(),
             react(),
             sentryVitePlugin({
                 authToken: process.env.SENTRY_AUTH_TOKEN,

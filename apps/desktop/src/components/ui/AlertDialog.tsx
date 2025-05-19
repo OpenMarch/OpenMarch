@@ -77,13 +77,13 @@ export const AlertDialogContent = ({
     ...props
 }: AlertDialogContentProps) => (
     <RadixAlertDialog.Portal>
-        <RadixAlertDialog.Overlay className="data-[state=open]:animate-fade-in fixed inset-0 z-[998] bg-[rgb(var(--modal-overlay))]" />
+        <RadixAlertDialog.Overlay className="data-[state=open]:animate-fade-in fixed inset-0 z-998 bg-[rgb(var(--modal-overlay))]" />
         <RadixAlertDialog.Content
             {...props}
             className={twMerge(
                 clsx(
                     className,
-                    "rounded-6 border-stroke bg-modal text-text shadow-modal data-[state=open]:animate-fade-in fixed left-1/2 top-1/2 z-[999] flex min-w-[18.75rem] max-w-[27.5rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-sm",
+                    "rounded-6 border-stroke bg-modal text-text shadow-modal data-[state=open]:animate-fade-in fixed top-1/2 left-1/2 z-999 flex max-w-[27.5rem] min-w-[18.75rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-xs",
                 ),
             )}
         >

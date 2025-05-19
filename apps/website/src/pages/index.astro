@@ -1,6 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@openmarch/ui";
 import { getCollection, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
 import FeatureSelector from "@/components/home/FeatureSelector";
@@ -50,7 +50,7 @@ type Blog = CollectionEntry<"blog">;
                     </a>
                 </div>
                 <div
-                    class="absolute right-[-20%] top-1/2 -z-40 aspect-[1408/731] h-auto w-[64vw] -translate-y-1/2 bg-[url('/landing/land-light.png')] bg-cover intersect:motion-preset-slide-up dark:bg-[url('/landing/land-dark.png')] max-[950px]:relative max-[950px]:right-0 max-[950px]:top-0 max-[950px]:mt-32 max-[950px]:w-full max-[950px]:translate-y-0"
+                    class="absolute right-[-20%] top-[10%] -z-40 aspect-[1408/731] h-auto w-[64vw] -translate-y-1/2 bg-[url('/landing/land-light.png')] bg-cover intersect:motion-preset-slide-up dark:bg-[url('/landing/land-dark.png')] max-[950px]:relative max-[950px]:right-0 max-[950px]:top-0 max-[950px]:mt-32 max-[950px]:w-full max-[950px]:translate-y-0"
                 >
                 </div>
             </div>
