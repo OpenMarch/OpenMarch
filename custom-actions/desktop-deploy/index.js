@@ -124,14 +124,13 @@ const runAction = () => {
 
     log(`Building${release ? " and releasing" : ""} the Electron app…`);
     const cmd = "electron-builder";
+    const fullCmd = `pnpx ${cmd} --${platform} ${
+        release ? "--publish always" : ""
+    } ${args} ${runtimeArgs}`;
+    log(`Running '${fullCmd}' in ${pkgRoot}`);
     for (let i = 0; i < maxAttempts; i += 1) {
         try {
-            run(
-                `pnpx run ${cmd} --${platform} ${
-                    release ? "--publish always" : ""
-                } ${args} ${runtimeArgs}`,
-                pkgRoot,
-            );
+            run(fullCmd, pkgRoot);
             break;
         } catch (err) {
             if (i < maxAttempts - 1) {
