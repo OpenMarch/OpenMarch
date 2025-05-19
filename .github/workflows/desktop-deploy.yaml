@@ -26,6 +26,11 @@ jobs:
             - name: Check out Git repository
               uses: actions/checkout@v1
 
+            - name: Determine if releasing
+              id: release
+              run: |
+                  echo "RELEASE=${{ startsWith(github.ref, 'refs/tags/v') }}" >> $GITHUB_OUTPUT
+
             - name: Install Node.js
               uses: actions/setup-node@v1
               with:
@@ -35,11 +40,17 @@ jobs:
               uses: pnpm/action-setup@v4.1.0
 
             - name: Install Snapcraft (Ubuntu)
-              if: startsWith(matrix.os, 'ubuntu')
+              if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
               run: sudo snap install snapcraft --classic
 
+            - name: Validate Snapcraft credentials on Linux release
+              if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+              run: snapcraft whoami -q
+              env:
+                  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
             - name: Prepare for app notarization
-              if: startsWith(matrix.os, 'macos')
+              if: startsWith(matrix.os, 'macos') && steps.release.outputs.RELEASE == 'true'
               run: |
                   mkdir -p ~/private_keys/
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
@@ -47,33 +58,78 @@ jobs:
             - name: Create Sentry env file
               run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
 
-            # The OpenMarch/builder action should handle pnpm install internally
-            # if it detects pnpm is used in the project.
-            # If not, you might need to add a manual pnpm install step here.
+            - name: Install pnpm dependencies
+              run: pnpm install
+              env:
+                CI: true
+                ADBLOCK: true
+
+            - name: Delete canvas from node_modules
+              run: |
+                node -e "const fs = require('fs'); if (fs.existsSync('node_modules/canvas')) fs.rmSync('node_modules/canvas', { recursive: true, force: true });"
+
+            - name: Build for production
+              run: pnpm run build --if-present
 
             - name: Build/release Electron app
-              uses: ./custom-actions/desktop-deploy
-              with:
-                  # GitHub token, automatically provided to the action
-                  # (No need to define this secret in the repo settings)
-                  github_token: ${{ secrets.github_token }}
+              id: electron-builder
+              run: |
+                echo "Running the build script..."
 
-                  # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
-                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-                  mac_certs: ${{ secrets.mac_certs }}
-                  mac_certs_password: ${{ secrets.mac_certs_password }}
-                  max_attempts: 5
+                # Set platform-specific arguments
+                PLATFORM=""
+                RUNTIME_ARGS=""
+
+                if [[ "$RUNNER_OS" == "macOS" ]]; then
+                  PLATFORM="mac"
+                  if [[ "$(uname -m)" == "x86_64" ]]; then
+                    RUNTIME_ARGS="--x64"
+                  else
+                    RUNTIME_ARGS="--arm64"
+                  fi
+                elif [[ "$RUNNER_OS" == "Linux" ]]; then
+                  PLATFORM="linux"
+                elif [[ "$RUNNER_OS" == "Windows" ]]; then
+                  PLATFORM="win"
+                fi
+
+                # Build with retry logic
+                echo "Building${RELEASE_FLAG} the Electron app..."
+                MAX_ATTEMPTS=5
+
+                for ((i=0; i<$MAX_ATTEMPTS; i++)); do
+                  CMD="pnpm exec electron-builder"
+
+                  PUBLISH_FLAG=""
+                  if [[ "${{ steps.release.outputs.RELEASE }}" == "true" ]]; then
+                    PUBLISH_FLAG="--publish always"
+                  fi
+
+                  echo "Attempt $((i+1)) of $MAX_ATTEMPTS"
+                  if $CMD --$PLATFORM $PUBLISH_FLAG $RUNTIME_ARGS; then
+                    echo "Build successful!"
+                    break
+                  else
+                    if [ $i -lt $((MAX_ATTEMPTS-1)) ]; then
+                      echo "Attempt $((i+1)) failed, retrying..."
+                      sleep 5
+                    else
+                      echo "All $MAX_ATTEMPTS attempts failed"
+                      exit 1
+                    fi
+                  fi
+                done
               env:
-                  # Not needed since not building on windows
-                  # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
-                  APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
-                  APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
-                  APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
-                  # also put in camelCase for electron/notarize
-                  appleApiKey: "~/private_keys/apple_api_key.p8"
-                  appleApiKeyId: ${{ secrets.apple_api_key_id }}
-                  appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
-                  # For releasing
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-                  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+                # Not needed since not building on windows
+                # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
+                APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
+                APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
+                APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
+                # also put in camelCase for electron/notarize
+                appleApiKey: "~/private_keys/apple_api_key.p8"
+                appleApiKeyId: ${{ secrets.apple_api_key_id }}
+                appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
+                # For releasing
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+                SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
