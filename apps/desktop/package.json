@@ -14,9 +14,8 @@
     },
     "scripts": {
         "dev": "vite",
-        "app:prepare": "pnpm dlx electron-rebuild -f -w better-sqlite3",
+        "app:prepare": "electron-rebuild && electron-rebuild -f -w better-sqlite3",
         "build": "tsc && vite build && electron-builder install-app-deps ",
-        "postinstall": "electron-rebuild",
         "clean": "rm -rf node_modules dist-electron release",
         "lint": "eslint . --fix",
         "format": "prettier --write .",
