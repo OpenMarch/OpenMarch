@@ -123,8 +123,7 @@ const runAction = () => {
     }
 
     log(`Building${release ? " and releasing" : ""} the Electron app…`);
-    const cmd = "electron-builder";
-    const fullCmd = `pnpx ${cmd} --${platform} ${
+    const fullCmd = `pnpx electron-builder --${platform} ${
         release ? "--publish always" : ""
     } ${args} ${runtimeArgs}`;
     log(`Running '${fullCmd}' in ${pkgRoot}`);
