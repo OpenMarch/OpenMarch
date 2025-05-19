@@ -14,9 +14,9 @@
     },
     "scripts": {
         "dev": "vite",
-        "app:prepare": "pnpm dlx electron-rebuild -f -w better-sqlite3",
+        "app:prepare": "rimraf node_modules/canvas && pnpm dlx electron-rebuild -f -w better-sqlite3",
         "build": "tsc && vite build",
-        "postinstall": "electron-builder install-app-deps && electron-rebuild",
+        "postinstall": "rimraf node_modules/canvas && electron-builder install-app-deps && electron-rebuild",
         "clean": "rm -rf node_modules dist-electron release",
         "lint": "eslint . --fix",
         "format": "prettier --write .",
