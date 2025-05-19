@@ -11,6 +11,7 @@ module.exports = {
         "ungroup",
         "merch",
         "skeuo",
+        "turborepo",
         "colours",
         "sicommand",
         "bostick",
