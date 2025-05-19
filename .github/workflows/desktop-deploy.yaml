@@ -72,6 +72,7 @@ jobs:
               run: pnpm desktop build
 
             - name: Replace package name in package.json
+              if: startsWith(matrix.os, 'ubuntu')
               # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
               run: |
                 sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
