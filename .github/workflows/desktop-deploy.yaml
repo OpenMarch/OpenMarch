@@ -74,7 +74,7 @@ jobs:
             - name: Replace package name in package.json
               # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
               run: |
-                sed -i 's/"name": "@openmarch/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
+                sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
 
             - name: Build/release Electron app
               id: electron-builder
