@@ -65,8 +65,6 @@ export default defineConfig(({ command }) => {
                                 ),
                             },
                         },
-                        // **Important:** Ensure tailwindcss is not included in the Electron process builds
-                        plugins: [], // Or specifically exclude tailwindcss if other plugins are needed
                     },
                 },
                 {
@@ -89,8 +87,6 @@ export default defineConfig(({ command }) => {
                                 ),
                             },
                         },
-                        // **Important:** Ensure tailwindcss is not included in the Electron process builds
-                        plugins: [], // Or specifically exclude tailwindcss
                     },
                 },
             ]),
@@ -107,8 +103,5 @@ export default defineConfig(({ command }) => {
                 };
             })(),
         clearScreen: false,
-        build: {
-            sourcemap: sourcemap,
-        },
     };
 });

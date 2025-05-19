@@ -10,6 +10,7 @@ module.exports = {
         "BRHS",
         "ungroup",
         "merch",
+        "skeuo",
         "colours",
         "sicommand",
         "bostick",

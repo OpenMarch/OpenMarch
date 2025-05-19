@@ -8,11 +8,11 @@ import {
     SelectContent,
     SelectItem,
     SelectTriggerButton,
-} from "../ui/Select";
-import { Input } from "../ui/Input";
-import { Button } from "../ui/Button";
+    InfoNote,
+    Button,
+    Input,
+} from "@openmarch/ui";
 import { toast } from "sonner";
-import { InfoNote } from "../ui/Note";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
 

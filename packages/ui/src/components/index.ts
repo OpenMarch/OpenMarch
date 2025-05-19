@@ -12,6 +12,3 @@ export * from "./base/Dialog";
 export * from "./base/AlertDialog";
 export * from "./base/UnitInput";
 export * from "./base/Note";
-
-// Reused website components
-export { default as ThemeSwitcher } from "./website/ThemeSwitcher.astro";

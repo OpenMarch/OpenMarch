@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from "react";
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 import { Info } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "../ui/Tooltip";
+import { TooltipContents } from "@openmarch/ui";
 import {
     ColorResult,
     RgbaColor,

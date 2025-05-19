@@ -1,5 +1,5 @@
 import { SidebarCollapsible } from "./SidebarCollapsible";
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useCallback } from "react";
@@ -9,7 +9,7 @@ import {
     Select,
     SelectContent,
     SelectTriggerCompact,
-} from "../ui/Select";
+} from "@openmarch/ui";
 import {
     secondSegmentSvgCommands,
     SvgCommandEnum,

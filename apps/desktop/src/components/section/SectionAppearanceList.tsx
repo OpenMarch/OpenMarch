@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 import { Trash, Info, Plus } from "@phosphor-icons/react";
 import {
     AlertDialog,
@@ -10,14 +10,14 @@ import {
     AlertDialogDescription,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "../ui/AlertDialog";
+} from "@openmarch/ui";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTriggerText,
     SelectGroup,
-} from "../ui/Select";
+} from "@openmarch/ui";
 import {
     SectionAppearance,
     ModifiedSectionAppearanceArgs,
@@ -25,7 +25,7 @@ import {
 } from "@/global/classes/SectionAppearance";
 import * as Form from "@radix-ui/react-form";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "../ui/Tooltip";
+import { TooltipContents } from "@openmarch/ui";
 import ColorPicker from "../ui/ColorPicker";
 import clsx from "clsx";
 import { SECTIONS } from "@/global/classes/Sections";

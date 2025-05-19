@@ -3,7 +3,7 @@ import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
 import { X, CaretLeft } from "@phosphor-icons/react";
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 
 export default function MarchersModal() {
     return (

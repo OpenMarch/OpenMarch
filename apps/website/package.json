@@ -21,7 +21,7 @@
         "@fontsource/dm-mono": "^5.1.1",
         "@fontsource/dm-sans": "^5.1.1",
         "@openmarch/ui": "workspace:*",
-        "@phosphor-icons/web": "^2.1.1",
+        "@phosphor-icons/web": "^2.1.2",
         "@radix-ui/react-accordion": "^1.2.2",
         "@radix-ui/react-collapsible": "^1.1.2",
         "@tailwindcss/vite": "^4.1.7",

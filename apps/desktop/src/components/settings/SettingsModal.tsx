@@ -4,10 +4,10 @@ import {
     DialogContent,
     DialogTitle,
     DialogTrigger,
-} from "../ui/Dialog";
+} from "@openmarch/ui";
 import { GearSix } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { Switch } from "../ui/Switch";
+import { Switch } from "@openmarch/ui";
 
 export default function SettingsModal() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();

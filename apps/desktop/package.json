@@ -50,7 +50,6 @@
         "@uiw/react-color-swatch": "^2.3.4",
         "adm-zip": "^0.5.16",
         "better-sqlite3": "^9.6.0",
-        "canvas": "^3.1.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "electron-store": "^8.2.0",

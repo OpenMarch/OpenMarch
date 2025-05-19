@@ -8,21 +8,23 @@ import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaretDown, CaretUp, Info } from "@phosphor-icons/react";
 import * as Form from "@radix-ui/react-form";
-import { Input } from "../ui/Input";
+import {
+    Input,
+    TooltipContents,
+    Button,
+    Switch,
+    UnitInput,
+} from "@openmarch/ui";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "../ui/Tooltip";
 import clsx from "clsx";
-import { Switch } from "../ui/Switch";
-import { Button } from "../ui/Button";
 import { toast } from "sonner";
-import { UnitInput } from "../ui/UnitInput";
 import {
     Select,
     SelectContent,
     SelectGroup,
     SelectItem,
     SelectTriggerButton,
-} from "../ui/Select";
+} from "@openmarch/ui";
 import {
     ColorResult,
     RgbaColor,
@@ -1411,7 +1413,7 @@ export default function FieldPropertiesCustomizer() {
                             w/h
                         </div>
                     </div>
-                    <div className="text-sub text-text mx-16 text-pretty rounded-full py-4 text-end">
+                    <div className="text-sub text-text mx-16 rounded-full py-4 text-end text-pretty">
                         These values can be modified by adjusting the X and Y
                         coordinates, the step size and the background image
                     </div>
@@ -1538,7 +1540,7 @@ export default function FieldPropertiesCustomizer() {
                                 />
                             ))}
                     </div>
-                    <div className="mb-16 mt-16 flex justify-end">
+                    <div className="mt-16 mb-16 flex justify-end">
                         <Button
                             onClick={() => addCheckpoint("y")}
                             size="compact"

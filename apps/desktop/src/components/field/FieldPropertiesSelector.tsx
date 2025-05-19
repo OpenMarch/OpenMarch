@@ -8,9 +8,9 @@ import {
     SelectGroup,
     SelectItem,
     SelectTriggerButton,
-} from "../ui/Select";
-import { Button } from "../ui/Button";
-import { DangerNote } from "../ui/Note";
+    Button,
+    DangerNote,
+} from "@openmarch/ui";
 
 export default function FieldPropertiesSelector() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;

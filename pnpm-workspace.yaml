@@ -1,8 +1,6 @@
 packages:
     - apps/*
     - packages/*
-ignoredBuiltDependencies:
-    - esbuild
 onlyBuiltDependencies:
     - "@sentry/cli"
     - better-sqlite3
@@ -10,3 +8,4 @@ onlyBuiltDependencies:
     - electron
     - esbuild
     - sharp
+    - "@tailwindcss/oxide"
