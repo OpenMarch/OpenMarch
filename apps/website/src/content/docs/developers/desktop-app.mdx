@@ -1,43 +1,17 @@
 ---
-title: "Contributing"
-description: "Introduction to developing OpenMarch"
-sidebar:
-  order: -1
+title: "Desktop app"
+description: "Info about working with the desktop app"
 ---
 
-import { LinkCard } from "@astrojs/starlight/components";
 import { Steps } from "@astrojs/starlight/components";
 
-Get in here and contribute to OpenMarch! Learn our stack and codebase here.
+## Database issues
 
-We'd recommend looking at all of our [tasks](https://github.com/OpenMarch/OpenMarch/issues), and picking some you'd like to work on. The ones with `good first issue` and `help wanted` tags are good for getting started.
+If you're having issues with the desktop app's database when running the dev server or installing, try following [these steps](https://github.com/Automattic/node-canvas?tab=readme-ov-file#compiling) and doing a clean `pnpm install`.
 
-Feel free to ask questions on the Discord if you have problems with anything.
+## Structure
 
-<LinkCard title="Stack" href="/developers/stack/" />
-<LinkCard
-  title="Discord"
-  href="https://discord.com/invite/eTsQ98uZzq"
-  description="Go to #developers for support!"
-/>
-
-## Running the Dev Environment
-
-<Steps>
-
-1. Download & install [Node.js](https://nodejs.org/en)
-2. Download the code via git from the main branch (if you're contributing, [make a fork](https://github.com/OpenMarch/OpenMarch/fork) and clone your own repo): `git clone https://github.com/OpenMarch/OpenMarch.git`
-   - You might need to download git for this. You can also use other methods like the GitHub CLI
-3. Install dependencies: `npm ci` (runs a clean install, may take a while)
-   - You might get a bunch of scary npm errors after installing. If running the app doesn't work after, follow [these steps](https://github.com/Automattic/node-canvas?tab=readme-ov-file#compiling) to fix it.
-4. Run the dev environment: `npm run dev`
-   - If you see a bunch of errors, you may need to run `npm run app:prepare` first. More on this in the [running tests](#running-tests) section
-
-</Steps>
-
-## Codebase Structure
-
-Our simplified directory structure:
+Simplified directory structure:
 
 - `/electron` - The "main" process, the backend of the app, with database and system functionality
   - /database
@@ -50,7 +24,7 @@ Our simplified directory structure:
   - `/stores` - Global stores for certain items and actions, such as the list of Pages and Marchers
   - `App.tsx` - the main app file
 
-Most of the directories like `stores`, `context`, and `database` also have a `__test__` directory. These are [Vitest](https://vitest.dev/) or [Playwright](https://playwright.dev/) tests, which test the functionality of certain things. Tests are important, please write them!
+Most of the directories like `stores`, `context`, and `database` also have a `__test__` directory which are used for testing.
 
 ## Running Tests
 

@@ -14,6 +14,11 @@ To be a free and easy drill writing solution for marching bands, indoor programs
 
 ## Development
 
+<!---
+Please update the website's dev docs if you're updating anything important
+apps/website/src/content/docs/developers
+-->
+
 We are using a monorepo with Turbo, pnpm, and Node.js 22. Here are the main commands you need to know:
 
 ```bash
@@ -41,6 +46,9 @@ pnpm spellcheck
 # can also run tasks in specific packages
 pnpm desktop lint
 ```
+
+> [!NOTE]
+> If you're having issues with the desktop app's database when running the dev server or installing, try following [these steps](https://github.com/Automattic/node-canvas?tab=readme-ov-file#compiling) and doing a clean `pnpm install`.
 
 See all commands in each project's `package.json`.
 

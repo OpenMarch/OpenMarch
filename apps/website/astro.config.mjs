@@ -13,6 +13,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
     redirects: {
         "/alexdumo": "/about/alexdumo",
+        "/developers/contributing": "/developers/codebase",
     },
 
     integrations: [

@@ -1,0 +1,93 @@
+---
+title: "Codebase"
+description: "Introduction to developing OpenMarch"
+sidebar:
+  order: -1
+---
+
+import { LinkCard } from "@astrojs/starlight/components";
+import { Steps } from "@astrojs/starlight/components";
+
+Learn about the codebase here.
+
+We'd recommend looking at all of our [issues](https://github.com/OpenMarch/OpenMarch/issues) and picking some you'd like to work on. The ones with `good first issue` and `help wanted` tags are good for getting started.
+
+Feel free to ask questions on the Discord if you have problems with anything.
+
+<LinkCard
+  title="Discord"
+  href="https://discord.com/invite/eTsQ98uZzq"
+  description="Go to #developers for support!"
+/>
+
+# Codebase
+
+## Stack
+
+- Codebase
+  - Node.js 22
+  - Turborepo
+  - pnpm
+  - Prettier, ESLint, CSpell
+- Desktop app
+  - Electron, Fabric.js, Vitest, React
+- Websites
+  - Astro, React
+- Design system
+  - React, Tailwind, Radix
+
+## Initiating
+
+<Steps>
+
+1. Download & install [Node.js 22 (LTS)](https://nodejs.org/en) (also make sure to have `pnpm`)
+2. Clone/fork the repo (https://github.com/OpenMarch/OpenMarch)
+3. Install dependencies: `pnpm install`
+
+</Steps>
+
+## Monorepo
+
+### Structure
+
+This is the structure of our monorepo.
+
+```
+.
+├── apps/
+│   ├── desktop - The main desktop app
+│   └── website - Our website
+├── packages/
+│   └── ui - Our design system & playground
+└── package.json
+```
+
+### Tasks
+
+Tasks are our main commands in the codebase.
+
+```bash
+# Install packages
+pnpm install
+
+# Prepare electron app
+pnpm desktop app:prepare
+# Run electron & vite
+pnpm desktop dev
+
+# Run the website's astro dev server
+pnpm site dev
+
+# Run the design system playground
+pnpm ui dev
+
+# Fix
+pnpm fix
+# or individually:
+pnpm format
+pnpm lint
+pnpm spellcheck
+
+# can also run tasks in specific packages
+pnpm desktop lint
+```
