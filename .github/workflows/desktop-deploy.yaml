@@ -81,18 +81,21 @@ jobs:
                 PLATFORM=""
                 RUNTIME_ARGS=""
 
-                if [[ "$RUNNER_OS" == "macOS" ]]; then
+                if [[ "${{ matrix.os }}" == macos* ]]; then
                   PLATFORM="mac"
                   if [[ "$(uname -m)" == "x86_64" ]]; then
                     RUNTIME_ARGS="--x64"
                   else
                     RUNTIME_ARGS="--arm64"
                   fi
-                elif [[ "$RUNNER_OS" == "Linux" ]]; then
+                elif [[ "${{ matrix.os }}" == ubuntu* ]]; then
                   PLATFORM="linux"
-                elif [[ "$RUNNER_OS" == "Windows" ]]; then
+                  # Add specific configuration for AppImage
+                  export USE_SYSTEM_MKSQUASHFS=false
+                elif [[ "${{ matrix.os }}" == windows* ]]; then
                   PLATFORM="win"
                 fi
+
 
                 # Build with retry logic
                 echo "Building${RELEASE_FLAG} the Electron app..."
