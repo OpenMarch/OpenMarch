@@ -14,7 +14,7 @@
     },
     "scripts": {
         "dev": "vite",
-        "app:prepare": "pnpm remove canvas && rimraf node_modules/canvas && pnpm dlx electron-rebuild -f -w better-sqlite3",
+        "app:prepare": "rimraf node_modules/canvas && pnpm dlx electron-rebuild -f -w better-sqlite3",
         "build": "tsc && vite build",
         "postinstall": "rimraf node_modules/canvas && electron-builder install-app-deps && electron-rebuild",
         "clean": "rm -rf node_modules dist-electron release",
@@ -23,7 +23,7 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest",
-        "test:prepare": "pnpm add canvas && pnpm rebuild better-sqlite3",
+        "test:prepare": "pnpm rebuild better-sqlite3",
         "test:run": "vitest run",
         "test:coverage": "pnpm test:run -- --coverage",
         "test:clearCache": "vitest --clearCache"
