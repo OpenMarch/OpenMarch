@@ -3,18 +3,18 @@ import { ListFormProps } from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
 import { SECTIONS } from "@/global/classes/Sections";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@openmarch/ui";
 import { Trash } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { Input } from "../ui/Input";
+import { Input } from "@openmarch/ui";
 import FormButtons from "../FormButtons";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTriggerText,
-} from "../ui/Select";
-import { AlertDialogAction, AlertDialogCancel } from "../ui/AlertDialog";
+} from "@openmarch/ui";
+import { AlertDialogAction, AlertDialogCancel } from "@openmarch/ui";
 
 export default function MarcherList({
     hasHeader = false,

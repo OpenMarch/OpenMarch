@@ -19,7 +19,7 @@ export default function ErrorReport() {
     // If the version is the same, don't show the modal
     return (
         <div
-            className="hover:text-accent cursor-pointer outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
+            className="hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
             id="feedback-button"
         >
             Report a bug

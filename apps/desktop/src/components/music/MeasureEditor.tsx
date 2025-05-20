@@ -8,10 +8,8 @@
 //     Select,
 //     SelectItem,
 //     SelectContent,
-//     SelectTriggerButton,
-// } from "../ui/Select";
-// import { Button } from "../ui/Button";
-// import { Input } from "../ui/Input";
+//     SelectTriggerButton,Button,Input
+// } from "@openmarch/ui";
 // import * as Form from "@radix-ui/react-form";
 // import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 // import RegisteredActionButton from "../RegisteredActionButton";
@@ -22,8 +20,8 @@
 //     AlertDialogDescription,
 //     AlertDialogTitle,
 //     AlertDialogTrigger,
-// } from "../ui/AlertDialog";
-// import { TooltipContents } from "../ui/Tooltip";
+// } from "@openmarch/ui";
+// import { TooltipContents } from "@openmarch/ui";
 // import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 // export default function MeasureEditor() {
@@ -143,7 +141,7 @@
 //                                     RegisteredActionsObjects.launchImportMusicXmlFileDialogue
 //                                 }
 //                                 showTooltip={false}
-//                                 className="hover:text-text focus-visible:outline-none"
+//                                 className="hover:text-text focus-visible:outline-hidden"
 //                             >
 //                                 Import MusicXML
 //                             </RegisteredActionButton>
@@ -298,7 +296,7 @@
 //                                         required
 //                                         type="number"
 //                                         id="measure-tempo-bpm"
-//                                         className="flex-grow"
+//                                         className="grow"
 //                                         value={tempoBpm}
 //                                         onChange={(e) => {
 //                                             setTempoBpm(

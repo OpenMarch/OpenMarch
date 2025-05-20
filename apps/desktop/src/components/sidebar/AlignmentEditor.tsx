@@ -2,7 +2,7 @@ import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { SidebarCollapsible } from "./SidebarCollapsible";
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 
 export default function AlignmentEditor() {
     const {

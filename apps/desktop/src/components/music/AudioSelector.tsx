@@ -7,7 +7,7 @@ import {
     SelectContent,
     SelectSeparator,
     SelectTriggerButton,
-} from "../ui/Select";
+} from "@openmarch/ui";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
 

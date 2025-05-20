@@ -7,14 +7,13 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import { Button } from "../ui/Button";
-import { Input } from "../ui/Input";
+import { Button, Input } from "@openmarch/ui";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTriggerCompact,
-} from "../ui/Select";
+} from "@openmarch/ui";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
 import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";

@@ -1,0 +1,40 @@
+name: Test Desktop
+
+on:
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    - branch: main
+                      artifact: main
+                    - branch: ${{ github.head_ref }}
+                      artifact: pull-request
+
+        permissions:
+            # Required to checkout the code
+            contents: read
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
+            - name: Install project dependencies
+              run: pnpm install
+            # - name: Install canvas dependencies
+            #   # This step might not be needed if canvas is a project dependency
+            #   # If it's not a project dependency managed by pnpm, keep this.
+            #   run: cd apps/desktop && pnpm install canvas && cd ..
+            - name: Test Prepare
+              run: pnpm desktop test:prepare
+            - name: Test
+              run: pnpm desktop test:coverage
+            - name: "Upload Coverage"
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-${{ matrix.artifact }}
+                  path: coverage

@@ -1,7 +1,7 @@
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { X, CaretLeft } from "@phosphor-icons/react";
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 import NewPageForm from "./NewPageForm";
 import PageList from "./PageList";
 

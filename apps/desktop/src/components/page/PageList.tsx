@@ -3,9 +3,12 @@ import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
 import Page, { deletePages, updatePages } from "@/global/classes/Page";
 import { Trash } from "@phosphor-icons/react";
-import { Input } from "../ui/Input";
-import { Button } from "../ui/Button";
-import { AlertDialogAction, AlertDialogCancel } from "../ui/AlertDialog";
+import {
+    Input,
+    Button,
+    AlertDialogAction,
+    AlertDialogCancel,
+} from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { ModifiedPageArgs } from "electron/database/tables/PageTable";
 

@@ -4,7 +4,7 @@ import {
     Select,
     SelectContent,
     SelectTriggerButton,
-} from "../ui/Select";
+} from "@openmarch/ui";
 import { useEffect, useRef, useState } from "react";
 import Page, { createPages } from "@/global/classes/Page";
 import {
@@ -14,12 +14,9 @@ import {
     ArrowRight,
     Info,
 } from "@phosphor-icons/react";
-import { Input } from "../ui/Input";
-import { Checkbox } from "../ui/Checkbox";
-import { Button } from "../ui/Button";
+import { Input, Checkbox, Button, TooltipContents } from "@openmarch/ui";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { toast } from "sonner";
-import { TooltipContents } from "../ui/Tooltip";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { PageListContents } from "./PagesModal";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";

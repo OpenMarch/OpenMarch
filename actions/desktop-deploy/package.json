@@ -1,0 +1,32 @@
+{
+    "name": "action-electron-builder",
+    "version": "1.6.0",
+    "description": "GitHub Action for building and releasing Electron apps",
+    "author": {
+        "name": "Samuel Meuli",
+        "email": "me@samuelmeuli.com",
+        "url": "https://samuelmeuli.com"
+    },
+    "repository": "github:samuelmeuli/action-electron-builder",
+    "license": "MIT",
+    "private": true,
+    "main": "./index.js",
+    "scripts": {
+        "lint": "eslint --max-warnings 0 \"**/*.js\"",
+        "lint:fix": "yarn lint --fix",
+        "format": "prettier --ignore-path ./.gitignore --list-different \"**/*.{css,html,js,json,jsx,less,md,scss,ts,tsx,yaml,yml}\"",
+        "format:fix": "yarn format --write"
+    },
+    "dependencies": {},
+    "peerDependencies": {},
+    "devDependencies": {
+        "eslint": "6.8.0",
+        "eslint-config-prettier": "^6.10.1",
+        "eslint-plugin-import": "^2.20.2",
+        "prettier": "^2.0.4"
+    },
+    "eslintIgnore": [
+        "node_modules/",
+        "test/"
+    ]
+}

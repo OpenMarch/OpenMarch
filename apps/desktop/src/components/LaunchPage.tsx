@@ -1,5 +1,4 @@
-import { Button } from "./ui/Button";
-import { BugNote, WarningNote } from "./ui/Note";
+import { Button, BugNote, WarningNote } from "@openmarch/ui";
 import BugReport from "./ui/BugReport";
 import ThemeSwitcher from "./titlebar/ThemeSwitcher";
 import TitleBar from "./titlebar/TitleBar";
