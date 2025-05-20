@@ -19,7 +19,7 @@
     "scripts": {
         "dev": "vite",
         "app:prepare": "electron-rebuild && electron-rebuild -f -w better-sqlite3",
-        "postinstall": "rimraf node_modules/canvas && electron-builder install-app-deps",
+        "postinstall": "rimraf ../../node_modules/canvas && electron-builder install-app-deps",
         "build": "tsc && vite build",
         "clean": "rm -rf node_modules dist-electron release",
         "lint": "eslint . --fix",
