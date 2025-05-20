@@ -64,13 +64,6 @@ jobs:
                 CI: true
                 ADBLOCK: true
 
-            - name: Delete canvas from node_modules
-              run: |
-                node -e "const fs = require('fs'); if (fs.existsSync('node_modules/canvas')) fs.rmSync('node_modules/canvas', { recursive: true, force: true });"
-
-            - name: Prepare electron dependencies
-              run: pnpm desktop app:prepare
-
             - name: Build for production
               run: pnpm desktop build
 
@@ -79,7 +72,6 @@ jobs:
               # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
               run: |
                 sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
-
 
             - name: Build/release Electron app
               uses: ./actions/desktop-deploy
