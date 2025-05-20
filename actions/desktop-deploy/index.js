@@ -1,6 +1,4 @@
 const { execSync } = require("child_process");
-const { existsSync } = require("fs");
-const { join } = require("path");
 
 /**
  * Logs to the console
@@ -75,25 +73,8 @@ const runAction = () => {
     const args = getInput("args") || "";
     let runtimeArgs = "";
 
-    // const pkgJsonPath = join(pkgRoot, "package.json");
-
-    // // Make sure `package.json` file exists
-    // if (!existsSync(pkgJsonPath)) {
-    //     exit(`\`package.json\` file not found at path "${pkgJsonPath}"`);
-    // }
-
     // Copy "github_token" input variable to "GH_TOKEN" env variable (required by `electron-builder`)
     setEnv("GH_TOKEN", getInput("github_token", true));
-
-    // Validate publishing credentials
-    // if (release) {
-    //     if (platform === "linux") {
-    //         log(
-    //             "Platform is linux and release is true. Validating snapcraft credentials...",
-    //         );
-    //         run("snapcraft whoami -q");
-    //     }
-    // }
 
     // Require code signing certificate and password if building for macOS. Export them to environment
     // variables (required by `electron-builder`)
@@ -105,29 +86,9 @@ const runAction = () => {
         setEnv("CSC_KEY_PASSWORD", getInput("windows_certs_password"));
     }
 
-    // // Disable console advertisements during install phase
-    // setEnv("ADBLOCK", true);
-
-    // run("pnpm install", pkgRoot);
-
-    // log("Deleting native canvas module…");
-    // run("rimraf node_modules/canvas", pkgRoot);
-
-    // // Run NPM build script if it exists
-    // log("Running the build script…");
-    // run(`pnpm run build`, pkgRoot);
-
-    // if (platform === "mac") {
-    //     if (process.arch === "x64") {
-    //         runtimeArgs += "--x64";
-    //     } else {
-    //         runtimeArgs += "--arm64";
-    //     }
-    // }
-
     log(`Building${release ? " and releasing" : ""} the Electron app…`);
     const fullCmd = `pnpx electron-builder --${platform} ${
-        release ? "--publish always" : ""
+        release ? "--publish always" : "--publish=never"
     } ${args} ${runtimeArgs}`;
     log(`Running '${fullCmd}' in ${pkgRoot}`);
     for (let i = 0; i < maxAttempts; i += 1) {

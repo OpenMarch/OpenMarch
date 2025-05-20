@@ -68,6 +68,9 @@ jobs:
               run: |
                 node -e "const fs = require('fs'); if (fs.existsSync('node_modules/canvas')) fs.rmSync('node_modules/canvas', { recursive: true, force: true });"
 
+            - name: Prepare electron dependencies
+              run: pnpm desktop app:prepare
+
             - name: Build for production
               run: pnpm desktop build
 
