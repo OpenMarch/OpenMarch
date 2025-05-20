@@ -1,7 +1,7 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
-import { Switch } from "../ui/Switch";
+import { Switch } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { measureRangeString, updatePages } from "@/global/classes/Page";
 

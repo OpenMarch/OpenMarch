@@ -1,21 +1,23 @@
 // @ts-check
 import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
-import tailwind from "@astrojs/tailwind";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import yeskunallumami from "@yeskunall/astro-umami";
 import starlightImageZoom from "starlight-image-zoom";
 
+import tailwindcss from "@tailwindcss/vite";
+
 // https://astro.build/config
 export default defineConfig({
     redirects: {
         "/alexdumo": "/about/alexdumo",
+        "/developers/contributing": "/developers/codebase",
     },
+
     integrations: [
         react(),
-        tailwind({ applyBaseStyles: false }),
         starlight({
             plugins: [starlightImageZoom()],
             title: "OpenMarch",
@@ -63,8 +65,14 @@ export default defineConfig({
             endpointUrl: "https://umami.cool.korhq.com",
         }),
     ],
+
     site: "https://openmarch.com",
+
     devToolbar: {
         enabled: false,
+    },
+
+    vite: {
+        plugins: [tailwindcss()],
     },
 });

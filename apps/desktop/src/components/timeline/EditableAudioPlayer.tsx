@@ -21,7 +21,7 @@ import {
 } from "./AudioPlayer";
 import { Pause, Play } from "@phosphor-icons/react";
 import Beat from "@/global/classes/Beat";
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 import {
     createNewBeatObjects,
     createNewTemporaryBeats,

@@ -1,0 +1,47 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Sidebar from "@/components/playground/Sidebar.astro";
+import Playground from "@/components/playground/Playground.astro";
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import { generateVariants } from "@korhq/unpreview";
+
+export async function getStaticPaths() {
+    const previews: CollectionEntry<"previews"> =
+        await getCollection("previews");
+    const filteredPreviews = previews.filter(
+        (preview) => !preview.data.directory,
+    );
+    return filteredPreviews.map((preview) => ({
+        params: { id: preview.id },
+        props: { preview },
+    }));
+}
+
+interface Props {
+    preview: CollectionEntry<"previews">;
+}
+
+const { preview } = Astro.props;
+const { Content } = await render(preview);
+
+const allVariants = generateVariants(preview.data.variants ?? {});
+---
+
+<Layout title={preview.data.title}>
+    <div class="grid h-full grid-cols-5 gap-4 p-8">
+        <Sidebar />
+        <Playground>
+            <h1 class="text-h3">{preview.data.title}</h1>
+            {
+                allVariants.map((variants) => (
+                    <div class="">
+                        <p class="my-4 text-sub text-text/50">
+                            {variants[Object.keys(variants)[0]]}
+                        </p>
+                        <Content {...variants} />
+                    </div>
+                ))
+            }
+        </Playground>
+    </div>
+</Layout>

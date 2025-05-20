@@ -32,7 +32,7 @@ export default function SidebarModal() {
             tabIndex={0}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className={`rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 absolute left-0 top-0 z-40 h-full min-h-0 max-w-[35rem] overflow-scroll border p-12 outline-none ${
+            className={`rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 absolute top-0 left-0 z-40 h-full min-h-0 max-w-[35rem] overflow-scroll border p-12 outline-hidden ${
                 isOpen ? "animate-scale-in flex" : "hidden"
             }`}
         >
@@ -59,7 +59,7 @@ export function SidebarModalLauncher({
                     setContent(contents);
                 }
             }}
-            className="hover:text-accent outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+            className="hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
         >
             {buttonLabel}
         </button>

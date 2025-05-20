@@ -1,4 +1,4 @@
-import { Button } from "../ui/Button";
+import { Button } from "@openmarch/ui";
 
 export default function FieldIoButtons() {
     return (

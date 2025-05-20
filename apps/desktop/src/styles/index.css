@@ -1,48 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "@openmarch/ui/src/tailwind.css";
+@source "../../../../packages/ui/src/components";
 
-/* Each color style in RGB, gradient stop, and its dark mode variant */
-@layer base {
-    :root {
-        /* light mode */
-        --bg-1: 236, 235, 240;
-        --fg-1-stop-1: 0, 0, 0, 0.03;
-        --fg-1-stop-2: 0, 0, 0, 0.05;
-        --fg-2-stop-1: 255, 255, 255, 0.17;
-        --fg-2-stop-2: 255, 255, 255, 0.23;
-        --modal-stop-1: 236, 235, 240, 0.85;
-        --modal-stop-2: 236, 235, 240, 0.9;
-        --modal-shadow: 0, 0, 0, 0.15;
-        --modal-overlay: 255, 255, 255, 0.25;
-        --stroke: 0, 0, 0, 0.1;
-        --text: 32, 32, 32;
-        --text-invert: 255, 255, 255;
-        --accent: 100, 66, 255;
-        --red: 176, 51, 51;
-        --yellow: 200, 170, 0;
-        --green: 72, 158, 51;
-    }
-    [class="dark"] {
-        /* dark mode */
-        --bg-1: 15, 14, 19;
-        --fg-1-stop-1: 255, 255, 255, 0.02;
-        --fg-1-stop-2: 255, 255, 255, 0.04;
-        --fg-2-stop-1: 255, 255, 255, 0.03;
-        --fg-2-stop-2: 255, 255, 255, 0.05;
-        --modal-stop-1: 15, 14, 19, 0.96;
-        --modal-stop-2: 15, 14, 19, 0.98;
-        --modal-shadow: 0, 0, 0, 0.5;
-        --modal-overlay: 0, 0, 0, 0.15;
-        --stroke: 255, 255, 255, 0.06;
-        --text: 208, 208, 208;
-        --text-invert: 0, 0, 0;
-        --accent: 150, 126, 255;
-        --red: 227, 74, 74;
-        --yellow: 236, 211, 71;
-        --green: 113, 222, 86;
-    }
-}
+@plugin "@tailwindcss/typography";
+@plugin "tailwindcss-motion";
+@plugin "tailwindcss-intersect";
 
 @keyframes progress {
     from {
@@ -70,29 +31,6 @@
 }
 .main-app-titlebar .titlebar-button {
     -webkit-app-region: no-drag;
-}
-
-::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-}
-
-::-webkit-scrollbar-track {
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(var(--text), 0.075);
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--text), 0.15);
-}
-
-::selection {
-    background-color: rgb(var(--accent));
-    color: rgb(var(--text-invert));
 }
 
 /* Number input arrows */

@@ -1,0 +1,27 @@
+---
+import { getCollection } from "astro:content";
+import SidebarTree from "@/components/playground/SidebarTree.astro";
+import ThemeSwitcher from "@/components/website/ThemeSwitcher.astro";
+
+const previews = await getCollection("previews");
+---
+
+<div
+    class="rounded-6 border-stroke bg-fg-1 col-span-1 flex h-full flex-col gap-3 border p-16"
+>
+    <div class="flex w-full items-center justify-between">
+        <a href="/" class="text-h3"> OpenMarch UI </a>
+        <ThemeSwitcher />
+    </div>
+    <SidebarTree items={previews} />
+
+    <span class="flex-grow"></span>
+
+    <a
+        href="https://github.com/K0Rhq/un/tree/main/packages/preview"
+        target="_blank"
+        rel="noreferrer"
+        class="text-sub text-text/50 hover:text-accent-reversed duration-150 ease-out"
+        >Powered by unPreview</a
+    >
+</div>

@@ -321,7 +321,7 @@ export function PageTimeline() {
                                 isPlaying && (
                                     <div
                                         className={clsx(
-                                            "absolute left-0 top-0 z-0 h-full w-full",
+                                            "absolute top-0 left-0 z-0 h-full w-full",
                                             uiSettings.showWaveform
                                                 ? ""
                                                 : "bg-accent/25",
@@ -338,7 +338,7 @@ export function PageTimeline() {
                         </div>
                         <div
                             className={clsx(
-                                "absolute right-0 top-0 z-20 h-full w-3 cursor-ew-resize rounded transition-colors",
+                                "absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize rounded transition-colors",
                                 resizingPage.current?.id === page.id
                                     ? "bg-accent/50"
                                     : "hover:bg-accent/30 bg-transparent",
@@ -434,11 +434,11 @@ export default function TimelineContainer() {
             )}
         >
             <div
-                className="fixed bottom-0 right-0 m-16 flex gap-6 drop-shadow-md"
+                className="fixed right-0 bottom-0 m-16 flex gap-6 drop-shadow-md"
                 id="zoomIcons"
             >
                 <button
-                    className="text-text active:hover:text-accent m-4 outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() =>
                         setPixelsPerSecond(
                             uiSettings.timelinePixelsPerSecond * 0.8,
@@ -449,7 +449,7 @@ export default function TimelineContainer() {
                     <Minus size={16} />
                 </button>
                 <button
-                    className="text-text active:hover:text-accent m-4 outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() =>
                         setPixelsPerSecond(
                             uiSettings.timelinePixelsPerSecond * 1.2,

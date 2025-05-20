@@ -1,11 +1,11 @@
-import { Button, ButtonProps } from "@/components/ui/Button";
+import { Button, ButtonProps } from "@openmarch/ui";
 import {
     AlertDialog,
     AlertDialogTitle,
     AlertDialogContent,
     AlertDialogTrigger,
     AlertDialogDescription,
-} from "./ui/AlertDialog";
+} from "@openmarch/ui";
 
 interface FormButtonsProps extends ButtonProps {
     isEditingProp?: boolean;

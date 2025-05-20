@@ -12,14 +12,11 @@ import {
     DialogContent,
     DialogTitle,
     DialogTrigger,
-} from "../ui/Dialog";
+} from "@openmarch/ui";
 import { ArrowSquareOut, Info } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "../ui/Tooltip";
-import { Button } from "../ui/Button";
-import { Checkbox } from "../ui/Checkbox";
+import { TooltipContents, Button, Input, Checkbox } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
-import { Input } from "../ui/Input";
 import { toast } from "react-toastify";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
@@ -290,13 +287,13 @@ export default function ExportCoordinatesModal() {
         <Dialog>
             <DialogTrigger
                 asChild
-                className="hover:text-accent cursor-pointer outline-none duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                className="hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
             >
                 <ArrowSquareOut size={18} />
             </DialogTrigger>
 
             {/* Dialog Setup */}
-            <DialogContent className="w-[48rem]">
+            <DialogContent className="w-3xl">
                 <DialogTitle>Export Individual Coordinate Sheets</DialogTitle>
                 <ExportModalContents />
             </DialogContent>

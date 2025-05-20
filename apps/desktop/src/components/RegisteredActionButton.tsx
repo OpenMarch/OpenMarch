@@ -5,7 +5,7 @@ import {
 } from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "./ui/Tooltip";
+import { TooltipContents } from "@openmarch/ui";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {

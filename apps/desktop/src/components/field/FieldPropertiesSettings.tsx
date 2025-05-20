@@ -1,10 +1,9 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import FieldPropertiesSelector from "./FieldPropertiesSelector";
 import FieldPropertiesCustomizer from "./FieldPropertiesCustomizer";
-import { Switch } from "../ui/Switch";
+import { Switch, Button } from "@openmarch/ui";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldIoButtons from "./FieldIoButtons";
-import { Button } from "../ui/Button";
 import FieldProperties from "@/global/classes/FieldProperties";
 
 export default function FieldPropertiesSettings() {
