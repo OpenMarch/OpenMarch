@@ -87,9 +87,6 @@ const runAction = () => {
     }
 
     log(`Building${release ? " and releasing" : ""} the Electron app…`);
-
-    log("CWD:");
-    run("pwd");
     const fullCmd = `pnpx electron-builder --${platform} ${
         release ? "--publish always" : "--publish=never"
     } ${args} ${runtimeArgs}`;

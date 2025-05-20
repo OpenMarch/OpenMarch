@@ -67,11 +67,17 @@ jobs:
             - name: Build for production
               run: pnpm desktop build
 
-            - name: Replace package name in package.json
+            - name: Replace package name in package.json - ubuntu
               if: startsWith(matrix.os, 'ubuntu')
               # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
               run: |
                 sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
+
+            - name: Replace package name in package.json - windows
+              if: startsWith(matrix.os, 'win')
+              # needed to prevent NSIS executable errors
+              run: |
+                powershell -Command "(Get-Content apps\desktop\package.json) -replace '\"name\": \"@openmarch/desktop\"', '\"name\": \"OpenMarch\"' | Set-Content apps\desktop\package.json"
 
             - name: Build/release Electron app
               uses: ./actions/desktop-deploy
