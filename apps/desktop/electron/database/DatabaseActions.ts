@@ -269,82 +269,74 @@ export function createItems<DatabaseItemType, NewItemArgs extends Object>({
     }
     if (printHeaders)
         console.log(`\n=========== start ${functionName} ===========`);
+
     let output: DatabaseResponse<DatabaseItemType[]>;
-    // Track if an action was performed so the undo group can be decremented if needed
-    let actionWasPerformed = false;
 
-    // Track if the undo group was changed in this function so it can be decremented if needed
-    let groupWasIncremented = false;
     try {
-        // Increment the undo group so this action can be rolled back if needed
-        const currentUndoGroup = History.getCurrentUndoGroup(db);
-        const newUndoGroup = History.incrementUndoGroup(db);
-        groupWasIncremented = currentUndoGroup !== newUndoGroup;
-
-        const newItemIds: number[] = [];
-        const columns = getColumns(db, tableName);
-
-        for (const oldItem of items) {
-            const item = { ...oldItem }; // copy the object as to not modify the original reference
-            // Remove the id from the new item if it exists
-            let itemToInsert = item;
-            if (Object.keys(item).includes("id")) {
-                const { id, ...rest } = item as any;
-                itemToInsert = rest;
+        const newItems = db.transaction(() => {
+            if (useNextUndoGroup) {
+                History.incrementUndoGroup(db);
             }
+            const newItemIds: number[] = [];
+            const columns = getColumns(db, tableName);
 
-            const createdAt = new Date().toISOString();
-            let newItem = itemToInsert as any;
-            if (columns.has("created_at")) newItem.created_at = createdAt;
-            if (columns.has("updated_at")) newItem.updated_at = createdAt;
+            for (const oldItem of items) {
+                const item = { ...oldItem }; // copy the object as to not modify the original reference
+                // Remove the id from the new item if it exists
+                let itemToInsert = item;
+                if (Object.keys(item).includes("id")) {
+                    const { id, ...rest } = item as any;
+                    itemToInsert = rest;
+                }
 
-            const stmt = db.prepare(
-                `INSERT INTO ${tableName} ${insertClause(newItem)}`,
-            );
-            actionWasPerformed = true;
-            const insertResult = stmt.run(newItem);
-            const id = insertResult.lastInsertRowid as number;
-            newItemIds.push(id);
-        }
-        const newItems: DatabaseItemType[] = [];
-        for (const id of newItemIds) {
-            const newItem = getItem<DatabaseItemType>({
-                id,
-                db,
-                tableName,
-            }).data;
-            if (!newItem) {
-                throw new Error(
-                    `No item with id ${id} in table "${tableName}"`,
+                const createdAt = new Date().toISOString();
+                let newItem = itemToInsert as any;
+                if (columns.has("created_at")) newItem.created_at = createdAt;
+                if (columns.has("updated_at")) newItem.updated_at = createdAt;
+
+                const stmt = db.prepare(
+                    `INSERT INTO ${tableName} ${insertClause(newItem)}`,
                 );
-            } else {
-                newItems.push(newItem);
+                const insertResult = stmt.run(newItem);
+                const id = insertResult.lastInsertRowid as number;
+                newItemIds.push(id);
             }
-        }
+
+            const createdItems: DatabaseItemType[] = [];
+            for (const id of newItemIds) {
+                const newItem = getItem<DatabaseItemType>({
+                    id,
+                    db,
+                    tableName,
+                }).data;
+                if (!newItem) {
+                    throw new Error(
+                        `No item with id ${id} in table "${tableName}"`,
+                    );
+                } else {
+                    createdItems.push(newItem);
+                }
+            }
+
+            return createdItems;
+        })();
+
         output = {
             success: true,
             data: newItems as DatabaseItemType[],
         };
-
-        // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!useNextUndoGroup && groupWasIncremented && actionWasPerformed)
-            decrementLastUndoGroup(db);
     } catch (error: any) {
         output = {
             success: false,
             data: [],
             error: {
                 message:
-                    error.message || `Error getting items from ${tableName}`,
+                    error.message || `Error creating items in ${tableName}`,
                 stack: error.stack || "Unable to get error stack",
             },
         };
 
         console.log(`Error creating items in table ${tableName}:`, error);
-
-        // Roll back the changes caused by this action
-        History.performUndo(db);
-        History.clearMostRecentRedo(db);
     } finally {
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
@@ -393,7 +385,6 @@ export function updateItems<
     // Check if all of the items exist
     const notFoundIds: number[] = [];
     const ids = new Set<number>(items.map((item) => item.id));
-    let actionWasPerformed = false;
 
     // Verify all of the items exist before updating any of them
     for (const id of ids) {
@@ -422,56 +413,56 @@ export function updateItems<
         error: { message: "Failed to update item" },
     };
 
-    // Track if the undo group was changed in this function so it can be decremented if needed
-    let groupWasIncremented = false;
     try {
-        // Increment the undo group so this action can be rolled back if needed
-        const currentUndoGroup = History.getCurrentUndoGroup(db);
-        const newUndoGroup = History.incrementUndoGroup(db);
-        groupWasIncremented = currentUndoGroup !== newUndoGroup;
-
-        const columns = getColumns(db, tableName);
-
-        const updateIds: number[] = [];
-        for (const oldItem of items) {
-            const item = { ...oldItem }; // Copy the old item as to not modify the original reference
-            const updatedAt = new Date().toISOString();
-            let updatedItem: any = item;
-            if (columns.has("updated_at")) updatedItem.updated_at = updatedAt;
-
-            // remove the id from the updated item
-            const { id, ...rest } = updatedItem;
-            const setClause = Object.keys(rest)
-                .map((key) => `"${key}" = @${key}`)
-                .join(", ");
-
-            if (!Object.keys(updatedItem).includes("id")) {
-                console.warn("No id provided for update, skipping item");
-                continue;
+        const updatedItems = db.transaction(() => {
+            if (useNextUndoGroup) {
+                History.incrementUndoGroup(db);
             }
-            const stmt = db.prepare(
-                `UPDATE ${tableName} SET ${setClause} WHERE "rowid" = @id`,
-            );
-            stmt.run(updatedItem);
-            actionWasPerformed = true;
-            updateIds.push(id);
-        }
-        const updatedItems: DatabaseItemType[] = [];
-        for (const id of updateIds) {
-            const updatedItem = getItem<DatabaseItemType>({
-                id,
-                db,
-                tableName,
-            });
-            if (!updatedItem || !updatedItem.data || !updatedItem.success) {
-                throw new Error(updatedItem.error?.message || "No item found");
-            } else {
-                updatedItems.push(updatedItem.data);
+            const columns = getColumns(db, tableName);
+            const updateIds: number[] = [];
+
+            for (const oldItem of items) {
+                const item = { ...oldItem }; // Copy the old item as to not modify the original reference
+                const updatedAt = new Date().toISOString();
+                let updatedItem: any = item;
+                if (columns.has("updated_at"))
+                    updatedItem.updated_at = updatedAt;
+
+                // remove the id from the updated item
+                const { id, ...rest } = updatedItem;
+                const setClause = Object.keys(rest)
+                    .map((key) => `"${key}" = @${key}`)
+                    .join(", ");
+
+                if (!Object.keys(updatedItem).includes("id")) {
+                    console.warn("No id provided for update, skipping item");
+                    continue;
+                }
+                const stmt = db.prepare(
+                    `UPDATE ${tableName} SET ${setClause} WHERE "rowid" = @id`,
+                );
+                stmt.run(updatedItem);
+                updateIds.push(id);
             }
-        }
-        // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!useNextUndoGroup && actionWasPerformed && groupWasIncremented)
-            decrementLastUndoGroup(db);
+
+            const resultItems: DatabaseItemType[] = [];
+            for (const id of updateIds) {
+                const updatedItem = getItem<DatabaseItemType>({
+                    id,
+                    db,
+                    tableName,
+                });
+                if (!updatedItem || !updatedItem.data || !updatedItem.success) {
+                    throw new Error(
+                        updatedItem.error?.message || "No item found",
+                    );
+                } else {
+                    resultItems.push(updatedItem.data);
+                }
+            }
+
+            return resultItems;
+        })();
 
         output = {
             success: true,
@@ -490,11 +481,6 @@ export function updateItems<
 
         console.error(`Failed to update items from ${tableName}:`, error);
         console.error(`UPDATED ITEMS:`, items);
-        // Roll back the changes caused by this action
-        if (actionWasPerformed) {
-            History.performUndo(db);
-            History.clearMostRecentRedo(db);
-        }
     } finally {
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
@@ -540,11 +526,10 @@ export function deleteItems<DatabaseItemType>({
     }
     if (printHeaders)
         console.log(`\n=========== start ${functionName} ===========`);
-    const deletedObjects: DatabaseItemType[] = [];
+
     let output: DatabaseResponse<DatabaseItemType[]>;
     let currentId: number | undefined;
     const notFoundIds: number[] = [];
-    let actionWasPerformed = false;
     const itemsMap = new Map<number, DatabaseItemType>();
 
     // Verify all of the items exist before deleting any of them
@@ -569,32 +554,29 @@ export function deleteItems<DatabaseItemType>({
         };
     }
 
-    // Track if the undo group was changed in this function so it can be decremented if needed
-    let groupWasIncremented = false;
     try {
-        // Increment the undo group so this action can be rolled back if needed
-        const currentUndoGroup = History.getCurrentUndoGroup(db);
-        const newUndoGroup = History.incrementUndoGroup(db);
-        groupWasIncremented = currentUndoGroup !== newUndoGroup;
-
-        for (const id of ids) {
-            currentId = id;
-            const item = itemsMap.get(id);
-            if (!item) {
-                throw new Error(`No item found with "${idColumn}"=${id}`);
-            } else {
-                const stmt = db.prepare(
-                    `DELETE FROM ${tableName} WHERE "${idColumn}" = ?`,
-                );
-                stmt.run(id);
-                deletedObjects.push(item);
-                actionWasPerformed = true;
+        const deletedObjects = db.transaction(() => {
+            if (useNextUndoGroup) {
+                History.incrementUndoGroup(db);
             }
-        }
+            const deletedItems: DatabaseItemType[] = [];
 
-        // If the undo group was not supposed to be incremented, decrement all of the undo actions in the most recent group down by one
-        if (!useNextUndoGroup && actionWasPerformed && groupWasIncremented)
-            decrementLastUndoGroup(db);
+            for (const id of ids) {
+                currentId = id;
+                const item = itemsMap.get(id);
+                if (!item) {
+                    throw new Error(`No item found with "${idColumn}"=${id}`);
+                } else {
+                    const stmt = db.prepare(
+                        `DELETE FROM ${tableName} WHERE "${idColumn}" = ?`,
+                    );
+                    stmt.run(id);
+                    deletedItems.push(item);
+                }
+            }
+
+            return deletedItems;
+        })();
 
         output = {
             success: true,
@@ -615,12 +597,6 @@ export function deleteItems<DatabaseItemType>({
             `Failed to delete item with id="${currentId}" while trying to delete items "${idColumn}"="${Array.from(ids)}":`,
             error,
         );
-
-        // Roll back the changes caused by this action
-        if (actionWasPerformed) {
-            History.performUndo(db);
-            History.clearMostRecentRedo(db);
-        }
     } finally {
         if (printHeaders)
             console.log(`============ end ${functionName} ============\n`);
