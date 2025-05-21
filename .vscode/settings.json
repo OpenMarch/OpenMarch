@@ -44,7 +44,7 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "jest.jestCommandLine": "node_modules/.bin/jest",
-    "prettier.configPath": ".prettierrc",
+    "prettier.configPath": ".prettierrc.mjs",
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     } // set as "true" to run 'prettier' last not first

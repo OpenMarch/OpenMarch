@@ -23,7 +23,7 @@ import { Pause, Play } from "@phosphor-icons/react";
 import Beat from "@/global/classes/Beat";
 import { Button } from "@openmarch/ui";
 import {
-    createNewBeatObjects,
+    replaceAllBeatObjects,
     createNewTemporaryBeats,
     createNewTemporaryMeasures,
 } from "./EditableAudioPlayerUtils";
@@ -145,43 +145,49 @@ export default function EditableAudioPlayer({
     // Then in the component:
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {
-            event.preventDefault();
-            const eventNum = Number(event.key);
             if (
-                !isNaN(eventNum) &&
-                beatsToDisplay === "temporary" &&
-                eventNum > 0 &&
-                waveSurfer
+                !document.activeElement?.matches(
+                    "input, textarea, select, [contenteditable]",
+                )
             ) {
-                const currentTime = waveSurfer.getCurrentTime();
-                const totalDuration = waveSurfer.getDuration();
+                event.preventDefault();
+                const eventNum = Number(event.key);
+                if (
+                    !isNaN(eventNum) &&
+                    beatsToDisplay === "temporary" &&
+                    eventNum > 0 &&
+                    waveSurfer
+                ) {
+                    const currentTime = waveSurfer.getCurrentTime();
+                    const totalDuration = waveSurfer.getDuration();
 
-                const updatedBeats = createNewTemporaryBeats({
-                    currentTime,
-                    totalDuration,
-                    existingTemporaryBeats: temporaryBeats,
-                    numNewBeats: eventNum,
-                });
+                    const updatedBeats = createNewTemporaryBeats({
+                        currentTime,
+                        totalDuration,
+                        existingTemporaryBeats: temporaryBeats,
+                        numNewBeats: eventNum,
+                    });
 
-                if (updatedBeats.length > 0) {
-                    setTemporaryBeats(updatedBeats);
+                    if (updatedBeats.length > 0) {
+                        setTemporaryBeats(updatedBeats);
+                    }
+
+                    const updatedMeasures = createNewTemporaryMeasures({
+                        currentBeats: updatedBeats,
+                        currentMeasures: temporaryMeasures,
+                        newCounts: eventNum,
+                        currentTime,
+                    });
+                    console.log("temporary measures", updatedMeasures);
+                    setTemporaryMeasures(updatedMeasures);
+
+                    timingMarkersPlugin.current?.updateTimingMarkers(
+                        updatedBeats,
+                        updatedMeasures,
+                    );
+                } else if (event.key === " ") {
+                    togglePlayPause();
                 }
-
-                const updatedMeasures = createNewTemporaryMeasures({
-                    currentBeats: updatedBeats,
-                    currentMeasures: temporaryMeasures,
-                    newCounts: eventNum,
-                    currentTime,
-                });
-                console.log("temporary measures", updatedMeasures);
-                setTemporaryMeasures(updatedMeasures);
-
-                timingMarkersPlugin.current?.updateTimingMarkers(
-                    updatedBeats,
-                    updatedMeasures,
-                );
-            } else if (event.key === " ") {
-                togglePlayPause();
             }
         },
         [
@@ -256,7 +262,7 @@ export default function EditableAudioPlayer({
     };
 
     const handleSave = async () => {
-        const pageUpdates = await createNewBeatObjects({
+        const pageUpdates = await replaceAllBeatObjects({
             newBeats: temporaryBeats,
             oldBeats: beats,
             newMeasures: temporaryMeasures,

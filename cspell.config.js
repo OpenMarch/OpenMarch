@@ -66,6 +66,8 @@ module.exports = {
         "snapcraft",
         "samuelmeuli",
         "Meuli",
+        "esbenp",
+        "undoable",
     ],
     ignorePaths: [
         "node_modules/**",
