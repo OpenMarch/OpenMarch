@@ -375,13 +375,6 @@ export default class v6 extends v5 {
                             SELECT RAISE(FAIL, 'Deletion not allowed for the first beat.');
                         END;`,
                 ).run();
-
-                // Add 16 default beats
-                for (let x = 0; x < 16; x++) {
-                    db.prepare(
-                        `INSERT INTO ${tableName} ("duration", "position") VALUES (0.5, ${x + 1})`,
-                    ).run();
-                }
             }
         } catch (error) {
             throw new Error(`Failed to create ${tableName} table: ${error}`);

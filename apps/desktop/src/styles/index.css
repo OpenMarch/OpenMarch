@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import "@openmarch/ui/src/tailwind.css";
 @source "../../../../packages/ui/src/components";
 
@@ -38,7 +39,7 @@
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
     background: transparent;
-    color: var(--text);
+    color: var(--color-text);
     margin: 0;
 }
 
@@ -62,13 +63,13 @@ textarea,
 
 #sentry-feedback {
     --border: "black";
-    --foreground: rgb(var(--text));
-    --background: rgb(var(--modal-stop-2));
-    --accent-foreground: rgb(var(--text-invert));
-    --accent-background: rgb(var(--accent));
-    --success-color: rgb(var(--green));
-    --error-color: rgb(var(--red));
-    --box-shadow: rgb(var(--modal-shadow));
+    --foreground: rgb(var(--color-text));
+    --background: rgb(var(--color-modal-stop-2));
+    --accent-foreground: rgb(var(--color-text-invert));
+    --accent-background: rgb(var(--color-accent));
+    --success-color: rgb(var(--color-green));
+    --error-color: rgb(var(--color-red));
+    --box-shadow: rgb(var(--color-modal-shadow));
 }
 @keyframes pulse {
     0%,
@@ -84,28 +85,17 @@ textarea,
     }
 }
 
-.bg-launch-gradient {
-    background: linear-gradient(
-        45deg,
-        rgba(var(--bg-1)) 1%,
-        rgba(var(--accent)) 100%
-    );
-    background-size: 200% 200%;
-    animation: pulse 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    transition: all 0.3s ease;
-}
-
 /****** Wavesurfer *******/
 
 /* MEASURES */
 #waveform ::part(measure) {
-    background-color: rgba(var(--text)) !important;
+    background-color: rgba(var(--color-text)) !important;
 }
 
 #waveform ::part(rehearsalMark) {
-    background-color: rgba(var(--accent)) !important;
+    background-color: rgba(var(--color-accent)) !important;
     width: 4px !important;
-    border: 1px solid rgb(var(--text)) !important;
+    border: 1px solid rgb(var(--color-text)) !important;
     font-size: 24px;
 }
 
@@ -124,8 +114,8 @@ textarea,
     width: auto;
     text-align: center;
     padding: 0 4px;
-    border: 1px solid rgb(var(--text)) !important;
-    background-color: rgba(var(--bg-1));
+    border: 1px solid rgb(var(--color-text)) !important;
+    background-color: rgba(var(--color-bg-1));
     border-radius: 6px;
     opacity: 1 !important; /* Ensure content stays visible */
 }
@@ -133,12 +123,12 @@ textarea,
 /* BEATS */
 
 #waveform ::part(beat) {
-    background-color: rgb(var(--text)) !important;
+    background-color: rgb(var(--color-text)) !important;
     height: 10% !important;
 }
 #waveform ::part(editable-beat) {
-    background-color: rgb(var(--bg-1)) !important;
-    border: 1px solid rgb(var(--text)) !important;
+    background-color: rgb(var(--color-bg-1)) !important;
+    border: 1px solid rgb(var(--color-text)) !important;
     height: 100% !important;
     width: 6px !important;
     cursor: ew-resize;
@@ -149,11 +139,11 @@ textarea,
     bottom: -21px;
     left: -1px;
     transform: translateX(-50%);
-    color: rgb(var(--text));
+    color: rgb(var(--color-text));
     font-size: 24px;
 }
 
 /* CURSOR */
 #waveform ::part(cursor) {
-    background-color: rgb(var(--accent)) !important;
+    background-color: rgb(var(--color-accent)) !important;
 }

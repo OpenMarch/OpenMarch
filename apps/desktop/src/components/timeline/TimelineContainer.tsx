@@ -2,7 +2,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useCallback, useEffect, useRef } from "react";
-import { Plus, Minus } from "@phosphor-icons/react";
+import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import AudioPlayer from "./AudioPlayer";
@@ -18,6 +18,7 @@ import RegisteredActionButton from "../RegisteredActionButton";
 import { FaEdit, FaCheck } from "react-icons/fa";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import EditableAudioPlayer from "./EditableAudioPlayer";
+import MusicModal from "../music/MusicModal";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -355,6 +356,7 @@ export function PageTimeline() {
             <div
                 className="bg-accent text-sub text-text-invert ml-8 flex h-24 w-24 cursor-pointer items-center justify-center self-center rounded-full"
                 onClick={() =>
+                    beats.length > 1 &&
                     createLastPage({
                         currentLastPage: pages[pages.length - 1],
                         allBeats: beats,
@@ -363,7 +365,7 @@ export function PageTimeline() {
                     })
                 }
             >
-                <Plus />
+                {beats.length > 1 ? <PlusIcon /> : <MusicModal label="+" />}
             </div>
         </div>
     );
@@ -446,7 +448,7 @@ export default function TimelineContainer() {
                     }
                     disabled={uiSettings.timelinePixelsPerSecond <= 10}
                 >
-                    <Minus size={16} />
+                    <MinusIcon size={16} />
                 </button>
                 <button
                     className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
@@ -457,7 +459,7 @@ export default function TimelineContainer() {
                     }
                     disabled={uiSettings.timelinePixelsPerSecond >= 200}
                 >
-                    <Plus size={16} />
+                    <PlusIcon size={16} />
                 </button>
             </div>
             <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_90px] gap-6 overflow-x-auto overflow-y-hidden">

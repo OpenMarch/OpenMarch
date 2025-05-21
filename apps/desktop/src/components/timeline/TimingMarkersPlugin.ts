@@ -13,18 +13,19 @@ export class TimingMarkersPlugin {
         this.beats = beats;
         this.measures = measures;
     }
-
     /**
      * Creates timing markers for beats and measures on the waveform
      * Adds non-measure beat markers in gray and measure start markers in purple
      * Markers are non-draggable and non-resizable point regions
      */
     createTimingMarkers = () => {
+        const rootStyles = getComputedStyle(document.documentElement);
+        const textColor = rootStyles.getPropertyValue("--color-text").trim();
         this.beats.forEach((beat) => {
             const newRegion = this.wsRegions.addRegion({
                 id: `beat beat-${beat.id}`,
                 start: beat.timestamp,
-                // color: "rgba(255, 0, 0, 1)",
+                color: textColor,
                 drag: false,
                 resize: false,
             });

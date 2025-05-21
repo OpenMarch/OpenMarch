@@ -36,8 +36,9 @@ export default Beat;
 export const createBeats = async (
     beats: NewBeatArgs[],
     fetchBeatsFunction: () => Promise<void>,
+    startingPosition?: number,
 ): Promise<DatabaseResponse<DatabaseBeat[]>> => {
-    const response = await window.electron.createBeats(beats);
+    const response = await window.electron.createBeats(beats, startingPosition);
     if (response.success) fetchBeatsFunction();
     else console.error("Failed to create beats", response.error);
     return response;
@@ -198,4 +199,19 @@ export const durationToBeats = ({
     }
 
     return allBeats.slice(startBeat.index, beatIndex);
+};
+
+/**
+ * Converts a duration to a tempo attempting to fix floating point errors.
+ * @param duration - The duration to convert.
+ * @returns The tempo in BPM.
+ */
+export const durationToTempo = (
+    duration: number | { duration: number; bpm: number },
+) => {
+    const durationNumber =
+        typeof duration === "number" ? duration : duration.duration;
+
+    const tempo = 60 / durationNumber;
+    return Math.round(tempo * 1000) / 1000;
 };

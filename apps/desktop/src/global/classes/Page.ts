@@ -765,3 +765,14 @@ export const updatePageCountRequest = ({
     }
     return output;
 };
+
+type RequireSome<T, K extends keyof T> = Partial<T> & Pick<T, K>;
+
+export const beatsAreDependentsForPages = (
+    beats: RequireSome<Beat, "id">[],
+    pages: RequireSome<Page, "id" | "beats">[],
+) => {
+    return beats.some((beat) => {
+        return pages.some((page) => page.beats.some((b) => b.id === beat.id));
+    });
+};

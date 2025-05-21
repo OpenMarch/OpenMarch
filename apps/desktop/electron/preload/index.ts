@@ -327,10 +327,12 @@ const APP_API = {
         ipcRenderer.invoke("beat:getAll") as Promise<
             DatabaseResponse<DatabaseBeat[]>
         >,
-    createBeats: (newBeats: NewBeatArgs[]) =>
-        ipcRenderer.invoke("beat:insert", newBeats) as Promise<
-            DatabaseResponse<DatabaseBeat[]>
-        >,
+    createBeats: (newBeats: NewBeatArgs[], startingPosition?: number) =>
+        ipcRenderer.invoke(
+            "beat:insert",
+            newBeats,
+            startingPosition,
+        ) as Promise<DatabaseResponse<DatabaseBeat[]>>,
     updateBeats: (modifiedBeats: ModifiedBeatArgs[]) =>
         ipcRenderer.invoke("beat:update", modifiedBeats) as Promise<
             DatabaseResponse<DatabaseBeat[]>

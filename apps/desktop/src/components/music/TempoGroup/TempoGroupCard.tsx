@@ -1,0 +1,222 @@
+import {
+    handleCascadeDelete,
+    TempoGroup,
+} from "@/components/music/TempoGroup/TempoGroup";
+import { useMemo, useState } from "react";
+import { PencilIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import EditableTempoGroup from "./EditableTempoGroup";
+import {
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+    Button,
+    AlertDialogAction,
+    AlertDialogCancel,
+    TooltipContents,
+} from "@openmarch/ui";
+import { AlertDialog } from "@openmarch/ui";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import * as RadixTooltip from "@radix-ui/react-tooltip";
+
+export default function TempoGroupCard({
+    tempoGroup,
+    index,
+    setNewGroupFormIndex,
+}: {
+    tempoGroup: TempoGroup;
+    index: number;
+    setNewGroupFormIndex: (index: number) => void;
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    if (isEditing) {
+        return (
+            <EditableTempoGroup
+                tempoGroup={tempoGroup}
+                setIsVisible={setIsEditing}
+            />
+        );
+    }
+    return (
+        <StaticTempoGroupCard
+            tempoGroup={tempoGroup}
+            setIsEditing={setIsEditing}
+            setNewGroupFormIndex={setNewGroupFormIndex}
+            index={index}
+        />
+    );
+}
+
+function StaticTempoGroupCard({
+    tempoGroup,
+    setIsEditing,
+    setNewGroupFormIndex,
+    index,
+}: {
+    tempoGroup: TempoGroup;
+    setIsEditing: (isEditing: boolean) => void;
+    setNewGroupFormIndex: (index: number) => void;
+    index: number;
+}) {
+    const [isDeleting, setIsDeleting] = useState(false);
+    const isManualTempo = useMemo(
+        () => !!tempoGroup.manualTempos?.length,
+        [tempoGroup.manualTempos],
+    );
+    const isMixedMeter = useMemo(
+        () => !!tempoGroup.strongBeatIndexes?.length && !isManualTempo,
+        [tempoGroup.strongBeatIndexes, isManualTempo],
+    );
+    const trimmedName = tempoGroup.name.trim();
+    const { fetchTimingObjects } = useTimingObjectsStore();
+    return (
+        <>
+            {tempoGroup.name && trimmedName !== "" && trimmedName !== "-" && (
+                <div className="bg-fg-2 rounded-6 border-stroke mt-12 flex w-fit min-w-32 border px-8 py-4">
+                    <h3 className="text-text-secondary text-h3">
+                        {trimmedName}
+                    </h3>
+                </div>
+            )}
+            <div
+                className={`bg-fg-2 border-stroke rounded-tr-6 rounded-b-6 rounded-6 flex justify-between border p-12`}
+            >
+                <div className="flex flex-col gap-8">
+                    {tempoGroup.manualTempos ? (
+                        <div>
+                            <h3 className="text-h3">Custom</h3>
+
+                            <div className="flex- flex flex-wrap gap-4">
+                                {tempoGroup.manualTempos.map((tempo, index) => (
+                                    <div
+                                        key={index}
+                                        className="rounded-6 border-stroke bg-fg-1 bg-bg-1 border p-8 text-center"
+                                    >
+                                        {tempo}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            <h3 className="text-h3">
+                                {tempoGroup.tempo}{" "}
+                                <span className="text-text-subtitle text-sm">
+                                    {isMixedMeter ? "♩ " : ""}
+                                    bpm
+                                </span>
+                            </h3>
+                        </div>
+                    )}
+                    {tempoGroup.measureRangeString && (
+                        <p className="text-text-subtitle text-sm">
+                            {tempoGroup.measureRangeString}
+                            {tempoGroup.numOfRepeats > 1 &&
+                                ` (${tempoGroup.numOfRepeats}x)`}
+                        </p>
+                    )}
+                </div>
+                <div className="flex flex-col items-end justify-between gap-4">
+                    <h4 className="text-h4 flex items-center gap-8">
+                        <div
+                            className="bg-fg-1 rounded-6 border-stroke h-fit border px-6 text-sm"
+                            hidden={!isMixedMeter}
+                        >
+                            {Array.from({
+                                length: tempoGroup.bigBeatsPerMeasure,
+                            })
+                                .map((_, i) =>
+                                    tempoGroup.strongBeatIndexes?.includes(i)
+                                        ? "3"
+                                        : "2",
+                                )
+                                .join("+")}
+                        </div>
+                        {isMixedMeter
+                            ? `${
+                                  tempoGroup.bigBeatsPerMeasure * 2 +
+                                  (tempoGroup.strongBeatIndexes?.length ?? 0)
+                              }/8`
+                            : `${tempoGroup.bigBeatsPerMeasure}/4`}
+                    </h4>
+                    <div className="flex items-center gap-4">
+                        <AlertDialog>
+                            <AlertDialogTrigger>
+                                <button className="hover:text-red text-text-subtitle">
+                                    <TrashIcon size={24} />
+                                </button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogTitle>
+                                    Are you sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Deleting the tempo group will also delete
+                                    all pages associated with it.
+                                </AlertDialogDescription>
+                                <div className="flex flex-col items-center justify-center gap-8 align-middle">
+                                    <AlertDialogAction>
+                                        <Button
+                                            variant="red"
+                                            className="w-full"
+                                            onClick={() => {
+                                                setIsDeleting(true);
+                                                handleCascadeDelete(
+                                                    tempoGroup,
+                                                    fetchTimingObjects,
+                                                ).then(() =>
+                                                    setIsDeleting(false),
+                                                );
+                                            }}
+                                            disabled={isDeleting}
+                                        >
+                                            Delete all measures and their
+                                            associated pages
+                                        </Button>
+                                    </AlertDialogAction>
+                                    <div className="text-sub text-text-subtitle">
+                                        This action is undoable with Ctrl + Z
+                                    </div>
+                                    <AlertDialogCancel asChild>
+                                        <Button
+                                            variant="secondary"
+                                            disabled={isDeleting}
+                                            className="w-full"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </AlertDialogCancel>
+                                </div>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
+                        <RadixTooltip.Provider>
+                            <RadixTooltip.Root>
+                                <RadixTooltip.Trigger asChild>
+                                    <button
+                                        onClick={() => {
+                                            setNewGroupFormIndex(index);
+                                            setIsEditing(false);
+                                        }}
+                                        className="hover:text-accent text-text-subtitle"
+                                    >
+                                        <PlusIcon size={24} />
+                                    </button>
+                                </RadixTooltip.Trigger>
+                                <TooltipContents side="top">
+                                    Add a new tempo group after this one
+                                </TooltipContents>
+                            </RadixTooltip.Root>
+                        </RadixTooltip.Provider>
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="hover:text-accent text-text-subtitle"
+                        >
+                            <PencilIcon size={24} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
