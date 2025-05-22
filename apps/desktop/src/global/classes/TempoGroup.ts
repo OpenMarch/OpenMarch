@@ -13,12 +13,6 @@ export type TempoGroup = Readonly<{
      */
     startTempo: number;
     /**
-     * The ending tempo of the group in BPM.
-     * If undefined, the tempo stays the same throughout the group.
-     * If defined, the tempo slows down or speeds up over the course of the group.
-     */
-    endTempo?: number;
-    /**
      * If defined, the tempo changes over the course of the group.
      * The array contains the tempo for each beat in the group.
      */
@@ -36,22 +30,11 @@ export type TempoGroup = Readonly<{
      * If the group is not a mixed meter, this is undefined.
      */
     longBeatIndexes?: number[];
-    /**
-     * The number of measures in the tempo change.
-     * EndTempo must be set in this case.
-     *
-     * This is undefined for non-tempo-change groups.
-     */
-    numMeasuresInTempoChange?: number;
     numOfRepeats: number;
 }>;
 
 const aboutEqual = (a: number, b: number, epsilon = 0.000001): boolean => {
     return Math.abs(a - b) < epsilon;
-};
-
-const roundToHundredth = (num: number): number => {
-    return Math.round(num * 100) / 100;
 };
 
 /**
@@ -64,7 +47,7 @@ export const measureHasOneTempo = (measure: Measure) => {
 };
 
 const getTempoFromBeat = (beat: { duration: number }) => {
-    return 60 / beat.duration;
+    return Math.round((60 / beat.duration) * 100) / 100;
 };
 
 const getStartAndEndTempos = (
@@ -95,85 +78,6 @@ export const measureIsSameTempo = (
         measureTempo === expectedStartTempo &&
         (expectedEndTempo === undefined || measureTempo === expectedEndTempo)
     );
-};
-/**
- * Detects if there is a tempo change across the given measures.
- * Returns null if there is no tempo change, or details about the tempo change if one exists.
- *
- * `numMeasures` defines the number of measures involved in the tempo change from index 0
- */
-export const detectTempoChange = (
-    measures: Measure[],
-): { numMeasures: number; startTempo: number; endTempo: number } | null => {
-    let numMeasures = 0;
-    let output = null;
-
-    if (
-        measureHasOneTempo(measures[0]) &&
-        // These are here in the case where the measures only have one beat and the tempo change is over the course of many measures
-        (measures.length === 1 ||
-            (measures[1].beats.length >= 1 &&
-                measures[1].beats[0].duration ===
-                    measures[0].beats[0].duration))
-    ) {
-        return null;
-    }
-
-    if (measures[0].beats.length === 1 && measures.length === 1) {
-        return null;
-    }
-
-    const startDuration = measures[0].beats[0].duration;
-    const startTempo = 60 / startDuration;
-    let currentTempo = startTempo;
-    const useNextMeasure = measures[0].beats.length === 1;
-    if (useNextMeasure) numMeasures = 1;
-    const delta = useNextMeasure
-        ? // If the measure has a single beat, calculate the delta between the first and second measure
-          startTempo - getTempoFromBeat(measures[1].beats[0])
-        : startTempo - getTempoFromBeat(measures[0].beats[1]);
-
-    // Start at measures index 1 if we're using the next measure's first beat, meaning the first measure has a single beat
-    for (
-        let mIndex = useNextMeasure ? 1 : 0;
-        mIndex < measures.length;
-        mIndex++
-    ) {
-        // Restrict the measures in a tempo group to only have the same number of beats
-        if (
-            mIndex > 0 &&
-            measures[mIndex - 1].beats.length !== measures[mIndex].beats.length
-        )
-            return output;
-
-        // Start at beat index 1 if we're still on the first measure (meaning the first measure has multiple beats)
-        for (
-            let bIndex = mIndex === 0 ? 1 : 0;
-            bIndex < measures[mIndex].beats.length;
-            bIndex++
-        ) {
-            const beat = measures[mIndex].beats[bIndex];
-            const tempo = getTempoFromBeat(beat);
-            if (!aboutEqual(tempo, currentTempo - delta)) {
-                if (bIndex > 0 && output)
-                    output = {
-                        ...output,
-                        numMeasures: numMeasures + 1,
-                    };
-                return output;
-            }
-            currentTempo = tempo;
-        }
-        numMeasures += 1;
-        output = {
-            numMeasures,
-            startTempo,
-            // Predict the end tempo of the last measure
-            endTempo: roundToHundredth(currentTempo - delta),
-        };
-    }
-
-    return output;
 };
 
 /**
@@ -252,19 +156,7 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
             measureBeats !== currentBeatsPerMeasure ||
             !isSameTempo
         ) {
-            const tempoChange = detectTempoChange(currentGroup);
-            if (tempoChange) {
-                groups.push({
-                    name:
-                        currentGroup[0].rehearsalMark ||
-                        `Group ${groups.length + 1}`,
-                    startTempo: tempoChange.startTempo,
-                    endTempo: tempoChange.endTempo,
-                    bigBeatsPerMeasure: currentBeatsPerMeasure,
-                    numOfRepeats: 1,
-                    numMeasuresInTempoChange: tempoChange.numMeasures,
-                });
-            } else if (isSameTempo) {
+            if (isSameTempo) {
                 // Add the current group to groups
                 groups.push({
                     name:

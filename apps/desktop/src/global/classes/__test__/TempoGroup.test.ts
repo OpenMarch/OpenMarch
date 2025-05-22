@@ -4,7 +4,6 @@ import type Measure from "../Measure";
 import { measureIsMixedMeter } from "../TempoGroup";
 import type Beat from "../Beat";
 import { measureIsSameTempo } from "../TempoGroup";
-import { detectTempoChange } from "../TempoGroup";
 import { measureHasOneTempo } from "../TempoGroup";
 
 // Helper function to create a mock beat
@@ -239,8 +238,8 @@ describe("TempoGroupsFromMeasures", () => {
         expect(result[2]).toEqual({
             name: "Group 3",
             startTempo: 120,
-            endTempo: 80, // Slows down
-            bigBeatsPerMeasure: 2,
+            manualTempos: [120, 109.09, 100, 92.31, 80],
+            bigBeatsPerMeasure: 5,
             numOfRepeats: 1,
         });
         expect(result[3]).toEqual({
@@ -271,7 +270,7 @@ describe("TempoGroupsFromMeasures", () => {
         expect(result[0]).toEqual({
             name: "Group 1",
             startTempo: 100,
-            endTempo: 199,
+            manualTempos: [100, 133, 166],
             bigBeatsPerMeasure: 3,
             numOfRepeats: 1,
         });
@@ -317,17 +316,30 @@ describe("TempoGroupsFromMeasures", () => {
 
         const result = TempoGroupsFromMeasures(measures);
 
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(4);
         expect(result[0]).toEqual({
             name: "Group 1",
-            startTempo: 100,
-            endTempo: 199,
+            startTempo: 160,
+            manualTempos: [160, 150, 140],
             bigBeatsPerMeasure: 3,
-            numMeasuresInTempoChange: 4,
             numOfRepeats: 1,
         });
         expect(result[1]).toEqual({
             name: "Group 2",
+            startTempo: 130,
+            manualTempos: [130, 120, 110],
+            bigBeatsPerMeasure: 3,
+            numOfRepeats: 1,
+        });
+        expect(result[2]).toEqual({
+            name: "Group 3",
+            startTempo: 100,
+            manualTempos: [100, 90, 80],
+            bigBeatsPerMeasure: 3,
+            numOfRepeats: 1,
+        });
+        expect(result[3]).toEqual({
+            name: "Group 4",
             startTempo: 70,
             bigBeatsPerMeasure: 3,
             numOfRepeats: 1,
@@ -784,204 +796,5 @@ describe("measureIsSameTempo", () => {
             beats: [createMockBeat(0.5)], // 120 BPM
         });
         expect(measureIsSameTempo(measure, 120, undefined)).toBe(true);
-    });
-});
-
-// Import the function we're testing
-
-describe("detectTempoChange", () => {
-    // Helper function to create a mock beat (reusing from other tests)
-    const createMockBeat = (duration: number): Beat => ({
-        id: Math.random(),
-        position: Math.random(),
-        duration,
-        includeInMeasure: true,
-        notes: null,
-        index: Math.random(),
-        timestamp: Math.random(),
-    });
-
-    // Helper function to create a mock measure (reusing from other tests)
-    const createMockMeasure = ({
-        beats,
-        rehearsalMark = null,
-    }: {
-        beats: Beat[];
-        rehearsalMark?: string | null;
-    }): Measure => ({
-        id: Math.random(),
-        startBeat: beats[0],
-        number: Math.random(),
-        rehearsalMark,
-        notes: null,
-        duration: beats.reduce((sum, beat) => sum + beat.duration, 0),
-        counts: beats.length,
-        beats,
-        timestamp: Math.random(),
-    });
-
-    it("should return null for single measure with constant tempo", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [
-                    createMockBeat(0.5), // 120 BPM
-                    createMockBeat(0.5),
-                ],
-            }),
-        ];
-        expect(detectTempoChange(measures)).toBeNull();
-    });
-
-    it("should return null for single measure with single beat", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [createMockBeat(0.5)], // 120 BPM
-            }),
-        ];
-        expect(detectTempoChange(measures)).toBeNull();
-    });
-
-    it("should return null when consecutive measures have same tempo", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [createMockBeat(0.5)], // 120 BPM
-            }),
-            createMockMeasure({
-                beats: [createMockBeat(0.5)], // 120 BPM
-            }),
-        ];
-        expect(detectTempoChange(measures)).toBeNull();
-    });
-
-    it("should detect tempo change within a single measure", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [
-                    createMockBeat(0.5), // 120 BPM
-                    createMockBeat(0.4), // 150 BPM
-                    // will be 180 BPM
-                ],
-            }),
-        ];
-        const result = detectTempoChange(measures);
-        expect(result).toEqual({
-            numMeasures: 1,
-            startTempo: 120,
-            endTempo: 180,
-        });
-    });
-
-    it("should detect gradual tempo change across multiple measures with single beats", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [createMockBeat(0.5)], // 120 BPM
-            }),
-            createMockMeasure({
-                beats: [createMockBeat(0.4)], // 150 BPM
-            }),
-            createMockMeasure({
-                beats: [createMockBeat(1 / 3)], // 180 BPM
-            }),
-        ];
-        const result = detectTempoChange(measures);
-        expect(result).toEqual({
-            numMeasures: 3,
-            startTempo: 120,
-            endTempo: 210,
-        });
-    });
-
-    it("should detect gradual tempo change across multiple measures with multiple beats", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [
-                    createMockBeat(60 / 120), // 120 BPM
-                    createMockBeat(60 / 110), // 110 BPM
-                ],
-            }),
-            createMockMeasure({
-                beats: [
-                    createMockBeat(60 / 100), // 100 BPM
-                    createMockBeat(60 / 90), // 90 BPM
-                ],
-            }),
-        ];
-        const result = detectTempoChange(measures);
-        expect(result).toEqual({
-            numMeasures: 2,
-            startTempo: 120,
-            endTempo: 80,
-        });
-    });
-
-    it("should detect gradual tempo increase in one measure", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [
-                    createMockBeat(0.5), // 120 BPM
-                    createMockBeat(0.5454545454), // 110 BPM
-                    createMockBeat(0.6), // 100 BPM
-                    createMockBeat(2 / 3), // 90 BPM
-                ],
-            }),
-        ];
-        const result = detectTempoChange(measures);
-        expect(result).toEqual({
-            numMeasures: 1,
-            startTempo: 120,
-            endTempo: 80,
-        });
-    });
-
-    // Can not handle the case where measures have different number of beats
-    // it("should handle mixed single and multiple beat measures", () => {
-    //     const measures = [
-    //         createMockMeasure({
-    //             beats: [createMockBeat(60 / 150)],
-    //         }),
-    //         createMockMeasure({
-    //             beats: [createMockBeat(60 / 140), createMockBeat(60 / 130)],
-    //         }),
-    //         createMockMeasure({
-    //             beats: [
-    //                 createMockBeat(60 / 120),
-    //                 createMockBeat(60 / 110),
-    //                 createMockBeat(60 / 100),
-    //             ],
-    //         }),
-    //         createMockMeasure({
-    //             beats: [createMockBeat(60 / 90)],
-    //         }),
-    //         createMockMeasure({
-    //             beats: [
-    //                 createMockBeat(60 / 80),
-    //                 createMockBeat(60 / 70),
-    //                 createMockBeat(60 / 60),
-    //             ],
-    //         }),
-    //     ];
-    //     const result = detectTempoChange(measures);
-    //     expect(result).toEqual({
-    //         numMeasures: 5,
-    //         startTempo: 150,
-    //         endTempo: 50,
-    //     });
-    // });
-
-    it("should handle very small tempo changes", () => {
-        const measures = [
-            createMockMeasure({
-                beats: [
-                    createMockBeat(0.5), // 120 BPM
-                    createMockBeat(0.499), // ~120.24 BPM
-                ],
-            }),
-        ];
-        const result = detectTempoChange(measures);
-        expect(result).toEqual({
-            numMeasures: 1,
-            startTempo: 120,
-            endTempo: 120.48,
-        });
     });
 });
