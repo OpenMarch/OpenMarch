@@ -24,10 +24,40 @@ export type TempoGroup = Readonly<{
      */
     manualTempos?: number[];
     bigBeatsPerMeasure: number;
+    /**
+     * Index of the long beats in mixed meter groups.
+     * "Long beats" are defined as the beats that are 1.5 times the duration of the short beats.
+     *
+     * For example, in 7/8 (2+2+3), the long beat indexes would be [2]. 7/8 (3+2+2) would be [0].
+     *
+     * In 10/8 (3+2+3+2), the long beat indexes would be [0, 2].
+     * In 8/8 (3+3+2), the long beat indexes would be [0, 1].
+     *
+     * If the group is not a mixed meter, this is undefined.
+     */
+    longBeatIndexes?: number[];
+    /**
+     * The number of measures in the tempo change.
+     * EndTempo must be set in this case.
+     *
+     * This is undefined for non-tempo-change groups.
+     */
+    numMeasuresInTempoChange?: number;
     numOfRepeats: number;
 }>;
 
-const measureHasOneTempo = (measure: Measure) => {
+const aboutEqual = (a: number, b: number, epsilon = 0.000001): boolean => {
+    return Math.abs(a - b) < epsilon;
+};
+
+const roundToHundredth = (num: number): number => {
+    return Math.round(num * 100) / 100;
+};
+
+/**
+ * Checks if all beats in a measure have the same duration.
+ */
+export const measureHasOneTempo = (measure: Measure) => {
     return measure.beats.every(
         (beat) => beat.duration === measure.beats[0].duration,
     );
@@ -48,12 +78,17 @@ const getStartAndEndTempos = (
     return { startTempo, endTempo };
 };
 
-const measureIsSameTempo = (
+/**
+ * Checks if a measure has the expected tempo(s).
+ * Returns false if the measure has varying tempos within it or if the measure is empty.
+ * If expectedEndTempo is undefined, only checks against expectedStartTempo.
+ */
+export const measureIsSameTempo = (
     measure: Measure,
     expectedStartTempo: number,
     expectedEndTempo: number | undefined,
 ) => {
-    if (!measureHasOneTempo(measure)) return false;
+    if (!measure.beats.length || !measureHasOneTempo(measure)) return false;
 
     const measureTempo = getTempoFromBeat(measure.beats[0]);
     return (
@@ -61,8 +96,129 @@ const measureIsSameTempo = (
         (expectedEndTempo === undefined || measureTempo === expectedEndTempo)
     );
 };
+/**
+ * Detects if there is a tempo change across the given measures.
+ * Returns null if there is no tempo change, or details about the tempo change if one exists.
+ *
+ * `numMeasures` defines the number of measures involved in the tempo change from index 0
+ */
+export const detectTempoChange = (
+    measures: Measure[],
+): { numMeasures: number; startTempo: number; endTempo: number } | null => {
+    let numMeasures = 0;
+    let output = null;
 
-// TODO, get a group from multiple measures if we are certain that we created the group (rather than making multiple groups for each measure)
+    if (
+        measureHasOneTempo(measures[0]) &&
+        // These are here in the case where the measures only have one beat and the tempo change is over the course of many measures
+        (measures.length === 1 ||
+            (measures[1].beats.length >= 1 &&
+                measures[1].beats[0].duration ===
+                    measures[0].beats[0].duration))
+    ) {
+        return null;
+    }
+
+    if (measures[0].beats.length === 1 && measures.length === 1) {
+        return null;
+    }
+
+    const startDuration = measures[0].beats[0].duration;
+    const startTempo = 60 / startDuration;
+    let currentTempo = startTempo;
+    const useNextMeasure = measures[0].beats.length === 1;
+    if (useNextMeasure) numMeasures = 1;
+    const delta = useNextMeasure
+        ? // If the measure has a single beat, calculate the delta between the first and second measure
+          startTempo - getTempoFromBeat(measures[1].beats[0])
+        : startTempo - getTempoFromBeat(measures[0].beats[1]);
+
+    // Start at measures index 1 if we're using the next measure's first beat, meaning the first measure has a single beat
+    for (
+        let mIndex = useNextMeasure ? 1 : 0;
+        mIndex < measures.length;
+        mIndex++
+    ) {
+        // Restrict the measures in a tempo group to only have the same number of beats
+        if (
+            mIndex > 0 &&
+            measures[mIndex - 1].beats.length !== measures[mIndex].beats.length
+        )
+            return output;
+
+        // Start at beat index 1 if we're still on the first measure (meaning the first measure has multiple beats)
+        for (
+            let bIndex = mIndex === 0 ? 1 : 0;
+            bIndex < measures[mIndex].beats.length;
+            bIndex++
+        ) {
+            const beat = measures[mIndex].beats[bIndex];
+            const tempo = getTempoFromBeat(beat);
+            if (!aboutEqual(tempo, currentTempo - delta)) {
+                if (bIndex > 0 && output)
+                    output = {
+                        ...output,
+                        numMeasures: numMeasures + 1,
+                    };
+                return output;
+            }
+            currentTempo = tempo;
+        }
+        numMeasures += 1;
+        output = {
+            numMeasures,
+            startTempo,
+            // Predict the end tempo of the last measure
+            endTempo: roundToHundredth(currentTempo - delta),
+        };
+    }
+
+    return output;
+};
+
+/**
+ * Checks if a measure is a mixed meter.
+ * A measure is considered mixed meter if it has two different beat durations that are in the ratio of 3:2.
+ * This is a very common time signature for brass and percussion sections.
+ */
+export const measureIsMixedMeter = (measure: Measure) => {
+    const durations = new Set<number>(
+        measure.beats.map((beat) => beat.duration),
+    );
+
+    let output = false;
+    if (durations.size === 2) {
+        const shorterDuration = Math.min(...durations);
+        const longerDuration = Math.max(...durations);
+        const ratio = longerDuration / shorterDuration;
+        output = aboutEqual(ratio, 1.5);
+    }
+
+    return output;
+};
+
+/**
+ * Gets the indexes of long beats in a mixed meter measure.
+ * Long beats are defined as beats that are 1.5 times the duration of short beats.
+ * Returns an empty array if the measure is not a valid mixed meter.
+ */
+export const getLongBeatIndexes = (measure: Measure): number[] => {
+    const durations = new Set<number>(
+        measure.beats.map((beat) => beat.duration),
+    );
+    if (durations.size !== 2) {
+        console.error("Measure is not a mixed meter", measure);
+        return [];
+    }
+    const longBeatDuration = Math.max(...durations);
+
+    const longBeatIndexes: number[] = [];
+    for (let i = 0; i < measure.beats.length; i++) {
+        if (measure.beats[i].duration === longBeatDuration)
+            longBeatIndexes.push(i);
+    }
+    return longBeatIndexes;
+};
 
 export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
     if (!measures.length) return [];
@@ -96,7 +252,19 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
             measureBeats !== currentBeatsPerMeasure ||
             !isSameTempo
         ) {
-            if (isSameTempo) {
+            const tempoChange = detectTempoChange(currentGroup);
+            if (tempoChange) {
+                groups.push({
+                    name:
+                        currentGroup[0].rehearsalMark ||
+                        `Group ${groups.length + 1}`,
+                    startTempo: tempoChange.startTempo,
+                    endTempo: tempoChange.endTempo,
+                    bigBeatsPerMeasure: currentBeatsPerMeasure,
+                    numOfRepeats: 1,
+                    numMeasuresInTempoChange: tempoChange.numMeasures,
+                });
+            } else if (isSameTempo) {
                 // Add the current group to groups
                 groups.push({
                     name:
@@ -115,7 +283,9 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
                         currentGroup[0].rehearsalMark ||
                         `Group ${groups.length + 1}`,
                     startTempo: currentStartTempo,
-                    manualTempos: measure.beats.map(getTempoFromBeat),
+                    manualTempos: measureHasOneTempo(measures[i - 1])
+                        ? undefined
+                        : measures[i - 1].beats.map(getTempoFromBeat),
                     bigBeatsPerMeasure: currentBeatsPerMeasure,
                     numOfRepeats: currentNumberOfRepeats,
                 });
