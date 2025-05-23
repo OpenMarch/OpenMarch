@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mixedMeterPermutations } from "../tempo-utils";
+import { mixedMeterPermutations } from "../TempoUtils";
 
 describe("mixedMeterPermutations", () => {
     it("should return empty array for total beats of 0", () => {

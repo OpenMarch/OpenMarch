@@ -7,7 +7,7 @@ import { Button, Input } from "@openmarch/ui";
 import { Form, FormField, Label } from "@radix-ui/react-form";
 import clsx from "clsx";
 import React, { useMemo } from "react";
-import { mixedMeterPermutations } from "./tempo-utils";
+import { mixedMeterPermutations } from "./TempoUtils";
 
 export default function MusicModal() {
     return (

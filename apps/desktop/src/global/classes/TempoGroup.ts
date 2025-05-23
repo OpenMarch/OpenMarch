@@ -1,3 +1,4 @@
+import { NewBeatArgs } from "electron/database/tables/BeatTable";
 import Measure from "./Measure";
 
 export type TempoGroup = Readonly<{
@@ -11,7 +12,7 @@ export type TempoGroup = Readonly<{
      * The starting tempo of the group in BPM.
      * This is always defined as we can always determine the initial tempo.
      */
-    startTempo: number;
+    tempo: number;
     /**
      * If defined, the tempo changes over the course of the group.
      * The array contains the tempo for each beat in the group.
@@ -30,7 +31,16 @@ export type TempoGroup = Readonly<{
      * If the group is not a mixed meter, this is undefined.
      */
     longBeatIndexes?: number[];
+    /**
+     * The number of times the group is repeated.
+     */
     numOfRepeats: number;
+    /**
+     * A string that describes the range of measures that the group spans.
+     * This is used to identify the group in the UI.
+     *
+     * E.g. "m 1-4"
+     */
     measureRangeString?: string;
 }>;
 
@@ -65,18 +75,18 @@ const getStartAndEndTempos = (
 /**
  * Checks if a measure has the expected tempo(s).
  * Returns false if the measure has varying tempos within it or if the measure is empty.
- * If expectedEndTempo is undefined, only checks against expectedStartTempo.
+ * If expectedEndTempo is undefined, only checks against expectedTempo.
  */
 export const measureIsSameTempo = (
     measure: Measure,
-    expectedStartTempo: number,
+    expectedTempo: number,
     expectedEndTempo: number | undefined,
 ) => {
     if (!measure.beats.length || !measureHasOneTempo(measure)) return false;
 
     const measureTempo = getTempoFromBeat(measure.beats[0]);
     return (
-        measureTempo === expectedStartTempo &&
+        measureTempo === expectedTempo &&
         (expectedEndTempo === undefined || measureTempo === expectedEndTempo)
     );
 };
@@ -130,9 +140,9 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
 
     const groups: TempoGroup[] = [];
     let currentGroup: Measure[] = [measures[0]];
-    const { startTempo: initialStartTempo, endTempo: initialEndTempo } =
+    const { startTempo: initialTempo, endTempo: initialEndTempo } =
         getStartAndEndTempos(measures[0]);
-    let currentStartTempo = initialStartTempo;
+    let currentTempo = initialTempo;
     let currentEndTempo = initialEndTempo;
     let currentBeatsPerMeasure = measures[0].beats.length;
     let currentNumberOfRepeats = 1;
@@ -140,12 +150,12 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
     for (let i = 1; i < measures.length; i++) {
         const measure = measures[i];
         const measureBeats = measure.beats.length;
-        const { startTempo: measureStartTempo, endTempo: measureEndTempo } =
+        const { startTempo: measureTempo, endTempo: measureEndTempo } =
             getStartAndEndTempos(measure);
 
         const isSameTempo = measureIsSameTempo(
             measure,
-            currentStartTempo,
+            currentTempo,
             currentEndTempo,
         );
         // Create a new group if:
@@ -163,8 +173,8 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
                     name:
                         currentGroup[0].rehearsalMark ||
                         `Group ${groups.length + 1}`,
-                    startTempo: currentStartTempo,
-                    ...(currentEndTempo && currentEndTempo !== currentStartTempo
+                    tempo: currentTempo,
+                    ...(currentEndTempo && currentEndTempo !== currentTempo
                         ? { endTempo: currentEndTempo }
                         : {}),
                     bigBeatsPerMeasure: currentBeatsPerMeasure,
@@ -175,7 +185,7 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
                     name:
                         currentGroup[0].rehearsalMark ||
                         `Group ${groups.length + 1}`,
-                    startTempo: currentStartTempo,
+                    tempo: currentTempo,
                     manualTempos: measureHasOneTempo(measures[i - 1])
                         ? undefined
                         : measures[i - 1].beats.map(getTempoFromBeat),
@@ -186,7 +196,7 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
 
             // Start a new group
             currentGroup = [measure];
-            currentStartTempo = measureStartTempo;
+            currentTempo = measureTempo;
             currentEndTempo = measureEndTempo;
             currentBeatsPerMeasure = measureBeats;
         } else {
@@ -203,8 +213,8 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
     if (currentGroup.length > 0) {
         groups.push({
             name: currentGroup[0].rehearsalMark || `Group ${groups.length + 1}`,
-            startTempo: currentStartTempo,
-            ...(currentEndTempo && currentEndTempo !== currentStartTempo
+            tempo: currentTempo,
+            ...(currentEndTempo && currentEndTempo !== currentTempo
                 ? { endTempo: currentEndTempo }
                 : {}),
             bigBeatsPerMeasure: currentBeatsPerMeasure,
@@ -215,19 +225,67 @@ export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
     return groups;
 };
 
-// const createDatabaseObjectsFromTempoGroup = (
+/**
+ * Creates new beats with duration based on the tempo.
+ *
+ * If the end tempo is provided and is different from the start tempo,
+ * the beats will have a duration that changes linearly from the start tempo to right before.
+ *
+ * This is to match how tempo changes in music occur.
+ * E.e. 4 beats for 120 -> 80:
+ * [120, 110, 100, 90]
+ * This sets up the next beat to be 80. If you disagree with this, lmk
+ */
+export const newBeatsFromTempoGroup = ({
+    tempo,
+    numRepeats,
+    bigBeatsPerMeasure,
+    endTempo,
+}: {
+    tempo: number;
+    numRepeats: number;
+    bigBeatsPerMeasure: number;
+    endTempo?: number;
+}): NewBeatArgs[] => {
+    const beats: NewBeatArgs[] = [];
+    if (!endTempo || endTempo === tempo) {
+        const duration = 60 / tempo;
+        for (let i = 0; i < numRepeats; i++) {
+            for (let j = 0; j < bigBeatsPerMeasure; j++) {
+                beats.push({
+                    duration,
+                    include_in_measure: 1 as 1 | 0,
+                });
+            }
+        }
+    } else {
+        let currentTempo = tempo;
+        const tempoDelta =
+            (endTempo - tempo) / (bigBeatsPerMeasure * numRepeats);
+        for (let i = 0; i < numRepeats; i++) {
+            for (let j = 0; j < bigBeatsPerMeasure; j++) {
+                beats.push({
+                    duration: 60 / currentTempo,
+                    include_in_measure: 1 as 1 | 0,
+                });
+                currentTempo += tempoDelta;
+            }
+        }
+    }
+    return beats;
+};
+
+// const createFromTempoGroup = (
 //     tempoGroup: TempoGroup,
-// ): { newBeats: NewBeatArgs[]; newMeasures: NewMeasureArgs[] } => {
-//     const { name, startTempo, endTempo, bigBeatsPerMeasure, numOfRepeats } =
-//         tempoGroup;
-
-//     const newBeats: NewBeatArgs[] = [];
-//     const newMeasures: NewMeasureArgs[] = [];
-
-//     const duration = startTempo ? 60 / startTempo : undefined;
-//     for (let i = 0; i < numOfRepeats; i++) {
-//         for (let j = 0; j < bigBeatsPerMeasure; j++) {
-//             newBeats.push({});
-//         }
+//     endTempo?: number,
+// ): Promise<{ success: boolean }> => {
+//     const createBeatsResponse = await GroupFunction({
+//         refreshFunction: () => {},
+//         functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
+//         useNextUndoGroup: true,
+//     });
+//     if (!createBeatsResponse.success) {
+//         conToastError("Error creating beats", createBeatsResponse);
+//         return { success: false };
 //     }
 // };
