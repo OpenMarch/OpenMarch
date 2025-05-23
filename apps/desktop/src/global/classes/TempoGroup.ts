@@ -1,5 +1,9 @@
-import { NewBeatArgs } from "electron/database/tables/BeatTable";
-import Measure from "./Measure";
+import { DatabaseBeat, NewBeatArgs } from "electron/database/tables/BeatTable";
+import Measure, { createMeasures } from "./Measure";
+import Beat, { createBeats, fromDatabaseBeat } from "./Beat";
+import { GroupFunction } from "@/utilities/ApiFunctions";
+import { conToastError } from "@/utilities/utils";
+import { NewMeasureArgs } from "electron/database/tables/MeasureTable";
 
 export type TempoGroup = Readonly<{
     /**
@@ -274,18 +278,92 @@ export const newBeatsFromTempoGroup = ({
     }
     return beats;
 };
+/**
+ * Converts database beats to Beat objects with calculated timestamps
+ *
+ * @param databaseBeats - The database beats to convert
+ * @returns An array of Beat objects with calculated timestamps
+ */
+const convertDatabaseBeatsToBeats = (databaseBeats: DatabaseBeat[]): Beat[] => {
+    let timeStamp = 0;
+    return databaseBeats.map((dbBeat: DatabaseBeat, i: number) => {
+        const newBeat = fromDatabaseBeat(dbBeat, i, timeStamp);
+        timeStamp += dbBeat.duration;
+        return newBeat;
+    });
+};
 
-// const createFromTempoGroup = (
-//     tempoGroup: TempoGroup,
-//     endTempo?: number,
-// ): Promise<{ success: boolean }> => {
-//     const createBeatsResponse = await GroupFunction({
-//         refreshFunction: () => {},
-//         functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
-//         useNextUndoGroup: true,
-//     });
-//     if (!createBeatsResponse.success) {
-//         conToastError("Error creating beats", createBeatsResponse);
-//         return { success: false };
-//     }
-// };
+export const getNewMeasuresFromCreatedBeats = ({
+    createdBeats,
+    numOfRepeats,
+    bigBeatsPerMeasure,
+}: {
+    createdBeats: Beat[];
+    numOfRepeats: number;
+    bigBeatsPerMeasure: number;
+}): NewMeasureArgs[] => {
+    const newMeasures: NewMeasureArgs[] = [];
+    for (let i = 0; i < numOfRepeats; i++) {
+        newMeasures.push({
+            start_beat: createdBeats[i * bigBeatsPerMeasure].id,
+        });
+    }
+    return newMeasures;
+};
+
+/**
+ * Creates new beats and measures in the database from a tempo group
+ */
+export const createFromTempoGroup = async (
+    tempoGroup: TempoGroup,
+    refreshFunction: () => Promise<void>,
+    endTempo?: number,
+): Promise<{ success: boolean }> => {
+    const beatsToCreate = newBeatsFromTempoGroup({
+        tempo: tempoGroup.tempo,
+        numRepeats: tempoGroup.numOfRepeats,
+        bigBeatsPerMeasure: tempoGroup.bigBeatsPerMeasure,
+        endTempo,
+    });
+
+    const createBeatsResponse = await GroupFunction({
+        refreshFunction: () => {},
+        functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
+        useNextUndoGroup: true,
+    });
+    if (!createBeatsResponse.success) {
+        conToastError("Error creating beats", createBeatsResponse);
+        return { success: false };
+    }
+    try {
+        // Step 3: Convert database beats to Beat objects
+        const databaseBeats = (
+            createBeatsResponse.responses[0] as {
+                success: boolean;
+                data: DatabaseBeat[];
+            }
+        ).data;
+        const createdBeats = convertDatabaseBeatsToBeats(databaseBeats).sort(
+            (a, b) => a.position - b.position,
+        );
+
+        const newMeasures = getNewMeasuresFromCreatedBeats({
+            createdBeats,
+            numOfRepeats: tempoGroup.numOfRepeats,
+            bigBeatsPerMeasure: tempoGroup.bigBeatsPerMeasure,
+        });
+        const createMeasuresResponse = await createMeasures(
+            newMeasures,
+            refreshFunction,
+        );
+        if (!createMeasuresResponse.success) {
+            throw new Error("Error creating measures");
+        }
+
+        return { success: true };
+    } catch (error) {
+        conToastError("Error creating new beats", error);
+        window.electron.undo();
+        return { success: false };
+    }
+};
