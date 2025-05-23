@@ -31,6 +31,7 @@ export type TempoGroup = Readonly<{
      */
     longBeatIndexes?: number[];
     numOfRepeats: number;
+    measureRangeString?: string;
 }>;
 
 const aboutEqual = (a: number, b: number, epsilon = 0.000001): boolean => {
