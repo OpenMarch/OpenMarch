@@ -1,7 +1,9 @@
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import Constants from "../../../src/global/Constants";
-
+import { DB } from "../db.types";
+import * as schema from "../migrations/schema";
+import { eq } from "drizzle-orm";
 /**
  * Represents an appearance configuration for a section
  */
@@ -35,32 +37,27 @@ export interface ModifiedSectionAppearanceArgs {
     shape_type?: string;
 }
 
-/**
- * Get all section appearances or a specific one if section is provided
- * @param db The database connection
- * @param section Optional section name to filter by
- * @returns Database response with section appearances
- */
 export function getSectionAppearances({
-    db,
+    orm,
     section,
 }: {
     db: Database.Database;
+    orm: DB;
     section?: string;
 }): DbActions.DatabaseResponse<SectionAppearance[]> {
+    let queryBuilder = orm
+        .select()
+        .from(schema.section_appearances)
+        .$dynamic();
+
     if (section) {
-        return DbActions.getItemsByColValue<SectionAppearance>({
-            db,
-            tableName: Constants.SectionAppearancesTableName,
-            col: "section",
-            value: section,
-        });
-    } else {
-        return DbActions.getAllItems<SectionAppearance>({
-            db,
-            tableName: Constants.SectionAppearancesTableName,
-        });
+        queryBuilder = queryBuilder.where(eq(schema.section_appearances.section, section));
     }
+
+    return {
+        success: true,
+        data: queryBuilder.all(),
+    };
 }
 
 /**
