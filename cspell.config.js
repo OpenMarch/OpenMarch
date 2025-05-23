@@ -68,6 +68,7 @@ module.exports = {
         "Meuli",
         "esbenp",
         "undoable",
+        "shouldn",
     ],
     ignorePaths: [
         "node_modules/**",

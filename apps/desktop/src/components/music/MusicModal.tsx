@@ -6,6 +6,8 @@ import { TempoGroup } from "@/global/classes/TempoGroup";
 import { Button, Input } from "@openmarch/ui";
 import { Form, FormField, Label } from "@radix-ui/react-form";
 import clsx from "clsx";
+import React, { useMemo } from "react";
+import { mixedMeterPermutations } from "./tempo-utils";
 
 export default function MusicModal() {
     return (
@@ -17,6 +19,8 @@ export default function MusicModal() {
 }
 function MusicModalContents() {
     const { toggleOpen } = useSidebarModalStore();
+    const [newGroupFormHidden, setNewGroupFormHidden] = React.useState(true);
+
     return (
         <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
             <header className="flex justify-between gap-24">
@@ -39,8 +43,19 @@ function MusicModalContents() {
                 {testTempoGroups.map((tempoGroup, i) => (
                     <TempoGroupCard key={i} tempoGroup={tempoGroup} />
                 ))}
-                New Group
-                <NewTempoGroupForm />
+                <div className="flex min-h-[20rem] flex-col">
+                    <div className="flex justify-end py-8">
+                        <Button
+                            variant="secondary"
+                            onClick={() =>
+                                setNewGroupFormHidden(!newGroupFormHidden)
+                            }
+                        >
+                            {newGroupFormHidden ? "Add New Group" : "Cancel"}
+                        </Button>
+                    </div>
+                    {!newGroupFormHidden && <NewTempoGroupForm />}
+                </div>
             </div>
         </div>
     );
@@ -135,7 +150,7 @@ function TempoGroupCard({ tempoGroup }: { tempoGroup: TempoGroup }) {
     return (
         <>
             {tempoGroup.name && trimmedName !== "" && trimmedName !== "-" && (
-                <div className="bg-fg-2 rounded-6 mt-12 flex w-fit min-w-32 border border-white px-8 py-4">
+                <div className="bg-fg-2 rounded-6 border-text mt-12 flex w-fit min-w-32 border px-8 py-4">
                     <h3 className="text-text-secondary text-h3">
                         {trimmedName}
                     </h3>
@@ -172,52 +187,206 @@ function TempoGroupCard({ tempoGroup }: { tempoGroup: TempoGroup }) {
 
 function NewTempoGroupForm() {
     const subTextClass = clsx("text-text-subtitle text-sub ");
+    const [isMixedMeter, setIsMixedMeter] = React.useState(false);
+    const [beatsPerMeasure, setBeatsPerMeasure] = React.useState(4);
+    const [selectedPattern, setSelectedPattern] = React.useState<string>("");
+    const maxMixedMeterBeats = 30;
+    const tooManyMixedMeterBeats = useMemo(
+        () => beatsPerMeasure > maxMixedMeterBeats && isMixedMeter,
+        [beatsPerMeasure, isMixedMeter],
+    );
+
+    const handleBeatsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(e.target.value) || 0;
+        setBeatsPerMeasure(value);
+        // If mixed meter is enabled and the beats change, we might need to update available patterns
+        if (isMixedMeter) {
+            // Reset selected pattern when beats change
+            setSelectedPattern("");
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        const name = (formData.get("name") as string) || "";
+        const startTempo =
+            parseInt(formData.get("startTempo") as string) || 120;
+        const endTempo = formData.get("endTempo")
+            ? parseInt(formData.get("endTempo") as string)
+            : undefined;
+        const repeats = parseInt(formData.get("repeats") as string) || 4;
+
+        const newTempoGroup: TempoGroup = {
+            name,
+            startTempo,
+            ...(endTempo && { endTempo }),
+            bigBeatsPerMeasure: beatsPerMeasure,
+            numOfRepeats: repeats,
+            ...(isMixedMeter &&
+                selectedPattern && {
+                    longBeatIndexes: selectedPattern
+                        .split(",")
+                        .map((val, index) => (val === "3" ? index : null))
+                        .filter((index): index is number => index !== null),
+                }),
+        };
+
+        console.log("Created new tempo group:", newTempoGroup);
+        // TODO: Add the new tempo group to the list
+    };
+
     return (
         <div
             className={`bg-fg-2 border-accent rounded-tr-6 rounded-b-6 rounded-6 flex justify-between border p-12`}
         >
-            <Form className="grid grid-cols-2 gap-16">
-                <FormField name={"bpm"} className="flex flex-col gap-2">
-                    <Label className="text-sm">Tempo</Label>
+            <Form className="grid grid-cols-6 gap-16" onSubmit={handleSubmit}>
+                <FormField
+                    name="name"
+                    className="col-span-2 flex flex-col gap-2"
+                >
+                    <Label className="text-sm select-all">Name</Label>
                     <Input
-                        id="bpm-input"
+                        id="name-input"
+                        placeholder="Optional"
+                        type="text"
+                        className="select-all"
+                    />
+                    <p className={subTextClass}>
+                        Rehearsal letter or identifier
+                    </p>
+                </FormField>
+                <FormField
+                    name="startTempo"
+                    className="col-span-2 flex flex-col gap-2"
+                >
+                    <Label className="text-sm">Start Tempo *</Label>
+                    <Input
+                        id="start-tempo-input"
                         type="number"
                         min={1}
                         defaultValue={"120"}
+                        required
                     />
                     <p className={subTextClass}>Beats per minute</p>
                 </FormField>
-                <FormField name={"bpm"} className="flex flex-col gap-2">
-                    <Label className="text-sm">Beats per measure</Label>
+
+                <FormField
+                    name="endTempo"
+                    className="col-span-2 flex flex-col gap-2"
+                >
+                    <Label className="text-sm">End Tempo</Label>
+                    <Input
+                        id="end-tempo-input"
+                        type="number"
+                        min={1}
+                        placeholder="Optional"
+                        defaultValue={""}
+                    />
+                </FormField>
+                <FormField
+                    name="beatsPerMeasure"
+                    className={clsx(
+                        "flex flex-col gap-2",
+                        isMixedMeter ? "col-span-2" : "col-span-3",
+                    )}
+                >
+                    <Label
+                        className={clsx(
+                            "text-sm",
+                            tooManyMixedMeterBeats ? "text-red" : "",
+                        )}
+                    >
+                        Beats per measure *
+                    </Label>
                     <Input
                         id="bpm-input"
                         type="number"
                         min={1}
-                        defaultValue={"4"}
+                        value={beatsPerMeasure === 0 ? "" : beatsPerMeasure}
+                        onChange={handleBeatsChange}
+                        required
+                        className={tooManyMixedMeterBeats ? "border-red" : ""}
                     />
-                    <p className={subTextClass}>
-                        E.g. - &apos;5&apos; for 5/4 time signature
-                    </p>
+                    {tooManyMixedMeterBeats ? (
+                        <p className={clsx("text-red text-sub")}>
+                            Mixed-meter shouldn&apos;t have more than{" "}
+                            {maxMixedMeterBeats} beats. It will make your
+                            computer sad. If you really need this, please
+                            contact us so we can hear your cool mixed-meter
+                            music that has {beatsPerMeasure} beats per measure
+                        </p>
+                    ) : (
+                        <p className={subTextClass}>
+                            Time signature: {beatsPerMeasure}/
+                            {isMixedMeter ? "8" : "4"}
+                        </p>
+                    )}
                 </FormField>
-                <FormField name={"bpm"} className="flex flex-col gap-2">
-                    <Label className="text-sm">Number of measures</Label>
+                {isMixedMeter && (
+                    <FormField
+                        name="beatPattern"
+                        className="col-span-2 flex flex-col gap-2"
+                    >
+                        <Label className="text-sm">Beat Pattern *</Label>
+                        <select
+                            className="bg-bg-1 border-stroke rounded-4 border px-8 py-4"
+                            required
+                            disabled={tooManyMixedMeterBeats}
+                            value={selectedPattern}
+                            onChange={(e) => setSelectedPattern(e.target.value)}
+                        >
+                            <option value="">Select a pattern</option>
+                            {!tooManyMixedMeterBeats &&
+                                mixedMeterPermutations(beatsPerMeasure).map(
+                                    (pattern: number[], index: number) => (
+                                        <option
+                                            key={index}
+                                            value={pattern.join(",")}
+                                        >
+                                            {pattern.join("+")}
+                                        </option>
+                                    ),
+                                )}
+                        </select>
+                    </FormField>
+                )}
+                <FormField
+                    name="repeats"
+                    className={clsx(
+                        "flex flex-col gap-2",
+                        isMixedMeter ? "col-span-2" : "col-span-3",
+                    )}
+                >
+                    <Label className="text-sm">Repeats *</Label>
                     <Input
-                        id="bpm-input"
+                        id="repeats-input"
                         type="number"
                         min={1}
                         defaultValue={"4"}
+                        required
                     />
-                    <p className={subTextClass}>
-                        # of times to repeat this group
-                    </p>
                 </FormField>
-                <div className="col-span-2 flex justify-end gap-4">
-                    <Button size="compact">Create</Button>
-                    <Button size="compact" variant="secondary">
-                        Cancel
+                <div className="col-span-6 flex gap-4">
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setIsMixedMeter(!isMixedMeter)}
+                        disabled={!isMixedMeter && beatsPerMeasure < 5}
+                    >
+                        {isMixedMeter
+                            ? "Make regular meter"
+                            : "Make mixed meter"}
+                    </Button>
+                    <div className="flex-grow" />
+                    <Button
+                        type="submit"
+                        disabled={isMixedMeter && beatsPerMeasure < 5}
+                    >
+                        Create
                     </Button>
                 </div>
-                asdf
             </Form>
         </div>
     );
