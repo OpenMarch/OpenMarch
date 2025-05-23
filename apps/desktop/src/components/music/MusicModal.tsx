@@ -3,6 +3,9 @@ import { SidebarModalLauncher } from "../sidebar/SidebarModal";
 import { XIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { TempoGroup } from "@/global/classes/TempoGroup";
+import { Button, Input } from "@openmarch/ui";
+import { Form, FormField, Label } from "@radix-ui/react-form";
+import clsx from "clsx";
 
 export default function MusicModal() {
     return (
@@ -36,6 +39,8 @@ function MusicModalContents() {
                 {testTempoGroups.map((tempoGroup, i) => (
                     <TempoGroupCard key={i} tempoGroup={tempoGroup} />
                 ))}
+                New Group
+                <NewTempoGroupForm />
             </div>
         </div>
     );
@@ -130,24 +135,26 @@ function TempoGroupCard({ tempoGroup }: { tempoGroup: TempoGroup }) {
     return (
         <>
             {tempoGroup.name && trimmedName !== "" && trimmedName !== "-" && (
-                <div className="bg-fg-2 border-accent rounded-6 mt-12 flex w-fit min-w-32 border px-8 py-4">
+                <div className="bg-fg-2 rounded-6 mt-12 flex w-fit min-w-32 border border-white px-8 py-4">
                     <h3 className="text-text-secondary text-h3">
                         {trimmedName}
                     </h3>
                 </div>
             )}
             <div
-                className={`bg-fg-2 border-stroke rounded-tr-6 rounded-b-6 rounded-6 flex max-w-6 justify-between border p-12`}
+                className={`bg-fg-2 border-stroke rounded-tr-6 rounded-b-6 rounded-6 flex justify-between border p-12`}
             >
                 <div className="flex flex-col gap-8">
                     <div>
                         <h3 className="text-h3">
                             {tempoGroup.startTempo}{" "}
-                            <span className="text-text/60 text-sm">bpm</span>
+                            <span className="text-text-subtitle text-sm">
+                                bpm
+                            </span>
                         </h3>
                     </div>
                     {tempoGroup.measureRangeString && (
-                        <p className="text-text/60 text-sm">
+                        <p className="text-text-subtitle text-sm">
                             {tempoGroup.measureRangeString}
                         </p>
                     )}
@@ -160,5 +167,58 @@ function TempoGroupCard({ tempoGroup }: { tempoGroup: TempoGroup }) {
                 </div>
             </div>
         </>
+    );
+}
+
+function NewTempoGroupForm() {
+    const subTextClass = clsx("text-text-subtitle text-sub ");
+    return (
+        <div
+            className={`bg-fg-2 border-accent rounded-tr-6 rounded-b-6 rounded-6 flex justify-between border p-12`}
+        >
+            <Form className="grid grid-cols-2 gap-16">
+                <FormField name={"bpm"} className="flex flex-col gap-2">
+                    <Label className="text-sm">Tempo</Label>
+                    <Input
+                        id="bpm-input"
+                        type="number"
+                        min={1}
+                        defaultValue={"120"}
+                    />
+                    <p className={subTextClass}>Beats per minute</p>
+                </FormField>
+                <FormField name={"bpm"} className="flex flex-col gap-2">
+                    <Label className="text-sm">Beats per measure</Label>
+                    <Input
+                        id="bpm-input"
+                        type="number"
+                        min={1}
+                        defaultValue={"4"}
+                    />
+                    <p className={subTextClass}>
+                        E.g. - &apos;5&apos; for 5/4 time signature
+                    </p>
+                </FormField>
+                <FormField name={"bpm"} className="flex flex-col gap-2">
+                    <Label className="text-sm">Number of measures</Label>
+                    <Input
+                        id="bpm-input"
+                        type="number"
+                        min={1}
+                        defaultValue={"4"}
+                    />
+                    <p className={subTextClass}>
+                        # of times to repeat this group
+                    </p>
+                </FormField>
+                <div className="col-span-2 flex justify-end gap-4">
+                    <Button size="compact">Create</Button>
+                    <Button size="compact" variant="secondary">
+                        Cancel
+                    </Button>
+                </div>
+                asdf
+            </Form>
+        </div>
     );
 }
