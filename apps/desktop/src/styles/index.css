@@ -1,3 +1,4 @@
+@import "tailwindcss";
 @import "@openmarch/ui/src/tailwind.css";
 @source "../../../../packages/ui/src/components";
 
@@ -82,18 +83,6 @@ textarea,
         background-size: 220% 220%;
         opacity: 1;
     }
-}
-
-.bg-launch-gradient {
-    background: linear-gradient(
-        45deg,
-        rgba(var(--color-bg-1)) 1%,
-        rgba(var(--color-accent)) 100%
-    );
-    background-size: 200% 200%;
-    animation: pulse 12s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    transition: all 0.3s ease;
-    opacity: 1 !important; /* Ensure content stays visible */
 }
 
 /****** Wavesurfer *******/
