@@ -1,6 +1,5 @@
 import Database from "better-sqlite3";
 import * as History from "./database.history";
-import Constants from "../../src/global/Constants";
 
 /**
  * Response from the database
@@ -12,41 +11,6 @@ export interface DatabaseResponse<DatabaseItemType> {
     readonly error?: { message: string; stack?: string };
     /** The data that was affected or returned by the operation */
     readonly data: DatabaseItemType;
-}
-
-/**
- * Decrement all of the undo actions in the most recent group down by one.
- *
- * This should be used when a database action should not create its own group, but the group number
- * was incremented to allow for rolling back changes due to error.
- *
- * @param db database connection
- */
-function decrementLastUndoGroup(db: Database.Database) {
-    const maxGroup = (
-        db
-            .prepare(
-                `SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}`,
-            )
-            .get() as { max_undo_group: number }
-    ).max_undo_group;
-
-    const previousGroup = (
-        db
-            .prepare(
-                `SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ?`,
-            )
-            .get(maxGroup) as { previous_group: number }
-    ).previous_group;
-
-    if (previousGroup) {
-        db.prepare(
-            `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group = ?`,
-        ).run(previousGroup, maxGroup);
-        db.prepare(
-            `UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ?`,
-        ).run(previousGroup);
-    }
 }
 
 /**
