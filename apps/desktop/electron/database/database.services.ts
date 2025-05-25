@@ -1,8 +1,10 @@
 import { ipcMain } from "electron";
 import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history";
+import * as schema from "./migrations/schema";
 import * as Utilities from "./utilities";
 import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, {
@@ -117,13 +119,22 @@ export function connect() {
 
 /* ============================ Handlers ============================ */
 async function connectWrapper<T>(
-    func: (args: any) => DatabaseResponse<T | undefined>,
+    func: (args: any) => DatabaseResponse<T | undefined> | T,
     args: any = {},
 ): Promise<DatabaseResponse<T | undefined>> {
     const db = connect();
+    const orm = drizzle({ client: db, schema, casing: "snake_case" });
     let result: Promise<DatabaseResponse<T | undefined>>;
     try {
-        result = Promise.resolve(func({ ...args, db }));
+        let fnResult = func({ ...args, db, orm });
+        if (
+            !fnResult ||
+            typeof fnResult !== "object" ||
+            !("success" in fnResult)
+        ) {
+            fnResult = { success: true, data: fnResult };
+        }
+        result = Promise.resolve(fnResult);
     } catch (error: any) {
         console.error(error);
         result = Promise.resolve({
