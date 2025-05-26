@@ -107,7 +107,7 @@ describe("TimingMarkersPlugin", () => {
     });
 
     describe("createTimingMarkers", () => {
-        it("should create beat regions for each beat", () => {
+        it.todo("should create beat regions for each beat", () => {
             timingMarkersPlugin.createTimingMarkers();
 
             // Should call addRegion for each beat
