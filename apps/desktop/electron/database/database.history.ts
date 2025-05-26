@@ -136,6 +136,7 @@ export function incrementUndoGroup(db: Database.Database) {
     return incrementGroupDrizzle(orm, "undo");
 }
 
+// A temporary wrapper until all callers can pass in the ORM. Then this becomes incrementUndoGroup
 export function incrementUndoGroupDrizzle(orm: DB) {
     return incrementGroupDrizzle(orm, "undo");
 }
