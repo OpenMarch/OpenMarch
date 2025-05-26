@@ -1,10 +1,8 @@
 import { ipcMain } from "electron";
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history";
-import * as schema from "./migrations/schema";
 import * as Utilities from "./utilities";
 import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, {
@@ -23,6 +21,7 @@ import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
 import * as SectionAppearanceTable from "./tables/SectionAppearanceTable";
+import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -123,7 +122,7 @@ async function connectWrapper<T>(
     args: any = {},
 ): Promise<DatabaseResponse<T | undefined>> {
     const db = connect();
-    const orm = drizzle({ client: db, schema, casing: "snake_case" });
+    const orm = getOrm(db);
     let result: Promise<DatabaseResponse<T | undefined>>;
     try {
         let fnResult = func({ ...args, db, orm });

@@ -1,4 +1,4 @@
-import { DB } from "../db.types";
+import { DB } from "../db";
 import * as schema from "../migrations/schema";
 import { eq, inArray } from "drizzle-orm";
 import * as History from "../database.history";
