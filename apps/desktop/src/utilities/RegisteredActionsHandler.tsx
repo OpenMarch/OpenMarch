@@ -204,6 +204,7 @@ class KeyboardShortcut {
  * This is useful for getting the details of a registered action at compile time.
  */
 export const RegisteredActionsObjects: {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     [key in RegisteredActionsEnum]: RegisteredAction;
 } = {
     // Electron interactions

@@ -76,6 +76,10 @@ export default function AudioSelector() {
                                 </SelectItem>
                             ))}
                         </SelectContent>
+                        <div className="text-text-subtitle text-sub mx-2 mt-4">
+                            You may need to refresh the page to see the new
+                            audio file.
+                        </div>
                     </Select>
                 </div>
             </div>

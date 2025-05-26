@@ -8,6 +8,7 @@ import {
     prepareBeatsForCreation,
     prepareMeasuresForCreation,
     preparePageUpdates,
+    createNewBeatsForTempoChange,
 } from "../EditableAudioPlayerUtils";
 import Beat from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
@@ -1032,5 +1033,180 @@ describe("performDatabaseOperations", () => {
             useNextUndoGroup: false,
             refreshFunction,
         });
+    });
+});
+
+describe("createNewBeatsForTempoChange", () => {
+    // Helper function to create a mock beat
+    const createMockBeat = (id: number, timestamp: number): Beat => ({
+        id,
+        position: 0,
+        duration: 1,
+        includeInMeasure: true,
+        notes: null,
+        index: 0,
+        timestamp,
+    });
+
+    it("should create beats at the correct tempo", () => {
+        const beats = [
+            createMockBeat(1, 0),
+            createMockBeat(2, 1),
+            createMockBeat(3, 2),
+        ];
+        const tempo = 120; // 120 BPM = 0.5 seconds per beat
+        const audioDuration = 4;
+
+        const result = createNewBeatsForTempoChange({
+            beats,
+            tempo,
+            audioDuration,
+            measures: [],
+            pages: [],
+        });
+
+        expect(result.newBeats.length).toBeGreaterThan(0);
+        expect(result.newBeats[0].duration).toBeCloseTo(0.5); // 60/120 = 0.5 seconds per beat
+        expect(result.newBeats[0].timestamp).toBe(0);
+
+        // Check that beats are evenly spaced at the correct tempo
+        for (let i = 1; i < result.newBeats.length; i++) {
+            expect(result.newBeats[i].timestamp).toBeCloseTo(i * 0.5);
+            expect(result.newBeats[i].duration).toBeCloseTo(0.5);
+        }
+    });
+
+    it("should mark beats after timestamp for deletion", () => {
+        const beats = [
+            createMockBeat(1, 0),
+            createMockBeat(2, 1),
+            createMockBeat(3, 2),
+            createMockBeat(4, 3),
+        ];
+        const timestamp = 1.5;
+        const tempo = 120;
+        const audioDuration = 4;
+
+        const result = createNewBeatsForTempoChange({
+            beats,
+            timestamp,
+            tempo,
+            audioDuration,
+            measures: [],
+            pages: [],
+        });
+
+        // Should mark beats at t=2 and t=3 for deletion
+        expect(result.beatsToDelete).toHaveLength(2);
+        expect(result.beatsToDelete.map((b) => b.id)).toEqual([3, 4]);
+    });
+
+    it("should create beats with negative IDs", () => {
+        const beats = [createMockBeat(1, 0)];
+        const tempo = 60; // 60 BPM = 1 second per beat
+        const audioDuration = 3;
+
+        const result = createNewBeatsForTempoChange({
+            beats,
+            tempo,
+            audioDuration,
+            measures: [],
+            pages: [],
+        });
+
+        // All new beats should have negative IDs
+        result.newBeats.forEach((beat) => {
+            expect(beat.id).toBeLessThan(0);
+        });
+    });
+
+    it("should handle custom timestamp start point", () => {
+        const beats = [createMockBeat(1, 0), createMockBeat(2, 1)];
+        const timestamp = 0.5;
+        const tempo = 120;
+        const audioDuration = 2;
+
+        const result = createNewBeatsForTempoChange({
+            beats,
+            timestamp,
+            tempo,
+            audioDuration,
+            measures: [],
+            pages: [],
+        });
+
+        // First new beat should start at the timestamp
+        expect(result.newBeats[0].timestamp).toBe(0.5);
+
+        // Subsequent beats should be evenly spaced from the timestamp
+        for (let i = 1; i < result.newBeats.length; i++) {
+            expect(result.newBeats[i].timestamp).toBeCloseTo(0.5 + i * 0.5);
+        }
+    });
+
+    it("should handle very slow tempo", () => {
+        const beats = [createMockBeat(1, 0)];
+        const tempo = 30; // 30 BPM = 2 seconds per beat
+        const audioDuration = 6;
+
+        const result = createNewBeatsForTempoChange({
+            beats,
+            tempo,
+            audioDuration,
+            measures: [],
+            pages: [],
+        });
+
+        expect(result.newBeats[0].duration).toBeCloseTo(2); // 60/30 = 2 seconds per beat
+        expect(result.newBeats.length).toBeCloseTo(3); // Should fit 3 beats in 6 seconds at 2 sec/beat
+    });
+
+    it("should handle very fast tempo", () => {
+        const beats = [createMockBeat(1, 0)];
+        const tempo = 240; // 240 BPM = 0.25 seconds per beat
+        const audioDuration = 1;
+
+        const result = createNewBeatsForTempoChange({
+            beats,
+            tempo,
+            audioDuration,
+            measures: [],
+            pages: [],
+        });
+
+        expect(result.newBeats[0].duration).toBeCloseTo(0.25); // 60/240 = 0.25 seconds per beat
+        expect(result.newBeats.length).toBeCloseTo(4); // Should fit 4 beats in 1 second at 0.25 sec/beat
+    });
+
+    it("should handle zero beats input", () => {
+        const result = createNewBeatsForTempoChange({
+            beats: [],
+            tempo: 120,
+            audioDuration: 4,
+            measures: [],
+            pages: [],
+        });
+
+        expect(result.newBeats.length).toBeGreaterThan(0);
+        expect(result.beatsToDelete).toHaveLength(0);
+    });
+
+    it("should handle audioDuration equal to timestamp", () => {
+        const beats = [createMockBeat(1, 0)];
+        const timestamp = 2;
+        const audioDuration = 2;
+        const tempo = 120;
+
+        const result = createNewBeatsForTempoChange({
+            beats,
+            timestamp,
+            tempo,
+            audioDuration,
+            measures: [],
+            pages: [],
+        });
+
+        expect(result.newBeats.length).toBe(0);
+        expect(result.beatsToDelete.length).toBe(0);
     });
 });

@@ -356,6 +356,99 @@ export const performDatabaseOperations = async (
 };
 
 /**
+ * Creates new beats for a tempo change
+ *
+ * @param beats - The beats to update
+ * @param timestamp - The timestamp to start the new beats
+ * @param tempo - The tempo to set the new beats to
+ * @param audioDuration - The duration of the audio
+ * @returns An object containing the new beats and the beats to delete
+ */
+export const createNewBeatsForTempoChange = ({
+    beats,
+    timestamp = 0,
+    tempo,
+    audioDuration,
+}: {
+    beats: Beat[];
+    measures: Measure[];
+    pages: Page[];
+    timestamp?: number;
+    tempo: number;
+    audioDuration: number;
+}): { newBeats: Beat[]; beatsToDelete: Beat[] } => {
+    const beatsToDelete = beats.filter((beat) => beat.timestamp > timestamp);
+
+    const newBeats: Beat[] = [];
+    const duration = 60 / tempo;
+    let curTimestamp = timestamp;
+    let curId = -1;
+
+    while (curTimestamp < audioDuration) {
+        newBeats.push({
+            duration,
+            includeInMeasure: true,
+            notes: null,
+            index: 0,
+            timestamp: curTimestamp,
+            id: curId--,
+            position: 0,
+        });
+        curTimestamp += duration;
+    }
+
+    return { newBeats, beatsToDelete };
+};
+
+// export const createNewBeatObjects = async ({
+//     newBeats,
+//     beatsToDelete,
+//     pages,
+//     measures,
+// }: {
+//     newBeats: Beat[];
+//     beatsToDelete: Beat[];
+//     pages: Page[];
+//     measures: Measure[];
+// }): Promise<{ success: boolean }> => {
+//     // Step 1: Prepare beats for creation
+//     const beatsToCreate = prepareBeatsForCreation(newBeats);
+
+//     // Step 2: Create beats in the database
+//     const createBeatsResponse = await GroupFunction({
+//         refreshFunction: () => {},
+//         functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
+//         useNextUndoGroup: true,
+//     });
+
+//     if (!createBeatsResponse.success) {
+//         conToastError("Error creating beats", createBeatsResponse);
+//         return { success: false };
+//     }
+//     try {
+//         // Step 3: Convert database beats to Beat objects
+//         const databaseBeats = (
+//             createBeatsResponse.responses[0] as {
+//                 success: boolean;
+//                 data: DatabaseBeat[];
+//             }
+//         ).data;
+//         const createdBeats = convertDatabaseBeatsToBeats(databaseBeats);
+
+//         // Step 4: Prepare page updates
+//         const { pagesToUpdate } = preparePageUpdates(
+//             pages,
+//             oldBeats,
+//             createdBeats,
+//         );
+//     } catch (error) {
+//         console.error("Error creating new beats", error);
+//         window.electron.undo();
+//         return { success: false };
+//     }
+// };
+
+/**
  * Creates new beat objects and updates associated pages
  *
  * @param newBeats - The new beats to be created
@@ -366,7 +459,7 @@ export const performDatabaseOperations = async (
  * @param refreshFunction - Function to refresh the UI after updates
  * @returns An object indicating whether the beat creation and update was successful
  */
-export const createNewBeatObjects = async ({
+export const replaceAllBeatObjects = async ({
     newBeats,
     oldBeats,
     newMeasures,
@@ -381,30 +474,20 @@ export const createNewBeatObjects = async ({
     pages: Page[];
     refreshFunction: () => Promise<void>;
 }): Promise<{ success: boolean }> => {
-    console.log("newBeatsJson", JSON.stringify(newBeats));
-    console.log("oldBeatsJson", JSON.stringify(oldBeats));
-    console.log("newMeasuresJson", JSON.stringify(newMeasures));
-    console.log("oldMeasuresJson", JSON.stringify(oldMeasures));
-    console.log("pagesJson", JSON.stringify(pages));
+    // Step 1: Prepare beats for creation
+    const beatsToCreate = prepareBeatsForCreation(newBeats);
 
+    // Step 2: Create beats in the database
+    const createBeatsResponse = await GroupFunction({
+        refreshFunction: () => {},
+        functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
+        useNextUndoGroup: true,
+    });
+    if (!createBeatsResponse.success) {
+        conToastError("Error creating beats", createBeatsResponse);
+        return { success: false };
+    }
     try {
-        // Step 1: Prepare beats for creation
-        const beatsToCreate = prepareBeatsForCreation(newBeats);
-
-        // Step 2: Create beats in the database
-        const createBeatsResponse = await GroupFunction({
-            refreshFunction: () => {},
-            functionsToExecute: [
-                () => createBeats(beatsToCreate, async () => {}),
-            ],
-            useNextUndoGroup: true,
-        });
-
-        if (!createBeatsResponse.success) {
-            conToastError("Error creating beats", createBeatsResponse);
-            return { success: false };
-        }
-
         // Step 3: Convert database beats to Beat objects
         const databaseBeats = (
             createBeatsResponse.responses[0] as {

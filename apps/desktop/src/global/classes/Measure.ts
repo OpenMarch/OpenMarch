@@ -3,8 +3,10 @@ import {
     ModifiedMeasureArgs,
     NewMeasureArgs,
 } from "electron/database/tables/MeasureTable";
-import Beat, { beatsDuration, compareBeats } from "./Beat";
+import Beat, { beatsDuration, compareBeats, deleteBeats } from "./Beat";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
+import { GroupFunction } from "@/utilities/ApiFunctions";
+import { deletePages } from "./Page";
 
 interface Measure {
     /** ID of the measure in the database */
@@ -139,4 +141,34 @@ export const deleteMeasures = async (
     if (response.success) fetchMeasuresFunction();
     else console.error("Failed to delete measures", response.error);
     return response;
+};
+
+/** Deletes all measures, beats, and pages associated with the measures */
+export const cascadeDeleteMeasures = async (
+    measures: Measure[],
+    fetchMeasuresFunction: () => Promise<void>,
+) => {
+    const beatIdsToDelete = new Set(
+        measures.flatMap((m) => m.beats.map((b) => b.id)),
+    );
+    const pages = await window.electron.getPages();
+    if (!pages.success) {
+        throw new Error("Failed to get pages");
+    }
+    const pageIdsToDelete = new Set(
+        pages.data
+            .filter((p) => beatIdsToDelete.has(p.start_beat))
+            .map((p) => p.id),
+    );
+
+    const fakeFetch = async () => {};
+    return GroupFunction({
+        functionsToExecute: [
+            () => deleteMeasures(new Set(measures.map((m) => m.id)), fakeFetch),
+            () => deletePages(pageIdsToDelete, fakeFetch),
+            () => deleteBeats(beatIdsToDelete, fakeFetch),
+        ],
+        refreshFunction: fetchMeasuresFunction,
+        useNextUndoGroup: true,
+    });
 };

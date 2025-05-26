@@ -224,9 +224,10 @@ export function initHandlers() {
     ipcMain.handle("beat:getAll", async () =>
         connectWrapper(BeatTable.getBeats),
     );
-    ipcMain.handle("beat:insert", async (_, newBeats) =>
+    ipcMain.handle("beat:insert", async (_, newBeats, startingPosition) =>
         connectWrapper(BeatTable.createBeats, {
             newBeats,
+            startingPosition,
         }),
     );
     ipcMain.handle("beat:update", async (_, modifiedBeats) =>

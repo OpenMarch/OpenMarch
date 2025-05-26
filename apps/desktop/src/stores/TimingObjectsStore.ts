@@ -56,9 +56,9 @@ export const useTimingObjectsStore = create<TimingObjectStoreInterface>(
                 );
             }
             // First create beats with default timestamps
-            const rawBeats = beatsResponse.data.map((beat, index) =>
-                fromDatabaseBeat(beat, index),
-            );
+            const rawBeats = beatsResponse.data
+                .sort((a, b) => a.position - b.position)
+                .map((beat, index) => fromDatabaseBeat(beat, index));
             // Then calculate the actual timestamps based on durations
             const createdBeats = calculateTimestamps(rawBeats);
             const createdMeasures = fromDatabaseMeasures({

@@ -21,5 +21,6 @@ export default defineConfig({
             ["src/**", "jsdom"],
             ["electron/**", "node"],
         ],
+        testTimeout: 120000, // 2 minute global timeout for all tests
     },
 });

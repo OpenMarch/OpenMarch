@@ -20,7 +20,7 @@ jobs:
                     - macos-latest
                     - macos-13 # x86 (Intel) macOS
                     - ubuntu-latest
-                    - windows-latest
+                    # - windows-latest
 
         steps:
             - name: Check out Git repository
@@ -61,8 +61,8 @@ jobs:
             - name: Install pnpm dependencies
               run: pnpm install
               env:
-                CI: true
-                ADBLOCK: true
+                  CI: true
+                  ADBLOCK: true
 
             - name: Build for production
               run: pnpm desktop build
@@ -71,13 +71,13 @@ jobs:
               if: startsWith(matrix.os, 'ubuntu')
               # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
               run: |
-                sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
+                  sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
 
             - name: Replace package name in package.json - windows
               if: startsWith(matrix.os, 'win')
               # needed to prevent NSIS executable errors
               run: |
-                (Get-Content apps/desktop/package.json) -replace '"name": "@openmarch\\/desktop"', '"name": "OpenMarch"' | Set-Content apps/desktop/package.json
+                  (Get-Content apps/desktop/package.json) -replace '"name": "@openmarch\\/desktop"', '"name": "OpenMarch"' | Set-Content apps/desktop/package.json
 
             - name: Build/release Electron app
               uses: ./actions/desktop-deploy
