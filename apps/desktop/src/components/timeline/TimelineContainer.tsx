@@ -354,7 +354,12 @@ export function PageTimeline() {
                 );
             })}
             <div
-                className="bg-accent text-sub text-text-invert ml-8 flex h-24 w-24 cursor-pointer items-center justify-center self-center rounded-full"
+                className={clsx(
+                    "bg-accent text-sub text-text-invert ml-8 flex cursor-pointer items-center justify-center self-center rounded-full",
+                    beats.length > 1
+                        ? "h-24 w-24"
+                        : "hover:bg-accent/80 px-8 py-4",
+                )}
                 onClick={() =>
                     beats.length > 1 &&
                     createLastPage({
@@ -365,7 +370,11 @@ export function PageTimeline() {
                     })
                 }
             >
-                {beats.length > 1 ? <PlusIcon /> : <MusicModal label="+" />}
+                {beats.length > 1 ? (
+                    <PlusIcon />
+                ) : (
+                    <MusicModal label="Add tempo data" />
+                )}
             </div>
         </div>
     );
