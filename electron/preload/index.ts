@@ -203,6 +203,8 @@ const APP_API = {
             }>;
             organizeBySection: boolean;
         }) => ipcRenderer.invoke("export:pdf", params),
+        svgPagesToPdf: (svgPages: string[], options: { fileName: string }) =>
+            ipcRenderer.invoke("export:svgPagesToPdf", svgPages, options),
     },
 
     buffer: {

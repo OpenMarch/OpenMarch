@@ -119,9 +119,9 @@ export default class DefaultListeners implements CanvasListeners {
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
 
-        // Handle middle mouse button for panning
-        if (evt.button === 1 || evt.altKey) {
-            // Middle mouse button or Alt key
+        // Handle middle mouse button or right click for panning
+        if (evt.button === 1 || evt.button === 2 || evt.altKey) {
+            // Middle mouse button, right click, or Alt key
             evt.preventDefault();
             this.isMiddleMouseDown = true;
             this.lastMousePosition = { x: evt.clientX, y: evt.clientY };
@@ -148,10 +148,18 @@ export default class DefaultListeners implements CanvasListeners {
         }
 
         // If not near any marcher and shift key is not pressed, enable canvas dragging
-        if (!evt.shiftKey) {
+        // Only enable canvas dragging if the setting is enabled
+        if (
+            !evt.shiftKey &&
+            this.canvas.uiSettings.mouseSettings.enableCanvasPanning
+        ) {
             this.canvas.isDragging = true;
             this.canvas.selection = false;
             this.canvas.panDragStartPos = { x: evt.clientX, y: evt.clientY };
+        } else {
+            // If canvas panning is disabled, enable selection mode
+            this.canvas.selection = true;
+            this.canvas.isDragging = false;
         }
     }
 
@@ -218,24 +226,23 @@ export default class DefaultListeners implements CanvasListeners {
             const deltaX = e.clientX - this.lastMousePosition.x;
             const deltaY = e.clientY - this.lastMousePosition.y;
 
-            // Adjust panning speed based on zoom level for more precise control
-            const zoomFactor = this.canvas.getZoom();
-            const panSpeed = Math.min(1, 1 / Math.max(0.5, zoomFactor));
-
-            // Apply the pan with adjusted speed
-            vpt[4] += deltaX * panSpeed;
-            vpt[5] += deltaY * panSpeed;
+            // Use the CSS-based panning system instead of Fabric.js viewport transform
+            // This prevents clipping issues and matches the trackpad behavior
+            this.canvas.panContainer(deltaX, deltaY);
 
             this.lastMousePosition = { x: e.clientX, y: e.clientY };
-            this.canvas.requestRenderAll();
             return;
         }
 
-        // Handle regular dragging
+        // Handle regular dragging using CSS-based panning
         if (this.canvas.isDragging) {
-            vpt[4] += e.clientX - this.canvas.panDragStartPos.x;
-            vpt[5] += e.clientY - this.canvas.panDragStartPos.y;
-            this.canvas.requestRenderAll();
+            const deltaX = e.clientX - this.canvas.panDragStartPos.x;
+            const deltaY = e.clientY - this.canvas.panDragStartPos.y;
+
+            // Use the CSS-based panning system instead of Fabric.js viewport transform
+            // This prevents clipping issues and matches the trackpad behavior
+            this.canvas.panContainer(deltaX, deltaY);
+
             this.canvas.panDragStartPos = { x: e.clientX, y: e.clientY };
         }
     }
@@ -249,6 +256,8 @@ export default class DefaultListeners implements CanvasListeners {
         // Reset middle mouse state
         if (evt.button === 1 || this.isMiddleMouseDown) {
             this.isMiddleMouseDown = false;
+            // Sync Fabric.js viewport with CSS transform after middle mouse panning
+            this.canvas.updateFabricViewportFromContainer();
         }
 
         if (!this.canvas.viewportTransform) {
@@ -256,6 +265,11 @@ export default class DefaultListeners implements CanvasListeners {
                 "Viewport transform is not set. This will cause issues with panning around the canvas.",
             );
             return;
+        }
+
+        // If we were dragging, sync the viewport transform with the CSS transform
+        if (this.canvas.isDragging) {
+            this.canvas.updateFabricViewportFromContainer();
         }
 
         // on mouse up we want to recalculate new interaction

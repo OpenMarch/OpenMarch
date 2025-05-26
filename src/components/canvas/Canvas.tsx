@@ -15,9 +15,9 @@ import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectabl
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
-import { CircleNotch } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useCanvas } from "@/context/CanvasContext";
 
 /**
  * The field/stage UI of OpenMarch
@@ -54,6 +54,7 @@ export default function Canvas({
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
     const pagePathways = useRef<fabric.Object[]>([]);
+    const { setCanvas: setGlobalCanvas } = useCanvas();
 
     /* -------------------------- Selection Functions -------------------------- */
     const unimplementedError = (
@@ -321,17 +322,30 @@ export default function Canvas({
 
         if (testCanvas) {
             setCanvas(testCanvas);
+            setGlobalCanvas(testCanvas);
         } else {
-            setCanvas(
-                new OpenMarchCanvas({
-                    canvasRef: canvasRef.current,
-                    fieldProperties,
-                    uiSettings,
-                    currentPage: selectedPage,
-                }),
-            );
+            const newCanvas = new OpenMarchCanvas({
+                canvasRef: canvasRef.current,
+                fieldProperties,
+                uiSettings,
+                currentPage: selectedPage,
+            });
+            setCanvas(newCanvas);
+            setGlobalCanvas(newCanvas);
         }
-    }, [selectedPage, fieldProperties, testCanvas, uiSettings, canvas]);
+
+        // Cleanup function to remove the canvas reference
+        return () => {
+            setGlobalCanvas(undefined);
+        };
+    }, [
+        selectedPage,
+        fieldProperties,
+        testCanvas,
+        uiSettings,
+        canvas,
+        setGlobalCanvas,
+    ]);
 
     // Initiate listeners
     useEffect(() => {
@@ -557,6 +571,46 @@ export default function Canvas({
         }
     }, [canvas, fieldProperties]);
 
+    // Ensure canvas field properties are always synchronized
+    useEffect(() => {
+        if (canvas && fieldProperties && !canvas.fieldProperties) {
+            canvas.fieldProperties = fieldProperties;
+            canvas.refreshCanvasSize();
+        }
+    }, [canvas, fieldProperties]);
+
+    // Additional canvas validation and repair
+    useEffect(() => {
+        if (canvas && fieldProperties) {
+            // Validate canvas state and repair if necessary
+            const validateAndRepair = () => {
+                try {
+                    if (!canvas.fieldProperties) {
+                        canvas.fieldProperties = fieldProperties;
+                    }
+
+                    // Ensure canvas is properly sized
+                    canvas.refreshCanvasSize();
+
+                    // Force a render to ensure everything is up to date
+                    canvas.requestRenderAll();
+                } catch (error) {
+                    console.error("Error validating/repairing canvas:", error);
+                }
+            };
+
+            // Run validation immediately
+            validateAndRepair();
+
+            // Set up periodic validation (every 5 seconds) to catch any issues
+            const validationInterval = setInterval(validateAndRepair, 5000);
+
+            return () => {
+                clearInterval(validationInterval);
+            };
+        }
+    }, [canvas, fieldProperties]);
+
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {
@@ -630,14 +684,8 @@ export default function Canvas({
     ]);
 
     return (
-        <div className={`h-full overflow-hidden rounded-6 ${className}`}>
-            {pages.length > 0 ? (
-                <canvas ref={canvasRef} id="fieldCanvas" />
-            ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                    <CircleNotch size={32} className="animate-spin text-text" />
-                </div>
-            )}
+        <div className={`relative h-full w-full ${className}`}>
+            <canvas ref={canvasRef} />
         </div>
     );
 }

@@ -8,6 +8,7 @@ import {
 import { GearSix } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { Switch } from "../ui/Switch";
+import MouseSettings from "./MouseSettings";
 
 export default function SettingsModal() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
@@ -20,7 +21,7 @@ export default function SettingsModal() {
             >
                 <GearSix size={18} />
             </DialogTrigger>
-            <DialogContent className="w-[10rem]" aria-describedby="Settings">
+            <DialogContent className="w-[32rem]" aria-describedby="Settings">
                 <DialogTitle>Settings</DialogTitle>
                 <div className="flex flex-col gap-48">
                     <div className="flex flex-col gap-16">
@@ -42,6 +43,7 @@ export default function SettingsModal() {
                             />
                         </div>
                     </div>
+                    <MouseSettings />
                 </div>
             </DialogContent>
         </Dialog>

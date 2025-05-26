@@ -58,6 +58,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: 0,
         time: 0,
     };
+    /** Variables for tracking pan position */
+    lastPosX = 0;
+    lastPosY = 0;
     marcherShapes: MarcherShape[] = [];
     /**
      * The reference to the grid (the lines on the field) object to use for caching
@@ -89,9 +92,45 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The UI settings for the canvas */
     private _uiSettings: UiSettings;
 
-    // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
-    perfLimitSizeTotal = 225000000;
-    maxCacheSideLimit = 11000;
+    /** Track touch points for pinch-to-zoom */
+    private touchPoints: { [key: number]: { x: number; y: number } } = {};
+    private lastPinchDistance: number = 0;
+
+    /** CSS transform values for the canvas container */
+    private transformValues = {
+        translateX: 0,
+        translateY: 0,
+        scale: 1,
+        originX: 0,
+        originY: 0,
+    };
+
+    /** Track state for CSS-based panning */
+    private isPanning = false;
+
+    /** Track pinch gesture for zooming */
+    private initialPinchDistance = 0;
+
+    /** Reference to the canvas CSS wrapper element */
+    private cssZoomWrapper: HTMLDivElement | null = null;
+
+    /** Add a user preference toggle for trackpad mode in UI */
+    private trackpadModeEnabled = this.isMacOS(); // Default to true on Mac
+
+    /** Flag to force trackpad pan mode when Alt key is pressed */
+    private forceTrackpadPan = false;
+
+    /**
+     * Constants for zoom limits
+     */
+    private readonly MIN_ZOOM = 0.5; // 50% (zoomed in, field is twice as big as viewport)
+    private readonly MAX_ZOOM = 2.0; // 200% (zoomed out, field is half as big as viewport)
+    private readonly ZOOM_STEP = 0.05; // 5% increments for smoother zooming
+
+    // Sensitivity settings
+    private panSensitivity = 0.5; // Reduced for smoother panning
+    private zoomSensitivity = 0.03; // Reduced for gentler zooming
+    private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
 
     constructor({
         canvasRef,
@@ -107,9 +146,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         listeners?: CanvasListeners;
     }) {
         super(canvasRef, {
-            // TODO - why are these here from 4023b18
-            // selectionColor: "white",
-            // selectionLineWidth: 8,
             selectionColor: rgbaToString({
                 ...fieldProperties.theme.shape,
                 a: 0.2,
@@ -117,8 +153,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             selectionBorderColor: rgbaToString(fieldProperties.theme.shape),
             selectionLineWidth: 2,
             fireRightClick: true, // Allow right click events
-            stopContextMenu: true, // Prevent right click context menu
+            stopContextMenu: false, // Allow right click context menu for panning
+            enableRetinaScaling: true, // Better display on retina screens
         });
+
+        // CRITICAL: Completely disable Fabric's built-in mousewheel handler to avoid conflicts
+        // @ts-ignore - Accessing private property to disable built-in handling
+        this.off("mouse:wheel");
+
+        // Init the DOM wrapper for the canvas if available
+        if (canvasRef) {
+            this.setupExternalPanZoomContainer(canvasRef);
+        }
 
         if (currentPage) this.currentPage = currentPage;
         // If no page is provided, create a default page
@@ -140,12 +186,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 timestamp: 0,
             };
 
-        // Set canvas size
-        this.refreshCanvasSize();
-        // Update canvas size on window resize
-        window.addEventListener("resize", (evt) => {
+        // Only set canvas size if canvasRef is available
+        if (canvasRef) {
             this.refreshCanvasSize();
-        });
+            // Update canvas size on window resize
+            window.addEventListener("resize", (evt) => {
+                this.refreshCanvasSize();
+            });
+        }
 
         this._fieldProperties = fieldProperties;
 
@@ -153,6 +201,21 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         // Set the UI settings
         this._uiSettings = uiSettings;
+
+        // Initialize trackpad mode based on settings and platform
+        this.trackpadModeEnabled = uiSettings.mouseSettings.trackpadMode;
+
+        // Initialize sensitivity settings from UI settings
+        if (uiSettings.mouseSettings.panSensitivity) {
+            this.panSensitivity = uiSettings.mouseSettings.panSensitivity;
+        }
+        if (uiSettings.mouseSettings.trackpadPanSensitivity) {
+            this.trackpadPanSensitivity =
+                uiSettings.mouseSettings.trackpadPanSensitivity;
+        }
+        if (uiSettings.mouseSettings.zoomSensitivity) {
+            this.zoomSensitivity = uiSettings.mouseSettings.zoomSensitivity;
+        }
 
         if (listeners) this.setListeners(listeners);
 
@@ -162,13 +225,894 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     }
 
+    /**
+     * Set up an external container to handle pan and zoom, completely independent
+     * of Fabric.js's internal handling, similar to how modern design tools work
+     */
+    private setupExternalPanZoomContainer(canvasRef: HTMLCanvasElement) {
+        const canvasContainer = canvasRef.parentElement as HTMLDivElement;
+        if (!canvasContainer) return;
+
+        // Store reference to the container
+        this.cssZoomWrapper = canvasContainer;
+
+        // Create a wrapper element that will mask the canvas and handle overflow
+        const outerWrapper = document.createElement("div");
+        outerWrapper.className = "fabric-outer-container";
+        outerWrapper.style.position = "absolute";
+        outerWrapper.style.top = "0";
+        outerWrapper.style.left = "0";
+        outerWrapper.style.right = "0";
+        outerWrapper.style.bottom = "0";
+        outerWrapper.style.overflow = "hidden";
+        outerWrapper.style.touchAction = "none";
+
+        // Insert the outer wrapper
+        if (canvasContainer.parentElement) {
+            canvasContainer.parentElement.insertBefore(
+                outerWrapper,
+                canvasContainer,
+            );
+            outerWrapper.appendChild(canvasContainer);
+        }
+
+        // Style the canvas container for transforms
+        canvasContainer.style.position = "absolute";
+        canvasContainer.style.transformOrigin = "0 0";
+        canvasContainer.style.willChange = "transform";
+
+        // CRITICAL: Add CSS to the whole document to prevent default zoom behaviors
+        // This is what modern design tools do - they prevent all browser-level zoom gestures
+        this.addNoZoomCSSToDocument();
+
+        // Initialize event handlers with professional design application style approach
+        this.setupModernDesignToolGestureHandlers(
+            outerWrapper,
+            canvasContainer,
+        );
+    }
+
+    /**
+     * Add CSS to prevent browser zoom gestures - critical for macOS trackpads
+     * This is what professional design applications do to prevent browser from interpreting trackpad gestures as zoom
+     */
+    private addNoZoomCSSToDocument() {
+        // Create a style element
+        const style = document.createElement("style");
+        style.textContent = `
+            /* Prevent pinch zoom on the entire document */
+            html, body {
+                touch-action: pan-x pan-y;
+                -ms-touch-action: pan-x pan-y;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                overflow: hidden;
+                height: 100%;
+                width: 100%;
+                position: fixed;
+            }
+            /* Explicitly prevent browser zoom on trackpad gestures */
+            .fabric-outer-container {
+                touch-action: none !important;
+                -ms-touch-action: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Disable zoom on meta+wheel and ctrl+wheel
+        window.addEventListener(
+            "wheel",
+            (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                }
+            },
+            { passive: false },
+        );
+
+        // Add viewport meta tag to prevent mobile pinch zoom
+        const meta = document.createElement("meta");
+        meta.name = "viewport";
+        meta.content =
+            "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+        document.head.appendChild(meta);
+    }
+
+    /**
+     * Set up all gesture handlers using the modern design tool approach
+     */
+    private setupModernDesignToolGestureHandlers(
+        outerContainer: HTMLElement,
+        canvasContainer: HTMLElement,
+    ) {
+        // ===== DIRECT DOM EVENT HANDLERS =====
+        // Modern design tools use direct wheel event handling from the DOM rather than relying on library events
+
+        // CRITICAL: This is the most important part for macOS - handle wheel events at the capture phase
+        // This ensures we get them before any other handlers
+        outerContainer.addEventListener("wheel", this.handleMacOSTrackpad, {
+            capture: true, // Get events during capture phase (before they reach inner elements)
+            passive: false, // Allows us to call preventDefault()
+        });
+
+        // Normal wheel fallback for non-macOS
+        outerContainer.addEventListener("wheel", this.handleContainerWheel, {
+            passive: false,
+        });
+
+        // ===== MOUSE DRAG EVENTS =====
+        outerContainer.addEventListener(
+            "mousedown",
+            this.handleContainerMouseDown,
+        );
+        window.addEventListener("mousemove", this.handleContainerMouseMove);
+        window.addEventListener("mouseup", this.handleContainerMouseUp);
+
+        // ===== TOUCH EVENTS =====
+        outerContainer.addEventListener(
+            "touchstart",
+            this.handleContainerTouchStart,
+            { passive: false },
+        );
+        outerContainer.addEventListener(
+            "touchmove",
+            this.handleContainerTouchMove,
+            { passive: false },
+        );
+        outerContainer.addEventListener(
+            "touchend",
+            this.handleContainerTouchEnd,
+        );
+
+        // ===== UI CONTROLS =====
+        // Add zoom percentage display
+        this.updateZoomPercentageDisplay();
+    }
+
+    /**
+     * The most critical handler: Specially handle macOS trackpad events in capture phase
+     * This is similar to how professional design applications handle trackpad gestures
+     */
+    private handleMacOSTrackpad = (e: WheelEvent) => {
+        // Only needed for macOS
+        if (!this.isMacOS()) return;
+
+        // Check if this looks like a macOS trackpad gesture
+        const isMacTrackpadGesture = this.isMacTrackpadGesture(e);
+
+        if (isMacTrackpadGesture) {
+            // Aggressively prevent default for any trackpad gesture
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Disable object caching for better performance
+            if (this.staticGridRef.objectCaching) {
+                this.staticGridRef.objectCaching = false;
+            }
+
+            // ONLY allow zoom if explicitly using meta/ctrl key
+            if (e.metaKey || e.ctrlKey) {
+                // Apply a smoother, less aggressive zoom factor
+                const smoothZoomFactor =
+                    1 +
+                    (e.deltaY < 0
+                        ? this.zoomSensitivity
+                        : -this.zoomSensitivity);
+                this.zoomContainer(smoothZoomFactor, e.clientX, e.clientY);
+            }
+            // Otherwise force ALL trackpad gestures to be interpreted as pan
+            else {
+                // Apply the pan with sensitivity adjustment
+                this.panContainer(
+                    -e.deltaX * this.trackpadPanSensitivity,
+                    -e.deltaY * this.trackpadPanSensitivity,
+                );
+            }
+
+            // Re-enable caching after a delay
+            clearTimeout(this._zoomTimeout);
+            this._zoomTimeout = setTimeout(() => {
+                if (this.staticGridRef && !this.staticGridRef.objectCaching) {
+                    this.staticGridRef.objectCaching = true;
+                    this.updateFabricViewportFromContainer();
+                    this.requestRenderAll();
+                }
+            }, 100);
+        }
+    };
+
+    /**
+     * Detect if this event is from a macOS trackpad
+     * Based on how professional design applications detect trackpad gestures
+     */
+    private isMacTrackpadGesture(e: WheelEvent): boolean {
+        // Must be on macOS
+        if (!this.isMacOS()) return false;
+
+        // Trackpad mode must be enabled
+        if (!this.trackpadModeEnabled) return false;
+
+        // Most macOS trackpad events have deltaMode=0 (pixels)
+        const isPixelMode = e.deltaMode === 0;
+
+        // Look for small, precise delta values (trackpads produce these)
+        const isPreciseMovement =
+            Math.abs(e.deltaY) < 10 || Math.abs(e.deltaX) < 10;
+
+        // Trackpads typically produce both X and Y values together
+        const isTwoDimensional =
+            Math.abs(e.deltaX) > 0 && Math.abs(e.deltaY) > 0;
+
+        // Return true if this looks like a macOS trackpad gesture
+        return isPixelMode && (isPreciseMovement || isTwoDimensional);
+    }
+
+    /**
+     * Apply pan to the container using CSS transform
+     * Enhanced for professional design application style smooth motion
+     */
+    public panContainer(deltaX: number, deltaY: number) {
+        if (!this.cssZoomWrapper) return;
+
+        // Apply inertia damping for smoother, more controlled motion
+        // This makes small movements more precise while still allowing larger movements
+        const applyInertia = (delta: number): number => {
+            const sign = Math.sign(delta);
+            const absDelta = Math.abs(delta);
+
+            // Enhanced damping for ultra-smooth movements
+            // More controlled and gentle for all ranges of motion
+            if (absDelta < 3) {
+                return delta * 0.6; // Very small movements - more controlled
+            } else if (absDelta < 10) {
+                return sign * (absDelta * 0.5); // Small movements - smoother
+            } else if (absDelta < 30) {
+                return sign * (absDelta * 0.4); // Medium movements
+            } else {
+                return sign * (absDelta * 0.3); // Larger movements - much gentler
+            }
+        };
+
+        // Apply the inertia function to smooth out movements
+        const smoothDeltaX = applyInertia(deltaX);
+        const smoothDeltaY = applyInertia(deltaY);
+
+        // Update transform values with the smoothed deltas
+        this.transformValues.translateX += smoothDeltaX;
+        this.transformValues.translateY += smoothDeltaY;
+
+        // Apply the transform with a subtle transition for smoother movement
+        this.cssZoomWrapper.style.transition =
+            "transform 0.08s cubic-bezier(0.33, 1, 0.68, 1)";
+        this.applyContainerTransform();
+
+        // Immediately update the Fabric viewport for better interaction
+        this.updateFabricViewportFromContainer();
+
+        // Reset transition after a short delay
+        setTimeout(() => {
+            if (this.cssZoomWrapper) {
+                this.cssZoomWrapper.style.transition = "none";
+            }
+        }, 80);
+    }
+
+    /**
+     * Handle wheel events for both zooming and panning
+     */
+    private handleContainerWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Disable object caching during transformation
+        if (this.staticGridRef.objectCaching) {
+            this.staticGridRef.objectCaching = false;
+        }
+
+        // Detect platform and input method
+        const isMac = this.isMacOS();
+
+        // On Mac, treat vertical gestures as panning by default unless modifier keys are pressed
+        if (isMac && this.trackpadModeEnabled) {
+            // If holding Ctrl/Cmd, handle as zoom regardless of platform
+            if (e.ctrlKey || e.metaKey) {
+                // Use smoother zoom factor
+                const smoothZoomFactor =
+                    1 +
+                    (e.deltaY < 0
+                        ? this.zoomSensitivity
+                        : -this.zoomSensitivity);
+                this.zoomContainer(smoothZoomFactor, e.clientX, e.clientY);
+            } else {
+                // Otherwise, treat as pan with sensitivity adjustment
+                this.panContainer(
+                    -e.deltaX * this.trackpadPanSensitivity,
+                    -e.deltaY * this.trackpadPanSensitivity,
+                );
+            }
+        }
+        // Standard behavior for other platforms
+        else {
+            if (e.ctrlKey || e.metaKey) {
+                // Zoom with ctrl/meta key - smoother factor
+                const smoothZoomFactor =
+                    1 +
+                    (e.deltaY < 0
+                        ? this.zoomSensitivity
+                        : -this.zoomSensitivity);
+                this.zoomContainer(smoothZoomFactor, e.clientX, e.clientY);
+            } else {
+                // Pan without modifier keys - with standard sensitivity
+                this.panContainer(
+                    -e.deltaX * this.panSensitivity,
+                    -e.deltaY * this.panSensitivity,
+                );
+            }
+        }
+
+        // Re-enable caching after a delay
+        clearTimeout(this._zoomTimeout);
+        this._zoomTimeout = setTimeout(() => {
+            if (this.staticGridRef && !this.staticGridRef.objectCaching) {
+                this.staticGridRef.objectCaching = true;
+                this.updateFabricViewportFromContainer();
+                this.requestRenderAll();
+            }
+        }, 100);
+    };
+
+    /**
+     * Handle mousedown on the container
+     */
+    private handleContainerMouseDown = (e: MouseEvent) => {
+        // Only handle middle mouse button or Alt+click for panning
+        if (e.button === 1 || e.altKey) {
+            e.preventDefault();
+            this.isPanning = true;
+            this.lastPosX = e.clientX;
+            this.lastPosY = e.clientY;
+
+            // Change cursor
+            document.body.style.cursor = "grabbing";
+        }
+    };
+
+    /**
+     * Handle mousemove for panning
+     */
+    private handleContainerMouseMove = (e: MouseEvent) => {
+        if (!this.isPanning) return;
+
+        const deltaX = e.clientX - this.lastPosX;
+        const deltaY = e.clientY - this.lastPosY;
+
+        this.panContainer(deltaX, deltaY);
+
+        this.lastPosX = e.clientX;
+        this.lastPosY = e.clientY;
+    };
+
+    /**
+     * Handle mouseup to end panning
+     */
+    private handleContainerMouseUp = () => {
+        if (this.isPanning) {
+            this.isPanning = false;
+            document.body.style.cursor = "";
+            this.updateFabricViewportFromContainer();
+        }
+    };
+
+    /**
+     * Handle touch start for pan/zoom
+     */
+    private handleContainerTouchStart = (e: TouchEvent) => {
+        e.preventDefault();
+
+        // Two-finger gesture for pinch zoom
+        if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+
+            // Calculate initial distance for pinch-zoom
+            this.initialPinchDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY,
+            );
+
+            // Calculate center point
+            this.lastPosX = (touch1.clientX + touch2.clientX) / 2;
+            this.lastPosY = (touch1.clientY + touch2.clientY) / 2;
+        }
+        // Single finger for panning
+        else if (e.touches.length === 1) {
+            this.isPanning = true;
+            this.lastPosX = e.touches[0].clientX;
+            this.lastPosY = e.touches[0].clientY;
+        }
+    };
+
+    /**
+     * Handle touch move for pan/zoom
+     */
+    private handleContainerTouchMove = (e: TouchEvent) => {
+        e.preventDefault();
+
+        // Pinch-zoom gesture with two fingers
+        if (e.touches.length === 2) {
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+
+            // Calculate current distance
+            const currentDistance = Math.hypot(
+                touch2.clientX - touch1.clientX,
+                touch2.clientY - touch1.clientY,
+            );
+
+            // Calculate center point
+            const centerX = (touch1.clientX + touch2.clientX) / 2;
+            const centerY = (touch1.clientY + touch2.clientY) / 2;
+
+            // Calculate delta for panning
+            const deltaX = centerX - this.lastPosX;
+            const deltaY = centerY - this.lastPosY;
+
+            // Apply zoom if distance changed significantly
+            if (Math.abs(currentDistance - this.initialPinchDistance) > 10) {
+                const zoomFactor = currentDistance / this.initialPinchDistance;
+                this.zoomContainer(zoomFactor, centerX, centerY);
+                this.initialPinchDistance = currentDistance;
+            }
+
+            // Apply pan
+            this.panContainer(deltaX, deltaY);
+
+            // Update reference point
+            this.lastPosX = centerX;
+            this.lastPosY = centerY;
+        }
+        // Single finger panning
+        else if (e.touches.length === 1 && this.isPanning) {
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - this.lastPosX;
+            const deltaY = touch.clientY - this.lastPosY;
+
+            this.panContainer(deltaX, deltaY);
+
+            this.lastPosX = touch.clientX;
+            this.lastPosY = touch.clientY;
+        }
+    };
+
+    /**
+     * Handle touch end
+     */
+    private handleContainerTouchEnd = () => {
+        this.isPanning = false;
+        this.initialPinchDistance = 0;
+        this.updateFabricViewportFromContainer();
+    };
+
+    /**
+     * Apply zoom to the container using CSS transform with strict limits
+     * Enhanced with smoother transitions for professional design application feel
+     */
+    private zoomContainer(factor: number, clientX: number, clientY: number) {
+        if (!this.cssZoomWrapper || !this.cssZoomWrapper.parentElement) return;
+
+        // Get container rect to calculate relative position
+        const rect = this.cssZoomWrapper.parentElement.getBoundingClientRect();
+
+        // Calculate point position relative to container
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        // Store current scale for calculation
+        const prevScale = this.transformValues.scale;
+
+        // Calculate new scale with strict limits
+        // Apply a stronger damping factor for ultra-smooth zooming
+        const dampedFactor =
+            factor > 1
+                ? 1 + (factor - 1) * 0.5 // More dampening for zoom in
+                : 1 - (1 - factor) * 0.5; // More dampening for zoom out
+
+        let newScale = prevScale * dampedFactor;
+
+        // Apply strict zoom limits
+        const isAtMinZoom = prevScale <= this.MIN_ZOOM && factor < 1;
+        const isAtMaxZoom = prevScale >= this.MAX_ZOOM && factor > 1;
+
+        // Enforce limits and provide visual feedback when limits are reached
+        if (isAtMinZoom) {
+            newScale = this.MIN_ZOOM;
+            this.showZoomLimitFeedback("You've reached maximum zoom out");
+            return; // Don't apply any more zoom
+        } else if (isAtMaxZoom) {
+            newScale = this.MAX_ZOOM;
+            this.showZoomLimitFeedback("You've reached maximum zoom in");
+            return; // Don't apply any more zoom
+        }
+
+        // Final clamp to ensure we never exceed limits
+        newScale = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, newScale));
+
+        // Skip if scale change is too small
+        if (Math.abs(newScale - prevScale) < 0.0001) return;
+
+        // Update origin point for the transform
+        this.transformValues.originX = x;
+        this.transformValues.originY = y;
+
+        // Adjust translation to zoom toward the cursor point
+        const scaleFactor = newScale / prevScale;
+        this.transformValues.translateX =
+            x - (x - this.transformValues.translateX) * scaleFactor;
+        this.transformValues.translateY =
+            y - (y - this.transformValues.translateY) * scaleFactor;
+
+        // Update scale value
+        this.transformValues.scale = newScale;
+
+        // Apply the transform with an improved easing curve for smoother zoom feeling
+        // Longer duration and better easing curve for professional design application smoothness
+        this.cssZoomWrapper.style.transition =
+            "transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1)";
+        this.applyContainerTransform();
+
+        // Clear the transition after zoom is complete for responsive panning
+        setTimeout(() => {
+            if (this.cssZoomWrapper) {
+                this.cssZoomWrapper.style.transition = "none";
+            }
+        }, 150);
+
+        // Update zoom percentage in UI if we have a zoom display
+        this.updateZoomPercentageDisplay();
+    }
+
+    /**
+     * Show temporary visual feedback when user hits zoom limits
+     */
+    private showZoomLimitFeedback(message: string) {
+        // Check if feedback element already exists
+        let feedback = document.getElementById("zoom-limit-feedback");
+
+        // Create if it doesn't exist
+        if (!feedback) {
+            feedback = document.createElement("div");
+            feedback.id = "zoom-limit-feedback";
+            feedback.style.position = "absolute";
+            feedback.style.bottom = "60px";
+            feedback.style.left = "50%";
+            feedback.style.transform = "translateX(-50%)";
+            feedback.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+            feedback.style.color = "white";
+            feedback.style.padding = "8px 12px";
+            feedback.style.borderRadius = "4px";
+            feedback.style.fontFamily = "sans-serif";
+            feedback.style.fontSize = "14px";
+            feedback.style.pointerEvents = "none";
+            feedback.style.opacity = "0";
+            feedback.style.transition = "opacity 0.2s ease-in-out";
+            feedback.style.zIndex = "10000";
+            document.body.appendChild(feedback);
+        }
+
+        // Update message and show
+        feedback.textContent = message;
+        feedback.style.opacity = "1";
+
+        // Hide after 1.5 seconds
+        setTimeout(() => {
+            if (feedback) feedback.style.opacity = "0";
+        }, 1500);
+    }
+
+    /**
+     * Update zoom percentage display in UI
+     */
+    private updateZoomPercentageDisplay() {
+        // Remove any existing zoom controls to avoid duplicates
+        if (!this.fieldProperties || !this.cssZoomWrapper) return;
+        let oldZoomControls = document.getElementById(
+            "workspace-zoom-controls",
+        );
+        if (oldZoomControls && oldZoomControls.parentElement) {
+            oldZoomControls.parentElement.removeChild(oldZoomControls);
+        }
+
+        // Get or create the workspace zoom controls container
+        let zoomControlsContainer = document.createElement("div");
+        zoomControlsContainer.id = "workspace-zoom-controls";
+        zoomControlsContainer.title = "Workspace Zoom Controls";
+        zoomControlsContainer.style.position = "absolute";
+        zoomControlsContainer.style.right = "20px";
+        zoomControlsContainer.style.zIndex = "1000";
+        zoomControlsContainer.style.display = "flex";
+        zoomControlsContainer.style.alignItems = "center";
+        zoomControlsContainer.style.backgroundColor = "white";
+        zoomControlsContainer.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.2)";
+        zoomControlsContainer.style.borderRadius = "4px";
+        zoomControlsContainer.style.padding = "4px";
+        zoomControlsContainer.style.fontFamily = "sans-serif";
+
+        // Create zoom out button
+        const zoomOutButton = document.createElement("button");
+        zoomOutButton.innerHTML = "−";
+        zoomOutButton.style.width = "28px";
+        zoomOutButton.style.height = "28px";
+        zoomOutButton.style.border = "none";
+        zoomOutButton.style.backgroundColor = "white";
+        zoomOutButton.style.borderRadius = "4px";
+        zoomOutButton.style.cursor = "pointer";
+        zoomOutButton.style.fontSize = "18px";
+        zoomOutButton.style.display = "flex";
+        zoomOutButton.style.alignItems = "center";
+        zoomOutButton.style.justifyContent = "center";
+        zoomOutButton.title = "Zoom out";
+        zoomOutButton.addEventListener("click", () => {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const zoomFactor = 0.8;
+            this.zoomContainer(zoomFactor, centerX, centerY);
+        });
+        zoomOutButton.addEventListener("mouseenter", () => {
+            zoomOutButton.style.backgroundColor = "#f5f5f5";
+        });
+        zoomOutButton.addEventListener("mouseleave", () => {
+            zoomOutButton.style.backgroundColor = "white";
+        });
+
+        // Create zoom percentage display as a button
+        const zoomDisplay = document.createElement("button");
+        zoomDisplay.id = "zoom-percentage-display";
+        zoomDisplay.style.padding = "0 8px";
+        zoomDisplay.style.fontSize = "12px";
+        zoomDisplay.style.minWidth = "40px";
+        zoomDisplay.style.textAlign = "center";
+        zoomDisplay.style.height = "28px";
+        zoomDisplay.style.border = "none";
+        zoomDisplay.style.backgroundColor = "white";
+        zoomDisplay.style.borderRadius = "4px";
+        zoomDisplay.style.cursor = "pointer";
+        zoomDisplay.style.fontWeight = "bold";
+        zoomDisplay.style.display = "flex";
+        zoomDisplay.style.alignItems = "center";
+        zoomDisplay.style.justifyContent = "center";
+        zoomDisplay.title = "Click to fit field to view (100%)";
+        zoomDisplay.addEventListener("click", () => {
+            this.fitToScreen();
+        });
+        zoomDisplay.addEventListener("mouseenter", () => {
+            zoomDisplay.style.backgroundColor = "#f5f5f5";
+        });
+        zoomDisplay.addEventListener("mouseleave", () => {
+            zoomDisplay.style.backgroundColor = "white";
+        });
+        zoomDisplay.addEventListener("mousedown", () => {
+            zoomDisplay.style.backgroundColor = "#e0e0e0";
+        });
+        zoomDisplay.addEventListener("mouseup", () => {
+            zoomDisplay.style.backgroundColor = "#f5f5f5";
+        });
+
+        // Create zoom in button
+        const zoomInButton = document.createElement("button");
+        zoomInButton.innerHTML = "+";
+        zoomInButton.style.width = "28px";
+        zoomInButton.style.height = "28px";
+        zoomInButton.style.border = "none";
+        zoomInButton.style.backgroundColor = "white";
+        zoomInButton.style.borderRadius = "4px";
+        zoomInButton.style.cursor = "pointer";
+        zoomInButton.style.fontSize = "18px";
+        zoomInButton.style.display = "flex";
+        zoomInButton.style.alignItems = "center";
+        zoomInButton.style.justifyContent = "center";
+        zoomInButton.title = "Zoom in";
+        zoomInButton.addEventListener("click", () => {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const zoomFactor = 1.25;
+            this.zoomContainer(zoomFactor, centerX, centerY);
+        });
+        zoomInButton.addEventListener("mouseenter", () => {
+            zoomInButton.style.backgroundColor = "#f5f5f5";
+        });
+        zoomInButton.addEventListener("mouseleave", () => {
+            zoomInButton.style.backgroundColor = "white";
+        });
+
+        // Remove fit to screen button and separator
+        // Only use: zoomOutButton, zoomDisplay, zoomInButton
+        zoomControlsContainer.appendChild(zoomOutButton);
+        zoomControlsContainer.appendChild(zoomDisplay);
+        zoomControlsContainer.appendChild(zoomInButton);
+
+        // Try to position above the timeline if it exists
+        const timeline = document.getElementById("timeline");
+        let parentForControls: HTMLElement | null = null;
+        let bottomPx = 20;
+        if (timeline && timeline.parentElement) {
+            parentForControls = timeline.parentElement;
+            // Get timeline height (including margin/padding)
+            const timelineRect = timeline.getBoundingClientRect();
+            // Get parent rect to calculate offset
+            const parentRect = parentForControls.getBoundingClientRect();
+            // Place controls above the timeline, relative to parent
+            bottomPx = parentRect.bottom - timelineRect.top + 20;
+            zoomControlsContainer.style.bottom = `${bottomPx}px`;
+            parentForControls.appendChild(zoomControlsContainer);
+        } else {
+            // Fallback to .canvas-upper or body
+            const upperCanvas = document.querySelector(".canvas-upper");
+            if (upperCanvas) {
+                if (getComputedStyle(upperCanvas).position === "static") {
+                    (upperCanvas as HTMLElement).style.position = "relative";
+                }
+                zoomControlsContainer.style.bottom = "80px";
+                upperCanvas.appendChild(zoomControlsContainer);
+            } else {
+                zoomControlsContainer.style.position = "fixed";
+                zoomControlsContainer.style.bottom = "80px";
+                document.body.appendChild(zoomControlsContainer);
+            }
+        }
+
+        // Listen for window resize to reposition dynamically
+        window.addEventListener(
+            "resize",
+            () => {
+                this.updateZoomPercentageDisplay();
+            },
+            { once: true },
+        );
+
+        // Calculate fit-to-field scale
+        let fitScale = 1;
+        if (this.cssZoomWrapper) {
+            const fieldWidth = this.fieldProperties.width;
+            const fieldHeight = this.fieldProperties.height;
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const margin = 40;
+            const scaleX = (viewportWidth - margin) / fieldWidth;
+            const scaleY = (viewportHeight - margin) / fieldHeight;
+            fitScale = Math.min(scaleX, scaleY) * 0.8; // 80% of the viewport
+        }
+        const percentOfFit = Math.round(
+            (this.transformValues.scale / fitScale) * 100,
+        );
+        const zoomDisplayElem = document.getElementById(
+            "zoom-percentage-display",
+        );
+        if (zoomDisplayElem) {
+            zoomDisplayElem.textContent = `${percentOfFit}%`;
+        }
+    }
+
+    /**
+     * Reset zoom and pan to default
+     */
+    private resetZoom() {
+        // Reset to default values
+        this.transformValues.scale = 1;
+        this.transformValues.translateX = 0;
+        this.transformValues.translateY = 0;
+
+        // Apply transform
+        this.applyContainerTransform();
+
+        // Update Fabric.js viewport
+        this.updateFabricViewportFromContainer();
+
+        // Update zoom percentage display
+        this.updateZoomPercentageDisplay();
+    }
+
+    /**
+     * Auto-fit the field to the viewport with a margin
+     */
+    private fitToScreen() {
+        if (!this.cssZoomWrapper) return;
+
+        // Get field dimensions
+        const fieldWidth = this.fieldProperties.width;
+        const fieldHeight = this.fieldProperties.height;
+
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        // Calculate the scale needed to fit the field with a margin
+        const margin = 40; // 20px margin on each side
+        const scaleX = (viewportWidth - margin) / fieldWidth;
+        const scaleY = (viewportHeight - margin) / fieldHeight;
+        let scale = Math.min(scaleX, scaleY) * 0.8; // 80% of the viewport
+        // Enforce zoom limits
+        scale = Math.max(this.MIN_ZOOM, Math.min(this.MAX_ZOOM, scale));
+
+        // Center the geometric center of the field
+        const centerFieldX = fieldWidth / 2;
+        const centerFieldY = fieldHeight / 2;
+        const centerViewportX = viewportWidth / 2;
+        const centerViewportY = viewportHeight / 2;
+        const translateX = centerViewportX - centerFieldX * scale;
+        const translateY = centerViewportY - centerFieldY * scale;
+
+        // Set new transform values
+        this.transformValues.scale = scale;
+        this.transformValues.translateX = translateX;
+        this.transformValues.translateY = translateY;
+
+        // Apply transform with transition for smooth animation
+        this.cssZoomWrapper.style.transition =
+            "transform 0.3s cubic-bezier(0.2, 0, 0.2, 1)";
+        this.applyContainerTransform();
+
+        // Clear transition after animation completes
+        setTimeout(() => {
+            if (this.cssZoomWrapper) {
+                this.cssZoomWrapper.style.transition = "none";
+            }
+        }, 300);
+
+        // Update Fabric.js viewport
+        this.updateFabricViewportFromContainer();
+
+        // Update zoom percentage display
+        this.updateZoomPercentageDisplay();
+    }
+
+    /**
+     * Apply transform values to the container
+     * Modified to use transitions specified by calling functions instead
+     */
+    private applyContainerTransform() {
+        if (!this.cssZoomWrapper) return;
+
+        const { translateX, translateY, scale } = this.transformValues;
+
+        // Apply the transform without overriding transition
+        // (Each calling function now sets its own appropriate transition timing)
+        this.cssZoomWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+
+    /**
+     * Update Fabric.js viewport to match the CSS container transform
+     * This ensures object interactions work correctly after CSS transforms
+     */
+    public updateFabricViewportFromContainer() {
+        if (!this.cssZoomWrapper) return;
+
+        const { scale, translateX, translateY } = this.transformValues;
+
+        // Update Fabric viewport transform to match the container's CSS transform
+        if (this.viewportTransform) {
+            this.viewportTransform[0] = scale; // scaleX
+            this.viewportTransform[3] = scale; // scaleY
+            this.viewportTransform[4] = translateX; // translateX
+            this.viewportTransform[5] = translateY; // translateY
+
+            // Apply transform to Fabric
+            this.setViewportTransform(this.viewportTransform);
+        }
+    }
+
     /******************* INSTANCE METHODS ******************/
     /**
      * Refreshes the size of the canvas to fit the window.
      */
     refreshCanvasSize() {
-        this.setWidth(window.innerWidth);
-        this.setHeight(window.innerHeight);
+        // Only set dimensions if the canvas element exists
+        if (this.getElement()) {
+            this.setWidth(window.innerWidth);
+            this.setHeight(window.innerHeight);
+        }
     }
 
     /**
@@ -181,6 +1125,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         this._listeners = newListeners;
         this._listeners.initiateListeners();
+
+        // Update cursor based on canvas panning setting
+        if (!this._uiSettings.mouseSettings.enableCanvasPanning) {
+            this.defaultCursor = "default";
+            this.moveCursor = "default";
+        } else {
+            this.defaultCursor = "grab";
+            this.moveCursor = "grabbing";
+        }
     }
 
     /**
@@ -552,40 +1505,28 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /*********************** PRIVATE INSTANCE METHODS ***********************/
     /**
-     * Zoom in and out with the mouse wheel
+     * Apply pan with the given deltas
      */
-    private handleMouseWheel = (fabricEvent: fabric.IEvent<WheelEvent>) => {
-        // set objectCaching to true to improve performance while zooming
-        if (!this.staticGridRef.objectCaching)
-            this.staticGridRef.objectCaching = true;
+    private applyPan(deltaX: number, deltaY: number): void {
+        const vpt = this.viewportTransform;
+        if (vpt) {
+            vpt[4] -= deltaX;
+            vpt[5] -= deltaY;
+            this.requestRenderAll();
+        }
+    }
 
-        // set objectCaching to true to improve performance while zooming
-        if (!this.staticGridRef.objectCaching)
-            this.staticGridRef.objectCaching = true;
-
-        const delta = fabricEvent.e.deltaY;
+    /**
+     * Apply zoom with the given delta at the given point
+     */
+    private applyZoom(deltaY: number, point: { x: number; y: number }): void {
         let zoom = this.getZoom();
-        zoom *= 0.999 ** delta;
-        if (zoom > 25) zoom = 25;
-        if (zoom < 0.35) zoom = 0.35;
-        this.zoomToPoint(
-            { x: fabricEvent.e.offsetX, y: fabricEvent.e.offsetY },
-            zoom,
-        );
-        fabricEvent.e.preventDefault();
-        fabricEvent.e.stopPropagation();
-
-        // set objectCaching to false after 100ms to improve performance after zooming
-        // This is why the grid is blurry but fast while zooming, and sharp while not.
-        // If it was always sharp (object caching on), it would be horrendously slow
-        clearTimeout(this._zoomTimeout);
-        this._zoomTimeout = /** The */ setTimeout(() => {
-            if (/** The */ this.staticGridRef.objectCaching) {
-                this.staticGridRef.objectCaching = false;
-                this.requestRenderAll();
-            }
-        }, 50);
-    };
+        const zoomFactor = 0.9;
+        zoom *= deltaY > 0 ? zoomFactor : 1 / zoomFactor;
+        zoom = Math.min(Math.max(0.1, zoom), 20);
+        this.zoomToPoint(point, zoom);
+        this.requestRenderAll();
+    }
 
     /**
      * Builds the grid for the field/stage based on the given field properties as a fabric.Group.
@@ -1162,11 +2103,39 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             activeObject.lockMovementY = uiSettings.lockY;
         }
 
+        // Update trackpad settings if changed
+        if (
+            this.trackpadModeEnabled !== uiSettings.mouseSettings.trackpadMode
+        ) {
+            this.trackpadModeEnabled = uiSettings.mouseSettings.trackpadMode;
+        }
+
+        // Update sensitivity settings if they exist in the UI settings
+        if (uiSettings.mouseSettings.panSensitivity) {
+            this.panSensitivity = uiSettings.mouseSettings.panSensitivity;
+        }
+        if (uiSettings.mouseSettings.trackpadPanSensitivity) {
+            this.trackpadPanSensitivity =
+                uiSettings.mouseSettings.trackpadPanSensitivity;
+        }
+        if (uiSettings.mouseSettings.zoomSensitivity) {
+            this.zoomSensitivity = uiSettings.mouseSettings.zoomSensitivity;
+        }
+
         if (
             oldUiSettings.gridLines !== uiSettings.gridLines ||
             oldUiSettings.halfLines !== uiSettings.halfLines
         ) {
             this.renderFieldGrid();
+        }
+
+        // Update cursor based on canvas panning setting
+        if (!uiSettings.mouseSettings.enableCanvasPanning) {
+            this.defaultCursor = "default";
+            this.moveCursor = "default";
+        } else {
+            this.defaultCursor = "grab";
+            this.moveCursor = "grabbing";
         }
     }
 
@@ -1364,5 +2333,147 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         (obj: any) => obj.selectable,
                     )))
         );
+    };
+
+    /**
+     * Detects if running on MacOS
+     */
+    private isMacOS(): boolean {
+        return navigator.platform.indexOf("Mac") > -1;
+    }
+
+    /**
+     * A backup method to manually pan the canvas
+     */
+    private manualPan(deltaX: number, deltaY: number): void {
+        this.panContainer(deltaX, deltaY);
+    }
+
+    /**
+     * Set trackpad mode from settings
+     * @param enabled Whether trackpad mode should be enabled
+     */
+    public setTrackpadMode(enabled: boolean) {
+        this.trackpadModeEnabled = enabled;
+    }
+
+    /**
+     * Get current trackpad mode state
+     * @returns Current trackpad mode state (enabled/disabled)
+     */
+    public getTrackpadMode(): boolean {
+        return this.trackpadModeEnabled;
+    }
+
+    /**
+     * Set pan sensitivity value from settings
+     * @param value New pan sensitivity value
+     */
+    public setPanSensitivity(value: number) {
+        this.panSensitivity = Math.max(0.1, Math.min(3.0, value));
+    }
+
+    /**
+     * Set trackpad pan sensitivity value from settings
+     * @param value New trackpad pan sensitivity value
+     */
+    public setTrackpadPanSensitivity(value: number) {
+        this.trackpadPanSensitivity = Math.max(0.1, Math.min(3.0, value));
+    }
+
+    /**
+     * Set zoom sensitivity value from settings
+     * @param value New zoom sensitivity value
+     */
+    public setZoomSensitivity(value: number) {
+        this.zoomSensitivity = Math.max(0.01, Math.min(0.5, value));
+    }
+
+    /**
+     * Get current pan sensitivity value
+     * @returns Current pan sensitivity
+     */
+    public getPanSensitivity(): number {
+        return this.panSensitivity;
+    }
+
+    /**
+     * Get current trackpad pan sensitivity value
+     * @returns Current trackpad pan sensitivity
+     */
+    public getTrackpadPanSensitivity(): number {
+        return this.trackpadPanSensitivity;
+    }
+
+    /**
+     * Get current zoom sensitivity value
+     * @returns Current zoom sensitivity
+     */
+    public getZoomSensitivity(): number {
+        return this.zoomSensitivity;
+    }
+
+    /**
+     * Exports the canvas as SVG
+     * @param options Optional SVG export options
+     * @returns SVG string representation of the canvas
+     */
+    toSVG = (options?: any): string => {
+        try {
+            // Store current viewport transform to restore later
+            const originalVPT = this.viewportTransform;
+
+            // Reset viewport to show entire field (no zoom/pan)
+            this.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
+            // Get the field dimensions
+            const fieldWidth = this.fieldProperties.width;
+            const fieldHeight = this.fieldProperties.height;
+
+            // Store original canvas dimensions
+            const originalWidth = this.width;
+            const originalHeight = this.height;
+
+            // Temporarily set canvas size to match field dimensions for export
+            this.setWidth(fieldWidth);
+            this.setHeight(fieldHeight);
+
+            // Force a render to ensure everything is up to date
+            this.requestRenderAll();
+
+            // Call the parent toSVG method with proper options
+            const svgOptions = {
+                width: fieldWidth,
+                height: fieldHeight,
+                viewBox: {
+                    x: 0,
+                    y: 0,
+                    width: fieldWidth,
+                    height: fieldHeight,
+                },
+                ...options,
+            };
+
+            const svgString = super.toSVG(svgOptions);
+
+            // Restore original viewport transform
+            if (originalVPT) {
+                this.setViewportTransform(originalVPT);
+            }
+
+            // Restore original canvas dimensions
+            this.setWidth(originalWidth || fieldWidth);
+            this.setHeight(originalHeight || fieldHeight);
+
+            // Force another render to restore the view
+            this.requestRenderAll();
+
+            return svgString;
+        } catch (error) {
+            console.error("Error exporting canvas to SVG:", error);
+            throw new Error(
+                `Failed to export canvas to SVG: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+        }
     };
 }

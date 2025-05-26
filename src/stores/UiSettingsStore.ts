@@ -19,6 +19,25 @@ export interface UiSettings {
     timelinePixelsPerSecond: number;
     /** The component that is currently focussed */
     focussedComponent: FocusableComponents;
+    /** Mouse settings */
+    mouseSettings: {
+        /** Mouse wheel zoom sensitivity (1-10) */
+        wheelZoomSensitivity: number;
+        /** Whether to enable touchpad gestures */
+        enableTouchpadGestures: boolean;
+        /** Whether to enable momentum scrolling */
+        enableMomentumScrolling: boolean;
+        /** Whether to enable canvas panning with left click */
+        enableCanvasPanning: boolean;
+        /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
+        trackpadMode: boolean;
+        /** Trackpad pan sensitivity (0.1-3.0) */
+        trackpadPanSensitivity: number;
+        /** Zoom sensitivity (0.01-0.1) */
+        zoomSensitivity: number;
+        /** Standard pan sensitivity (0.1-3.0) */
+        panSensitivity: number;
+    };
 }
 
 interface UiSettingsStoreState {
@@ -52,6 +71,17 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             timelinePixelsPerSecond: 40,
             /** The component that is currently focussed */
             focussedComponent: "canvas",
+            /** Mouse settings */
+            mouseSettings: {
+                wheelZoomSensitivity: 5,
+                enableTouchpadGestures: true,
+                enableMomentumScrolling: true,
+                enableCanvasPanning: true,
+                trackpadMode: true,
+                trackpadPanSensitivity: 0.5,
+                zoomSensitivity: 0.03,
+                panSensitivity: 0.5,
+            },
         },
 
         /**
