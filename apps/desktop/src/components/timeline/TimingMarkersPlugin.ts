@@ -32,8 +32,10 @@ export class TimingMarkersPlugin {
             this.beatRegions.set(beat.id, newRegion);
         });
         this.measures.forEach((measure) => {
+            const hasRehearsalMark =
+                !!measure.rehearsalMark && measure.rehearsalMark.trim() !== "";
             const newRegion = this.wsRegions.addRegion({
-                id: `measure measure-${measure.id}`,
+                id: `${hasRehearsalMark ? "rehearsalMark" : "measure"} measure-${measure.id}`,
                 start: measure.timestamp,
                 // color: "rgba(100, 66, 255, 1)",
                 content: measure.rehearsalMark ?? measure.number.toString(),

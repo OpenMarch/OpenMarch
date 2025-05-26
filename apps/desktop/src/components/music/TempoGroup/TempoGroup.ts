@@ -479,10 +479,12 @@ export const updateTempoGroup = async ({
     const newBeats = newBeatsFromTempoGroup({
         tempo: newTempo,
         numRepeats: tempoGroup.numOfRepeats,
-        bigBeatsPerMeasure: getRealBigBeatsPerMeasure(tempoGroup),
+        bigBeatsPerMeasure: tempoGroup.bigBeatsPerMeasure,
         strongBeatIndexes: newStrongBeatIndexes,
     });
 
+    console.log("oldBeats", oldBeats);
+    console.log("newBeats", newBeats);
     if (oldBeats.length !== newBeats.length) {
         conToastError(
             "Tempo group has different number of beats. This should not happen. Please reach out for support",
@@ -511,7 +513,7 @@ export const updateTempoGroup = async ({
                 [
                     {
                         id: tempoGroup.measures![0].id,
-                        rehearsal_mark: tempoGroup.name,
+                        rehearsal_mark: newName.trim() === "" ? null : newName,
                     },
                 ],
                 async () => {},
@@ -522,6 +524,41 @@ export const updateTempoGroup = async ({
     return GroupFunction({
         refreshFunction,
         functionsToExecute,
+        useNextUndoGroup: true,
+    });
+};
+
+export const updateManualTempos = async ({
+    tempoGroup,
+    newManualTempos,
+    refreshFunction,
+}: {
+    tempoGroup: TempoGroup;
+    newManualTempos: number[];
+    refreshFunction: () => Promise<void>;
+}) => {
+    const oldBeats = tempoGroup.measures?.flatMap((measure) => measure.beats);
+    if (!oldBeats || oldBeats.length !== newManualTempos.length) {
+        conToastError(
+            "Tempo group has different number of beats. This should not happen. Please reach out for support",
+            tempoGroup,
+            oldBeats,
+            newManualTempos,
+        );
+        return;
+    }
+
+    const updatedBeats: ModifiedBeatArgs[] = [];
+    for (let i = 0; i < oldBeats.length; i++) {
+        updatedBeats.push({
+            id: oldBeats[i].id,
+            duration: 60 / newManualTempos[i],
+        });
+    }
+
+    return GroupFunction({
+        refreshFunction,
+        functionsToExecute: [() => updateBeats(updatedBeats, async () => {})],
         useNextUndoGroup: true,
     });
 };
