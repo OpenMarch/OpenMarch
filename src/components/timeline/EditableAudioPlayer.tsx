@@ -173,6 +173,7 @@ export default function EditableAudioPlayer({
                     newCounts: eventNum,
                     currentTime,
                 });
+                console.log("temporary measures", updatedMeasures);
                 setTemporaryMeasures(updatedMeasures);
 
                 timingMarkersPlugin.current?.updateTimingMarkers(
