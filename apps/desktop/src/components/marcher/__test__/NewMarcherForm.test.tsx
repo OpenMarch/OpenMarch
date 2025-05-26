@@ -97,7 +97,7 @@ describe.todo("NewMarcherForm", () => {
         const submitButtons =
             submitButtonContainer.getElementsByTagName("button");
         expect(submitButtons[0]).toBeDefined();
-        expect(submitButtons[0]).not.toBeDisabled();
+        (expect(submitButtons[0]).not as any).toBeDisabled();
         fireEvent.click(submitButtons[0]);
 
         await waitFor(() => {
@@ -159,7 +159,7 @@ describe.todo("NewMarcherForm", () => {
             target: { value: "" },
         });
 
-        expect(screen.getByText("Create Marcher")).toBeDisabled();
+        (expect(screen.getByText("Create Marcher")) as any).toBeDisabled();
     });
 
     describe.todo(
