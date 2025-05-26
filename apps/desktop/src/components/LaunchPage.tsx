@@ -27,8 +27,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 className="from-bg-1 to-accent absolute -z-0 flex h-screen w-screen flex-col content-between bg-linear-to-tr from-5% to-100%"
                 style={{
                     backgroundSize: "200% 200%",
-                    animation:
-                        "pulse 12s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                    animation: "pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite",
                     transition: "all 0.3s ease",
                     opacity: 1,
                 }}

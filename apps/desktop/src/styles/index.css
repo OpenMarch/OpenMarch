@@ -39,7 +39,16 @@
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
     background: transparent;
-    color: var(--color-text);
+    /* $SED color: var(--color-text); */
+    color: rgb(32, 32, 32);
+    margin: 0;
+}
+
+.dark input[type="number"]::-webkit-inner-spin-button,
+.dark input[type="number"]::-webkit-outer-spin-button {
+    background: transparent;
+    /* $SED_DARK color: var(--color-text); */
+    color: rgb(208, 208, 208);
     margin: 0;
 }
 
@@ -63,14 +72,52 @@ textarea,
 
 #sentry-feedback {
     --border: "black";
-    --foreground: rgb(var(--color-text));
-    --background: rgb(var(--color-modal-stop-2));
-    --accent-foreground: rgb(var(--color-text-invert));
-    --accent-background: rgb(var(--color-accent));
-    --success-color: rgb(var(--color-green));
-    --error-color: rgb(var(--color-red));
-    --box-shadow: rgb(var(--color-modal-shadow));
+    /* $SED --foreground: rgb(var(--color-text)); */
+    --foreground: rgb(32, 32, 32);
+    /* $SED --background: rgb(var(--color-bg-1)); */
+    --background: rgb(236, 235, 240);
+    /* $SED --accent-foreground: rgb(var(--color-text-invert)); */
+    --accent-foreground: rgb(255, 255, 255);
+    /* $SED --accent-background: rgb(var(--color-accent)); */
+    --accent-background: rgb(100, 66, 255);
+    /* $SED --success-color: rgb(var(--color-green)); */
+    --success-color: rgb(72, 158, 51);
+    /* $SED --accent-foreground: rgb(var(--color-text-invert)); */
+    --accent-foreground: rgb(255, 255, 255);
+    /* $SED --accent-background: rgb(var(--color-accent)); */
+    --accent-background: rgb(100, 66, 255);
+    /* $SED --success-color: rgb(var(--color-green)); */
+    --success-color: rgb(72, 158, 51);
+    /* $SED --error-color: rgb(var(--color-red)); */
+    --error-color: rgb(176, 51, 51);
+    /* $SED --box-shadow: rgb(var(--color-modal-shadow)); */
+    --box-shadow: rgba(0, 0, 0, 0.15);
 }
+
+.dark #sentry-feedback {
+    --border: "white";
+    /* $SED_DARK --foreground: rgb(var(--color-text)); */
+    --foreground: rgb(208, 208, 208);
+    /* $SED_DARK --background: rgb(var(--color-bg-1)); */
+    --background: rgb(15, 14, 19);
+    /* $SED_DARK --accent-foreground: rgb(var(--color-text-invert)); */
+    --accent-foreground: rgb(0, 0, 0);
+    /* $SED_DARK --accent-background: rgb(var(--color-accent)); */
+    --accent-background: rgb(150, 126, 255);
+    /* $SED_DARK --success-color: rgb(var(--color-green)); */
+    --success-color: rgb(113, 222, 86);
+    /* $SED_DARK --accent-foreground: rgb(var(--color-text-invert)); */
+    --accent-foreground: rgb(0, 0, 0);
+    /* $SED_DARK --accent-background: rgb(var(--color-accent)); */
+    --accent-background: rgb(150, 126, 255);
+    /* $SED_DARK --success-color: rgb(var(--color-green)); */
+    --success-color: rgb(113, 222, 86);
+    /* $SED_DARK --error-color: rgb(var(--color-red)); */
+    --error-color: rgb(227, 74, 74);
+    /* $SED_DARK --box-shadow: rgb(var(--color-modal-shadow)); */
+    --box-shadow: rgba(255, 255, 255, 0.15);
+}
+
 @keyframes pulse {
     0%,
     100% {
@@ -89,13 +136,30 @@ textarea,
 
 /* MEASURES */
 #waveform ::part(measure) {
-    background-color: rgba(var(--color-text)) !important;
+    /* $SED background-color: rgba(var(--color-text)) !important; */
+    background-color: rgb(32, 32, 32) !important;
+}
+
+.dark #waveform ::part(measure) {
+    /* $SED_DARK background-color: rgba(var(--color-text)) !important; */
+    background-color: rgb(208, 208, 208) !important;
 }
 
 #waveform ::part(rehearsalMark) {
-    background-color: rgba(var(--color-accent)) !important;
+    /* $SED background-color: rgba(var(--color-accent)) !important; */
+    background-color: rgb(100, 66, 255) !important;
     width: 4px !important;
-    border: 1px solid rgb(var(--color-text)) !important;
+    /* $SED border: 1px solid rgb(var(--color-text)) !important; */
+    border: 1px solid rgb(32, 32, 32) !important;
+    font-size: 24px;
+}
+
+.dark #waveform ::part(rehearsalMark) {
+    /* $SED_DARK background-color: rgba(var(--color-accent)) !important; */
+    background-color: rgb(150, 126, 255) !important;
+    width: 4px !important;
+    /* $SED_DARK border: 1px solid rgb(var(--color-text)) !important; */
+    border: 1px solid rgb(208, 208, 208) !important;
     font-size: 24px;
 }
 
@@ -114,36 +178,90 @@ textarea,
     width: auto;
     text-align: center;
     padding: 0 4px;
-    border: 1px solid rgb(var(--color-text)) !important;
-    background-color: rgba(var(--color-bg-1));
+    /* $SED border: 1px solid rgb(var(--color-text)) !important; */
+    border: 1px solid rgb(32, 32, 32) !important;
+    /* $SED background-color: rgba(var(--color-bg-1)); */
+    background-color: rgb(236, 235, 240);
     border-radius: 6px;
     opacity: 1 !important; /* Ensure content stays visible */
+}
+
+.dark #waveform ::part(region-content) {
+    margin-left: 6px;
+    width: auto;
+    text-align: center;
+    padding: 0 4px;
+    /* $SED_DARK border: 1px solid rgb(var(--color-text)) !important; */
+    border: 1px solid rgb(208, 208, 208) !important;
+    /* $SED_DARK background-color: rgba(var(--color-bg-1)); */
+    background-color: rgb(15, 14, 19);
+    border-radius: 6px;
+    opacity: 1 !important;
 }
 
 /* BEATS */
 
 #waveform ::part(beat) {
-    background-color: rgb(var(--color-text)) !important;
+    /* $SED background-color: rgb(var(--color-text)) !important; */
+    background-color: rgb(32, 32, 32) !important;
     height: 10% !important;
 }
+
+.dark #waveform ::part(beat) {
+    /* $SED_DARK background-color: rgb(var(--color-text)) !important; */
+    background-color: rgb(208, 208, 208) !important;
+    height: 10% !important;
+}
+
 #waveform ::part(editable-beat) {
-    background-color: rgb(var(--color-bg-1)) !important;
-    border: 1px solid rgb(var(--color-text)) !important;
+    /* $SED background-color: rgb(var(--color-bg-1)) !important; */
+    background-color: rgb(236, 235, 240) !important;
+    /* $SED border: 1px solid rgb(var(--color-text)) !important; */
+    border: 1px solid rgb(32, 32, 32) !important;
     height: 100% !important;
     width: 6px !important;
     cursor: ew-resize;
 }
+
+.dark #waveform ::part(editable-beat) {
+    /* $SED_DARK background-color: rgb(var(--color-bg-1)) !important; */
+    background-color: rgb(15, 14, 19) !important;
+    /* $SED_DARK border: 1px solid rgb(var(--color-text)) !important; */
+    border: 1px solid rgb(208, 208, 208) !important;
+    height: 100% !important;
+    width: 6px !important;
+    cursor: ew-resize;
+}
+
 #waveform ::part(editable-beat)::after {
     content: "•";
     position: absolute;
     bottom: -21px;
     left: -1px;
     transform: translateX(-50%);
-    color: rgb(var(--color-text));
+    /* $SED color: rgb(var(--color-text)); */
+    color: rgb(32, 32, 32);
+    font-size: 24px;
+}
+
+.dark #waveform ::part(editable-beat)::after {
+    content: "•";
+    position: absolute;
+    bottom: -21px;
+    left: -1px;
+    transform: translateX(-50%);
+    /* $SED_DARK color: rgb(var(--color-text)); */
+    color: rgb(208, 208, 208);
     font-size: 24px;
 }
 
 /* CURSOR */
 #waveform ::part(cursor) {
-    background-color: rgb(var(--color-accent)) !important;
+    /* $SED background-color: rgb(var(--color-accent)) !important; */
+    background-color: rgb(100, 66, 255) !important;
+}
+
+.dark #waveform ::part(cursor) {
+    /* $SED_DARK background-color: rgb(var(--color-accent)) !important; */
+    background-color: rgb(150, 126, 255) !important;
 }
