@@ -2,7 +2,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useCallback, useEffect, useRef } from "react";
-import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
+import { PlusIcon, MinusIcon, XIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import AudioPlayer from "./AudioPlayer";
@@ -15,7 +15,7 @@ import Page, {
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
 import RegisteredActionButton from "../RegisteredActionButton";
-import { FaEdit, FaCheck } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import EditableAudioPlayer from "./EditableAudioPlayer";
 import MusicModal from "../music/MusicModal";
@@ -440,7 +440,7 @@ export default function TimelineContainer() {
                 uiSettings.focussedComponent === "timeline"
                     ? "h-[48rem]"
                     : uiSettings.showWaveform
-                      ? "h-[13rem]"
+                      ? "h-[8rem]"
                       : "h-[4rem]",
             )}
         >
@@ -499,7 +499,7 @@ export default function TimelineContainer() {
                                 RegisteredActionsObjects.focusCanvas
                             }
                         >
-                            <FaCheck />
+                            <XIcon />
                         </RegisteredActionButton>
                     )}
                 </div>

@@ -72,7 +72,7 @@ export default function AudioPlayer() {
                 container: waveformRef.current,
 
                 // this should be dynamic, but the parent is given height through tailwind currently
-                height: 80,
+                height: 60,
                 width: audioDuration * 40,
 
                 // hide the default cursor

@@ -5,6 +5,7 @@ import { Switch } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { measureRangeString, updatePages } from "@/global/classes/Page";
 
+// TODO: figure out how to make this work with the new music system
 function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore()!;
@@ -117,6 +118,7 @@ function PageEditor() {
                             {measureRangeString(selectedPage)}
                         </p>
                     </div>
+
                     {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
                     Not yet implemented

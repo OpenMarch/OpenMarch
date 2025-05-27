@@ -1,6 +1,6 @@
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
-import { X, CaretLeft } from "@phosphor-icons/react";
+import { CaretLeftIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import NewPageForm from "./NewPageForm";
 import PageList from "./PageList";
@@ -34,7 +34,7 @@ export function PageListContents() {
                         onClick={toggleOpen}
                         className="hover:text-red duration-150 ease-out"
                     >
-                        <X size={24} />
+                        <XIcon size={24} />
                     </button>
                 </div>
             </header>
@@ -56,7 +56,7 @@ export function PageNewFormContents() {
                         }}
                         className="hover:text-accent duration-150 ease-out"
                     >
-                        <CaretLeft size={24} />
+                        <CaretLeftIcon size={24} />
                     </button>
                     <h4 className="text-h4 leading-none">Add Pages</h4>
                 </div>
@@ -64,7 +64,7 @@ export function PageNewFormContents() {
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >
-                    <X size={24} />
+                    <XIcon size={24} />
                 </button>
             </header>
             <NewPageForm />
