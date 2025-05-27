@@ -206,6 +206,22 @@ function initGetters() {
         );
     });
 
+    // Export SVG pages to PDF
+    ipcMain.handle(
+        "export:svgPagesToPdf",
+        async (_, svgPages: string[], options: { fileName: string }) => {
+            return await PDFExportService.exportSvgPagesToPdf(
+                svgPages,
+                options,
+            );
+        },
+    );
+
+    // Get current filename
+    ipcMain.handle("get-current-filename", async () => {
+        return PDFExportService.getCurrentFilename();
+    });
+
     // Export Full Charts
     // ipcMain.handle(
 
@@ -625,7 +641,10 @@ export async function insertAudioFile(): Promise<
                 // Id is -1 to conform with interface
                 DatabaseServices.insertAudioFile({
                     id: -1,
-                    data,
+                    data: data.buffer.slice(
+                        data.byteOffset,
+                        data.byteOffset + data.byteLength,
+                    ),
                     path: path.filePaths[0],
                     nickname: path.filePaths[0],
                     selected: true,
