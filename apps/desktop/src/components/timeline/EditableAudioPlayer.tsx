@@ -19,7 +19,7 @@ import {
     lightProgressColor,
     waveColor,
 } from "./AudioPlayer";
-import { Pause, Play } from "@phosphor-icons/react";
+import { PauseIcon, PlayIcon, RewindIcon } from "@phosphor-icons/react";
 import Beat from "@/global/classes/Beat";
 import { Button } from "@openmarch/ui";
 import {
@@ -94,7 +94,7 @@ export default function EditableAudioPlayer({
                 container: waveformRef.current,
 
                 // this should be dynamic, but the parent is given height through tailwind currently
-                height: 160,
+                height: 120,
                 width: audioDuration * 40,
 
                 // hide the default cursor
@@ -299,44 +299,131 @@ export default function EditableAudioPlayer({
             <div id="waveform" ref={waveformRef}></div>
             <div className="mb-2 flex items-center">
                 <button
-                    onClick={togglePlayPause}
-                    className="mr-2 rounded-md bg-blue-500 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-600"
+                    onClick={() => waveSurfer?.seekTo(0)}
+                    className="hover:text-accent mr-2 rounded-md px-4 py-2 font-medium text-white transition-colors"
                     disabled={!waveSurfer || !audioFileUrl}
                 >
-                    {isAudioPlaying ? <Pause size={24} /> : <Play size={24} />}
+                    <RewindIcon size={24} />
+                </button>
+                <button
+                    onClick={togglePlayPause}
+                    className="hover:text-accent mr-2 rounded-md px-4 py-2 font-medium text-white transition-colors"
+                    disabled={!waveSurfer || !audioFileUrl}
+                >
+                    {isAudioPlaying ? (
+                        <PauseIcon size={24} />
+                    ) : (
+                        <PlayIcon size={24} />
+                    )}
                 </button>
             </div>
 
             {beatsToDisplay === "real" ? (
-                <Button onClick={triggerTapNewTempo} size={"compact"}>
-                    Tap New Tempo
-                </Button>
+                <div className="flex gap-8">
+                    <Button onClick={triggerTapNewTempo} size={"compact"}>
+                        Tap New Tempo
+                    </Button>
+                    <div className="">
+                        Tempo tapping is not very polished and is currently
+                        &quot;all-or-nothing.&quot;
+                        <br />
+                        You must tap all in one shot and will need to restart in
+                        order to edit.
+                        <br />
+                        The result is a fun jam session with you and your
+                        keyboard. It will certainly be quick and not at all
+                        frustrating.
+                        <br />
+                        Please let us know if you find the tap-tempo feature
+                        useful, as we just aren&apos;t predicting that many
+                        people will use it.
+                        <br />
+                        GLHF!
+                    </div>
+                </div>
             ) : (
-                <div
-                    id="timeline-editor-button-container"
-                    className="flex gap-4"
-                >
-                    <Button
-                        size={"compact"}
-                        disabled={isAudioPlaying}
-                        onClick={handleSave}
+                <div className="flex gap-16">
+                    <div
+                        id="timeline-editor-button-container"
+                        className="flex flex-col gap-4"
                     >
-                        Save New Beats
-                    </Button>
-                    <Button
-                        variant={"red"}
-                        onClick={triggerTapNewTempo}
-                        size={"compact"}
-                    >
-                        Discard All
-                    </Button>
-                    <Button
-                        size="compact"
-                        variant="secondary"
-                        onClick={handleCancel}
-                    >
-                        Cancel
-                    </Button>
+                        <Button
+                            className="w-full"
+                            size={"compact"}
+                            disabled={isAudioPlaying}
+                            onClick={handleSave}
+                        >
+                            Save New Beats
+                        </Button>
+                        <Button
+                            className="w-full"
+                            variant={"red"}
+                            onClick={() => {
+                                triggerTapNewTempo();
+                                waveSurfer?.seekTo(0);
+                            }}
+                            size={"compact"}
+                        >
+                            Restart
+                        </Button>
+                        <Button
+                            className="w-full"
+                            size="compact"
+                            variant="secondary"
+                            onClick={handleCancel}
+                        >
+                            Exit
+                        </Button>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <p className="text-text-subtitle text-sm">
+                            Instructions
+                        </p>
+                        <ol className="list-inside list-decimal">
+                            <li>Start at the beginning of the audio</li>
+                            <li>
+                                Press play{" "}
+                                <span className="text-text-subtitle">
+                                    (space bar works)
+                                </span>
+                            </li>
+                            <li>
+                                Tap the tempo{" "}
+                                <span className="text-text-subtitle">
+                                    (instructions on the right)
+                                </span>
+                            </li>
+                            <li>
+                                Pause the audio. Either save the new beats or
+                                retry
+                            </li>
+                        </ol>
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <p className="text-text-subtitle text-sm">
+                            Tapping the tempo
+                        </p>
+
+                        <ul className="list-inside list-disc">
+                            <li>
+                                OpenMarch uses the number keys{" "}
+                                <span className="font-mono">[1-9]</span> to tap
+                                the tempo
+                            </li>
+                            <li>
+                                The number you press corresponds to the number
+                                of beats in the measure
+                            </li>
+                            <li>
+                                For instance in 4/4, you would press the
+                                &quot;4&quot; key
+                            </li>
+                            <li>
+                                Press the key at the downbeat of the next
+                                measure
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             )}
         </div>

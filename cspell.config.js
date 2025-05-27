@@ -69,6 +69,9 @@ module.exports = {
         "esbenp",
         "undoable",
         "shouldn",
+        "aren", // for aren&apos;t
+        "apos",
+        "GLHF",
     ],
     ignorePaths: [
         "node_modules/**",
