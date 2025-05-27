@@ -57,7 +57,6 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
 
     useEffect(() => {
         let newStartBeat = null;
-        console.log("previousPage", previousPage);
         if (previousPage) {
             const lastBeat = previousPage.beats[previousPage.beats.length - 1];
             newStartBeat = getNextBeat(lastBeat, beats);

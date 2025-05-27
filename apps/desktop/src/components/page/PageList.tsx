@@ -1,16 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import FormButtons from "../FormButtons";
 import { ListFormProps } from "../../global/Interfaces";
-import Page, { deletePages, updatePages } from "@/global/classes/Page";
-import { Trash } from "@phosphor-icons/react";
+import Page, {
+    deletePages,
+    updatePageCountRequest,
+    updatePages,
+    areEnoughBeatsForPages,
+} from "@/global/classes/Page";
+import { Check, X, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import {
     Input,
     Button,
     AlertDialogAction,
     AlertDialogCancel,
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { ModifiedPageArgs } from "electron/database/tables/PageTable";
+import { toast } from "sonner";
+import { GroupFunction } from "@/utilities/ApiFunctions";
 
 function PageList({
     hasHeader = false,
@@ -23,6 +32,7 @@ function PageList({
         isEditingLocal,
         setIsEditingLocal,
     ];
+    const [editingPageId, setEditingPageId] = useState<number | null>(null);
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [
         false,
         undefined,
@@ -31,7 +41,7 @@ function PageList({
         false,
         undefined,
     ];
-    const { pages, fetchTimingObjects } = useTimingObjectsStore();
+    const { pages, fetchTimingObjects, beats } = useTimingObjectsStore();
 
     // localPages are the Pages that are displayed in the table
     const [localPages, setLocalPages] = useState<Page[]>();
@@ -40,9 +50,7 @@ function PageList({
     const deletionsRef = useRef<number[]>([]);
 
     async function handleSubmit() {
-        setIsEditing(false);
-
-        const modifiedPages: ModifiedPageArgs[] = [];
+        const modifiedPages: { id: number; counts: number }[] = [];
 
         if (deletionsRef.current.length > 0) {
             await deletePages(new Set(deletionsRef.current), async () => {});
@@ -51,22 +59,68 @@ function PageList({
         for (const [pageId, changes] of Object.entries(changesRef.current))
             modifiedPages.push({ id: Number(pageId), ...changes });
 
-        const result = await updatePages(modifiedPages, fetchTimingObjects);
+        if (
+            !areEnoughBeatsForPages({
+                pages: pages.map((p) => {
+                    const modifiedPage = modifiedPages.find(
+                        (mp) => mp.id === p.id,
+                    );
+                    return {
+                        counts: parseInt(
+                            modifiedPage?.counts.toString() ||
+                                p.counts.toString(),
+                        ),
+                    };
+                }),
+                beats,
+            })
+        ) {
+            toast.error("You cannot have more counts than beats");
+            return;
+        }
+
+        const modifiedPagesRequests = modifiedPages.map((page) =>
+            updatePageCountRequest({
+                pageToUpdate: pages.find((p) => p.id === page.id)!,
+                newCounts: page.counts,
+                pages,
+                beats,
+            }),
+        );
+
+        const result = await GroupFunction({
+            functionsToExecute: modifiedPagesRequests.map(
+                (request) => () => updatePages(request, async () => {}),
+            ),
+            useNextUndoGroup: true,
+            refreshFunction: fetchTimingObjects,
+        });
+
         deletionsRef.current = [];
         changesRef.current = {};
+        setIsEditing(false);
+        setEditingPageId(null);
         return result;
     }
 
     function handleCancel() {
         setIsEditing(false);
+        setEditingPageId(null);
         setLocalPagesModified(pages);
         deletionsRef.current = [];
         changesRef.current = {};
     }
 
-    function handleDeletePage(pageId: number) {
-        deletionsRef.current.push(pageId);
-        setLocalPagesModified(localPages?.filter((page) => page.id !== pageId));
+    async function handleDeletePage(pageId: number) {
+        const response = await deletePages(
+            new Set([pageId]),
+            fetchTimingObjects,
+        );
+        if (response.success) {
+            toast.success("Page deleted");
+        } else {
+            toast.error("Failed to delete page");
+        }
     }
 
     const handleChange = (
@@ -127,74 +181,6 @@ function PageList({
         >
             <div className="flex w-full items-center justify-between">
                 <p className="text-body text-text">List</p>
-                <div className="flex gap-8">
-                    {!isEditingStateProp ? (
-                        <>
-                            {deletionsRef.current.length > 0 ? (
-                                <FormButtons
-                                    variant="primary"
-                                    size="compact"
-                                    handleCancel={handleCancel}
-                                    editButton={"Edit Pages"}
-                                    isEditingProp={isEditing}
-                                    setIsEditingProp={setIsEditing}
-                                    handleSubmit={handleSubmit}
-                                    isDangerButton={true}
-                                    alertDialogTitle="Warning"
-                                    alertDialogDescription={`
-                                        You are about to delete:
-                                        ${deletionsRef.current
-                                            .map((pageId) => {
-                                                const pageName = pages?.find(
-                                                    (page) =>
-                                                        page.id === pageId,
-                                                )?.name;
-                                                return `Pg. ${pageName || "Unknown"}`;
-                                            })
-                                            .join(
-                                                ", ",
-                                            )}. This will delete all the coordinates for the marchers on the page. This can be undone with [Ctrl/Cmd+Z].
-                                    `}
-                                    alertDialogActions={
-                                        <>
-                                            <AlertDialogAction>
-                                                <Button
-                                                    variant="red"
-                                                    size="compact"
-                                                    onClick={handleSubmit}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </AlertDialogAction>
-                                            <AlertDialogCancel>
-                                                <Button
-                                                    variant="secondary"
-                                                    size="compact"
-                                                    onClick={handleCancel}
-                                                >
-                                                    Cancel
-                                                </Button>
-                                            </AlertDialogCancel>
-                                        </>
-                                    }
-                                />
-                            ) : (
-                                <FormButtons
-                                    variant="secondary"
-                                    size="compact"
-                                    handleCancel={handleCancel}
-                                    editButton={"Edit Pages"}
-                                    isEditingProp={isEditing}
-                                    setIsEditingProp={setIsEditing}
-                                    handleSubmit={handleSubmit}
-                                />
-                            )}
-                        </>
-                    ) : (
-                        // exists to ensure default submit behavior
-                        <button type="submit" hidden={true} />
-                    )}
-                </div>
             </div>
             <div
                 id="table"
@@ -227,52 +213,124 @@ function PageList({
                                     </p>
                                 </div>
                                 <div className="flex w-2/3 items-center gap-6">
-                                    {isEditing ? (
-                                        <Input
-                                            compact
-                                            type="number"
-                                            className="form-control"
-                                            aria-label="Page counts input"
-                                            title="Page counts input"
-                                            defaultValue={page.counts}
-                                            disabled={
-                                                !isEditing ||
-                                                page.id === pages[0].id
-                                            }
-                                            key={page.id}
-                                            min={0}
-                                            step={1}
-                                            onChange={(event) =>
-                                                handleChange(
-                                                    event,
-                                                    "counts",
-                                                    page.id,
-                                                )
-                                            }
-                                        />
+                                    {editingPageId === page.id ? (
+                                        <>
+                                            <Input
+                                                compact
+                                                type="number"
+                                                className="form-control"
+                                                aria-label="Page counts input"
+                                                title="Page counts input"
+                                                defaultValue={page.counts}
+                                                disabled={
+                                                    page.id === pages[0].id
+                                                }
+                                                key={page.id}
+                                                min={0}
+                                                step={1}
+                                                onChange={(event) =>
+                                                    handleChange(
+                                                        event,
+                                                        "counts",
+                                                        page.id,
+                                                    )
+                                                }
+                                            />
+                                            <div className="flex-grow" />
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="primary"
+                                                    size="compact"
+                                                    content="icon"
+                                                    onClick={handleSubmit}
+                                                >
+                                                    <Check size={18} />
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="compact"
+                                                    content="icon"
+                                                    onClick={handleCancel}
+                                                >
+                                                    <X size={18} />
+                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger>
+                                                        <Button
+                                                            variant="red"
+                                                            size="compact"
+                                                            content="icon"
+                                                            disabled={
+                                                                page.id ===
+                                                                pages[0].id
+                                                            }
+                                                        >
+                                                            <TrashIcon
+                                                                size={18}
+                                                            />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogTitle>
+                                                            Are you sure?
+                                                        </AlertDialogTitle>
+                                                        <div className="flex flex-col items-center justify-center gap-8 align-middle">
+                                                            <AlertDialogAction>
+                                                                <Button
+                                                                    variant="red"
+                                                                    className="w-full"
+                                                                    onClick={() =>
+                                                                        handleDeletePage(
+                                                                            page.id,
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Delete Page{" "}
+                                                                    {page.name}
+                                                                </Button>
+                                                            </AlertDialogAction>
+                                                            <div className="text-sub text-text-subtitle">
+                                                                This action is
+                                                                undoable with
+                                                                Ctrl + Z
+                                                            </div>
+                                                            <AlertDialogCancel
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    variant="secondary"
+                                                                    // disabled={
+                                                                    //     isDeleting
+                                                                    // }
+                                                                    className="w-full"
+                                                                >
+                                                                    Cancel
+                                                                </Button>
+                                                            </AlertDialogCancel>
+                                                        </div>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
+                                        </>
                                     ) : (
-                                        <p
-                                            className="text-body text-text"
-                                            data-testid="page-counts"
-                                        >
-                                            {page.counts}
-                                        </p>
-                                    )}
-                                    {isEditing && (
-                                        <Button
-                                            variant="red"
-                                            size="compact"
-                                            content="icon"
-                                            disabled={
-                                                !isEditing ||
-                                                page.id === pages[0].id
-                                            }
-                                            onClick={() =>
-                                                handleDeletePage(page.id)
-                                            }
-                                        >
-                                            <Trash size={18} />
-                                        </Button>
+                                        <>
+                                            <p
+                                                className="text-body text-text"
+                                                data-testid="page-counts"
+                                            >
+                                                {page.counts}
+                                            </p>
+                                            <div className="flex-grow" />
+                                            <button
+                                                className="hover:text-accent"
+                                                hidden={page.id === pages[0].id}
+                                                onClick={() =>
+                                                    setEditingPageId(page.id)
+                                                }
+                                            >
+                                                <PencilSimpleIcon size={18} />
+                                            </button>
+                                        </>
                                     )}
                                 </div>
                             </div>

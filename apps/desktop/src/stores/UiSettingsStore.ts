@@ -49,7 +49,11 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             halfLines: true,
             showWaveform: false,
             /** The number of pixels per second in the timeline */
-            timelinePixelsPerSecond: 40,
+            timelinePixelsPerSecond: localStorage.getItem(
+                "timelinePixelsPerSecond",
+            )
+                ? parseInt(localStorage.getItem("timelinePixelsPerSecond")!)
+                : 40,
             /** The component that is currently focussed */
             focussedComponent: "canvas",
         },
@@ -94,6 +98,12 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             set({ uiSettings: uiSettings });
         },
         setPixelsPerSecond: (pixelsPerSecond: number) => {
+            // Store in localStorage
+            localStorage.setItem(
+                "timelinePixelsPerSecond",
+                pixelsPerSecond.toString(),
+            );
+
             set({
                 uiSettings: {
                     ...state().uiSettings,

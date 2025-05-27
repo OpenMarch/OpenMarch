@@ -440,7 +440,7 @@ export default function TimelineContainer() {
                 uiSettings.focussedComponent === "timeline"
                     ? "h-[48rem]"
                     : uiSettings.showWaveform
-                      ? "h-[13rem]"
+                      ? "h-[8rem]"
                       : "h-[4rem]",
             )}
         >

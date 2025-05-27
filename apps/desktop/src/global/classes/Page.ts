@@ -691,11 +691,13 @@ export const updatePageCountRequest = ({
     newCounts,
     pages,
     beats,
+    pushAll = false,
 }: {
     pages: Page[];
     beats: Beat[];
     pageToUpdate: Page;
     newCounts: number;
+    pushAll?: boolean;
 }): ModifyPagesRequest => {
     // If there's no next page, we can't adjust the duration
     const nextPage = pages.find((page) => page.id === pageToUpdate.nextPageId);
@@ -766,13 +768,15 @@ export const updatePageCountRequest = ({
     return output;
 };
 
-type RequireSome<T, K extends keyof T> = Partial<T> & Pick<T, K>;
-
-export const beatsAreDependentsForPages = (
-    beats: RequireSome<Beat, "id">[],
-    pages: RequireSome<Page, "id" | "beats">[],
-) => {
-    return beats.some((beat) => {
-        return pages.some((page) => page.beats.some((b) => b.id === beat.id));
-    });
+export const areEnoughBeatsForPages = ({
+    pages,
+    beats,
+}: {
+    pages: { counts: number }[];
+    beats: { id: number }[];
+}) => {
+    console.log(pages, beats);
+    const totalCounts = pages.reduce((acc, page) => acc + page.counts, 0);
+    const totalBeats = beats.length;
+    return totalCounts <= totalBeats;
 };
