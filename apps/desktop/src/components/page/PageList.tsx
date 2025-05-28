@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { ListFormProps } from "../../global/Interfaces";
 import Page, {
     deletePages,
-    updatePageCountRequest,
     updatePages,
-    areEnoughBeatsForPages,
+    yankOrPushPagesAfterIndex,
 } from "@/global/classes/Page";
-import { Check, X, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+    X,
+    PencilSimpleIcon,
+    TrashIcon,
+    CheckIcon,
+} from "@phosphor-icons/react";
 import {
     Input,
     Button,
@@ -19,7 +23,6 @@ import {
 } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { toast } from "sonner";
-import { GroupFunction } from "@/utilities/ApiFunctions";
 
 function PageList({
     hasHeader = false,
@@ -27,11 +30,7 @@ function PageList({
     submitActivatorStateProp = undefined,
     cancelActivatorStateProp = undefined,
 }: ListFormProps) {
-    const [isEditingLocal, setIsEditingLocal] = useState(false);
-    const [isEditing, setIsEditing] = isEditingStateProp || [
-        isEditingLocal,
-        setIsEditingLocal,
-    ];
+    const [newCounts, setNewCounts] = useState<number | null>(null);
     const [editingPageId, setEditingPageId] = useState<number | null>(null);
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [
         false,
@@ -42,73 +41,36 @@ function PageList({
         undefined,
     ];
     const { pages, fetchTimingObjects, beats } = useTimingObjectsStore();
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setNewCounts(null);
+    }, [editingPageId]);
 
     // localPages are the Pages that are displayed in the table
     const [localPages, setLocalPages] = useState<Page[]>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const changesRef = useRef<{ [key: number | string]: any }>({});
-    const deletionsRef = useRef<number[]>([]);
 
     async function handleSubmit() {
-        const modifiedPages: { id: number; counts: number }[] = [];
+        if (newCounts) {
+            const pageIndex = pages.findIndex((p) => p.id === editingPageId);
+            const modifiedPagesArgs = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: pageIndex,
+                offset: newCounts - pages[pageIndex].counts,
+            });
 
-        if (deletionsRef.current.length > 0) {
-            await deletePages(new Set(deletionsRef.current), async () => {});
+            if (modifiedPagesArgs) {
+                updatePages(modifiedPagesArgs, fetchTimingObjects);
+            }
         }
 
-        for (const [pageId, changes] of Object.entries(changesRef.current))
-            modifiedPages.push({ id: Number(pageId), ...changes });
-
-        if (
-            !areEnoughBeatsForPages({
-                pages: pages.map((p) => {
-                    const modifiedPage = modifiedPages.find(
-                        (mp) => mp.id === p.id,
-                    );
-                    return {
-                        counts: parseInt(
-                            modifiedPage?.counts.toString() ||
-                                p.counts.toString(),
-                        ),
-                    };
-                }),
-                beats,
-            })
-        ) {
-            toast.error("You cannot have more counts than beats");
-            return;
-        }
-
-        const modifiedPagesRequests = modifiedPages.map((page) =>
-            updatePageCountRequest({
-                pageToUpdate: pages.find((p) => p.id === page.id)!,
-                newCounts: page.counts,
-                pages,
-                beats,
-            }),
-        );
-
-        const result = await GroupFunction({
-            functionsToExecute: modifiedPagesRequests.map(
-                (request) => () => updatePages(request, async () => {}),
-            ),
-            useNextUndoGroup: true,
-            refreshFunction: fetchTimingObjects,
-        });
-
-        deletionsRef.current = [];
-        changesRef.current = {};
-        setIsEditing(false);
         setEditingPageId(null);
-        return result;
     }
 
     function handleCancel() {
-        setIsEditing(false);
         setEditingPageId(null);
         setLocalPagesModified(pages);
-        deletionsRef.current = [];
-        changesRef.current = {};
     }
 
     async function handleDeletePage(pageId: number) {
@@ -122,18 +84,6 @@ function PageList({
             toast.error("Failed to delete page");
         }
     }
-
-    const handleChange = (
-        event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-        attribute: string,
-        pageId: number,
-    ) => {
-        // create an entry for the page if it doesn't exist
-        if (!changesRef.current[pageId]) changesRef.current[pageId] = {};
-
-        // record the change
-        changesRef.current[pageId][attribute] = event.target.value;
-    };
 
     // Set local pages to the pages prop
     const setLocalPagesModified = useCallback((pages: Page[] | undefined) => {
@@ -169,6 +119,13 @@ function PageList({
         }
         // eslint-disable-next-line
     }, [cancelActivator, setCancelActivator]);
+
+    // Focus input when editing begins
+    useEffect(() => {
+        if (editingPageId !== null) {
+            inputRef.current?.focus();
+        }
+    }, [editingPageId]);
 
     return (
         <form
@@ -216,35 +173,39 @@ function PageList({
                                     {editingPageId === page.id ? (
                                         <>
                                             <Input
+                                                ref={inputRef}
                                                 compact
                                                 type="number"
                                                 className="form-control"
                                                 aria-label="Page counts input"
                                                 title="Page counts input"
-                                                defaultValue={page.counts}
-                                                disabled={
-                                                    page.id === pages[0].id
-                                                }
+                                                value={newCounts ?? page.counts}
                                                 key={page.id}
                                                 min={0}
                                                 step={1}
                                                 onChange={(event) =>
-                                                    handleChange(
-                                                        event,
-                                                        "counts",
-                                                        page.id,
+                                                    setNewCounts(
+                                                        Number(
+                                                            event.target.value,
+                                                        ),
                                                     )
                                                 }
+                                                onKeyDown={(event) => {
+                                                    if (event.key === "Enter") {
+                                                        event.preventDefault();
+                                                        handleSubmit();
+                                                    }
+                                                }}
                                             />
                                             <div className="flex-grow" />
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-8">
                                                 <Button
                                                     variant="primary"
                                                     size="compact"
                                                     content="icon"
                                                     onClick={handleSubmit}
                                                 >
-                                                    <Check size={18} />
+                                                    <CheckIcon size={18} />
                                                 </Button>
                                                 <Button
                                                     variant="secondary"

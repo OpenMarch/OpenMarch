@@ -8,6 +8,7 @@ import {
 } from "../../../electron/database/tables/PageTable";
 import { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
+import { conToastError } from "@/utilities/utils";
 
 interface Page {
     /** The id of the page in the database */
@@ -679,6 +680,9 @@ export const updateLastPageCounts = async ({
 // Function to update page duration in the database
 /**
  * Updates the duration of a page by adjusting its beats and the start beat of the next page.
+ *
+ * To push or yank all of the subsequent pages, use the yankOrPushPagesAfterIndex function.
+ *
  * @param pageToUpdate The page whose duration is being modified
  * @param newCounts The target duration (in counts) for the page
  * @param pages Array of all pages in the project
@@ -691,13 +695,11 @@ export const updatePageCountRequest = ({
     newCounts,
     pages,
     beats,
-    pushAll = false,
 }: {
     pages: Page[];
     beats: Beat[];
     pageToUpdate: Page;
     newCounts: number;
-    pushAll?: boolean;
 }): ModifyPagesRequest => {
     // If there's no next page, we can't adjust the duration
     const nextPage = pages.find((page) => page.id === pageToUpdate.nextPageId);
@@ -779,4 +781,130 @@ export const areEnoughBeatsForPages = ({
     const totalCounts = pages.reduce((acc, page) => acc + page.counts, 0);
     const totalBeats = beats.length;
     return totalCounts <= totalBeats;
+};
+
+/**
+ * Pushes or yanks all of the subsequent pages after the given index.
+ * Useful for updating counts of one page and having the subsequent pages update accordingly.
+ *
+ * @param allPages - The list of all pages in the project
+ * @param allBeats - The list of all beats in the project
+ * @param index - The index of the page to push or yank after
+ * @param offset - The number of beats to push or yank
+ * @returns The modified pages args
+ */
+export const yankOrPushPagesAfterIndex = ({
+    allPages,
+    allBeats,
+    index,
+    offset,
+}: {
+    allPages: Pick<Page, "id" | "beats" | "counts">[];
+    allBeats: Pick<Beat, "id" | "index">[];
+    index: number;
+    offset: number;
+}): ModifiedPageArgs[] | undefined => {
+    if (index < 0 || index >= allPages.length) {
+        throw new Error("Index out of bounds");
+    }
+
+    const pageAtIndex = allPages[index];
+
+    if (pageAtIndex.counts + offset < 0) {
+        conToastError("Cannot yank pages that would result in negative counts");
+        return;
+    }
+    if (!areEnoughBeatsForPages({ pages: allPages, beats: allBeats })) {
+        conToastError("Cannot push pages further than the end of the show");
+        return;
+    }
+
+    console.log("index", index);
+    console.log("offset", offset);
+    console.log("allPages", allPages);
+    console.log("allBeats", allBeats);
+
+    const pagesToYankOrPush = allPages.slice(index + 1);
+    const modifiedPagesArgs: ModifiedPageArgs[] = [];
+
+    console.log(pagesToYankOrPush);
+
+    // validate that all pages have at least one beat
+    for (const page of pagesToYankOrPush) {
+        if (page.beats.length === 0) {
+            conToastError("Cannot yank pages that have no beats", page);
+            return;
+        }
+    }
+
+    for (const page of pagesToYankOrPush) {
+        const pageStartBeat = page.beats[0];
+        const newBeatIndex = pageStartBeat.index + offset;
+
+        if (newBeatIndex < 0 || newBeatIndex >= allBeats.length) {
+            conToastError("Beat yank would result in out of bounds beats", {
+                allBeatsLength: allBeats.length,
+                newBeatIndex,
+                pageIndex: index,
+                pageObject: page,
+            });
+            return;
+        }
+
+        modifiedPagesArgs.push({
+            id: page.id,
+            start_beat: allBeats[newBeatIndex].id,
+        });
+    }
+
+    return modifiedPagesArgs;
+};
+
+/**
+ * Args for a new page that will be perceived as a subset of the original page.
+ *
+ * @param page - The page to split.
+ * @returns The new page args.
+ */
+export const splitPage = (
+    page: Pick<Page, "beats" | "nextPageId">,
+):
+    | { newPageArgs: NewPageArgs; modifyPageRequest?: ModifyPagesRequest }
+    | undefined => {
+    if (page.beats.length <= 1) {
+        conToastError("Cannot split page that has less than 2 beats", page);
+        return;
+    }
+
+    const beatIndex = Math.ceil(page.beats.length / 2);
+    const newStartBeat = page.beats[beatIndex];
+
+    if (!newStartBeat) {
+        conToastError("Failed to find a new start beat", {
+            page,
+            newBeatIndex: Math.floor(page.beats.length / 2),
+        });
+        return;
+    }
+    const newPage: NewPageArgs = {
+        start_beat: newStartBeat.id,
+        is_subset: true,
+    };
+
+    const output: {
+        newPageArgs: NewPageArgs;
+        modifyPageRequest?: ModifyPagesRequest;
+    } = {
+        newPageArgs: newPage,
+    };
+
+    if (!page.nextPageId) {
+        const modifyPageRequest: ModifyPagesRequest = {
+            modifiedPagesArgs: [],
+            lastPageCounts: Math.floor(page.beats.length / 2),
+        };
+        output.modifyPageRequest = modifyPageRequest;
+    }
+
+    return output;
 };

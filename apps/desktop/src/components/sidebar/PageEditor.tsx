@@ -1,9 +1,16 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
-import { Switch } from "@openmarch/ui";
+import { Button, Switch } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { measureRangeString, updatePages } from "@/global/classes/Page";
+import {
+    createPages,
+    measureRangeString,
+    splitPage,
+    updatePages,
+} from "@/global/classes/Page";
+import { toast } from "sonner";
+import { GroupFunction } from "@/utilities/ApiFunctions";
 
 // TODO: figure out how to make this work with the new music system
 function PageEditor() {
@@ -18,7 +25,6 @@ function PageEditor() {
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const form = event.currentTarget;
-        const counts = form[countsInputId].value;
         const subset = form[subsetInputId].checked;
 
         if (selectedPage) {
@@ -34,8 +40,6 @@ function PageEditor() {
         ) as HTMLInputElement;
         if (inputField) {
             inputField.blur();
-            inputField.defaultValue = counts;
-            inputField.value = counts;
         }
     };
 
@@ -55,6 +59,34 @@ function PageEditor() {
             setIsFirstPage(selectedPage === firstPage);
         }
     }, [pages, selectedPage]);
+
+    const handleSplitPage = async () => {
+        if (selectedPage) {
+            const newPageArgs = splitPage(selectedPage);
+            if (newPageArgs) {
+                const functionsToExecute: (() => Promise<{
+                    success: boolean;
+                }>)[] = [
+                    () =>
+                        createPages([newPageArgs.newPageArgs], async () => {}),
+                ];
+                if (newPageArgs.modifyPageRequest) {
+                    functionsToExecute.push(() =>
+                        updatePages(
+                            newPageArgs.modifyPageRequest!,
+                            async () => {},
+                        ),
+                    );
+                }
+                await GroupFunction({
+                    functionsToExecute,
+                    refreshFunction: fetchTimingObjects,
+                    useNextUndoGroup: true,
+                });
+                toast.success("Page split successfully");
+            }
+        }
+    };
 
     if (selectedPage)
         return (
@@ -118,6 +150,14 @@ function PageEditor() {
                             {measureRangeString(selectedPage)}
                         </p>
                     </div>
+                    <Button
+                        variant="secondary"
+                        size="compact"
+                        onClick={handleSplitPage}
+                        disabled={selectedPage?.beats.length <= 1}
+                    >
+                        Split page
+                    </Button>
 
                     {/* <div>
                     <label htmlFor="page-sets">Tempo</label>
