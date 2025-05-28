@@ -3,6 +3,7 @@ import Page, {
     fromDatabasePages,
     generatePageNames,
     updatePageCountRequest,
+    yankOrPushPagesAfterIndex,
 } from "../Page";
 import Measure from "../Measure";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -15,6 +16,7 @@ import { ElectronApi } from "../../../../electron/preload";
 import { FIRST_BEAT_ID } from "../../../../electron/database/tables/BeatTable";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
+import { conToastError } from "@/utilities/utils";
 
 describe("Page", () => {
     describe("generatePageNames", () => {
@@ -1118,6 +1120,199 @@ describe("Page", () => {
                     lastPageCounts: 3,
                 });
             });
+        });
+    });
+
+    describe("yankOrPushPagesAfterIndex", () => {
+        // Mock the conToastError function
+        vi.mock("@/utilities/utils", () => ({
+            conToastError: vi.fn(),
+        }));
+
+        // Helper function to create test data
+        const createTestData = (
+            numPages: number = 3,
+            beatsPerPage: number = 4,
+        ) => {
+            const beats = Array.from(
+                { length: numPages * beatsPerPage },
+                (_, i) =>
+                    ({
+                        id: i + 1,
+                        index: i,
+                        position: i,
+                        duration: 1,
+                        includeInMeasure: true,
+                        notes: null,
+                        timestamp: i,
+                    }) as Beat,
+            );
+
+            const pages = Array.from(
+                { length: numPages },
+                (_, i) =>
+                    ({
+                        id: i + 1,
+                        counts: beatsPerPage,
+                        beats: beats.slice(
+                            i * beatsPerPage,
+                            (i + 1) * beatsPerPage,
+                        ),
+                    }) as Pick<Page, "id" | "beats" | "counts">,
+            );
+
+            return { pages, beats };
+        };
+
+        beforeEach(() => {
+            vi.clearAllMocks();
+        });
+
+        it("should successfully push pages forward", () => {
+            const { pages, beats } = createTestData();
+            const result = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: 0,
+                offset: 2,
+            });
+
+            expect(result).toBeDefined();
+            expect(result!).toEqual([
+                {
+                    id: 2,
+                    start_beat: beats[6].id, // Original start (4) + offset (2)
+                },
+                {
+                    id: 3,
+                    start_beat: beats[10].id, // Original start (8) + offset (2)
+                },
+            ]);
+        });
+
+        it("should successfully yank pages backward", () => {
+            const { pages, beats } = createTestData();
+            const result = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: 0,
+                offset: -2,
+            });
+
+            expect(result).toBeDefined();
+            expect(result!).toEqual([
+                {
+                    id: 2,
+                    start_beat: beats[2].id, // Original start (4) - offset (2)
+                },
+                {
+                    id: 3,
+                    start_beat: beats[6].id, // Original start (8) - offset (2)
+                },
+            ]);
+        });
+
+        it("should throw error for invalid index", () => {
+            const { pages, beats } = createTestData();
+
+            expect(() =>
+                yankOrPushPagesAfterIndex({
+                    allPages: pages,
+                    allBeats: beats,
+                    index: -1,
+                    offset: 1,
+                }),
+            ).toThrow("Index out of bounds");
+
+            expect(() =>
+                yankOrPushPagesAfterIndex({
+                    allPages: pages,
+                    allBeats: beats,
+                    index: 3,
+                    offset: 1,
+                }),
+            ).toThrow("Index out of bounds");
+        });
+
+        it("should prevent yanking that results in negative counts", () => {
+            const { pages, beats } = createTestData();
+            const result = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: 0,
+                offset: -5,
+            });
+
+            expect(result).toBeUndefined();
+            expect(conToastError).toHaveBeenCalledWith(
+                "Cannot yank pages that would result in negative counts",
+            );
+        });
+
+        it("should prevent pushing beyond available beats", () => {
+            const { pages, beats } = createTestData();
+            const result = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: 0,
+                offset: 10,
+            });
+
+            expect(result).toBeUndefined();
+            expect(conToastError).toHaveBeenCalled();
+        });
+
+        it("should handle pages with no beats", () => {
+            const { pages: originalPages, beats } = createTestData();
+            const pages = [...originalPages];
+            pages[1] = { ...pages[1], beats: [] };
+
+            const result = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: 0,
+                offset: 1,
+            });
+
+            expect(result).toBeUndefined();
+            expect(conToastError).toHaveBeenCalledWith(
+                "Cannot yank pages that have no beats",
+                pages[1],
+            );
+        });
+
+        it("should handle single page modification", () => {
+            const { pages, beats } = createTestData();
+            const result = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: 1,
+                offset: 1,
+            });
+
+            expect(result).toBeDefined();
+            expect(result!).toEqual([
+                {
+                    id: 3,
+                    start_beat: beats[9].id, // Original start (8) + offset (1)
+                },
+            ]);
+        });
+
+        it("should handle modification of all pages", () => {
+            const { pages, beats } = createTestData();
+            const result = yankOrPushPagesAfterIndex({
+                allPages: pages,
+                allBeats: beats,
+                index: 0,
+                offset: 1,
+            });
+
+            expect(result).toBeDefined();
+            expect(result!).toEqual([
+                { id: 2, start_beat: beats[5].id }, // Original start (4) + offset (1)
+                { id: 3, start_beat: beats[9].id }, // Original start (8) + offset (1)
+            ]);
         });
     });
 });
