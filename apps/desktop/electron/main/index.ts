@@ -641,10 +641,12 @@ export async function insertAudioFile(): Promise<
                 // Id is -1 to conform with interface
                 DatabaseServices.insertAudioFile({
                     id: -1,
-                    data: data.buffer.slice(
-                        data.byteOffset,
-                        data.byteOffset + data.byteLength,
-                    ),
+                    data: Buffer.from(
+                        data.buffer.slice(
+                            data.byteOffset,
+                            data.byteOffset + data.byteLength,
+                        ),
+                    ) as any as ArrayBuffer,
                     path: path.filePaths[0],
                     nickname: path.filePaths[0],
                     selected: true,

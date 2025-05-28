@@ -40,7 +40,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                         theme === "dark" ? "text-white" : "text-black",
                     )}
                 >
-                    <div className="flex h-full w-full flex-col items-start justify-center gap-32 p-32 font-bold">
+                    <div className="flex h-full w-full flex-col items-start justify-center gap-32 p-32">
                         <h1 className="text-[4rem] leading-none">
                             Welcome to OpenMarch
                         </h1>

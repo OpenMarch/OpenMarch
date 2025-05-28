@@ -204,6 +204,7 @@ z4 | z4 | z4 | z4 | z4 | z4 | z4 | z4 |
             `,
             tableName: Constants.AudioFilesTableName,
             db,
+            createHistoryTriggers: false,
         });
     }
 }

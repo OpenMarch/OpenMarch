@@ -1,6 +1,10 @@
 import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
-import { createHistoryTables, createUndoTriggers } from "../database.history";
+import {
+    createHistoryTables,
+    createUndoTriggers,
+    dropUndoTriggers,
+} from "../database.history";
 import v5 from "./v5";
 
 const FIRST_BEAT_ID = 0;
@@ -16,6 +20,8 @@ export default class v6 extends v5 {
         if (!dbToUse) throw new Error("Failed to connect to database.");
 
         this.migrationWrapper(() => {
+            // Greedily delete audio file triggers
+            dropUndoTriggers(dbToUse, Constants.AudioFilesTableName);
             // Create new tables first, but don't create initial beats since we'll create them from ABC data
             this.createBeatsTable(dbToUse, false);
             this.createUtilityTable(dbToUse);
