@@ -72,6 +72,10 @@ module.exports = {
         "aren", // for aren&apos;t
         "apos",
         "GLHF",
+        "NSIS",
+        "blockmap",
+        "winget",
+        "signtool",
     ],
     ignorePaths: [
         "node_modules/**",
