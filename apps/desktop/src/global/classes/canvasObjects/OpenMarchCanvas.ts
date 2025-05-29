@@ -58,6 +58,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: 0,
         time: 0,
     };
+    /** Variables for tracking pan position */
+    lastPosX = 0;
+    lastPosY = 0;
     marcherShapes: MarcherShape[] = [];
     /**
      * The reference to the grid (the lines on the field) object to use for caching
@@ -89,6 +92,46 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The UI settings for the canvas */
     private _uiSettings: UiSettings;
 
+    /** Track touch points for pinch-to-zoom */
+    private touchPoints: { [key: number]: { x: number; y: number } } = {};
+    private lastPinchDistance: number = 0;
+
+    /** CSS transform values for the canvas container */
+    private transformValues = {
+        translateX: 0,
+        translateY: 0,
+        scale: 1,
+        originX: 0,
+        originY: 0,
+    };
+
+    /** Track state for CSS-based panning */
+    private isPanning = false;
+
+    /** Track pinch gesture for zooming */
+    private initialPinchDistance = 0;
+
+    /** Reference to the canvas CSS wrapper element */
+    private cssZoomWrapper: HTMLDivElement | null = null;
+
+    /** Add a user preference toggle for trackpad mode in UI */
+    private trackpadModeEnabled = false; // Will be set in constructor
+
+    /** Flag to force trackpad pan mode when Alt key is pressed */
+    private forceTrackpadPan = false;
+
+    /**
+     * Constants for zoom limits
+     */
+    private readonly MIN_ZOOM = 0.5; // 50% (zoomed in, field is twice as big as viewport)
+    private readonly MAX_ZOOM = 2.0; // 200% (zoomed out, field is half as big as viewport)
+    private readonly ZOOM_STEP = 0.05; // 5% increments for smoother zooming
+
+    // Sensitivity settings
+    private panSensitivity = 0.5; // Reduced for smoother panning
+    private zoomSensitivity = 0.03; // Reduced for gentler zooming
+    private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
+
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
     maxCacheSideLimit = 11000;
@@ -117,8 +160,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             selectionBorderColor: rgbaToString(fieldProperties.theme.shape),
             selectionLineWidth: 2,
             fireRightClick: true, // Allow right click events
-            stopContextMenu: true, // Prevent right click context menu
+            stopContextMenu: false, // Allow right click context menu for panning
+            enableRetinaScaling: true, // Better display on retina screens
         });
+
+        // CRITICAL: Completely disable Fabric's built-in mousewheel handler to avoid conflicts
+        // @ts-ignore - Accessing private property to disable built-in handling
+        this.off("mouse:wheel");
+
+        // Init the DOM wrapper for the canvas if available
+        if (canvasRef) {
+            this.setupExternalPanZoomContainer(canvasRef);
+        }
 
         if (currentPage) this.currentPage = currentPage;
         // If no page is provided, create a default page
@@ -160,6 +213,449 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.refreshBackgroundImage();
 
         this.requestRenderAll();
+    }
+
+    /******************* ADVANCED EVENT HANDLERS ******************/
+
+    /**
+     * Handle advanced wheel events for CSS-based zooming and trackpad gestures
+     */
+    private handleAdvancedWheel(event: WheelEvent) {
+        event.preventDefault();
+
+        // Update sensitivity settings
+        this.updateSensitivitySettings();
+
+        const rect = this.cssZoomWrapper!.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        // Detect trackpad vs mouse wheel
+        const isTrackpad =
+            Math.abs(event.deltaX) > 0 || Math.abs(event.deltaY) < 50;
+
+        if (isTrackpad && this.trackpadModeEnabled) {
+            // Trackpad gestures
+            if (event.ctrlKey || event.metaKey) {
+                // Pinch-to-zoom gesture
+                this.handleCSSZoom(
+                    -event.deltaY * this.zoomSensitivity,
+                    mouseX,
+                    mouseY,
+                );
+            } else {
+                // Trackpad pan
+                this.handleCSSPan(
+                    -event.deltaX * this.trackpadPanSensitivity,
+                    -event.deltaY * this.trackpadPanSensitivity,
+                );
+            }
+        } else {
+            // Traditional mouse wheel - zoom
+            const zoomDelta = -event.deltaY * this.zoomSensitivity;
+            this.handleCSSZoom(zoomDelta, mouseX, mouseY);
+        }
+    }
+
+    /**
+     * Handle CSS-based zooming
+     */
+    private handleCSSZoom(delta: number, mouseX: number, mouseY: number) {
+        const oldScale = this.transformValues.scale;
+        const newScale = Math.max(
+            this.MIN_ZOOM,
+            Math.min(this.MAX_ZOOM, oldScale + delta),
+        );
+
+        if (newScale === oldScale) return; // No change needed
+
+        const scaleFactor = newScale / oldScale;
+
+        // Calculate the new translation to zoom towards the mouse position
+        const newTranslateX =
+            mouseX - (mouseX - this.transformValues.translateX) * scaleFactor;
+        const newTranslateY =
+            mouseY - (mouseY - this.transformValues.translateY) * scaleFactor;
+
+        this.transformValues.scale = newScale;
+        this.transformValues.translateX = newTranslateX;
+        this.transformValues.translateY = newTranslateY;
+
+        this.applyCSSTransform();
+    }
+
+    /**
+     * Handle CSS-based panning
+     */
+    private handleCSSPan(deltaX: number, deltaY: number) {
+        this.transformValues.translateX += deltaX;
+        this.transformValues.translateY += deltaY;
+        this.applyCSSTransform();
+    }
+
+    /**
+     * Apply the CSS transform to the wrapper element
+     */
+    private applyCSSTransform() {
+        if (!this.cssZoomWrapper) return;
+
+        const { translateX, translateY, scale } = this.transformValues;
+        this.cssZoomWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+
+    /**
+     * Handle touch start for mobile/trackpad gestures
+     */
+    private handleTouchStart(event: TouchEvent) {
+        event.preventDefault();
+
+        // Store touch points
+        for (let i = 0; i < event.touches.length; i++) {
+            const touch = event.touches[i];
+            this.touchPoints[touch.identifier] = {
+                x: touch.clientX,
+                y: touch.clientY,
+            };
+        }
+
+        // If two fingers, prepare for pinch gesture
+        if (event.touches.length === 2) {
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+            this.initialPinchDistance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2),
+            );
+        }
+    }
+
+    /**
+     * Handle touch move for mobile/trackpad gestures
+     */
+    private handleTouchMove(event: TouchEvent) {
+        event.preventDefault();
+
+        if (event.touches.length === 1) {
+            // Single finger pan
+            const touch = event.touches[0];
+            const lastTouch = this.touchPoints[touch.identifier];
+
+            if (lastTouch) {
+                const deltaX = touch.clientX - lastTouch.x;
+                const deltaY = touch.clientY - lastTouch.y;
+                this.handleCSSPan(deltaX, deltaY);
+
+                this.touchPoints[touch.identifier] = {
+                    x: touch.clientX,
+                    y: touch.clientY,
+                };
+            }
+        } else if (event.touches.length === 2) {
+            // Two finger pinch-to-zoom
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+            const currentDistance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2),
+            );
+
+            if (this.initialPinchDistance > 0) {
+                const scaleDelta =
+                    (currentDistance - this.initialPinchDistance) * 0.01;
+                const centerX = (touch1.clientX + touch2.clientX) / 2;
+                const centerY = (touch1.clientY + touch2.clientY) / 2;
+
+                const rect = this.cssZoomWrapper!.getBoundingClientRect();
+                this.handleCSSZoom(
+                    scaleDelta,
+                    centerX - rect.left,
+                    centerY - rect.top,
+                );
+
+                this.initialPinchDistance = currentDistance;
+            }
+        }
+    }
+
+    /**
+     * Handle touch end for mobile/trackpad gestures
+     */
+    private handleTouchEnd(event: TouchEvent) {
+        // Remove ended touches from tracking
+        for (let i = 0; i < event.changedTouches.length; i++) {
+            const touch = event.changedTouches[i];
+            delete this.touchPoints[touch.identifier];
+        }
+
+        // Reset pinch distance if no more touches
+        if (event.touches.length < 2) {
+            this.initialPinchDistance = 0;
+        }
+    }
+
+    /**
+     * Handle advanced mouse down for panning
+     */
+    private handleAdvancedMouseDown(event: MouseEvent) {
+        // Only handle right-click or middle-click for panning
+        if (event.button === 2 || event.button === 1 || this.forceTrackpadPan) {
+            event.preventDefault();
+            this.isPanning = true;
+            this.lastPosX = event.clientX;
+            this.lastPosY = event.clientY;
+
+            // Change cursor to indicate panning mode
+            this.cssZoomWrapper!.style.cursor = "grabbing";
+        }
+    }
+
+    /**
+     * Handle advanced mouse move for panning
+     */
+    private handleAdvancedMouseMove(event: MouseEvent) {
+        if (this.isPanning) {
+            event.preventDefault();
+
+            const deltaX = event.clientX - this.lastPosX;
+            const deltaY = event.clientY - this.lastPosY;
+
+            this.handleCSSPan(
+                deltaX * this.panSensitivity,
+                deltaY * this.panSensitivity,
+            );
+
+            this.lastPosX = event.clientX;
+            this.lastPosY = event.clientY;
+        }
+    }
+
+    /**
+     * Handle advanced mouse up to end panning
+     */
+    private handleAdvancedMouseUp(event: MouseEvent) {
+        if (this.isPanning) {
+            this.isPanning = false;
+            this.cssZoomWrapper!.style.cursor = "default";
+        }
+    }
+
+    /**
+     * Handle key down for modifier keys
+     */
+    private handleKeyDown(event: KeyboardEvent) {
+        if (event.altKey) {
+            this.forceTrackpadPan = true;
+            if (this.cssZoomWrapper) {
+                this.cssZoomWrapper.style.cursor = "grab";
+            }
+        }
+    }
+
+    /**
+     * Handle key up for modifier keys
+     */
+    private handleKeyUp(event: KeyboardEvent) {
+        if (!event.altKey) {
+            this.forceTrackpadPan = false;
+            if (this.cssZoomWrapper && !this.isPanning) {
+                this.cssZoomWrapper.style.cursor = "default";
+            }
+        }
+    }
+
+    /**
+     * Reset the CSS transform to default values
+     */
+    public resetCSSTransform() {
+        this.transformValues = {
+            translateX: 0,
+            translateY: 0,
+            scale: 1,
+            originX: 0,
+            originY: 0,
+        };
+        this.applyCSSTransform();
+    }
+
+    /**
+     * Get the current CSS transform values
+     */
+    public getCSSTransformValues() {
+        return { ...this.transformValues };
+    }
+
+    /**
+     * Set the CSS transform values
+     */
+    public setCSSTransformValues(values: Partial<typeof this.transformValues>) {
+        this.transformValues = { ...this.transformValues, ...values };
+        this.applyCSSTransform();
+    }
+
+    /******************* ADVANCED NAVIGATION METHODS ******************/
+
+    /**
+     * Detect if the current platform is macOS
+     */
+    private detectMacOS(): boolean {
+        return navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+    }
+
+    /**
+     * Setup the external CSS wrapper for pan/zoom functionality
+     */
+    private setupExternalPanZoomContainer(canvasElement: HTMLCanvasElement) {
+        // Initialize trackpad mode based on platform
+        this.trackpadModeEnabled = this.detectMacOS();
+
+        // Update sensitivity settings from UI settings
+        this.updateSensitivitySettings();
+
+        // Create a wrapper div for CSS transforms if it doesn't exist
+        const existingWrapper = canvasElement.parentElement;
+        if (
+            existingWrapper &&
+            existingWrapper.classList.contains("canvas-zoom-wrapper")
+        ) {
+            this.cssZoomWrapper = existingWrapper as HTMLDivElement;
+        } else {
+            this.cssZoomWrapper = document.createElement("div");
+            this.cssZoomWrapper.className = "canvas-zoom-wrapper";
+            this.cssZoomWrapper.style.cssText = `
+                position: relative;
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                transform-origin: 0 0;
+                will-change: transform;
+            `;
+
+            // Wrap the canvas
+            if (canvasElement.parentNode) {
+                canvasElement.parentNode.insertBefore(
+                    this.cssZoomWrapper,
+                    canvasElement,
+                );
+                this.cssZoomWrapper.appendChild(canvasElement);
+            }
+        }
+
+        // Set up custom event listeners for advanced navigation
+        this.setupAdvancedEventListeners();
+    }
+
+    /**
+     * Update sensitivity settings from UI settings
+     */
+    private updateSensitivitySettings() {
+        if (this._uiSettings?.mouseSettings) {
+            this.zoomSensitivity =
+                this._uiSettings.mouseSettings.zoomSensitivity;
+            this.panSensitivity = this._uiSettings.mouseSettings.panSensitivity;
+            this.trackpadPanSensitivity =
+                this._uiSettings.mouseSettings.trackpadPanSensitivity;
+            this.trackpadModeEnabled =
+                this._uiSettings.mouseSettings.trackpadMode;
+        }
+    }
+
+    /**
+     * Setup advanced event listeners for CSS-based navigation
+     */
+    private setupAdvancedEventListeners() {
+        if (!this.cssZoomWrapper) return;
+
+        // Remove any existing listeners to prevent duplicates
+        this.removeAdvancedEventListeners();
+
+        // Mouse wheel for zooming and trackpad gestures
+        this.cssZoomWrapper.addEventListener(
+            "wheel",
+            this.handleAdvancedWheel.bind(this),
+            { passive: false },
+        );
+
+        // Touch events for mobile/trackpad gestures
+        this.cssZoomWrapper.addEventListener(
+            "touchstart",
+            this.handleTouchStart.bind(this),
+            { passive: false },
+        );
+        this.cssZoomWrapper.addEventListener(
+            "touchmove",
+            this.handleTouchMove.bind(this),
+            { passive: false },
+        );
+        this.cssZoomWrapper.addEventListener(
+            "touchend",
+            this.handleTouchEnd.bind(this),
+            { passive: false },
+        );
+
+        // Mouse events for panning
+        this.cssZoomWrapper.addEventListener(
+            "mousedown",
+            this.handleAdvancedMouseDown.bind(this),
+        );
+        this.cssZoomWrapper.addEventListener(
+            "mousemove",
+            this.handleAdvancedMouseMove.bind(this),
+        );
+        this.cssZoomWrapper.addEventListener(
+            "mouseup",
+            this.handleAdvancedMouseUp.bind(this),
+        );
+        this.cssZoomWrapper.addEventListener(
+            "mouseleave",
+            this.handleAdvancedMouseUp.bind(this),
+        );
+
+        // Keyboard events for modifier keys
+        document.addEventListener("keydown", this.handleKeyDown.bind(this));
+        document.addEventListener("keyup", this.handleKeyUp.bind(this));
+    }
+
+    /**
+     * Remove advanced event listeners
+     */
+    private removeAdvancedEventListeners() {
+        if (!this.cssZoomWrapper) return;
+
+        this.cssZoomWrapper.removeEventListener(
+            "wheel",
+            this.handleAdvancedWheel.bind(this),
+        );
+        this.cssZoomWrapper.removeEventListener(
+            "touchstart",
+            this.handleTouchStart.bind(this),
+        );
+        this.cssZoomWrapper.removeEventListener(
+            "touchmove",
+            this.handleTouchMove.bind(this),
+        );
+        this.cssZoomWrapper.removeEventListener(
+            "touchend",
+            this.handleTouchEnd.bind(this),
+        );
+        this.cssZoomWrapper.removeEventListener(
+            "mousedown",
+            this.handleAdvancedMouseDown.bind(this),
+        );
+        this.cssZoomWrapper.removeEventListener(
+            "mousemove",
+            this.handleAdvancedMouseMove.bind(this),
+        );
+        this.cssZoomWrapper.removeEventListener(
+            "mouseup",
+            this.handleAdvancedMouseUp.bind(this),
+        );
+        this.cssZoomWrapper.removeEventListener(
+            "mouseleave",
+            this.handleAdvancedMouseUp.bind(this),
+        );
+
+        document.removeEventListener("keydown", this.handleKeyDown.bind(this));
+        document.removeEventListener("keyup", this.handleKeyUp.bind(this));
     }
 
     /******************* INSTANCE METHODS ******************/
