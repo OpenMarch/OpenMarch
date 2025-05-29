@@ -76,6 +76,8 @@ module.exports = {
         "blockmap",
         "winget",
         "signtool",
+        "trackpad",
+        "trackpads",
     ],
     ignorePaths: [
         "node_modules/**",
