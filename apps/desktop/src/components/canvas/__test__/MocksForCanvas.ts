@@ -18,6 +18,16 @@ export const falsyUiSettings: UiSettings = {
     showWaveform: false,
     timelinePixelsPerSecond: 40,
     focussedComponent: "canvas",
+    mouseSettings: {
+        wheelZoomSensitivity: 5,
+        enableTouchpadGestures: true,
+        enableMomentumScrolling: true,
+        enableCanvasPanning: true,
+        trackpadMode: true,
+        trackpadPanSensitivity: 0.5,
+        zoomSensitivity: 0.03,
+        panSensitivity: 0.5,
+    },
 };
 
 export const mockMarchers: Marcher[] = [

@@ -119,9 +119,9 @@ export default class DefaultListeners implements CanvasListeners {
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
 
-        // Handle middle mouse button for panning
-        if (evt.button === 1 || evt.altKey) {
-            // Middle mouse button or Alt key
+        // Handle middle mouse button or right click for panning
+        if (evt.button === 1 || evt.button === 2 || evt.altKey) {
+            // Middle mouse button, right click, or Alt key
             evt.preventDefault();
             this.isMiddleMouseDown = true;
             this.lastMousePosition = { x: evt.clientX, y: evt.clientY };
@@ -148,10 +148,18 @@ export default class DefaultListeners implements CanvasListeners {
         }
 
         // If not near any marcher and shift key is not pressed, enable canvas dragging
-        if (!evt.shiftKey) {
+        // Only enable canvas dragging if the setting is enabled
+        if (
+            !evt.shiftKey &&
+            this.canvas.uiSettings.mouseSettings.enableCanvasPanning
+        ) {
             this.canvas.isDragging = true;
             this.canvas.selection = false;
             this.canvas.panDragStartPos = { x: evt.clientX, y: evt.clientY };
+        } else {
+            // If canvas panning is disabled, enable selection mode
+            this.canvas.selection = true;
+            this.canvas.isDragging = false;
         }
     }
 
