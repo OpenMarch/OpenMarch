@@ -5,6 +5,7 @@ export * from "./base/Input";
 export * from "./base/RadioGroup";
 export * from "./base/Select";
 export * from "./base/Skeleton";
+export * from "./base/Slider";
 export * from "./base/Switch";
 export * from "./base/ListItem";
 export * from "./base/Tooltip";
