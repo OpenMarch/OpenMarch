@@ -39,7 +39,9 @@ function App() {
             ?.list()
             .then(async (pluginPaths: string[]) => {
                 for (const path of pluginPaths) {
-                    console.log(`Loading plugin: ${path}`);
+                    const pluginName =
+                        path.split(/[/\\]/).pop() || "Unknown Plugin";
+                    console.log(`Loading plugin: ${pluginName}`);
                     try {
                         const code = await window.plugins.get(path);
                         const script = document.createElement("script");
@@ -47,7 +49,10 @@ function App() {
                         script.text = code;
                         document.body.appendChild(script);
                     } catch (error) {
-                        console.error(`Failed to load plugin ${path}:`, error);
+                        console.error(
+                            `Failed to load plugin ${pluginName}:`,
+                            error,
+                        );
                     }
                 }
             })
