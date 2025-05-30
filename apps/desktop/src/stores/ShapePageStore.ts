@@ -1,5 +1,5 @@
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
-import { ShapePage } from "electron/database/tables/ShapePageTable";
+import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { create } from "zustand";
 
 interface ShapePageStoreInterface {

@@ -1,6 +1,6 @@
 import BeatUnit from "@/global/classes/BeatUnit";
 import TimeSignature from "@/global/classes/TimeSignature";
-import { NewBeatArgs } from "electron/database/tables/BeatTable";
+import type { NewBeatArgs } from "electron/database/tables/BeatTable";
 import xml2abcInterpreter from "./xml2abcInterpreter";
 
 interface TemporaryNewMeasureArgs {
