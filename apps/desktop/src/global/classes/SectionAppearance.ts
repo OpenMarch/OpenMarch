@@ -1,5 +1,5 @@
 import { RgbaColor } from "@uiw/react-color";
-import { SectionAppearance as DatabaseSectionAppearance } from "electron/database/tables/SectionAppearanceTable";
+import type { SectionAppearance as DatabaseSectionAppearance } from "electron/database/tables/SectionAppearanceTable";
 import { rgbaToString } from "./FieldTheme";
 
 // Parse rgba(0, 0, 0, 1) string color to RGBA color

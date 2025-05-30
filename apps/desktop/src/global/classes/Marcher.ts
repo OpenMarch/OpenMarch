@@ -1,4 +1,4 @@
-import { DatabaseResponse } from "electron/database/DatabaseActions";
+import type { DatabaseResponse } from "electron/database/DatabaseActions";
 import { getSectionObjectByName } from "./Sections";
 
 /**
