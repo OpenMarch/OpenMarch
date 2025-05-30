@@ -513,4 +513,13 @@ const APP_API = {
 
 contextBridge.exposeInMainWorld("electron", APP_API);
 
+const PLUGINS_API = {
+    list: () => ipcRenderer.invoke("plugins:list") as Promise<string[]>,
+    get: (pluginPath: string) =>
+        ipcRenderer.invoke("plugins:get", pluginPath) as Promise<string>,
+};
+
+contextBridge.exposeInMainWorld("plugins", PLUGINS_API);
+
 export type ElectronApi = typeof APP_API;
+export type PluginsApi = typeof PLUGINS_API;
