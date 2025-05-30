@@ -1,4 +1,4 @@
-import {
+import type {
     DatabaseBeat,
     ModifiedBeatArgs,
     NewBeatArgs,
@@ -16,7 +16,7 @@ import Beat, {
 } from "../../../global/classes/Beat";
 import { GroupFunction } from "../../../utilities/ApiFunctions";
 import { conToastError } from "../../../utilities/utils";
-import { NewMeasureArgs } from "electron/database/tables/MeasureTable";
+import type { NewMeasureArgs } from "electron/database/tables/MeasureTable";
 import { toast } from "sonner";
 
 export type TempoGroup = {

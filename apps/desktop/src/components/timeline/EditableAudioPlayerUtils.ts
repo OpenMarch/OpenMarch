@@ -15,8 +15,8 @@ import {
     ModifiedBeatArgs,
     NewBeatArgs,
 } from "electron/database/tables/BeatTable";
-import { NewMeasureArgs } from "electron/database/tables/MeasureTable";
-import { ModifiedPageArgs } from "electron/database/tables/PageTable";
+import type { NewMeasureArgs } from "electron/database/tables/MeasureTable";
+import type { ModifiedPageArgs } from "electron/database/tables/PageTable";
 
 /**
  * Creates new temporary beats by subdividing the time between the last existing beat and the current time.

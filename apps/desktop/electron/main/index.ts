@@ -18,7 +18,7 @@ import {
     updateFieldProperties,
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
-import { FIRST_PAGE_ID } from "../database/tables/PageTable";
+import { FIRST_PAGE_ID } from "../database/constants";
 
 // The built directory structure
 //

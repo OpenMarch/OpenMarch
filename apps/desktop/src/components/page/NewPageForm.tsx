@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { PageListContents } from "./PagesModal";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { NewPageArgs } from "electron/database/tables/PageTable";
+import type { NewPageArgs } from "electron/database/tables/PageTable";
 import Beat, { getNextBeat } from "@/global/classes/Beat";
 
 interface NewPageFormProps {

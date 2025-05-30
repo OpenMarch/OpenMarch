@@ -4,7 +4,7 @@ import * as History from "../../database.history";
 import Database from "better-sqlite3";
 import * as BeatTable from "../BeatTable";
 import Constants from "../../../../src/global/Constants";
-import { FIRST_PAGE_ID } from "../PageTable";
+import { FIRST_PAGE_ID } from "../../constants";
 
 const sorter = (a: any, b: any) => a.position - b.position;
 

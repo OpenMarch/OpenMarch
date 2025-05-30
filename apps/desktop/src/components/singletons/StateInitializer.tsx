@@ -8,7 +8,7 @@ import Marcher from "../../global/classes/Marcher";
 import MarcherPage from "../../global/classes/MarcherPage";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
-import { HistoryResponse } from "electron/database/database.services";
+import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";

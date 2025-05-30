@@ -11,7 +11,7 @@ import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
-import { ShapePage } from "electron/database/tables/ShapePageTable";
+import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
 import { UiSettings } from "@/stores/UiSettingsStore";

@@ -1,4 +1,4 @@
-import { DatabaseResponse } from "electron/database/DatabaseActions";
+import type { DatabaseResponse } from "electron/database/DatabaseActions";
 
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.

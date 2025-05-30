@@ -8,10 +8,8 @@ import Page, {
 import Measure from "../Measure";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Beat from "../Beat";
-import {
-    DatabasePage,
-    FIRST_PAGE_ID,
-} from "../../../../electron/database/tables/PageTable";
+import type { DatabasePage } from "../../../../electron/database/tables/PageTable";
+import { FIRST_PAGE_ID } from "../../../../electron/database/constants";
 import { ElectronApi } from "../../../../electron/preload";
 import { FIRST_BEAT_ID } from "../../../../electron/database/tables/BeatTable";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";

@@ -1,5 +1,5 @@
-import { DatabaseResponse } from "electron/database/DatabaseActions";
-import {
+import type { DatabaseResponse } from "electron/database/DatabaseActions";
+import type {
     DatabaseBeat,
     ModifiedBeatArgs,
     NewBeatArgs,
