@@ -57,30 +57,6 @@ function App() {
     }, []);
 
     useEffect(() => {
-        console.log("Loading plugins...");
-        window.plugins?.list().then(async (pluginPaths: string[]) => {
-            for (const path of pluginPaths) {
-                try {
-                    const code = await window.plugins.get(path);
-                    if (/module\.exports|require\(/.test(code)) {
-                        console.warn(
-                            `Plugin ${path} uses CommonJS and will not work in the browser context.`,
-                        );
-                        continue;
-                    }
-                    const script = document.createElement("script");
-                    script.type = "text/javascript";
-                    script.text = code;
-                    document.body.appendChild(script);
-                    console.log(`Plugin loaded: ${path}`);
-                } catch (error) {
-                    console.error(`Failed to load plugin ${path}:`, error);
-                }
-            }
-        });
-    }, []);
-
-    useEffect(() => {
         window.electron.databaseIsReady().then((result) => {
             setDatabaseIsReady(result);
         });
