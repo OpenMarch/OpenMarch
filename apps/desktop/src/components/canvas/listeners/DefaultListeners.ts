@@ -53,10 +53,22 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("mouse:up", this.handleMouseUp);
-        this.canvas.on("mouse:wheel", this.handleMouseWheel);
 
-        // Start momentum animation loop
-        this.updateMomentum();
+        // Only register mouse:wheel if advanced navigation (trackpad mode) is not enabled
+        // This prevents conflicts with the advanced wheel handler in OpenMarchCanvas
+        if (!this.isAdvancedNavigationEnabled()) {
+            console.log(
+                `🔧 DefaultListeners: Registering wheel handler (trackpad mode disabled)`,
+            );
+            this.canvas.on("mouse:wheel", this.handleMouseWheel);
+        } else {
+            console.log(
+                `🔧 DefaultListeners: Skipping wheel handler (trackpad mode enabled - using advanced handler)`,
+            );
+        }
+
+        // NOTE: Removed momentum animation loop for professional immediate response
+        // Professional navigation should be instant and precise, not momentum-based
     };
 
     cleanupListeners = () => {
@@ -64,7 +76,11 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
         this.canvas.off("mouse:up", this.handleMouseUp as any);
-        this.canvas.off("mouse:wheel", this.handleMouseWheel as any);
+
+        // Only remove mouse:wheel if it was registered (i.e., advanced navigation was disabled)
+        if (!this.isAdvancedNavigationEnabled()) {
+            this.canvas.off("mouse:wheel", this.handleMouseWheel as any);
+        }
     };
 
     /**
@@ -129,6 +145,11 @@ export default class DefaultListeners implements CanvasListeners {
             return;
         }
 
+        // For left-click, always enable selection mode
+        // This ensures multi-select (Shift+drag) always works
+        this.canvas.selection = true;
+        this.canvas.isDragging = false;
+
         // First check if clicking directly on a marcher
         if (OpenMarchCanvas.selectionHasObjects(fabricEvent)) {
             this.canvas.selectDragStart = {
@@ -141,26 +162,13 @@ export default class DefaultListeners implements CanvasListeners {
 
         // If not directly on a marcher, check if near one (proximity check)
         if (this.isNearMarcher(fabricEvent)) {
-            // Near a marcher but not on one - enable selection mode but don't drag canvas
-            this.canvas.selection = true;
-            this.canvas.isDragging = false;
+            // Near a marcher but not on one - keep selection mode enabled
+            // This allows for easy selection without interfering with multi-select
             return;
         }
 
-        // If not near any marcher and shift key is not pressed, enable canvas dragging
-        // Only enable canvas dragging if the setting is enabled
-        if (
-            !evt.shiftKey &&
-            this.canvas.uiSettings.mouseSettings.enableCanvasPanning
-        ) {
-            this.canvas.isDragging = true;
-            this.canvas.selection = false;
-            this.canvas.panDragStartPos = { x: evt.clientX, y: evt.clientY };
-        } else {
-            // If canvas panning is disabled, enable selection mode
-            this.canvas.selection = true;
-            this.canvas.isDragging = false;
-        }
+        // If not near any marcher, still keep selection enabled
+        // This allows for multi-select box creation anywhere on canvas
     }
 
     /**
@@ -214,14 +222,15 @@ export default class DefaultListeners implements CanvasListeners {
     handleMouseMove(fabricEvent: fabric.IEvent<MouseEvent>) {
         const e = fabricEvent.e;
         const vpt = this.canvas.viewportTransform;
+
         if (!vpt) {
             console.error(
-                "Viewport transform not set - handleMouseMove: Canvas.tsx",
+                "Viewport transform is not set. This will cause issues with panning around the canvas.",
             );
             return;
         }
 
-        // Enhanced middle mouse or Alt+drag panning
+        // Enhanced middle mouse or Alt+drag panning (right-click, middle-click, Alt+click)
         if (this.isMiddleMouseDown) {
             const deltaX = e.clientX - this.lastMousePosition.x;
             const deltaY = e.clientY - this.lastMousePosition.y;
@@ -239,13 +248,8 @@ export default class DefaultListeners implements CanvasListeners {
             return;
         }
 
-        // Handle regular dragging
-        if (this.canvas.isDragging) {
-            vpt[4] += e.clientX - this.canvas.panDragStartPos.x;
-            vpt[5] += e.clientY - this.canvas.panDragStartPos.y;
-            this.canvas.requestRenderAll();
-            this.canvas.panDragStartPos = { x: e.clientX, y: e.clientY };
-        }
+        // Note: Removed left-click canvas dragging logic
+        // Left-click is now exclusively for selection and multi-select
     }
 
     /**
@@ -275,78 +279,57 @@ export default class DefaultListeners implements CanvasListeners {
 
     private handleMouseWheel = (opt: fabric.IEvent<WheelEvent>) => {
         const e = opt.e;
-        // Always prevent default behavior
+
+        console.log(
+            `🔍 DEFAULT WHEEL called: deltaX=${e.deltaX.toFixed(2)}, deltaY=${e.deltaY.toFixed(2)}`,
+        );
+
+        // Check if zoom on scroll is disabled
+        if (!this.canvas.uiSettings.mouseSettings.zoomOnScroll) {
+            console.log(`🔍 DEFAULT WHEEL: zoom disabled, skipping`);
+            return;
+        }
+
+        // Always prevent default to ensure smooth scrolling
         e.preventDefault();
-        e.stopPropagation();
 
         // Skip if canvas not initialized
         if (!this.canvas.viewportTransform) return;
 
-        // Skip all wheel events during active rendering
-        if (this._scrollAnimationFrame !== null) {
-            return;
-        }
+        console.log(`🔍 DEFAULT WHEEL: proceeding with professional zoom`);
+        // Professional zoom implementation - no blurriness, no momentum
+        this.handleProfessionalZoom(e);
+    };
 
-        // Use a more aggressive rate limit for better performance
+    /**
+     * Professional-grade zoom handler with crisp rendering and no momentum
+     */
+    private handleProfessionalZoom(e: WheelEvent) {
+        // Rate limiting for smooth performance (60fps target)
         const now = Date.now();
-        if (now - this.lastWheelTime < 12) {
-            // ~83fps max
-            return; // Skip processing if events come too fast
+        if (now - this.lastWheelTime < 16) {
+            // ~60fps
+            return;
         }
         this.lastWheelTime = now;
 
-        // Check if this is a horizontal scroll event (shift+wheel or native horizontal scroll)
+        // Check if this is horizontal scroll (shift+wheel or native horizontal)
         const isHorizontalScroll =
             Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey;
 
-        // Handle horizontal scrolling if available
         if (isHorizontalScroll && !e.ctrlKey && !e.metaKey) {
-            // Get current zoom for sensitivity adjustment
-            const zoom = this.canvas.getZoom();
-            const vpt = this.canvas.viewportTransform;
-
-            // Use deltaX for native horizontal scroll or deltaY for shift+wheel
-            const horizontalDelta =
-                Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-
-            // Apply horizontal scroll - adjust sensitivity with zoom
-            const sensitivity = Math.min(1, 0.5 / Math.max(0.5, zoom)) * 2;
-            const panAmount = horizontalDelta * sensitivity;
-
-            // Pan horizontally
-            vpt[4] -= panAmount;
-
-            // Apply immediately
-            this.canvas.renderAll();
-
-            // Check bounds after short delay
-            clearTimeout(this._zoomTimeout);
-            this._zoomTimeout = setTimeout(() => {
-                this.checkCanvasBounds();
-            }, 100);
-
+            // Handle horizontal pan with immediate crisp rendering
+            this.handleProfessionalPan(e);
             return;
         }
 
-        // For simplicity, always treat standard mouse wheel as zoom
-        // Positive deltaY = zoom out, negative deltaY = zoom in
-        const delta = e.deltaY;
-
-        // Get current zoom level
+        // Handle vertical zoom with immediate crisp rendering
         const currentZoom = this.canvas.getZoom();
 
-        // Use a more aggressive zoom factor for responsiveness
-        const baseZoomFactor = 1.25; // 25% change per step - even more responsive
-
-        // Calculate new zoom level based on delta magnitude for smoother zooming
-        // This makes the zoom more responsive to aggressive wheel movements
-        const deltaFactor = Math.min(3, Math.max(1, Math.abs(delta / 50)));
-        const adjustedZoomFactor = 1 + (baseZoomFactor - 1) * deltaFactor;
-
-        const newZoom =
-            delta < 0
-                ? currentZoom * adjustedZoomFactor // zoom in
-                : currentZoom / adjustedZoomFactor; // zoom out
+        // Professional zoom factor - more responsive than original
+        const zoomStep = 0.1; // 10% per step for precise control
+        const zoomDirection = e.deltaY > 0 ? -1 : 1; // Inverted for natural feel
+        const newZoom = currentZoom + zoomDirection * zoomStep;
 
         // Apply zoom constraints
         const limitedZoom = Math.min(
@@ -354,78 +337,50 @@ export default class DefaultListeners implements CanvasListeners {
             this.MAX_ZOOM,
         );
 
-        // Skip zooming if not changing significantly
+        // Skip if no significant change
         if (Math.abs(limitedZoom - currentZoom) < 0.001) {
             return;
         }
 
-        // Get mouse position relative to canvas
-        // This is in screen coordinates
-        const mouse = {
-            x: e.offsetX,
-            y: e.offsetY,
-        };
+        // Get precise cursor position
+        const pointer = this.canvas.getPointer(e);
 
-        // Enable ultra-performance mode during zooming
-        if (!this._isZooming) {
-            this._isZooming = true;
+        // Apply zoom with crisp rendering - NO object caching
+        this.canvas.zoomToPoint(pointer, limitedZoom);
 
-            // Apply performance optimizations but keep content visible
-            if (this.canvas.staticGridRef) {
-                // Keep grid visible but use performance rendering
-                this.canvas.staticGridRef.objectCaching = true;
-            }
+        // Immediate high-quality render - no delays, no blurriness
+        this.canvas.requestRenderAll();
 
-            // Disable active selection but keep objects visible
-            this.canvas.discardActiveObject();
-            this.canvas.renderOnAddRemove = false;
+        // Ensure bounds are maintained
+        this.checkCanvasBounds();
+    }
 
-            // Disable interactive mode
-            this._originalInteractive = this.canvas.interactive;
-            this.canvas.interactive = false;
-        }
-
-        // Direct zoom implementation for maximum performance
-        // Get viewport transform
+    /**
+     * Professional-grade pan handler with crisp rendering
+     */
+    private handleProfessionalPan(e: WheelEvent) {
         const vpt = this.canvas.viewportTransform;
+        if (!vpt) return;
 
-        // Apply zoom transformation directly
-        vpt[0] = limitedZoom;
-        vpt[3] = limitedZoom;
+        const zoom = this.canvas.getZoom();
 
-        // Calculate the point position in canvas coordinates before zoom change
-        const canvasX = (mouse.x - vpt[4]) / currentZoom;
-        const canvasY = (mouse.y - vpt[5]) / currentZoom;
+        // Use deltaX for native horizontal scroll or deltaY for shift+wheel
+        const horizontalDelta =
+            Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
 
-        // Update translation to keep the point under cursor
-        vpt[4] = -canvasX * limitedZoom + mouse.x;
-        vpt[5] = -canvasY * limitedZoom + mouse.y;
+        // Professional pan sensitivity - zoom-adjusted for precision
+        const panSensitivity = Math.min(1.5, 1 / Math.max(0.3, zoom));
+        const panAmount = horizontalDelta * panSensitivity;
 
-        // Use direct rendering without requestAnimationFrame
-        this.canvas.renderAll();
+        // Apply horizontal pan
+        vpt[4] -= panAmount;
 
-        // Cancel any previous timeout to avoid stacking
-        clearTimeout(this._zoomTimeout);
+        // Immediate crisp render
+        this.canvas.requestRenderAll();
 
-        // Reset state after zooming
-        this._zoomTimeout = setTimeout(() => {
-            // Restore all performance optimizations
-            this._isZooming = false;
-
-            if (this.canvas.staticGridRef) {
-                // Return to high quality rendering
-                this.canvas.staticGridRef.objectCaching = false;
-            }
-
-            // Re-enable interaction
-            this.canvas.interactive = this._originalInteractive || true;
-            this.canvas.renderOnAddRemove = true;
-
-            // Final high-quality render and boundary check
-            this.canvas.requestRenderAll();
-            this.checkCanvasBounds();
-        }, 150);
-    };
+        // Ensure bounds
+        this.checkCanvasBounds();
+    }
 
     private updateMomentum = () => {
         if (
@@ -582,5 +537,28 @@ export default class DefaultListeners implements CanvasListeners {
         if (needsAdjustment) {
             this.canvas.requestRenderAll();
         }
+    }
+
+    /**
+     * Check if advanced navigation (trackpad mode) is enabled
+     */
+    private isAdvancedNavigationEnabled(): boolean {
+        // Check if trackpad mode is enabled in UI settings
+        const trackpadModeEnabled =
+            this.canvas.uiSettings?.mouseSettings?.trackpadMode;
+
+        // On macOS, trackpad mode is enabled by default even if UI setting is undefined
+        const isMacOS = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+        const defaultTrackpadMode = isMacOS;
+
+        const result =
+            trackpadModeEnabled !== undefined
+                ? trackpadModeEnabled
+                : defaultTrackpadMode;
+        console.log(
+            `🔧 DefaultListeners.isAdvancedNavigationEnabled(): trackpadModeEnabled=${trackpadModeEnabled}, isMacOS=${isMacOS}, defaultTrackpadMode=${defaultTrackpadMode}, result=${result}`,
+        );
+
+        return result;
     }
 }

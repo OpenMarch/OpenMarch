@@ -21,6 +21,16 @@ describe("uiSettings Store", () => {
         showWaveform: true,
         timelinePixelsPerSecond: 16,
         focussedComponent: "canvas",
+        mouseSettings: {
+            wheelZoomSensitivity: 5,
+            enableTouchpadGestures: true,
+            enableMomentumScrolling: true,
+            trackpadMode: true,
+            trackpadPanSensitivity: 0.5,
+            zoomSensitivity: 0.03,
+            panSensitivity: 0.5,
+            zoomOnScroll: true,
+        },
     } satisfies UiSettings;
 
     beforeEach(() => {

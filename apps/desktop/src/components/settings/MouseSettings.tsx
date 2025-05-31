@@ -123,18 +123,18 @@ export default function MouseSettings() {
                     />
                 </div>
                 <div className="flex w-full items-center justify-between gap-16">
-                    <label htmlFor="canvasPanning" className="text-body">
-                        Enable canvas panning with left click
+                    <label htmlFor="zoomOnScroll" className="text-body">
+                        Enable zoom on scroll (without Ctrl/Cmd)
                     </label>
                     <Switch
-                        id="canvasPanning"
-                        checked={uiSettings.mouseSettings.enableCanvasPanning}
+                        id="zoomOnScroll"
+                        checked={uiSettings.mouseSettings.zoomOnScroll}
                         onCheckedChange={(checked) =>
                             setUiSettings({
                                 ...uiSettings,
                                 mouseSettings: {
                                     ...uiSettings.mouseSettings,
-                                    enableCanvasPanning: checked,
+                                    zoomOnScroll: checked,
                                 },
                             })
                         }

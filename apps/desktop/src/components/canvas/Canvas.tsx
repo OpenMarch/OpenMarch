@@ -18,6 +18,7 @@ import Marcher from "@/global/classes/Marcher";
 import { CircleNotch } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import CanvasZoomControls from "./CanvasZoomControls";
 
 /**
  * The field/stage UI of OpenMarch
@@ -638,6 +639,7 @@ export default function Canvas({
                     <CircleNotch size={32} className="text-text animate-spin" />
                 </div>
             )}
+            <CanvasZoomControls canvas={canvas} />
         </div>
     );
 }

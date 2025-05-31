@@ -27,8 +27,6 @@ export interface UiSettings {
         enableTouchpadGestures: boolean;
         /** Whether to enable momentum scrolling */
         enableMomentumScrolling: boolean;
-        /** Whether to enable canvas panning with left click */
-        enableCanvasPanning: boolean;
         /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
         trackpadMode: boolean;
         /** Trackpad pan sensitivity (0.1-3.0) */
@@ -37,6 +35,8 @@ export interface UiSettings {
         zoomSensitivity: number;
         /** Standard pan sensitivity (0.1-3.0) */
         panSensitivity: number;
+        /** Whether to enable zoom on scroll without modifier keys */
+        zoomOnScroll: boolean;
     };
 }
 
@@ -83,8 +83,6 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
                 enableTouchpadGestures: true,
                 /** Whether to enable momentum scrolling */
                 enableMomentumScrolling: true,
-                /** Whether to enable canvas panning with left click */
-                enableCanvasPanning: true,
                 /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
                 trackpadMode: true,
                 /** Trackpad pan sensitivity (0.1-3.0) */
@@ -93,6 +91,8 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
                 zoomSensitivity: 0.03,
                 /** Standard pan sensitivity (0.1-3.0) */
                 panSensitivity: 0.5,
+                /** Whether to enable zoom on scroll without modifier keys */
+                zoomOnScroll: true,
             },
         },
 

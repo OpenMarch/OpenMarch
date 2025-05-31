@@ -22,11 +22,11 @@ export const falsyUiSettings: UiSettings = {
         wheelZoomSensitivity: 5,
         enableTouchpadGestures: true,
         enableMomentumScrolling: true,
-        enableCanvasPanning: true,
         trackpadMode: true,
         trackpadPanSensitivity: 0.5,
         zoomSensitivity: 0.03,
         panSensitivity: 0.5,
+        zoomOnScroll: true,
     },
 };
 
