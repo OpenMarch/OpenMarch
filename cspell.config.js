@@ -92,6 +92,7 @@ module.exports = {
         "rgba",
         "choco",
         "WASD",
+        "viewports",
     ],
     ignorePaths: [
         "node_modules/**",
