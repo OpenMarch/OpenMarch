@@ -47,6 +47,9 @@
         "preview": {
             "outputs": []
         },
+        "e2e": {
+            "outputs": []
+        },
         "dev": {
             "persistent": true,
             "cache": false

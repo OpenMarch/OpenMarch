@@ -27,6 +27,7 @@ import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
+import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 
 // app
 
@@ -40,6 +41,12 @@ function App() {
     );
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
+
+    // Check if running in codegen mode
+    const isCodegen = window.electron.isCodegen;
+    if (isCodegen) {
+        console.log("🎭 React app running in Playwright Codegen mode");
+    }
 
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
@@ -110,12 +117,26 @@ function App() {
             });
     }, []);
 
+    useEffect(() => {
+        if (appCanvas && isCodegen) {
+            window.electron.codegen.clearMouseActions();
+            const cleanup = attachCodegenListeners(appCanvas);
+            return cleanup;
+        }
+    }, [appCanvas, isCodegen]);
+
     return (
         <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
-            {analyticsConsent === null && (
+            {analyticsConsent === null && !isCodegen && (
                 <AnalyticsOptInModal
                     onChoice={(choice) => setAnalyticsConsent(choice)}
                 />
+            )}
+            {/* Codegen mode indicator */}
+            {isCodegen && (
+                <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
+                    🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
+                </div>
             )}
             {!databaseIsReady ? (
                 <>

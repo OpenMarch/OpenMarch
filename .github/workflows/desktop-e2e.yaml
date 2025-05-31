@@ -1,0 +1,44 @@
+name: Desktop E2E tets
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    desktop-e2e:
+        runs-on: macos-latest
+        # Test on both main's and PR's code
+        strategy:
+            matrix:
+                include:
+                    - branch: main
+                      artifact: main
+                    - branch: ${{ github.head_ref }}
+                      artifact: pull-request
+
+        permissions:
+            contents: read
+
+        steps:
+            - uses: actions/checkout@v4
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
+            - name: Install project dependencies
+              run: pnpm install
+            - name: Install Playwright Browsers
+              run: pnpm exec playwright install --with-deps
+            - name: Build desktop app
+              run: cd apps/desktop && pnpm run build:electron --mac --publish=never
+            - name: Run E2E tests
+              run: pnpm run e2e
+              working-directory: apps/desktop
+              env:
+                  DISPLAY: ":99"
+            - uses: actions/upload-artifact@v4
+              if: ${{ !cancelled() }}
+              with:
+                  name: desktop-playwright-report-${{ github.run_number }}
+                  path: apps/desktop/playwright-report/
+                  retention-days: 30
