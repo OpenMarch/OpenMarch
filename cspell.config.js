@@ -88,6 +88,7 @@ module.exports = {
         "apikey",
         "madripoor",
         "rgba",
+        "viewports",
     ],
     ignorePaths: [
         "node_modules/**",
