@@ -15,17 +15,13 @@ export default class DefaultListeners implements CanvasListeners {
     private momentumY: number = 0;
     private lastGestureTime: number = 0;
     private readonly ZOOM_SENSITIVITY: number = 0.008;
-    private readonly MOUSE_WHEEL_ZOOM_SENSITIVITY: number = 0.002;
     private readonly MOMENTUM_DECAY: number = 0.95;
     private readonly MOMENTUM_THRESHOLD: number = 0.01;
     private readonly SCROLL_SENSITIVITY: number = 0.8;
     private readonly TOUCHPAD_SCROLL_SENSITIVITY: number = 0.4;
     private readonly HORIZONTAL_SCROLL_SENSITIVITY: number = 0.2;
-    private readonly MIN_ZOOM: number = 0.3;
-    private readonly MAX_ZOOM: number = 10;
     private isMiddleMouseDown: boolean = false;
     private lastMousePosition = { x: 0, y: 0 };
-    private lastWheelTime: number = 0;
     private readonly WHEEL_TIMEOUT = 50;
     private lastDeltaX: number = 0;
     private lastDeltaY: number = 0;
@@ -44,7 +40,6 @@ export default class DefaultListeners implements CanvasListeners {
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
-        this.handleMouseWheel = this.handleMouseWheel.bind(this);
         this.updateMomentum = this.updateMomentum.bind(this);
     }
 
@@ -53,19 +48,6 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("mouse:up", this.handleMouseUp);
-
-        // Only register mouse:wheel if advanced navigation (trackpad mode) is not enabled
-        // This prevents conflicts with the advanced wheel handler in OpenMarchCanvas
-        if (!this.isAdvancedNavigationEnabled()) {
-            console.log(
-                `🔧 DefaultListeners: Registering wheel handler (trackpad mode disabled)`,
-            );
-            this.canvas.on("mouse:wheel", this.handleMouseWheel);
-        } else {
-            console.log(
-                `🔧 DefaultListeners: Skipping wheel handler (trackpad mode enabled - using advanced handler)`,
-            );
-        }
 
         // NOTE: Removed momentum animation loop for professional immediate response
         // Professional navigation should be instant and precise, not momentum-based
@@ -76,11 +58,6 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
         this.canvas.off("mouse:up", this.handleMouseUp as any);
-
-        // Only remove mouse:wheel if it was registered (i.e., advanced navigation was disabled)
-        if (!this.isAdvancedNavigationEnabled()) {
-            this.canvas.off("mouse:wheel", this.handleMouseWheel as any);
-        }
     };
 
     /**
@@ -277,111 +254,6 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.selection = true;
     }
 
-    private handleMouseWheel = (opt: fabric.IEvent<WheelEvent>) => {
-        const e = opt.e;
-
-        console.log(
-            `🔍 DEFAULT WHEEL called: deltaX=${e.deltaX.toFixed(2)}, deltaY=${e.deltaY.toFixed(2)}`,
-        );
-
-        // Check if zoom on scroll is disabled
-        if (!this.canvas.uiSettings.mouseSettings.zoomOnScroll) {
-            console.log(`🔍 DEFAULT WHEEL: zoom disabled, skipping`);
-            return;
-        }
-
-        // Always prevent default to ensure smooth scrolling
-        e.preventDefault();
-
-        // Skip if canvas not initialized
-        if (!this.canvas.viewportTransform) return;
-
-        console.log(`🔍 DEFAULT WHEEL: proceeding with professional zoom`);
-        // Professional zoom implementation - no blurriness, no momentum
-        this.handleProfessionalZoom(e);
-    };
-
-    /**
-     * Professional-grade zoom handler with crisp rendering and no momentum
-     */
-    private handleProfessionalZoom(e: WheelEvent) {
-        // Rate limiting for smooth performance (60fps target)
-        const now = Date.now();
-        if (now - this.lastWheelTime < 16) {
-            // ~60fps
-            return;
-        }
-        this.lastWheelTime = now;
-
-        // Check if this is horizontal scroll (shift+wheel or native horizontal)
-        const isHorizontalScroll =
-            Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey;
-
-        if (isHorizontalScroll && !e.ctrlKey && !e.metaKey) {
-            // Handle horizontal pan with immediate crisp rendering
-            this.handleProfessionalPan(e);
-            return;
-        }
-
-        // Handle vertical zoom with immediate crisp rendering
-        const currentZoom = this.canvas.getZoom();
-
-        // Professional zoom factor - more responsive than original
-        const zoomStep = 0.1; // 10% per step for precise control
-        const zoomDirection = e.deltaY > 0 ? -1 : 1; // Inverted for natural feel
-        const newZoom = currentZoom + zoomDirection * zoomStep;
-
-        // Apply zoom constraints
-        const limitedZoom = Math.min(
-            Math.max(newZoom, this.MIN_ZOOM),
-            this.MAX_ZOOM,
-        );
-
-        // Skip if no significant change
-        if (Math.abs(limitedZoom - currentZoom) < 0.001) {
-            return;
-        }
-
-        // Get precise cursor position
-        const pointer = this.canvas.getPointer(e);
-
-        // Apply zoom with crisp rendering - NO object caching
-        this.canvas.zoomToPoint(pointer, limitedZoom);
-
-        // Immediate high-quality render - no delays, no blurriness
-        this.canvas.requestRenderAll();
-
-        // Ensure bounds are maintained
-        this.checkCanvasBounds();
-    }
-
-    /**
-     * Professional-grade pan handler with crisp rendering
-     */
-    private handleProfessionalPan(e: WheelEvent) {
-        const vpt = this.canvas.viewportTransform;
-        if (!vpt) return;
-
-        const zoom = this.canvas.getZoom();
-
-        // Use deltaX for native horizontal scroll or deltaY for shift+wheel
-        const horizontalDelta =
-            Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-
-        // Professional pan sensitivity - zoom-adjusted for precision
-        const panSensitivity = Math.min(1.5, 1 / Math.max(0.3, zoom));
-        const panAmount = horizontalDelta * panSensitivity;
-
-        // Apply horizontal pan
-        vpt[4] -= panAmount;
-
-        // Immediate crisp render
-        this.canvas.requestRenderAll();
-
-        // Ensure bounds
-        this.checkCanvasBounds();
-    }
-
     private updateMomentum = () => {
         if (
             Math.abs(this.momentumX) > this.MOMENTUM_THRESHOLD ||
@@ -537,28 +409,5 @@ export default class DefaultListeners implements CanvasListeners {
         if (needsAdjustment) {
             this.canvas.requestRenderAll();
         }
-    }
-
-    /**
-     * Check if advanced navigation (trackpad mode) is enabled
-     */
-    private isAdvancedNavigationEnabled(): boolean {
-        // Check if trackpad mode is enabled in UI settings
-        const trackpadModeEnabled =
-            this.canvas.uiSettings?.mouseSettings?.trackpadMode;
-
-        // On macOS, trackpad mode is enabled by default even if UI setting is undefined
-        const isMacOS = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-        const defaultTrackpadMode = isMacOS;
-
-        const result =
-            trackpadModeEnabled !== undefined
-                ? trackpadModeEnabled
-                : defaultTrackpadMode;
-        console.log(
-            `🔧 DefaultListeners.isAdvancedNavigationEnabled(): trackpadModeEnabled=${trackpadModeEnabled}, isMacOS=${isMacOS}, defaultTrackpadMode=${defaultTrackpadMode}, result=${result}`,
-        );
-
-        return result;
     }
 }

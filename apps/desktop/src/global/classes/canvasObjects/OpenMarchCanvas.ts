@@ -141,6 +141,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private readonly MIN_ZOOM = 0.5; // 50% (zoomed in, field is twice as big as viewport)
     private readonly MAX_ZOOM = 2.0; // 200% (zoomed out, field is half as big as viewport)
     private readonly ZOOM_STEP = 0.05; // 5% increments for smoother zooming
+    private readonly INTERNAL_BASE_ZOOM_SENSITIVITY = 0.5; // Base sensitivity for zoom operations
 
     // Sensitivity settings
     private panSensitivity = 0.5; // Reduced for smoother panning
@@ -239,25 +240,32 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // console.log(`🔍 ADVANCED WHEEL called: deltaX=${event.deltaX.toFixed(2)}, deltaY=${event.deltaY.toFixed(2)}, ctrlKey=${event.ctrlKey}, metaKey=${event.metaKey}`);
 
         event.preventDefault();
-        this.updateSensitivitySettings(); // Ensure sensitivities are current
+        this.updateSensitivitySettings(); // Ensure sensitivities are current (this updates this.trackpadModeEnabled)
 
         const isPinchGesture = event.ctrlKey || event.metaKey;
-        const isLikelyTrackpad = this.detectTrackpadGesture(event);
 
-        // console.log(`🔍 Detection: isLikelyTrackpad=${isLikelyTrackpad}, isPinchGesture=${isPinchGesture}, (trackpadModeSetting=${this.trackpadModeEnabled})`);
+        // console.log(`🔍 Detection: isPinchGesture=${isPinchGesture}, trackpadModeEnabled=${this.trackpadModeEnabled}`);
 
         if (isPinchGesture) {
-            // Route to pinch gesture zoom (trackpad pinch, or Ctrl/Cmd + mouse wheel)
+            // Pinch gestures (Ctrl/Cmd + wheel, or trackpad pinch if detectTrackpadGesture allows)
+            // should always zoom, regardless of trackpadModeEnabled setting for simple scroll.
             // console.log(`🔍 → Executing pinch gesture zoom`);
             this.handlePinchGestureZoom(event);
-        } else if (isLikelyTrackpad) {
-            // Route to trackpad pan (two-finger scroll on trackpad)
-            // console.log(`🔍 → Executing trackpad pan (auto-detected)`);
-            this.handleTrackpadPan(event);
-        } else {
-            // Route to standard mouse wheel zoom
-            // console.log(`🔍 → Executing mouse wheel zoom (auto-detected)`);
+        } else if (!this.trackpadModeEnabled) {
+            // Trackpad mode is OFF. Mouse wheel should ONLY zoom.
+            // console.log(`🔍 Trackpad mode OFF → Executing mouse wheel zoom`);
             this.handleMouseWheelZoom(event);
+        } else {
+            // Trackpad mode is ON. Use existing detection logic.
+            const isLikelyTrackpad = this.detectTrackpadGesture(event);
+            // console.log(`🔍 Trackpad mode ON: isLikelyTrackpad=${isLikelyTrackpad}`);
+            if (isLikelyTrackpad) {
+                // console.log(`🔍 → Executing trackpad pan (auto-detected)`);
+                this.handleTrackpadPan(event);
+            } else {
+                // console.log(`🔍 → Executing mouse wheel zoom (auto-detected)`);
+                this.handleMouseWheelZoom(event);
+            }
         }
     }
 
@@ -267,60 +275,52 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * based on event properties like deltaMode, deltaX/Y values, and their precision.
      */
     private detectTrackpadGesture(event: WheelEvent): boolean {
-        // --- Stricter Mouse Wheel Identification First ---
-        const isLikelyDiscreteMouseWheel =
-            event.deltaMode === 1 ||
-            (event.deltaY % 100 === 0 && event.deltaY !== 0) ||
-            (event.deltaY % 120 === 0 && event.deltaY !== 0);
+        const absDeltaX = Math.abs(event.deltaX);
+        const isPixelMode = event.deltaMode === 0;
+        const hasDecimalDeltas =
+            event.deltaX % 1 !== 0 || event.deltaY % 1 !== 0;
 
-        if (isLikelyDiscreteMouseWheel) {
-            // console.log(`🔍 Trackpad indicators: Detected as DISCRETE MOUSE WHEEL (deltaMode=${event.deltaMode}, deltaY=${event.deltaY}). result=false`);
+        // If Ctrl or Meta key is pressed, it's a pinch gesture, not a trackpad pan for scrolling.
+        if (event.ctrlKey || event.metaKey) {
+            // console.log("🔍 TG: Ctrl/Meta key pressed -> Not a trackpad pan (likely pinch zoom)");
             return false;
         }
 
-        // --- If not a clear mouse wheel, proceed with trackpad heuristics ---
-        const hasSignificantHorizontalMovement = Math.abs(event.deltaX) > 0.5; // Increased threshold slightly, must be more than tiny noise
-        const hasSmallContinuousVerticalMovement =
-            Math.abs(event.deltaY) < 40 && // Made slightly stricter
-            (event.deltaY % 1 !== 0 ||
-                (Math.abs(event.deltaY) > 0 && Math.abs(event.deltaY) < 10));
-
-        const hasDecimalValues =
-            event.deltaY % 1 !== 0 || event.deltaX % 1 !== 0;
-
-        const hasPrecisePixelMode = event.deltaMode === 0;
-        const hasModerateDeltaY = Math.abs(event.deltaY) < 80; // Made stricter
-
-        let trackpadIndicatorCount = 0;
-        // For a pan gesture, some horizontal movement is usually expected, even if small.
-        // Or, it must have very characteristic small, decimal, precise vertical movement without much horizontal.
-        if (hasSignificantHorizontalMovement) trackpadIndicatorCount++;
-        if (hasSmallContinuousVerticalMovement) trackpadIndicatorCount++;
-        if (hasDecimalValues && hasPrecisePixelMode) trackpadIndicatorCount++; // Decimal values in precise mode is a strong trackpad signal
+        // Primary condition for identifying a mouse wheel:
+        // - Not pixel mode (deltaMode === 1 for line scrolling is a strong mouse wheel indicator)
+        // - OR, it IS pixel mode, but there are NO decimal deltas and there IS vertical movement without horizontal.
         if (
-            hasPrecisePixelMode &&
-            hasModerateDeltaY &&
-            !hasSignificantHorizontalMovement &&
-            hasSmallContinuousVerticalMovement
+            event.deltaMode === 1 || // Discrete line scrolling (classic mouse wheel)
+            (isPixelMode &&
+                !hasDecimalDeltas &&
+                event.deltaY !== 0 &&
+                absDeltaX === 0) || // Pixel mode, integer Y, no X
+            (isPixelMode &&
+                !hasDecimalDeltas &&
+                event.deltaY !== 0 &&
+                absDeltaX < 0.1) // Pixel mode, integer Y, very little X
         ) {
-            // If no horizontal, but very clear vertical trackpad signals (small, precise, moderate)
-            trackpadIndicatorCount++;
+            // console.log("🔍 TG: Strong mouse wheel signal -> Returns FALSE (for Zoom)");
+            return false; // This is likely a mouse wheel, so not a trackpad gesture for panning.
         }
 
-        // Increased threshold: Now need 3 signals if the more specific horizontal/vertical combo isn't met.
-        // Or if specific strong indicators are present.
-        let isLikelyTrackpad = trackpadIndicatorCount >= 3;
+        // Heuristic for trackpad pan:
+        // - Pixel mode (continuous scrolling)
+        // - AND (has decimal deltas OR significant horizontal movement OR moderate vertical movement with some horizontal)
         if (
-            hasSignificantHorizontalMovement &&
-            hasDecimalValues &&
-            hasPrecisePixelMode
+            isPixelMode &&
+            (hasDecimalDeltas ||
+                absDeltaX > 0.5 ||
+                (Math.abs(event.deltaY) > 5 && absDeltaX > 0.05))
         ) {
-            isLikelyTrackpad = true; // Strong indication of trackpad pan with horizontal component
+            // console.log("🔍 TG: Trackpad pan characteristics detected -> Returns TRUE (for Pan)");
+            return true; // This is likely a trackpad pan.
         }
 
-        // console.log(`🔍 Trackpad indicators: discreteWheel=${isLikelyDiscreteMouseWheel}, sigHorizontal=${hasSignificantHorizontalMovement}, smallContVert=${hasSmallContinuousVerticalMovement}, decimal=${hasDecimalValues}, precisePixelMode=${hasPrecisePixelMode}, moderateDeltaY=${hasModerateDeltaY}, totalTrackpadSignals=${trackpadIndicatorCount}, result=${isLikelyTrackpad}`);
-
-        return isLikelyTrackpad;
+        // Fallback: If none of the above, assume it's a mouse wheel for zooming.
+        // This makes the function default to zoom if unsure.
+        // console.log("🔍 TG: Defaulting to FALSE (for Zoom)");
+        return false;
     }
 
     /**
@@ -381,37 +381,36 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Handles pinch gestures (trackpad pinch or Ctrl/Cmd + mouse wheel) for zooming.
      */
     private handlePinchGestureZoom(event: WheelEvent) {
-        this._applyZoom(event, 0.99, 0.5); // zoomCalculationBase = 0.99, sensitivityFactor = 0.5
+        this._applyZoom(event, 0.99); // zoomCalculationBase = 0.99
     }
 
     /**
      * Handles standard mouse wheel events for zooming.
      */
     private handleMouseWheelZoom(event: WheelEvent) {
-        this._applyZoom(event, 0.997, 0.5); // zoomCalculationBase = 0.997, sensitivityFactor = 0.5
+        this._applyZoom(event, 0.997); // zoomCalculationBase = 0.997
     }
 
     /**
      * Internal method to apply zoom based on event and specific calculation parameters.
      */
-    private _applyZoom(
-        event: WheelEvent,
-        zoomCalculationBase: number,
-        sensitivityFactor: number,
-    ) {
+    private _applyZoom(event: WheelEvent, zoomCalculationBase: number) {
         const delta = event.deltaY;
         const currentZoom = this.getZoom();
 
+        // effectiveSensitivity combines internal base with UI multiplier
+        const effectiveSensitivity =
+            this.INTERNAL_BASE_ZOOM_SENSITIVITY * this.zoomSensitivity;
         const zoomMultiplier = Math.pow(
             zoomCalculationBase,
-            delta * sensitivityFactor,
+            delta * effectiveSensitivity,
         );
         let newZoom = currentZoom * zoomMultiplier;
 
         newZoom = Math.max(0.2, Math.min(25, newZoom)); // Apply zoom limits
 
-        if (Math.abs(newZoom - currentZoom) < 0.001) {
-            // Skip if no significant change
+        if (Math.abs(newZoom - currentZoom) < 0.0001) {
+            // Skip if no significant change - Lowered threshold from 0.001
             return;
         }
 
@@ -421,7 +420,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             y: event.clientY - rect.top,
         };
 
-        // console.log(`🔍 Zoom: type=${zoomCalculationBase === 0.99 ? 'Pinch' : 'Wheel'}, base=${zoomCalculationBase}, sens=${sensitivityFactor}, from ${currentZoom.toFixed(3)} to ${newZoom.toFixed(3)} at cursor (${pointer.x.toFixed(1)}, ${pointer.y.toFixed(1)}) deltaY: ${delta.toFixed(2)}`);
+        // console.log(`🔍 Zoom: type=${zoomCalculationBase === 0.99 ? 'Pinch' : 'Wheel'}, base=${zoomCalculationBase}, sens=${this.zoomSensitivity}, from ${currentZoom.toFixed(3)} to ${newZoom.toFixed(3)} at cursor (${pointer.x.toFixed(1)}, ${pointer.y.toFixed(1)}) deltaY: ${delta.toFixed(2)}`);
 
         this.zoomToPoint(pointer, newZoom);
         this.checkCanvasBounds();
@@ -573,7 +572,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Handle advanced mouse down for panning
      */
     private handleAdvancedMouseDown(event: MouseEvent) {
-        // Only handle right-click or middle-click for panning
+        // Only handle right-click or middle-click for panning, or if Alt key is pressed
         if (event.button === 2 || event.button === 1 || this.forceTrackpadPan) {
             event.preventDefault();
             this.isPanning = true;

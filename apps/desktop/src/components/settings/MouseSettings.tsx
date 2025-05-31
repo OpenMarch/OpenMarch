@@ -14,9 +14,9 @@ export default function MouseSettings() {
                     </label>
                     <div className="w-[200px]">
                         <Slider
-                            min={0.01}
-                            max={0.1}
-                            step={0.005}
+                            min={0.5}
+                            max={2.0}
+                            step={0.1}
                             value={[uiSettings.mouseSettings.zoomSensitivity]}
                             onValueChange={([value]) =>
                                 setUiSettings({
@@ -83,66 +83,8 @@ export default function MouseSettings() {
                     </div>
                 </div>
                 <div className="flex w-full items-center justify-between gap-16">
-                    <label htmlFor="touchpadGestures" className="text-body">
-                        Enable touchpad gestures
-                    </label>
-                    <Switch
-                        id="touchpadGestures"
-                        checked={
-                            uiSettings.mouseSettings.enableTouchpadGestures
-                        }
-                        onCheckedChange={(checked) =>
-                            setUiSettings({
-                                ...uiSettings,
-                                mouseSettings: {
-                                    ...uiSettings.mouseSettings,
-                                    enableTouchpadGestures: checked,
-                                },
-                            })
-                        }
-                    />
-                </div>
-                <div className="flex w-full items-center justify-between gap-16">
-                    <label htmlFor="momentumScrolling" className="text-body">
-                        Enable momentum scrolling
-                    </label>
-                    <Switch
-                        id="momentumScrolling"
-                        checked={
-                            uiSettings.mouseSettings.enableMomentumScrolling
-                        }
-                        onCheckedChange={(checked) =>
-                            setUiSettings({
-                                ...uiSettings,
-                                mouseSettings: {
-                                    ...uiSettings.mouseSettings,
-                                    enableMomentumScrolling: checked,
-                                },
-                            })
-                        }
-                    />
-                </div>
-                <div className="flex w-full items-center justify-between gap-16">
-                    <label htmlFor="zoomOnScroll" className="text-body">
-                        Enable zoom on scroll (without Ctrl/Cmd)
-                    </label>
-                    <Switch
-                        id="zoomOnScroll"
-                        checked={uiSettings.mouseSettings.zoomOnScroll}
-                        onCheckedChange={(checked) =>
-                            setUiSettings({
-                                ...uiSettings,
-                                mouseSettings: {
-                                    ...uiSettings.mouseSettings,
-                                    zoomOnScroll: checked,
-                                },
-                            })
-                        }
-                    />
-                </div>
-                <div className="flex w-full items-center justify-between gap-16">
                     <label htmlFor="trackpadMode" className="text-body">
-                        Enable trackpad mode
+                        Enable trackpad mode (recommended for macOS users)
                     </label>
                     <Switch
                         id="trackpadMode"

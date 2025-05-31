@@ -21,22 +21,14 @@ export interface UiSettings {
     focussedComponent: FocusableComponents;
     /** Mouse settings */
     mouseSettings: {
-        /** Mouse wheel zoom sensitivity (1-10) */
-        wheelZoomSensitivity: number;
-        /** Whether to enable touchpad gestures */
-        enableTouchpadGestures: boolean;
-        /** Whether to enable momentum scrolling */
-        enableMomentumScrolling: boolean;
         /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
         trackpadMode: boolean;
         /** Trackpad pan sensitivity (0.1-3.0) */
         trackpadPanSensitivity: number;
-        /** Zoom sensitivity (0.01-0.1) */
+        /** Multiplier for base zoom sensitivity. Default: 1.0 (100%). Range 0.5-2.0 (50%-200%). */
         zoomSensitivity: number;
         /** Standard pan sensitivity (0.1-3.0) */
         panSensitivity: number;
-        /** Whether to enable zoom on scroll without modifier keys */
-        zoomOnScroll: boolean;
     };
 }
 
@@ -77,22 +69,14 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             focussedComponent: "canvas",
             /** Mouse settings */
             mouseSettings: {
-                /** Mouse wheel zoom sensitivity (1-10) */
-                wheelZoomSensitivity: 5,
-                /** Whether to enable touchpad gestures */
-                enableTouchpadGestures: true,
-                /** Whether to enable momentum scrolling */
-                enableMomentumScrolling: true,
                 /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
                 trackpadMode: true,
                 /** Trackpad pan sensitivity (0.1-3.0) */
                 trackpadPanSensitivity: 0.5,
-                /** Zoom sensitivity (0.01-0.1) */
-                zoomSensitivity: 0.03,
+                /** Multiplier for base zoom sensitivity. Default: 1.0 (100%). Range 0.5-2.0 (50%-200%). */
+                zoomSensitivity: 1.0,
                 /** Standard pan sensitivity (0.1-3.0) */
                 panSensitivity: 0.5,
-                /** Whether to enable zoom on scroll without modifier keys */
-                zoomOnScroll: true,
             },
         },
 
