@@ -18,21 +18,23 @@ import Marcher from "@/global/classes/Marcher";
 import { CircleNotch } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import CanvasZoomControls from "./CanvasZoomControls";
 
 /**
  * The field/stage UI of OpenMarch
  *
  * @param className Additional classNames to add to the <div/> containing this canvas
  * @param testCanvas An OpenMarchCanvas object to pass in, rather than this component creating its own. Should only be used for test purposes.
+ * @param onCanvasReady Callback function that receives the canvas instance once it's initialized.
  * @returns
  */
 export default function Canvas({
     className = "",
     testCanvas,
+    onCanvasReady,
 }: {
     className?: string;
     testCanvas?: OpenMarchCanvas;
+    onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marchers } = useMarcherStore()!;
@@ -318,21 +320,31 @@ export default function Canvas({
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
     useEffect(() => {
-        if (canvas || !selectedPage || !fieldProperties) return; // If the canvas is already initialized, or the selected page is not set, return
+        if (canvas || !selectedPage || !fieldProperties) return;
 
+        let newCanvasInstance: OpenMarchCanvas;
         if (testCanvas) {
-            setCanvas(testCanvas);
+            newCanvasInstance = testCanvas;
         } else {
-            setCanvas(
-                new OpenMarchCanvas({
-                    canvasRef: canvasRef.current,
-                    fieldProperties,
-                    uiSettings,
-                    currentPage: selectedPage,
-                }),
-            );
+            newCanvasInstance = new OpenMarchCanvas({
+                canvasRef: canvasRef.current,
+                fieldProperties,
+                uiSettings,
+                currentPage: selectedPage,
+            });
         }
-    }, [selectedPage, fieldProperties, testCanvas, uiSettings, canvas]);
+        setCanvas(newCanvasInstance);
+        if (onCanvasReady) {
+            onCanvasReady(newCanvasInstance);
+        }
+    }, [
+        selectedPage,
+        fieldProperties,
+        testCanvas,
+        uiSettings,
+        canvas,
+        onCanvasReady,
+    ]);
 
     // Initiate listeners
     useEffect(() => {
@@ -631,7 +643,9 @@ export default function Canvas({
     ]);
 
     return (
-        <div className={`rounded-6 h-full overflow-hidden ${className}`}>
+        <div
+            className={`rounded-6 h-full overflow-hidden ${className} relative`}
+        >
             {pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
@@ -639,7 +653,6 @@ export default function Canvas({
                     <CircleNotch size={32} className="text-text animate-spin" />
                 </div>
             )}
-            <CanvasZoomControls canvas={canvas} />
         </div>
     );
 }

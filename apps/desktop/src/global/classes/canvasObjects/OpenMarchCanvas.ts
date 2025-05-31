@@ -234,171 +234,134 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /******************* ADVANCED EVENT HANDLERS ******************/
 
     /**
+     * Returns the coordinates of the center of the field in the canvas's coordinate system.
+     * This does not account for zoom or pan; it's the raw center based on field properties.
+     */
+    public getFieldCenterInCanvasCoords(): { x: number; y: number } {
+        if (
+            !this._fieldProperties ||
+            typeof this._fieldProperties.width !== "number" ||
+            typeof this._fieldProperties.height !== "number"
+        ) {
+            console.warn(
+                "getFieldCenterInCanvasCoords: fieldProperties or their dimensions are not fully initialized. Fallback will center HTML canvas (0,0) at viewport center, or no pan if fieldProperties are partially defined.",
+            );
+            // Fallback: If field dimensions are unknown, returning HTML canvas center results in a pan of (0,0),
+            // aligning Fabric canvas (0,0) with HTML canvas (0,0).
+            return {
+                x: (this.width || 0) / 2,
+                y: (this.height || 0) / 2,
+            };
+        }
+        // This is the center of the actual field content as drawn on the Fabric canvas,
+        // in Fabric canvas coordinates (before viewport transform).
+        // The field content (grid, etc.) is typically drawn from (0,0) up to (fieldProperties.width, fieldProperties.height).
+        return {
+            x: this._fieldProperties.width / 2,
+            y: this._fieldProperties.height / 2,
+        };
+    }
+
+    /**
      * Handle advanced wheel events for CSS-based zooming and trackpad gestures
      */
     private handleAdvancedWheel(event: WheelEvent) {
-        // console.log(`🔍 ADVANCED WHEEL called: deltaX=${event.deltaX.toFixed(2)}, deltaY=${event.deltaY.toFixed(2)}, ctrlKey=${event.ctrlKey}, metaKey=${event.metaKey}`);
-
         event.preventDefault();
-        this.updateSensitivitySettings(); // Ensure sensitivities are current (this updates this.trackpadModeEnabled)
+        this.updateSensitivitySettings();
 
         const isPinchGesture = event.ctrlKey || event.metaKey;
 
-        // console.log(`🔍 Detection: isPinchGesture=${isPinchGesture}, trackpadModeEnabled=${this.trackpadModeEnabled}`);
-
         if (isPinchGesture) {
-            // Pinch gestures (Ctrl/Cmd + wheel, or trackpad pinch if detectTrackpadGesture allows)
-            // should always zoom, regardless of trackpadModeEnabled setting for simple scroll.
-            // console.log(`🔍 → Executing pinch gesture zoom`);
             this.handlePinchGestureZoom(event);
         } else if (!this.trackpadModeEnabled) {
-            // Trackpad mode is OFF. Mouse wheel should ONLY zoom.
-            // console.log(`🔍 Trackpad mode OFF → Executing mouse wheel zoom`);
             this.handleMouseWheelZoom(event);
         } else {
-            // Trackpad mode is ON. Use existing detection logic.
             const isLikelyTrackpad = this.detectTrackpadGesture(event);
-            // console.log(`🔍 Trackpad mode ON: isLikelyTrackpad=${isLikelyTrackpad}`);
             if (isLikelyTrackpad) {
-                // console.log(`🔍 → Executing trackpad pan (auto-detected)`);
                 this.handleTrackpadPan(event);
             } else {
-                // console.log(`🔍 → Executing mouse wheel zoom (auto-detected)`);
                 this.handleMouseWheelZoom(event);
             }
         }
     }
 
-    /**
-     * Enhanced trackpad gesture detection.
-     * Attempts to differentiate between mouse wheel and trackpad scroll/pinch events
-     * based on event properties like deltaMode, deltaX/Y values, and their precision.
-     */
     private detectTrackpadGesture(event: WheelEvent): boolean {
         const absDeltaX = Math.abs(event.deltaX);
         const isPixelMode = event.deltaMode === 0;
         const hasDecimalDeltas =
             event.deltaX % 1 !== 0 || event.deltaY % 1 !== 0;
 
-        // If Ctrl or Meta key is pressed, it's a pinch gesture, not a trackpad pan for scrolling.
         if (event.ctrlKey || event.metaKey) {
-            // console.log("🔍 TG: Ctrl/Meta key pressed -> Not a trackpad pan (likely pinch zoom)");
             return false;
         }
 
-        // Primary condition for identifying a mouse wheel:
-        // - Not pixel mode (deltaMode === 1 for line scrolling is a strong mouse wheel indicator)
-        // - OR, it IS pixel mode, but there are NO decimal deltas and there IS vertical movement without horizontal.
         if (
-            event.deltaMode === 1 || // Discrete line scrolling (classic mouse wheel)
+            event.deltaMode === 1 ||
             (isPixelMode &&
                 !hasDecimalDeltas &&
                 event.deltaY !== 0 &&
-                absDeltaX === 0) || // Pixel mode, integer Y, no X
+                absDeltaX === 0) ||
             (isPixelMode &&
                 !hasDecimalDeltas &&
                 event.deltaY !== 0 &&
-                absDeltaX < 0.1) // Pixel mode, integer Y, very little X
+                absDeltaX < 0.1)
         ) {
-            // console.log("🔍 TG: Strong mouse wheel signal -> Returns FALSE (for Zoom)");
-            return false; // This is likely a mouse wheel, so not a trackpad gesture for panning.
+            return false;
         }
-
-        // Heuristic for trackpad pan:
-        // - Pixel mode (continuous scrolling)
-        // - AND (has decimal deltas OR significant horizontal movement OR moderate vertical movement with some horizontal)
         if (
             isPixelMode &&
             (hasDecimalDeltas ||
                 absDeltaX > 0.5 ||
                 (Math.abs(event.deltaY) > 5 && absDeltaX > 0.05))
         ) {
-            // console.log("🔍 TG: Trackpad pan characteristics detected -> Returns TRUE (for Pan)");
-            return true; // This is likely a trackpad pan.
+            return true;
         }
-
-        // Fallback: If none of the above, assume it's a mouse wheel for zooming.
-        // This makes the function default to zoom if unsure.
-        // console.log("🔍 TG: Defaulting to FALSE (for Zoom)");
         return false;
     }
 
-    /**
-     * Handle trackpad zoom using Fabric.js zoom methods
-     */
     private handleTrackpadZoom(event: WheelEvent) {
         const currentZoom = this.getZoom();
-
-        // Professional zoom calculation for trackpad - more sensitive
-        const zoomDelta = -event.deltaY * 0.005; // Reduced from 0.01 for finer control
+        const zoomDelta = -event.deltaY * 0.005;
         const newZoom = Math.max(0.2, Math.min(25, currentZoom + zoomDelta));
 
-        // Skip if no significant change
         if (Math.abs(newZoom - currentZoom) < 0.001) {
             return;
         }
-
-        // Get precise cursor position relative to canvas for proper zoom-to-cursor
         const rect = this.getSelectionElement().getBoundingClientRect();
         const pointer = {
             x: event.clientX - rect.left,
             y: event.clientY - rect.top,
         };
-
-        // console.log(`🔍 Zooming from ${currentZoom.toFixed(3)} to ${newZoom.toFixed(3)} at cursor (${pointer.x.toFixed(1)}, ${pointer.y.toFixed(1)})`);
-
-        // Apply zoom with Fabric.js for proper integration
         this.zoomToPoint(pointer, newZoom);
-
-        // Immediate high-quality render
         this.requestRenderAll();
     }
 
-    /**
-     * Handle trackpad pan using Fabric.js pan methods
-     */
     private handleTrackpadPan(event: WheelEvent) {
         const vpt = this.viewportTransform;
         if (!vpt) return;
 
-        // Use both deltaX and deltaY for natural trackpad panning
-        // Use trackpadPanSensitivity from UI settings
         const panX = -event.deltaX * this.trackpadPanSensitivity;
         const panY = -event.deltaY * this.trackpadPanSensitivity;
 
-        // console.log(`🔍 Trackpad pan: deltaX=${event.deltaX.toFixed(2)} (sens: ${this.trackpadPanSensitivity}) → panX=${panX.toFixed(2)}, deltaY=${event.deltaY.toFixed(2)} (sens: ${this.trackpadPanSensitivity}) → panY=${panY.toFixed(2)}`);
-
-        // Apply pan to viewport transform
         vpt[4] += panX;
         vpt[5] += panY;
 
-        // Immediate render with bounds checking
         this.requestRenderAll();
         this.checkCanvasBounds();
     }
 
-    /**
-     * Handles pinch gestures (trackpad pinch or Ctrl/Cmd + mouse wheel) for zooming.
-     */
     private handlePinchGestureZoom(event: WheelEvent) {
-        this._applyZoom(event, 0.99); // zoomCalculationBase = 0.99
+        this._applyZoom(event, 0.99);
     }
 
-    /**
-     * Handles standard mouse wheel events for zooming.
-     */
     private handleMouseWheelZoom(event: WheelEvent) {
-        this._applyZoom(event, 0.997); // zoomCalculationBase = 0.997
+        this._applyZoom(event, 0.997);
     }
 
-    /**
-     * Internal method to apply zoom based on event and specific calculation parameters.
-     */
     private _applyZoom(event: WheelEvent, zoomCalculationBase: number) {
         const delta = event.deltaY;
         const currentZoom = this.getZoom();
 
-        // effectiveSensitivity combines internal base with UI multiplier
         const effectiveSensitivity =
             this.INTERNAL_BASE_ZOOM_SENSITIVITY * this.zoomSensitivity;
         const zoomMultiplier = Math.pow(
@@ -407,10 +370,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         );
         let newZoom = currentZoom * zoomMultiplier;
 
-        newZoom = Math.max(0.2, Math.min(25, newZoom)); // Apply zoom limits
+        newZoom = Math.max(0.2, Math.min(25, newZoom));
 
         if (Math.abs(newZoom - currentZoom) < 0.0001) {
-            // Skip if no significant change - Lowered threshold from 0.001
             return;
         }
 
@@ -419,16 +381,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             x: event.clientX - rect.left,
             y: event.clientY - rect.top,
         };
-
-        // console.log(`🔍 Zoom: type=${zoomCalculationBase === 0.99 ? 'Pinch' : 'Wheel'}, base=${zoomCalculationBase}, sens=${this.zoomSensitivity}, from ${currentZoom.toFixed(3)} to ${newZoom.toFixed(3)} at cursor (${pointer.x.toFixed(1)}, ${pointer.y.toFixed(1)}) deltaY: ${delta.toFixed(2)}`);
-
         this.zoomToPoint(pointer, newZoom);
         this.checkCanvasBounds();
     }
 
-    /**
-     * Check canvas bounds (borrowed from DefaultListeners)
-     */
     private checkCanvasBounds() {
         if (!this.viewportTransform) return;
 
@@ -439,7 +395,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         let needsAdjustment = false;
 
-        // Check horizontal position
         if (vpt[4] > canvasWidth * 0.5) {
             vpt[4] = canvasWidth * 0.5;
             needsAdjustment = true;
@@ -448,7 +403,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             needsAdjustment = true;
         }
 
-        // Check vertical position
         if (vpt[5] > canvasHeight * 0.5) {
             vpt[5] = canvasHeight * 0.5;
             needsAdjustment = true;
@@ -457,19 +411,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             needsAdjustment = true;
         }
 
-        // Only re-render if needed
         if (needsAdjustment) {
             this.requestRenderAll();
         }
     }
 
-    /**
-     * Handle touch start for mobile/trackpad gestures
-     */
     private handleTouchStart(event: TouchEvent) {
         event.preventDefault();
-
-        // Store touch points
         for (let i = 0; i < event.touches.length; i++) {
             const touch = event.touches[i];
             this.touchPoints[touch.identifier] = {
@@ -477,8 +425,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 y: touch.clientY,
             };
         }
-
-        // If two fingers, prepare for pinch gesture
         if (event.touches.length === 2) {
             const touch1 = event.touches[0];
             const touch2 = event.touches[1];
@@ -489,128 +435,89 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    /**
-     * Handle touch move for mobile/trackpad gestures
-     */
     private handleTouchMove(event: TouchEvent) {
         event.preventDefault();
-
         if (event.touches.length === 1) {
-            // Single finger pan using Fabric.js
             const touch = event.touches[0];
             const lastTouch = this.touchPoints[touch.identifier];
 
             if (lastTouch && this.viewportTransform) {
                 const deltaX = touch.clientX - lastTouch.x;
                 const deltaY = touch.clientY - lastTouch.y;
-
-                // Apply pan to viewport transform
                 this.viewportTransform[4] += deltaX * this.panSensitivity;
                 this.viewportTransform[5] += deltaY * this.panSensitivity;
-
                 this.requestRenderAll();
                 this.checkCanvasBounds();
-
                 this.touchPoints[touch.identifier] = {
                     x: touch.clientX,
                     y: touch.clientY,
                 };
             }
         } else if (event.touches.length === 2) {
-            // Two finger pinch-to-zoom using Fabric.js
             const touch1 = event.touches[0];
             const touch2 = event.touches[1];
             const currentDistance = Math.sqrt(
                 Math.pow(touch2.clientX - touch1.clientX, 2) +
                     Math.pow(touch2.clientY - touch1.clientY, 2),
             );
-
             if (this.initialPinchDistance > 0) {
                 const scaleDelta =
                     (currentDistance - this.initialPinchDistance) * 0.01;
                 const centerX = (touch1.clientX + touch2.clientX) / 2;
                 const centerY = (touch1.clientY + touch2.clientY) / 2;
-
-                // Get center point relative to canvas
                 const rect = this.getSelectionElement().getBoundingClientRect();
                 const pointer = {
                     x: centerX - rect.left,
                     y: centerY - rect.top,
                 };
-
                 const currentZoom = this.getZoom();
                 const newZoom = Math.max(
                     0.2,
                     Math.min(25, currentZoom + scaleDelta),
                 );
-
                 this.zoomToPoint(pointer, newZoom);
                 this.requestRenderAll();
-
                 this.initialPinchDistance = currentDistance;
             }
         }
     }
 
-    /**
-     * Handle touch end for mobile/trackpad gestures
-     */
     private handleTouchEnd(event: TouchEvent) {
-        // Remove ended touches from tracking
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
             delete this.touchPoints[touch.identifier];
         }
-
-        // Reset pinch distance if no more touches
         if (event.touches.length < 2) {
             this.initialPinchDistance = 0;
         }
     }
 
-    /**
-     * Handle advanced mouse down for panning
-     */
     private handleAdvancedMouseDown(event: MouseEvent) {
-        // Only handle right-click or middle-click for panning, or if Alt key is pressed
         if (event.button === 2 || event.button === 1 || this.forceTrackpadPan) {
             event.preventDefault();
             this.isPanning = true;
             this.lastPosX = event.clientX;
             this.lastPosY = event.clientY;
-
-            // Change cursor to indicate panning mode
             if (this.cssZoomWrapper) {
                 this.cssZoomWrapper.style.cursor = "grabbing";
             }
         }
     }
 
-    /**
-     * Handle advanced mouse move for panning
-     */
     private handleAdvancedMouseMove(event: MouseEvent) {
         if (this.isPanning && this.viewportTransform) {
             event.preventDefault();
-
             const deltaX = event.clientX - this.lastPosX;
             const deltaY = event.clientY - this.lastPosY;
-
-            // Apply pan to viewport transform
             this.viewportTransform[4] += deltaX * this.panSensitivity;
             this.viewportTransform[5] += deltaY * this.panSensitivity;
-
             this.requestRenderAll();
             this.checkCanvasBounds();
-
             this.lastPosX = event.clientX;
             this.lastPosY = event.clientY;
         }
     }
 
-    /**
-     * Handle advanced mouse up to end panning
-     */
     private handleAdvancedMouseUp(event: MouseEvent) {
         if (this.isPanning) {
             this.isPanning = false;
@@ -620,9 +527,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    /**
-     * Handle key down for modifier keys
-     */
     private handleKeyDown(event: KeyboardEvent) {
         if (event.altKey) {
             this.forceTrackpadPan = true;
@@ -632,9 +536,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    /**
-     * Handle key up for modifier keys
-     */
     private handleKeyUp(event: KeyboardEvent) {
         if (!event.altKey) {
             this.forceTrackpadPan = false;
@@ -644,9 +545,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    /**
-     * Reset the CSS transform to default values
-     */
     public resetCSSTransform() {
         this.transformValues = {
             translateX: 0,
@@ -655,22 +553,26 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             originX: 0,
             originY: 0,
         };
-        // this.applyCSSTransform(); // No longer needed - using Fabric.js transforms
+        this.applyCSSTransform();
     }
 
-    /**
-     * Get the current CSS transform values
-     */
     public getCSSTransformValues() {
         return { ...this.transformValues };
     }
 
-    /**
-     * Set the CSS transform values
-     */
     public setCSSTransformValues(values: Partial<typeof this.transformValues>) {
         this.transformValues = { ...this.transformValues, ...values };
-        // this.applyCSSTransform(); // No longer needed - using Fabric.js transforms
+        this.applyCSSTransform();
+    }
+
+    private applyCSSTransform() {
+        if (this.cssZoomWrapper) {
+            const { translateX, translateY, scale, originX, originY } =
+                this.transformValues;
+            this.cssZoomWrapper.style.transformOrigin = `${originX}px ${originY}px`;
+            this.cssZoomWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            this.requestRenderAll();
+        }
     }
 
     /******************* ADVANCED NAVIGATION METHODS ******************/
@@ -684,6 +586,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /**
      * Setup the external CSS wrapper for pan/zoom functionality
+     * THIS IS THE VERSION WE WANT TO KEEP
      */
     private setupExternalPanZoomContainer(canvasElement: HTMLCanvasElement) {
         // Initialize trackpad mode based on platform
@@ -710,25 +613,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 transform-origin: 0 0;
                 will-change: transform;
             `;
-
-            // Wrap the canvas
             if (canvasElement.parentNode) {
                 canvasElement.parentNode.insertBefore(
                     this.cssZoomWrapper,
                     canvasElement,
                 );
                 this.cssZoomWrapper.appendChild(canvasElement);
-
-                // CRITICAL FIX: Ensure the Fabric.js upperCanvasEl is also a child of cssZoomWrapper
-                // The upperCanvasEl is what Fabric uses for event detection.
-                // If it's not inside cssZoomWrapper, wheel events on it won't bubble to our listener.
                 const upperCanvas = (this as any)
                     .upperCanvasEl as HTMLCanvasElement | null;
                 if (
                     upperCanvas &&
                     upperCanvas.parentNode !== this.cssZoomWrapper
                 ) {
-                    // Check if upperCanvasEl is currently a sibling of cssZoomWrapper (common case)
                     if (
                         upperCanvas.parentNode ===
                         this.cssZoomWrapper.parentNode
@@ -738,8 +634,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             "🔧 Moved upperCanvasEl into cssZoomWrapper.",
                         );
                     } else {
-                        // If it's somewhere else, log a warning, as this is unexpected.
-                        // We'll still try to append it, but the layout might be broken.
                         console.warn(
                             "🔧 upperCanvasEl was not a sibling of cssZoomWrapper. Attempting to move it, but layout might be affected.",
                         );
@@ -752,14 +646,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 }
             }
         }
-
-        // Set up custom event listeners for advanced navigation
         this.setupAdvancedEventListeners();
     }
 
-    /**
-     * Update sensitivity settings from UI settings
-     */
     private updateSensitivitySettings() {
         if (this._uiSettings?.mouseSettings) {
             this.zoomSensitivity =
@@ -767,20 +656,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.panSensitivity = this._uiSettings.mouseSettings.panSensitivity;
             this.trackpadPanSensitivity =
                 this._uiSettings.mouseSettings.trackpadPanSensitivity;
-
-            // Only override trackpadModeEnabled if UI settings are actually defined
-            // This prevents overriding with undefined during initialization
             if (this._uiSettings.mouseSettings.trackpadMode !== undefined) {
-                const oldValue = this.trackpadModeEnabled;
                 this.trackpadModeEnabled =
                     this._uiSettings.mouseSettings.trackpadMode;
             }
         }
     }
 
-    /**
-     * Setup advanced event listeners for CSS-based navigation
-     */
     private setupAdvancedEventListeners() {
         console.log(
             `🔧 Setting up advanced event listeners. cssZoomWrapper exists: ${!!this.cssZoomWrapper}`,
@@ -795,10 +677,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             return;
         }
 
-        // Remove any existing listeners to prevent duplicates
         this.removeAdvancedEventListeners();
 
-        // Create bound functions once and store them
         this.boundHandleAdvancedWheel = this.handleAdvancedWheel.bind(this);
         this.boundHandleTouchStart = this.handleTouchStart.bind(this);
         this.boundHandleTouchMove = this.handleTouchMove.bind(this);
@@ -811,7 +691,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.boundHandleKeyDown = this.handleKeyDown.bind(this);
         this.boundHandleKeyUp = this.handleKeyUp.bind(this);
 
-        // Mouse wheel for zooming and trackpad gestures
         this.cssZoomWrapper.addEventListener(
             "wheel",
             this.boundHandleAdvancedWheel,
@@ -819,7 +698,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         );
         console.log(`🔧 ✅ Added wheel event listener to cssZoomWrapper`);
 
-        // Touch events for mobile/trackpad gestures
         this.cssZoomWrapper.addEventListener(
             "touchstart",
             this.boundHandleTouchStart,
@@ -835,8 +713,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.boundHandleTouchEnd,
             { passive: false },
         );
-
-        // Mouse events for panning
         this.cssZoomWrapper.addEventListener(
             "mousedown",
             this.boundHandleAdvancedMouseDown,
@@ -853,17 +729,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             "mouseleave",
             this.boundHandleAdvancedMouseUp,
         );
-
-        // Keyboard events for modifier keys
         document.addEventListener("keydown", this.boundHandleKeyDown);
         document.addEventListener("keyup", this.boundHandleKeyUp);
-
         console.log(`🔧 ✅ All advanced event listeners attached successfully`);
     }
 
-    /**
-     * Remove advanced event listeners
-     */
     private removeAdvancedEventListeners() {
         if (!this.cssZoomWrapper) return;
 
@@ -913,7 +783,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this.boundHandleAdvancedMouseUp,
             );
         }
-
         if (this.boundHandleKeyDown) {
             document.removeEventListener("keydown", this.boundHandleKeyDown);
         }
@@ -923,34 +792,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     /******************* INSTANCE METHODS ******************/
-    /**
-     * Refreshes the size of the canvas to fit the window.
-     */
     refreshCanvasSize() {
         this.setWidth(window.innerWidth);
         this.setHeight(window.innerHeight);
     }
 
-    /**
-     * Set the listeners on the canvas. This should be changed based on the cursor mode.
-     *
-     * @param newListeners The listeners to set on the canvas
-     */
     setListeners(newListeners: CanvasListeners) {
         this._listeners?.cleanupListeners();
-
         this._listeners = newListeners;
         this._listeners.initiateListeners();
     }
 
-    /**
-     * Sets given object as the only active object on canvas
-     * This is an overload of the fabric.Canvas method to set the lockMovementX and lockMovementY properties
-     *
-     * @param object — Object to set as an active one
-     * @param e — Event (passed along when firing "object:selected")
-     * @return — thisArg
-     */
     setActiveObject(object: fabric.Object, e?: Event): fabric.Canvas {
         object.lockMovementX = this.uiSettings.lockX;
         object.lockMovementY = this.uiSettings.lockY;
@@ -965,13 +817,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.freeDrawingCursor = "crosshair";
     };
 
-    /******* Marcher Functions *******/
-    /**
-     * Brings all control points of the marcher shapes to the front of the canvas.
-     * This ensures the control points are always visible and on top of the marcher shapes.
-     */
     bringAllControlPointsTooFront() {
-        // Put all of the control points to the front if they exist
         for (const marcherShape of this.marcherShapes) {
             marcherShape.controlPoints.forEach((controlPoint) => {
                 controlPoint.bringToFront();
@@ -979,23 +825,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    /**
-     * Renders the marcher shapes on the canvas based on the provided shape pages.
-     * This method handles adding new shapes, updating existing shapes, and removing
-     * shapes that are no longer present in the shape pages.
-     *
-     * @param shapePages - An array of shape pages containing the SVG paths to render.
-     */
     renderMarcherShapes({ shapePages }: { shapePages: ShapePage[] }) {
         const existingMarcherShapeMap = new Map(
             this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
         );
-
-        // Remove shapes that no longer exist
         const newShapeIds = new Set(shapePages.map((sp) => sp.shape_id));
         const removedShapeIds = new Set();
         for (const existingMarcherShape of existingMarcherShapeMap) {
-            // The shape is no longer present in the shape pages. Remove it.
             if (!newShapeIds.has(existingMarcherShape[0])) {
                 removedShapeIds.add(existingMarcherShape[0]);
                 existingMarcherShape[1].destroy();
@@ -1006,7 +842,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 (ms) => !removedShapeIds.has(ms.shapePage.shape_id),
             );
         }
-
         for (const shapePage of shapePages) {
             const existingMarcherShape = existingMarcherShapeMap.get(
                 shapePage.shape_id,
@@ -1024,12 +859,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
     }
-    /**
-     * Render the given marcherPages on the canvas
-     *
-     * @param currentMarcherPages All of the marcher pages (must be filtered by the intended page)
-     * @param allMarchers All marchers in the drill
-     */
+
     renderMarchers = async ({
         currentMarcherPages,
         allMarchers,
@@ -1038,23 +868,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         allMarchers: Marcher[];
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
-
         const sectionAppearances =
             await SectionAppearance.getSectionAppearances();
-
-        // Get the canvas marchers on the canvas
         const canvasMarchersMap = new Map<number, CanvasMarcher>(
             this.getCanvasMarchers().map((m) => [m.marcherObj.id, m]),
         );
         const allMarchersMap = new Map<number, Marcher>(
             allMarchers.map((m) => [m.id, m]),
         );
-
         for (const marcherPage of currentMarcherPages) {
             const curCanvasMarcher = canvasMarchersMap.get(
                 marcherPage.marcher_id,
             );
-            // Marcher does not exist on the Canvas, create a new one
             if (!curCanvasMarcher) {
                 const curMarcher = allMarchersMap.get(marcherPage.marcher_id);
                 if (!curMarcher) {
@@ -1064,12 +889,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     );
                     continue;
                 }
-
                 const sectionAppearance = getSectionAppearance(
                     curMarcher.section,
                     sectionAppearances,
                 );
-
                 this.add(
                     new CanvasMarcher({
                         marcher: curMarcher,
@@ -1077,18 +900,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         sectionAppearance,
                     }),
                 );
-            }
-            // Marcher exists on the Canvas, move it to the new location if it has changed
-            else {
+            } else {
                 curCanvasMarcher.setMarcherCoords(marcherPage);
             }
         }
-
         const marcherPageMarcherIds: Set<number> = new Set(
             currentMarcherPages.map((marcherPage) => marcherPage.marcher_id),
         );
-
-        // Check for any canvas marchers that are no longer in the current marcher pages
         if (marcherPageMarcherIds.size !== canvasMarchersMap.size) {
             canvasMarchersMap.forEach((canvasMarcher, marcherId) => {
                 if (!marcherPageMarcherIds.has(marcherId)) {
@@ -1096,50 +914,30 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 }
             });
         }
-
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
-
         this.bringAllControlPointsTooFront();
         this.requestRenderAll();
     };
 
-    /**
-     * Reset all marchers on the canvas to the positions defined in their MarcherPage objects
-     */
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
             canvasMarcher.setMarcherCoords(canvasMarcher.marcherPage);
         });
-
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
-
         this.requestRenderAll();
     };
 
-    /**
-     * Brings all of the canvasMarchers to the front of the canvas
-     */
     sendCanvasMarchersToFront = () => {
-        // Get the canvas marchers on the canvas
         const curCanvasMarchers: CanvasMarcher[] = this.getCanvasMarchers();
-
         curCanvasMarchers.forEach((canvasMarcher) => {
             this.bringToFront(canvasMarcher);
         });
         this.bringAllControlPointsTooFront();
     };
 
-    /**
-     * Render static marchers for the given page
-     *
-     * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
-     * @param allMarchers All marchers in the drill
-     * @returns The StaticCanvasMarcher objects created
-     */
     renderStaticMarchers = ({
         color,
         intendedMarcherPages,
