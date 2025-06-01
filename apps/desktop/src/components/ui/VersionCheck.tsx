@@ -167,24 +167,32 @@ export default function VersionChecker() {
                                     Install Latest Version for Windows
                                 </Button>
                             )}
-                        {downloadUrls.macArm && (
-                            <Button
-                                onClick={() =>
-                                    window.open(downloadUrls.macArm, "_blank")
-                                }
-                            >
-                                Install Latest Version for Apple Silicon
-                            </Button>
-                        )}
-                        {downloadUrls.macIntel && (
-                            <Button
-                                onClick={() =>
-                                    window.open(downloadUrls.macIntel, "_blank")
-                                }
-                            >
-                                Install Latest Version for Intel Mac
-                            </Button>
-                        )}
+                        {downloadUrls.macArm &&
+                            navigator.userAgent.indexOf("Mac") !== -1 && (
+                                <Button
+                                    onClick={() =>
+                                        window.open(
+                                            downloadUrls.macArm,
+                                            "_blank",
+                                        )
+                                    }
+                                >
+                                    Install Latest Version for Apple Silicon
+                                </Button>
+                            )}
+                        {downloadUrls.macIntel &&
+                            navigator.userAgent.indexOf("Mac") !== -1 && (
+                                <Button
+                                    onClick={() =>
+                                        window.open(
+                                            downloadUrls.macIntel,
+                                            "_blank",
+                                        )
+                                    }
+                                >
+                                    Install Latest Version for Intel Mac
+                                </Button>
+                            )}
                         {downloadUrls.linux &&
                             navigator.userAgent.indexOf("Linux") !== -1 && (
                                 <Button

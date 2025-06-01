@@ -52,6 +52,8 @@ import {
     ModifiedUtilityRecord,
 } from "electron/database/tables/UtilityTable";
 
+import Plugin from "../../src/global/classes/Plugin";
+
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
 ) {
@@ -517,6 +519,11 @@ const PLUGINS_API = {
     list: () => ipcRenderer.invoke("plugins:list") as Promise<string[]>,
     get: (pluginPath: string) =>
         ipcRenderer.invoke("plugins:get", pluginPath) as Promise<string>,
+    plugins: () => Plugin.getPlugins(),
+    install: (pluginUrl: string) =>
+        ipcRenderer.invoke("plugins:install", pluginUrl) as Promise<boolean>,
+    uninstall: (file: string) =>
+        ipcRenderer.invoke("plugins:uninstall", file) as Promise<boolean>,
 };
 
 contextBridge.exposeInMainWorld("plugins", PLUGINS_API);
