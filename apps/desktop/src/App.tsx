@@ -7,7 +7,7 @@ import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/LaunchPage";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
@@ -29,6 +29,37 @@ import { useUiSettingsStore } from "./stores/UiSettingsStore";
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
     const { fetchUiSettings } = useUiSettingsStore();
+    const pluginsLoadedRef = useRef(false);
+
+    useEffect(() => {
+        if (pluginsLoadedRef.current) return;
+        pluginsLoadedRef.current = true;
+        console.log("Loading plugins...");
+        window.plugins
+            ?.list()
+            .then(async (pluginPaths: string[]) => {
+                for (const path of pluginPaths) {
+                    const pluginName =
+                        path.split(/[/\\]/).pop() || "Unknown Plugin";
+                    console.log(`Loading plugin: ${pluginName}`);
+                    try {
+                        const code = await window.plugins.get(path);
+                        const script = document.createElement("script");
+                        script.type = "text/javascript";
+                        script.text = code;
+                        document.body.appendChild(script);
+                    } catch (error) {
+                        console.error(
+                            `Failed to load plugin ${pluginName}:`,
+                            error,
+                        );
+                    }
+                }
+            })
+            .then(() => {
+                console.log("All plugins loaded.");
+            });
+    }, []);
 
     useEffect(() => {
         window.electron.databaseIsReady().then((result) => {

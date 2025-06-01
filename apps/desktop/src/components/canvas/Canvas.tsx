@@ -317,7 +317,10 @@ export default function Canvas({
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
     useEffect(() => {
-        if (canvas || !selectedPage || !fieldProperties) return; // If the canvas is already initialized, or the selected page is not set, return
+        if (canvas || !selectedPage || !fieldProperties) {
+            window.canvas = canvas;
+            return;
+        } // If the canvas is already initialized, or the selected page is not set, return
 
         if (testCanvas) {
             setCanvas(testCanvas);
@@ -331,6 +334,8 @@ export default function Canvas({
                 }),
             );
         }
+
+        window.canvas = canvas;
     }, [selectedPage, fieldProperties, testCanvas, uiSettings, canvas]);
 
     // Initiate listeners

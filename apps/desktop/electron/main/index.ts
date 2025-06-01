@@ -309,6 +309,20 @@ ipcMain.handle("get:showWaveform", async () => {
     return store.get("showWaveform", true);
 });
 
+// Plugins
+ipcMain.handle("plugins:list", async () => {
+    const pluginsDir = join(app.getPath("userData"), "plugins");
+    if (!fs.existsSync(pluginsDir)) return [];
+    return fs
+        .readdirSync(pluginsDir)
+        .filter((file) => file.endsWith(".om.js"))
+        .map((file) => join(pluginsDir, file));
+});
+
+ipcMain.handle("plugins:get", async (_, pluginPath) => {
+    return fs.readFileSync(pluginPath, "utf-8");
+});
+
 app.on("second-instance", () => {
     if (win) {
         // Focus on the main window if the user tried to open another
