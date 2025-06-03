@@ -103,7 +103,7 @@ function PluginsContents() {
         <div className="animate-scale-in text-text w-5rem flex flex-col gap-16">
             {showRefreshNotice && (
                 <div className="mb-4 rounded border-l-4 border-yellow-500 bg-yellow-100 p-4 text-yellow-700">
-                    Please <strong>refresh the app</strong> to update plugins.
+                    Please <strong>reload the app</strong> to update plugins.
                 </div>
             )}
             <div className="flex items-center justify-between">
