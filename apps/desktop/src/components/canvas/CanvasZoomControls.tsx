@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Minus, List } from "@phosphor-icons/react";
+import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 
 interface CanvasZoomControlsProps {
@@ -132,18 +132,18 @@ export default function CanvasZoomControls({
     const getMinZoom = () => FABRIC_MIN_ZOOM * 100;
 
     // Tooltip for the hamburger icon (placeholder)
-    const NavigationTooltip = () => (
-        <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded-md bg-neutral-800 px-3 py-1.5 text-sm whitespace-nowrap text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-            Zoom and navigation
-            <div className="absolute top-full left-1/2 -translate-x-1/2 transform border-x-4 border-t-4 border-x-transparent border-t-neutral-800" />
-        </div>
-    );
+    // const NavigationTooltip = () => (
+    //     <div className="bg-bg-1 pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded-md px-3 py-1.5 text-sm whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+    //         Zoom and navigation
+    //         <div className="border-t-bg-1 absolute top-full left-1/2 -translate-x-1/2 transform border-x-4 border-t-4 border-x-transparent" />
+    //     </div>
+    // );
 
     return (
-        <div className="group absolute right-6 bottom-6 z-10 flex items-stretch overflow-hidden rounded-lg border border-neutral-300 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-800">
+        <div className="group border-stroke bg-bg-1 absolute right-6 bottom-6 z-10 flex w-128 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
             {/* Hamburger Icon (placeholder for future menu) */}
             {/* <button
-                className="text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 flex items-center justify-center p-2 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-text hover:bg-fg-2 flex items-center justify-center p-2 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
                 title="Zoom and navigation"
                 disabled={!canvas}
             >
@@ -154,17 +154,17 @@ export default function CanvasZoomControls({
             {/* Zoom Out Button */}
             <button
                 onClick={handleZoomOut}
-                className="flex items-center justify-center border-l border-neutral-300 p-2 text-neutral-700 transition-colors duration-150 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas || currentZoom <= getMinZoom()}
                 title="Zoom Out"
             >
-                <Minus size={18} weight="bold" />
+                <MinusIcon size={18} weight="bold" />
             </button>
 
             {/* Zoom Percentage Display and Reset Button */}
             <button
                 onClick={handleResetZoomAndCenter}
-                className="dark:bg-neutral-750 dark:hover:bg-neutral-650 flex h-full items-center justify-center border-r border-l border-neutral-300 bg-neutral-100 px-3 py-1 font-mono text-sm text-neutral-700 transition-colors duration-150 hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-300"
+                className="border-stroke bg-fg-2 text-text flex h-full items-center justify-center border-r border-l px-3 py-1 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas}
                 title="Reset Zoom and Center"
             >
@@ -174,11 +174,11 @@ export default function CanvasZoomControls({
             {/* Zoom In Button */}
             <button
                 onClick={handleZoomIn}
-                className="flex items-center justify-center p-2 text-neutral-700 transition-colors duration-150 hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas || currentZoom >= getMaxZoom()}
                 title="Zoom In"
             >
-                <Plus size={18} weight="bold" />
+                <PlusIcon size={18} weight="bold" />
             </button>
         </div>
     );
