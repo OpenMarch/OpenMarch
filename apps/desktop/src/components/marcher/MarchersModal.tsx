@@ -5,7 +5,10 @@ import NewMarcherForm from "./NewMarcherForm";
 import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
+<<<<<<< HEAD
 import SectionAppearanceList from "./section/SectionAppearanceList";
+=======
+>>>>>>> 1f8fe29 (ui: add new sidebar layout, fix icon imports)
 
 export default function MarchersModal() {
     return (
