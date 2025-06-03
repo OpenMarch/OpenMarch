@@ -680,7 +680,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i += pixelsPerStep
             )
                 fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps),
+                    new fabric.Line(
+                        [
+                            i,
+                            0,
+                            i,
+                            fieldHeight +
+                                this.fieldProperties.stepsPastFSL *
+                                    pixelsPerStep,
+                        ],
+                        gridLineProps,
+                    ),
                 );
             for (
                 let i = centerFrontPoint.xPixels - pixelsPerStep;
@@ -688,7 +698,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 i -= pixelsPerStep
             )
                 fieldArray.push(
-                    new fabric.Line([i, 0, i, fieldHeight], gridLineProps),
+                    new fabric.Line(
+                        [
+                            i,
+                            0,
+                            i,
+                            fieldHeight +
+                                this.fieldProperties.stepsPastFSL *
+                                    pixelsPerStep,
+                        ],
+                        gridLineProps,
+                    ),
                 );
 
             // Y
@@ -697,7 +717,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 let i =
                     centerFrontPoint.yPixels +
                     yCheckpointToStartGridFrom.stepsFromCenterFront *
-                        pixelsPerStep;
+                        pixelsPerStep +
+                    this.fieldProperties.stepsPastFSL * pixelsPerStep;
                 i > 0;
                 i -= pixelsPerStep
             )
@@ -723,7 +744,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             centerFrontPoint.xPixels,
                             0,
                             centerFrontPoint.xPixels,
-                            fieldHeight,
+                            fieldHeight +
+                                this.fieldProperties.stepsPastFSL *
+                                    pixelsPerStep,
                         ],
                         darkLineProps,
                     ),
@@ -736,7 +759,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     i += pixelsPerStep * this.fieldProperties.halfLineXInterval
                 )
                     fieldArray.push(
-                        new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
+                        new fabric.Line(
+                            [
+                                i,
+                                0,
+                                i,
+                                fieldHeight +
+                                    this.fieldProperties.stepsPastFSL *
+                                        pixelsPerStep,
+                            ],
+                            darkLineProps,
+                        ),
                     );
                 for (
                     let i =
@@ -746,7 +779,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     i -= pixelsPerStep * this.fieldProperties.halfLineXInterval
                 )
                     fieldArray.push(
-                        new fabric.Line([i, 0, i, fieldHeight], darkLineProps),
+                        new fabric.Line(
+                            [
+                                i,
+                                0,
+                                i,
+                                fieldHeight +
+                                    this.fieldProperties.stepsPastFSL *
+                                        pixelsPerStep,
+                            ],
+                            darkLineProps,
+                        ),
                     );
             }
             if (this.fieldProperties.halfLineYInterval) {
@@ -756,7 +799,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         centerFrontPoint.yPixels +
                         yCheckpointToStartGridFrom.stepsFromCenterFront *
                             pixelsPerStep -
-                        pixelsPerStep * this.fieldProperties.halfLineYInterval;
+                        pixelsPerStep * this.fieldProperties.halfLineYInterval +
+                        this.fieldProperties.stepsPastFSL * pixelsPerStep;
                     i > 0;
                     i -= pixelsPerStep * this.fieldProperties.halfLineYInterval
                 )
@@ -790,7 +834,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 centerFrontPoint.xPixels +
                 xCheckpoint.stepsFromCenterFront * pixelsPerStep;
             fieldArray.push(
-                new fabric.Line([x, 0, x, fieldHeight], xCheckpointProps),
+                new fabric.Line(
+                    [
+                        x,
+                        0,
+                        x,
+                        fieldHeight +
+                            this.fieldProperties.stepsPastFSL * pixelsPerStep,
+                    ],
+                    xCheckpointProps,
+                ),
             );
 
             // Y-Checkpoints (or hashes)
