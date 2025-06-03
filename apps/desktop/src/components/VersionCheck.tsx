@@ -5,10 +5,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@openmarch/ui";
-import { version as currentVersion } from "../../../package.json";
+import { version as currentVersion } from "../../package.json";
 import { Button } from "@openmarch/ui";
 import StyledMarkdown from "./StyledMarkdown";
 import { Skeleton } from "@openmarch/ui";
+
 export default function VersionChecker() {
     const [isOpen, setIsOpen] = useState(false);
     const [latestVersion, setLatestVersion] = useState<string | null>(null);

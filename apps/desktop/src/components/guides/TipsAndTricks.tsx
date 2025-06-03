@@ -1,6 +1,6 @@
 import { SidebarModalLauncher } from "../sidebar/SidebarModal";
 import TipsAndTricksMarkdown from "./TipsAndTricks.md?raw";
-import StyledMarkdown from "../ui/StyledMarkdown";
+import StyledMarkdown from "../StyledMarkdown";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { XIcon } from "@phosphor-icons/react";
 import { LightbulbIcon } from "@phosphor-icons/react/dist/ssr";
