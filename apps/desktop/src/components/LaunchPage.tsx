@@ -1,5 +1,9 @@
 import { Button, BugNote, WarningNote } from "@openmarch/ui";
+<<<<<<< HEAD
 import BugReport from "./titlebar/BugReport";
+=======
+import BugReport from "./sidebar/BugReport";
+>>>>>>> 7d8b28a (rearrange, add tabs ui component)
 import ThemeSwitcher from "./titlebar/ThemeSwitcher";
 import TitleBar from "./titlebar/TitleBar";
 import { useTheme } from "@/context/ThemeContext";

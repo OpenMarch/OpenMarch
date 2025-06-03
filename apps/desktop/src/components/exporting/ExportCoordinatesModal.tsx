@@ -377,8 +377,6 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                 </Form.Field>
-<<<<<<< HEAD
-=======
 
                 <Form.Field
                     name="organizeBySection"
@@ -416,7 +414,6 @@ function CoordinateSheetExport() {
                         </Tooltip.Root>
                     </Tooltip.TooltipProvider>
                 </Form.Field>
->>>>>>> c8539e2 (ui: add new sidebar layout, fix icon imports)
             </Form.Root>
 
             {/* Preview Section */}
