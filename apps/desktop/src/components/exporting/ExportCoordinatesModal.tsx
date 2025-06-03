@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import * as Tabs from "@radix-ui/react-tabs";
+import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 
 function CoordinateSheetExport() {
     const [isTerse, setIsTerse] = useState(false);
@@ -951,33 +951,20 @@ function DrillChartExport() {
 
 function ExportModalContents() {
     return (
-        <Tabs.Root
-            defaultValue="coordinate-sheets"
-            className="flex flex-col gap-20"
-        >
-            <Tabs.List className="border-stroke flex gap-8 border-b">
-                <Tabs.Trigger
-                    value="coordinate-sheets"
-                    className="text-body text-text/60 data-[state=active]:border-accent data-[state=active]:text-accent px-16 py-8 data-[state=active]:border-b-2"
-                >
-                    Coordinate Sheets
-                </Tabs.Trigger>
-                <Tabs.Trigger
-                    value="drill-charts"
-                    className="text-body text-text/60 data-[state=active]:border-accent data-[state=active]:text-accent px-16 py-8 data-[state=active]:border-b-2"
-                >
-                    Drill Charts
-                </Tabs.Trigger>
-            </Tabs.List>
+        <Tabs defaultValue="coordinate-sheets">
+            <TabsList>
+                <TabItem value="coordinate-sheets">Coordinate Sheets</TabItem>
+                <TabItem value="drill-charts">Drill Charts</TabItem>
+            </TabsList>
 
-            <Tabs.Content value="coordinate-sheets">
+            <TabContent value="coordinate-sheets">
                 <CoordinateSheetExport />
-            </Tabs.Content>
+            </TabContent>
 
-            <Tabs.Content value="drill-charts">
+            <TabContent value="drill-charts">
                 <DrillChartExport />
-            </Tabs.Content>
-        </Tabs.Root>
+            </TabContent>
+        </Tabs>
     );
 }
 
