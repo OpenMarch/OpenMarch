@@ -1142,7 +1142,11 @@ export default function ExportCoordinatesModal() {
                 asChild
                 className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
+<<<<<<< HEAD
                 <ArrowSquareOutIcon size={24} />
+=======
+                <ArrowSquareOutIcon size={18} />
+>>>>>>> 062f903 (add tabs to toolbar)
                 Export
             </DialogTrigger>
 

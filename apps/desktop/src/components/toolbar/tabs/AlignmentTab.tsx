@@ -8,9 +8,18 @@ import {
     AlignCenterVerticalSimpleIcon,
     DotsThreeOutlineIcon,
     DotsThreeOutlineVerticalIcon,
+    RewindIcon,
+    SkipBackIcon,
+    PlayIcon,
+    PauseIcon,
+    SkipForwardIcon,
+    FastForwardIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useIsPlaying } from "@/context/IsPlayingContext";
+import { topBarComponentProps } from "@/global/Interfaces";
 
 export default function AlignmentTab() {
     const { uiSettings } = useUiSettingsStore();
