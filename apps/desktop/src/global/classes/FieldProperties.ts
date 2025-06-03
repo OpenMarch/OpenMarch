@@ -6,6 +6,7 @@ interface FieldPropertyArgs {
     yCheckpoints: Checkpoint[];
     yardNumberCoordinates?: YardNumberCoordinates;
     sideDescriptions?: SideDescriptions;
+    stepsPastFSL?: number;
     halfLineXInterval?: number;
     halfLineYInterval?: number;
     stepSizeInches?: number;
@@ -86,6 +87,8 @@ export default class FieldProperties {
     readonly yardNumberCoordinates: YardNumberCoordinates;
     /** The description of the sides of the field. E.g. "Side 1" and "Side 2" */
     readonly sideDescriptions: SideDescriptions;
+    /** The number of steps past the front sideline to render the grid */
+    readonly stepsPastFSL: number;
     /** The interval that half lines appear in the UI on the X axis from the center of the field. */
     readonly halfLineXInterval?: number;
     /** The interval that half lines appear in the UI on the Y axis from the front of the field. */
@@ -121,6 +124,7 @@ export default class FieldProperties {
         yCheckpoints,
         yardNumberCoordinates = {},
         sideDescriptions = defaultSideDescriptions,
+        stepsPastFSL = 0,
         halfLineXInterval = 0,
         halfLineYInterval = 0,
         stepSizeInches = 22.5,
@@ -162,6 +166,7 @@ export default class FieldProperties {
         this.yCheckpoints = yCheckpoints;
         this.yardNumberCoordinates = yardNumberCoordinates;
         this.sideDescriptions = sideDescriptions;
+        this.stepsPastFSL = stepsPastFSL;
         this.halfLineXInterval = halfLineXInterval;
         this.halfLineYInterval = halfLineYInterval;
         this.stepSizeInches = stepSizeInches;

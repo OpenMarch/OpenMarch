@@ -1051,7 +1051,88 @@ export default function FieldPropertiesCustomizer() {
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
                     </Form.Field>
+                    <Form.Field
+                        name="Steps Past FSL"
+                        className={formFieldClassname}
+                    >
+                        <Form.Label className={labelClassname}>
+                            Steps Past FSL
+                        </Form.Label>
+                        <Form.Control asChild>
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*\.?[0-9]*"
+                                className={inputClassname}
+                                onBlur={(e) => {
+                                    e.preventDefault();
 
+                                    if (e.target.value === "") {
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                stepsPastFSL: undefined,
+                                            }),
+                                        );
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    stepsPastFSL: parsedFloat,
+                                                }),
+                                            );
+                                        }
+                                    }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers and decimal point
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.]/g,
+                                        "",
+                                    );
+                                    // Ensure only one decimal point
+                                    const normalized = filtered.replace(
+                                        /\.+/g,
+                                        ".",
+                                    );
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.halfLineXInterval ?? ""
+                                }
+                            />
+                        </Form.Control>
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <Info size={18} className="text-text/60" />
+                                </Tooltip.Trigger>
+                                <TooltipContents
+                                    className="p-16 text-center"
+                                    side="right"
+                                >
+                                    <div>
+                                        The amount of steps past the front
+                                        sideline to render the grid.
+                                    </div>
+                                    <div>
+                                        Leave as 0 to not render the grid past
+                                        the front sideline
+                                    </div>
+                                    <div>
+                                        This does not affect coordinates in any
+                                        way, it is purely cosmetic
+                                    </div>
+                                </TooltipContents>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
                     <Form.Field
                         name="Half line X-Interval"
                         className={formFieldClassname}
