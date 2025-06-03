@@ -15,7 +15,7 @@ import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectabl
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
-import { CircleNotch } from "@phosphor-icons/react";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
@@ -655,7 +655,10 @@ export default function Canvas({
                 <canvas ref={canvasRef} id="fieldCanvas" />
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
-                    <CircleNotch size={32} className="text-text animate-spin" />
+                    <CircleNotchIcon
+                        size={32}
+                        className="text-text animate-spin"
+                    />
                 </div>
             )}
         </div>

@@ -2,14 +2,15 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
-import { X, CaretLeft } from "@phosphor-icons/react";
+import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
+import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 
 export default function MarchersModal() {
     return (
         <SidebarModalLauncher
             contents={<MarcherListContents />}
-            buttonLabel="Marchers"
+            buttonLabel={<UsersThreeIcon size={24} />}
         />
     );
 }
@@ -34,7 +35,7 @@ export function MarcherListContents() {
                         onClick={toggleOpen}
                         className="hover:text-red duration-150 ease-out"
                     >
-                        <X size={24} />
+                        <XIcon size={24} />
                     </button>
                 </div>
             </header>
@@ -59,7 +60,7 @@ export function MarcherNewFormContents() {
                         }}
                         className="hover:text-accent duration-150 ease-out"
                     >
-                        <CaretLeft size={24} />
+                        <CaretLeftIcon size={24} />
                     </button>
                     <h4 className="text-h4 leading-none">Add Marchers</h4>
                 </div>
@@ -67,7 +68,7 @@ export function MarcherNewFormContents() {
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >
-                    <X size={24} />
+                    <XIcon size={24} />
                 </button>
             </header>
 

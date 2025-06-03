@@ -11,8 +11,13 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import TempoGroupCard from "./TempoGroup/TempoGroupCard";
 import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
+import { MusicNotesIcon } from "@phosphor-icons/react";
 
-export default function MusicModal({ label = "Music" }: { label?: string }) {
+export default function MusicModal({
+    label = <MusicNotesIcon size={24} />,
+}: {
+    label?: string | React.ReactNode;
+}) {
     return (
         <SidebarModalLauncher
             contents={<MusicModalContents />}

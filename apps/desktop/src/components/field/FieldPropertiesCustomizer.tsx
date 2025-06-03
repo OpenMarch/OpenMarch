@@ -6,7 +6,7 @@ import FieldProperties, {
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CaretDown, CaretUp, Info } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon, InfoIcon } from "@phosphor-icons/react";
 import * as Form from "@radix-ui/react-form";
 import {
     Input,
@@ -89,7 +89,7 @@ function CheckpointEditor({
                     <div>{checkpoint.name}</div>
                     <div>{checkpoint.stepsFromCenterFront} steps</div>
                 </div>
-                {open ? <CaretUp size={24} /> : <CaretDown size={24} />}
+                {open ? <CaretUpIcon size={24} /> : <CaretDownIcon size={24} />}
             </RadixCollapsible.Trigger>
             <RadixCollapsible.Content className={"mx-12 my-8"}>
                 <div className="flex flex-col gap-8">
@@ -150,7 +150,7 @@ function CheckpointEditor({
                                         type="button"
                                         className={tooltipClassname}
                                     >
-                                        <Info
+                                        <InfoIcon
                                             size={18}
                                             className="text-text/60"
                                         />
@@ -210,7 +210,7 @@ function CheckpointEditor({
                                         type="button"
                                         className={tooltipClassname}
                                     >
-                                        <Info
+                                        <InfoIcon
                                             size={18}
                                             className="text-text/60"
                                         />
@@ -273,7 +273,10 @@ function CheckpointEditor({
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     The primary name of the checkpoint. (E.g.
@@ -322,7 +325,7 @@ function CheckpointEditor({
                             <Tooltip.TooltipProvider>
                                 <Tooltip.Root>
                                     <Tooltip.Trigger type="button">
-                                        <Info
+                                        <InfoIcon
                                             size={18}
                                             className="text-text/60"
                                         />
@@ -362,7 +365,10 @@ function CheckpointEditor({
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     If this checkpoint should be visible on the
@@ -399,7 +405,10 @@ function CheckpointEditor({
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     If this checkpoint should be used as a
@@ -838,7 +847,7 @@ export default function FieldPropertiesCustomizer() {
                     <Tooltip.TooltipProvider>
                         <Tooltip.Root>
                             <Tooltip.Trigger type="button">
-                                <Info size={18} className="text-text/60" />
+                                <InfoIcon size={18} className="text-text/60" />
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16" side="right">
                                 {tooltip}
@@ -898,7 +907,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     The name of this field, stage, or grid
@@ -977,7 +989,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents
                                     className="w-256 flex-wrap p-16 text-center"
@@ -1039,7 +1054,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents
                                     className="p-16 text-center"
@@ -1113,7 +1131,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents
                                     className="p-16 text-center"
@@ -1197,7 +1218,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents
                                     className="p-16 text-center"
@@ -1287,7 +1311,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents
                                     className="p-16 text-center"
@@ -1512,7 +1539,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents
                                     className="p-16 text-center"
@@ -1600,7 +1630,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     E.g. &quot;Side 1&quot;,&quot; Audience
@@ -1656,7 +1689,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     E.g. &quot;S1&quot;, &quot;AL&quot; or
@@ -1716,7 +1752,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     E.g. &quot;Side 2&quot;,&quot; Audience
@@ -1772,7 +1811,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     E.g. &quot;S2&quot;, &quot;AR&quot; or
@@ -1865,7 +1907,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     Number of steps from the front sideline to
@@ -1953,7 +1998,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     Number of steps from the front sideline to
@@ -2041,7 +2089,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     Number of steps from the front sideline to
@@ -2129,7 +2180,10 @@ export default function FieldPropertiesCustomizer() {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16" side="right">
                                     Number of steps from the front sideline to

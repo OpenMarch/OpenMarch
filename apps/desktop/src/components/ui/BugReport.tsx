@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import * as Sentry from "@sentry/electron/renderer";
+import { BugBeetleIcon } from "@phosphor-icons/react/dist/ssr";
 
 export const feedbackObj = Sentry.feedbackIntegration({
     autoInject: false,
@@ -22,7 +23,7 @@ export default function ErrorReport() {
             className="hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
             id="feedback-button"
         >
-            Report a bug
+            <BugBeetleIcon size={24} />
         </div>
     );
 }

@@ -1,13 +1,13 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
-    ArrowsHorizontal,
-    ArrowsVertical,
-    ArrowsInCardinal,
-    AlignCenterHorizontalSimple,
-    AlignCenterVerticalSimple,
-    DotsThreeOutline,
-    DotsThreeOutlineVertical,
+    ArrowsHorizontalIcon,
+    ArrowsVerticalIcon,
+    ArrowsInCardinalIcon,
+    AlignCenterHorizontalSimpleIcon,
+    AlignCenterVerticalSimpleIcon,
+    DotsThreeOutlineIcon,
+    DotsThreeOutlineVerticalIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
@@ -29,7 +29,7 @@ export default function UiSettingsToolbar() {
                     registeredAction={RegisteredActionsObjects.lockX}
                     className={uiSettings.lockX ? "text-accent" : "text-text"}
                 >
-                    <ArrowsVertical size={24} />
+                    <ArrowsVerticalIcon size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     instructionalString={
@@ -44,14 +44,14 @@ export default function UiSettingsToolbar() {
                         uiSettings.lockY ? "text-accent" : "text-text"
                     }`}
                 >
-                    <ArrowsHorizontal size={24} />
+                    <ArrowsHorizontalIcon size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.snapToNearestWhole
                     }
                 >
-                    <ArrowsInCardinal size={24} />
+                    <ArrowsInCardinalIcon size={24} />
                 </RegisteredActionButton>
                 {/* -- */}
             </ToolbarSection>
@@ -59,28 +59,28 @@ export default function UiSettingsToolbar() {
                 <RegisteredActionButton
                     registeredAction={RegisteredActionsObjects.alignVertically}
                 >
-                    <AlignCenterVerticalSimple size={24} />
+                    <AlignCenterVerticalSimpleIcon size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.alignHorizontally
                     }
                 >
-                    <AlignCenterHorizontalSimple size={24} />
+                    <AlignCenterHorizontalSimpleIcon size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.evenlyDistributeVertically
                     }
                 >
-                    <DotsThreeOutlineVertical size={24} />
+                    <DotsThreeOutlineVerticalIcon size={24} />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.evenlyDistributeHorizontally
                     }
                 >
-                    <DotsThreeOutline size={24} />
+                    <DotsThreeOutlineIcon size={24} />
                 </RegisteredActionButton>
             </ToolbarSection>
             <ToolbarSection aria-label="Set marcher positions">

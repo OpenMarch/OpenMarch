@@ -1,7 +1,7 @@
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import { SidebarCollapsible } from "./SidebarCollapsible";
+import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button } from "@openmarch/ui";
 
 export default function AlignmentEditor() {
@@ -13,7 +13,7 @@ export default function AlignmentEditor() {
 
     return (
         alignmentEvent === "line" && (
-            <SidebarCollapsible
+            <InspectorCollapsible
                 defaultOpen
                 title={`Alignment`}
                 className="mt-12 flex flex-col gap-12"
@@ -57,7 +57,7 @@ export default function AlignmentEditor() {
                         .map((marcher) => marcher.drill_number)
                         .join(", ")}
                 </p>
-            </SidebarCollapsible>
+            </InspectorCollapsible>
         )
     );
 }
