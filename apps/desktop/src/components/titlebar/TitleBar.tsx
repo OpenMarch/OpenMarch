@@ -1,4 +1,9 @@
 import { MinusIcon, SquareIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+<<<<<<< HEAD
+=======
+import FileControls from "./FileControls";
+import SettingsModal from "../settings/SettingsModal";
+>>>>>>> c8539e2 (ui: add new sidebar layout, fix icon imports)
 import { useEffect, useState } from "react";
 import { version as currentVersion } from "../../../package.json";
 import VersionChecker from "../VersionCheck";

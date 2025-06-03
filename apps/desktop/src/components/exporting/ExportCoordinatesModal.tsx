@@ -377,6 +377,46 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                 </Form.Field>
+<<<<<<< HEAD
+=======
+
+                <Form.Field
+                    name="organizeBySection"
+                    className="flex w-full items-center gap-12"
+                >
+                    <Form.Control asChild>
+                        <Checkbox
+                            checked={organizeBySection}
+                            onCheckedChange={(checked: boolean) =>
+                                setOrganizeBySection(checked)
+                            }
+                        />
+                    </Form.Control>
+                    <Form.Label className="text-body">
+                        {" "}
+                        Organize by Section{" "}
+                    </Form.Label>
+
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <InfoIcon size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div>
+                                    Create PDF files for each individual marcher
+                                    organized in folders by section.
+                                </div>
+                                <div>
+                                    If this is not checked, one large PDF file
+                                    will be created with every coordinate sheet
+                                    in score order.
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
+                </Form.Field>
+>>>>>>> c8539e2 (ui: add new sidebar layout, fix icon imports)
             </Form.Root>
 
             {/* Preview Section */}
