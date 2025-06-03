@@ -17,6 +17,7 @@ export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
         <div
             className={twMerge(
                 clsx(
+                    "relative",
                     "flex flex-row-reverse items-center gap-4",
                     "text-body text-text",
                     "disabled:opacity-50",

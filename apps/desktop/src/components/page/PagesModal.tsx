@@ -16,7 +16,7 @@ export function PageListContents() {
     const { toggleOpen } = useSidebarModalStore();
 
     return (
-        <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
+        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex items-center justify-between gap-24">
                 <h4 className="text-h4 leading-none">Pages</h4>
                 <div className="flex items-center gap-8">
@@ -36,7 +36,11 @@ export function PageListContents() {
                     </button>
                 </div>
             </header>
-            <PageList />
+            <hr />
+
+            <div className="flex grow flex-col gap-16 overflow-scroll">
+                <PageList />
+            </div>
         </div>
     );
 }
