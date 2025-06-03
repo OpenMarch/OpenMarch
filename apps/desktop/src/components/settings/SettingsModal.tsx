@@ -18,7 +18,7 @@ export default function SettingsModal() {
                 asChild
                 className="titlebar-button hover:text-accent flex cursor-pointer items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
             >
-                <GearSixIcon size={18} />
+                <GearSixIcon size={24} /> App Settings
             </DialogTrigger>
             <DialogContent className="w-[10rem]" aria-describedby="Settings">
                 <DialogTitle>Settings</DialogTitle>

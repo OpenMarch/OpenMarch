@@ -3,7 +3,15 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 
-export default function UiSettingsToolbar() {
+export default function ViewTab() {
+    return (
+        <div className="flex w-full flex-wrap gap-8">
+            <UiSettingsToolbar />
+        </div>
+    );
+}
+
+function UiSettingsToolbar() {
     const { uiSettings } = useUiSettingsStore();
 
     return (
