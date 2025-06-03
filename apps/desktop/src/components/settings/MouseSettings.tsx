@@ -15,7 +15,7 @@ export default function MouseSettings() {
                     <div className="w-[200px]">
                         <Slider
                             min={0.5}
-                            max={2.0}
+                            max={4.0}
                             step={0.1}
                             value={[uiSettings.mouseSettings.zoomSensitivity]}
                             onValueChange={([value]) =>

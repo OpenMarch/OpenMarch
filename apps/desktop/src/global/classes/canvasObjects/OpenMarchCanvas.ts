@@ -276,12 +276,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         } else if (!this.trackpadModeEnabled) {
             this.handleMouseWheelZoom(event);
         } else {
-            const isLikelyTrackpad = this.detectTrackpadGesture(event);
-            if (isLikelyTrackpad) {
-                this.handleTrackpadPan(event);
-            } else {
-                this.handleMouseWheelZoom(event);
-            }
+            this.handleTrackpadPan(event);
         }
     }
 
@@ -362,6 +357,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const delta = event.deltaY;
         const currentZoom = this.getZoom();
 
+        if (!this.staticGridRef.objectCaching)
+            this.staticGridRef.objectCaching = true;
+
         const effectiveSensitivity =
             this.INTERNAL_BASE_ZOOM_SENSITIVITY * this.zoomSensitivity;
         const zoomMultiplier = Math.pow(
@@ -383,6 +381,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         };
         this.zoomToPoint(pointer, newZoom);
         this.checkCanvasBounds();
+
+        // set objectCaching to false after 100ms to improve performance after zooming
+        // This is why the grid is blurry but fast while zooming, and sharp while not.
+        // If it was always sharp (object caching on), it would be horrendously slow
+        clearTimeout(this._zoomTimeout);
+        this._zoomTimeout = setTimeout(() => {
+            if (this.staticGridRef.objectCaching) {
+                this.staticGridRef.objectCaching = false;
+                this.requestRenderAll();
+            }
+        }, 25);
     }
 
     private checkCanvasBounds() {
@@ -630,9 +639,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         this.cssZoomWrapper.parentNode
                     ) {
                         this.cssZoomWrapper.appendChild(upperCanvas);
-                        console.log(
-                            "🔧 Moved upperCanvasEl into cssZoomWrapper.",
-                        );
+                        // console.log(
+                        //     "🔧 Moved upperCanvasEl into cssZoomWrapper.",
+                        // );
                     } else {
                         console.warn(
                             "🔧 upperCanvasEl was not a sibling of cssZoomWrapper. Attempting to move it, but layout might be affected.",
@@ -664,12 +673,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     private setupAdvancedEventListeners() {
-        console.log(
-            `🔧 Setting up advanced event listeners. cssZoomWrapper exists: ${!!this.cssZoomWrapper}`,
-        );
-        console.log(`🔧 Trackpad mode enabled: ${this.trackpadModeEnabled}`);
-        console.log(`🔧 Platform detected: ${navigator.platform}`);
-
         if (!this.cssZoomWrapper) {
             console.error(
                 `🔧 ERROR: cssZoomWrapper is null, cannot setup advanced listeners`,
@@ -696,7 +699,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.boundHandleAdvancedWheel,
             { passive: false },
         );
-        console.log(`🔧 ✅ Added wheel event listener to cssZoomWrapper`);
 
         this.cssZoomWrapper.addEventListener(
             "touchstart",
@@ -797,12 +799,25 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.setHeight(window.innerHeight);
     }
 
+    /**
+     * Set the listeners on the canvas. This should be changed based on the cursor mode.
+     *
+     * @param newListeners The listeners to set on the canvas
+     */
     setListeners(newListeners: CanvasListeners) {
         this._listeners?.cleanupListeners();
         this._listeners = newListeners;
         this._listeners.initiateListeners();
     }
 
+    /**
+     * Sets given object as the only active object on canvas
+     * This is an overload of the fabric.Canvas method to set the lockMovementX and lockMovementY properties
+     *
+     * @param object — Object to set as an active one
+     * @param e — Event (passed along when firing "object:selected")
+     * @return — thisArg
+     */
     setActiveObject(object: fabric.Object, e?: Event): fabric.Canvas {
         object.lockMovementX = this.uiSettings.lockX;
         object.lockMovementY = this.uiSettings.lockY;
@@ -859,7 +874,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
     }
-
+    /**
+     * Render the given marcherPages on the canvas
+     *
+     * @param currentMarcherPages All of the marcher pages (must be filtered by the intended page)
+     * @param allMarchers All marchers in the drill
+     */
     renderMarchers = async ({
         currentMarcherPages,
         allMarchers,
@@ -870,6 +890,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         CanvasMarcher.theme = this.fieldProperties.theme;
         const sectionAppearances =
             await SectionAppearance.getSectionAppearances();
+
+        // Get the canvas marchers on the canvas
         const canvasMarchersMap = new Map<number, CanvasMarcher>(
             this.getCanvasMarchers().map((m) => [m.marcherObj.id, m]),
         );
@@ -900,13 +922,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         sectionAppearance,
                     }),
                 );
-            } else {
+            }
+            // Marcher exists on the Canvas, move it to the new location if it has changed
+            else {
                 curCanvasMarcher.setMarcherCoords(marcherPage);
             }
         }
         const marcherPageMarcherIds: Set<number> = new Set(
             currentMarcherPages.map((marcherPage) => marcherPage.marcher_id),
         );
+
+        // Check for any canvas marchers that are no longer in the current marcher pages
         if (marcherPageMarcherIds.size !== canvasMarchersMap.size) {
             canvasMarchersMap.forEach((canvasMarcher, marcherId) => {
                 if (!marcherPageMarcherIds.has(marcherId)) {
@@ -930,6 +956,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     };
 
+    /**
+     * Brings all of the canvasMarchers to the front of the canvas
+     */
     sendCanvasMarchersToFront = () => {
         const curCanvasMarchers: CanvasMarcher[] = this.getCanvasMarchers();
         curCanvasMarchers.forEach((canvasMarcher) => {
@@ -938,6 +967,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.bringAllControlPointsTooFront();
     };
 
+    /**
+     * Render static marchers for the given page
+     *
+     * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
+     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
+     * @param allMarchers All marchers in the drill
+     * @returns The StaticCanvasMarcher objects created
+     */
     renderStaticMarchers = ({
         color,
         intendedMarcherPages,
@@ -1101,10 +1138,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             gridLines,
             halfLines,
         });
-
-        // PROFESSIONAL: Always disable object caching for crisp rendering
-        // Object caching causes blurriness during zoom for performance
-        // Professional applications prioritize visual quality
         this.staticGridRef.objectCaching = false;
 
         this.add(this.staticGridRef);
@@ -1120,6 +1153,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const delta = fabricEvent.e.deltaY;
         const currentZoom = this.getZoom();
 
+        // set objectCaching to true to improve performance while zooming
+        if (!this.staticGridRef.objectCaching)
+            this.staticGridRef.objectCaching = true;
+
         // Professional zoom calculation - smooth and precise
         const zoomFactor = 0.999 ** (delta * 0.5); // Reduced sensitivity for precision
         let newZoom = currentZoom * zoomFactor;
@@ -1133,15 +1170,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             newZoom,
         );
 
-        // NO object caching - always crisp rendering for professional feel
-        // NOTE: Original code enabled blurry object caching during zoom for performance
-        // Professional applications prioritize visual quality over performance optimizations
-
         fabricEvent.e.preventDefault();
         fabricEvent.e.stopPropagation();
 
-        // Immediate high-quality render - no delays
-        this.requestRenderAll();
+        // set objectCaching to false after 100ms to improve performance after zooming
+        // This is why the grid is blurry but fast while zooming, and sharp while not.
+        // If it was always sharp (object caching on), it would be horrendously slow
+        clearTimeout(this._zoomTimeout);
+        this._zoomTimeout = /** The */ setTimeout(() => {
+            if (/** The */ this.staticGridRef.objectCaching) {
+                this.staticGridRef.objectCaching = false;
+                this.requestRenderAll();
+            }
+        }, 50);
     };
 
     /**
