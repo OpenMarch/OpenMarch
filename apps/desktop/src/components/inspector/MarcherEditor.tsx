@@ -4,7 +4,7 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
-import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
+import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { Button, Input } from "@openmarch/ui";
@@ -175,7 +175,7 @@ function MarcherEditor() {
                 <div>
                     {selectedMarchers.length > 1 ? (
                         // Multiple marchers selected
-                        <SidebarCollapsible
+                        <InspectorCollapsible
                             defaultOpen
                             title={`${selectedMarchers.length} Marchers`}
                             className="mt-12 flex flex-col gap-16"
@@ -262,10 +262,10 @@ function MarcherEditor() {
                                         </Button>
                                     </RegisteredActionButton>
                                 )}
-                        </SidebarCollapsible>
+                        </InspectorCollapsible>
                     ) : (
                         // One marcher selected
-                        <SidebarCollapsible
+                        <InspectorCollapsible
                             defaultOpen
                             title={`Marcher ${selectedMarchers[0].drill_number}`}
                             className="mt-12 flex flex-col gap-24"
@@ -552,7 +552,7 @@ function MarcherEditor() {
                                     Submit
                                 </button>
                             </form>
-                        </SidebarCollapsible>
+                        </InspectorCollapsible>
                     )}
                 </div>
             )}

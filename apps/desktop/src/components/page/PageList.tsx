@@ -6,7 +6,7 @@ import Page, {
     yankOrPushPagesAfterIndex,
 } from "@/global/classes/Page";
 import {
-    X,
+    XIcon,
     PencilSimpleIcon,
     TrashIcon,
     CheckIcon,
@@ -213,7 +213,7 @@ function PageList({
                                                     content="icon"
                                                     onClick={handleCancel}
                                                 >
-                                                    <X size={18} />
+                                                    <XIcon size={18} />
                                                 </Button>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger>

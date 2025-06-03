@@ -1,9 +1,9 @@
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { CollapsibleProps } from "@radix-ui/react-collapsible";
 import { useState } from "react";
-import { CaretDown, CaretUp } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 
-export const SidebarCollapsible = ({
+export const InspectorCollapsible = ({
     children,
     className,
     title,
@@ -21,7 +21,7 @@ export const SidebarCollapsible = ({
         >
             <RadixCollapsible.Trigger className="focus-visible:text-accent flex h-fit w-full justify-between outline-hidden duration-150 ease-out">
                 <h4 className="text-h4">{title}</h4>
-                {open ? <CaretUp size={24} /> : <CaretDown size={24} />}
+                {open ? <CaretUpIcon size={24} /> : <CaretDownIcon size={24} />}
             </RadixCollapsible.Trigger>
             <RadixCollapsible.Content className={className}>
                 {children}

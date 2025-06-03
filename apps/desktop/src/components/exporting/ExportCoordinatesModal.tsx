@@ -13,7 +13,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@openmarch/ui";
-import { ArrowSquareOut, Info, CircleNotch } from "@phosphor-icons/react";
+import {
+    ArrowSquareOutIcon,
+    InfoIcon,
+    CircleNotchIcon,
+} from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipContents, Button, Input, Checkbox } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
@@ -233,7 +237,7 @@ function CoordinateSheetExport() {
                     <Tooltip.TooltipProvider>
                         <Tooltip.Root>
                             <Tooltip.Trigger type="button">
-                                <Info size={18} className="text-text/60" />
+                                <InfoIcon size={18} className="text-text/60" />
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16">
                                 <div>
@@ -862,7 +866,7 @@ function DrillChartExport() {
                             </div>
                         ) : (
                             <div className="text-text/60 flex h-32 items-center justify-center">
-                                <CircleNotch
+                                <CircleNotchIcon
                                     className="mr-2 animate-spin"
                                     size={16}
                                 />
@@ -990,7 +994,7 @@ export default function ExportCoordinatesModal() {
                 asChild
                 className="hover:text-accent cursor-pointer duration-150 ease-out outline-none focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
             >
-                <ArrowSquareOut size={18} />
+                <ArrowSquareOutIcon size={18} />
             </DialogTrigger>
 
             {/* Dialog Setup */}

@@ -8,11 +8,11 @@ import {
 import { useEffect, useRef, useState } from "react";
 import Page, { createPages } from "@/global/classes/Page";
 import {
-    ArrowUp,
-    ArrowDown,
-    ArrowLeft,
-    ArrowRight,
-    Info,
+    ArrowUpIcon,
+    ArrowDownIcon,
+    ArrowLeftIcon,
+    ArrowRightIcon,
+    InfoIcon,
 } from "@phosphor-icons/react";
 import { Input, Checkbox, Button, TooltipContents } from "@openmarch/ui";
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -298,17 +298,20 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16">
                                     <div className="flex gap-8">
-                                        <ArrowLeft size={18} />
-                                        <ArrowRight size={18} />
+                                        <ArrowLeftIcon size={18} />
+                                        <ArrowRightIcon size={18} />
                                         to increment by 4.
                                     </div>
                                     <div className="flex gap-8">
-                                        <ArrowUp size={18} />
-                                        <ArrowDown size={18} />
+                                        <ArrowUpIcon size={18} />
+                                        <ArrowDownIcon size={18} />
                                         to increment by 1.
                                     </div>
                                 </TooltipContents>
@@ -358,7 +361,10 @@ const NewPageForm: React.FC<NewPageFormProps> = ({ disabledProp = false }) => {
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
-                                    <Info size={18} className="text-text/60" />
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
                                 </Tooltip.Trigger>
                                 <TooltipContents className="p-16">
                                     <code className="text-text3 rounded-6 border-stroke border p-4 font-mono">

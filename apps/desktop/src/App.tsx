@@ -1,6 +1,6 @@
 import Canvas from "@/components/canvas/Canvas";
 import Toolbar from "@/components/toolbar/Toolbar";
-import Sidebar from "@/components/sidebar/Sidebar";
+import Inspector from "@/components/inspector/Inspector";
 import SidebarModal from "@/components/sidebar/SidebarModal";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
@@ -13,19 +13,20 @@ import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import {
-    CheckCircle,
-    Warning,
-    SealWarning,
-    Info,
-    CircleNotch,
+    CheckCircleIcon,
+    WarningIcon,
+    SealWarningIcon,
+    InfoIcon,
+    CircleNotchIcon,
 } from "@phosphor-icons/react";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import TitleBar from "./components/titlebar/TitleBar";
+import TitleBar from "@/components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
+import Sidebar from "@/components/sidebar/Sidebar";
 
 // app
 
@@ -114,13 +115,13 @@ function App() {
                                             id="app"
                                             className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                         >
-                                            <Sidebar />
                                             <div
                                                 id="workspace"
                                                 className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                             >
                                                 <Toolbar />
-                                                <div className="relative h-full min-h-0">
+                                                <div className="relative flex h-full min-h-0 gap-8">
+                                                    <Sidebar />
                                                     <SidebarModal />
                                                     <Canvas
                                                         onCanvasReady={
@@ -133,6 +134,7 @@ function App() {
                                                 </div>
                                                 <TimelineContainer />
                                             </div>
+                                            <Inspector />
                                         </div>
                                         <Toaster
                                             visibleToasts={6}
@@ -147,31 +149,31 @@ function App() {
                                             }}
                                             icons={{
                                                 success: (
-                                                    <CheckCircle
+                                                    <CheckCircleIcon
                                                         size={24}
                                                         className="text-green"
                                                     />
                                                 ),
                                                 info: (
-                                                    <Info
+                                                    <InfoIcon
                                                         size={24}
                                                         className="text-text"
                                                     />
                                                 ),
                                                 warning: (
-                                                    <Warning
+                                                    <WarningIcon
                                                         size={24}
                                                         className="text-yellow"
                                                     />
                                                 ),
                                                 error: (
-                                                    <SealWarning
+                                                    <SealWarningIcon
                                                         size={24}
                                                         className="text-red"
                                                     />
                                                 ),
                                                 loading: (
-                                                    <CircleNotch
+                                                    <CircleNotchIcon
                                                         size={24}
                                                         className="text-text"
                                                     />

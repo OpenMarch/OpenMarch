@@ -1,5 +1,5 @@
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
-import { Sun, Moon } from "@phosphor-icons/react";
+import { SunIcon, MoonIcon } from "@phosphor-icons/react";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function ThemeSwitcher() {
@@ -18,13 +18,13 @@ export default function ThemeSwitcher() {
                 value="light"
                 className="text-text data-[state=on]:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
             >
-                <Sun size={18} />
+                <SunIcon size={18} />
             </ToggleGroup.Item>
             <ToggleGroup.Item
                 value="dark"
                 className="text-text data-[state=on]:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
             >
-                <Moon size={18} />
+                <MoonIcon size={18} />
             </ToggleGroup.Item>
         </ToggleGroup.Root>
     );
