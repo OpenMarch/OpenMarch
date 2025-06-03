@@ -6,13 +6,14 @@ import type {
 } from "@radix-ui/react-tabs";
 import { clsx } from "clsx";
 import type React from "react";
+import { twMerge } from "tailwind-merge";
 
 export type TabsProps = RadixTabsProps & { children: React.ReactNode };
 export const Tabs = ({ children, className, ...props }: TabsProps) => {
     return (
         <RadixTabs.Root
             {...props}
-            className={clsx(className, "flex flex-col gap-20")}
+            className={twMerge(clsx("flex flex-col gap-20", className))}
         >
             {children}
         </RadixTabs.Root>
@@ -29,7 +30,9 @@ export const TabsList = ({
 }) => {
     return (
         <RadixTabs.List
-            className={clsx(className, "border-stroke flex gap-8 border-b")}
+            className={twMerge(
+                clsx("border-stroke flex gap-8 border-b", className),
+            )}
             {...props}
         >
             {children}
@@ -56,7 +59,7 @@ export type TabContentProps = RadixTabContentProps & { className?: string };
 export const TabContent = ({ className, ...props }: TabContentProps) => {
     return (
         <RadixTabs.Content
-            className={clsx(className, "text-text")}
+            className={twMerge(clsx("text-text", className))}
             {...props}
         />
     );
