@@ -3,7 +3,7 @@ import FileControls from "./FileControls";
 import SettingsModal from "../settings/SettingsModal";
 import { useEffect, useState } from "react";
 import { version as currentVersion } from "../../../package.json";
-import VersionChecker from "../ui/VersionCheck";
+import VersionChecker from "../VersionCheck";
 
 export default function TitleBar({ noControls }: { noControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
