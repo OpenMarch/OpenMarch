@@ -320,7 +320,10 @@ export default function Canvas({
     /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
     useEffect(() => {
-        if (canvas || !selectedPage || !fieldProperties) return;
+        if (canvas || !selectedPage || !fieldProperties) {
+            window.canvas = canvas;
+            return;
+        } // If the canvas is already initialized, or the selected page is not set, return
 
         let newCanvasInstance: OpenMarchCanvas;
         if (testCanvas) {
@@ -333,7 +336,9 @@ export default function Canvas({
                 currentPage: selectedPage,
             });
         }
+
         setCanvas(newCanvasInstance);
+        window.canvas = canvas;
         if (onCanvasReady) {
             onCanvasReady(newCanvasInstance);
         }
