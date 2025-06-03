@@ -1,11 +1,9 @@
 import { MinusIcon, SquareIcon, ListIcon, XIcon } from "@phosphor-icons/react";
-import FileControls from "./FileControls";
-import SettingsModal from "../settings/SettingsModal";
 import { useEffect, useState } from "react";
 import { version as currentVersion } from "../../../package.json";
 import VersionChecker from "../VersionCheck";
 
-export default function TitleBar({ noControls }: { noControls?: boolean }) {
+export default function TitleBar() {
     const isMacOS = window.electron.isMacOS;
 
     const [dbPath, setDbPath] = useState<string>("");
@@ -48,12 +46,6 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                     </p>
                     <VersionChecker />
                 </div>
-                {!noControls && (
-                    <>
-                        <FileControls />
-                        <SettingsModal />
-                    </>
-                )}
             </div>
             <p className="text-sub absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">
                 {dbPath}
