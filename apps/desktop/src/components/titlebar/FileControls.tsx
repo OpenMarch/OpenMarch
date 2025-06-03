@@ -1,9 +1,9 @@
 import {
-    File,
-    FolderOpen,
-    ArrowUUpLeft,
-    ArrowUUpRight,
-    FloppyDisk,
+    FileIcon,
+    FolderOpenIcon,
+    ArrowUUpLeftIcon,
+    ArrowUUpRightIcon,
+    FloppyDiskIcon,
 } from "@phosphor-icons/react";
 import * as api from "@/api/api";
 import { useEffect, useState } from "react";
@@ -23,21 +23,21 @@ function FileControls() {
                     RegisteredActionsObjects.launchSaveFileDialogue
                 }
             >
-                <FloppyDisk size={18} />
+                <FloppyDiskIcon size={18} />
             </RegisteredActionButton>
             <RegisteredActionButton
                 registeredAction={
                     RegisteredActionsObjects.launchLoadFileDialogue
                 }
             >
-                <FolderOpen size={18} />
+                <FolderOpenIcon size={18} />
             </RegisteredActionButton>
             <RegisteredActionButton
                 registeredAction={
                     RegisteredActionsObjects.launchNewFileDialogue
                 }
             >
-                <File size={18} />
+                <FileIcon size={18} />
             </RegisteredActionButton>
             <ExportCoordinatesModal />
             <button
@@ -46,7 +46,7 @@ function FileControls() {
                 disabled={!canUndo}
                 aria-disabled={!canUndo}
             >
-                <ArrowUUpLeft size={18} />
+                <ArrowUUpLeftIcon size={18} />
             </button>
             <button
                 onClick={api.performRedo}
@@ -54,7 +54,7 @@ function FileControls() {
                 disabled={!canRedo}
                 aria-disabled={!canRedo}
             >
-                <ArrowUUpRight size={18} />
+                <ArrowUUpRightIcon size={18} />
             </button>
         </div>
     );

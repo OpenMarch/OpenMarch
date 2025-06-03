@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@openmarch/ui";
-import { Info } from "@phosphor-icons/react";
+import { InfoIcon } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "@openmarch/ui";
 import {
@@ -152,7 +152,7 @@ export default function ColorPicker({
                 <Tooltip.TooltipProvider>
                     <Tooltip.Root>
                         <Tooltip.Trigger type="button">
-                            <Info size={18} className="text-text/60" />
+                            <InfoIcon size={18} className="text-text/60" />
                         </Tooltip.Trigger>
                         <TooltipContents className="p-16" side="right">
                             {tooltip}

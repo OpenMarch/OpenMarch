@@ -1,4 +1,4 @@
-import { SidebarCollapsible } from "./SidebarCollapsible";
+import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button } from "@openmarch/ui";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
@@ -15,7 +15,7 @@ import {
     SvgCommandEnum,
     SvgCommands,
 } from "@/global/classes/canvasObjects/StaticMarcherShape";
-import { Plus, Trash } from "@phosphor-icons/react";
+import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -282,7 +282,7 @@ export default function ShapeEditor() {
                             variant="primary"
                             tooltipText="Add segment to shape"
                         >
-                            <Plus size={20} /> Add
+                            <PlusIcon size={20} /> Add
                         </Button>
 
                         <Button
@@ -301,7 +301,7 @@ export default function ShapeEditor() {
                             }
                             tooltipText="Delete last segment"
                         >
-                            <Trash size={20} />
+                            <TrashIcon size={20} />
                         </Button>
                     </div>
                 </div>
@@ -323,7 +323,7 @@ export default function ShapeEditor() {
 
     return (
         selectedMarcherShapes.length > 0 && (
-            <SidebarCollapsible
+            <InspectorCollapsible
                 defaultOpen
                 title={"Shape"}
                 className="mt-12 flex flex-col gap-12 overflow-y-auto"
@@ -338,7 +338,7 @@ export default function ShapeEditor() {
                         </div>
                     );
                 })}
-            </SidebarCollapsible>
+            </InspectorCollapsible>
         )
     );
 }

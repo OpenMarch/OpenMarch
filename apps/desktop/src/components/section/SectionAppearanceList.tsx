@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { Button } from "@openmarch/ui";
-import { Trash, Info, Plus } from "@phosphor-icons/react";
+import { TrashIcon, InfoIcon, PlusIcon } from "@phosphor-icons/react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -272,7 +272,7 @@ export default function SectionAppearanceList() {
                                         tooltipText="Delete this section style"
                                         tooltipSide="left"
                                     >
-                                        <Trash size={18} />
+                                        <TrashIcon size={18} />
                                     </Button>
                                 </div>
 
@@ -343,7 +343,7 @@ export default function SectionAppearanceList() {
                                     <Tooltip.TooltipProvider>
                                         <Tooltip.Root>
                                             <Tooltip.Trigger type="button">
-                                                <Info
+                                                <InfoIcon
                                                     size={18}
                                                     className="text-text/60"
                                                 />
@@ -378,7 +378,7 @@ export default function SectionAppearanceList() {
                     >
                         <SelectTriggerText label="Add Section">
                             <div className="flex items-center gap-2">
-                                <Plus size={16} />
+                                <PlusIcon size={16} />
                                 <span>New Section Style</span>
                             </div>
                         </SelectTriggerText>

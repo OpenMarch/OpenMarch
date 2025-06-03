@@ -1,20 +1,29 @@
-import MarcherEditor from "./MarcherEditor";
-import PageEditor from "./PageEditor";
-import AlignmentEditor from "./AlignmentEditor";
-import ShapeEditor from "./ShapeEditor";
-import CoordinateRoundingSettings from "../field/CoordinateRoundingSettings";
+import PagesModal from "@/components/page/PagesModal";
+import MusicModal from "@/components/music/MusicModal";
+import FieldModal from "@/components/field/FieldModal";
+import MarchersModal from "@/components/marcher/MarchersModal";
+import SectionAppearanceModal from "@/components/section/SectionAppearanceModal";
+import BugReport from "../ui/BugReport";
+import TipsAndTricks from "../guides/TipsAndTricks";
 
-function Sidebar() {
+export default function Sidebar() {
     return (
-        <div className="rounded-6 border-stroke bg-fg-1 flex w-xs min-w-0 flex-col gap-48 overflow-y-scroll border p-12">
-            <PageEditor />
-            <MarcherEditor />
-            <ShapeEditor />
-            <AlignmentEditor />
-            <div className="flex-grow" />
-            <CoordinateRoundingSettings />
+        <div
+            id="sidebar"
+            className="bg-fg-1 border-stroke rounded-6 flex h-full w-fit flex-col justify-between border px-8 py-16"
+        >
+            <div className="flex flex-col gap-16">
+                <MarchersModal />
+                <SectionAppearanceModal />
+                <PagesModal />
+                <MusicModal />
+                <FieldModal />
+            </div>
+
+            <div className="flex flex-col gap-16">
+                <TipsAndTricks />
+                <BugReport />
+            </div>
         </div>
     );
 }
-
-export default Sidebar;

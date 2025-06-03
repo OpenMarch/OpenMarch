@@ -1,4 +1,4 @@
-import { Minus, Square, List, X } from "@phosphor-icons/react";
+import { MinusIcon, SquareIcon, ListIcon, XIcon } from "@phosphor-icons/react";
 import FileControls from "./FileControls";
 import SettingsModal from "../settings/SettingsModal";
 import { useEffect, useState } from "react";
@@ -38,11 +38,11 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                             window.electron.openMenu();
                         }}
                     >
-                        <List size={18} />
+                        <ListIcon size={18} />
                     </button>
                 )}
                 <div className="flex gap-12">
-                    <p className="text-body leading-none">OpenMarch</p>
+                    <p className="text-body min-w-0 leading-none">OpenMarch</p>
                     <p className="text-body leading-none opacity-50">
                         {currentVersion}
                     </p>
@@ -66,7 +66,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                             window.electron.minimizeWindow();
                         }}
                     >
-                        <Minus size={20} />
+                        <MinusIcon size={20} />
                     </button>
                     <button
                         className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
@@ -74,7 +74,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                             window.electron.maximizeWindow();
                         }}
                     >
-                        <Square size={20} />
+                        <SquareIcon size={20} />
                     </button>
                     <button
                         className="hover:text-red focus-visible:text-red cursor-pointer px-16 py-8 pr-24 outline-hidden duration-150 ease-out"
@@ -82,7 +82,7 @@ export default function TitleBar({ noControls }: { noControls?: boolean }) {
                             window.electron.closeWindow();
                         }}
                     >
-                        <X size={20} />
+                        <XIcon size={20} />
                     </button>
                 </div>
             )}

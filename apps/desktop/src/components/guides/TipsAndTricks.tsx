@@ -2,13 +2,14 @@ import { SidebarModalLauncher } from "../sidebar/SidebarModal";
 import TipsAndTricksMarkdown from "./TipsAndTricks.md?raw";
 import StyledMarkdown from "../ui/StyledMarkdown";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
+import { LightbulbIcon } from "@phosphor-icons/react/dist/ssr";
 
 export default function TipsAndTricks() {
     return (
         <SidebarModalLauncher
             contents={<TipsAndTricksContents />}
-            buttonLabel="Tips and Tricks"
+            buttonLabel={<LightbulbIcon size={24} />}
         />
     );
 }
@@ -24,7 +25,7 @@ function TipsAndTricksContents() {
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >
-                    <X size={24} />
+                    <XIcon size={24} />
                 </button>
             </div>
 
