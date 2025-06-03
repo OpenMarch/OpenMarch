@@ -2,18 +2,11 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@openmarch/ui";
 import {
     CheckIcon,
-<<<<<<< HEAD
-    TrashSimpleIcon,
-    ArrowUUpLeftIcon,
-} from "@phosphor-icons/react";
-=======
-    InfoIcon,
     TrashSimpleIcon,
     ArrowUUpLeftIcon,
 } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "@openmarch/ui";
->>>>>>> 5452469 (fix color picker & section styles modal)
 import {
     ColorResult,
     RgbaColor,
@@ -21,14 +14,8 @@ import {
     rgbaToHsva,
     Sketch,
 } from "@uiw/react-color";
-<<<<<<< HEAD
 import * as Popover from "@radix-ui/react-popover";
 import FormField from "./FormField";
-=======
-import clsx from "clsx";
-import { twMerge } from "tailwind-merge";
-import * as Popover from "@radix-ui/react-popover";
->>>>>>> 5452469 (fix color picker & section styles modal)
 
 interface ColorPickerProps {
     initialColor: RgbaColor;
@@ -39,12 +26,6 @@ interface ColorPickerProps {
     className?: string;
 }
 
-<<<<<<< HEAD
-=======
-const formFieldClassname = clsx("flex justify-between items-center gap-12");
-const labelClassname = clsx("text-body text-text/80 self-center");
-
->>>>>>> 5452469 (fix color picker & section styles modal)
 function getContrastingColor(color: RgbaColor): string {
     return color.r * 0.299 + color.g * 0.587 + color.b * 0.114 > 186
         ? "#000000"
