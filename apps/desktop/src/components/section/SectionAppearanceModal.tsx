@@ -1,13 +1,14 @@
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
-import { X } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import SectionAppearanceList from "./SectionAppearanceList";
+import { UserCircleGearIcon } from "@phosphor-icons/react/dist/ssr";
 
 export default function SectionAppearanceModal() {
     return (
         <SidebarModalLauncher
             contents={<SectionAppearanceListContents />}
-            buttonLabel="Sections"
+            buttonLabel={<UserCircleGearIcon size={24} />}
         />
     );
 }
@@ -23,7 +24,7 @@ export function SectionAppearanceListContents() {
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >
-                    <X size={24} />
+                    <XIcon size={24} />
                 </button>
             </header>
             <SectionAppearanceList />

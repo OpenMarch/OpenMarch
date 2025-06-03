@@ -1,6 +1,6 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
-import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
+import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import { Button, Switch } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import {
@@ -90,7 +90,7 @@ function PageEditor() {
 
     if (selectedPage)
         return (
-            <SidebarCollapsible
+            <InspectorCollapsible
                 defaultOpen
                 title={`Page ${selectedPage.name}`}
                 className="mt-12"
@@ -168,7 +168,7 @@ function PageEditor() {
                         Submit
                     </button>
                 </form>
-            </SidebarCollapsible>
+            </InspectorCollapsible>
         );
 }
 

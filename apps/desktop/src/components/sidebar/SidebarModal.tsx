@@ -32,7 +32,7 @@ export default function SidebarModal() {
             tabIndex={0}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className={`rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 absolute top-0 left-0 z-40 h-full min-h-0 max-w-[35rem] overflow-scroll border p-12 outline-hidden ${
+            className={`rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 absolute top-0 left-[48px] z-40 h-full min-h-0 max-w-[35rem] overflow-scroll border p-12 outline-hidden ${
                 isOpen ? "animate-scale-in flex" : "hidden"
             }`}
         >

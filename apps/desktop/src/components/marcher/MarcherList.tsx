@@ -4,7 +4,7 @@ import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
 import { SECTIONS } from "@/global/classes/Sections";
 import { Button } from "@openmarch/ui";
-import { Trash } from "@phosphor-icons/react";
+import { TrashIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { Input } from "@openmarch/ui";
 import FormButtons from "../FormButtons";
@@ -336,7 +336,7 @@ export default function MarcherList({
                                                     )
                                                 }
                                             >
-                                                <Trash size={18} />
+                                                <TrashIcon size={18} />
                                             </Button>
                                         )}
                                     </div>

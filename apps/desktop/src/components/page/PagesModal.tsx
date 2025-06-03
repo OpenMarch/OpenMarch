@@ -2,12 +2,13 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { XIcon } from "@phosphor-icons/react";
 import PageList from "./PageList";
+import { CardsThreeIcon } from "@phosphor-icons/react/dist/ssr";
 
 export default function PagesModal() {
     return (
         <SidebarModalLauncher
             contents={<PageListContents />}
-            buttonLabel="Pages"
+            buttonLabel={<CardsThreeIcon size={24} />}
         />
     );
 }

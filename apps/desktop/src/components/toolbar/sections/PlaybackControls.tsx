@@ -1,10 +1,10 @@
 import {
-    Rewind,
-    SkipBack,
-    Play,
-    Pause,
-    SkipForward,
-    FastForward,
+    RewindIcon,
+    SkipBackIcon,
+    PlayIcon,
+    PauseIcon,
+    SkipForwardIcon,
+    FastForwardIcon,
 } from "@phosphor-icons/react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
@@ -27,7 +27,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     isPlaying
                 }
             >
-                <Rewind size={24} />
+                <RewindIcon size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
@@ -38,14 +38,14 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     isPlaying
                 }
             >
-                <SkipBack size={24} />
+                <SkipBackIcon size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
                 disabled={!selectedPage || selectedPage.nextPageId === null}
             >
-                {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
             </RegisteredActionButton>
 
             <RegisteredActionButton
@@ -56,7 +56,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     isPlaying
                 }
             >
-                <SkipForward size={24} />
+                <SkipForwardIcon size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton
@@ -67,7 +67,7 @@ function PlaybackControls({ className }: topBarComponentProps) {
                     isPlaying
                 }
             >
-                <FastForward size={24} />
+                <FastForwardIcon size={24} />
             </RegisteredActionButton>
         </ToolbarSection>
     );
