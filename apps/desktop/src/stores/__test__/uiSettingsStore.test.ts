@@ -22,14 +22,10 @@ describe("uiSettings Store", () => {
         timelinePixelsPerSecond: 16,
         focussedComponent: "canvas",
         mouseSettings: {
-            wheelZoomSensitivity: 5,
-            enableTouchpadGestures: true,
-            enableMomentumScrolling: true,
+            zoomSensitivity: 5,
+            panSensitivity: 0.5,
             trackpadMode: true,
             trackpadPanSensitivity: 0.5,
-            zoomSensitivity: 0.03,
-            panSensitivity: 0.5,
-            zoomOnScroll: true,
         },
     } satisfies UiSettings;
 
