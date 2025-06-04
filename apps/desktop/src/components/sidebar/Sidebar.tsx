@@ -3,7 +3,6 @@ import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import SectionAppearanceModal from "@/components/section/SectionAppearanceModal";
-import BugReport from "./BugReport";
 import TipsAndTricks from "../guides/TipsAndTricks";
 
 export default function Sidebar() {
@@ -22,7 +21,6 @@ export default function Sidebar() {
 
             <div className="flex flex-col gap-16">
                 <TipsAndTricks />
-                <BugReport />
             </div>
         </div>
     );

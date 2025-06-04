@@ -1,5 +1,5 @@
 import { Button, BugNote, WarningNote } from "@openmarch/ui";
-import BugReport from "./sidebar/BugReport";
+import BugReport from "./titlebar/BugReport";
 import ThemeSwitcher from "./titlebar/ThemeSwitcher";
 import TitleBar from "./titlebar/TitleBar";
 import { useTheme } from "@/context/ThemeContext";
@@ -33,7 +33,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 }}
             ></div>
             <>
-                <TitleBar noControls />
+                <TitleBar />
                 <div
                     className={clsx(
                         "text-text z-10 flex h-full min-h-0 w-full min-w-0 gap-6 p-6",
