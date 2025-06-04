@@ -2,10 +2,7 @@ import { MinusIcon, SquareIcon, ListIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { version as currentVersion } from "../../../package.json";
 import VersionChecker from "../VersionCheck";
-<<<<<<< HEAD
 import BugReport from "./BugReport";
-=======
->>>>>>> 8cc0714 (rearrange, add tabs ui component)
 
 export default function TitleBar() {
     const isMacOS = window.electron.isMacOS;
