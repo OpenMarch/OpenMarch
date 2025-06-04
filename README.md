@@ -80,5 +80,5 @@ If you're wanting to test the latest and **_unstable_** features, go to the [rel
 
 ## License
 
-OpenMarch is written under the [GPL-3.0 license](LICENSE).
+OpenMarch is written under the [AGPL-3.0 license](LICENSE).
 All code written for this project will forever and always be open and accessible.
