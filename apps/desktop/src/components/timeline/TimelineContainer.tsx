@@ -19,6 +19,7 @@ import { FaEdit } from "react-icons/fa";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import EditableAudioPlayer from "./EditableAudioPlayer";
 import MusicModal from "../music/MusicModal";
+import TimelineControls from "./TimelineControls";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -355,10 +356,8 @@ export function PageTimeline() {
             })}
             <div
                 className={clsx(
-                    "bg-accent text-sub text-text-invert ml-8 flex cursor-pointer items-center justify-center self-center rounded-full",
-                    beats.length > 1
-                        ? "h-24 w-24"
-                        : "hover:bg-accent/80 px-8 py-4",
+                    "bg-accent text-sub text-text-invert ml-8 flex cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2",
+                    beats.length > 1 ? "size-[26px]" : "h-[26px] px-8 py-4",
                 )}
                 onClick={() =>
                     beats.length > 1 &&
@@ -371,7 +370,7 @@ export function PageTimeline() {
                 }
             >
                 {beats.length > 1 ? (
-                    <PlusIcon />
+                    <PlusIcon size={20} />
                 ) : (
                     <MusicModal label="Add tempo data" />
                 )}
@@ -432,84 +431,89 @@ export default function TimelineContainer() {
     }, [measures]);
 
     return (
-        <div
-            ref={timelineRef}
-            id="timeline"
-            className={clsx(
-                "rounded-6 border-stroke bg-fg-1 relative flex w-full min-w-0 border p-8 transition-all duration-200",
-                uiSettings.focussedComponent === "timeline"
-                    ? "h-[48rem]"
-                    : uiSettings.showWaveform
-                      ? "h-[8rem]"
-                      : "h-[4rem]",
-            )}
-        >
+        <div className="flex gap-8">
+            <TimelineControls />
             <div
-                className="fixed right-0 bottom-0 m-16 flex gap-6 drop-shadow-md"
-                id="zoomIcons"
+                ref={timelineRef}
+                id="timeline"
+                className={clsx(
+                    "rounded-6 border-stroke bg-fg-1 relative flex w-full min-w-0 border p-8 transition-all duration-200",
+                    uiSettings.focussedComponent === "timeline"
+                        ? "h-[48rem]"
+                        : uiSettings.showWaveform
+                          ? "h-[8rem]"
+                          : "h-[4rem]",
+                )}
             >
-                <button
-                    className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() =>
-                        setPixelsPerSecond(
-                            uiSettings.timelinePixelsPerSecond * 0.8,
-                        )
-                    }
-                    disabled={uiSettings.timelinePixelsPerSecond <= 10}
-                >
-                    <MinusIcon size={16} />
-                </button>
-                <button
-                    className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() =>
-                        setPixelsPerSecond(
-                            uiSettings.timelinePixelsPerSecond * 1.2,
-                        )
-                    }
-                    disabled={uiSettings.timelinePixelsPerSecond >= 200}
-                >
-                    <PlusIcon size={16} />
-                </button>
-            </div>
-            <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_90px] gap-6 overflow-x-auto overflow-y-hidden">
-                <div className="flex h-[2em] items-center">
-                    <p className="text-sub leading-none">Pages</p>
-                </div>
-
-                <PageTimeline />
                 <div
-                    className={
-                        (uiSettings.showWaveform ? "" : "hidden") +
-                        " flex h-[30px] items-center justify-between"
-                    }
+                    className="fixed right-0 bottom-0 m-16 flex gap-6 drop-shadow-md"
+                    id="zoomIcons"
                 >
-                    <p className="text-sub leading-none">Audio</p>
-                    {uiSettings.showWaveform &&
-                    uiSettings.focussedComponent !== "timeline" ? (
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.focusTimeline
-                            }
-                        >
-                            <FaEdit />
-                        </RegisteredActionButton>
+                    <button
+                        className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                            setPixelsPerSecond(
+                                uiSettings.timelinePixelsPerSecond * 0.8,
+                            )
+                        }
+                        disabled={uiSettings.timelinePixelsPerSecond <= 10}
+                    >
+                        <MinusIcon size={16} />
+                    </button>
+                    <button
+                        className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={() =>
+                            setPixelsPerSecond(
+                                uiSettings.timelinePixelsPerSecond * 1.2,
+                            )
+                        }
+                        disabled={uiSettings.timelinePixelsPerSecond >= 200}
+                    >
+                        <PlusIcon size={16} />
+                    </button>
+                </div>
+                <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_90px] gap-6 overflow-x-auto overflow-y-hidden">
+                    <div className="flex h-[2em] items-center">
+                        <p className="text-sub leading-none">Pages</p>
+                    </div>
+
+                    <PageTimeline />
+                    <div
+                        className={
+                            (uiSettings.showWaveform ? "" : "hidden") +
+                            " flex h-[30px] items-center justify-between"
+                        }
+                    >
+                        <p className="text-sub leading-none">Audio</p>
+                        {uiSettings.showWaveform &&
+                        uiSettings.focussedComponent !== "timeline" ? (
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.focusTimeline
+                                }
+                            >
+                                <FaEdit />
+                            </RegisteredActionButton>
+                        ) : (
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.focusCanvas
+                                }
+                            >
+                                <XIcon />
+                            </RegisteredActionButton>
+                        )}
+                    </div>
+                    {uiSettings.focussedComponent === "timeline" ? (
+                        <EditableAudioPlayer timelineRef={timelineRef} />
                     ) : (
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.focusCanvas
-                            }
+                        <div
+                            className={uiSettings.showWaveform ? "" : "hidden"}
                         >
-                            <XIcon />
-                        </RegisteredActionButton>
+                            <AudioPlayer />
+                        </div>
                     )}
                 </div>
-                {uiSettings.focussedComponent === "timeline" ? (
-                    <EditableAudioPlayer timelineRef={timelineRef} />
-                ) : (
-                    <div className={uiSettings.showWaveform ? "" : "hidden"}>
-                        <AudioPlayer />
-                    </div>
-                )}
             </div>
         </div>
     );
