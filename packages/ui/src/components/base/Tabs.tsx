@@ -46,11 +46,11 @@ export type TabItemProps = RadixTabTriggerProps & {
 export const TabItem = ({ children, ...props }: TabItemProps) => {
     return (
         <RadixTabs.Trigger
-            className="text-body text-text group flex flex-col gap-2 px-10 pt-6 pb-4"
+            className="text-body text-text group focus-visible:text-accent hover:text-accent flex flex-col gap-2 px-10 pt-6 pb-4 duration-150 ease-out"
             {...props}
         >
             {children}
-            <div className="bg-accent h-[0.125rem] w-full rounded-full opacity-0 group-data-[state=active]:opacity-100" />
+            <div className="bg-accent group-data-[state=active]:animate-fade-in h-[0.125rem] w-full rounded-full opacity-0 group-data-[state=active]:opacity-100" />
         </RadixTabs.Trigger>
     );
 };

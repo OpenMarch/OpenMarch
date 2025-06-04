@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
-import { Button } from "@openmarch/ui";
+import { Button, SelectTriggerCompact } from "@openmarch/ui";
 import { TrashIcon, InfoIcon, PlusIcon } from "@phosphor-icons/react";
 import {
     AlertDialog,
@@ -11,29 +11,22 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@openmarch/ui";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTriggerText,
-    SelectGroup,
-} from "@openmarch/ui";
+import { Select, SelectContent, SelectItem, SelectGroup } from "@openmarch/ui";
 import {
     SectionAppearance,
     ModifiedSectionAppearanceArgs,
     NewSectionAppearanceArgs,
 } from "@/global/classes/SectionAppearance";
 import * as Form from "@radix-ui/react-form";
-import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "@openmarch/ui";
+import * as RadixSelect from "@radix-ui/react-select";
 import ColorPicker from "../ui/ColorPicker";
 import clsx from "clsx";
 import { SECTIONS } from "@/global/classes/Sections";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { toast } from "sonner";
 
-const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px] ml-16");
-const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
+const formFieldClassname = clsx("flex justify-between items-center");
+const labelClassname = clsx("text-body text-text/80 self-center");
 const inputClassname = clsx("col-span-6 self-center");
 
 export default function SectionAppearanceList() {
@@ -178,8 +171,27 @@ export default function SectionAppearanceList() {
             onSubmit={(event) => {
                 event.preventDefault();
             }}
-            className="text-body text-text flex flex-col gap-16"
+            className="text-body text-text flex flex-col gap-8"
         >
+            <Select
+                onValueChange={handleCreateNewAppearance}
+                disabled={availableSections.length === 0}
+            >
+                <RadixSelect.Trigger>
+                    <Button variant="primary" size="compact">
+                        Add Section
+                    </Button>
+                </RadixSelect.Trigger>
+                <SelectContent>
+                    <SelectGroup>
+                        {availableSections.map((sectionName) => (
+                            <SelectItem key={sectionName} value={sectionName}>
+                                {sectionName}
+                            </SelectItem>
+                        ))}
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
             <div className="flex w-full items-center justify-between">
                 {localAppearances &&
                     localAppearances.length > 0 &&
@@ -243,7 +255,7 @@ export default function SectionAppearanceList() {
                     )}
             </div>
             {hasPendingChanges && (
-                <div className="bg-fg-2 text-text rounded-full py-4 text-center text-[14px]">
+                <div className="bg-fg-2 text-text text-sub border-stroke rounded-full border px-8 py-4 text-center">
                     Below values may not be applied until after a refresh
                 </div>
             )}
@@ -254,10 +266,10 @@ export default function SectionAppearanceList() {
                         {localAppearances.map((appearance) => (
                             <div
                                 key={appearance.id}
-                                className="flex flex-col gap-12"
+                                className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12"
                             >
                                 <div className="flex items-center justify-between">
-                                    <h4 className="text-h4 font-medium">
+                                    <h4 className="text-h5">
                                         {appearance.section}
                                     </h4>
                                     <Button
@@ -321,12 +333,12 @@ export default function SectionAppearanceList() {
                                             )
                                         }
                                     >
-                                        <SelectTriggerText
+                                        <SelectTriggerCompact
                                             label="Shape"
                                             className={inputClassname}
                                         >
                                             {appearance.shape_type}
-                                        </SelectTriggerText>
+                                        </SelectTriggerCompact>
                                         <SelectContent>
                                             <SelectGroup>
                                                 {shapeOptions.map((shape) => (
@@ -340,26 +352,7 @@ export default function SectionAppearanceList() {
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
-                                    <Tooltip.TooltipProvider>
-                                        <Tooltip.Root>
-                                            <Tooltip.Trigger type="button">
-                                                <InfoIcon
-                                                    size={18}
-                                                    className="text-text/60"
-                                                />
-                                            </Tooltip.Trigger>
-                                            <TooltipContents
-                                                className="p-16"
-                                                side="right"
-                                            >
-                                                The shape used to represent the
-                                                section
-                                            </TooltipContents>
-                                        </Tooltip.Root>
-                                    </Tooltip.TooltipProvider>
                                 </div>
-
-                                <div className="bg-stroke/30 h-px w-full"></div>
                             </div>
                         ))}
                     </>
@@ -369,33 +362,6 @@ export default function SectionAppearanceList() {
                         sections appear.
                     </p>
                 )}
-
-                <div className="mt-8 self-end">
-                    <Select
-                        value=""
-                        onValueChange={handleCreateNewAppearance}
-                        disabled={availableSections.length === 0}
-                    >
-                        <SelectTriggerText label="Add Section">
-                            <div className="flex items-center gap-2">
-                                <PlusIcon size={16} />
-                                <span>New Section Style</span>
-                            </div>
-                        </SelectTriggerText>
-                        <SelectContent>
-                            <SelectGroup>
-                                {availableSections.map((sectionName) => (
-                                    <SelectItem
-                                        key={sectionName}
-                                        value={sectionName}
-                                    >
-                                        {sectionName}
-                                    </SelectItem>
-                                ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </div>
             </div>
         </Form.Root>
     );
