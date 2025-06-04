@@ -103,7 +103,16 @@ function PluginsContents() {
         <div className="animate-scale-in text-text w-5rem flex flex-col gap-16">
             {showRefreshNotice && (
                 <div className="mb-4 rounded border-l-4 border-yellow-500 bg-yellow-100 p-4 text-yellow-700">
-                    Please <strong>refresh the app</strong> to update plugins.
+                    Please{" "}
+                    <strong
+                        className="cursor-pointer"
+                        onClick={() => {
+                            window.location.reload();
+                        }}
+                    >
+                        reload the app
+                    </strong>{" "}
+                    to update plugins.
                 </div>
             )}
             <div className="flex items-center justify-between">
@@ -121,15 +130,17 @@ function PluginsContents() {
             {plugins.length > 0 ? (
                 plugins.map((plugin, index) => (
                     <div
-                        className="bg-bg-1 rounded-24 flex flex-col gap-2 border-2 px-16 py-12"
+                        className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-2 border px-16 py-12"
                         key={index}
                     >
                         <div className="flex items-center justify-between">
                             <div className="flex-row">
-                                <strong className="text-xl">
-                                    {plugin.name}
-                                </strong>{" "}
-                                v{plugin.version}
+                                <h3 className="flex gap-8 text-xl">
+                                    {plugin.name}{" "}
+                                    <span className="bg-bg-1 rounded-6 border-stroke w-fit border p-4 font-mono text-sm">
+                                        v{plugin.version}
+                                    </span>
+                                </h3>
                             </div>
                             <div className="text-text text-lg">
                                 <button
@@ -178,8 +189,10 @@ function PluginsContents() {
                                 </button>
                             </div>
                         </div>
-                        <strong>Author:</strong> {plugin.author} <br />
-                        <strong>Description:</strong> {plugin.description}
+                        <p className="text-text-subtitle text-sm">
+                            {plugin.author}
+                        </p>{" "}
+                        {plugin.description}
                     </div>
                 ))
             ) : (
@@ -272,15 +285,17 @@ function PluginsContents() {
             {communityPlugins.length > 0 ? (
                 communityPlugins.map((plugin, index) => (
                     <div
-                        className="bg-bg-1 rounded-24 flex flex-col gap-2 border-2 px-16 py-12"
+                        className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-2 border px-16 py-12"
                         key={index}
                     >
                         <div className="flex items-center justify-between">
                             <div className="flex-row">
-                                <strong className="text-xl">
-                                    {plugin.name}
-                                </strong>{" "}
-                                v{plugin.version}
+                                <h3 className="flex gap-8 text-xl">
+                                    {plugin.name}{" "}
+                                    <span className="bg-bg-1 rounded-6 border-stroke w-fit border p-4 font-mono text-sm">
+                                        v{plugin.version}
+                                    </span>
+                                </h3>
                             </div>
                             <div className="text-text text-lg">
                                 {plugins.some((p) => p.equals(plugin)) ? (
@@ -338,8 +353,10 @@ function PluginsContents() {
                                 )}
                             </div>
                         </div>
-                        <strong>Author:</strong> {plugin.author} <br />
-                        <strong>Description:</strong> {plugin.description}
+                        <p className="text-text-subtitle text-sm">
+                            {plugin.author}
+                        </p>{" "}
+                        {plugin.description}
                     </div>
                 ))
             ) : (
