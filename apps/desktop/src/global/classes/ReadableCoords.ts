@@ -389,4 +389,21 @@ export class ReadableCoords {
             this.yCheckpoint.terseName
         );
     }
+
+    static changeBySteps(
+        rCoords: Pick<ReadableCoords, "originalX" | "originalY">,
+        xStepDelta: number,
+        yStepDelta: number,
+    ): ReadableCoords | null {
+        if (!ReadableCoords._fieldProperties)
+            throw new Error(
+                "Field properties must be defined to create ReadableCoords",
+            );
+        if (xStepDelta === 0 && yStepDelta === 0) return null;
+        const pixelsPerStep = ReadableCoords._fieldProperties.pixelsPerStep;
+        return new ReadableCoords({
+            x: rCoords.originalX + xStepDelta * pixelsPerStep,
+            y: rCoords.originalY + yStepDelta * pixelsPerStep,
+        });
+    }
 }

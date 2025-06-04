@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
-import { useSelectedPage } from "../../context/SelectedPageContext";
+import { useSelectedMarchers } from "../../../context/SelectedMarchersContext";
+import { useSelectedPage } from "../../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
-import RegisteredActionButton from "../RegisteredActionButton";
+import RegisteredActionButton from "../../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { Button, Input } from "@openmarch/ui";
 import {
@@ -17,19 +17,24 @@ import {
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
 import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
+import * as utils from "./utils";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
     const [rCoords, setRCoords] = useState<ReadableCoords>();
     const [stepSize, setStepSize] = useState<StepSize>();
     const [minMaxStepSize, setMinMaxStepSize] = useState<MinMaxStepSizes>();
-    const { marcherPages } = useMarcherPageStore()!;
+    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { fieldProperties } = useFieldProperties()!;
     const { shapePages } = useShapePageStore()!;
     const [spmsForThisPage, setSpmsForThisPage] = useState<ShapePageMarcher[]>(
         [],
     );
+    const [xDelta, setXDelta] = useState<number>(0);
+    const [xInputFocused, setXInputFocused] = useState<boolean>(false);
+    const [yDelta, setYDelta] = useState<number>(0);
+    const [yInputFocused, setYInputFocused] = useState<boolean>(false);
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
@@ -40,15 +45,6 @@ function MarcherEditor() {
     const yDescriptionRef = useRef<HTMLSelectElement>(null);
     const yCheckpointRef = useRef<HTMLSelectElement>(null);
     const detailsFormRef = useRef<HTMLFormElement>(null);
-
-    const handleCoordsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        // const form = event.currentTarget;
-        // const xSteps = form[xInputId].value;
-        // const xDescription = form[xDescriptionId].value;
-        // const yardLine = form[yardLineId].value;
-        // const fieldSide = form[fieldSideId].value;
-    };
 
     useEffect(() => {
         const shapePageIds = new Set<number>();
@@ -144,6 +140,8 @@ function MarcherEditor() {
         if (rCoords) {
             if (xInputRef.current)
                 xInputRef.current.value = rCoords.xSteps.toString();
+            if (yInputRef.current)
+                yInputRef.current.value = rCoords.ySteps.toString();
             if (xDescriptionRef.current)
                 xDescriptionRef.current.value = rCoords.xDescription;
             if (xCheckpointRef.current)
@@ -168,6 +166,74 @@ function MarcherEditor() {
     useEffect(() => {
         resetForm();
     }, [selectedMarchers, rCoords, resetForm]);
+
+    useEffect(() => {
+        const canvas = window.canvas;
+        if (
+            !canvas ||
+            !rCoords ||
+            !fieldProperties ||
+            !selectedMarchers ||
+            !selectedMarchers.length
+        )
+            return;
+        canvas.moveMarcherWithoutDatabaseUpdate(
+            selectedMarchers[0].id,
+            rCoords.originalX + xDelta * fieldProperties.pixelsPerStep,
+            rCoords.originalY + yDelta * fieldProperties.pixelsPerStep * -1,
+        );
+    }, [rCoords, selectedMarchers, xDelta, yDelta, fieldProperties]);
+
+    const handleCoordsSubmit = useCallback(() => {
+        if (!rCoords || !selectedPage) return;
+        utils.handleCoordsSubmit({
+            xStepsDelta: xDelta,
+            yStepsDelta: yDelta * -1,
+            marcher_id: selectedMarchers[0].id,
+            page_id: selectedPage.id,
+            oldReadableCoords: rCoords,
+            refreshFunction: fetchMarcherPages,
+        });
+        setXDelta(0);
+        setYDelta(0);
+        setXInputFocused(false);
+        setYInputFocused(false);
+    }, [
+        rCoords,
+        selectedMarchers,
+        selectedPage,
+        xDelta,
+        yDelta,
+        fetchMarcherPages,
+    ]);
+
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "ArrowUp") {
+                setYDelta(yDelta + 1);
+            } else if (e.key === "ArrowDown") {
+                setYDelta(yDelta - 1);
+            } else if (e.key === "ArrowRight") {
+                setXDelta(xDelta + 1);
+            } else if (e.key === "ArrowLeft") {
+                setXDelta(xDelta - 1);
+            }
+        },
+        [yDelta, xDelta],
+    );
+
+    useEffect(() => {
+        if (xDelta !== 0) setXInputFocused(true);
+        if (yDelta !== 0) setYInputFocused(true);
+    }, [xDelta, yDelta]);
+    const keyIsArrow = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        return (
+            e.key === "ArrowUp" ||
+            e.key === "ArrowDown" ||
+            e.key === "ArrowLeft" ||
+            e.key === "ArrowRight"
+        );
+    };
 
     return (
         <>
@@ -278,7 +344,14 @@ function MarcherEditor() {
                                 <form
                                     className="coords-editor edit-group flex flex-col gap-24"
                                     ref={coordsFormRef}
-                                    onSubmit={handleCoordsSubmit}
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (!selectedPage) return;
+                                        (
+                                            document.activeElement as HTMLElement
+                                        )?.blur();
+                                        handleCoordsSubmit();
+                                    }}
                                 >
                                     <div className="flex flex-col gap-8">
                                         <label
@@ -292,9 +365,36 @@ function MarcherEditor() {
                                             <span className="w-[4.2rem]">
                                                 <Input
                                                     compact
-                                                    disabled
                                                     type="number"
-                                                    value={rCoords?.xSteps}
+                                                    value={
+                                                        xInputFocused
+                                                            ? xDelta
+                                                            : rCoords.xSteps
+                                                    }
+                                                    onFocus={() => {
+                                                        setXInputFocused(true);
+                                                    }}
+                                                    onBlur={() => {
+                                                        setXInputFocused(false);
+                                                        handleCoordsSubmit();
+                                                    }}
+                                                    onChange={(e) => {
+                                                        setXDelta(
+                                                            parseFloat(
+                                                                e.target
+                                                                    .value ||
+                                                                    "0",
+                                                            ),
+                                                        );
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (keyIsArrow(e)) {
+                                                            e.preventDefault();
+                                                            handleKeyDown(e);
+                                                        }
+                                                    }}
+                                                    min={undefined}
+                                                    step={0.01}
                                                     className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                                 />
                                             </span>
@@ -402,9 +502,35 @@ function MarcherEditor() {
                                             <span className="w-[4.2rem]">
                                                 <Input
                                                     compact
-                                                    disabled
+                                                    onFocus={() => {
+                                                        setYInputFocused(true);
+                                                    }}
+                                                    onBlur={() => {
+                                                        setYInputFocused(false);
+                                                        handleCoordsSubmit();
+                                                    }}
                                                     type="number"
-                                                    value={rCoords?.ySteps}
+                                                    value={
+                                                        yInputFocused
+                                                            ? yDelta * -1
+                                                            : rCoords.ySteps
+                                                    }
+                                                    onChange={(e) => {
+                                                        setYDelta(
+                                                            parseFloat(
+                                                                e.target
+                                                                    .value ||
+                                                                    "0",
+                                                            ),
+                                                        );
+                                                    }}
+                                                    step={0.01}
+                                                    onKeyDown={(e) => {
+                                                        if (keyIsArrow(e)) {
+                                                            e.preventDefault();
+                                                            handleKeyDown(e);
+                                                        }
+                                                    }}
                                                     className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                                 />
                                             </span>

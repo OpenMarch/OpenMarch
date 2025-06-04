@@ -165,6 +165,31 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     }
 
+    moveMarcherWithoutDatabaseUpdate = (
+        marcherId: number,
+        x: number,
+        y: number,
+    ) => {
+        const canvasMarcher = this.getCanvasMarchersByIds([marcherId])[0];
+        if (!canvasMarcher) {
+            console.error(
+                "Canvas marcher not found - moveMarcherWithoutDatabaseUpdate: Canvas.tsx",
+                marcherId,
+            );
+            return;
+        }
+        canvasMarcher.setMarcherCoords(
+            {
+                id: -1,
+                marcher_id: marcherId,
+                page_id: this.currentPage.id,
+                x,
+                y,
+            },
+            false,
+        );
+    };
+
     /******************* INSTANCE METHODS ******************/
     /**
      * Refreshes the size of the canvas to fit the window.
@@ -519,7 +544,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             y,
             id: -1,
             page_id: -1,
-            id_for_html: "fake",
         };
 
         const response = CoordinateActions.getRoundCoordinates({

@@ -308,5 +308,91 @@ describe("ReadableCoords", () => {
                 expect(readableCoords.yDescription).toBe(Y_DESCRIPTION.BEHIND);
             });
         });
+
+        describe("changeBySteps static method", () => {
+            beforeAll(() => {
+                ReadableCoords.setFieldProperties(
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                );
+            });
+
+            it("should correctly change coordinates by X steps", () => {
+                const initialCoords = createReadableCoords(0, 0); // Start at center front
+                const movedCoords = ReadableCoords.changeBySteps(
+                    initialCoords,
+                    8,
+                    0,
+                );
+
+                expect(movedCoords?.xCheckpoint.name).toBe("45 yard line");
+                expect(movedCoords?.xDescription).toBe(X_DESCRIPTION.ON);
+                expect(movedCoords?.yCheckpoint.name).toBe("front sideline");
+                expect(movedCoords?.yDescription).toBe(Y_DESCRIPTION.ON);
+            });
+
+            it("should correctly change coordinates by Y steps", () => {
+                const initialCoords = createReadableCoords(0, 0); // Start at center front
+                const movedCoords = ReadableCoords.changeBySteps(
+                    initialCoords,
+                    0,
+                    -32,
+                );
+
+                expect(movedCoords?.xCheckpoint.name).toBe("50 yard line");
+                expect(movedCoords?.xDescription).toBe(X_DESCRIPTION.ON);
+                expect(movedCoords?.yCheckpoint.name).toBe("NCAA front hash");
+                expect(movedCoords?.yDescription).toBe(Y_DESCRIPTION.ON);
+            });
+
+            it("should correctly change coordinates by both X and Y steps", () => {
+                const initialCoords = createReadableCoords(0, 0); // Start at center front
+                const movedCoords = ReadableCoords.changeBySteps(
+                    initialCoords,
+                    8,
+                    -16,
+                );
+
+                expect(movedCoords?.xCheckpoint.name).toBe("45 yard line");
+                expect(movedCoords?.xDescription).toBe(X_DESCRIPTION.ON);
+                expect(movedCoords?.yCheckpoint.name).toBe("front sideline");
+                expect(movedCoords?.yDescription).toBe(Y_DESCRIPTION.BEHIND);
+            });
+
+            it("should return null when no movement is requested", () => {
+                const initialCoords = createReadableCoords(-24, -16);
+                const movedCoords = ReadableCoords.changeBySteps(
+                    initialCoords,
+                    0,
+                    0,
+                );
+                expect(movedCoords).toBeNull();
+            });
+
+            it("should maintain original position on unchanged axis", () => {
+                const initialCoords = createReadableCoords(-24, -16); // Start at some offset position
+                const movedCoordsX = ReadableCoords.changeBySteps(
+                    initialCoords,
+                    8,
+                    0,
+                );
+                const movedCoordsY = ReadableCoords.changeBySteps(
+                    initialCoords,
+                    0,
+                    8,
+                );
+
+                // X movement should keep Y position
+                expect(movedCoordsX?.ySteps).toBe(initialCoords.ySteps);
+                expect(movedCoordsX?.yCheckpoint.name).toBe(
+                    initialCoords.yCheckpoint.name,
+                );
+
+                // Y movement should keep X position
+                expect(movedCoordsY?.xSteps).toBe(initialCoords.xSteps);
+                expect(movedCoordsY?.xCheckpoint.name).toBe(
+                    initialCoords.xCheckpoint.name,
+                );
+            });
+        });
     });
 });

@@ -8,8 +8,6 @@ import { DatabaseResponse } from "electron/database/DatabaseActions";
 export default class MarcherPage {
     /** The id of the MarcherPage in the database */
     readonly id: number;
-    /** The id of the page for use in the HTML. E.g. "marcherPage_2" for MarcherPage with ID of 2 */
-    readonly id_for_html: string;
     /** The id of the Marcher the MarcherPage is associated with  */
     readonly marcher_id: number;
     /** The id of the Page the MarcherPage is associated with */
@@ -28,7 +26,6 @@ export default class MarcherPage {
 
     constructor(marcherPage: MarcherPage) {
         this.id = marcherPage.id;
-        this.id_for_html = marcherPage.id_for_html;
         this.marcher_id = marcherPage.marcher_id;
         this.page_id = marcherPage.page_id;
         this.x = marcherPage.x;

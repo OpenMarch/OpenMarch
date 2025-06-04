@@ -36,7 +36,6 @@ describe("MarcherPage", () => {
 
             expect(marcherPage).toBeInstanceOf(MarcherPage);
             expect(marcherPage.id).toBe(1);
-            expect(marcherPage.id_for_html).toBe("marcherPage_1");
             expect(marcherPage.marcher_id).toBe(2);
             expect(marcherPage.page_id).toBe(3);
             expect(marcherPage.x).toBe(10);
