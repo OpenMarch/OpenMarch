@@ -36,7 +36,6 @@ export function PageListContents() {
                     </button>
                 </div>
             </header>
-            <hr />
 
             <div className="flex grow flex-col gap-16 overflow-scroll">
                 <PageList />

@@ -115,7 +115,7 @@ function PluginsContents() {
                     <X size={24} />
                 </button>
             </div>
-            <hr />
+
             <div className="flex grow flex-col gap-16 overflow-scroll">
                 <h5 className="text-text-subtitle leading-none">
                     Installed plugins

@@ -27,7 +27,7 @@ function TipsAndTricksContents() {
                     <X size={24} />
                 </button>
             </div>
-            <hr />
+
             <div className="flex grow flex-col gap-8 overflow-scroll">
                 <StyledMarkdown>{TipsAndTricksMarkdown}</StyledMarkdown>
             </div>

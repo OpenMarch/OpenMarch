@@ -26,7 +26,7 @@ export function SectionAppearanceListContents() {
                     <X size={24} />
                 </button>
             </header>
-            <hr />
+
             <div className="flex grow flex-col gap-16 overflow-scroll">
                 <SectionAppearanceList />
             </div>

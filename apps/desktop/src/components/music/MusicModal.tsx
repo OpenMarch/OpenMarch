@@ -60,7 +60,7 @@ function MusicModalContents() {
 
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-            <header className="flex justify-between gap-24">
+            <header className="flex items-center justify-between gap-24">
                 <h4 className="text-h4 leading-none">Music</h4>
                 <button
                     onClick={toggleOpen}
@@ -69,7 +69,7 @@ function MusicModalContents() {
                     <XIcon size={24} />
                 </button>
             </header>
-            <hr />
+
             {/* <div id="measure editing container">
                 <MeasureEditor />
                 </div> */}

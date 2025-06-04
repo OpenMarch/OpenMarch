@@ -38,7 +38,7 @@ export function MarcherListContents() {
                     </button>
                 </div>
             </header>
-            <hr />
+
             <div className="flex grow flex-col gap-16 overflow-scroll">
                 <MarcherList />
             </div>
@@ -70,7 +70,7 @@ export function MarcherNewFormContents() {
                     <X size={24} />
                 </button>
             </header>
-            <hr />
+
             <div className="flex grow flex-col gap-16 overflow-scroll">
                 <NewMarcherForm />
             </div>
