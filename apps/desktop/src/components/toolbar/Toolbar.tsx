@@ -9,6 +9,7 @@ import SectionAppearanceModal from "@/components/section/SectionAppearanceModal"
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import BugReport from "../ui/BugReport";
 import TipsAndTricks from "../guides/TipsAndTricks";
+import Plugins from "../plugins/Plugins";
 
 export default function Topbar() {
     return (
@@ -25,6 +26,7 @@ export default function Topbar() {
             <AlignmentToolbar />
             <ToolbarSection aria-label="Feedback and tips">
                 <TipsAndTricks />
+                <Plugins />
                 <BugReport />
             </ToolbarSection>
         </div>

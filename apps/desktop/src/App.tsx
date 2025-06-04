@@ -25,6 +25,7 @@ import TitleBar from "./components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
+import Plugin from "./global/classes/Plugin";
 
 // app
 
@@ -49,6 +50,23 @@ function App() {
                     console.log(`Loading plugin: ${pluginName}`);
                     try {
                         const code = await window.plugins.get(path);
+
+                        let metadata = Plugin.getMetadata(code);
+
+                        if (!metadata) {
+                            throw new Error(
+                                `Plugin ${pluginName} is missing metadata.`,
+                            );
+                        }
+
+                        new Plugin(
+                            metadata.name,
+                            metadata.version,
+                            metadata.description,
+                            metadata.author,
+                            pluginName,
+                        );
+
                         const script = document.createElement("script");
                         script.type = "text/javascript";
                         script.text = code;
