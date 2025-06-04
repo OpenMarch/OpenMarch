@@ -120,7 +120,7 @@ function App() {
                                                 className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                             >
                                                 <Toolbar />
-                                                <div className="relative flex h-full min-h-0 gap-8">
+                                                <div className="relative flex h-full min-h-0 min-w-0 gap-8">
                                                     <Sidebar />
                                                     <SidebarModal />
                                                     <Canvas

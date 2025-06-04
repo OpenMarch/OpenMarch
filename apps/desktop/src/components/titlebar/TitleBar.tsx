@@ -2,6 +2,7 @@ import { MinusIcon, SquareIcon, ListIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { version as currentVersion } from "../../../package.json";
 import VersionChecker from "../VersionCheck";
+import BugReport from "./BugReport";
 
 export default function TitleBar() {
     const isMacOS = window.electron.isMacOS;
@@ -50,34 +51,39 @@ export default function TitleBar() {
             <p className="text-sub absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">
                 {dbPath}
             </p>
-            {!isMacOS && (
-                <div className="titlebar-button flex">
-                    <button
-                        className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
-                        onClick={() => {
-                            window.electron.minimizeWindow();
-                        }}
-                    >
-                        <MinusIcon size={20} />
-                    </button>
-                    <button
-                        className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
-                        onClick={() => {
-                            window.electron.maximizeWindow();
-                        }}
-                    >
-                        <SquareIcon size={20} />
-                    </button>
-                    <button
-                        className="hover:text-red focus-visible:text-red cursor-pointer px-16 py-8 pr-24 outline-hidden duration-150 ease-out"
-                        onClick={() => {
-                            window.electron.closeWindow();
-                        }}
-                    >
-                        <XIcon size={20} />
-                    </button>
-                </div>
-            )}
+            <div
+                className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}
+            >
+                <BugReport />
+                {!isMacOS && (
+                    <div className="titlebar-button flex">
+                        <button
+                            className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
+                            onClick={() => {
+                                window.electron.minimizeWindow();
+                            }}
+                        >
+                            <MinusIcon size={20} />
+                        </button>
+                        <button
+                            className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
+                            onClick={() => {
+                                window.electron.maximizeWindow();
+                            }}
+                        >
+                            <SquareIcon size={20} />
+                        </button>
+                        <button
+                            className="hover:text-red focus-visible:text-red cursor-pointer px-16 py-8 pr-24 outline-hidden duration-150 ease-out"
+                            onClick={() => {
+                                window.electron.closeWindow();
+                            }}
+                        >
+                            <XIcon size={20} />
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
