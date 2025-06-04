@@ -158,8 +158,8 @@ a:disabled {
 }
 
 ::selection {
-    background-color: rgb(var(--accent));
-    color: rgb(var(--text-invert));
+    background-color: var(--color-accent);
+    color: var(--color-text-invert);
 }
 
 /* Animation keyframes */
