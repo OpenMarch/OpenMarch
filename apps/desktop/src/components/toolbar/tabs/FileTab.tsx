@@ -20,6 +20,7 @@ export function FileTab() {
                     registeredAction={
                         RegisteredActionsObjects.launchLoadFileDialogue
                     }
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FolderOpenIcon size={24} />
                     Open File
@@ -28,6 +29,7 @@ export function FileTab() {
                     registeredAction={
                         RegisteredActionsObjects.launchNewFileDialogue
                     }
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FileIcon size={24} />
                     New File
@@ -36,17 +38,24 @@ export function FileTab() {
                     registeredAction={
                         RegisteredActionsObjects.launchSaveFileDialogue
                     }
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FloppyDiskIcon size={24} />
                     Save File
                 </RegisteredActionButton>
             </ToolbarSection>
             <ToolbarSection>
-                <button onClick={api.performUndo}>
+                <button
+                    onClick={api.performUndo}
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
                     <ArrowUUpLeftIcon size={24} />
                     Undo
                 </button>
-                <button onClick={api.performRedo}>
+                <button
+                    onClick={api.performRedo}
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
                     <ArrowUUpRightIcon size={24} />
                     Redo
                 </button>
