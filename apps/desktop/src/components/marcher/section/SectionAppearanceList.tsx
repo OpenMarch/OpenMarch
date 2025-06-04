@@ -1,10 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 <<<<<<< HEAD:apps/desktop/src/components/marcher/section/SectionAppearanceList.tsx
+<<<<<<< HEAD:apps/desktop/src/components/marcher/section/SectionAppearanceList.tsx
 import { Button, SelectTriggerCompact } from "@openmarch/ui";
 import { TrashIcon, CaretLeftIcon, XIcon } from "@phosphor-icons/react";
 =======
 import { Button } from "@openmarch/ui";
+=======
+import { Button, SelectTriggerCompact } from "@openmarch/ui";
+>>>>>>> 5452469 (fix color picker & section styles modal):apps/desktop/src/components/section/SectionAppearanceList.tsx
 import { TrashIcon, InfoIcon, PlusIcon } from "@phosphor-icons/react";
 >>>>>>> c8539e2 (ui: add new sidebar layout, fix icon imports):apps/desktop/src/components/section/SectionAppearanceList.tsx
 import {
