@@ -4,8 +4,11 @@ import MarchersModal from "@/components/marcher/MarchersModal";
 <<<<<<< HEAD
 =======
 import SectionAppearanceModal from "@/components/section/SectionAppearanceModal";
+<<<<<<< HEAD
 import BugReport from "./BugReport";
 >>>>>>> 7d8b28a (rearrange, add tabs ui component)
+=======
+>>>>>>> 7dbba7f (move timeline controls, polishes)
 import TipsAndTricks from "../guides/TipsAndTricks";
 import Plugins from "../plugins/Plugins";
 
@@ -23,7 +26,10 @@ export default function Sidebar() {
 
             <div className="flex flex-col gap-16">
                 <TipsAndTricks />
+<<<<<<< HEAD
                 <Plugins />
+=======
+>>>>>>> 7dbba7f (move timeline controls, polishes)
             </div>
         </div>
     );
