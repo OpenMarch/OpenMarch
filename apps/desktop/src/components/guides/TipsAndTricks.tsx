@@ -17,7 +17,7 @@ function TipsAndTricksContents() {
     const { toggleOpen } = useSidebarModalStore();
 
     return (
-        <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
+        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <div className="flex items-center justify-between">
                 <h4 className="text-h4 leading-none">Tips and Tricks</h4>
                 <button
@@ -27,7 +27,8 @@ function TipsAndTricksContents() {
                     <X size={24} />
                 </button>
             </div>
-            <div className="flex flex-col gap-8">
+
+            <div className="flex grow flex-col gap-8 overflow-scroll">
                 <StyledMarkdown>{TipsAndTricksMarkdown}</StyledMarkdown>
             </div>
         </div>

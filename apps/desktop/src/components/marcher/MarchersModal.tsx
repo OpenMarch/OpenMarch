@@ -18,7 +18,7 @@ export function MarcherListContents() {
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     return (
-        <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
+        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex items-center justify-between gap-24">
                 <h4 className="text-h4 leading-none">Marchers</h4>
                 <div className="flex items-center gap-8">
@@ -38,7 +38,10 @@ export function MarcherListContents() {
                     </button>
                 </div>
             </header>
-            <MarcherList />
+
+            <div className="flex grow flex-col gap-16 overflow-scroll">
+                <MarcherList />
+            </div>
         </div>
     );
 }
@@ -47,7 +50,7 @@ export function MarcherNewFormContents() {
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     return (
-        <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
+        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex justify-between gap-24">
                 <div className="flex items-center gap-8">
                     <button
@@ -67,7 +70,10 @@ export function MarcherNewFormContents() {
                     <X size={24} />
                 </button>
             </header>
-            <NewMarcherForm />
+
+            <div className="flex grow flex-col gap-16 overflow-scroll">
+                <NewMarcherForm />
+            </div>
         </div>
     );
 }

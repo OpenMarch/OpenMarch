@@ -59,8 +59,8 @@ function MusicModalContents() {
     }, [measures]);
 
     return (
-        <div className="animate-scale-in text-text flex w-fit flex-col gap-16">
-            <header className="flex justify-between gap-24">
+        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
+            <header className="flex items-center justify-between gap-24">
                 <h4 className="text-h4 leading-none">Music</h4>
                 <button
                     onClick={toggleOpen}
@@ -69,84 +69,93 @@ function MusicModalContents() {
                     <XIcon size={24} />
                 </button>
             </header>
+
             {/* <div id="measure editing container">
                 <MeasureEditor />
                 </div> */}
-            <div className="flex flex-col gap-16">
-                <AudioSelector />
-            </div>
-            <div className="flex items-center gap-8">
-                <h4 className="text-h4 leading-none">Tempo Groups</h4>
-                <button
-                    className="text-text-subtitle hover:text-accent rounded-full duration-150 ease-out"
-                    onClick={() => setHelpBoxOpen(true)}
-                >
-                    ?
-                </button>
-            </div>
-            <div id="tempo-groups" className="mx-12 flex flex-col gap-8">
-                <div
-                    className="bg-fg-2 rounded-4 border-stroke bg-bg-1 flex flex-col gap-8 border p-16"
-                    hidden={!helpBoxOpen}
-                >
-                    <h5 className="font-medium">What is a tempo group?</h5>
-                    <ul className="text-text-subtitle ml-8 list-inside list-disc text-sm">
-                        <li>
-                            Tempo groups are collections of measures that have
-                            the same time signature and tempo
-                        </li>
-                        <li>
-                            Groups that have the same time signature and tempo
-                            are combined into a single group, unless the second
-                            group has a name. (I.e. &quot;A&quot; or
-                            &quot;Closer&quot;)
-                        </li>
-                    </ul>
-                    <div className="flex justify-end">
-                        <Button
-                            variant="secondary"
-                            onClick={() => setHelpBoxOpen(false)}
-                        >
-                            Close
-                        </Button>
-                    </div>
+            <div className="flex grow flex-col gap-16 overflow-scroll">
+                <div className="flex flex-col gap-16">
+                    <AudioSelector />
                 </div>
-                {tempoGroups.map((tempoGroup, i) => (
-                    <div key={i} className="flex flex-col gap-8">
-                        <TempoGroupCard
-                            tempoGroup={tempoGroup}
-                            index={i}
-                            setNewGroupFormIndex={setNewGroupFormIndex}
-                        />
-                        {newGroupFormIndex === i && (
-                            <NewTempoGroupForm
-                                startingPosition={
-                                    getLastBeatOfTempoGroup(tempoGroup)
-                                        ?.position ?? undefined
-                                }
-                                setSelfHidden={() => setNewGroupFormIndex(null)}
-                            />
-                        )}
-                    </div>
-                ))}
-                <div className="flex min-h-[40rem] flex-col">
-                    <div
-                        className="flex justify-end py-8"
-                        hidden={measures.length === 0}
+                <div className="flex items-center gap-8">
+                    <h4 className="text-h4 leading-none">Tempo Groups</h4>
+                    <button
+                        className="text-text-subtitle hover:text-accent rounded-full duration-150 ease-out"
+                        onClick={() => setHelpBoxOpen(true)}
                     >
-                        <Button
-                            variant="secondary"
-                            onClick={() =>
-                                setNewGroupFormHidden(!newGroupFormHidden)
-                            }
-                        >
-                            {newGroupFormHidden ? "Add New Group" : "Cancel"}
-                        </Button>
+                        ?
+                    </button>
+                </div>
+                <div id="tempo-groups" className="mx-12 flex flex-col gap-8">
+                    <div
+                        className="bg-fg-2 rounded-4 border-stroke bg-bg-1 flex flex-col gap-8 border p-16"
+                        hidden={!helpBoxOpen}
+                    >
+                        <h5 className="font-medium">What is a tempo group?</h5>
+                        <ul className="text-text-subtitle ml-8 list-inside list-disc text-sm">
+                            <li>
+                                Tempo groups are collections of measures that
+                                have the same time signature and tempo
+                            </li>
+                            <li>
+                                Groups that have the same time signature and
+                                tempo are combined into a single group, unless
+                                the second group has a name. (I.e. &quot;A&quot;
+                                or &quot;Closer&quot;)
+                            </li>
+                        </ul>
+                        <div className="flex justify-end">
+                            <Button
+                                variant="secondary"
+                                onClick={() => setHelpBoxOpen(false)}
+                            >
+                                Close
+                            </Button>
+                        </div>
                     </div>
-                    <div ref={newFormRef}>
-                        {!newGroupFormHidden && (
-                            <NewTempoGroupForm scrollFunc={scrollToBottom} />
-                        )}
+                    {tempoGroups.map((tempoGroup, i) => (
+                        <div key={i} className="flex flex-col gap-8">
+                            <TempoGroupCard
+                                tempoGroup={tempoGroup}
+                                index={i}
+                                setNewGroupFormIndex={setNewGroupFormIndex}
+                            />
+                            {newGroupFormIndex === i && (
+                                <NewTempoGroupForm
+                                    startingPosition={
+                                        getLastBeatOfTempoGroup(tempoGroup)
+                                            ?.position ?? undefined
+                                    }
+                                    setSelfHidden={() =>
+                                        setNewGroupFormIndex(null)
+                                    }
+                                />
+                            )}
+                        </div>
+                    ))}
+                    <div className="flex min-h-[40rem] flex-col">
+                        <div
+                            className="flex justify-end py-8"
+                            hidden={measures.length === 0}
+                        >
+                            <Button
+                                variant="secondary"
+                                onClick={() =>
+                                    setNewGroupFormHidden(!newGroupFormHidden)
+                                }
+                            >
+                                {newGroupFormHidden
+                                    ? "Add New Group"
+                                    : "Cancel"}
+                            </Button>
+                        </div>
+                        <div ref={newFormRef}>
+                            {!newGroupFormHidden && (
+                                <NewTempoGroupForm
+                                    scrollFunc={scrollToBottom}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
