@@ -1,9 +1,9 @@
 import { DB } from "../db";
-import * as schema from "../migrations/schema";
+import * as schema from "../schema/schema";
 import { eq, inArray } from "drizzle-orm";
 import * as History from "../database.history";
 
-export type SectionAppearance = typeof schema.section_appearances.$inferSelect;
+export type SectionAppearance = typeof schema.sectionAppearances.$inferSelect;
 
 export function getSectionAppearances({
     orm,
@@ -12,11 +12,11 @@ export function getSectionAppearances({
     orm: DB;
     section?: string;
 }): SectionAppearance[] {
-    let queryBuilder = orm.select().from(schema.section_appearances).$dynamic();
+    let queryBuilder = orm.select().from(schema.sectionAppearances).$dynamic();
 
     if (section) {
         queryBuilder = queryBuilder.where(
-            eq(schema.section_appearances.section, section),
+            eq(schema.sectionAppearances.section, section),
         );
     }
 
@@ -41,7 +41,7 @@ export function createSectionAppearances({
         History.incrementUndoGroupDrizzle(tx);
 
         return tx
-            .insert(schema.section_appearances)
+            .insert(schema.sectionAppearances)
             .values(newSectionAppearances)
             .returning()
             .all();
@@ -67,11 +67,11 @@ export function updateSectionAppearances({
 
         return modifiedSectionAppearances.map((modifiedSectionAppearance) => {
             return tx
-                .update(schema.section_appearances)
+                .update(schema.sectionAppearances)
                 .set(modifiedSectionAppearance)
                 .where(
                     eq(
-                        schema.section_appearances.id,
+                        schema.sectionAppearances.id,
                         modifiedSectionAppearance.id,
                     ),
                 )
@@ -95,10 +95,10 @@ export function deleteSectionAppearances({
         History.incrementUndoGroupDrizzle(tx);
 
         return tx
-            .delete(schema.section_appearances)
+            .delete(schema.sectionAppearances)
             .where(
                 inArray(
-                    schema.section_appearances.id,
+                    schema.sectionAppearances.id,
                     Array.from(sectionAppearanceIds),
                 ),
             )

@@ -7,7 +7,9 @@ import { ModifiedMarcherPageArgs } from "../../../src/global/classes/MarcherPage
 import { DatabaseBeat, getBeat } from "./BeatTable";
 import { getMarchers } from "./MarcherTable";
 import { updateUtilityRecord, UtilityRecord } from "./UtilityTable";
-import { FIRST_PAGE_ID } from "../constants";
+import * as ConstantValues from "../constants";
+
+export const FIRST_PAGE_ID = ConstantValues.FIRST_PAGE_ID;
 
 /** How a page is represented in the database */
 /** Represents a page in the database */

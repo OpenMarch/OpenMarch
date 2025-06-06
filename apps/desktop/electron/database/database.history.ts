@@ -1,9 +1,7 @@
 import { Constants } from "../../src/global/Constants";
 import Database from "better-sqlite3";
-import { DB, getOrm } from "./db";
-import { desc, not, inArray, sql } from "drizzle-orm";
-import * as schema from "./migrations/schema";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { DB, getOrm, getSchema } from "./db";
+import { inArray, sql } from "drizzle-orm";
 
 type HistoryType = "undo" | "redo";
 
@@ -248,42 +246,70 @@ function incrementGroup(db: Database.Database, type: HistoryType) {
 }
 
 export function incrementGroupDrizzle(orm: DB, type: HistoryType) {
+    // Get the schema and determine which history table to use
+    const schema = getSchema();
     const historyTable =
-        type === "undo" ? schema.history_undo : schema.history_redo;
+        type === "undo" ? schema.historyUndo : schema.historyRedo;
+    const historyStatsTable = schema.historyStats;
 
-    return orm.transaction((tx) => {
-        const groupLimit = tx
-            .select({ group_limit: schema.history_stats.group_limit })
-            .from(schema.history_stats)
-            .get()!.group_limit;
+    // Step 1: Get the current group limit
+    const statsResult = orm
+        .select({ group_limit: historyStatsTable.groupLimit })
+        .from(historyStatsTable)
+        .get();
 
-        const maxGroup = tx
-            .select({
-                max: sql`COALESCE(MAX(${historyTable.history_group}), 0) + 1`,
-            })
+    if (!statsResult) {
+        console.error("Could not get group limit from history stats table");
+        return 1; // Default to 1 if we can't get the stats
+    }
+
+    const groupLimit = statsResult.group_limit;
+
+    // Step 2: Get the max group number and calculate the new group number
+    const maxGroupResult = orm
+        .select({
+            max_group: sql`COALESCE(MAX(${historyTable.historyGroup}), 0)`,
+        })
+        .from(historyTable)
+        .get() as { max_group: number };
+
+    const maxGroup: number = maxGroupResult ? maxGroupResult.max_group : 0;
+    const newGroup = maxGroup + 1;
+
+    // Step 3: Update the current group number in the history stats table
+    if (type === "undo") {
+        orm.update(historyStatsTable).set({ curUndoGroup: newGroup }).run();
+    } else {
+        orm.update(historyStatsTable).set({ curRedoGroup: newGroup }).run();
+    }
+
+    // Step 4: If group limit is positive, handle the deletion of old groups
+    if (groupLimit > 0) {
+        // Get all groups ordered by group number
+        const allGroupsResult = orm
+            .selectDistinct({ history_group: historyTable.historyGroup })
             .from(historyTable)
-            .get()!.max;
+            .orderBy(historyTable.historyGroup)
+            .all();
 
-        const groupColumn =
-            type === "undo" ? "cur_undo_group" : "cur_redo_group";
+        const allGroups = allGroupsResult.map((g) => g.history_group);
 
-        tx.update(schema.history_stats)
-            .set({ [groupColumn]: maxGroup })
-            .run();
+        // If we have more groups than the limit, delete the oldest ones
+        if (allGroups.length > groupLimit) {
+            // Calculate how many groups to delete
+            const deleteCount = allGroups.length - groupLimit;
+            // Get the groups to delete (the oldest ones)
+            const groupsToDelete = allGroups.slice(0, deleteCount);
 
-        const recentGroupsQuery = tx
-            .selectDistinct({ history_group: historyTable.history_group })
-            .from(historyTable)
-            .orderBy(desc(historyTable.history_group))
-            .limit(groupLimit);
+            if (groupsToDelete.length > 0) {
+                orm.delete(historyTable)
+                    .where(inArray(historyTable.historyGroup, groupsToDelete))
+                    .run();
+            }
+        }
+    }
 
-        // Delete all groups except the most recent group_limit groups
-        tx.delete(historyTable)
-            .where(not(inArray(historyTable.history_group, recentGroupsQuery)))
-            .run();
-
-        return maxGroup;
-    });
+    return newGroup;
 }
 
 /**

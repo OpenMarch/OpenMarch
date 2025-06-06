@@ -3,16 +3,16 @@ import {
     beats,
     measures,
     pages,
-    marcher_pages,
+    marcherPages,
     marchers,
-    shape_pages,
+    shapePages,
     shapes,
-    shape_page_marchers,
+    shapePageMarchers,
 } from "./schema";
 
 export const measuresRelations = relations(measures, ({ one }) => ({
     beat: one(beats, {
-        fields: [measures.start_beat],
+        fields: [measures.startBeat],
         references: [beats.id],
     }),
 }));
@@ -24,55 +24,55 @@ export const beatsRelations = relations(beats, ({ many }) => ({
 
 export const pagesRelations = relations(pages, ({ one, many }) => ({
     beat: one(beats, {
-        fields: [pages.start_beat],
+        fields: [pages.startBeat],
         references: [beats.id],
     }),
-    marcher_pages: many(marcher_pages),
-    shape_pages: many(shape_pages),
+    marcherPages: many(marcherPages),
+    shapePages: many(shapePages),
 }));
 
-export const marcher_pagesRelations = relations(marcher_pages, ({ one }) => ({
+export const marcherPagesRelations = relations(marcherPages, ({ one }) => ({
     page: one(pages, {
-        fields: [marcher_pages.page_id],
+        fields: [marcherPages.pageId],
         references: [pages.id],
     }),
     marcher: one(marchers, {
-        fields: [marcher_pages.marcher_id],
+        fields: [marcherPages.marcherId],
         references: [marchers.id],
     }),
 }));
 
 export const marchersRelations = relations(marchers, ({ many }) => ({
-    marcher_pages: many(marcher_pages),
-    shape_page_marchers: many(shape_page_marchers),
+    marcherPages: many(marcherPages),
+    shapePageMarchers: many(shapePageMarchers),
 }));
 
-export const shape_pagesRelations = relations(shape_pages, ({ one, many }) => ({
+export const shapePagesRelations = relations(shapePages, ({ one, many }) => ({
     page: one(pages, {
-        fields: [shape_pages.page_id],
+        fields: [shapePages.pageId],
         references: [pages.id],
     }),
     shape: one(shapes, {
-        fields: [shape_pages.shape_id],
+        fields: [shapePages.shapeId],
         references: [shapes.id],
     }),
-    shape_page_marchers: many(shape_page_marchers),
+    shapePageMarchers: many(shapePageMarchers),
 }));
 
 export const shapesRelations = relations(shapes, ({ many }) => ({
-    shape_pages: many(shape_pages),
+    shapePages: many(shapePages),
 }));
 
-export const shape_page_marchersRelations = relations(
-    shape_page_marchers,
+export const shapePageMarchersRelations = relations(
+    shapePageMarchers,
     ({ one }) => ({
         marcher: one(marchers, {
-            fields: [shape_page_marchers.marcher_id],
+            fields: [shapePageMarchers.marcherId],
             references: [marchers.id],
         }),
-        shape_page: one(shape_pages, {
-            fields: [shape_page_marchers.shape_page_id],
-            references: [shape_pages.id],
+        shapePage: one(shapePages, {
+            fields: [shapePageMarchers.shapePageId],
+            references: [shapePages.id],
         }),
     }),
 );

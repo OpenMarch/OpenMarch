@@ -2,9 +2,9 @@ import Database from "better-sqlite3";
 import * as History from "../database.history";
 import * as DbActions from "../DatabaseActions";
 import Constants from "../../../src/global/Constants";
-import { DB, getOrm } from "../db";
+import { getOrm } from "../db";
 import { eq } from "drizzle-orm";
-import * as schema from "../migrations/schema";
+import * as schema from "../schema/schema";
 
 export const FIRST_BEAT_ID = 0;
 
@@ -92,7 +92,7 @@ export function getBeat({
         .sync();
     return {
         success: true,
-        data: beat as DatabaseBeat,
+        data: beat as unknown as DatabaseBeat,
     };
 }
 

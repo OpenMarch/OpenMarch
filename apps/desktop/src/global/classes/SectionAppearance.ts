@@ -81,19 +81,19 @@ export class SectionAppearance {
     constructor({
         id,
         section,
-        fill_color,
-        outline_color,
-        shape_type,
-        created_at,
-        updated_at,
+        fillColor,
+        outlineColor,
+        shapeType,
+        createdAt,
+        updatedAt,
     }: DatabaseSectionAppearance) {
         this.id = id;
         this.section = section;
-        this.fill_color = parseColor(fill_color);
-        this.outline_color = parseColor(outline_color);
-        this.shape_type = shape_type;
-        this.created_at = created_at;
-        this.updated_at = updated_at;
+        this.fill_color = parseColor(fillColor);
+        this.outline_color = parseColor(outlineColor);
+        this.shape_type = shapeType;
+        this.created_at = createdAt;
+        this.updated_at = updatedAt;
     }
 
     /**

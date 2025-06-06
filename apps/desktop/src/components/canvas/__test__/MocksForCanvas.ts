@@ -225,10 +225,10 @@ export const mockSectionAppearances: SectionAppearance[] = [
     {
         id: 1,
         section: "Flute",
-        fill_color: "rgba(1, 0, 0, 1)",
-        outline_color: "rgba(0, 1, 0, 1)",
-        created_at: "2021-01-01",
-        updated_at: "2021-01-01",
-        shape_type: "circle",
+        fillColor: "rgba(1, 0, 0, 1)",
+        outlineColor: "rgba(0, 1, 0, 1)",
+        createdAt: "2021-01-01",
+        updatedAt: "2021-01-01",
+        shapeType: "circle",
     },
 ] as const;
