@@ -48,5 +48,9 @@ coverage/
 # misc OS generated files
 .DS_Store
 
+# Markdown files (personal notes, documentation drafts, etc.)
+*.md
+*.mdc
+
 # Sentry Config File
 .env.sentry-build-plugin

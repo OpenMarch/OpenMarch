@@ -23,12 +23,17 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "./components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
+import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
+import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 
 // app
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
+    const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
+        undefined,
+    );
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
 
@@ -117,7 +122,14 @@ function App() {
                                                 <Toolbar />
                                                 <div className="relative h-full min-h-0">
                                                     <SidebarModal />
-                                                    <Canvas />
+                                                    <Canvas
+                                                        onCanvasReady={
+                                                            setAppCanvas
+                                                        }
+                                                    />
+                                                    <CanvasZoomControls
+                                                        canvas={appCanvas}
+                                                    />
                                                 </div>
                                                 <TimelineContainer />
                                             </div>

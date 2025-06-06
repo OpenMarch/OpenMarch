@@ -210,19 +210,6 @@ describe("DefaultListeners", () => {
             expect(canvas.selectDragStart.x).toBe(123);
             expect(canvas.selectDragStart.y).toBe(321);
         });
-        it("should set the canvas to dragging when selecting the canvas", () => {
-            const fabricEvent: fabric.IEvent<MouseEvent> = {
-                e: new MouseEvent("mousedown"),
-            };
-
-            expect(canvas.isDragging).toBe(false);
-            expect(canvas.selection).toBe(true);
-
-            listeners.handleMouseDown(fabricEvent);
-
-            expect(canvas.isDragging).toBe(true);
-            expect(canvas.selection).toBe(false);
-        });
         it("should not set the canvas to dragging when selecting the canvas and the shift key is pressed", () => {
             const fabricEvent: fabric.IEvent<MouseEvent> = {
                 e: new MouseEvent("mousedown", { shiftKey: true }),

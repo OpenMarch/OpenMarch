@@ -58,6 +58,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: 0,
         time: 0,
     };
+    /** Variables for tracking pan position */
+    lastPosX = 0;
+    lastPosY = 0;
     marcherShapes: MarcherShape[] = [];
     /**
      * The reference to the grid (the lines on the field) object to use for caching
@@ -89,6 +92,62 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The UI settings for the canvas */
     private _uiSettings: UiSettings;
 
+    /** Track touch points for pinch-to-zoom */
+    private touchPoints: { [key: number]: { x: number; y: number } } = {};
+    private lastPinchDistance: number = 0;
+
+    /** CSS transform values for the canvas container */
+    private transformValues = {
+        translateX: 0,
+        translateY: 0,
+        scale: 1,
+        originX: 0,
+        originY: 0,
+    };
+
+    /** Track state for CSS-based panning */
+    private isPanning = false;
+
+    /** Track pinch gesture for zooming */
+    private initialPinchDistance = 0;
+
+    /** Reference to the canvas CSS wrapper element */
+    private cssZoomWrapper: HTMLDivElement | null = null;
+
+    /** Add a user preference toggle for trackpad mode in UI */
+    private trackpadModeEnabled = false; // Will be set in constructor
+
+    /** Flag to force trackpad pan mode when Alt key is pressed */
+    private forceTrackpadPan = false;
+
+    // Bound event handlers for proper cleanup
+    private boundHandleAdvancedWheel: ((event: WheelEvent) => void) | null =
+        null;
+    private boundHandleTouchStart: ((event: TouchEvent) => void) | null = null;
+    private boundHandleTouchMove: ((event: TouchEvent) => void) | null = null;
+    private boundHandleTouchEnd: ((event: TouchEvent) => void) | null = null;
+    private boundHandleAdvancedMouseDown: ((event: MouseEvent) => void) | null =
+        null;
+    private boundHandleAdvancedMouseMove: ((event: MouseEvent) => void) | null =
+        null;
+    private boundHandleAdvancedMouseUp: ((event: MouseEvent) => void) | null =
+        null;
+    private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
+    private boundHandleKeyUp: ((event: KeyboardEvent) => void) | null = null;
+
+    /**
+     * Constants for zoom limits
+     */
+    private readonly MIN_ZOOM = 0.5; // 50% (zoomed in, field is twice as big as viewport)
+    private readonly MAX_ZOOM = 2.0; // 200% (zoomed out, field is half as big as viewport)
+    private readonly ZOOM_STEP = 0.05; // 5% increments for smoother zooming
+    private readonly INTERNAL_BASE_ZOOM_SENSITIVITY = 0.5; // Base sensitivity for zoom operations
+
+    // Sensitivity settings
+    private panSensitivity = 0.5; // Reduced for smoother panning
+    private zoomSensitivity = 0.03; // Reduced for gentler zooming
+    private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
+
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
     maxCacheSideLimit = 11000;
@@ -117,8 +176,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             selectionBorderColor: rgbaToString(fieldProperties.theme.shape),
             selectionLineWidth: 2,
             fireRightClick: true, // Allow right click events
-            stopContextMenu: true, // Prevent right click context menu
+            stopContextMenu: false, // Allow right click context menu for panning
+            enableRetinaScaling: true, // Better display on retina screens
         });
+
+        // CRITICAL: Completely disable Fabric's built-in mousewheel handler to avoid conflicts
+        // @ts-ignore - Accessing private property to disable built-in handling
+        this.off("mouse:wheel");
+
+        // Init the DOM wrapper for the canvas if available
+        if (canvasRef) {
+            this.setupExternalPanZoomContainer(canvasRef);
+        }
 
         if (currentPage) this.currentPage = currentPage;
         // If no page is provided, create a default page
@@ -151,9 +220,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         this.fieldProperties = fieldProperties;
 
-        // The mouse wheel event should never be changed
-        this.on("mouse:wheel", this.handleMouseWheel);
-
         // Set the UI settings
         this._uiSettings = uiSettings;
 
@@ -165,10 +231,569 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     }
 
-    /******************* INSTANCE METHODS ******************/
+    /******************* ADVANCED EVENT HANDLERS ******************/
+
     /**
-     * Refreshes the size of the canvas to fit the window.
+     * Returns the coordinates of the center of the field in the canvas's coordinate system.
+     * This does not account for zoom or pan; it's the raw center based on field properties.
      */
+    public getFieldCenterInCanvasCoords(): { x: number; y: number } {
+        if (
+            !this._fieldProperties ||
+            typeof this._fieldProperties.width !== "number" ||
+            typeof this._fieldProperties.height !== "number"
+        ) {
+            console.warn(
+                "getFieldCenterInCanvasCoords: fieldProperties or their dimensions are not fully initialized. Fallback will center HTML canvas (0,0) at viewport center, or no pan if fieldProperties are partially defined.",
+            );
+            // Fallback: If field dimensions are unknown, returning HTML canvas center results in a pan of (0,0),
+            // aligning Fabric canvas (0,0) with HTML canvas (0,0).
+            return {
+                x: (this.width || 0) / 2,
+                y: (this.height || 0) / 2,
+            };
+        }
+        // This is the center of the actual field content as drawn on the Fabric canvas,
+        // in Fabric canvas coordinates (before viewport transform).
+        // The field content (grid, etc.) is typically drawn from (0,0) up to (fieldProperties.width, fieldProperties.height).
+        return {
+            x: this._fieldProperties.width / 2,
+            y: this._fieldProperties.height / 2,
+        };
+    }
+
+    /**
+     * Handle advanced wheel events for CSS-based zooming and trackpad gestures
+     */
+    private handleAdvancedWheel(event: WheelEvent) {
+        event.preventDefault();
+        this.updateSensitivitySettings();
+
+        const isPinchGesture = event.ctrlKey || event.metaKey;
+
+        if (isPinchGesture) {
+            this.handlePinchGestureZoom(event);
+        } else if (!this.trackpadModeEnabled) {
+            this.handleMouseWheelZoom(event);
+        } else {
+            this.handleTrackpadPan(event);
+        }
+    }
+
+    private detectTrackpadGesture(event: WheelEvent): boolean {
+        const absDeltaX = Math.abs(event.deltaX);
+        const isPixelMode = event.deltaMode === 0;
+        const hasDecimalDeltas =
+            event.deltaX % 1 !== 0 || event.deltaY % 1 !== 0;
+
+        if (event.ctrlKey || event.metaKey) {
+            return false;
+        }
+
+        if (
+            event.deltaMode === 1 ||
+            (isPixelMode &&
+                !hasDecimalDeltas &&
+                event.deltaY !== 0 &&
+                absDeltaX === 0) ||
+            (isPixelMode &&
+                !hasDecimalDeltas &&
+                event.deltaY !== 0 &&
+                absDeltaX < 0.1)
+        ) {
+            return false;
+        }
+        if (
+            isPixelMode &&
+            (hasDecimalDeltas ||
+                absDeltaX > 0.5 ||
+                (Math.abs(event.deltaY) > 5 && absDeltaX > 0.05))
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    private handleTrackpadZoom(event: WheelEvent) {
+        const currentZoom = this.getZoom();
+        const zoomDelta = -event.deltaY * 0.005;
+        const newZoom = Math.max(0.2, Math.min(25, currentZoom + zoomDelta));
+
+        if (Math.abs(newZoom - currentZoom) < 0.001) {
+            return;
+        }
+        const rect = this.getSelectionElement().getBoundingClientRect();
+        const pointer = {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+        };
+        this.zoomToPoint(pointer, newZoom);
+        this.requestRenderAll();
+    }
+
+    private handleTrackpadPan(event: WheelEvent) {
+        const vpt = this.viewportTransform;
+        if (!vpt) return;
+
+        const panX = -event.deltaX * this.trackpadPanSensitivity;
+        const panY = -event.deltaY * this.trackpadPanSensitivity;
+
+        vpt[4] += panX;
+        vpt[5] += panY;
+
+        this.requestRenderAll();
+        this.checkCanvasBounds();
+    }
+
+    private handlePinchGestureZoom(event: WheelEvent) {
+        this._applyZoom(event, 0.99);
+    }
+
+    private handleMouseWheelZoom(event: WheelEvent) {
+        this._applyZoom(event, 0.997);
+    }
+
+    private _applyZoom(event: WheelEvent, zoomCalculationBase: number) {
+        const delta = event.deltaY;
+        const currentZoom = this.getZoom();
+
+        if (!this.staticGridRef.objectCaching)
+            this.staticGridRef.objectCaching = true;
+
+        const effectiveSensitivity =
+            this.INTERNAL_BASE_ZOOM_SENSITIVITY * this.zoomSensitivity;
+        const zoomMultiplier = Math.pow(
+            zoomCalculationBase,
+            delta * effectiveSensitivity,
+        );
+        let newZoom = currentZoom * zoomMultiplier;
+
+        newZoom = Math.max(0.2, Math.min(25, newZoom));
+
+        if (Math.abs(newZoom - currentZoom) < 0.0001) {
+            return;
+        }
+
+        const rect = this.getSelectionElement().getBoundingClientRect();
+        const pointer = {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top,
+        };
+        this.zoomToPoint(pointer, newZoom);
+        this.checkCanvasBounds();
+
+        // set objectCaching to false after 100ms to improve performance after zooming
+        // This is why the grid is blurry but fast while zooming, and sharp while not.
+        // If it was always sharp (object caching on), it would be horrendously slow
+        clearTimeout(this._zoomTimeout);
+        this._zoomTimeout = setTimeout(() => {
+            if (this.staticGridRef.objectCaching) {
+                this.staticGridRef.objectCaching = false;
+                this.requestRenderAll();
+            }
+        }, 25);
+    }
+
+    private checkCanvasBounds() {
+        if (!this.viewportTransform) return;
+
+        const vpt = this.viewportTransform;
+        const zoom = this.getZoom();
+        const canvasWidth = this.width || 0;
+        const canvasHeight = this.height || 0;
+
+        let needsAdjustment = false;
+
+        if (vpt[4] > canvasWidth * 0.5) {
+            vpt[4] = canvasWidth * 0.5;
+            needsAdjustment = true;
+        } else if (vpt[4] < -canvasWidth * (zoom - 0.5)) {
+            vpt[4] = -canvasWidth * (zoom - 0.5);
+            needsAdjustment = true;
+        }
+
+        if (vpt[5] > canvasHeight * 0.5) {
+            vpt[5] = canvasHeight * 0.5;
+            needsAdjustment = true;
+        } else if (vpt[5] < -canvasHeight * (zoom - 0.5)) {
+            vpt[5] = -canvasHeight * (zoom - 0.5);
+            needsAdjustment = true;
+        }
+
+        if (needsAdjustment) {
+            this.requestRenderAll();
+        }
+    }
+
+    private handleTouchStart(event: TouchEvent) {
+        event.preventDefault();
+        for (let i = 0; i < event.touches.length; i++) {
+            const touch = event.touches[i];
+            this.touchPoints[touch.identifier] = {
+                x: touch.clientX,
+                y: touch.clientY,
+            };
+        }
+        if (event.touches.length === 2) {
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+            this.initialPinchDistance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2),
+            );
+        }
+    }
+
+    private handleTouchMove(event: TouchEvent) {
+        event.preventDefault();
+        if (event.touches.length === 1) {
+            const touch = event.touches[0];
+            const lastTouch = this.touchPoints[touch.identifier];
+
+            if (lastTouch && this.viewportTransform) {
+                const deltaX = touch.clientX - lastTouch.x;
+                const deltaY = touch.clientY - lastTouch.y;
+                this.viewportTransform[4] += deltaX * this.panSensitivity;
+                this.viewportTransform[5] += deltaY * this.panSensitivity;
+                this.requestRenderAll();
+                this.checkCanvasBounds();
+                this.touchPoints[touch.identifier] = {
+                    x: touch.clientX,
+                    y: touch.clientY,
+                };
+            }
+        } else if (event.touches.length === 2) {
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+            const currentDistance = Math.sqrt(
+                Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2),
+            );
+            if (this.initialPinchDistance > 0) {
+                const scaleDelta =
+                    (currentDistance - this.initialPinchDistance) * 0.01;
+                const centerX = (touch1.clientX + touch2.clientX) / 2;
+                const centerY = (touch1.clientY + touch2.clientY) / 2;
+                const rect = this.getSelectionElement().getBoundingClientRect();
+                const pointer = {
+                    x: centerX - rect.left,
+                    y: centerY - rect.top,
+                };
+                const currentZoom = this.getZoom();
+                const newZoom = Math.max(
+                    0.2,
+                    Math.min(25, currentZoom + scaleDelta),
+                );
+                this.zoomToPoint(pointer, newZoom);
+                this.requestRenderAll();
+                this.initialPinchDistance = currentDistance;
+            }
+        }
+    }
+
+    private handleTouchEnd(event: TouchEvent) {
+        for (let i = 0; i < event.changedTouches.length; i++) {
+            const touch = event.changedTouches[i];
+            delete this.touchPoints[touch.identifier];
+        }
+        if (event.touches.length < 2) {
+            this.initialPinchDistance = 0;
+        }
+    }
+
+    private handleAdvancedMouseDown(event: MouseEvent) {
+        if (event.button === 2 || event.button === 1 || this.forceTrackpadPan) {
+            event.preventDefault();
+            this.isPanning = true;
+            this.lastPosX = event.clientX;
+            this.lastPosY = event.clientY;
+            if (this.cssZoomWrapper) {
+                this.cssZoomWrapper.style.cursor = "grabbing";
+            }
+        }
+    }
+
+    private handleAdvancedMouseMove(event: MouseEvent) {
+        if (this.isPanning && this.viewportTransform) {
+            event.preventDefault();
+            const deltaX = event.clientX - this.lastPosX;
+            const deltaY = event.clientY - this.lastPosY;
+            this.viewportTransform[4] += deltaX * this.panSensitivity;
+            this.viewportTransform[5] += deltaY * this.panSensitivity;
+            this.requestRenderAll();
+            this.checkCanvasBounds();
+            this.lastPosX = event.clientX;
+            this.lastPosY = event.clientY;
+        }
+    }
+
+    private handleAdvancedMouseUp(event: MouseEvent) {
+        if (this.isPanning) {
+            this.isPanning = false;
+            if (this.cssZoomWrapper) {
+                this.cssZoomWrapper.style.cursor = "default";
+            }
+        }
+    }
+
+    private handleKeyDown(event: KeyboardEvent) {
+        if (event.altKey) {
+            this.forceTrackpadPan = true;
+            if (this.cssZoomWrapper) {
+                this.cssZoomWrapper.style.cursor = "grab";
+            }
+        }
+    }
+
+    private handleKeyUp(event: KeyboardEvent) {
+        if (!event.altKey) {
+            this.forceTrackpadPan = false;
+            if (this.cssZoomWrapper && !this.isPanning) {
+                this.cssZoomWrapper.style.cursor = "default";
+            }
+        }
+    }
+
+    public resetCSSTransform() {
+        this.transformValues = {
+            translateX: 0,
+            translateY: 0,
+            scale: 1,
+            originX: 0,
+            originY: 0,
+        };
+        this.applyCSSTransform();
+    }
+
+    public getCSSTransformValues() {
+        return { ...this.transformValues };
+    }
+
+    public setCSSTransformValues(values: Partial<typeof this.transformValues>) {
+        this.transformValues = { ...this.transformValues, ...values };
+        this.applyCSSTransform();
+    }
+
+    private applyCSSTransform() {
+        if (this.cssZoomWrapper) {
+            const { translateX, translateY, scale, originX, originY } =
+                this.transformValues;
+            this.cssZoomWrapper.style.transformOrigin = `${originX}px ${originY}px`;
+            this.cssZoomWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            this.requestRenderAll();
+        }
+    }
+
+    /******************* ADVANCED NAVIGATION METHODS ******************/
+
+    /**
+     * Detect if the current platform is macOS
+     */
+    private detectMacOS(): boolean {
+        return navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+    }
+
+    /**
+     * Setup the external CSS wrapper for pan/zoom functionality
+     * THIS IS THE VERSION WE WANT TO KEEP
+     */
+    private setupExternalPanZoomContainer(canvasElement: HTMLCanvasElement) {
+        // Initialize trackpad mode based on platform
+        this.trackpadModeEnabled = this.detectMacOS();
+
+        // Update sensitivity settings from UI settings
+        this.updateSensitivitySettings();
+
+        // Create a wrapper div for CSS transforms if it doesn't exist
+        const existingWrapper = canvasElement.parentElement;
+        if (
+            existingWrapper &&
+            existingWrapper.classList.contains("canvas-zoom-wrapper")
+        ) {
+            this.cssZoomWrapper = existingWrapper as HTMLDivElement;
+        } else {
+            this.cssZoomWrapper = document.createElement("div");
+            this.cssZoomWrapper.className = "canvas-zoom-wrapper";
+            this.cssZoomWrapper.style.cssText = `
+                position: relative;
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                transform-origin: 0 0;
+                will-change: transform;
+            `;
+            if (canvasElement.parentNode) {
+                canvasElement.parentNode.insertBefore(
+                    this.cssZoomWrapper,
+                    canvasElement,
+                );
+                this.cssZoomWrapper.appendChild(canvasElement);
+                const upperCanvas = (this as any)
+                    .upperCanvasEl as HTMLCanvasElement | null;
+                if (
+                    upperCanvas &&
+                    upperCanvas.parentNode !== this.cssZoomWrapper
+                ) {
+                    if (
+                        upperCanvas.parentNode ===
+                        this.cssZoomWrapper.parentNode
+                    ) {
+                        this.cssZoomWrapper.appendChild(upperCanvas);
+                        // console.log(
+                        //     "🔧 Moved upperCanvasEl into cssZoomWrapper.",
+                        // );
+                    } else {
+                        console.warn(
+                            "🔧 upperCanvasEl was not a sibling of cssZoomWrapper. Attempting to move it, but layout might be affected.",
+                        );
+                        this.cssZoomWrapper.appendChild(upperCanvas);
+                    }
+                } else if (!upperCanvas) {
+                    console.warn(
+                        "🔧 upperCanvasEl is null or undefined during setup. This might lead to event handling issues.",
+                    );
+                }
+            }
+        }
+        this.setupAdvancedEventListeners();
+    }
+
+    private updateSensitivitySettings() {
+        if (this._uiSettings?.mouseSettings) {
+            this.zoomSensitivity =
+                this._uiSettings.mouseSettings.zoomSensitivity;
+            this.panSensitivity = this._uiSettings.mouseSettings.panSensitivity;
+            this.trackpadPanSensitivity =
+                this._uiSettings.mouseSettings.trackpadPanSensitivity;
+            if (this._uiSettings.mouseSettings.trackpadMode !== undefined) {
+                this.trackpadModeEnabled =
+                    this._uiSettings.mouseSettings.trackpadMode;
+            }
+        }
+    }
+
+    private setupAdvancedEventListeners() {
+        if (!this.cssZoomWrapper) {
+            console.error(
+                `🔧 ERROR: cssZoomWrapper is null, cannot setup advanced listeners`,
+            );
+            return;
+        }
+
+        this.removeAdvancedEventListeners();
+
+        this.boundHandleAdvancedWheel = this.handleAdvancedWheel.bind(this);
+        this.boundHandleTouchStart = this.handleTouchStart.bind(this);
+        this.boundHandleTouchMove = this.handleTouchMove.bind(this);
+        this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
+        this.boundHandleAdvancedMouseDown =
+            this.handleAdvancedMouseDown.bind(this);
+        this.boundHandleAdvancedMouseMove =
+            this.handleAdvancedMouseMove.bind(this);
+        this.boundHandleAdvancedMouseUp = this.handleAdvancedMouseUp.bind(this);
+        this.boundHandleKeyDown = this.handleKeyDown.bind(this);
+        this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+
+        this.cssZoomWrapper.addEventListener(
+            "wheel",
+            this.boundHandleAdvancedWheel,
+            { passive: false },
+        );
+
+        this.cssZoomWrapper.addEventListener(
+            "touchstart",
+            this.boundHandleTouchStart,
+            { passive: false },
+        );
+        this.cssZoomWrapper.addEventListener(
+            "touchmove",
+            this.boundHandleTouchMove,
+            { passive: false },
+        );
+        this.cssZoomWrapper.addEventListener(
+            "touchend",
+            this.boundHandleTouchEnd,
+            { passive: false },
+        );
+        this.cssZoomWrapper.addEventListener(
+            "mousedown",
+            this.boundHandleAdvancedMouseDown,
+        );
+        this.cssZoomWrapper.addEventListener(
+            "mousemove",
+            this.boundHandleAdvancedMouseMove,
+        );
+        this.cssZoomWrapper.addEventListener(
+            "mouseup",
+            this.boundHandleAdvancedMouseUp,
+        );
+        this.cssZoomWrapper.addEventListener(
+            "mouseleave",
+            this.boundHandleAdvancedMouseUp,
+        );
+        document.addEventListener("keydown", this.boundHandleKeyDown);
+        document.addEventListener("keyup", this.boundHandleKeyUp);
+        console.log(`🔧 ✅ All advanced event listeners attached successfully`);
+    }
+
+    private removeAdvancedEventListeners() {
+        if (!this.cssZoomWrapper) return;
+
+        if (this.boundHandleAdvancedWheel) {
+            this.cssZoomWrapper.removeEventListener(
+                "wheel",
+                this.boundHandleAdvancedWheel,
+            );
+        }
+        if (this.boundHandleTouchStart) {
+            this.cssZoomWrapper.removeEventListener(
+                "touchstart",
+                this.boundHandleTouchStart,
+            );
+        }
+        if (this.boundHandleTouchMove) {
+            this.cssZoomWrapper.removeEventListener(
+                "touchmove",
+                this.boundHandleTouchMove,
+            );
+        }
+        if (this.boundHandleTouchEnd) {
+            this.cssZoomWrapper.removeEventListener(
+                "touchend",
+                this.boundHandleTouchEnd,
+            );
+        }
+        if (this.boundHandleAdvancedMouseDown) {
+            this.cssZoomWrapper.removeEventListener(
+                "mousedown",
+                this.boundHandleAdvancedMouseDown,
+            );
+        }
+        if (this.boundHandleAdvancedMouseMove) {
+            this.cssZoomWrapper.removeEventListener(
+                "mousemove",
+                this.boundHandleAdvancedMouseMove,
+            );
+        }
+        if (this.boundHandleAdvancedMouseUp) {
+            this.cssZoomWrapper.removeEventListener(
+                "mouseup",
+                this.boundHandleAdvancedMouseUp,
+            );
+            this.cssZoomWrapper.removeEventListener(
+                "mouseleave",
+                this.boundHandleAdvancedMouseUp,
+            );
+        }
+        if (this.boundHandleKeyDown) {
+            document.removeEventListener("keydown", this.boundHandleKeyDown);
+        }
+        if (this.boundHandleKeyUp) {
+            document.removeEventListener("keyup", this.boundHandleKeyUp);
+        }
+    }
+
+    /******************* INSTANCE METHODS ******************/
     refreshCanvasSize() {
         this.setWidth(window.innerWidth);
         this.setHeight(window.innerHeight);
@@ -181,7 +806,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      */
     setListeners(newListeners: CanvasListeners) {
         this._listeners?.cleanupListeners();
-
         this._listeners = newListeners;
         this._listeners.initiateListeners();
     }
@@ -208,13 +832,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.freeDrawingCursor = "crosshair";
     };
 
-    /******* Marcher Functions *******/
-    /**
-     * Brings all control points of the marcher shapes to the front of the canvas.
-     * This ensures the control points are always visible and on top of the marcher shapes.
-     */
     bringAllControlPointsTooFront() {
-        // Put all of the control points to the front if they exist
         for (const marcherShape of this.marcherShapes) {
             marcherShape.controlPoints.forEach((controlPoint) => {
                 controlPoint.bringToFront();
@@ -222,23 +840,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    /**
-     * Renders the marcher shapes on the canvas based on the provided shape pages.
-     * This method handles adding new shapes, updating existing shapes, and removing
-     * shapes that are no longer present in the shape pages.
-     *
-     * @param shapePages - An array of shape pages containing the SVG paths to render.
-     */
     renderMarcherShapes({ shapePages }: { shapePages: ShapePage[] }) {
         const existingMarcherShapeMap = new Map(
             this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
         );
-
-        // Remove shapes that no longer exist
         const newShapeIds = new Set(shapePages.map((sp) => sp.shape_id));
         const removedShapeIds = new Set();
         for (const existingMarcherShape of existingMarcherShapeMap) {
-            // The shape is no longer present in the shape pages. Remove it.
             if (!newShapeIds.has(existingMarcherShape[0])) {
                 removedShapeIds.add(existingMarcherShape[0]);
                 existingMarcherShape[1].destroy();
@@ -249,7 +857,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 (ms) => !removedShapeIds.has(ms.shapePage.shape_id),
             );
         }
-
         for (const shapePage of shapePages) {
             const existingMarcherShape = existingMarcherShapeMap.get(
                 shapePage.shape_id,
@@ -281,7 +888,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         allMarchers: Marcher[];
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
-
         const sectionAppearances =
             await SectionAppearance.getSectionAppearances();
 
@@ -292,12 +898,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const allMarchersMap = new Map<number, Marcher>(
             allMarchers.map((m) => [m.id, m]),
         );
-
         for (const marcherPage of currentMarcherPages) {
             const curCanvasMarcher = canvasMarchersMap.get(
                 marcherPage.marcher_id,
             );
-            // Marcher does not exist on the Canvas, create a new one
             if (!curCanvasMarcher) {
                 const curMarcher = allMarchersMap.get(marcherPage.marcher_id);
                 if (!curMarcher) {
@@ -307,12 +911,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     );
                     continue;
                 }
-
                 const sectionAppearance = getSectionAppearance(
                     curMarcher.section,
                     sectionAppearances,
                 );
-
                 this.add(
                     new CanvasMarcher({
                         marcher: curMarcher,
@@ -326,7 +928,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 curCanvasMarcher.setMarcherCoords(marcherPage);
             }
         }
-
         const marcherPageMarcherIds: Set<number> = new Set(
             currentMarcherPages.map((marcherPage) => marcherPage.marcher_id),
         );
@@ -339,26 +940,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 }
             });
         }
-
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
-
         this.bringAllControlPointsTooFront();
         this.requestRenderAll();
     };
 
-    /**
-     * Reset all marchers on the canvas to the positions defined in their MarcherPage objects
-     */
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
             canvasMarcher.setMarcherCoords(canvasMarcher.marcherPage);
         });
-
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
-
         this.requestRenderAll();
     };
 
@@ -366,9 +960,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Brings all of the canvasMarchers to the front of the canvas
      */
     sendCanvasMarchersToFront = () => {
-        // Get the canvas marchers on the canvas
         const curCanvasMarchers: CanvasMarcher[] = this.getCanvasMarchers();
-
         curCanvasMarchers.forEach((canvasMarcher) => {
             this.bringToFront(canvasMarcher);
         });
@@ -534,7 +1126,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
-     * Builds and renders the grid for the field/stage based on the instance's field properties.
      *
      * @param gridLines Whether or not to include grid lines (every step)
      * @param halfLines Whether or not to include half lines (every 4 steps)
@@ -548,6 +1139,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             halfLines,
         });
         this.staticGridRef.objectCaching = false;
+
         this.add(this.staticGridRef);
         this.sendToBack(this.staticGridRef);
         this.requestRenderAll();
@@ -555,26 +1147,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /*********************** PRIVATE INSTANCE METHODS ***********************/
     /**
-     * Zoom in and out with the mouse wheel
+     * Professional zoom handler - crisp rendering, no blurriness
      */
     private handleMouseWheel = (fabricEvent: fabric.IEvent<WheelEvent>) => {
-        // set objectCaching to true to improve performance while zooming
-        if (!this.staticGridRef.objectCaching)
-            this.staticGridRef.objectCaching = true;
-
-        // set objectCaching to true to improve performance while zooming
-        if (!this.staticGridRef.objectCaching)
-            this.staticGridRef.objectCaching = true;
-
         const delta = fabricEvent.e.deltaY;
-        let zoom = this.getZoom();
-        zoom *= 0.999 ** delta;
-        if (zoom > 25) zoom = 25;
-        if (zoom < 0.35) zoom = 0.35;
+        const currentZoom = this.getZoom();
+
+        // set objectCaching to true to improve performance while zooming
+        if (!this.staticGridRef.objectCaching)
+            this.staticGridRef.objectCaching = true;
+
+        // Professional zoom calculation - smooth and precise
+        const zoomFactor = 0.999 ** (delta * 0.5); // Reduced sensitivity for precision
+        let newZoom = currentZoom * zoomFactor;
+
+        // Apply professional zoom limits
+        newZoom = Math.max(0.2, Math.min(25, newZoom));
+
+        // Apply zoom immediately with crisp rendering
         this.zoomToPoint(
             { x: fabricEvent.e.offsetX, y: fabricEvent.e.offsetY },
-            zoom,
+            newZoom,
         );
+
         fabricEvent.e.preventDefault();
         fabricEvent.e.stopPropagation();
 

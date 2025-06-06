@@ -387,6 +387,12 @@ function DrillChartExport() {
                         showWaveform: false,
                         timelinePixelsPerSecond: 40,
                         focussedComponent: "canvas",
+                        mouseSettings: {
+                            trackpadMode: true,
+                            trackpadPanSensitivity: 0.5,
+                            zoomSensitivity: 0.03,
+                            panSensitivity: 0.5,
+                        },
                     },
                     currentPage: selectedPage || pages[0],
                 });

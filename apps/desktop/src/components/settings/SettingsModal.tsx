@@ -1,4 +1,5 @@
 import ThemeSwitcher from "../titlebar/ThemeSwitcher";
+import MouseSettings from "./MouseSettings";
 import {
     Dialog,
     DialogContent,
@@ -20,28 +21,35 @@ export default function SettingsModal() {
             >
                 <GearSix size={18} />
             </DialogTrigger>
-            <DialogContent className="w-[10rem]" aria-describedby="Settings">
+            <DialogContent
+                className="max-h-[80vh] w-[40rem] overflow-y-auto"
+                aria-describedby="Settings"
+            >
                 <DialogTitle>Settings</DialogTitle>
                 <div className="flex flex-col gap-48">
                     <div className="flex flex-col gap-16">
-                        <div className="flex w-full items-center justify-between gap-16">
-                            <p className="text-body">Theme</p>
-                            <ThemeSwitcher />
-                        </div>
-                        <div className="flex w-full items-center justify-between gap-16">
-                            <p className="text-body">Show waveform</p>
-                            <Switch
-                                id="waveform"
-                                checked={uiSettings.showWaveform}
-                                onCheckedChange={(checked) =>
-                                    setUiSettings({
-                                        ...uiSettings,
-                                        showWaveform: checked,
-                                    })
-                                }
-                            />
+                        <h4 className="text-h5 leading-none">General</h4>
+                        <div className="flex flex-col gap-16 px-12">
+                            <div className="flex w-full items-center justify-between gap-16">
+                                <p className="text-body">Theme</p>
+                                <ThemeSwitcher />
+                            </div>
+                            <div className="flex w-full items-center justify-between gap-16">
+                                <p className="text-body">Show waveform</p>
+                                <Switch
+                                    id="waveform"
+                                    checked={uiSettings.showWaveform}
+                                    onCheckedChange={(checked) =>
+                                        setUiSettings({
+                                            ...uiSettings,
+                                            showWaveform: checked,
+                                        })
+                                    }
+                                />
+                            </div>
                         </div>
                     </div>
+                    <MouseSettings />
                 </div>
             </DialogContent>
         </Dialog>
