@@ -6,16 +6,47 @@ import {
     PauseIcon,
     SkipForwardIcon,
     FastForwardIcon,
+    MagnifyingGlassPlusIcon,
+    MagnifyingGlassMinusIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 export default function TimelineControls() {
     return (
         <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-12 border px-16 py-12">
             <p className="text-body text-text/60">Timeline</p>
             <PlaybackControls />
+            <ZoomControls />
+        </div>
+    );
+}
+
+function ZoomControls() {
+    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
+
+    return (
+        <div className="flex" id="zoomIcons">
+            <button
+                className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                    setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 0.8)
+                }
+                disabled={uiSettings.timelinePixelsPerSecond <= 10}
+            >
+                <MagnifyingGlassMinusIcon size={24} />
+            </button>
+            <button
+                className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                    setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 1.2)
+                }
+                disabled={uiSettings.timelinePixelsPerSecond >= 200}
+            >
+                <MagnifyingGlassPlusIcon size={24} />
+            </button>
         </div>
     );
 }

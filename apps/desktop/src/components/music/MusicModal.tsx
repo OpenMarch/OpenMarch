@@ -78,7 +78,7 @@ function MusicModalContents() {
             {/* <div id="measure editing container">
                 <MeasureEditor />
                 </div> */}
-            <div className="flex grow flex-col gap-16 overflow-scroll">
+            <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
                 <div className="flex flex-col gap-16">
                     <AudioSelector />
                 </div>
@@ -138,7 +138,7 @@ function MusicModalContents() {
                             )}
                         </div>
                     ))}
-                    <div className="flex min-h-[40rem] flex-col">
+                    <div className="flex flex-col">
                         <div
                             className="flex justify-end py-8"
                             hidden={measures.length === 0}

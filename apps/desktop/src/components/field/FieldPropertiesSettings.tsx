@@ -69,7 +69,7 @@ export default function FieldPropertiesSettings() {
                                 );
                             }}
                             size="compact"
-                            className="w-[50%] self-end"
+                            className="w-fit self-end"
                             variant="secondary"
                         >
                             Customize

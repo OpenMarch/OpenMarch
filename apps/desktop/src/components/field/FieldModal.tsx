@@ -29,7 +29,7 @@ export function FieldPropertiesContents() {
                 </div>
             </header>
 
-            <div className="flex grow flex-col gap-16 overflow-scroll">
+            <div className="flex grow flex-col gap-16 overflow-y-auto">
                 <FieldProperties />
             </div>
         </div>
