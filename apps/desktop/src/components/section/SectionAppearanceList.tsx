@@ -54,7 +54,7 @@ export default function SectionAppearanceList() {
     const defaultOutlineColor = CanvasMarcher.theme.defaultMarcher.outline;
     const defaultShapeType = "circle";
 
-    const shapeOptions = ["circle", "square", "triangle"];
+    const shapeOptions = ["circle", "square", "triangle", "x"];
 
     useEffect(() => {
         fetchSectionAppearances();
