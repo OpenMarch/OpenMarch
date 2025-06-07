@@ -286,7 +286,7 @@ export default function EditableAudioPlayer({
     };
 
     return (
-        <div className="pl-[40px]">
+        <div className="h-fit pl-[40px]">
             {audioFileUrl && (
                 <audio
                     ref={audioRef}
@@ -297,7 +297,7 @@ export default function EditableAudioPlayer({
             )}
 
             <div id="waveform" ref={waveformRef}></div>
-            <div className="mb-2 flex items-center">
+            <div className="flex items-center">
                 <button
                     onClick={() => waveSurfer?.seekTo(0)}
                     className="hover:text-accent mr-2 rounded-md px-4 py-2 font-medium text-white transition-colors"
@@ -319,11 +319,15 @@ export default function EditableAudioPlayer({
             </div>
 
             {beatsToDisplay === "real" ? (
-                <div className="flex gap-8">
-                    <Button onClick={triggerTapNewTempo} size={"compact"}>
+                <div className="flex h-fit min-h-0 gap-8">
+                    <Button
+                        onClick={triggerTapNewTempo}
+                        size={"compact"}
+                        className="w-fit min-w-0 px-16 whitespace-nowrap"
+                    >
                         Tap New Tempo
                     </Button>
-                    <div className="">
+                    <div className="w-full">
                         Tempo tapping is not very polished and is currently
                         &quot;all-or-nothing.&quot;
                         <br />
@@ -342,13 +346,13 @@ export default function EditableAudioPlayer({
                     </div>
                 </div>
             ) : (
-                <div className="flex gap-16">
+                <div className="flex h-fit min-h-0 w-full min-w-0 gap-16">
                     <div
                         id="timeline-editor-button-container"
                         className="flex flex-col gap-4"
                     >
                         <Button
-                            className="w-full"
+                            className="w-full whitespace-nowrap"
                             size={"compact"}
                             disabled={isAudioPlaying}
                             onClick={handleSave}
@@ -375,7 +379,7 @@ export default function EditableAudioPlayer({
                             Exit
                         </Button>
                     </div>
-                    <div className="flex flex-col gap-4">
+                    <div className="flex w-full flex-col gap-4">
                         <p className="text-text-subtitle text-sm">
                             Instructions
                         </p>
@@ -399,7 +403,7 @@ export default function EditableAudioPlayer({
                             </li>
                         </ol>
                     </div>
-                    <div className="flex flex-col gap-4">
+                    <div className="flex w-full flex-col gap-4">
                         <p className="text-text-subtitle text-sm">
                             Tapping the tempo
                         </p>

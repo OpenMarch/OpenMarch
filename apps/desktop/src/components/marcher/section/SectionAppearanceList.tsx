@@ -167,17 +167,6 @@ export default function SectionAppearanceList() {
     }
 
     return (
-<<<<<<< HEAD:apps/desktop/src/components/section/SectionAppearanceList.tsx
-        <Form.Root
-            onSubmit={(event) => {
-                event.preventDefault();
-            }}
-            className="text-body text-text flex flex-col gap-8"
-        >
-            <Select
-                onValueChange={handleCreateNewAppearance}
-                disabled={availableSections.length === 0}
-=======
         <div className="animate-scale-in flex flex-col gap-8">
             <header className="flex justify-between gap-24">
                 <div className="flex items-center gap-8">
@@ -204,7 +193,6 @@ export default function SectionAppearanceList() {
                     handleSubmit();
                 }}
                 className="text-body text-text flex flex-col gap-8"
->>>>>>> a2f43c1 (move section styles to marchers modal):apps/desktop/src/components/marcher/section/SectionAppearanceList.tsx
             >
                 <Select
                     onValueChange={handleCreateNewAppearance}

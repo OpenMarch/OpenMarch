@@ -2,7 +2,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useCallback, useEffect, useRef } from "react";
-import { PlusIcon, MinusIcon, XIcon } from "@phosphor-icons/react";
+import { XIcon, PlusIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import AudioPlayer from "./AudioPlayer";
@@ -16,7 +16,6 @@ import Page, {
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
 import RegisteredActionButton from "../RegisteredActionButton";
-import { FaEdit } from "react-icons/fa";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import EditableAudioPlayer from "./EditableAudioPlayer";
 import MusicModal from "../music/MusicModal";
@@ -268,7 +267,7 @@ export function PageTimeline() {
             {/* ------ FIRST PAGE ------ */}
             {pages.length > 0 && (
                 <div
-                    className={`rounded-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 ${
+                    className={`rounded-6 bg-fg-2 flex h-fit w-[40px] items-center justify-center border px-10 py-4 ${
                         !isPlaying && "cursor-pointer"
                     } ${
                         pages[0].id === selectedPage?.id
@@ -421,7 +420,7 @@ export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
     const { measures } = useTimingObjectsStore()!;
     const { selectedPage } = useSelectedPage()!;
-    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
+    const { uiSettings } = useUiSettingsStore();
     const timelineRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -475,42 +474,10 @@ export default function TimelineContainer() {
                 ref={timelineRef}
                 id="timeline"
                 className={clsx(
-                    "rounded-6 border-stroke bg-fg-1 relative flex w-full min-w-0 border p-8 transition-all duration-200",
-                    uiSettings.focussedComponent === "timeline"
-                        ? "h-[48rem]"
-                        : uiSettings.showWaveform
-                          ? "h-[8rem]"
-                          : "h-[4rem]",
+                    "rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 border p-8 transition-all duration-200",
                 )}
             >
-                <div
-                    className="fixed right-0 bottom-0 m-16 flex gap-6 drop-shadow-md"
-                    id="zoomIcons"
-                >
-                    <button
-                        className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
-                        onClick={() =>
-                            setPixelsPerSecond(
-                                uiSettings.timelinePixelsPerSecond * 0.8,
-                            )
-                        }
-                        disabled={uiSettings.timelinePixelsPerSecond <= 10}
-                    >
-                        <MinusIcon size={16} />
-                    </button>
-                    <button
-                        className="text-text active:hover:text-accent m-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
-                        onClick={() =>
-                            setPixelsPerSecond(
-                                uiSettings.timelinePixelsPerSecond * 1.2,
-                            )
-                        }
-                        disabled={uiSettings.timelinePixelsPerSecond >= 200}
-                    >
-                        <PlusIcon size={16} />
-                    </button>
-                </div>
-                <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_90px] gap-6 overflow-x-auto overflow-y-hidden">
+                <div className="overflow-ys-hidden grid h-fit min-h-0 grid-cols-[4em_1fr] grid-rows-2 gap-6 overflow-x-auto">
                     <div className="flex h-[2em] items-center">
                         <p className="text-sub leading-none">Pages</p>
                     </div>
@@ -530,7 +497,7 @@ export default function TimelineContainer() {
                                     RegisteredActionsObjects.focusTimeline
                                 }
                             >
-                                <FaEdit />
+                                <PencilSimpleIcon />
                             </RegisteredActionButton>
                         ) : (
                             <RegisteredActionButton
