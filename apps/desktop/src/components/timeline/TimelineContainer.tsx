@@ -11,6 +11,7 @@ import Page, {
     ModifyPagesRequest,
     updatePageCountRequest,
     updatePages,
+    deletePages,
 } from "@/global/classes/Page";
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
@@ -20,6 +21,9 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import EditableAudioPlayer from "./EditableAudioPlayer";
 import MusicModal from "../music/MusicModal";
 import TimelineControls from "./TimelineControls";
+import * as ContextMenu from "@radix-ui/react-context-menu";
+import { Button } from "@openmarch/ui";
+import { toast } from "sonner";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -247,6 +251,18 @@ export function PageTimeline() {
         };
     }, [handlePageResizeEnd, handlePageResizeMove]);
 
+    async function handleDeletePage(pageId: number, pageName: string) {
+        const response = await deletePages(
+            new Set([pageId]),
+            fetchTimingObjects,
+        );
+        if (response.success) {
+            toast.success(`Page ${pageName} deleted`);
+        } else {
+            toast.error("Failed to delete page");
+        }
+    }
+
     return (
         <div className="flex gap-0" id="pages">
             {/* ------ FIRST PAGE ------ */}
@@ -285,73 +301,95 @@ export function PageTimeline() {
                     (p) => p.id === selectedPage?.id,
                 );
                 return (
-                    <div
-                        key={index}
-                        className="relative inline-block"
-                        timeline-page-id={page.id}
-                        style={{ width: `${width}px` }}
-                        title={`Page ${page.name}`}
-                        aria-label={`Page ${page.name}`}
-                    >
-                        {/* ------ PAGES ------ */}
-                        <div
-                            className={`rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end overflow-clip border px-8 py-4 ${
-                                !isPlaying && "cursor-pointer"
-                            } ${
-                                page.id === selectedPage?.id
-                                    ? // if the page is selected
-                                      `border-accent ${
-                                          isPlaying
-                                              ? "text-text/75 pointer-events-none"
-                                              : ""
-                                      }`
-                                    : `border-stroke ${
-                                          isPlaying
-                                              ? "text-text/75 pointer-events-none"
-                                              : ""
-                                      }`
-                            }`}
-                            onClick={() => {
-                                if (!isPlaying) setSelectedPage(page);
-                                setSelectedMarcherShapes([]);
-                            }}
-                        >
-                            <div className="rig static z-10">{page.name}</div>
-                            {(selectedIndex === index - 1 ||
-                                (selectedIndex === 0 &&
-                                    index === pages.length)) &&
-                                isPlaying && (
-                                    <div
-                                        className={clsx(
-                                            "absolute top-0 left-0 z-0 h-full w-full",
-                                            uiSettings.showWaveform
-                                                ? ""
-                                                : "bg-accent/25",
+                    <ContextMenu.Root key={index}>
+                        <ContextMenu.Trigger>
+                            <div
+                                className="relative inline-block"
+                                timeline-page-id={page.id}
+                                style={{ width: `${width}px` }}
+                                title={`Page ${page.name}`}
+                                aria-label={`Page ${page.name}`}
+                            >
+                                {/* ------ PAGES ------ */}
+                                <div
+                                    className={`rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end overflow-clip border px-8 py-4 ${
+                                        !isPlaying && "cursor-pointer"
+                                    } ${
+                                        page.id === selectedPage?.id
+                                            ? // if the page is selected
+                                              `border-accent ${
+                                                  isPlaying
+                                                      ? "text-text/75 pointer-events-none"
+                                                      : ""
+                                              }`
+                                            : `border-stroke ${
+                                                  isPlaying
+                                                      ? "text-text/75 pointer-events-none"
+                                                      : ""
+                                              }`
+                                    }`}
+                                    onClick={() => {
+                                        if (!isPlaying) setSelectedPage(page);
+                                        setSelectedMarcherShapes([]);
+                                    }}
+                                >
+                                    <div className="rig static z-10">
+                                        {page.name}
+                                    </div>
+                                    {(selectedIndex === index - 1 ||
+                                        (selectedIndex === 0 &&
+                                            index === pages.length)) &&
+                                        isPlaying && (
+                                            <div
+                                                className={clsx(
+                                                    "absolute top-0 left-0 z-0 h-full w-full",
+                                                    uiSettings.showWaveform
+                                                        ? ""
+                                                        : "bg-accent/25",
+                                                )}
+                                                style={
+                                                    uiSettings.showWaveform
+                                                        ? {}
+                                                        : {
+                                                              animation: `progress ${page.duration}s linear forwards`,
+                                                          }
+                                                }
+                                            />
                                         )}
-                                        style={
-                                            uiSettings.showWaveform
-                                                ? {}
-                                                : {
-                                                      animation: `progress ${page.duration}s linear forwards`,
-                                                  }
-                                        }
-                                    />
-                                )}
-                        </div>
-                        <div
-                            className={clsx(
-                                "absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize rounded transition-colors",
-                                resizingPage.current?.id === page.id
-                                    ? "bg-accent/50"
-                                    : "hover:bg-accent/30 bg-transparent",
-                            )}
-                            onMouseDown={(e) =>
-                                handlePageResizeStart(e.nativeEvent, page)
-                            }
-                        >
-                            &nbsp;
-                        </div>
-                    </div>
+                                </div>
+                                <div
+                                    className={clsx(
+                                        "absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize rounded transition-colors",
+                                        resizingPage.current?.id === page.id
+                                            ? "bg-accent/50"
+                                            : "hover:bg-accent/30 bg-transparent",
+                                    )}
+                                    onMouseDown={(e) =>
+                                        handlePageResizeStart(
+                                            e.nativeEvent,
+                                            page,
+                                        )
+                                    }
+                                >
+                                    &nbsp;
+                                </div>
+                            </div>
+                        </ContextMenu.Trigger>
+                        <ContextMenu.Portal>
+                            <ContextMenu.Content className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 flex flex-col gap-4 border p-16 py-12 backdrop-blur-md">
+                                <h5 className="text-h5">Page {page.name}</h5>
+                                <Button
+                                    onClick={() =>
+                                        handleDeletePage(page.id, page.name)
+                                    }
+                                    size="compact"
+                                    variant="red"
+                                >
+                                    Delete
+                                </Button>
+                            </ContextMenu.Content>
+                        </ContextMenu.Portal>
+                    </ContextMenu.Root>
                 );
             })}
             <div
