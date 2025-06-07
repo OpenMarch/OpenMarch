@@ -5,6 +5,7 @@ import { Switch, Button } from "@openmarch/ui";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldIoButtons from "./FieldIoButtons";
 import FieldProperties from "@/global/classes/FieldProperties";
+import { StaticFormField } from "../ui/FormField";
 
 export default function FieldPropertiesSettings() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
@@ -22,11 +23,8 @@ export default function FieldPropertiesSettings() {
         <div className="flex flex-col">
             <div className="flex w-full min-w-0 flex-col gap-16">
                 <h4 className="text-h5 leading-none">General</h4>
-                <div className="flex flex-col gap-16 px-12">
-                    <div className="flex w-full items-center justify-between gap-16">
-                        <label htmlFor="gridLines" className="text-body">
-                            Grid lines
-                        </label>
+                <div className="flex flex-col gap-16">
+                    <StaticFormField label="Grid lines">
                         <Switch
                             id="gridLines"
                             checked={uiSettings.gridLines}
@@ -37,11 +35,8 @@ export default function FieldPropertiesSettings() {
                                 })
                             }
                         />
-                    </div>
-                    <div className="flex w-full items-center justify-between gap-16">
-                        <label htmlFor="halfLines" className="text-body">
-                            Half lines
-                        </label>
+                    </StaticFormField>
+                    <StaticFormField label="Half lines">
                         <Switch
                             id="halfLines"
                             checked={uiSettings.halfLines}
@@ -52,7 +47,7 @@ export default function FieldPropertiesSettings() {
                                 })
                             }
                         />
-                    </div>
+                    </StaticFormField>
                     <div className="m-8">
                         <FieldIoButtons />
                     </div>

@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
+import FormField from "../ui/FormField";
 
 interface NewMarcherFormProps {
     disabledProp?: boolean;
@@ -232,111 +233,54 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             ref={formRef}
             className="flex h-full flex-col gap-16"
         >
-            <div className="flex flex-col gap-16 px-12">
-                <Form.Field
-                    name="Quantity"
-                    className="flex items-center justify-between"
-                >
-                    <Form.Label className="text-body text-text/80 w-full">
-                        Quantity
-                    </Form.Label>
-                    <Form.Control asChild>
-                        <Input
-                            type="number"
-                            defaultValue={1}
-                            onChange={handleQuantityChange}
-                            step={1}
-                            min={1}
-                            max={100}
-                        />
-                    </Form.Control>
-                    <Form.Message
-                        match={"valueMissing"}
-                        className="text-sub text-red leading-none"
-                    >
-                        Please enter a value.
-                    </Form.Message>
-                </Form.Field>
-                <Form.Field
-                    name="section"
-                    className="flex items-center justify-between"
-                >
-                    <Form.Label className="text-body text-text/80">
-                        Section
-                    </Form.Label>
-                    <Form.Control asChild>
-                        <Select onValueChange={handleSectionChange} required>
-                            <SelectTriggerButton label={section || "Section"} />
-                            <SelectContent>
-                                {Object.values(SECTIONS).map((section) => {
-                                    return (
-                                        <SelectItem
-                                            key={section.name}
-                                            value={section.name}
-                                        >
-                                            {section.name}
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                    </Form.Control>
-                    <Form.Message
-                        match={"valueMissing"}
-                        className="text-sub text-red leading-none"
-                    >
-                        Please enter a value.
-                    </Form.Message>
-                </Form.Field>
-                <Form.Field
-                    name="Drill Prefix"
-                    className="flex items-center justify-between"
-                >
-                    <Form.Label className="text-body text-text/80">
-                        Drill Prefix
-                    </Form.Label>
-                    <Form.Control asChild>
-                        <Input
-                            type="text"
-                            placeholder="-"
-                            onChange={handlePrefixChange}
-                            value={drillPrefix}
-                            required
-                            maxLength={3}
-                        />
-                    </Form.Control>
-                    <Form.Message
-                        match={"valueMissing"}
-                        className="text-sub text-red leading-none"
-                    >
-                        Please enter a value.
-                    </Form.Message>
-                </Form.Field>
-
-                <Form.Field
-                    name="Drill Number"
-                    className="flex items-center justify-between gap-32"
-                >
-                    <Form.Label className="text-body text-text/80">
-                        Drill Number
-                    </Form.Label>
-                    <Form.Control asChild>
-                        <Input
-                            type="number"
-                            placeholder="-"
-                            onChange={handleOrderChange}
-                            value={drillOrder}
-                            required
-                            maxLength={3}
-                        />
-                    </Form.Control>
-                    <Form.Message
-                        match={"valueMissing"}
-                        className="text-sub text-red leading-none"
-                    >
-                        Please enter a value.
-                    </Form.Message>
-                </Form.Field>
+            <div className="flex flex-col gap-16">
+                <FormField label="Quantity">
+                    <Input
+                        type="number"
+                        defaultValue={1}
+                        onChange={handleQuantityChange}
+                        step={1}
+                        min={1}
+                        max={100}
+                    />
+                </FormField>
+                <FormField label="Section">
+                    <Select onValueChange={handleSectionChange} required>
+                        <SelectTriggerButton label={section || "Section"} />
+                        <SelectContent>
+                            {Object.values(SECTIONS).map((section) => {
+                                return (
+                                    <SelectItem
+                                        key={section.name}
+                                        value={section.name}
+                                    >
+                                        {section.name}
+                                    </SelectItem>
+                                );
+                            })}
+                        </SelectContent>
+                    </Select>
+                </FormField>
+                <FormField label="Drill Prefix">
+                    <Input
+                        type="text"
+                        placeholder="-"
+                        onChange={handlePrefixChange}
+                        value={drillPrefix}
+                        required
+                        maxLength={3}
+                    />
+                </FormField>
+                <FormField label="Drill Number">
+                    <Input
+                        type="number"
+                        placeholder="-"
+                        onChange={handleOrderChange}
+                        value={drillOrder}
+                        required
+                        maxLength={3}
+                    />
+                </FormField>
             </div>
 
             <div className="flex flex-col gap-8">
