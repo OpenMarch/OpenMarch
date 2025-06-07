@@ -1,4 +1,3 @@
-import PagesModal from "@/components/page/PagesModal";
 import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
@@ -13,7 +12,6 @@ export default function Sidebar() {
         >
             <div className="flex flex-col gap-16">
                 <MarchersModal />
-                <PagesModal />
                 <MusicModal />
                 <FieldModal />
             </div>
