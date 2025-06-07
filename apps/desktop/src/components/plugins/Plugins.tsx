@@ -1,6 +1,6 @@
 import { SidebarModalLauncher } from "../sidebar/SidebarModal";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { X } from "@phosphor-icons/react";
+import { PuzzlePieceIcon, X } from "@phosphor-icons/react";
 import Plugin, { PluginMetadata } from "@/global/classes/Plugin";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -9,7 +9,7 @@ export default function Plugins() {
     return (
         <SidebarModalLauncher
             contents={<PluginsContents />}
-            buttonLabel="Plugins"
+            buttonLabel={<PuzzlePieceIcon size={24} />}
         />
     );
 }
