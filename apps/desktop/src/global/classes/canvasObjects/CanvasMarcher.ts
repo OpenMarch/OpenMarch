@@ -94,6 +94,20 @@ export default class CanvasMarcher
                 width: triangleRadius * 2,
                 height: triangleRadius * Math.sqrt(3), // Height of equilateral triangle
             });
+        } else if (shapeType === "x") {
+            // Create an X shape using two crossing lines
+            const xSize = dotRadius * 1.2;
+            const line1 = new fabric.Line([-xSize, -xSize, xSize, xSize], {
+                stroke: outlineColor,
+                strokeWidth: 2,
+            });
+            const line2 = new fabric.Line([-xSize, xSize, xSize, -xSize], {
+                stroke: outlineColor,
+                strokeWidth: 2,
+            });
+            markerShape = new fabric.Group([line1, line2], {
+                ...commonShapeProps,
+            });
         } else {
             // Default to circle
             markerShape = new fabric.Circle({
