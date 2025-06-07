@@ -215,7 +215,7 @@ export default function SectionAppearanceList() {
                     event.preventDefault();
                     handleSubmit();
                 }}
-                className="text-body text-text flex flex-col gap-8"
+                className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
             >
                 <div className="flex w-full items-center justify-between">
                     {localAppearances && hasPendingChanges && (

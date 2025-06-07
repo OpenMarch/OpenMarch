@@ -476,15 +476,10 @@ export default function TimelineContainer() {
                 ref={timelineRef}
                 id="timeline"
                 className={clsx(
-                    "rounded-6 border-stroke bg-fg-1 relative flex w-full min-w-0 border p-8 transition-all duration-200",
-                    uiSettings.focussedComponent === "timeline"
-                        ? "h-[48rem]"
-                        : uiSettings.showWaveform
-                          ? "h-[8rem]"
-                          : "h-[4rem]",
+                    "rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 border p-8 transition-all duration-200",
                 )}
             >
-                <div className="grid grid-cols-[4em_1fr] grid-rows-[2em_90px] gap-6 overflow-x-auto overflow-y-hidden">
+                <div className="overflow-ys-hidden grid h-fit min-h-0 grid-cols-[4em_1fr] grid-rows-2 gap-6 overflow-x-auto">
                     <div className="flex h-[2em] items-center">
                         <p className="text-sub leading-none">Pages</p>
                     </div>
