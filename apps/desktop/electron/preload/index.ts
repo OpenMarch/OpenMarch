@@ -471,13 +471,6 @@ const APP_API = {
         ) as Promise<DatabaseResponse<UtilityRecord>>,
 
     // Section Appearances
-    getSectionAppearances: (
-        section?: string,
-    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke(
-            "section_appearances:getSectionAppearances",
-            section,
-        ),
     createSectionAppearances: (
         newSectionAppearances: NewSectionAppearanceArgs[],
     ): Promise<DatabaseResponse<SectionAppearance[]>> =>
@@ -499,6 +492,16 @@ const APP_API = {
             "section_appearances:deleteSectionAppearances",
             sectionAppearanceIds,
         ),
+
+    // SQL Proxy for Drizzle
+    sqlProxy: (
+        sql: string,
+        params: any[],
+        method: "all" | "run" | "get" | "values",
+    ) =>
+        ipcRenderer.invoke("sql:proxy", sql, params, method) as Promise<{
+            rows: any[] | any;
+        }>,
 
     // Utilities
     swapMarchers: (args: {

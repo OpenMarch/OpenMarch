@@ -5,24 +5,6 @@ import * as History from "../database.history";
 
 export type SectionAppearance = typeof schema.sectionAppearances.$inferSelect;
 
-export function getSectionAppearances({
-    orm,
-    section,
-}: {
-    orm: DB;
-    section?: string;
-}): SectionAppearance[] {
-    let queryBuilder = orm.select().from(schema.sectionAppearances).$dynamic();
-
-    if (section) {
-        queryBuilder = queryBuilder.where(
-            eq(schema.sectionAppearances.section, section),
-        );
-    }
-
-    return queryBuilder.all();
-}
-
 export interface NewSectionAppearanceArgs {
     section: string;
     fill_color?: string;
