@@ -45,7 +45,7 @@ export const SelectTriggerButton = forwardRef<
         <RadixSelect.Trigger
             className={twMerge(
                 clsx(
-                    "rounded-6 border-stroke bg-fg-2 text-body text-text focus-visible:border-accent flex h-[2.5rem] w-fit items-center justify-between gap-12 overflow-clip border px-22 duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "rounded-6 border-stroke bg-fg-2 text-body text-text focus-visible:border-accent flex h-[2.5rem] w-fit items-center justify-between gap-8 overflow-clip border px-22 duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -53,7 +53,7 @@ export const SelectTriggerButton = forwardRef<
         >
             <RadixSelect.Value placeholder={label} />
             <RadixSelect.Icon>
-                <CaretDownIcon size={24} />
+                <CaretDownIcon size={18} />
             </RadixSelect.Icon>
         </RadixSelect.Trigger>
     );
