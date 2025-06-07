@@ -6,16 +6,9 @@ import FieldProperties, {
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CaretDownIcon, CaretUpIcon, InfoIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import * as Form from "@radix-ui/react-form";
-import {
-    Input,
-    TooltipContents,
-    Button,
-    Switch,
-    UnitInput,
-} from "@openmarch/ui";
-import * as Tooltip from "@radix-ui/react-tooltip";
+import { Input, Button, Switch, UnitInput } from "@openmarch/ui";
 import clsx from "clsx";
 import { toast } from "sonner";
 import {
@@ -28,19 +21,12 @@ import {
 import { RgbaColor } from "@uiw/react-color";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
 import ColorPicker from "../ui/ColorPicker";
+import FormField from "../ui/FormField";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
 
-const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px] ml-16");
-const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
-const requiredLabelClassname = clsx(
-    labelClassname,
-    "after:content-['*'] after:text-red",
-);
 const inputClassname = clsx("col-span-6 self-center ");
-const tooltipClassname = clsx("");
-const errorClassname = clsx("text-md leading-none text-red mt-8");
 
 const blurOnEnterFunc = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -85,332 +71,180 @@ function CheckpointEditor({
                 </div>
                 {open ? <CaretUpIcon size={24} /> : <CaretDownIcon size={24} />}
             </RadixCollapsible.Trigger>
-            <RadixCollapsible.Content className={"mx-12 my-8"}>
+            <RadixCollapsible.Content className="mx-12 my-8">
                 <div className="flex flex-col gap-8">
-                    <Form.Field name="Steps from center">
-                        <div className={formFieldClassname}>
-                            <Form.Label className={requiredLabelClassname}>
-                                Steps from{axis === "x" ? " center" : " front"}
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Input
-                                    type="text" // Changed from "number"
-                                    inputMode="numeric" // Better mobile experience
-                                    pattern="-?[0-9]*" // Ensures only numbers can be entered
-                                    className={inputClassname}
-                                    onBlur={(e) => {
-                                        e.preventDefault();
-                                        const parsedInt = parseInt(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedInt)) {
-                                            updateCheckpoint({
-                                                axis,
-                                                oldCheckpoint: checkpoint,
-                                                newCheckpoint: {
-                                                    ...checkpoint,
-                                                    stepsFromCenterFront:
-                                                        parseInt(
-                                                            e.target.value,
-                                                        ),
-                                                },
-                                            });
-                                        }
-                                    }}
-                                    onChange={(e) => {
-                                        // Only allow numbers and negative sign
-                                        const filtered = e.target.value.replace(
-                                            /[^\d-]/g,
-                                            "",
-                                        );
-                                        // Ensure only one negative sign at start
-                                        const normalized = filtered
-                                            .replace(/--+/g, "-")
-                                            .replace(/(.+)-/g, "$1");
-                                        e.target.value = normalized;
-                                    }}
-                                    onKeyDown={blurOnEnter}
-                                    defaultValue={
-                                        checkpoint.stepsFromCenterFront
-                                    }
-                                    required
-                                    maxLength={10}
-                                />
-                            </Form.Control>
-                            <Tooltip.TooltipProvider>
-                                <Tooltip.Root>
-                                    <Tooltip.Trigger
-                                        type="button"
-                                        className={tooltipClassname}
-                                    >
-                                        <InfoIcon
-                                            size={18}
-                                            className="text-text/60"
-                                        />
-                                    </Tooltip.Trigger>
-                                    <TooltipContents
-                                        className="p-16 text-center"
-                                        side="right"
-                                    >
-                                        The number of steps away from the front
-                                        of the field that this checkpoint is.{" "}
-                                        <br />
-                                        Negative is towards the back.
-                                    </TooltipContents>
-                                </Tooltip.Root>
-                            </Tooltip.TooltipProvider>
-                        </div>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-                    </Form.Field>
-                    <Form.Field name="Name">
-                        <div className={formFieldClassname}>
-                            <Form.Label className={requiredLabelClassname}>
-                                Name
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Input
-                                    type="text"
-                                    onBlur={(e) => {
-                                        e.preventDefault();
-                                        if (
-                                            e.target.value !== checkpoint.name
-                                        ) {
-                                            updateCheckpoint({
-                                                axis,
-                                                oldCheckpoint: checkpoint,
-                                                newCheckpoint: {
-                                                    ...checkpoint,
-                                                    name: e.target.value,
-                                                },
-                                            });
-                                        }
-                                    }}
-                                    className={inputClassname}
-                                    onKeyDown={blurOnEnter}
-                                    defaultValue={checkpoint.name}
-                                    required
-                                />
-                            </Form.Control>
-
-                            <Tooltip.TooltipProvider>
-                                <Tooltip.Root>
-                                    <Tooltip.Trigger
-                                        type="button"
-                                        className={tooltipClassname}
-                                    >
-                                        <InfoIcon
-                                            size={18}
-                                            className="text-text/60"
-                                        />
-                                    </Tooltip.Trigger>
-                                    <TooltipContents
-                                        className="p-16"
-                                        side="right"
-                                    >
-                                        The primary name of the checkpoint.
-                                        (E.g. &quot;45 Yard Line - Side 1&quot;)
-                                    </TooltipContents>
-                                </Tooltip.Root>
-                            </Tooltip.TooltipProvider>
-                        </div>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-                    </Form.Field>
-                    <Form.Field
-                        name="Short Name"
-                        className={formFieldClassname}
+                    <FormField
+                        label={`Steps from ${axis === "x" ? " center" : " front"}`}
+                        tooltip="The number of steps away from the front
+                of the field that this checkpoint is.
+                Negative is towards the back."
                     >
-                        <Form.Label className={requiredLabelClassname}>
-                            Short Name
-                        </Form.Label>
-                        <Form.Control asChild>
+                        <Input
+                            type="text" // Changed from "number"
+                            inputMode="numeric" // Better mobile experience
+                            pattern="-?[0-9]*" // Ensures only numbers can be entered
+                            className={inputClassname}
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                const parsedInt = parseInt(e.target.value);
+
+                                if (!isNaN(parsedInt)) {
+                                    updateCheckpoint({
+                                        axis,
+                                        oldCheckpoint: checkpoint,
+                                        newCheckpoint: {
+                                            ...checkpoint,
+                                            stepsFromCenterFront: parseInt(
+                                                e.target.value,
+                                            ),
+                                        },
+                                    });
+                                }
+                            }}
+                            onChange={(e) => {
+                                // Only allow numbers and negative sign
+                                const filtered = e.target.value.replace(
+                                    /[^\d-]/g,
+                                    "",
+                                );
+                                // Ensure only one negative sign at start
+                                const normalized = filtered
+                                    .replace(/--+/g, "-")
+                                    .replace(/(.+)-/g, "$1");
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={checkpoint.stepsFromCenterFront}
+                            required
+                            maxLength={10}
+                        />
+                    </FormField>
+                    <FormField
+                        label="Name"
+                        tooltip="Name your checkpoint whatever you want. This is just for you to know what checkpoint you're selecting."
+                    >
+                        <Input
+                            type="text"
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                updateCheckpoint({
+                                    axis,
+                                    oldCheckpoint: checkpoint,
+                                    newCheckpoint: {
+                                        ...checkpoint,
+                                        name: e.target.value,
+                                    },
+                                });
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={checkpoint.name}
+                            required
+                            maxLength={40}
+                            className={inputClassname}
+                        />
+                    </FormField>
+                    <FormField
+                        label="Short Name"
+                        tooltip='The primary name of the checkpoint. (E.g.
+                        "45 Yard Line - Side 1")'
+                    >
+                        <Input
+                            type="text" // Changed from "number"
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (e.target.value !== checkpoint.terseName) {
+                                    updateCheckpoint({
+                                        axis,
+                                        oldCheckpoint: checkpoint,
+                                        newCheckpoint: {
+                                            ...checkpoint,
+                                            terseName: e.target.value,
+                                        },
+                                    });
+                                }
+                            }}
+                            className={inputClassname}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={checkpoint.terseName}
+                            required
+                        />
+                    </FormField>
+                    {axis === "x" && (
+                        <FormField
+                            label="Field label"
+                            tooltip="
+                            The label to appear on the field. I.e.
+                            the yard markers"
+                        >
                             <Input
                                 type="text" // Changed from "number"
                                 onBlur={(e) => {
                                     e.preventDefault();
                                     if (
-                                        e.target.value !== checkpoint.terseName
+                                        e.target.value !== checkpoint.fieldLabel
                                     ) {
                                         updateCheckpoint({
                                             axis,
                                             oldCheckpoint: checkpoint,
                                             newCheckpoint: {
                                                 ...checkpoint,
-                                                terseName: e.target.value,
+                                                fieldLabel:
+                                                    e.target.value.length === 0
+                                                        ? undefined
+                                                        : e.target.value,
                                             },
                                         });
                                     }
                                 }}
                                 className={inputClassname}
                                 onKeyDown={blurOnEnter}
-                                defaultValue={checkpoint.terseName}
-                                required
+                                defaultValue={checkpoint.fieldLabel ?? ""}
                             />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    The primary name of the checkpoint. (E.g.
-                                    &quot;45 Yard Line - Side 1&quot;)
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    {axis === "x" && (
-                        <Form.Field
-                            name="Field label"
-                            className={formFieldClassname}
-                        >
-                            <Form.Label className={labelClassname}>
-                                Field label
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Input
-                                    type="text" // Changed from "number"
-                                    onBlur={(e) => {
-                                        e.preventDefault();
-                                        if (
-                                            e.target.value !==
-                                            checkpoint.fieldLabel
-                                        ) {
-                                            updateCheckpoint({
-                                                axis,
-                                                oldCheckpoint: checkpoint,
-                                                newCheckpoint: {
-                                                    ...checkpoint,
-                                                    fieldLabel:
-                                                        e.target.value
-                                                            .length === 0
-                                                            ? undefined
-                                                            : e.target.value,
-                                                },
-                                            });
-                                        }
-                                    }}
-                                    className={inputClassname}
-                                    onKeyDown={blurOnEnter}
-                                    defaultValue={checkpoint.fieldLabel ?? ""}
-                                />
-                            </Form.Control>
-
-                            <Tooltip.TooltipProvider>
-                                <Tooltip.Root>
-                                    <Tooltip.Trigger type="button">
-                                        <InfoIcon
-                                            size={18}
-                                            className="text-text/60"
-                                        />
-                                    </Tooltip.Trigger>
-                                    <TooltipContents
-                                        className="p-16"
-                                        side="right"
-                                    >
-                                        The label to appear on the field. I.e.
-                                        the yard markers
-                                    </TooltipContents>
-                                </Tooltip.Root>
-                            </Tooltip.TooltipProvider>
-                        </Form.Field>
+                        </FormField>
                     )}
-                    <Form.Field name="Visible" className={formFieldClassname}>
-                        <Form.Label className={labelClassname}>
-                            Visible
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Switch
-                                className={inputClassname}
-                                checked={checkpoint.visible}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    updateCheckpoint({
-                                        axis,
-                                        oldCheckpoint: checkpoint,
-                                        newCheckpoint: {
-                                            ...checkpoint,
-                                            visible: !checkpoint.visible,
-                                        },
-                                    });
-                                }}
-                            />
-                        </Form.Control>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    If this checkpoint should be visible on the
-                                    field
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Use as reference"
-                        className={formFieldClassname}
+                    <FormField
+                        label="Visible"
+                        tooltip=" If this checkpoint should be visible on the
+                        field"
                     >
-                        <Form.Label className={labelClassname}>
-                            Use as reference
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Switch
-                                className={inputClassname}
-                                checked={checkpoint.useAsReference}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    updateCheckpoint({
-                                        axis,
-                                        oldCheckpoint: checkpoint,
-                                        newCheckpoint: {
-                                            ...checkpoint,
-                                            useAsReference:
-                                                !checkpoint.useAsReference,
-                                        },
-                                    });
-                                }}
-                            />
-                        </Form.Control>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    If this checkpoint should be used as a
-                                    reference for coordinates.
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
+                        <Switch
+                            className={inputClassname}
+                            checked={checkpoint.visible}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                updateCheckpoint({
+                                    axis,
+                                    oldCheckpoint: checkpoint,
+                                    newCheckpoint: {
+                                        ...checkpoint,
+                                        visible: !checkpoint.visible,
+                                    },
+                                });
+                            }}
+                        />
+                    </FormField>
+                    <FormField
+                        label="Use as reference"
+                        tooltip=" If this checkpoint should be used as a
+                        reference for coordinates."
+                    >
+                        <Switch
+                            className={inputClassname}
+                            checked={checkpoint.useAsReference}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                updateCheckpoint({
+                                    axis,
+                                    oldCheckpoint: checkpoint,
+                                    newCheckpoint: {
+                                        ...checkpoint,
+                                        useAsReference:
+                                            !checkpoint.useAsReference,
+                                    },
+                                });
+                            }}
+                        />
+                    </FormField>
                     <Button
                         variant="red"
                         size="compact"
@@ -659,154 +493,98 @@ export default function FieldPropertiesCustomizer() {
             <div className="flex flex-col gap-16">
                 <div className="flex flex-col gap-12">
                     <h4 className="text-h4 mb-8">General</h4>
-                    <Form.Field
-                        name="Field Name"
-                        className={formFieldClassname}
+                    <FormField
+                        label="Field Name"
+                        tooltip=" The name of this field, stage, or grid"
                     >
-                        <Form.Label className={requiredLabelClassname}>
-                            Field Name
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.name
-                                    ) {
+                        <Input
+                            type="text" // Changed from "number"
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (
+                                    e.target.value !==
+                                    currentFieldProperties.name
+                                ) {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            name: e.target.value,
+                                        }),
+                                    );
+                                }
+                            }}
+                            className={inputClassname}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={currentFieldProperties.name}
+                            required
+                        />
+                    </FormField>
+                    <FormField
+                        label=" Step Size"
+                        tooltip="The size of each step. The canvas will
+                        adjust to this number so that the size
+                        of it is always consistent with its
+                        real-world dimensions."
+                    >
+                        <UnitInput
+                            type="text"
+                            ref={stepSizeInputRef}
+                            inputMode="numeric"
+                            pattern="[0-9]*\.?[0-9]*"
+                            containerClassName={inputClassname}
+                            // className={inputClassname}
+                            unit={
+                                measurementSystem === "imperial" ? "in" : "cm"
+                            }
+                            onBlur={(e) => {
+                                e.preventDefault();
+
+                                if (e.target.value !== "") {
+                                    const parsedFloat = parseFloat(
+                                        e.target.value,
+                                    );
+
+                                    if (!isNaN(parsedFloat)) {
                                         setFieldProperties(
                                             new FieldProperties({
                                                 ...currentFieldProperties,
-                                                name: e.target.value,
+                                                stepSizeInches:
+                                                    measurementSystem ===
+                                                    "imperial"
+                                                        ? parsedFloat
+                                                        : FieldProperties.centimetersToInches(
+                                                              parsedFloat,
+                                                          ),
                                             }),
                                         );
                                     }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={currentFieldProperties.name}
-                                required
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    The name of this field, stage, or grid
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field name="Step Size" className={formFieldClassname}>
-                        <Form.Label className={requiredLabelClassname}>
-                            Step Size
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <UnitInput
-                                type="text"
-                                ref={stepSizeInputRef}
-                                inputMode="numeric"
-                                pattern="[0-9]*\.?[0-9]*"
-                                containerClassName={inputClassname}
-                                // className={inputClassname}
-                                unit={
-                                    measurementSystem === "imperial"
-                                        ? "in"
-                                        : "cm"
                                 }
-                                onBlur={(e) => {
-                                    e.preventDefault();
-
-                                    if (e.target.value !== "") {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    stepSizeInches:
-                                                        measurementSystem ===
-                                                        "imperial"
-                                                            ? parsedFloat
-                                                            : FieldProperties.centimetersToInches(
-                                                                  parsedFloat,
-                                                              ),
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers and decimal point
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.]/g,
-                                        "",
-                                    );
-                                    // Ensure only one decimal point
-                                    const normalized = filtered.replace(
-                                        /\.+/g,
-                                        ".",
-                                    );
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    currentFieldProperties.stepSizeInUnits
-                                }
-                                required
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents
-                                    className="w-256 flex-wrap p-16 text-center"
-                                    side="right"
-                                >
-                                    <div>
-                                        The size of each step. The canvas will
-                                        adjust to this number so that the size
-                                        of it is always consistent with its
-                                        real-world dimensions.
-                                    </div>
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Measurement System"
-                        className={formFieldClassname}
+                            }}
+                            onChange={(e) => {
+                                // Allow numbers and decimal point
+                                const filtered = e.target.value.replace(
+                                    /[^\d.]/g,
+                                    "",
+                                );
+                                // Ensure only one decimal point
+                                const normalized = filtered.replace(
+                                    /\.+/g,
+                                    ".",
+                                );
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                currentFieldProperties.stepSizeInUnits
+                            }
+                            required
+                        />
+                    </FormField>
+                    <FormField
+                        label="Measurement System"
+                        tooltip="The unit of measurement to define the step
+                        size in. Can go back and forth"
                     >
-                        <Form.Label className={labelClassname}>
-                            Measurement System
-                        </Form.Label>
                         <Select
                             onValueChange={(e) => {
                                 setFieldProperties(
@@ -836,245 +614,157 @@ export default function FieldPropertiesCustomizer() {
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
+                    </FormField>
 
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents
-                                    className="p-16 text-center"
-                                    side="right"
-                                >
-                                    The unit of measurement to define the step
-                                    size in. Can go back and forth
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-
-                    <Form.Field
-                        name="Half line X-Interval"
-                        className={formFieldClassname}
+                    <FormField
+                        label="Half Line X-Interval"
+                        tooltip="
+                            The interval that half lines appear in
+                            the UI on the X axis from the center of
+                            the field.
+                            Leave empty to omit half lines on the
+                            X-axis.
+                            This is purely cosmetic and does not
+                            affect coordinates in any way
+                        "
                     >
-                        <Form.Label className={labelClassname}>
-                            Half Line X-Interval
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*\.?[0-9]*"
+                            className={inputClassname}
+                            onBlur={(e) => {
+                                e.preventDefault();
 
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                halfLineXInterval: undefined,
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    halfLineXInterval:
-                                                        parsedFloat,
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers and decimal point
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.]/g,
-                                        "",
-                                    );
-                                    // Ensure only one decimal point
-                                    const normalized = filtered.replace(
-                                        /\.+/g,
-                                        ".",
-                                    );
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.halfLineXInterval ?? ""
-                                }
-                            />
-                        </Form.Control>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents
-                                    className="p-16 text-center"
-                                    side="right"
-                                >
-                                    <div>
-                                        The interval that half lines appear in
-                                        the UI on the X axis from the center of
-                                        the field.
-                                    </div>
-                                    <div>
-                                        Leave empty to omit half lines on the
-                                        X-axis.
-                                    </div>
-                                    <div>
-                                        This is purely cosmetic and does not
-                                        affect coordinates in any way
-                                    </div>
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Half line Y-Interval"
-                        className={formFieldClassname}
-                    >
-                        <Form.Label className={labelClassname}>
-                            Half Line Y-Interval
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                halfLineYInterval: undefined,
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    halfLineYInterval:
-                                                        parsedFloat,
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers and decimal point
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.]/g,
-                                        "",
-                                    );
-                                    // Ensure only one decimal point
-                                    const normalized = filtered.replace(
-                                        /\.+/g,
-                                        ".",
-                                    );
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.halfLineYInterval ?? ""
-                                }
-                            />
-                        </Form.Control>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents
-                                    className="p-16 text-center"
-                                    side="right"
-                                >
-                                    <div>
-                                        The interval that half lines appear in
-                                        the UI on the Y axis from the front of
-                                        the field.
-                                    </div>
-                                    <div>
-                                        Leave empty to omit half lines on the
-                                        Y-axis.
-                                    </div>
-                                    <div>
-                                        This is purely cosmetic and does not
-                                        affect coordinates in any way
-                                    </div>
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                </div>
-                <div className="flex flex-col gap-12">
-                    <h4 className="text-h4 mb-8">Image Rendering</h4>
-                    <Form.Field
-                        name="Left"
-                        className={clsx(
-                            formFieldClassname,
-                            "flex justify-between",
-                        )}
-                    >
-                        <Form.Label
-                            className={clsx(labelClassname, "col-span-4")}
-                        >
-                            Show Background Image
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Switch
-                                className={clsx(inputClassname, "col-span-2")}
-                                checked={currentFieldProperties.showFieldImage}
-                                onClick={(e) => {
-                                    e.preventDefault();
+                                if (e.target.value === "") {
                                     setFieldProperties(
                                         new FieldProperties({
                                             ...currentFieldProperties,
-                                            showFieldImage:
-                                                !currentFieldProperties.showFieldImage,
+                                            halfLineXInterval: undefined,
                                         }),
                                     );
-                                }}
-                            />
-                        </Form.Control>
-                    </Form.Field>
-                    <Form.Field
-                        name="Measurement System"
-                        className={formFieldClassname}
+                                } else {
+                                    const parsedFloat = parseFloat(
+                                        e.target.value,
+                                    );
+
+                                    if (!isNaN(parsedFloat)) {
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                halfLineXInterval: parsedFloat,
+                                            }),
+                                        );
+                                    }
+                                }
+                            }}
+                            onChange={(e) => {
+                                // Allow numbers and decimal point
+                                const filtered = e.target.value.replace(
+                                    /[^\d.]/g,
+                                    "",
+                                );
+                                // Ensure only one decimal point
+                                const normalized = filtered.replace(
+                                    /\.+/g,
+                                    ".",
+                                );
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                fieldProperties?.halfLineXInterval ?? ""
+                            }
+                        />
+                    </FormField>
+                    <FormField
+                        label="Half Line Y-Interval"
+                        tooltip="
+                            The interval that half lines appear in
+                            the UI on the Y axis from the front of
+                            the field.
+                            Leave empty to omit half lines on the
+                            Y-axis.
+                            This is purely cosmetic and does not
+                            affect coordinates in any way
+                        "
                     >
-                        <Form.Label className={labelClassname}>
-                            Conform Method
-                        </Form.Label>
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*\.?[0-9]*"
+                            className={inputClassname}
+                            onBlur={(e) => {
+                                e.preventDefault();
+
+                                if (e.target.value === "") {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            halfLineYInterval: undefined,
+                                        }),
+                                    );
+                                } else {
+                                    const parsedFloat = parseFloat(
+                                        e.target.value,
+                                    );
+
+                                    if (!isNaN(parsedFloat)) {
+                                        setFieldProperties(
+                                            new FieldProperties({
+                                                ...currentFieldProperties,
+                                                halfLineYInterval: parsedFloat,
+                                            }),
+                                        );
+                                    }
+                                }
+                            }}
+                            onChange={(e) => {
+                                // Allow numbers and decimal point
+                                const filtered = e.target.value.replace(
+                                    /[^\d.]/g,
+                                    "",
+                                );
+                                // Ensure only one decimal point
+                                const normalized = filtered.replace(
+                                    /\.+/g,
+                                    ".",
+                                );
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                fieldProperties?.halfLineYInterval ?? ""
+                            }
+                        />
+                    </FormField>
+                </div>
+                <div className="flex flex-col gap-12">
+                    <h4 className="text-h4 mb-8">Image Rendering</h4>
+                    <FormField label="Show Background Image">
+                        <Switch
+                            className={clsx(inputClassname, "col-span-2")}
+                            checked={currentFieldProperties.showFieldImage}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        showFieldImage:
+                                            !currentFieldProperties.showFieldImage,
+                                    }),
+                                );
+                            }}
+                        />
+                    </FormField>
+                    <FormField
+                        label="Conform Method"
+                        tooltip="
+                            Whether to fit the background image
+                            inside the field or fill it.
+                            The aspect ratio is always
+                            maintained"
+                    >
                         <Select
                             onValueChange={(e) => {
                                 const newValue =
@@ -1099,31 +789,7 @@ export default function FieldPropertiesCustomizer() {
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents
-                                    className="p-16 text-center"
-                                    side="right"
-                                >
-                                    <div>
-                                        Whether to fit the background image
-                                        inside the field or fill it
-                                    </div>
-                                    <div>
-                                        The aspect ratio is always
-                                        maintained{" "}
-                                    </div>
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
+                    </FormField>
 
                     <Button
                         className="self-end"
@@ -1154,7 +820,7 @@ export default function FieldPropertiesCustomizer() {
 
                 <div className="flex flex-col gap-12">
                     <h4 className="text-h4 mb-8">Stats</h4>
-                    <div className={clsx(formFieldClassname, "items-center")}>
+                    <div>
                         <div className={clsx("col-span-2 align-middle")}>
                             Width
                         </div>
@@ -1167,7 +833,7 @@ export default function FieldPropertiesCustomizer() {
                             {currentFieldProperties.prettyWidth}
                         </div>
                     </div>
-                    <div className={clsx(formFieldClassname, "items-center")}>
+                    <div>
                         <div className={clsx("col-span-2 align-middle")}>
                             Height
                         </div>
@@ -1180,7 +846,7 @@ export default function FieldPropertiesCustomizer() {
                             {currentFieldProperties.prettyHeight}
                         </div>
                     </div>
-                    <div className={clsx(formFieldClassname, "items-center")}>
+                    <div>
                         <div className={clsx("col-span-5 align-middle")}>
                             Field Ratio
                         </div>
@@ -1204,7 +870,7 @@ export default function FieldPropertiesCustomizer() {
                             w/h
                         </div>
                     </div>
-                    <div className={clsx(formFieldClassname, "items-center")}>
+                    <div>
                         <div className={clsx("col-span-5 align-middle")}>
                             Background Image Ratio
                         </div>
@@ -1305,50 +971,27 @@ export default function FieldPropertiesCustomizer() {
                         behind the front of the field. Failing to do so may
                         cause graphical errors and unexpected coordinates.
                     </div>
-                    <Form.Field
-                        name="Use Hashes"
-                        className={clsx(formFieldClassname, "mb-8")}
+                    <FormField
+                        label="Use Hashes"
+                        tooltip="
+                            Use hashes for the Y-checkpoints, like a
+                            football field. If unchecked, lines will be used.    "
                     >
-                        <Form.Label className={labelClassname}>
-                            Use Hashes
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Switch
-                                className={inputClassname}
-                                checked={currentFieldProperties.useHashes}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            useHashes:
-                                                !currentFieldProperties.useHashes,
-                                        }),
-                                    );
-                                }}
-                            />
-                        </Form.Control>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents
-                                    className="p-16 text-center"
-                                    side="right"
-                                >
-                                    <div>
-                                        Use hashes for the Y-checkpoints, like a
-                                        football field.
-                                    </div>
-                                    <div>If unchecked, lines will be used.</div>
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
+                        <Switch
+                            className={inputClassname}
+                            checked={currentFieldProperties.useHashes}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        useHashes:
+                                            !currentFieldProperties.useHashes,
+                                    }),
+                                );
+                            }}
+                        />
+                    </FormField>
                     <div className="flex flex-col gap-12">
                         {currentFieldProperties.yCheckpoints
                             .sort(sorter)
@@ -1375,749 +1018,496 @@ export default function FieldPropertiesCustomizer() {
                 </div>
                 <div className="flex flex-col gap-12">
                     <h4 className="text-h4 mb-8">Side Descriptions</h4>
-                    <Form.Field
-                        name="Director's left"
-                        className={formFieldClassname}
+                    <FormField
+                        label="Director's Left"
+                        tooltip=' E.g. "Side 1"," Audience
+                        Left" or "Stage Right"'
                     >
-                        <Form.Label className={requiredLabelClassname}>
-                            Director&apos;s Left
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .verboseLeft
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    verboseLeft: e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
+                        <Input
+                            type="text" // Changed from "number"
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (
+                                    e.target.value !==
                                     currentFieldProperties.sideDescriptions
                                         .verboseLeft
+                                ) {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                verboseLeft: e.target.value,
+                                            },
+                                        }),
+                                    );
                                 }
-                                required
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    E.g. &quot;Side 1&quot;,&quot; Audience
-                                    Left&quot; or &quot;Stage Right&quot;
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Director's left"
-                        className={formFieldClassname}
+                            }}
+                            className={inputClassname}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                currentFieldProperties.sideDescriptions
+                                    .verboseLeft
+                            }
+                            required
+                        />
+                    </FormField>
+                    <FormField
+                        label="Left Abbreviation"
+                        tooltip='E.g. "S1", "AL" or
+                        "SR" (short for "Side
+                        1", "Audience Left" or
+                        "Stage Right")'
                     >
-                        <Form.Label className={requiredLabelClassname}>
-                            Left Abbreviation
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .terseLeft
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    terseLeft: e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
+                        <Input
+                            type="text" // Changed from "number"
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (
+                                    e.target.value !==
                                     currentFieldProperties.sideDescriptions
                                         .terseLeft
+                                ) {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                terseLeft: e.target.value,
+                                            },
+                                        }),
+                                    );
                                 }
-                                required
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
+                            }}
+                            className={inputClassname}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                currentFieldProperties.sideDescriptions
+                                    .terseLeft
+                            }
+                            required
+                        />
+                    </FormField>
 
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    E.g. &quot;S1&quot;, &quot;AL&quot; or
-                                    &quot;SR&quot; (short for &quot;Side
-                                    1&quot;, &quot;Audience Left&quot; or
-                                    &quot;Stage Right&quot;)
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-
-                    <Form.Field
-                        name="Director's right"
-                        className={formFieldClassname}
+                    <FormField
+                        label="Director's Right"
+                        tooltip='E.g. "Side 2"," Audience
+                        Right" or "Stage Left"'
                     >
-                        <Form.Label className={requiredLabelClassname}>
-                            Director&apos;s Right
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .verboseRight
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    verboseRight:
-                                                        e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
+                        <Input
+                            type="text" // Changed from "number"
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (
+                                    e.target.value !==
                                     currentFieldProperties.sideDescriptions
                                         .verboseRight
+                                ) {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                verboseRight: e.target.value,
+                                            },
+                                        }),
+                                    );
                                 }
-                                required
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    E.g. &quot;Side 2&quot;,&quot; Audience
-                                    Right&quot; or &quot;Stage Left&quot;
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Director's right"
-                        className={formFieldClassname}
+                            }}
+                            className={inputClassname}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                currentFieldProperties.sideDescriptions
+                                    .verboseRight
+                            }
+                            required
+                        />
+                    </FormField>
+                    <FormField
+                        label="Right Abbreviation"
+                        tooltip='E.g. "S2", "AR" or
+                        "SL" (short for "Side
+                        2", "Audience Right" or
+                        "Stage Left")'
                     >
-                        <Form.Label className={requiredLabelClassname}>
-                            Right Abbreviation
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .terseRight
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    terseRight: e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
+                        <Input
+                            type="text" // Changed from "number"
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (
+                                    e.target.value !==
                                     currentFieldProperties.sideDescriptions
                                         .terseRight
+                                ) {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            sideDescriptions: {
+                                                ...currentFieldProperties.sideDescriptions,
+                                                terseRight: e.target.value,
+                                            },
+                                        }),
+                                    );
                                 }
-                                required
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    E.g. &quot;S2&quot;, &quot;AR&quot; or
-                                    &quot;SL&quot; (short for &quot;Side
-                                    2&quot;, &quot;Audience Right&quot; or
-                                    &quot;Stage Left&quot;)
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
+                            }}
+                            className={inputClassname}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                currentFieldProperties.sideDescriptions
+                                    .terseRight
+                            }
+                            required
+                        />
+                    </FormField>
                 </div>
                 <div className="flex flex-col gap-12">
                     {/* <div className="mb-16">Field </div> */}
                     <h4 className="text-h4 mb-8">Field Labels</h4>
-                    <Form.Field
-                        name="Steps from front to home label bottom"
-                        className={formFieldClassname}
+                    <FormField
+                        label="Steps from front to home label bottom"
+                        tooltip="Number of steps from the front sideline to
+                        the outside of the home number (closer to
+                        the front sideline)"
                     >
-                        <Form.Label className={labelClassname}>
-                            Steps from front to home label bottom
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="-?[0-9]*\.?[0-9]*"
+                            className={inputClassname}
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (e.target.value === "") {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                homeStepsFromFrontToOutside:
+                                                    undefined,
+                                            },
+                                        }),
+                                    );
+                                } else {
+                                    const parsedFloat = parseFloat(
+                                        e.target.value,
+                                    );
+
+                                    if (!isNaN(parsedFloat)) {
                                         setFieldProperties(
                                             new FieldProperties({
                                                 ...currentFieldProperties,
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     homeStepsFromFrontToOutside:
-                                                        undefined,
+                                                        parsedFloat,
                                                 },
                                             }),
                                         );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        homeStepsFromFrontToOutside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
                                     }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
+                                }
+                            }}
+                            onChange={(e) => {
+                                // Allow numbers, decimal point, and negative sign
+                                const filtered = e.target.value.replace(
+                                    /[^\d.-]/g,
+                                    "",
+                                );
+
+                                // Ensure only one decimal point and one negative sign at start
+                                const normalized = filtered
+                                    .replace(/\.+/g, ".")
+                                    .replace(/--+/g, "-")
+                                    .replace(/(.+)-/g, "$1");
+
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                fieldProperties?.yardNumberCoordinates
+                                    .homeStepsFromFrontToOutside ?? ""
+                            }
+                            disabled
+                        />
+                    </FormField>
+                    <FormField
+                        label="Steps from front to home label top"
+                        tooltip="Number of steps from the front sideline to
+                        the inside of the home number (closer to the
+                        center of the field)"
+                    >
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="-?[0-9]*\.?[0-9]*"
+                            className={inputClassname}
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (e.target.value === "") {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                homeStepsFromFrontToInside:
+                                                    undefined,
+                                            },
+                                        }),
+                                    );
+                                } else {
+                                    const parsedFloat = parseFloat(
+                                        e.target.value,
                                     );
 
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .homeStepsFromFrontToOutside ?? ""
-                                }
-                                disabled
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    Number of steps from the front sideline to
-                                    the outside of the home number (closer to
-                                    the front sideline)
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Steps from front to home label top"
-                        className={formFieldClassname}
-                    >
-                        <Form.Label className={labelClassname}>
-                            Steps from front to home label top
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
+                                    if (!isNaN(parsedFloat)) {
                                         setFieldProperties(
                                             new FieldProperties({
                                                 ...currentFieldProperties,
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     homeStepsFromFrontToInside:
-                                                        undefined,
+                                                        parsedFloat,
                                                 },
                                             }),
                                         );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        homeStepsFromFrontToInside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
                                     }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
+                                }
+                            }}
+                            onChange={(e) => {
+                                // Allow numbers, decimal point, and negative sign
+                                const filtered = e.target.value.replace(
+                                    /[^\d.-]/g,
+                                    "",
+                                );
+
+                                // Ensure only one decimal point and one negative sign at start
+                                const normalized = filtered
+                                    .replace(/\.+/g, ".")
+                                    .replace(/--+/g, "-")
+                                    .replace(/(.+)-/g, "$1");
+
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                fieldProperties?.yardNumberCoordinates
+                                    .homeStepsFromFrontToInside ?? ""
+                            }
+                            disabled
+                        />
+                    </FormField>
+                    <FormField
+                        label="
+                        Steps from front to away label top"
+                        tooltip="
+                        Number of steps from the front sideline to
+                        the inside of the away number (closer to the
+                        center of the field)"
+                    >
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="-?[0-9]*\.?[0-9]*"
+                            className={inputClassname}
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (e.target.value === "") {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                awayStepsFromFrontToInside:
+                                                    undefined,
+                                            },
+                                        }),
+                                    );
+                                } else {
+                                    const parsedFloat = parseFloat(
+                                        e.target.value,
                                     );
 
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .homeStepsFromFrontToInside ?? ""
-                                }
-                                disabled
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    Number of steps from the front sideline to
-                                    the inside of the home number (closer to the
-                                    center of the field)
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Steps from front to away label top"
-                        className={formFieldClassname}
-                    >
-                        <Form.Label className={labelClassname}>
-                            Steps from front to away label top
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
+                                    if (!isNaN(parsedFloat)) {
                                         setFieldProperties(
                                             new FieldProperties({
                                                 ...currentFieldProperties,
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     awayStepsFromFrontToInside:
-                                                        undefined,
+                                                        parsedFloat,
                                                 },
                                             }),
                                         );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        awayStepsFromFrontToInside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
                                     }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
+                                }
+                            }}
+                            onChange={(e) => {
+                                // Allow numbers, decimal point, and negative sign
+                                const filtered = e.target.value.replace(
+                                    /[^\d.-]/g,
+                                    "",
+                                );
+
+                                // Ensure only one decimal point and one negative sign at start
+                                const normalized = filtered
+                                    .replace(/\.+/g, ".")
+                                    .replace(/--+/g, "-")
+                                    .replace(/(.+)-/g, "$1");
+
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                fieldProperties?.yardNumberCoordinates
+                                    .awayStepsFromFrontToInside ?? ""
+                            }
+                            disabled
+                        />
+                    </FormField>
+                    <FormField
+                        label="
+                        Steps from front to away label bottom"
+                        tooltip="
+                        Number of steps from the front sideline to
+                        the outside of the away number (closer to
+                        the back sideline)"
+                    >
+                        <Input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="-?[0-9]*\.?[0-9]*"
+                            className={inputClassname}
+                            onBlur={(e) => {
+                                e.preventDefault();
+                                if (e.target.value === "") {
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                awayStepsFromFrontToOutside:
+                                                    undefined,
+                                            },
+                                        }),
+                                    );
+                                } else {
+                                    const parsedFloat = parseFloat(
+                                        e.target.value,
                                     );
 
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .awayStepsFromFrontToInside ?? ""
-                                }
-                                disabled
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
-
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    Number of steps from the front sideline to
-                                    the inside of the away number (closer to the
-                                    center of the field)
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
-                    <Form.Field
-                        name="Steps from front to away label bottom"
-                        className={formFieldClassname}
-                    >
-                        <Form.Label className={labelClassname}>
-                            Steps from front to away label bottom
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
+                                    if (!isNaN(parsedFloat)) {
                                         setFieldProperties(
                                             new FieldProperties({
                                                 ...currentFieldProperties,
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     awayStepsFromFrontToOutside:
-                                                        undefined,
+                                                        parsedFloat,
                                                 },
                                             }),
                                         );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        awayStepsFromFrontToOutside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
                                     }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
-                                    );
-
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .awayStepsFromFrontToOutside ?? ""
                                 }
-                                disabled
-                            />
-                        </Form.Control>
-                        <Form.Message
-                            match={"valueMissing"}
-                            className={errorClassname}
-                        >
-                            Please enter a value.
-                        </Form.Message>
+                            }}
+                            onChange={(e) => {
+                                // Allow numbers, decimal point, and negative sign
+                                const filtered = e.target.value.replace(
+                                    /[^\d.-]/g,
+                                    "",
+                                );
 
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <TooltipContents className="p-16" side="right">
-                                    Number of steps from the front sideline to
-                                    the outside of the away number (closer to
-                                    the back sideline)
-                                </TooltipContents>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    </Form.Field>
+                                // Ensure only one decimal point and one negative sign at start
+                                const normalized = filtered
+                                    .replace(/\.+/g, ".")
+                                    .replace(/--+/g, "-")
+                                    .replace(/(.+)-/g, "$1");
+
+                                e.target.value = normalized;
+                            }}
+                            onKeyDown={blurOnEnter}
+                            defaultValue={
+                                fieldProperties?.yardNumberCoordinates
+                                    .awayStepsFromFrontToOutside ?? ""
+                            }
+                            disabled
+                        />
+                    </FormField>
                 </div>
                 <div className="flex flex-col gap-12">
                     {/* <div className="mb-16">Field </div> */}
                     <h4 className="text-h4 mb-8">External Labels</h4>
                     <div className="grid grid-cols-4">
-                        <Form.Field
-                            name="Left"
-                            className={clsx(
-                                formFieldClassname,
-                                "flex justify-between",
-                            )}
-                        >
-                            <Form.Label
-                                className={clsx(labelClassname, "col-span-4")}
-                            >
-                                Left
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Switch
-                                    className={clsx(
-                                        inputClassname,
-                                        "col-span-2",
-                                    )}
-                                    checked={
-                                        currentFieldProperties.leftLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                leftLabelsVisible:
-                                                    !currentFieldProperties.leftLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </Form.Control>
-                        </Form.Field>
-                        <Form.Field
-                            name="Right"
-                            className={clsx(
-                                formFieldClassname,
-                                "flex justify-between",
-                            )}
-                        >
-                            <Form.Label
-                                className={clsx(labelClassname, "col-span-4")}
-                            >
-                                Right
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Switch
-                                    className={clsx(
-                                        inputClassname,
-                                        "col-span-2",
-                                    )}
-                                    checked={
-                                        currentFieldProperties.rightLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                rightLabelsVisible:
-                                                    !currentFieldProperties.rightLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </Form.Control>
-                        </Form.Field>
-                        <Form.Field
-                            name="Bottom"
-                            className={clsx(
-                                formFieldClassname,
-                                "flex justify-between",
-                            )}
-                        >
-                            <Form.Label className={labelClassname}>
-                                Bottom
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Switch
-                                    className={inputClassname}
-                                    checked={
-                                        currentFieldProperties.bottomLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                bottomLabelsVisible:
-                                                    !currentFieldProperties.bottomLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </Form.Control>
-                        </Form.Field>
-                        <Form.Field
-                            name="Top"
-                            className={clsx(
-                                formFieldClassname,
-                                "flex justify-between",
-                            )}
-                        >
-                            <Form.Label
-                                className={clsx(labelClassname, "col-span-4")}
-                            >
-                                Top
-                            </Form.Label>
-                            <Form.Control asChild>
-                                <Switch
-                                    className={inputClassname}
-                                    checked={
-                                        currentFieldProperties.topLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                topLabelsVisible:
-                                                    !currentFieldProperties.topLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </Form.Control>
-                        </Form.Field>
+                        <FormField label="Left">
+                            <Switch
+                                className={clsx(inputClassname, "col-span-2")}
+                                checked={
+                                    currentFieldProperties.leftLabelsVisible
+                                }
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            leftLabelsVisible:
+                                                !currentFieldProperties.leftLabelsVisible,
+                                        }),
+                                    );
+                                }}
+                            />
+                        </FormField>
+                        <FormField label="Right">
+                            <Switch
+                                className={clsx(inputClassname, "col-span-2")}
+                                checked={
+                                    currentFieldProperties.rightLabelsVisible
+                                }
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            rightLabelsVisible:
+                                                !currentFieldProperties.rightLabelsVisible,
+                                        }),
+                                    );
+                                }}
+                            />
+                        </FormField>
+                        <FormField label="Bottom">
+                            <Switch
+                                className={inputClassname}
+                                checked={
+                                    currentFieldProperties.bottomLabelsVisible
+                                }
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            bottomLabelsVisible:
+                                                !currentFieldProperties.bottomLabelsVisible,
+                                        }),
+                                    );
+                                }}
+                            />
+                        </FormField>
+                        <FormField label="Top">
+                            <Switch
+                                className={inputClassname}
+                                checked={
+                                    currentFieldProperties.topLabelsVisible
+                                }
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            topLabelsVisible:
+                                                !currentFieldProperties.topLabelsVisible,
+                                        }),
+                                    );
+                                }}
+                            />
+                        </FormField>
                     </div>
                 </div>
             </div>

@@ -36,6 +36,7 @@ export function FieldPropertiesContents() {
     );
 }
 
+// from tabler icons, phosphor doesn't have a good field icon
 function FieldIcon() {
     return (
         <svg

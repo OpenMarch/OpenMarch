@@ -16,6 +16,7 @@ module.exports = {
         "sicommand",
         "bostick",
         "dukc",
+        "tabler",
         "ehlert",
         "aleksi",
         "saario",

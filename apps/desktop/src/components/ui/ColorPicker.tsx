@@ -2,12 +2,9 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@openmarch/ui";
 import {
     CheckIcon,
-    InfoIcon,
     TrashSimpleIcon,
     ArrowUUpLeftIcon,
 } from "@phosphor-icons/react";
-import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "@openmarch/ui";
 import {
     ColorResult,
     RgbaColor,
@@ -15,9 +12,8 @@ import {
     rgbaToHsva,
     Sketch,
 } from "@uiw/react-color";
-import clsx from "clsx";
-import { twMerge } from "tailwind-merge";
 import * as Popover from "@radix-ui/react-popover";
+import FormField from "./FormField";
 
 interface ColorPickerProps {
     initialColor: RgbaColor;
@@ -25,10 +21,8 @@ interface ColorPickerProps {
     tooltip?: string;
     defaultColor?: RgbaColor;
     onChange: (color: RgbaColor) => void;
+    className?: string;
 }
-
-const formFieldClassname = clsx("flex justify-between items-center gap-12");
-const labelClassname = clsx("text-body text-text/80 self-center");
 
 function getContrastingColor(color: RgbaColor): string {
     return color.r * 0.299 + color.g * 0.587 + color.b * 0.114 > 186
@@ -42,6 +36,7 @@ export default function ColorPicker({
     tooltip,
     defaultColor,
     onChange,
+    className,
 }: ColorPickerProps) {
     const [currentColor, setCurrentColor] = useState<RgbaColor>(initialColor);
     const pickerRef = useRef<HTMLDivElement>(null);
@@ -84,26 +79,12 @@ export default function ColorPicker({
     }, [defaultColor, onChange]);
 
     return (
-        <div className={formFieldClassname} ref={pickerRef}>
-            <div
-                className={twMerge(
-                    clsx("flex items-center gap-4", labelClassname),
-                )}
-            >
-                {label}
-                {tooltip && (
-                    <Tooltip.TooltipProvider>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger type="button">
-                                <InfoIcon size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <TooltipContents className="p-16" side="right">
-                                {tooltip}
-                            </TooltipContents>
-                        </Tooltip.Root>
-                    </Tooltip.TooltipProvider>
-                )}
-            </div>
+        <FormField
+            label={label}
+            tooltip={tooltip}
+            ref={pickerRef}
+            className={className}
+        >
             <div className="flex items-center gap-8">
                 <Popover.Root>
                     <Popover.Trigger
@@ -168,6 +149,6 @@ export default function ColorPicker({
                     <ArrowUUpLeftIcon size={20} />
                 </Button>
             </div>
-        </div>
+        </FormField>
     );
 }
