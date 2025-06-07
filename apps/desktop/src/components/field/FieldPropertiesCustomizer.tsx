@@ -25,14 +25,9 @@ import {
     SelectItem,
     SelectTriggerButton,
 } from "@openmarch/ui";
-import ColorPicker from "../ui/ColorPicker";
-import {
-    RgbaColor,
-    // ColorResult, Sketch, rgbaToHsva removed as they are internal to the shared ColorPicker
-    // rgbaToHex, // Removed as shared ColorPicker handles its own preview
-} from "@uiw/react-color";
+import { RgbaColor } from "@uiw/react-color";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
-import { RxReset } from "react-icons/rx";
+import ColorPicker from "../ui/ColorPicker";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -638,7 +633,23 @@ export default function FieldPropertiesCustomizer() {
         measurementSystem,
     ]);
 
-    // Removed internal ColorPicker component definition
+    // Helper function to validate RGBA colors
+    const validateIsRgbaColor = (
+        themeProperty: keyof FieldTheme,
+        fieldProperties: FieldProperties,
+    ) => {
+        const color = fieldProperties.theme[themeProperty] as RgbaColor;
+        const isRgba =
+            color.r !== undefined &&
+            color.g !== undefined &&
+            color.b !== undefined &&
+            color.a !== undefined;
+        if (!isRgba) {
+            toast.error("Invalid color");
+            return false;
+        }
+        return true;
+    };
 
     return (
         <Form.Root
@@ -2118,13 +2129,17 @@ export default function FieldPropertiesCustomizer() {
                     tooltip="Background color of the field"
                     initialColor={currentFieldProperties.theme.background}
                     defaultColor={DEFAULT_FIELD_THEME.background as RgbaColor}
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "background",
+                            currentFieldProperties,
+                        );
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    background: newColor,
+                                    background: color,
                                 },
                             }),
                         );
@@ -2132,18 +2147,22 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="Primary Lines"
-                    tooltip="Color of the main field lines. E.g. sidelines and yard lines"
+                    tooltip="Color of primary lines on the field"
                     initialColor={currentFieldProperties.theme.primaryStroke}
                     defaultColor={
                         DEFAULT_FIELD_THEME.primaryStroke as RgbaColor
                     }
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "primaryStroke",
+                            currentFieldProperties,
+                        );
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    primaryStroke: newColor,
+                                    primaryStroke: color,
                                 },
                             }),
                         );
@@ -2151,18 +2170,22 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="Secondary Lines"
-                    tooltip="Color of secondary markings. E.g. Hashes and half lines"
+                    tooltip="Color of secondary lines on the field"
                     initialColor={currentFieldProperties.theme.secondaryStroke}
                     defaultColor={
                         DEFAULT_FIELD_THEME.secondaryStroke as RgbaColor
                     }
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "secondaryStroke",
+                            currentFieldProperties,
+                        );
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    secondaryStroke: newColor,
+                                    secondaryStroke: color,
                                 },
                             }),
                         );
@@ -2170,18 +2193,22 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="Grid Lines"
-                    tooltip="Color the 1-step grid"
+                    tooltip="Color of grid lines on the field"
                     initialColor={currentFieldProperties.theme.tertiaryStroke}
                     defaultColor={
                         DEFAULT_FIELD_THEME.tertiaryStroke as RgbaColor
                     }
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "tertiaryStroke",
+                            currentFieldProperties,
+                        );
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    tertiaryStroke: newColor,
+                                    tertiaryStroke: color,
                                 },
                             }),
                         );
@@ -2189,16 +2216,20 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="Field Labels"
-                    tooltip="Color of yard numbers and field markings text"
+                    tooltip="Color of field labels"
                     initialColor={currentFieldProperties.theme.fieldLabel}
                     defaultColor={DEFAULT_FIELD_THEME.fieldLabel as RgbaColor}
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "fieldLabel",
+                            currentFieldProperties,
+                        );
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    fieldLabel: newColor,
+                                    fieldLabel: color,
                                 },
                             }),
                         );
@@ -2206,18 +2237,22 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="External Labels"
-                    tooltip="Color of labels outside the main field area"
+                    tooltip="Color of external labels"
                     initialColor={currentFieldProperties.theme.externalLabel}
                     defaultColor={
                         DEFAULT_FIELD_THEME.externalLabel as RgbaColor
                     }
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "externalLabel",
+                            currentFieldProperties,
+                        );
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    externalLabel: newColor,
+                                    externalLabel: color,
                                 },
                             }),
                         );
@@ -2225,16 +2260,20 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="Previous Path"
-                    tooltip="Color of paths showing previous movement"
+                    tooltip="Color of the previous path"
                     initialColor={currentFieldProperties.theme.previousPath}
                     defaultColor={DEFAULT_FIELD_THEME.previousPath as RgbaColor}
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "previousPath",
+                            currentFieldProperties,
+                        );
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    previousPath: newColor,
+                                    previousPath: color,
                                 },
                             }),
                         );
@@ -2242,16 +2281,17 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="Next Path"
-                    tooltip="Color of paths showing upcoming movement"
+                    tooltip="Color of the next path"
                     initialColor={currentFieldProperties.theme.nextPath}
                     defaultColor={DEFAULT_FIELD_THEME.nextPath as RgbaColor}
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor("nextPath", currentFieldProperties);
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    nextPath: newColor,
+                                    nextPath: color,
                                 },
                             }),
                         );
@@ -2262,16 +2302,17 @@ export default function FieldPropertiesCustomizer() {
                 </div>
                 <ColorPicker
                     label="Shapes"
-                    tooltip="Color of geometric shapes drawn on the field"
+                    tooltip="Color of shapes"
                     initialColor={currentFieldProperties.theme.shape}
                     defaultColor={DEFAULT_FIELD_THEME.shape as RgbaColor}
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor("shape", currentFieldProperties);
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    shape: newColor,
+                                    shape: color,
                                 },
                             }),
                         );
@@ -2279,16 +2320,17 @@ export default function FieldPropertiesCustomizer() {
                 />
                 <ColorPicker
                     label="Temporary Path"
-                    tooltip="Color of temporary or in-progress paths"
+                    tooltip="Color of the temporary path"
                     initialColor={currentFieldProperties.theme.tempPath}
                     defaultColor={DEFAULT_FIELD_THEME.tempPath as RgbaColor}
-                    onChange={(newColor) => {
+                    onChange={(color: RgbaColor) => {
+                        validateIsRgbaColor("tempPath", currentFieldProperties);
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
                                 theme: {
                                     ...currentFieldProperties.theme,
-                                    tempPath: newColor,
+                                    tempPath: color,
                                 },
                             }),
                         );
@@ -2300,10 +2342,8 @@ export default function FieldPropertiesCustomizer() {
                     initialColor={
                         currentFieldProperties.theme.defaultMarcher.fill
                     }
-                    defaultColor={
-                        DEFAULT_FIELD_THEME.defaultMarcher.fill as RgbaColor
-                    }
-                    onChange={(newColor) =>
+                    defaultColor={DEFAULT_FIELD_THEME.defaultMarcher.fill}
+                    onChange={(color: RgbaColor) =>
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
@@ -2325,10 +2365,8 @@ export default function FieldPropertiesCustomizer() {
                     initialColor={
                         currentFieldProperties.theme.defaultMarcher.outline
                     }
-                    defaultColor={
-                        DEFAULT_FIELD_THEME.defaultMarcher.outline as RgbaColor
-                    }
-                    onChange={(newColor) =>
+                    defaultColor={DEFAULT_FIELD_THEME.defaultMarcher.outline}
+                    onChange={(color: RgbaColor) =>
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
@@ -2350,10 +2388,8 @@ export default function FieldPropertiesCustomizer() {
                     initialColor={
                         currentFieldProperties.theme.defaultMarcher.label
                     }
-                    defaultColor={
-                        DEFAULT_FIELD_THEME.defaultMarcher.label as RgbaColor
-                    }
-                    onChange={(newColor) =>
+                    defaultColor={DEFAULT_FIELD_THEME.defaultMarcher.label}
+                    onChange={(color: RgbaColor) =>
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
