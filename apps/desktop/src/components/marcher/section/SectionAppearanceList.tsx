@@ -180,12 +180,36 @@ export default function SectionAppearanceList() {
                     </button>
                     <h4 className="text-h4 leading-none">Section Styles</h4>
                 </div>
-                <button
-                    onClick={toggleOpen}
-                    className="hover:text-red duration-150 ease-out"
-                >
-                    <XIcon size={24} />
-                </button>
+                <div className="flex items-center gap-6">
+                    <Select
+                        onValueChange={handleCreateNewAppearance}
+                        disabled={availableSections.length === 0}
+                    >
+                        <RadixSelect.Trigger>
+                            <Button variant="primary" size="compact">
+                                Add Section Style
+                            </Button>
+                        </RadixSelect.Trigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                {availableSections.map((sectionName) => (
+                                    <SelectItem
+                                        key={sectionName}
+                                        value={sectionName}
+                                    >
+                                        {sectionName}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    <button
+                        onClick={toggleOpen}
+                        className="hover:text-red duration-150 ease-out"
+                    >
+                        <XIcon size={24} />
+                    </button>
+                </div>
             </header>
             <Form.Root
                 onSubmit={(event) => {
@@ -194,28 +218,6 @@ export default function SectionAppearanceList() {
                 }}
                 className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
             >
-                <Select
-                    onValueChange={handleCreateNewAppearance}
-                    disabled={availableSections.length === 0}
-                >
-                    <RadixSelect.Trigger>
-                        <Button variant="primary" size="compact">
-                            Add Section Style
-                        </Button>
-                    </RadixSelect.Trigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            {availableSections.map((sectionName) => (
-                                <SelectItem
-                                    key={sectionName}
-                                    value={sectionName}
-                                >
-                                    {sectionName}
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
                 <div className="flex w-full items-center justify-between">
                     {localAppearances && hasPendingChanges && (
                         <div className="flex w-full justify-between gap-8">
