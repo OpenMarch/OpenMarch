@@ -21,15 +21,11 @@ import {
 import * as Form from "@radix-ui/react-form";
 import * as RadixSelect from "@radix-ui/react-select";
 import ColorPicker from "../../ui/ColorPicker";
-import clsx from "clsx";
 import { SECTIONS } from "@/global/classes/Sections";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { toast } from "sonner";
 import { MarcherListContents } from "../MarchersModal";
-
-const formFieldClassname = clsx("flex justify-between items-center");
-const labelClassname = clsx("text-body text-text/80 self-center");
-const inputClassname = clsx("col-span-6 self-center");
+import FormField from "@/components/ui/FormField";
 
 export default function SectionAppearanceList() {
     const { setContent, toggleOpen } = useSidebarModalStore();
@@ -328,7 +324,6 @@ export default function SectionAppearanceList() {
 
                                     <ColorPicker
                                         label="Fill Color"
-                                        tooltip="The fill color of the section marker"
                                         initialColor={appearance.fill_color}
                                         onChange={(color) => {
                                             handleChange(
@@ -337,6 +332,7 @@ export default function SectionAppearanceList() {
                                                 appearance.id,
                                             );
                                         }}
+                                        className="px-0"
                                         defaultColor={{
                                             r: 0,
                                             g: 0,
@@ -347,7 +343,6 @@ export default function SectionAppearanceList() {
 
                                     <ColorPicker
                                         label="Outline Color"
-                                        tooltip="The outline-solid color of the section marker"
                                         initialColor={appearance.outline_color}
                                         onChange={(color) => {
                                             handleChange(
@@ -356,6 +351,7 @@ export default function SectionAppearanceList() {
                                                 appearance.id,
                                             );
                                         }}
+                                        className="px-0"
                                         defaultColor={{
                                             r: 255,
                                             g: 255,
@@ -364,10 +360,7 @@ export default function SectionAppearanceList() {
                                         }}
                                     />
 
-                                    <div className={formFieldClassname}>
-                                        <div className={labelClassname}>
-                                            Shape
-                                        </div>
+                                    <FormField label="Shape" className="px-0">
                                         <Select
                                             value={appearance.shape_type}
                                             onValueChange={(value) =>
@@ -378,10 +371,7 @@ export default function SectionAppearanceList() {
                                                 )
                                             }
                                         >
-                                            <SelectTriggerCompact
-                                                label="Shape"
-                                                className={inputClassname}
-                                            >
+                                            <SelectTriggerCompact label="Shape">
                                                 {appearance.shape_type}
                                             </SelectTriggerCompact>
                                             <SelectContent>
@@ -399,7 +389,7 @@ export default function SectionAppearanceList() {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                    </div>
+                                    </FormField>
                                 </div>
                             ))}
                         </>

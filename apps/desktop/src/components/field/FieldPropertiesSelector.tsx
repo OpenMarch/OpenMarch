@@ -11,6 +11,7 @@ import {
     Button,
     DangerNote,
 } from "@openmarch/ui";
+import { StaticFormField } from "../ui/FormField";
 
 export default function FieldPropertiesSelector() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
@@ -42,46 +43,40 @@ export default function FieldPropertiesSelector() {
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
-                <div className="flex w-full items-center justify-between gap-16 px-12">
-                    <p className="text-body">Field Template</p>
-                    <div className="flex gap-8">
-                        <Select
-                            onValueChange={handleFieldTypeChange}
-                            defaultValue={
-                                fieldProperties.isCustom
-                                    ? "Custom"
-                                    : fieldProperties.name
-                            }
-                            ref={selectRef}
-                        >
-                            <SelectTriggerButton
-                                label={fieldProperties.name || "Field type"}
-                            />
-                            <SelectContent>
-                                <SelectGroup>
-                                    {Object.entries(
-                                        FieldPropertiesTemplates,
-                                    ).map((template, index) => (
+                <StaticFormField label="Field Template">
+                    <Select
+                        onValueChange={handleFieldTypeChange}
+                        defaultValue={
+                            fieldProperties.isCustom
+                                ? "Custom"
+                                : fieldProperties.name
+                        }
+                        ref={selectRef}
+                    >
+                        <SelectTriggerButton
+                            label={fieldProperties.name || "Field type"}
+                        />
+                        <SelectContent>
+                            <SelectGroup>
+                                {Object.entries(FieldPropertiesTemplates).map(
+                                    (template, index) => (
                                         <SelectItem
                                             key={index}
                                             value={template[1].name}
                                         >
                                             {template[1].name}
                                         </SelectItem>
-                                    ))}
-                                    {fieldProperties.isCustom && (
-                                        <SelectItem
-                                            key={"custom"}
-                                            value={"Custom"}
-                                        >
-                                            Custom
-                                        </SelectItem>
-                                    )}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
+                                    ),
+                                )}
+                                {fieldProperties.isCustom && (
+                                    <SelectItem key={"custom"} value={"Custom"}>
+                                        Custom
+                                    </SelectItem>
+                                )}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </StaticFormField>
                 <Button
                     className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
                     onClick={applyChanges}
