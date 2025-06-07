@@ -47,7 +47,7 @@ function CheckpointEditor({
     checkpoint,
     updateCheckpoint,
     deleteCheckpoint,
-    axis,
+    axis,z
 }: {
     checkpoint: Checkpoint;
     deleteCheckpoint: (checkpoint: Checkpoint) => void;
@@ -529,13 +529,7 @@ export default function FieldPropertiesCustomizer() {
                                         setFieldProperties(
                                             new FieldProperties({
                                                 ...currentFieldProperties,
-                                                stepSizeInches:
-                                                    measurementSystem ===
-                                                    "imperial"
-                                                        ? parsedFloat
-                                                        : FieldProperties.centimetersToInches(
-                                                              parsedFloat,
-                                                          ),
+                                                name: e.target.value,
                                             }),
                                         );
                                     }
@@ -805,16 +799,6 @@ export default function FieldPropertiesCustomizer() {
                                 defaultValue={
                                     currentFieldProperties.sideDescriptions
                                         .verboseLeft
-                                ) {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                verboseLeft: e.target.value,
-                                            },
-                                        }),
-                                    );
                                 }
                                 required
                             />
@@ -851,16 +835,6 @@ export default function FieldPropertiesCustomizer() {
                                 defaultValue={
                                     currentFieldProperties.sideDescriptions
                                         .terseLeft
-                                ) {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                terseLeft: e.target.value,
-                                            },
-                                        }),
-                                    );
                                 }
                                 required
                             />
@@ -897,16 +871,6 @@ export default function FieldPropertiesCustomizer() {
                                 defaultValue={
                                     currentFieldProperties.sideDescriptions
                                         .verboseRight
-                                ) {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                verboseRight: e.target.value,
-                                            },
-                                        }),
-                                    );
                                 }
                                 required
                             />
@@ -943,16 +907,6 @@ export default function FieldPropertiesCustomizer() {
                                 defaultValue={
                                     currentFieldProperties.sideDescriptions
                                         .terseRight
-                                ) {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            sideDescriptions: {
-                                                ...currentFieldProperties.sideDescriptions,
-                                                terseRight: e.target.value,
-                                            },
-                                        }),
-                                    );
                                 }
                                 required
                             />
@@ -981,63 +935,34 @@ export default function FieldPropertiesCustomizer() {
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     homeStepsFromFrontToOutside:
-                                                        parsedFloat,
+                                                        undefined,
                                                 },
                                             }),
                                         );
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        homeStepsFromFrontToOutside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
+                                        }
                                     }
-                                }
-                            }}
-                            onChange={(e) => {
-                                // Allow numbers, decimal point, and negative sign
-                                const filtered = e.target.value.replace(
-                                    /[^\d.-]/g,
-                                    "",
-                                );
-
-                                // Ensure only one decimal point and one negative sign at start
-                                const normalized = filtered
-                                    .replace(/\.+/g, ".")
-                                    .replace(/--+/g, "-")
-                                    .replace(/(.+)-/g, "$1");
-
-                                e.target.value = normalized;
-                            }}
-                            onKeyDown={blurOnEnter}
-                            defaultValue={
-                                fieldProperties?.yardNumberCoordinates
-                                    .homeStepsFromFrontToOutside ?? ""
-                            }
-                            disabled
-                        />
-                    </FormField>
-                    <FormField
-                        label="Steps from front to home label top"
-                        tooltip="Number of steps from the front sideline to
-                        the inside of the home number (closer to the
-                        center of the field)"
-                    >
-                        <Input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="-?[0-9]*\.?[0-9]*"
-                            className={inputClassname}
-                            onBlur={(e) => {
-                                e.preventDefault();
-                                if (e.target.value === "") {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            yardNumberCoordinates: {
-                                                ...currentFieldProperties.yardNumberCoordinates,
-                                                homeStepsFromFrontToInside:
-                                                    undefined,
-                                            },
-                                        }),
-                                    );
-                                } else {
-                                    const parsedFloat = parseFloat(
-                                        e.target.value,
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
                                     );
 
                                     // Ensure only one decimal point and one negative sign at start
@@ -1076,65 +1001,34 @@ export default function FieldPropertiesCustomizer() {
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     homeStepsFromFrontToInside:
-                                                        parsedFloat,
+                                                        undefined,
                                                 },
                                             }),
                                         );
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        homeStepsFromFrontToInside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
+                                        }
                                     }
-                                }
-                            }}
-                            onChange={(e) => {
-                                // Allow numbers, decimal point, and negative sign
-                                const filtered = e.target.value.replace(
-                                    /[^\d.-]/g,
-                                    "",
-                                );
-
-                                // Ensure only one decimal point and one negative sign at start
-                                const normalized = filtered
-                                    .replace(/\.+/g, ".")
-                                    .replace(/--+/g, "-")
-                                    .replace(/(.+)-/g, "$1");
-
-                                e.target.value = normalized;
-                            }}
-                            onKeyDown={blurOnEnter}
-                            defaultValue={
-                                fieldProperties?.yardNumberCoordinates
-                                    .homeStepsFromFrontToInside ?? ""
-                            }
-                            disabled
-                        />
-                    </FormField>
-                    <FormField
-                        label="
-                        Steps from front to away label top"
-                        tooltip="
-                        Number of steps from the front sideline to
-                        the inside of the away number (closer to the
-                        center of the field)"
-                    >
-                        <Input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="-?[0-9]*\.?[0-9]*"
-                            className={inputClassname}
-                            onBlur={(e) => {
-                                e.preventDefault();
-                                if (e.target.value === "") {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            yardNumberCoordinates: {
-                                                ...currentFieldProperties.yardNumberCoordinates,
-                                                awayStepsFromFrontToInside:
-                                                    undefined,
-                                            },
-                                        }),
-                                    );
-                                } else {
-                                    const parsedFloat = parseFloat(
-                                        e.target.value,
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
                                     );
 
                                     // Ensure only one decimal point and one negative sign at start
@@ -1175,65 +1069,34 @@ export default function FieldPropertiesCustomizer() {
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     awayStepsFromFrontToInside:
-                                                        parsedFloat,
+                                                        undefined,
                                                 },
                                             }),
                                         );
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        awayStepsFromFrontToInside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
+                                        }
                                     }
-                                }
-                            }}
-                            onChange={(e) => {
-                                // Allow numbers, decimal point, and negative sign
-                                const filtered = e.target.value.replace(
-                                    /[^\d.-]/g,
-                                    "",
-                                );
-
-                                // Ensure only one decimal point and one negative sign at start
-                                const normalized = filtered
-                                    .replace(/\.+/g, ".")
-                                    .replace(/--+/g, "-")
-                                    .replace(/(.+)-/g, "$1");
-
-                                e.target.value = normalized;
-                            }}
-                            onKeyDown={blurOnEnter}
-                            defaultValue={
-                                fieldProperties?.yardNumberCoordinates
-                                    .awayStepsFromFrontToInside ?? ""
-                            }
-                            disabled
-                        />
-                    </FormField>
-                    <FormField
-                        label="
-                        Steps from front to away label bottom"
-                        tooltip="
-                        Number of steps from the front sideline to
-                        the outside of the away number (closer to
-                        the back sideline)"
-                    >
-                        <Input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="-?[0-9]*\.?[0-9]*"
-                            className={inputClassname}
-                            onBlur={(e) => {
-                                e.preventDefault();
-                                if (e.target.value === "") {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            yardNumberCoordinates: {
-                                                ...currentFieldProperties.yardNumberCoordinates,
-                                                awayStepsFromFrontToOutside:
-                                                    undefined,
-                                            },
-                                        }),
-                                    );
-                                } else {
-                                    const parsedFloat = parseFloat(
-                                        e.target.value,
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
                                     );
 
                                     // Ensure only one decimal point and one negative sign at start
@@ -1274,11 +1137,48 @@ export default function FieldPropertiesCustomizer() {
                                                 yardNumberCoordinates: {
                                                     ...currentFieldProperties.yardNumberCoordinates,
                                                     awayStepsFromFrontToOutside:
-                                                        parsedFloat,
+                                                        undefined,
                                                 },
                                             }),
                                         );
+                                    } else {
+                                        const parsedFloat = parseFloat(
+                                            e.target.value,
+                                        );
+
+                                        if (!isNaN(parsedFloat)) {
+                                            setFieldProperties(
+                                                new FieldProperties({
+                                                    ...currentFieldProperties,
+                                                    yardNumberCoordinates: {
+                                                        ...currentFieldProperties.yardNumberCoordinates,
+                                                        awayStepsFromFrontToOutside:
+                                                            parsedFloat,
+                                                    },
+                                                }),
+                                            );
+                                        }
                                     }
+                                }}
+                                onChange={(e) => {
+                                    // Allow numbers, decimal point, and negative sign
+                                    const filtered = e.target.value.replace(
+                                        /[^\d.-]/g,
+                                        "",
+                                    );
+
+                                    // Ensure only one decimal point and one negative sign at start
+                                    const normalized = filtered
+                                        .replace(/\.+/g, ".")
+                                        .replace(/--+/g, "-")
+                                        .replace(/(.+)-/g, "$1");
+
+                                    e.target.value = normalized;
+                                }}
+                                onKeyDown={blurOnEnter}
+                                defaultValue={
+                                    fieldProperties?.yardNumberCoordinates
+                                        .awayStepsFromFrontToOutside ?? ""
                                 }
                                 disabled
                             />
