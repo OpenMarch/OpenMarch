@@ -34,9 +34,13 @@ export default function Sidebar() {
             <div className="flex flex-col gap-16">
                 <TipsAndTricks />
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <Plugins />
 =======
 >>>>>>> 7dbba7f (move timeline controls, polishes)
+=======
+                <Plugins />
+>>>>>>> 936ead3 (rebase main)
             </div>
         </div>
     );
