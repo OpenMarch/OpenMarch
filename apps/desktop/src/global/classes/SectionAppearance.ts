@@ -1,6 +1,11 @@
 import { RgbaColor } from "@uiw/react-color";
-import type { SectionAppearance as DatabaseSectionAppearance } from "electron/database/tables/SectionAppearanceTable";
 import { rgbaToString } from "./FieldTheme";
+import { db } from "../database/db";
+import { sectionAppearances } from "../../../electron/database/schema/schema";
+import { eq } from "drizzle-orm";
+
+// Define types from the existing schema
+type DatabaseSectionAppearance = typeof sectionAppearances.$inferSelect;
 
 // Parse rgba(0, 0, 0, 1) string color to RGBA color
 function parseColor(colorStr: string): RgbaColor {
@@ -69,6 +74,7 @@ export function getSectionAppearance(
         (appearance) => appearance.section === section,
     );
 }
+
 export class SectionAppearance {
     readonly id: number;
     readonly section: string;
@@ -104,15 +110,16 @@ export class SectionAppearance {
     static async getSectionAppearances(
         section?: string,
     ): Promise<SectionAppearance[]> {
-        const response = await window.electron.getSectionAppearances(section);
-        if (response.success) {
-            return response.data.map(
-                (appearance) => new SectionAppearance(appearance),
+        let queryBuilder = db.select().from(sectionAppearances).$dynamic();
+
+        if (section) {
+            queryBuilder = queryBuilder.where(
+                eq(sectionAppearances.section, section),
             );
-        } else {
-            console.error("Failed to get section appearances:", response.error);
-            return [];
         }
+
+        const results = await queryBuilder.all();
+        return results.map((row) => new SectionAppearance(row));
     }
 
     /**

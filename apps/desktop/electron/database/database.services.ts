@@ -152,6 +152,64 @@ async function connectWrapper<T>(
  * Whenever modifying this, you must also modify the app api in electron/preload/index.ts
  */
 export function initHandlers() {
+    // Generic SQL proxy handler for Drizzle ORM
+    ipcMain.handle(
+        "sql:proxy",
+        async (
+            _,
+            sql: string,
+            params: any[],
+            method: "all" | "run" | "get" | "values",
+        ) => {
+            try {
+                const db = connect();
+
+                // prevent multiple queries
+                const sqlBody = sql.replace(/;/g, "");
+
+                const result = db.prepare(sqlBody);
+
+                let rows: any;
+                switch (method) {
+                    case "all":
+                        rows = result.all(...params);
+                        break;
+                    case "get":
+                        rows = result.get(...params);
+                        break;
+                    case "run":
+                        rows = result.run(...params);
+                        break;
+                    default:
+                        throw new Error(`Unknown method: ${method}`);
+                }
+
+                db.close();
+
+                // Return in the format expected by Drizzle proxy
+                // todo confirm get and run are working. all is working.
+                if (method === "get") {
+                    return {
+                        rows: rows
+                            ? Object.values(rows as Record<string, any>)
+                            : [],
+                    };
+                } else if (method === "all") {
+                    return {
+                        rows: rows.map((row: { [key: string]: any }) =>
+                            Object.values(row),
+                        ),
+                    };
+                } else {
+                    return { rows: Array.isArray(rows) ? rows : [rows] };
+                }
+            } catch (error: any) {
+                console.error("Error from SQL proxy:", error);
+                throw error;
+            }
+        },
+    );
+
     // Field properties
     ipcMain.handle("field_properties:get", async () =>
         connectWrapper<FieldProperties>(
@@ -447,15 +505,6 @@ export function initHandlers() {
             const undoGroup = History.getCurrentUndoGroup(db);
             return { success: true, data: undoGroup };
         }),
-    );
-
-    // Section Appearances
-    ipcMain.handle(
-        "section_appearances:getSectionAppearances",
-        async (_event, section?: string) =>
-            connectWrapper(SectionAppearanceTable.getSectionAppearances, {
-                section,
-            }),
     );
 
     ipcMain.handle(
