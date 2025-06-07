@@ -82,7 +82,7 @@ function CheckpointEditor({
                 </div>
                 {open ? <CaretUpIcon size={20} /> : <CaretDownIcon size={20} />}
             </RadixCollapsible.Trigger>
-            <RadixCollapsible.Content className="bg-fg-2 border-stroke rounded-6 mt-6 border p-8">
+            <RadixCollapsible.Content className="bg-fg-2 border-stroke rounded-6 mt-6 border p-8 pt-16">
                 <div className="flex flex-col gap-12">
                     <FormField
                         label={`Steps from ${axis === "x" ? " center" : " front"}`}
