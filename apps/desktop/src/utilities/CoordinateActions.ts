@@ -7,6 +7,7 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
+import { UiSettings } from "@/stores/UiSettingsStore";
 
 /**
  * A safety check to ensure that all the marcherPages are on the same page.
@@ -30,6 +31,8 @@ export function checkMarcherPagesAreSamePage(
     }
     return areSamePage;
 }
+
+const EPSILON = 10e2; // round to 3 decimal places to prevent floating point errors
 
 /**
  * Creates an array of rounded coordinates of the marcherPages with the given marcher_id and page_id
@@ -59,7 +62,6 @@ export function getRoundCoordinates({
 }): ModifiedMarcherPageArgs[] {
     const changes: ModifiedMarcherPageArgs[] = [];
     const stepsPerPixel = 1 / fieldProperties.pixelsPerStep;
-    const absoluteDenom = 10e2; // round to 3 decimal places to prevent floating point errors
     for (const marcherPage of marcherPages) {
         let newX = marcherPage.x;
         let newY = marcherPage.y;
@@ -73,7 +75,7 @@ export function getRoundCoordinates({
             newX =
                 fieldProperties.centerFrontPoint.xPixels -
                 roundedXSteps / stepsPerPixel;
-            newX = Math.round(newX * absoluteDenom) / absoluteDenom;
+            newX = Math.round(newX * EPSILON) / EPSILON;
         }
         if (yAxis) {
             const yStepsFromOrigin =
@@ -84,7 +86,7 @@ export function getRoundCoordinates({
             newY =
                 fieldProperties.centerFrontPoint.yPixels -
                 roundedYSteps / stepsPerPixel;
-            newY = Math.round(newY * absoluteDenom) / absoluteDenom;
+            newY = Math.round(newY * EPSILON) / EPSILON;
         }
         changes.push({
             marcher_id: marcherPage.marcher_id,
@@ -95,6 +97,72 @@ export function getRoundCoordinates({
         });
     }
     return changes;
+}
+
+/** More general implementation of getRoundCoordinates.
+ * This is a really bad name for this function, feel free to change it if you think of something better :)
+ */
+export function getRoundCoordinates2({
+    coordinate,
+    uiSettings,
+    fieldProperties,
+}: {
+    coordinate: { xPixels: number; yPixels: number };
+    uiSettings: Pick<UiSettings, "coordinateRounding">;
+    fieldProperties: Pick<
+        FieldProperties,
+        "centerFrontPoint" | "pixelsPerStep"
+    >;
+}) {
+    const output = { ...coordinate };
+
+    if (uiSettings.coordinateRounding) {
+        const stepsPerPixel = 1 / fieldProperties.pixelsPerStep;
+        const { nearestXSteps, nearestYSteps } = uiSettings.coordinateRounding;
+
+        if (nearestXSteps) {
+            const referenceX =
+                uiSettings.coordinateRounding.referencePointX ?? 0;
+
+            const xStepsFromOrigin =
+                stepsPerPixel *
+                    (output.xPixels -
+                        fieldProperties.centerFrontPoint.xPixels) -
+                referenceX;
+            if (xStepsFromOrigin !== 0) {
+                const denominator = 1 / nearestXSteps;
+                const roundedXSteps =
+                    Math.round(xStepsFromOrigin * denominator) / denominator;
+                output.xPixels =
+                    (roundedXSteps + referenceX) *
+                        fieldProperties.pixelsPerStep +
+                    fieldProperties.centerFrontPoint.xPixels;
+                output.xPixels = Math.round(output.xPixels * EPSILON) / EPSILON;
+            }
+        }
+        if (nearestYSteps) {
+            const referenceY =
+                uiSettings.coordinateRounding.referencePointY ?? 0;
+
+            const yStepsFromOrigin =
+                stepsPerPixel *
+                    (output.yPixels -
+                        fieldProperties.centerFrontPoint.yPixels) -
+                referenceY;
+            if (yStepsFromOrigin !== 0) {
+                const denominator = 1 / nearestYSteps;
+                const roundedYSteps =
+                    Math.round(yStepsFromOrigin * denominator) / denominator;
+                output.yPixels =
+                    (roundedYSteps + referenceY) *
+                        fieldProperties.pixelsPerStep +
+                    fieldProperties.centerFrontPoint.yPixels;
+                output.yPixels = Math.round(output.yPixels * EPSILON) / EPSILON;
+            }
+        }
+    }
+
+    return output;
 }
 
 /**

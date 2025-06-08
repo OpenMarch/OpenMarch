@@ -2,6 +2,7 @@ import MarcherEditor from "./MarcherEditor";
 import PageEditor from "./PageEditor";
 import AlignmentEditor from "./AlignmentEditor";
 import ShapeEditor from "./ShapeEditor";
+import CoordinateRoundingSettings from "../field/CoordinateRoundingSettings";
 
 function Sidebar() {
     return (
@@ -10,6 +11,8 @@ function Sidebar() {
             <MarcherEditor />
             <ShapeEditor />
             <AlignmentEditor />
+            <div className="flex-grow" />
+            <CoordinateRoundingSettings />
         </div>
     );
 }

@@ -138,9 +138,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /**
      * Constants for zoom limits
      */
-    private readonly MIN_ZOOM = 0.5; // 50% (zoomed in, field is twice as big as viewport)
-    private readonly MAX_ZOOM = 2.0; // 200% (zoomed out, field is half as big as viewport)
-    private readonly ZOOM_STEP = 0.05; // 5% increments for smoother zooming
     private readonly INTERNAL_BASE_ZOOM_SENSITIVITY = 0.5; // Base sensitivity for zoom operations
 
     // Sensitivity settings
@@ -404,19 +401,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         let needsAdjustment = false;
 
-        if (vpt[4] > canvasWidth * 0.5) {
-            vpt[4] = canvasWidth * 0.5;
+        if (vpt[4] > canvasWidth * zoom) {
+            vpt[4] = canvasWidth * zoom;
             needsAdjustment = true;
-        } else if (vpt[4] < -canvasWidth * (zoom - 0.5)) {
-            vpt[4] = -canvasWidth * (zoom - 0.5);
+        } else if (vpt[4] < -canvasWidth * 1.25 * zoom) {
+            vpt[4] = -canvasWidth * 1.25 * zoom;
             needsAdjustment = true;
         }
 
-        if (vpt[5] > canvasHeight * 0.5) {
-            vpt[5] = canvasHeight * 0.5;
+        if (vpt[5] > canvasHeight * zoom) {
+            vpt[5] = canvasHeight * zoom;
             needsAdjustment = true;
-        } else if (vpt[5] < -canvasHeight * (zoom - 0.5)) {
-            vpt[5] = -canvasHeight * (zoom - 0.5);
+        } else if (vpt[5] < -canvasHeight * zoom) {
+            vpt[5] = -canvasHeight * zoom;
             needsAdjustment = true;
         }
 
@@ -1361,6 +1358,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
 
+        // Coordinate dots (cannot implement right now because the canvas gets really slow)
+        // const coordinateDots = this.getCoordinateDots();
+        // fieldArray.push(...coordinateDots);
+
         // Yard lines, field numbers, and hashes
         const xCheckpointProps = {
             stroke: rgbaToString(this.fieldProperties.theme.primaryStroke),
@@ -1627,6 +1628,64 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             hoverCursor: "default",
         });
     };
+
+    private getCoordinateDots(): fabric.Circle[] {
+        const fieldWidth = this.fieldProperties.width;
+        const fieldHeight = this.fieldProperties.height;
+        const pixelsPerStep = this.fieldProperties.pixelsPerStep;
+        const centerFrontPoint = this.fieldProperties.centerFrontPoint;
+
+        const output: fabric.Circle[] = [];
+
+        const coordinateDotProps: fabric.ICircleOptions = {
+            fill: rgbaToString(this.fieldProperties.theme.tertiaryStroke),
+            radius: 2,
+            selectable: false,
+            originX: "center",
+            originY: "center",
+            strokeWidth: 0,
+        };
+        const xDelta =
+            Math.abs(this.uiSettings?.coordinateRounding?.nearestXSteps ?? 0) *
+            pixelsPerStep;
+        const yDelta =
+            Math.abs(this.uiSettings?.coordinateRounding?.nearestYSteps ?? 0) *
+            pixelsPerStep;
+
+        // If both X and Y delta are set, create a grid of dots
+        if (xDelta > 0 && yDelta > 0) {
+            for (
+                let currentX = 0;
+                currentX < fieldWidth / 2;
+                currentX += xDelta
+            ) {
+                for (
+                    let currentY = 0;
+                    currentY < fieldHeight;
+                    currentY += yDelta
+                ) {
+                    output.push(
+                        new fabric.Circle({
+                            left: centerFrontPoint.xPixels + currentX + 0.5,
+                            top: centerFrontPoint.yPixels - currentY + 0.5,
+                            ...coordinateDotProps,
+                        }),
+                    );
+                    // If the dot is not at the center, add a dot at the negative coordinates
+                    if (currentX !== 0 && currentY !== 0) {
+                        output.push(
+                            new fabric.Circle({
+                                left: centerFrontPoint.xPixels - currentX + 0.5,
+                                top: centerFrontPoint.yPixels - currentY + 0.5,
+                                ...coordinateDotProps,
+                            }),
+                        );
+                    }
+                }
+            }
+        }
+        return output;
+    }
 
     /*********************** GENERAL UTILITIES ***********************/
     /**
