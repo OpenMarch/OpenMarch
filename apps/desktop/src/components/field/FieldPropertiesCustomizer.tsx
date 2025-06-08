@@ -1448,7 +1448,7 @@ export default function FieldPropertiesCustomizer() {
                             </Select>
                         </FormField>
 
-                        <div className="flex items-center gap-8">
+                        <div className="flex h-fit min-h-0 items-center gap-8">
                             <Button
                                 className="w-full"
                                 tooltipText="Import an image to display on the field"
@@ -1471,7 +1471,7 @@ export default function FieldPropertiesCustomizer() {
                             >
                                 Import Image
                             </Button>
-                            <div className="text-sub text-body/60 w-fit whitespace-nowrap">
+                            <div className="text-sub text-body/60 h-fit min-h-0 w-fit leading-none whitespace-nowrap">
                                 Refresh after importing [Ctrl + R]
                             </div>
                         </div>
@@ -1584,7 +1584,6 @@ export default function FieldPropertiesCustomizer() {
                         <h4 className="text-h4 mb-8">Theme</h4>
                         <ColorPicker
                             label="Background"
-                            tooltip="Background color of the field"
                             initialColor={
                                 currentFieldProperties.theme.background
                             }
@@ -1609,7 +1608,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Primary Lines"
-                            tooltip="Color of primary lines on the field"
                             initialColor={
                                 currentFieldProperties.theme.primaryStroke
                             }
@@ -1634,7 +1632,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Secondary Lines"
-                            tooltip="Color of secondary lines on the field"
                             initialColor={
                                 currentFieldProperties.theme.secondaryStroke
                             }
@@ -1659,7 +1656,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Grid Lines"
-                            tooltip="Color of grid lines on the field"
                             initialColor={
                                 currentFieldProperties.theme.tertiaryStroke
                             }
@@ -1684,7 +1680,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Field Labels"
-                            tooltip="Color of field labels"
                             initialColor={
                                 currentFieldProperties.theme.fieldLabel
                             }
@@ -1709,7 +1704,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="External Labels"
-                            tooltip="Color of external labels"
                             initialColor={
                                 currentFieldProperties.theme.externalLabel
                             }
@@ -1734,7 +1728,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Previous Path"
-                            tooltip="Color of the previous path"
                             initialColor={
                                 currentFieldProperties.theme.previousPath
                             }
@@ -1759,7 +1752,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Next Path"
-                            tooltip="Color of the next path"
                             initialColor={currentFieldProperties.theme.nextPath}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.nextPath as RgbaColor
@@ -1786,7 +1778,6 @@ export default function FieldPropertiesCustomizer() {
                         </div>
                         <ColorPicker
                             label="Shapes"
-                            tooltip="Color of shapes"
                             initialColor={currentFieldProperties.theme.shape}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.shape as RgbaColor
@@ -1809,7 +1800,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Temporary Path"
-                            tooltip="Color of the temporary path"
                             initialColor={currentFieldProperties.theme.tempPath}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.tempPath as RgbaColor
@@ -1832,7 +1822,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Marcher Fill"
-                            tooltip="Dot color of the marchers"
                             initialColor={
                                 currentFieldProperties.theme.defaultMarcher.fill
                             }
@@ -1857,7 +1846,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Marcher Outline"
-                            tooltip="Outline color of the marchers"
                             initialColor={
                                 currentFieldProperties.theme.defaultMarcher
                                     .outline
@@ -1883,7 +1871,6 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label="Marcher Text"
-                            tooltip="Text color for marcher drill numbers"
                             initialColor={
                                 currentFieldProperties.theme.defaultMarcher
                                     .label
