@@ -141,8 +141,7 @@ export default function SectionAppearanceList() {
                 !sectionAppearances.some(
                     (appearance) => appearance.section === sectionName,
                 ),
-        )
-        .sort();
+        );
 
     async function handleCreateNewAppearance(sectionName: string) {
         if (!sectionName) {
