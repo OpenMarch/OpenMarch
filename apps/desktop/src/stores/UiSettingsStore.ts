@@ -30,7 +30,69 @@ export interface UiSettings {
         /** Standard pan sensitivity (0.1-3.0) */
         panSensitivity: number;
     };
+    coordinateRounding?: {
+        /** In steps, the closest step to round to on the X-axis, offset on the nearestXSteps */
+        nearestXSteps?: number;
+        /** In steps, the offset from the center-front point to round to on the X-axis */
+        referencePointX?: number;
+        /** In steps, the closest step to round to on the Y-axis, offset on the nearestYSteps */
+        nearestYSteps?: number;
+        /** In steps, the offset from the center-front point to round to on the Y-axis */
+        referencePointY?: number;
+    };
 }
+
+// Default settings that will be used if no localStorage data exists
+const defaultSettings: UiSettings = {
+    isPlaying: false,
+    lockX: false,
+    lockY: false,
+    previousPaths: false,
+    nextPaths: false,
+    gridLines: true,
+    halfLines: true,
+    showWaveform: false,
+    timelinePixelsPerSecond: 40,
+    focussedComponent: "canvas",
+    mouseSettings: {
+        trackpadMode: true,
+        trackpadPanSensitivity: 0.5,
+        zoomSensitivity: 1.0,
+        panSensitivity: 0.5,
+    },
+    coordinateRounding: {
+        nearestXSteps: 0,
+        referencePointX: undefined,
+        nearestYSteps: 0,
+        referencePointY: undefined,
+    },
+};
+
+const STORAGE_KEY = "openmarch:uiSettings";
+
+// Helper function to load settings from localStorage
+const loadSettings = (): UiSettings => {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return defaultSettings;
+
+        const parsed = JSON.parse(stored) as UiSettings;
+        // Merge with default settings to ensure all properties exist
+        return { ...defaultSettings, ...parsed };
+    } catch (error) {
+        console.error("Failed to load UI settings from localStorage:", error);
+        return defaultSettings;
+    }
+};
+
+// Helper function to save settings to localStorage
+const saveSettings = (settings: UiSettings): void => {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch (error) {
+        console.error("Failed to save UI settings to localStorage:", error);
+    }
+};
 
 interface UiSettingsStoreState {
     uiSettings: UiSettings;
@@ -45,63 +107,21 @@ interface UiSettingsStoreInterface
         UiSettingsStoreActions {}
 
 export const useUiSettingsStore = create<UiSettingsStoreInterface>(
-    (set, state) => ({
-        uiSettings: {
-            isPlaying: false,
-            lockX: false,
-            lockY: false,
-            /** Boolean to view previous page's paths/dots */
-            previousPaths: false,
-            /** Boolean to view next page's paths/dots */
-            nextPaths: false,
-            /** Boolean to view lines for every step on the field */
-            gridLines: true,
-            /** Boolean to view lines for every four steps on the field */
-            halfLines: true,
-            showWaveform: false,
-            /** The number of pixels per second in the timeline */
-            timelinePixelsPerSecond: localStorage.getItem(
-                "timelinePixelsPerSecond",
-            )
-                ? parseInt(localStorage.getItem("timelinePixelsPerSecond")!)
-                : 40,
-            /** The component that is currently focussed */
-            focussedComponent: "canvas",
-            /** Mouse settings */
-            mouseSettings: {
-                /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
-                trackpadMode: true,
-                /** Trackpad pan sensitivity (0.1-3.0) */
-                trackpadPanSensitivity: 0.5,
-                /** Multiplier for base zoom sensitivity. Default: 1.0 (100%). Range 0.5-2.0 (50%-200%). */
-                zoomSensitivity: 1.0,
-                /** Standard pan sensitivity (0.1-3.0) */
-                panSensitivity: 0.5,
-            },
-        },
+    (set, get) => ({
+        uiSettings: loadSettings(),
 
-        /**
-         * Fetch the uiSettings
-         * TODO: there are other settings that need to be refactored into this action. right now it's a little scattered
-         */
         fetchUiSettings: () => {
             window.electron.getShowWaveform().then((showWaveform: boolean) => {
-                set((state) => ({
-                    uiSettings: {
-                        ...state.uiSettings,
-                        showWaveform: showWaveform,
-                    },
-                }));
+                const currentSettings = get().uiSettings;
+                const newSettings = {
+                    ...currentSettings,
+                    showWaveform: showWaveform,
+                };
+                set({ uiSettings: newSettings });
+                saveSettings(newSettings);
             });
         },
 
-        /**
-         * Set the uiSettings
-         *
-         * @param newUiSettings the new uiSettings
-         * @param type the ui setting that is being changed. E.g. "lockX" if changing lockX, "lockY", if changing lockY
-         * This must be passed to keep lockX and lockY from being true at the same time
-         */
         setUiSettings: (newUiSettings, type) => {
             const uiSettings = { ...newUiSettings };
 
@@ -118,20 +138,16 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             window.electron.setShowWaveform(uiSettings.showWaveform);
 
             set({ uiSettings: uiSettings });
+            saveSettings(uiSettings);
         },
-        setPixelsPerSecond: (pixelsPerSecond: number) => {
-            // Store in localStorage
-            localStorage.setItem(
-                "timelinePixelsPerSecond",
-                pixelsPerSecond.toString(),
-            );
 
-            set({
-                uiSettings: {
-                    ...state().uiSettings,
-                    timelinePixelsPerSecond: pixelsPerSecond,
-                },
-            });
+        setPixelsPerSecond: (pixelsPerSecond: number) => {
+            const newSettings = {
+                ...get().uiSettings,
+                timelinePixelsPerSecond: pixelsPerSecond,
+            };
+            set({ uiSettings: newSettings });
+            saveSettings(newSettings);
         },
     }),
 );

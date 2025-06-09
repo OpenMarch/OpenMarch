@@ -6,6 +6,9 @@ import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
 import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
 import { SectionAppearance } from "../SectionAppearance";
+import { UiSettings } from "@/stores/UiSettingsStore";
+import OpenMarchCanvas from "./OpenMarchCanvas";
+import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -166,6 +169,44 @@ export default class CanvasMarcher
         const newCoords = this.databaseCoordsToCanvasCoords(marcherPage, false);
         this.left = newCoords.x;
         this.top = newCoords.y;
+
+        // Add moving event listener for real-time coordinate snapping
+        this.on("moving", this.handleMoving.bind(this));
+    }
+
+    /**
+     * Handles the moving event to apply coordinate rounding in real-time
+     * @param event The fabric event object
+     */
+    private handleMoving(event: fabric.IEvent<MouseEvent>) {
+        const canvas = this.getCanvas() as OpenMarchCanvas;
+        if (!canvas.uiSettings?.coordinateRounding) return;
+
+        // Get current canvas coordinates
+        const currentCanvasCoords = {
+            x: this.left || 0,
+            y: this.top || 0,
+        };
+
+        // Convert to database coordinates
+        const databaseCoords =
+            this.canvasCoordsToDatabaseCoords(currentCanvasCoords);
+
+        // Apply rounding if shift is not held
+        const roundedDatabaseCoords = event.e.shiftKey
+            ? databaseCoords
+            : this.roundCoordinates(databaseCoords, canvas.uiSettings);
+
+        // Convert back to canvas coordinates
+        const roundedCanvasCoords = this.databaseCoordsToCanvasCoords(
+            roundedDatabaseCoords,
+        );
+
+        // Update position with proper typing
+        this.set({
+            left: roundedCanvasCoords.x,
+            top: roundedCanvasCoords.y,
+        } as Partial<this>);
     }
 
     /******* CANVAS ACCESSORS *******/
@@ -298,6 +339,25 @@ export default class CanvasMarcher
         return databaseCoords;
     }
 
+    /**
+     * Rounds coordinates based on UI settings if rounding is enabled
+     * @param coords The coordinates to round
+     * @param uiSettings The UI settings containing rounding configuration
+     * @returns The rounded coordinates
+     */
+    private roundCoordinates(
+        coords: { x: number; y: number },
+        uiSettings: UiSettings,
+    ): { x: number; y: number } {
+        const output = getRoundCoordinates2({
+            coordinate: { xPixels: coords.x, yPixels: coords.y },
+            fieldProperties: (this.getCanvas() as OpenMarchCanvas)
+                .fieldProperties,
+            uiSettings,
+        });
+        return { x: output.xPixels, y: output.yPixels };
+    }
+
     /******* PUBLIC METHODS *******/
     static isCanvasMarcher(object: fabric.Object): object is CanvasMarcher {
         return object instanceof CanvasMarcher;
@@ -307,10 +367,20 @@ export default class CanvasMarcher
      * This adjusts the position of the fabric group object to match the MarcherPage object.
      *
      * @param marcherPage The MarcherPage object to set the coordinates from.
+     * @param uiSettings Optional UI settings for coordinate rounding
      */
-    setMarcherCoords(marcherPage: MarcherPage, updateMarcherPageObj = true) {
+    setMarcherCoords(
+        marcherPage: MarcherPage,
+        updateMarcherPageObj = true,
+        uiSettings?: UiSettings,
+    ) {
+        // Apply coordinate rounding if UI settings are provided
+        const coordsToUse = uiSettings
+            ? this.roundCoordinates(marcherPage, uiSettings)
+            : marcherPage;
+
         // Offset the new canvas coordinates (center of the dot/label group) by the dot's position
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(marcherPage);
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(coordsToUse);
 
         if (this.left === undefined || this.top === undefined)
             throw new Error(
@@ -331,7 +401,7 @@ export default class CanvasMarcher
      *
      * @returns {x: number, y: number}
      */
-    getMarcherCoords(): { x: number; y: number } {
+    getMarcherCoords(uiSettings?: UiSettings): { x: number; y: number } {
         if (this.left === undefined || this.top === undefined)
             throw new Error(
                 "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
@@ -340,6 +410,12 @@ export default class CanvasMarcher
             x: this.left,
             y: this.top,
         });
+
+        // Apply coordinate rounding if UI settings are provided
+        if (uiSettings) {
+            return this.roundCoordinates(databaseCoords, uiSettings);
+        }
+
         return databaseCoords;
     }
 

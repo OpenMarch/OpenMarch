@@ -6,9 +6,11 @@ import {
     evenlyDistributeHorizontally,
     evenlyDistributeVertically,
     getRoundCoordinates,
+    getRoundCoordinates2,
 } from "../CoordinateActions";
 import { describe, expect, it } from "vitest";
 import { legacyMockNCAAFieldProperties } from "@/__mocks__/globalMocks";
+import { UiSettings } from "@/stores/UiSettingsStore";
 
 describe("CoordinateActions", () => {
     // Convert the field properties to use the legacy PixelsPerStep (which was 24)
@@ -789,5 +791,51 @@ describe("CoordinateActions", () => {
             // Compare the sets to ignore order
             expect(new Set(result)).toEqual(new Set(expectedMarcherPages));
         });
+    });
+    it.each([
+        {
+            coordinate: { xPixels: 100, yPixels: 100 },
+            expected: { xPixels: 100, yPixels: 100 },
+        },
+        {
+            coordinate: { xPixels: 109, yPixels: 109 },
+            expected: { xPixels: 100, yPixels: 100 },
+        },
+        {
+            coordinate: { xPixels: 91, yPixels: 91 },
+            expected: { xPixels: 100, yPixels: 100 },
+        },
+        {
+            coordinate: { xPixels: 90, yPixels: 90 },
+            expected: { xPixels: 100, yPixels: 100 },
+        },
+        {
+            coordinate: { xPixels: 89, yPixels: 89 },
+            expected: { xPixels: 80, yPixels: 80 },
+        },
+        {
+            coordinate: { xPixels: 110, yPixels: 110 },
+            expected: { xPixels: 120, yPixels: 120 },
+        },
+    ])("getRoundCoordinates2 - 100x100, 20 pps", ({ coordinate, expected }) => {
+        const fieldProperties = {
+            centerFrontPoint: { xPixels: 100, yPixels: 100 },
+            pixelsPerStep: 20,
+        };
+        const uiSettings: Pick<UiSettings, "coordinateRounding"> = {
+            coordinateRounding: {
+                nearestXSteps: 1,
+                referencePointX: 0,
+                nearestYSteps: 1,
+                referencePointY: 0,
+            },
+        };
+        const roundedCoordinates = getRoundCoordinates2({
+            coordinate,
+            fieldProperties,
+            uiSettings,
+        });
+
+        expect(roundedCoordinates).toEqual(expected);
     });
 });

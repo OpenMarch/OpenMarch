@@ -13,3 +13,4 @@ export * from "./base/Dialog";
 export * from "./base/AlertDialog";
 export * from "./base/UnitInput";
 export * from "./base/Note";
+export * from "./base/ToggleGroup";
