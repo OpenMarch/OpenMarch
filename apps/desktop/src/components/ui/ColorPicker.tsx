@@ -20,7 +20,9 @@ interface ColorPickerProps {
     onChange: (color: RgbaColor) => void;
 }
 
-const formFieldClassname = clsx("grid grid-cols-12 gap-8 h-[40px] ml-16");
+const formFieldClassname = clsx(
+    "relative grid grid-cols-12 gap-8 h-[40px] ml-16",
+); // Added "relative"
 const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
 
 function getContrastingColor(color: RgbaColor): string {
