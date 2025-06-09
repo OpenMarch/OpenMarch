@@ -25,12 +25,11 @@ import {
     SelectItem,
     SelectTriggerButton,
 } from "@openmarch/ui";
+import ColorPicker from "../ui/ColorPicker";
 import {
-    ColorResult,
     RgbaColor,
-    rgbaToHex,
-    rgbaToHsva,
-    Sketch,
+    // ColorResult, Sketch, rgbaToHsva removed as they are internal to the shared ColorPicker
+    // rgbaToHex, // Removed as shared ColorPicker handles its own preview
 } from "@uiw/react-color";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
 import { RxReset } from "react-icons/rx";
@@ -630,225 +629,7 @@ export default function FieldPropertiesCustomizer() {
         measurementSystem,
     ]);
 
-    interface ColorPickerProps {
-        themeProperty?: keyof FieldTheme;
-        initialColor: RgbaColor;
-        label: string;
-        tooltip?: string;
-        defaultColor?: RgbaColor;
-        updateColorProp?: (color: RgbaColor) => void;
-    }
-
-    const ColorPicker: React.FC<ColorPickerProps> = ({
-        themeProperty,
-        initialColor,
-        label,
-        tooltip,
-        defaultColor,
-        updateColorProp,
-    }: ColorPickerProps) => {
-        const [displayColorPicker, setDisplayColorPicker] = useState(false);
-        const [currentColor, setCurrentColor] =
-            useState<RgbaColor>(initialColor);
-        const pickerRef = useRef<HTMLDivElement>(null);
-
-        const validateIsRgbaColor = useCallback(
-            (themeProperty: keyof FieldTheme) => {
-                const color = currentFieldProperties.theme[
-                    themeProperty
-                ] as RgbaColor;
-                const isRgba =
-                    color.r !== undefined &&
-                    color.g !== undefined &&
-                    color.b !== undefined &&
-                    color.a !== undefined;
-                if (!isRgba) {
-                    toast.error("Invalid color");
-                    return false;
-                }
-                return true;
-            },
-            [],
-        );
-
-        const updateColor = useCallback(
-            (color?: RgbaColor) => {
-                if (!currentColor) {
-                    console.error("No color selected");
-                    toast.error("No color selected");
-                    return;
-                }
-                if (updateColorProp) {
-                    updateColorProp(color ? color : currentColor);
-                } else if (themeProperty) {
-                    validateIsRgbaColor(themeProperty);
-                    rgbaToHex(
-                        currentFieldProperties.theme[
-                            themeProperty
-                        ] as RgbaColor,
-                    );
-
-                    setFieldProperties(
-                        new FieldProperties({
-                            ...currentFieldProperties,
-                            theme: {
-                                ...currentFieldProperties.theme,
-                                [themeProperty]: color ? color : currentColor,
-                            },
-                        }),
-                    );
-                } else {
-                    console.error("No theme property provided");
-                    toast.error("No theme property provided");
-                    return;
-                }
-            },
-            [currentColor, updateColorProp, validateIsRgbaColor, themeProperty],
-        );
-
-        const handleClick = () => setDisplayColorPicker(true);
-        const handleClose = useCallback(() => {
-            setDisplayColorPicker(false);
-            updateColor();
-        }, [updateColor]);
-
-        const handleChange = (color: ColorResult) => {
-            setCurrentColor(color.rgba);
-        };
-
-        const handleBlur = useCallback(
-            (event: React.FocusEvent) => {
-                if (
-                    pickerRef.current &&
-                    !pickerRef.current.contains(event.relatedTarget)
-                ) {
-                    handleClose();
-                }
-            },
-            [handleClose],
-        );
-
-        const handleKeyDown = useCallback(
-            (event: React.KeyboardEvent) => {
-                if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleClose();
-                }
-            },
-            [handleClose],
-        );
-
-        const resetToDefault = useCallback(() => {
-            let newColor: RgbaColor;
-            if (defaultColor) {
-                newColor = defaultColor;
-            } else if (themeProperty) {
-                validateIsRgbaColor(themeProperty);
-                newColor = DEFAULT_FIELD_THEME[themeProperty] as RgbaColor;
-            } else {
-                console.error("No theme property provided");
-                toast.error("No theme property provided");
-                return;
-            }
-            handleClose();
-            updateColor(newColor);
-        }, [
-            defaultColor,
-            handleClose,
-            themeProperty,
-            updateColor,
-            validateIsRgbaColor,
-        ]);
-
-        return (
-            <div className={formFieldClassname} ref={pickerRef}>
-                <div className={labelClassname}>{label}</div>
-                {/* Color Preview Box */}
-                <div
-                    className={
-                        "flex-between font border-fg-2 text-h5 col-span-5 flex h-24 w-full cursor-pointer items-center justify-center rounded-full border-2 py-16 font-mono tracking-wider"
-                    }
-                    style={{
-                        backgroundColor: rgbaToHex(currentColor),
-                        color:
-                            currentColor.r * 0.299 +
-                                currentColor.g * 0.587 +
-                                currentColor.b * 0.114 >
-                            186
-                                ? "#000000"
-                                : "#ffffff",
-                    }}
-                    onClick={handleClick}
-                    tabIndex={0} // Allows focus for blur detection
-                >
-                    {rgbaToHex(currentColor).toUpperCase()}
-                    {"-a"}
-                    {currentColor.a === 1
-                        ? 1
-                        : currentColor.a === 0
-                          ? 0
-                          : currentColor.a.toPrecision(2)}
-                </div>
-
-                {/* Color Picker Popover */}
-                {displayColorPicker && (
-                    <div className="bg-bg-1 absolute left-[50%] z-10 mt-32 rounded p-2 shadow-lg">
-                        <div className="z-50 my-8 flex justify-between gap-8">
-                            <Button
-                                size="compact"
-                                variant="secondary"
-                                className="w-full"
-                                onClick={() => {
-                                    setCurrentColor(initialColor);
-                                    setDisplayColorPicker(false);
-                                }}
-                            >
-                                Discard
-                            </Button>
-                            <Button
-                                size="compact"
-                                variant="primary"
-                                className="w-full"
-                                onClick={handleClose}
-                            >
-                                Apply
-                            </Button>
-                        </div>
-                        <Sketch
-                            color={rgbaToHsva(currentColor)}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            onKeyDown={handleKeyDown}
-                            className="bg-fg-2"
-                        />
-                    </div>
-                )}
-
-                <Button
-                    tooltipSide="right"
-                    size="compact"
-                    tooltipText={"Reset to default"}
-                    variant="secondary"
-                    onClick={resetToDefault}
-                    className="col-span-1 bg-transparent"
-                >
-                    <RxReset />
-                </Button>
-                {tooltip && (
-                    <Tooltip.TooltipProvider>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger type="button">
-                                <Info size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <TooltipContents className="p-16" side="right">
-                                {tooltip}
-                            </TooltipContents>
-                        </Tooltip.Root>
-                    </Tooltip.TooltipProvider>
-                )}
-            </div>
-        );
-    };
+    // Removed internal ColorPicker component definition
 
     return (
         <Form.Root
@@ -2279,72 +2060,196 @@ export default function FieldPropertiesCustomizer() {
             <div className="flex flex-col gap-12">
                 <h4 className="text-h4 mb-8">Theme</h4>
                 <ColorPicker
-                    themeProperty="background"
                     label="Background"
                     tooltip="Background color of the field"
                     initialColor={currentFieldProperties.theme.background}
+                    defaultColor={DEFAULT_FIELD_THEME.background as RgbaColor}
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    background: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="primaryStroke"
                     label="Primary Lines"
                     tooltip="Color of the main field lines. E.g. sidelines and yard lines"
                     initialColor={currentFieldProperties.theme.primaryStroke}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.primaryStroke as RgbaColor
+                    }
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    primaryStroke: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="secondaryStroke"
                     label="Secondary Lines"
                     tooltip="Color of secondary markings. E.g. Hashes and half lines"
                     initialColor={currentFieldProperties.theme.secondaryStroke}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.secondaryStroke as RgbaColor
+                    }
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    secondaryStroke: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="tertiaryStroke"
                     label="Grid Lines"
                     tooltip="Color the 1-step grid"
                     initialColor={currentFieldProperties.theme.tertiaryStroke}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.tertiaryStroke as RgbaColor
+                    }
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    tertiaryStroke: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="fieldLabel"
                     label="Field Labels"
                     tooltip="Color of yard numbers and field markings text"
                     initialColor={currentFieldProperties.theme.fieldLabel}
+                    defaultColor={DEFAULT_FIELD_THEME.fieldLabel as RgbaColor}
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    fieldLabel: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="externalLabel"
                     label="External Labels"
                     tooltip="Color of labels outside the main field area"
                     initialColor={currentFieldProperties.theme.externalLabel}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.externalLabel as RgbaColor
+                    }
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    externalLabel: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="previousPath"
                     label="Previous Path"
                     tooltip="Color of paths showing previous movement"
                     initialColor={currentFieldProperties.theme.previousPath}
+                    defaultColor={DEFAULT_FIELD_THEME.previousPath as RgbaColor}
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    previousPath: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="nextPath"
                     label="Next Path"
                     tooltip="Color of paths showing upcoming movement"
                     initialColor={currentFieldProperties.theme.nextPath}
+                    defaultColor={DEFAULT_FIELD_THEME.nextPath as RgbaColor}
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    nextPath: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <div className="bg-fg-2 text-text rounded-full py-4 text-center text-[14px]">
                     Below values may not be applied until after a refresh
                 </div>
                 <ColorPicker
-                    themeProperty="shape"
                     label="Shapes"
                     tooltip="Color of geometric shapes drawn on the field"
                     initialColor={currentFieldProperties.theme.shape}
+                    defaultColor={DEFAULT_FIELD_THEME.shape as RgbaColor}
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    shape: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
-                    themeProperty="tempPath"
                     label="Temporary Path"
                     tooltip="Color of temporary or in-progress paths"
                     initialColor={currentFieldProperties.theme.tempPath}
+                    defaultColor={DEFAULT_FIELD_THEME.tempPath as RgbaColor}
+                    onChange={(newColor) => {
+                        setFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    tempPath: newColor,
+                                },
+                            }),
+                        );
+                    }}
                 />
                 <ColorPicker
                     label="Marcher Fill"
                     tooltip="Dot color of the marchers"
-                    updateColorProp={(color) =>
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.fill
+                    }
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.defaultMarcher.fill as RgbaColor
+                    }
+                    onChange={(newColor) =>
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
@@ -2353,20 +2258,23 @@ export default function FieldPropertiesCustomizer() {
                                     defaultMarcher: {
                                         ...currentFieldProperties.theme
                                             .defaultMarcher,
-                                        fill: color,
+                                        fill: newColor,
                                     },
                                 },
                             }),
                         )
-                    }
-                    initialColor={
-                        currentFieldProperties.theme.defaultMarcher.fill
                     }
                 />
                 <ColorPicker
                     label="Marcher Outline"
                     tooltip="Outline color of the marchers"
-                    updateColorProp={(color) =>
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.outline
+                    }
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.defaultMarcher.outline as RgbaColor
+                    }
+                    onChange={(newColor) =>
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
@@ -2375,20 +2283,23 @@ export default function FieldPropertiesCustomizer() {
                                     defaultMarcher: {
                                         ...currentFieldProperties.theme
                                             .defaultMarcher,
-                                        outline: color,
+                                        outline: newColor,
                                     },
                                 },
                             }),
                         )
-                    }
-                    initialColor={
-                        currentFieldProperties.theme.defaultMarcher.outline
                     }
                 />
                 <ColorPicker
                     label="Marcher Text"
                     tooltip="Text color for marcher drill numbers"
-                    updateColorProp={(color) =>
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.label
+                    }
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.defaultMarcher.label as RgbaColor
+                    }
+                    onChange={(newColor) =>
                         setFieldProperties(
                             new FieldProperties({
                                 ...currentFieldProperties,
@@ -2397,14 +2308,11 @@ export default function FieldPropertiesCustomizer() {
                                     defaultMarcher: {
                                         ...currentFieldProperties.theme
                                             .defaultMarcher,
-                                        label: color,
+                                        label: newColor,
                                     },
                                 },
                             }),
                         )
-                    }
-                    initialColor={
-                        currentFieldProperties.theme.defaultMarcher.label
                     }
                 />
                 <Button
