@@ -78,6 +78,7 @@ module.exports = {
         "signtool",
         "trackpad",
         "trackpads",
+        "drumline",
     ],
     ignorePaths: [
         "node_modules/**",
