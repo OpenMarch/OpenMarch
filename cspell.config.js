@@ -79,6 +79,10 @@ module.exports = {
         "trackpad",
         "trackpads",
         "drumline",
+        "Woodgrove",
+        "skyrim",
+        "lightridge",
+        "clsx",
     ],
     ignorePaths: [
         "node_modules/**",
