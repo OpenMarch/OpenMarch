@@ -1,0 +1,14 @@
+{
+    "name": "musicxml-parser",
+    "module": "index.ts",
+    "type": "module",
+    "scripts": {
+        "test": "bun test"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    },
+    "dependencies": {
+        "vitest": "^2.1.9"
+    }
+}
