@@ -2,7 +2,7 @@
 title: "OpenMarch is Moving Fast in 2025!"
 author: "Alex Dumouchelle"
 date: 2025-06-10
-image: "/blog/placeholder.jpg"
+image: "/blog/20250609/thumbnail.jpg"
 ---
 
 ## Battle testing OpenMarch
