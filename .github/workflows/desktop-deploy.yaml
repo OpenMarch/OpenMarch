@@ -29,17 +29,16 @@ jobs:
             - name: Determine if releasing
               id: release
               run: |
-                if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-                  echo "RELEASE=true" >> "$GITHUB_OUTPUT"
-                else
-                  echo "RELEASE=false" >> "$GITHUB_OUTPUT"
-                fi
-
+                  if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+                    echo "RELEASE=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "RELEASE=false" >> "$GITHUB_OUTPUT"
+                  fi
 
             - name: Install Node.js
               uses: actions/setup-node@v1
               with:
-                  node-version: 18
+                  node-version: 22
 
             - name: Setup pnpm
               uses: pnpm/action-setup@v4.1.0
@@ -65,24 +64,21 @@ jobs:
 
             - name: Install pnpm dependencies
               run: pnpm install
+              working-directory: apps/desktop
               env:
                   CI: true
                   ADBLOCK: true
 
             - name: Build for production
-              run: pnpm desktop build
+              run: pnpm run build
+              working-directory: apps/desktop
 
             - name: Replace package name in package.json - ubuntu
+              working-directory: apps/desktop
               if: startsWith(matrix.os, 'ubuntu')
               # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
               run: |
-                  sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' apps/desktop/package.json
-
-            - name: Replace package name in package.json - windows
-              if: startsWith(matrix.os, 'win')
-              # needed to prevent NSIS executable errors
-              run: |
-                  (Get-Content apps/desktop/package.json) -replace '"name": "@openmarch\\/desktop"', '"name": "OpenMarch"' | Set-Content apps/desktop/package.json
+                  sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
 
             - name: Build/release Electron app
               uses: ./actions/desktop-deploy
