@@ -1,0 +1,68 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+deleted file mode 100644
+index cbbdb8254733ee6f2b607ecfb5068a47a3d96cc3..0000000000000000000000000000000000000000
+diff --git a/binding.gyp b/binding.gyp
+deleted file mode 100644
+index 19a33e816626268e3e787927ad4ae30056d6131c..0000000000000000000000000000000000000000
+diff --git a/changes b/changes
+deleted file mode 100644
+index a80b84b2308ef68b6b02d6e4b023f082e2be8208..0000000000000000000000000000000000000000
+diff --git a/package.json b/package.json
+index 77e72328c3f2ced9f17bdf1d5a9a9dd9654a6b15..ec250d01e13a5893c43b03185c06d8b2d2ae0a12 100644
+--- a/package.json
++++ b/package.json
+@@ -10,28 +10,16 @@
+     "Rod Vagg <r@va.gg>",
+     "Juriy Zaytsev <kangax@gmail.com>"
+   ],
+-  "keywords": [
+-    "canvas",
+-    "graphic",
+-    "graphics",
+-    "pixman",
+-    "cairo",
+-    "image",
+-    "images",
+-    "pdf"
+-  ],
+   "homepage": "https://github.com/Automattic/node-canvas",
+   "repository": "git://github.com/Automattic/node-canvas.git",
+   "scripts": {
+-    "prebenchmark": "node-gyp build",
+     "benchmark": "node benchmarks/run.js",
+     "lint": "standard examples/*.js test/server.js test/public/*.js benchmarks/run.js lib/context2d.js util/has_lib.js browser.js index.js",
+     "test": "mocha test/*.test.js",
+-    "pretest-server": "node-gyp build",
+     "test-server": "node test/server.js",
+     "generate-wpt": "node ./test/wpt/generate.js",
+     "test-wpt": "mocha test/wpt/generated/*.js",
+-    "install": "node-pre-gyp install --fallback-to-build --update-binary",
++    "install": "echo 'NOT INSTLALLING CANVAS'",
+     "dtslint": "dtslint types"
+   },
+   "binary": {
+@@ -42,7 +30,6 @@
+     "package_name": "{module_name}-v{version}-{node_abi}-{platform}-{libc}-{arch}.tar.gz"
+   },
+   "files": [
+-    "binding.gyp",
+     "lib/",
+     "src/",
+     "util/",
+@@ -50,7 +37,6 @@
+   ],
+   "types": "types/index.d.ts",
+   "dependencies": {
+-    "@mapbox/node-pre-gyp": "^1.0.0",
+     "nan": "^2.17.0",
+     "simple-get": "^3.0.3"
+   },
+diff --git a/src/CanvasRenderingContext2d.cc.orig b/src/CanvasRenderingContext2d.cc.orig
+deleted file mode 100644
+index 6dbc7271083eb2cca3a4c13558e71bc0243e33da..0000000000000000000000000000000000000000
+diff --git a/src/CanvasRenderingContext2d.h.orig b/src/CanvasRenderingContext2d.h.orig
+deleted file mode 100644
+index 94bcfd5180f2eebf4be6b06ef2dace1c29394015..0000000000000000000000000000000000000000
+diff --git a/types/Readme.md b/types/Readme.md
+deleted file mode 100644
+index 4beb7f528b18f011b028b958fb9716e263a84b30..0000000000000000000000000000000000000000

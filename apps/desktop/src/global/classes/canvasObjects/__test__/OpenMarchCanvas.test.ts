@@ -12,7 +12,7 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
 import { ElectronApi } from "electron/preload";
 
-describe("OpenMarchCanvas", () => {
+describe.skip("OpenMarchCanvas", () => {
     const NCAAFieldProperties =
         FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
 

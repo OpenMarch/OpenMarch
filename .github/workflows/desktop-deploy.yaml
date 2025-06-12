@@ -28,8 +28,9 @@ jobs:
 
             - name: Determine if releasing
               id: release
+              shell: bash
               run: |
-                  if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+                  if [ "${GITHUB_REF}" = refs/tags/v* ]; then
                     echo "RELEASE=true" >> "$GITHUB_OUTPUT"
                   else
                     echo "RELEASE=false" >> "$GITHUB_OUTPUT"
@@ -60,11 +61,12 @@ jobs:
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
             - name: Create Sentry env file
+              working-directory: apps/desktop
+              shell: bash
               run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
 
             - name: Install pnpm dependencies
               run: pnpm install
-              working-directory: apps/desktop
               env:
                   CI: true
                   ADBLOCK: true

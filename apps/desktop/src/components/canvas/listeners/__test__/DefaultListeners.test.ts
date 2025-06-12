@@ -14,7 +14,7 @@ import { fabric } from "fabric";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { ElectronApi } from "electron/preload";
 
-describe("DefaultListeners", () => {
+describe.skip("DefaultListeners", () => {
     const NCAAFieldProperties =
         FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
     let canvas: OpenMarchCanvas;
