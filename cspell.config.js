@@ -83,6 +83,8 @@ module.exports = {
         "skyrim",
         "lightridge",
         "clsx",
+        "eigen",
+        "lusolve",
     ],
     ignorePaths: [
         "node_modules/**",

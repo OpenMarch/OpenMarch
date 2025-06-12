@@ -1,0 +1,272 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Shape Classifier Visualizer</title>
+        <style>
+            .canvas-container {
+                display: inline-block;
+                margin: 10px;
+                text-align: center;
+            }
+            canvas {
+                border: 1px solid #ccc;
+                background: #f5f5f5;
+            }
+            h3 {
+                margin: 5px 0;
+                font-family: Arial, sans-serif;
+            }
+            #input-container {
+                margin: 20px;
+                padding: 20px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }
+            #json-input {
+                width: 100%;
+                height: 200px;
+                margin-bottom: 10px;
+                font-family: monospace;
+            }
+            .error {
+                color: red;
+                margin-top: 10px;
+                font-family: Arial, sans-serif;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 16px;
+                cursor: pointer;
+            }
+            #sample-data {
+                margin-top: 10px;
+                font-size: 14px;
+                color: #666;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="input-container">
+            <h2>Marcher Data Input</h2>
+            <textarea
+                id="json-input"
+                placeholder="Paste your JSON array of marcher data here..."
+            ></textarea>
+            <button onclick="visualizeFromInput()">Visualize</button>
+            <div id="error-message" class="error"></div>
+            <div id="sample-data">
+                <h4>Sample Format:</h4>
+                <pre>
+[
+    {
+        "name": "My Shape",
+        "marchers": [
+            { "id": 1, "coordinate": { "x": 0, "y": 0 } },
+            { "id": 2, "coordinate": { "x": 1, "y": 1 } }
+        ]
+    }
+]</pre
+                >
+            </div>
+        </div>
+        <div id="visualizations"></div>
+
+        <script>
+            // Shape classifier implementation
+            function mean(arr) {
+                return arr.reduce((a, b) => a + b, 0) / arr.length;
+            }
+
+            function transpose(m) {
+                return m[0].map((_, i) => m.map((row) => row[i]));
+            }
+
+            function multiply(a, b) {
+                const result = Array.from({ length: a.length }, () =>
+                    Array(b[0].length).fill(0),
+                );
+                for (let i = 0; i < a.length; i++) {
+                    for (let j = 0; j < b[0].length; j++) {
+                        for (let k = 0; k < b.length; k++) {
+                            result[i][j] += a[i][k] * b[k][j];
+                        }
+                    }
+                }
+                return result;
+            }
+
+            function getPCARatio(points) {
+                const xs = points.map((p) => p[0]);
+                const ys = points.map((p) => p[1]);
+                const meanX = mean(xs);
+                const meanY = mean(ys);
+
+                const centered = points.map(([x, y]) => [x - meanX, y - meanY]);
+                const covXX = mean(centered.map(([x]) => x * x));
+                const covYY = mean(centered.map(([, y]) => y * y));
+                const covXY = mean(centered.map(([x, y]) => x * y));
+
+                const trace = covXX + covYY;
+                const det = covXX * covYY - covXY * covXY;
+                const eigen1 = trace / 2 + Math.sqrt((trace * trace) / 4 - det);
+                const eigen2 = trace / 2 - Math.sqrt((trace * trace) / 4 - det);
+
+                return eigen1 / (eigen1 + eigen2);
+            }
+
+            function getBoundingBoxAspectRatio(points) {
+                const xs = points.map((p) => p[0]);
+                const ys = points.map((p) => p[1]);
+                const width = Math.max(...xs) - Math.min(...xs);
+                const height = Math.max(...ys) - Math.min(...ys);
+                if (height === 0) return Infinity;
+                return width / height;
+            }
+
+            function classifyShape(marchers) {
+                if (marchers.length < 3) return "irregular";
+
+                const points = marchers.map((m) => [
+                    m.coordinate.x,
+                    m.coordinate.y,
+                ]);
+
+                const pcaRatio = getPCARatio(points);
+                if (pcaRatio > 0.95) return "line";
+
+                const aspectRatio = getBoundingBoxAspectRatio(points);
+                if (aspectRatio > 0.75 && aspectRatio < 1.33) return "block";
+
+                // Simplified circle detection (using aspect ratio and point distribution)
+                const isCircleLike = aspectRatio > 0.8 && aspectRatio < 1.2;
+                if (isCircleLike) return "circle";
+
+                return "irregular";
+            }
+
+            // Visualization code
+            function drawMarchers(canvas, marchers) {
+                const ctx = canvas.getContext("2d");
+                const padding = 40;
+
+                // Find bounds
+                const xs = marchers.map((m) => m.coordinate.x);
+                const ys = marchers.map((m) => m.coordinate.y);
+                const minX = Math.min(...xs);
+                const maxX = Math.max(...xs);
+                const minY = Math.min(...ys);
+                const maxY = Math.max(...ys);
+
+                // Calculate scale to fit canvas
+                const width = maxX - minX;
+                const height = maxY - minY;
+                const scale = Math.min(
+                    (canvas.width - 2 * padding) / (width || 1),
+                    (canvas.height - 2 * padding) / (height || 1),
+                );
+
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw coordinate system
+                ctx.strokeStyle = "#ccc";
+                ctx.beginPath();
+                ctx.moveTo(padding, canvas.height / 2);
+                ctx.lineTo(canvas.width - padding, canvas.height / 2);
+                ctx.moveTo(canvas.width / 2, padding);
+                ctx.lineTo(canvas.width / 2, canvas.height - padding);
+                ctx.stroke();
+
+                // Draw marchers
+                marchers.forEach((marcher) => {
+                    const x = (marcher.coordinate.x - minX) * scale + padding;
+                    const y = (marcher.coordinate.y - minY) * scale + padding;
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = "blue";
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Draw ID
+                    ctx.fillStyle = "black";
+                    ctx.font = "12px Arial";
+                    ctx.fillText(marcher.id.toString(), x + 8, y - 8);
+                });
+            }
+
+            function visualizeFromInput() {
+                // Clear previous visualizations and error messages
+                document.getElementById("visualizations").innerHTML = "";
+                document.getElementById("error-message").textContent = "";
+
+                try {
+                    // Get and parse JSON input
+                    const jsonInput =
+                        document.getElementById("json-input").value;
+                    const testCases = JSON.parse(jsonInput);
+
+                    // Validate input format
+                    if (!Array.isArray(testCases)) {
+                        throw new Error("Input must be an array of test cases");
+                    }
+
+                    // Create visualizations for each test case
+                    testCases.forEach((testCase, index) => {
+                        if (
+                            !testCase.marchers ||
+                            !Array.isArray(testCase.marchers)
+                        ) {
+                            throw new Error(
+                                `Test case ${index + 1} must have a 'marchers' array`,
+                            );
+                        }
+
+                        const container = document.createElement("div");
+                        container.className = "canvas-container";
+
+                        const canvas = document.createElement("canvas");
+                        canvas.width = 200;
+                        canvas.height = 200;
+
+                        const shape = classifyShape(testCase.marchers);
+                        const title = document.createElement("h3");
+                        title.textContent = `${testCase.name || `Shape ${index + 1}`} (${shape})`;
+
+                        container.appendChild(title);
+                        container.appendChild(canvas);
+                        document
+                            .getElementById("visualizations")
+                            .appendChild(container);
+
+                        drawMarchers(canvas, testCase.marchers);
+                    });
+                } catch (error) {
+                    document.getElementById("error-message").textContent =
+                        `Error: ${error.message}`;
+                }
+            }
+
+            // Load sample data on page load
+            window.onload = function () {
+                const sampleData = [
+                    {
+                        name: "Line Example",
+                        marchers: [
+                            { id: 1, coordinate: { x: 0, y: 0 } },
+                            { id: 2, coordinate: { x: 1, y: 0.1 } },
+                            { id: 3, coordinate: { x: 2, y: 0.2 } },
+                            { id: 4, coordinate: { x: 3, y: 0.3 } },
+                        ],
+                    },
+                ];
+                document.getElementById("json-input").value = JSON.stringify(
+                    sampleData,
+                    null,
+                    4,
+                );
+                visualizeFromInput();
+            };
+        </script>
+    </body>
+</html>

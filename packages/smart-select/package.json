@@ -1,0 +1,31 @@
+{
+    "name": "smart-select",
+    "version": "1.0.0",
+    "description": "Intelligent marcher selection utilities",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "eslint src/**/*.ts",
+        "clean": "rm -rf dist"
+    },
+    "keywords": [
+        "marching-band",
+        "selection",
+        "utilities"
+    ],
+    "author": "",
+    "license": "ISC",
+    "packageManager": "pnpm@10.11.0",
+    "dependencies": {
+        "mathjs": "^12.4.3"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "eslint": "^8.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^1.0.0"
+    }
+}
