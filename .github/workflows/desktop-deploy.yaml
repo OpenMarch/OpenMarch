@@ -82,11 +82,6 @@ jobs:
               run: |
                   sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
 
-            - name: Install NSIS dependencies
-              if: startsWith(matrix.os, 'windows')
-              run: |
-                  winget install NSIS.NSIS
-
             - name: Build/release Electron app
               uses: ./actions/desktop-deploy
               with:
