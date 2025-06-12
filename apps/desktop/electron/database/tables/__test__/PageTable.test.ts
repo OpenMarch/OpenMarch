@@ -10,6 +10,7 @@ import Constants from "../../../../src/global/Constants";
 import { initTestDatabase } from "./testUtils";
 import { NewPageArgs } from "../PageTable";
 import { DatabaseBeat, FIRST_BEAT_ID, getBeats } from "../BeatTable";
+import { FIRST_PAGE_ID } from "../../constants";
 import * as History from "../../database.history";
 
 describe("PageTable", () => {
@@ -1387,7 +1388,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(getPagesAfterRedo.data.length).toBe(4);
                     const redonePages = getPagesAfterRedo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(redonePages[0].start_beat).toBe(16);
                     expect(redonePages[0].is_subset).toBe(false);
@@ -1469,7 +1470,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(getPagesAfterRedo.data.length).toBe(6);
                     const redonePages = getPagesAfterRedo.data
-                        .filter((p) => p.id !== PageTable.FIRST_PAGE_ID)
+                        .filter((p) => p.id !== FIRST_PAGE_ID)
                         .slice(2);
                     expect(redonePages[0].start_beat).toBe(16);
                     expect(redonePages[0].is_subset).toBe(false);
@@ -1568,7 +1569,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(getPagesAfterRedo.data.length).toBe(2);
                     const redonePage = getPagesAfterRedo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     )[0];
                     expect(redonePage.start_beat).toBe(12);
                     expect(redonePage.is_subset).toBe(false);
@@ -1587,7 +1588,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo2.success).toBe(true);
                     expect(
                         getPagesAfterUndo2.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(0);
 
@@ -1687,11 +1688,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(
                         getPagesAfterRedo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(3);
                     const redonePages = getPagesAfterRedo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(redonePages[0].start_beat).toBe(16);
                     expect(redonePages[0].is_subset).toBe(false);
@@ -1715,7 +1716,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo2.success).toBe(true);
                     expect(
                         getPagesAfterUndo2.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(0);
 
@@ -1776,7 +1777,7 @@ describe("PageTable", () => {
                 expect(getPagesAfterUndo.success).toBe(true);
                 expect(getPagesAfterUndo.data.length).toBe(2);
                 const revertedPage = getPagesAfterUndo.data.filter(
-                    (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                    (p) => p.id !== FIRST_PAGE_ID,
                 )[0];
                 expect(revertedPage.start_beat).toBe(12);
                 expect(revertedPage.is_subset).toBe(false);
@@ -1790,12 +1791,11 @@ describe("PageTable", () => {
                 const getPagesAfterRedo = PageTable.getPages({ db });
                 expect(getPagesAfterRedo.success).toBe(true);
                 expect(
-                    getPagesAfterRedo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
-                    ).length,
+                    getPagesAfterRedo.data.filter((p) => p.id !== FIRST_PAGE_ID)
+                        .length,
                 ).toBe(1);
                 const redonePage = getPagesAfterRedo.data.filter(
-                    (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                    (p) => p.id !== FIRST_PAGE_ID,
                 )[0];
                 expect(redonePage.start_beat).toBe(15);
                 expect(redonePage.is_subset).toBe(true);
@@ -1810,11 +1810,11 @@ describe("PageTable", () => {
                 expect(getPagesAfterUndo2.success).toBe(true);
                 expect(
                     getPagesAfterUndo2.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     ).length,
                 ).toBe(1);
                 const revertedPage2 = getPagesAfterUndo2.data.filter(
-                    (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                    (p) => p.id !== FIRST_PAGE_ID,
                 )[0];
                 expect(revertedPage2.start_beat).toBe(12);
                 expect(revertedPage2.is_subset).toBe(false);
@@ -1895,7 +1895,7 @@ describe("PageTable", () => {
                 expect(getPagesAfterUndo.success).toBe(true);
                 expect(getPagesAfterUndo.data.length).toBe(4);
                 const revertedPages = getPagesAfterUndo.data.filter(
-                    (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                    (p) => p.id !== FIRST_PAGE_ID,
                 );
                 expect(revertedPages[0].start_beat).toBe(16);
                 expect(revertedPages[0].is_subset).toBe(false);
@@ -1915,12 +1915,11 @@ describe("PageTable", () => {
                 const getPagesAfterRedo = PageTable.getPages({ db });
                 expect(getPagesAfterRedo.success).toBe(true);
                 expect(
-                    getPagesAfterRedo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
-                    ).length,
+                    getPagesAfterRedo.data.filter((p) => p.id !== FIRST_PAGE_ID)
+                        .length,
                 ).toBe(3);
                 const redonePages = getPagesAfterRedo.data.filter(
-                    (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                    (p) => p.id !== FIRST_PAGE_ID,
                 );
                 expect(redonePages[0].start_beat).toBe(15);
                 expect(redonePages[0].is_subset).toBe(true);
@@ -1941,11 +1940,11 @@ describe("PageTable", () => {
                 expect(getPagesAfterUndo2.success).toBe(true);
                 expect(
                     getPagesAfterUndo2.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     ).length,
                 ).toBe(3);
                 const revertedPages2 = getPagesAfterUndo2.data.filter(
-                    (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                    (p) => p.id !== FIRST_PAGE_ID,
                 );
                 expect(revertedPages2[0].start_beat).toBe(16);
                 expect(revertedPages2[0].is_subset).toBe(false);
@@ -2000,7 +1999,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo.success).toBe(true);
                     expect(getPagesAfterUndo.data.length).toBe(2);
                     const undonePage = getPagesAfterUndo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     )[0];
                     expect(undonePage.start_beat).toBe(12);
                     expect(undonePage.is_subset).toBe(false);
@@ -2014,7 +2013,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(
                         getPagesAfterRedo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(0);
 
@@ -2027,11 +2026,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo2.success).toBe(true);
                     expect(
                         getPagesAfterUndo2.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(1);
                     const undonePage2 = getPagesAfterUndo2.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     )[0];
                     expect(undonePage2.start_beat).toBe(12);
                     expect(undonePage2.is_subset).toBe(false);
@@ -2083,7 +2082,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo.success).toBe(true);
                     expect(getPagesAfterUndo.data.length).toBe(4);
                     const undonePages = getPagesAfterUndo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(undonePages.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),
@@ -2098,7 +2097,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(
                         getPagesAfterRedo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(0);
 
@@ -2111,11 +2110,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo2.success).toBe(true);
                     expect(
                         getPagesAfterUndo2.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(3);
                     const undonePages2 = getPagesAfterUndo2.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(undonePages2.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),
@@ -2181,7 +2180,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo.success).toBe(true);
                     expect(getPagesAfterUndo.data.length).toBe(6);
                     const undonePages = getPagesAfterUndo.data
-                        .filter((p) => p.id !== PageTable.FIRST_PAGE_ID)
+                        .filter((p) => p.id !== FIRST_PAGE_ID)
                         .slice(2);
                     expect(undonePages.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),
@@ -2196,7 +2195,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(
                         getPagesAfterRedo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(2);
 
@@ -2209,11 +2208,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo2.success).toBe(true);
                     expect(
                         getPagesAfterUndo2.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(5);
                     const undonePages2 = getPagesAfterUndo2.data
-                        .filter((p) => p.id !== PageTable.FIRST_PAGE_ID)
+                        .filter((p) => p.id !== FIRST_PAGE_ID)
                         .slice(2);
                     expect(undonePages2.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),
@@ -2310,11 +2309,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo.success).toBe(true);
                     expect(
                         getPagesAfterUndo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(3);
                     const undonePages = getPagesAfterUndo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(undonePages.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),
@@ -2334,7 +2333,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(
                         getPagesAfterRedo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(0);
 
@@ -2352,11 +2351,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo2.success).toBe(true);
                     expect(
                         getPagesAfterUndo2.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(3);
                     const undonePages2 = getPagesAfterUndo2.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(undonePages2.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),
@@ -2456,11 +2455,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo.success).toBe(true);
                     expect(
                         getPagesAfterUndo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(3);
                     const undonePages = getPagesAfterUndo.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(undonePages.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),
@@ -2480,7 +2479,7 @@ describe("PageTable", () => {
                     expect(getPagesAfterRedo.success).toBe(true);
                     expect(
                         getPagesAfterRedo.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(0);
 
@@ -2498,11 +2497,11 @@ describe("PageTable", () => {
                     expect(getPagesAfterUndo2.success).toBe(true);
                     expect(
                         getPagesAfterUndo2.data.filter(
-                            (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                            (p) => p.id !== FIRST_PAGE_ID,
                         ).length,
                     ).toBe(3);
                     const undonePages2 = getPagesAfterUndo2.data.filter(
-                        (p) => p.id !== PageTable.FIRST_PAGE_ID,
+                        (p) => p.id !== FIRST_PAGE_ID,
                     );
                     expect(undonePages2.map((page) => page.id).sort()).toEqual(
                         createdPages.map((page) => page.id).sort(),

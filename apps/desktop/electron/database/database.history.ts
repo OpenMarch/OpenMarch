@@ -1,5 +1,9 @@
 import { Constants } from "../../src/global/Constants";
 import Database from "better-sqlite3";
+import { DB, getOrm } from "./db";
+import { desc, not, inArray, sql } from "drizzle-orm";
+import * as schema from "./migrations/schema";
+import { drizzle } from "drizzle-orm/better-sqlite3";
 
 type HistoryType = "undo" | "redo";
 
@@ -128,7 +132,13 @@ export function createUndoTriggers(db: Database.Database, tableName: string) {
  * @returns the new undo group number
  */
 export function incrementUndoGroup(db: Database.Database) {
-    return incrementGroup(db, "undo");
+    const orm = getOrm(db);
+    return incrementGroupDrizzle(orm, "undo");
+}
+
+// A temporary wrapper until all callers can pass in the ORM. Then this becomes incrementUndoGroup
+export function incrementUndoGroupDrizzle(orm: DB) {
+    return incrementGroupDrizzle(orm, "undo");
 }
 
 /**
@@ -235,6 +245,45 @@ function incrementGroup(db: Database.Database, type: HistoryType) {
     }
 
     return newGroup;
+}
+
+export function incrementGroupDrizzle(orm: DB, type: HistoryType) {
+    const historyTable =
+        type === "undo" ? schema.history_undo : schema.history_redo;
+
+    return orm.transaction((tx) => {
+        const groupLimit = tx
+            .select({ group_limit: schema.history_stats.group_limit })
+            .from(schema.history_stats)
+            .get()!.group_limit;
+
+        const maxGroup = tx
+            .select({
+                max: sql`COALESCE(MAX(${historyTable.history_group}), 0) + 1`,
+            })
+            .from(historyTable)
+            .get()!.max;
+
+        const groupColumn =
+            type === "undo" ? "cur_undo_group" : "cur_redo_group";
+
+        tx.update(schema.history_stats)
+            .set({ [groupColumn]: maxGroup })
+            .run();
+
+        const recentGroupsQuery = tx
+            .selectDistinct({ history_group: historyTable.history_group })
+            .from(historyTable)
+            .orderBy(desc(historyTable.history_group))
+            .limit(groupLimit);
+
+        // Delete all groups except the most recent group_limit groups
+        tx.delete(historyTable)
+            .where(not(inArray(historyTable.history_group, recentGroupsQuery)))
+            .run();
+
+        return maxGroup;
+    });
 }
 
 /**

@@ -1,5 +1,5 @@
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { ShapePage } from "electron/database/tables/ShapePageTable";
+import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import {
     ShapePath,
     ShapePoint,
@@ -8,7 +8,7 @@ import {
     VanillaPoint,
 } from "./StaticMarcherShape";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { ModifiedShapePageMarcherArgs } from "electron/database/tables/ShapePageMarcherTable";
+import type { ModifiedShapePageMarcherArgs } from "electron/database/tables/ShapePageMarcherTable";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.

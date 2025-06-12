@@ -1,12 +1,12 @@
 import Measure from "./Measure";
 import Beat from "./Beat";
-import {
+import type {
     DatabasePage,
-    FIRST_PAGE_ID,
     ModifiedPageArgs,
     NewPageArgs,
 } from "../../../electron/database/tables/PageTable";
-import { DatabaseResponse } from "../../../electron/database/DatabaseActions";
+import { FIRST_PAGE_ID } from "../../../electron/database/constants";
+import type { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
 

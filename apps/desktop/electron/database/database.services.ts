@@ -21,6 +21,7 @@ import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
 import * as SectionAppearanceTable from "./tables/SectionAppearanceTable";
+import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -117,13 +118,22 @@ export function connect() {
 
 /* ============================ Handlers ============================ */
 async function connectWrapper<T>(
-    func: (args: any) => DatabaseResponse<T | undefined>,
+    func: (args: any) => DatabaseResponse<T | undefined> | T,
     args: any = {},
 ): Promise<DatabaseResponse<T | undefined>> {
     const db = connect();
+    const orm = getOrm(db);
     let result: Promise<DatabaseResponse<T | undefined>>;
     try {
-        result = Promise.resolve(func({ ...args, db }));
+        let fnResult = func({ ...args, db, orm });
+        if (
+            !fnResult ||
+            typeof fnResult !== "object" ||
+            !("success" in fnResult)
+        ) {
+            fnResult = { success: true, data: fnResult };
+        }
+        result = Promise.resolve(fnResult);
     } catch (error: any) {
         console.error(error);
         result = Promise.resolve({

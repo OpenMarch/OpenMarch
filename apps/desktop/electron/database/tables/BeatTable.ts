@@ -2,6 +2,9 @@ import Database from "better-sqlite3";
 import * as History from "../database.history";
 import * as DbActions from "../DatabaseActions";
 import Constants from "../../../src/global/Constants";
+import { DB, getOrm } from "../db";
+import { eq } from "drizzle-orm";
+import * as schema from "../migrations/schema";
 
 export const FIRST_BEAT_ID = 0;
 
@@ -74,9 +77,6 @@ export function getBeats({
 
 /**
  * Retrieves a single beat from the database by its unique identifier.
- * @param {Database.Database} db - The database instance to use.
- * @param {number} beatId - The unique identifier of the beat to retrieve.
- * @returns {DbActions.DatabaseResponse<DatabaseBeat | undefined>} - The response containing the retrieved beat, or undefined if the beat is not found.
  */
 export function getBeat({
     db,
@@ -85,11 +85,15 @@ export function getBeat({
     db: Database.Database;
     beatId: number;
 }): DbActions.DatabaseResponse<DatabaseBeat | undefined> {
-    return DbActions.getItem<DatabaseBeat>({
-        tableName: Constants.BeatsTableName,
-        db,
-        id: beatId,
-    });
+    const beat = getOrm(db)
+        .query.beats.findFirst({
+            where: eq(schema.beats.id, beatId),
+        })
+        .sync();
+    return {
+        success: true,
+        data: beat as DatabaseBeat,
+    };
 }
 
 /**
