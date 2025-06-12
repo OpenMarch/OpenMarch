@@ -20,7 +20,7 @@ jobs:
                     - macos-latest
                     - macos-13 # x86 (Intel) macOS
                     - ubuntu-latest
-                    - windows-latest
+                    # - windows-latest
 
         steps:
             - name: Check out Git repository
