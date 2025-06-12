@@ -33,9 +33,6 @@
         "test:coverage": "pnpm test:run -- --coverage",
         "test:clearCache": "vitest --clearCache"
     },
-    "overrides": {
-        "canvas": "npm:@openmarch/null-canvas@1.0.0"
-    },
     "dependencies": {
         "@fontsource/dm-mono": "^5.2.5",
         "@fontsource/dm-sans": "^5.2.5",
