@@ -20,7 +20,7 @@ jobs:
                     - macos-latest
                     - macos-13 # x86 (Intel) macOS
                     - ubuntu-latest
-                    # - windows-latest
+                    - windows-latest
 
         steps:
             - name: Check out Git repository
@@ -79,6 +79,11 @@ jobs:
               # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
               run: |
                   sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
+
+            - name: Install NSIS dependencies
+              if: startsWith(matrix.os, 'windows')
+              run: |
+                  winget install NSIS.NSIS
 
             - name: Build/release Electron app
               uses: ./actions/desktop-deploy

@@ -87,7 +87,7 @@ const runAction = () => {
     }
 
     log(`Building${release ? " and releasing" : ""} the Electron app…`);
-    const fullCmd = `pnpx electron-builder --${platform} ${
+    const fullCmd = `./node_modules/.bin/electron-builder  --${platform} ${
         release ? "--publish always" : "--publish=never"
     } ${args} ${runtimeArgs}`;
     log(`Running '${fullCmd}' in ${pkgRoot}`);

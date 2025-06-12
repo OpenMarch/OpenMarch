@@ -1,13 +1,11 @@
 packages:
-  - apps/*
-  - packages/*
+    - apps/*
+    - packages/*
 onlyBuiltDependencies:
-  - '@sentry/cli'
-  - better-sqlite3
-  - canvas
-  - electron
-  - esbuild
-  - sharp
-  - '@tailwindcss/oxide'
-patchedDependencies:
-  canvas: patches/canvas.patch
+    - "@sentry/cli"
+    - better-sqlite3
+    - canvas
+    - electron
+    - esbuild
+    - sharp
+    - "@tailwindcss/oxide"
