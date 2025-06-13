@@ -5,6 +5,7 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
 import FeatureSelector from "@/components/home/FeatureSelector";
 import { CURRENT_VERSION } from "@/constants";
+import NewsletterForm from "@/components/ui/NewsletterForm";
 
 const blogs = await getCollection("blog");
 type Blog = CollectionEntry<"blog">;
@@ -59,6 +60,18 @@ type Blog = CollectionEntry<"blog">;
             >
             </div>
         </section>
+        <div class="flex justify-center w-full">
+            <div
+                class="flex flex-col items-center gap-16 rounded-6 border border-stroke bg-fg-1 p-32"
+            >
+                <h2 class="text-h2">Stay up to date with OpenMarch</h2>
+                <NewsletterForm
+                    client:load
+                    variant="primary"
+                    buttonText="Join the Newsletter"
+                />
+            </div>
+        </div>
         <FeatureSelector client:load />
         <section class="flex flex-col gap-72 px-128 max-[1300px]:px-0">
             <div class="flex flex-col gap-24">
@@ -165,7 +178,7 @@ type Blog = CollectionEntry<"blog">;
                     class="flex w-full flex-col items-center justify-center gap-16 rounded-6 border border-stroke p-24"
                 >
                     <h2 class="text-h2">Partners</h2>
-                    <a href="https://silentcommand.org"
+                    <a href="https://silentcommand.org" target="_blank"
                         ><div
                             class="aspect-[328/125] h-auto w-[16rem] bg-[url('/partners/sicommandDark.png')] bg-cover dark:bg-[url('/partners/sicommandLight.png')]"
                         >

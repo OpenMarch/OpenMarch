@@ -83,6 +83,9 @@ module.exports = {
         "skyrim",
         "lightridge",
         "clsx",
+        "signup",
+        "supabase",
+        "apikey",
     ],
     ignorePaths: [
         "node_modules/**",
