@@ -1,0 +1,28 @@
+---
+title: Drag Input
+variants:
+  disabled:
+    default: false
+    options:
+      - false
+      - true
+  compact:
+    default: false
+    options:
+      - false
+      - true
+  dragAxis:
+    default: "y"
+    options:
+      - "y"
+      - "x"
+  # unit:
+  #   default: ""
+  #   options:
+  #     - ""
+  #     - "cm"
+---
+
+import { DragInput } from "@/components/index";
+
+<DragInput client:load {...props} />

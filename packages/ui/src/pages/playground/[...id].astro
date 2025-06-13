@@ -4,12 +4,10 @@ import Sidebar from "@/components/playground/Sidebar.astro";
 import Playground from "@/components/playground/Playground.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import { generateVariants } from "@korhq/unpreview";
-
 export async function getStaticPaths() {
-    const previews: CollectionEntry<"previews"> =
-        await getCollection("previews");
+    const previews = await getCollection("previews");
     const filteredPreviews = previews.filter(
-        (preview) => !preview.data.directory,
+        (preview: CollectionEntry<"previews">) => !preview.data.directory,
     );
     return filteredPreviews.map((preview) => ({
         params: { id: preview.id },
