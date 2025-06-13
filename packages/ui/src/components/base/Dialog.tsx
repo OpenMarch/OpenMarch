@@ -25,7 +25,9 @@ export const DialogTrigger = ({
     children: React.ReactNode;
     className?: string;
 }) => (
-    <RadixDialog.Trigger className={className}>{children}</RadixDialog.Trigger>
+    <RadixDialog.Trigger className={className} {...rest}>
+        {children}
+    </RadixDialog.Trigger>
 );
 
 export const DialogTitle = ({ children }: { children: React.ReactNode }) => (
