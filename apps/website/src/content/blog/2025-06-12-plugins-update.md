@@ -10,7 +10,7 @@ This development update brings a brand new plugin system for all of you aspiring
 
 ## Plugin Panel
 
-The is now a "Plugins" button in the OpenMarch toolbar that opens a new panel.
+There is now a "Plugins" button in the OpenMarch toolbar that opens a new panel.
 This panel lets you:
 
 - See all plugins currently installed (and gives you the option to remove them)
@@ -31,7 +31,7 @@ From our new [Plugin Repository](https://github.com/OpenMarch/plugins), there ar
 Plugins are loaded from the plugins directory within the OpenMarch app data folder (E.g. `%appdata%/OpenMarch/plugins` on Windows).
 
 - Simply create a file that ends with the `.om.js` extension, and this script will be loaded in the main window on startup.
-- The plugin's code will be run as if it were in a `&lt;script&gt;` tag within the main window (which is how plugins are loaded into OpenMarch).
+- The plugin's code will be run as if it were in a `<script>` tag within the main window (which is how plugins are loaded into OpenMarch).
 
 ### Submitting a Plugin
 
