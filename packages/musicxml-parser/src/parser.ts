@@ -1,3 +1,6 @@
+import fs from "fs/promises";
+import JSZip from "jszip";
+
 /**
  * Represents a beat in a musical performance or composition.
  * Provides details about the beat's position, duration, and optional notes.
@@ -29,18 +32,6 @@ export interface Measure {
  * @param xmlText The raw XML text representing a musical score
  * @returns An array of Measure objects representing the parsed musical composition
  */
-export interface Beat {
-    duration: number;
-    notes?: string;
-}
-
-export interface Measure {
-    number: number;
-    rehearsalMark?: string;
-    notes?: string;
-    beats: Beat[];
-}
-
 export function parseMusicXml(xmlText: string): Measure[] {
     const measures: Measure[] = [];
     let pos = 0;
@@ -101,7 +92,7 @@ export function parseMusicXml(xmlText: string): Measure[] {
 
         // Check for valid time signature
         const [bigBeatCount, tempoChange] = bigBeats[timeSignature] ?? [0, 0];
-        if (bigBeatCount == 0) {
+        if (bigBeatCount === 0) {
             throw new Error(`Unsupported time signature: ${timeSignature}`);
         }
 
@@ -127,4 +118,30 @@ export function parseMusicXml(xmlText: string): Measure[] {
     }
 
     return measures;
+}
+
+/**
+ * Extracts the XML content (as a string) from a MusicXML (.mxl) file.
+ * This function reads the .mxl file, unzips it, and returns the content of the first XML file found.
+ * Assumes that the zipped .mxl file contains only one desired XML file.
+ */
+export async function extractXmlFromMxlFile(filePath: string): Promise<string> {
+    // load file
+    const fileBuffer = await fs.readFile(filePath);
+    const zip = await JSZip.loadAsync(fileBuffer);
+
+    // loop through files in zip
+    for (const fileName of Object.keys(zip.files)) {
+        // locate a .xml or .musicxml file that is not container.xml or in META-INF
+        if (
+            (fileName.endsWith(".xml") || fileName.endsWith(".musicxml")) &&
+            !fileName.endsWith("container.xml") &&
+            !fileName.startsWith("META-INF/")
+        ) {
+            return await zip.files[fileName]!.async("text");
+        }
+    }
+
+    // unzipped, but no xml or musicxml file found
+    throw new Error("No XML file found.");
 }
