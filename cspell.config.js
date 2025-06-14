@@ -86,6 +86,8 @@ module.exports = {
         "signup",
         "supabase",
         "apikey",
+        "madripoor",
+        "rgba",
     ],
     ignorePaths: [
         "node_modules/**",

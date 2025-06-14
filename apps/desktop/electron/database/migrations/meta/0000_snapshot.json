@@ -1,0 +1,1374 @@
+{
+    "id": "00000000-0000-0000-0000-000000000000",
+    "prevId": "",
+    "version": "6",
+    "dialect": "sqlite",
+    "tables": {
+        "history_undo": {
+            "name": "history_undo",
+            "columns": {
+                "sequence": {
+                    "autoincrement": false,
+                    "name": "sequence",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "history_group": {
+                    "autoincrement": false,
+                    "name": "history_group",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "sql": {
+                    "autoincrement": false,
+                    "name": "sql",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "history_redo": {
+            "name": "history_redo",
+            "columns": {
+                "sequence": {
+                    "autoincrement": false,
+                    "name": "sequence",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "history_group": {
+                    "autoincrement": false,
+                    "name": "history_group",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "sql": {
+                    "autoincrement": false,
+                    "name": "sql",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "history_stats": {
+            "name": "history_stats",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "cur_undo_group": {
+                    "autoincrement": false,
+                    "name": "cur_undo_group",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "cur_redo_group": {
+                    "autoincrement": false,
+                    "name": "cur_redo_group",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "group_limit": {
+                    "autoincrement": false,
+                    "name": "group_limit",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "beats": {
+            "name": "beats",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "duration": {
+                    "autoincrement": false,
+                    "name": "duration",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "position": {
+                    "autoincrement": false,
+                    "name": "position",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "include_in_measure": {
+                    "default": 1,
+                    "autoincrement": false,
+                    "name": "include_in_measure",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "measures": {
+            "name": "measures",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "start_beat": {
+                    "autoincrement": false,
+                    "name": "start_beat",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "rehearsal_mark": {
+                    "autoincrement": false,
+                    "name": "rehearsal_mark",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {
+                "measures_start_beat_beats_id_fk": {
+                    "name": "measures_start_beat_beats_id_fk",
+                    "tableFrom": "measures",
+                    "tableTo": "beats",
+                    "columnsFrom": ["start_beat"],
+                    "columnsTo": ["id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "pages": {
+            "name": "pages",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "is_subset": {
+                    "default": 0,
+                    "autoincrement": false,
+                    "name": "is_subset",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "start_beat": {
+                    "autoincrement": false,
+                    "name": "start_beat",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {
+                "pages_start_beat_beats_id_fk": {
+                    "name": "pages_start_beat_beats_id_fk",
+                    "tableFrom": "pages",
+                    "tableTo": "beats",
+                    "columnsFrom": ["start_beat"],
+                    "columnsTo": ["id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "marchers": {
+            "name": "marchers",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "name": {
+                    "autoincrement": false,
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "section": {
+                    "autoincrement": false,
+                    "name": "section",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "year": {
+                    "autoincrement": false,
+                    "name": "year",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "drill_prefix": {
+                    "autoincrement": false,
+                    "name": "drill_prefix",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "drill_order": {
+                    "autoincrement": false,
+                    "name": "drill_order",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "marcher_pages": {
+            "name": "marcher_pages",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "id_for_html": {
+                    "autoincrement": false,
+                    "name": "id_for_html",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "marcher_id": {
+                    "autoincrement": false,
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "page_id": {
+                    "autoincrement": false,
+                    "name": "page_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "x": {
+                    "autoincrement": false,
+                    "name": "x",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "y": {
+                    "autoincrement": false,
+                    "name": "y",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {
+                "index_marcher_pages_on_page_id": {
+                    "name": "index_marcher_pages_on_page_id",
+                    "columns": ["page_id"],
+                    "isUnique": false
+                },
+                "index_marcher_pages_on_marcher_id": {
+                    "name": "index_marcher_pages_on_marcher_id",
+                    "columns": ["marcher_id"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "marcher_pages_page_id_pages_id_fk": {
+                    "name": "marcher_pages_page_id_pages_id_fk",
+                    "tableFrom": "marcher_pages",
+                    "tableTo": "pages",
+                    "columnsFrom": ["page_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "marcher_pages_marcher_id_marchers_id_fk": {
+                    "name": "marcher_pages_marcher_id_marchers_id_fk",
+                    "tableFrom": "marcher_pages",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "field_properties": {
+            "name": "field_properties",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "json_data": {
+                    "autoincrement": false,
+                    "name": "json_data",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "image": {
+                    "autoincrement": false,
+                    "name": "image",
+                    "type": "blob",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "audio_files": {
+            "name": "audio_files",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "path": {
+                    "autoincrement": false,
+                    "name": "path",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "nickname": {
+                    "autoincrement": false,
+                    "name": "nickname",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "data": {
+                    "autoincrement": false,
+                    "name": "data",
+                    "type": "blob",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "selected": {
+                    "default": 0,
+                    "autoincrement": false,
+                    "name": "selected",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "shapes": {
+            "name": "shapes",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "name": {
+                    "autoincrement": false,
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "shape_pages": {
+            "name": "shape_pages",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "shape_id": {
+                    "autoincrement": false,
+                    "name": "shape_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "page_id": {
+                    "autoincrement": false,
+                    "name": "page_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "svg_path": {
+                    "autoincrement": false,
+                    "name": "svg_path",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {
+                "shape_pages_page_id_pages_id_fk": {
+                    "name": "shape_pages_page_id_pages_id_fk",
+                    "tableFrom": "shape_pages",
+                    "tableTo": "pages",
+                    "columnsFrom": ["page_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "shape_pages_shape_id_shapes_id_fk": {
+                    "name": "shape_pages_shape_id_shapes_id_fk",
+                    "tableFrom": "shape_pages",
+                    "tableTo": "shapes",
+                    "columnsFrom": ["shape_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "shape_page_marchers": {
+            "name": "shape_page_marchers",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "shape_page_id": {
+                    "autoincrement": false,
+                    "name": "shape_page_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "marcher_id": {
+                    "autoincrement": false,
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "position_order": {
+                    "autoincrement": false,
+                    "name": "position_order",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "notes": {
+                    "autoincrement": false,
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {
+                "idx-spm-marcher_id": {
+                    "name": "idx-spm-marcher_id",
+                    "columns": ["marcher_id"],
+                    "isUnique": false
+                },
+                "idx-spm-shape_page_id": {
+                    "name": "idx-spm-shape_page_id",
+                    "columns": ["shape_page_id"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "shape_page_marchers_marcher_id_marchers_id_fk": {
+                    "name": "shape_page_marchers_marcher_id_marchers_id_fk",
+                    "tableFrom": "shape_page_marchers",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                },
+                "shape_page_marchers_shape_page_id_shape_pages_id_fk": {
+                    "name": "shape_page_marchers_shape_page_id_shape_pages_id_fk",
+                    "tableFrom": "shape_page_marchers",
+                    "tableTo": "shape_pages",
+                    "columnsFrom": ["shape_page_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "no action",
+                    "onUpdate": "no action"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "section_appearances": {
+            "name": "section_appearances",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "section": {
+                    "autoincrement": false,
+                    "name": "section",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "fill_color": {
+                    "default": "'rgba(0, 0, 0, 1)'",
+                    "autoincrement": false,
+                    "name": "fill_color",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "outline_color": {
+                    "default": "'rgba(0, 0, 0, 1)'",
+                    "autoincrement": false,
+                    "name": "outline_color",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "shape_type": {
+                    "default": "'circle'",
+                    "autoincrement": false,
+                    "name": "shape_type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "default": "(CURRENT_TIMESTAMP)",
+                    "autoincrement": false,
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        },
+        "utility": {
+            "name": "utility",
+            "columns": {
+                "id": {
+                    "autoincrement": false,
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": false
+                },
+                "last_page_counts": {
+                    "autoincrement": false,
+                    "name": "last_page_counts",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "compositePrimaryKeys": {},
+            "indexes": {},
+            "foreignKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "history_stats_check_1": {
+                    "name": "history_stats_check_1",
+                    "value": "id = 1"
+                },
+                "beats_check_2": {
+                    "name": "beats_check_2",
+                    "value": "duration >= 0"
+                },
+                "beats_check_3": {
+                    "name": "beats_check_3",
+                    "value": "position >= 0"
+                },
+                "beats_check_4": {
+                    "name": "beats_check_4",
+                    "value": "include_in_measure IN (0, 1"
+                },
+                "pages_check_5": {
+                    "name": "pages_check_5",
+                    "value": "is_subset IN (0, 1"
+                },
+                "field_properties_check_6": {
+                    "name": "field_properties_check_6",
+                    "value": "id = 1"
+                },
+                "utility_check_7": {
+                    "name": "utility_check_7",
+                    "value": "id = 0"
+                },
+                "utility_check_8": {
+                    "name": "utility_check_8",
+                    "value": "last_page_counts >= 1"
+                }
+            }
+        }
+    },
+    "views": {},
+    "enums": {},
+    "_meta": {
+        "schemas": {},
+        "tables": {},
+        "columns": {}
+    }
+}
