@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/sqlite-proxy";
-import * as schema from "../../../electron/database/schema/schema";
+import * as schema from "../../../electron/database/migrations/schema";
 
 // Create the Drizzle database instance using the SQLite proxy
 export const db = drizzle(
