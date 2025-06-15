@@ -263,11 +263,11 @@ export function PageTimeline() {
     }
 
     return (
-        <div className="flex gap-0" id="pages">
+        <div className="flex h-fit gap-0" id="pages">
             {/* ------ FIRST PAGE ------ */}
             {pages.length > 0 && (
                 <div
-                    className={`rounded-6 bg-fg-2 flex h-fit w-[40px] items-center justify-center border px-10 py-4 ${
+                    className={`rounded-l-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 ${
                         !isPlaying && "cursor-pointer"
                     } ${
                         pages[0].id === selectedPage?.id
@@ -300,18 +300,19 @@ export function PageTimeline() {
                     (p) => p.id === selectedPage?.id,
                 );
                 return (
-                    <ContextMenu.Root key={index}>
+                    <ContextMenu.Root
+                        key={index}
+                        timeline-page-id={page.id}
+                        aria-label={`Page ${page.name}`}
+                    >
                         <ContextMenu.Trigger>
                             <div
-                                className="relative inline-block"
-                                timeline-page-id={page.id}
+                                className="relative h-full"
                                 style={{ width: `${width}px` }}
-                                title={`Page ${page.name}`}
-                                aria-label={`Page ${page.name}`}
                             >
                                 {/* ------ PAGES ------ */}
                                 <div
-                                    className={`rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end overflow-clip border px-8 py-4 ${
+                                    className={`first:rounded-l-0 last:rounded-r-6 bg-fg-2 text-body text-text relative flex h-full items-center justify-end overflow-clip border px-8 py-4 ${
                                         !isPlaying && "cursor-pointer"
                                     } ${
                                         page.id === selectedPage?.id
@@ -358,11 +359,12 @@ export function PageTimeline() {
                                 </div>
                                 <div
                                     className={clsx(
-                                        "absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize rounded transition-colors",
+                                        "absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize transition-colors",
                                         resizingPage.current?.id === page.id
                                             ? "bg-accent/50"
                                             : "hover:bg-accent/30 bg-transparent",
                                     )}
+                                    hidden={isPlaying}
                                     onMouseDown={(e) =>
                                         handlePageResizeStart(
                                             e.nativeEvent,
@@ -394,7 +396,7 @@ export function PageTimeline() {
             <div
                 className={clsx(
                     "bg-accent text-sub text-text-invert ml-8 flex cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2",
-                    beats.length > 1 ? "size-[26px]" : "h-[26px] px-8 py-4",
+                    beats.length > 1 ? "size-[28px]" : "h-[28px] px-8 py-4",
                 )}
                 onClick={() =>
                     beats.length > 1 &&
@@ -428,7 +430,7 @@ export default function TimelineContainer() {
 
         const container = timelineRef.current;
         const selectedPageElement = document.querySelector(
-            `[data-page-id="${selectedPage.id}"]`,
+            `[data-timeline-page-id="${selectedPage.id}"]`,
         );
 
         if (!container || !selectedPageElement) return;
@@ -473,15 +475,12 @@ export default function TimelineContainer() {
             <div
                 ref={timelineRef}
                 id="timeline"
-                className={clsx(
-                    "rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 border p-8 transition-all duration-200",
-                )}
+                className="rounded-6 border-stroke bg-fg-1 relative flex h-full min-w-0 overflow-x-auto border p-8 transition-all duration-200"
             >
-                <div className="overflow-ys-hidden grid h-fit min-h-0 grid-cols-[4em_1fr] grid-rows-2 gap-6 overflow-x-auto">
-                    <div className="flex h-[2em] items-center">
+                <div className="grid h-fit min-h-0 w-full grid-cols-[4em_1fr] grid-rows-2 gap-6 overflow-x-auto overflow-y-hidden">
+                    <div className="flex h-[34px] items-center">
                         <p className="text-sub leading-none">Pages</p>
                     </div>
-
                     <PageTimeline />
                     <div
                         className={
