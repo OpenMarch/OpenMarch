@@ -2,7 +2,7 @@ Table __drizzle_migrations:
 [
   {
     "id": null,
-    "hash": "62261a3070d5aa48d8ac995b86a64d8aefa2d48d37fb3924fe85a2a08a7fd67c"
+    "hash": "31923c54989768cffe2a635ef8ae8f5528d1ef5ad45837c4dbdf4f79ea0064d9"
   }
 ]
 
