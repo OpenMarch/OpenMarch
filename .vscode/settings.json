@@ -53,5 +53,6 @@
     "prettier.configPath": ".prettierrc.mjs",
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
-    } // set as "true" to run 'prettier' last not first
+    }, // set as "true" to run 'prettier' last not first
+    "files.eol": "\n"
 }

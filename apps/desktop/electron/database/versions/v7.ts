@@ -8,7 +8,7 @@ import { Constants, TablesWithHistory } from "../../../src/global/Constants";
 import FieldPropertiesTemplates from "../../../src/global/classes/fieldTemplates/Football";
 
 export const DrizzleMigration0Hash =
-    "31923c54989768cffe2a635ef8ae8f5528d1ef5ad45837c4dbdf4f79ea0064d9";
+    "62261a3070d5aa48d8ac995b86a64d8aefa2d48d37fb3924fe85a2a08a7fd67c";
 export default class v7 extends v6 {
     get version() {
         return 7;
