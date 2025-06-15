@@ -122,6 +122,7 @@ async function connectWrapper<T>(
     args: any = {},
 ): Promise<DatabaseResponse<T | undefined>> {
     const db = connect();
+    db.pragma("foreign_keys = ON");
     const orm = getOrm(db);
     let result: Promise<DatabaseResponse<T | undefined>>;
     try {
@@ -148,67 +149,84 @@ async function connectWrapper<T>(
 }
 
 /**
+ * Core SQL proxy logic with dependency injection for Drizzle ORM
+ *
+ * Per Drizzle documentation:
+ * - When method is "get", return {rows: string[]}
+ * - Otherwise, return {rows: string[][]}
+ *
+ * https://orm.drizzle.team/docs/connect-drizzle-proxy
+ */
+async function handleSqlProxyWithDb(
+    db: Database.Database,
+    sql: string,
+    params: any[],
+    method: "all" | "run" | "get" | "values",
+) {
+    try {
+        // prevent multiple queries
+        const sqlBody = sql.replace(/;/g, "");
+
+        const result = db.prepare(sqlBody);
+
+        let rows: any;
+        switch (method) {
+            case "all":
+                rows = result.all(...params);
+                return {
+                    rows: rows
+                        ? rows.map((row: { [key: string]: any }) =>
+                              Object.values(row),
+                          )
+                        : [],
+                };
+            case "get":
+                rows = result.get(...params);
+                return {
+                    rows: rows
+                        ? Object.values(rows as Record<string, any>)
+                        : [],
+                };
+            case "run":
+                rows = result.run(...params);
+                return {
+                    rows: [], // no data returned for run
+                };
+            default:
+                throw new Error(`Unknown method: ${method}`);
+        }
+    } catch (error: any) {
+        console.error("Error from SQL proxy:", error);
+        throw error;
+    }
+}
+
+async function handleSqlProxy(
+    _: any,
+    sql: string,
+    params: any[],
+    method: "all" | "run" | "get" | "values",
+) {
+    try {
+        const db = connect();
+        db.pragma("foreign_keys = ON");
+        const result = await handleSqlProxyWithDb(db, sql, params, method);
+        db.close();
+        return result;
+    } catch (error: any) {
+        console.error("Error from SQL proxy:", error);
+        throw error;
+    }
+}
+
+export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
+/**
  * Handlers for the app api.
  * Whenever modifying this, you must also modify the app api in electron/preload/index.ts
  */
 export function initHandlers() {
     // Generic SQL proxy handler for Drizzle ORM
-    ipcMain.handle(
-        "sql:proxy",
-        async (
-            _,
-            sql: string,
-            params: any[],
-            method: "all" | "run" | "get" | "values",
-        ) => {
-            try {
-                const db = connect();
-
-                // prevent multiple queries
-                const sqlBody = sql.replace(/;/g, "");
-
-                const result = db.prepare(sqlBody);
-
-                let rows: any;
-                switch (method) {
-                    case "all":
-                        rows = result.all(...params);
-                        break;
-                    case "get":
-                        rows = result.get(...params);
-                        break;
-                    case "run":
-                        rows = result.run(...params);
-                        break;
-                    default:
-                        throw new Error(`Unknown method: ${method}`);
-                }
-
-                db.close();
-
-                // Return in the format expected by Drizzle proxy
-                // todo confirm get and run are working. all is working.
-                if (method === "get") {
-                    return {
-                        rows: rows
-                            ? Object.values(rows as Record<string, any>)
-                            : [],
-                    };
-                } else if (method === "all") {
-                    return {
-                        rows: rows.map((row: { [key: string]: any }) =>
-                            Object.values(row),
-                        ),
-                    };
-                } else {
-                    return { rows: Array.isArray(rows) ? rows : [rows] };
-                }
-            } catch (error: any) {
-                console.error("Error from SQL proxy:", error);
-                throw error;
-            }
-        },
-    );
+    ipcMain.handle("sql:proxy", handleSqlProxy);
 
     // Field properties
     ipcMain.handle("field_properties:get", async () =>
