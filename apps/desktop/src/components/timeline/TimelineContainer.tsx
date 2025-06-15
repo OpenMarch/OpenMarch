@@ -475,12 +475,10 @@ export default function TimelineContainer() {
             <div
                 ref={timelineRef}
                 id="timeline"
-                className={clsx(
-                    "rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 border p-8 transition-all duration-200",
-                )}
+                className="rounded-6 border-stroke bg-fg-1 relative flex h-full min-w-0 overflow-x-auto border p-8 transition-all duration-200"
             >
-                <div className="overflow-ys-hidden grid h-fit min-h-0 grid-cols-[4em_1fr] grid-rows-2 gap-6 overflow-x-auto">
-                    <div className="flex h-[2em] items-center">
+                <div className="grid h-fit min-h-0 w-full grid-cols-[4em_1fr] grid-rows-2 gap-6 overflow-x-auto overflow-y-hidden">
+                    <div className="flex h-[34px] items-center">
                         <p className="text-sub leading-none">Pages</p>
                     </div>
                     <PageTimeline />
