@@ -1,6 +1,10 @@
 import { Tabs, TabsList, TabContent, TabItem } from "@/components/index";
 
-export function TabsPreview() {
+export const PreviewProps = {
+    title: "Tabs",
+};
+
+export default function Preview() {
     return (
         <Tabs defaultValue="coordinate-sheets">
             <TabsList>

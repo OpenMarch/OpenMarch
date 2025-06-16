@@ -1,47 +1,59 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import Sidebar from "@/components/playground/Sidebar.astro";
-import Playground from "@/components/playground/Playground.astro";
-import { getCollection, render, type CollectionEntry } from "astro:content";
-import { generateVariants } from "@korhq/unpreview";
+import { getCollection, type CollectionEntry } from "astro:content";
+import Playground from "@/components/playground/Playground";
+import Inspector from "@/components/playground/Inspector";
 
 export async function getStaticPaths() {
-    const previews: CollectionEntry<"previews"> =
-        await getCollection("previews");
-    const filteredPreviews = previews.filter(
-        (preview) => !preview.data.directory,
-    );
-    return filteredPreviews.map((preview) => ({
+    const previews = await getCollection("previews");
+    type Preview = CollectionEntry<"previews">;
+    return previews.map((preview: Preview) => ({
         params: { id: preview.id },
         props: { preview },
     }));
 }
 
+const previews = await getCollection("previews");
 interface Props {
     preview: CollectionEntry<"previews">;
 }
-
 const { preview } = Astro.props;
-const { Content } = await render(preview);
-
-const allVariants = generateVariants(preview.data.variants ?? {});
+const { component, title = "Preview", variants = [] } = preview.data || {};
 ---
 
 <Layout title={preview.data.title}>
-    <div class="grid h-full grid-cols-5 gap-4 p-8">
+    <div class="h-full grid grid-cols-5 gap-4 p-8">
         <Sidebar />
-        <Playground>
-            <h1 class="text-h3">{preview.data.title}</h1>
-            {
-                allVariants.map((variants) => (
-                    <div class="">
-                        <p class="my-4 text-sub text-text/50">
-                            {variants[Object.keys(variants)[0]]}
-                        </p>
-                        <Content {...variants} />
-                    </div>
-                ))
-            }
-        </Playground>
+        <div class="col-span-3 flex justify-center">
+            <div class="w-[32rem] border border-stroke p-16 rounded-16">
+                <h1 class="text-h3">{preview.data.title}</h1>
+                <div>
+                    {
+                        component ? (
+                            <Playground
+                                component={component}
+                                variants={variants}
+                                client:load
+                            />
+                        ) : (
+                            <div>
+                                <p class="text-red">
+                                    Error rendering playground: component
+                                    property not found.
+                                </p>
+                                <p class="text-red">
+                                    Preview.data keys:{" "}
+                                    {JSON.stringify(
+                                        Object.keys(preview.data || {}),
+                                    )}
+                                </p>
+                            </div>
+                        )
+                    }
+                </div>
+            </div>
+        </div>
+        <Inspector client:load />
     </div>
 </Layout>
