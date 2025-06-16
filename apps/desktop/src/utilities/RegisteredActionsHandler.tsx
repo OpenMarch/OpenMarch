@@ -53,6 +53,10 @@ export enum RegisteredActionsEnum {
     evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
     evenlyDistributeVertically = "evenlyDistributeVertically",
     swapMarchers = "swapMarchers",
+    moveSelectedMarchersUp = "moveSelectedMarchersUp",
+    moveSelectedMarchersDown = "moveSelectedMarchersDown",
+    moveSelectedMarchersLeft = "moveSelectedMarchersLeft",
+    moveSelectedMarchersRight = "moveSelectedMarchersRight",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -294,6 +298,26 @@ export const RegisteredActionsObjects: {
         desc: "Set selected marcher(s) coordinates to next page",
         keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
         enumString: "setSelectedMarchersToNextPage",
+    }),
+    moveSelectedMarchersUp: new RegisteredAction({
+        desc: "Move selected marcher(s) up",
+        keyboardShortcut: new KeyboardShortcut({ key: "w" }),
+        enumString: "moveSelectedMarchersUp",
+    }),
+    moveSelectedMarchersDown: new RegisteredAction({
+        desc: "Move selected marcher(s) down",
+        keyboardShortcut: new KeyboardShortcut({ key: "s" }),
+        enumString: "moveSelectedMarchersDown",
+    }),
+    moveSelectedMarchersLeft: new RegisteredAction({
+        desc: "Move selected marcher(s) left",
+        keyboardShortcut: new KeyboardShortcut({ key: "a" }),
+        enumString: "moveSelectedMarchersLeft",
+    }),
+    moveSelectedMarchersRight: new RegisteredAction({
+        desc: "Move selected marcher(s) right",
+        keyboardShortcut: new KeyboardShortcut({ key: "d" }),
+        enumString: "moveSelectedMarchersRight",
     }),
 
     // Alignment
@@ -653,6 +677,50 @@ function RegisteredActionsHandler() {
                             `Successfully set ${nextMarcherPages.length} marcher coordinate${nextMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
                         );
                     }
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersUp: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "up",
+                        distance: 1,
+                        snap: false,
+                        fieldProperties: fieldProperties,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersDown: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "down",
+                        distance: 1,
+                        snap: false,
+                        fieldProperties: fieldProperties,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersLeft: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "left",
+                        distance: 1,
+                        snap: false,
+                        fieldProperties: fieldProperties,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersRight: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "right",
+                        distance: 1,
+                        snap: false,
+                        fieldProperties: fieldProperties,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
                     break;
                 }
 
