@@ -1,10 +1,8 @@
 import {
     sqliteTable,
-    AnySQLiteColumn,
     integer,
     text,
     real,
-    foreignKey,
     index,
     blob,
 } from "drizzle-orm/sqlite-core";

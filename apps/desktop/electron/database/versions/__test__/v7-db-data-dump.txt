@@ -1,0 +1,85 @@
+Table __drizzle_migrations:
+[
+  {
+    "id": null,
+    "hash": "62261a3070d5aa48d8ac995b86a64d8aefa2d48d37fb3924fe85a2a08a7fd67c"
+  }
+]
+
+Table audio_files:
+[]
+
+Table beats:
+[
+  {
+    "id": 0,
+    "duration": 0,
+    "position": 0,
+    "include_in_measure": 1,
+    "notes": null
+  }
+]
+
+Table field_properties:
+[
+  {
+    "id": 1,
+    "json_data": "{\"centerFrontPoint\":{\"xPixels\":900,\"yPixels\":959.9625},\"xCheckpoints\":[{\"id\":0,\"name\":\"0 yard line\",\"axis\":\"x\",\"terseName\":\"0\",\"stepsFromCenterFront\":-80,\"useAsReference\":true,\"visible\":true},{\"id\":1,\"name\":\"5 yard line\",\"axis\":\"x\",\"terseName\":\"5\",\"stepsFromCenterFront\":-72,\"useAsReference\":true,\"visible\":true},{\"id\":2,\"name\":\"10 yard line\",\"axis\":\"x\",\"terseName\":\"10\",\"stepsFromCenterFront\":-64,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"10\"},{\"id\":3,\"name\":\"15 yard line\",\"axis\":\"x\",\"terseName\":\"15\",\"stepsFromCenterFront\":-56,\"useAsReference\":true,\"visible\":true},{\"id\":4,\"name\":\"20 yard line\",\"axis\":\"x\",\"terseName\":\"20\",\"stepsFromCenterFront\":-48,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"20\"},{\"id\":5,\"name\":\"25 yard line\",\"axis\":\"x\",\"terseName\":\"25\",\"stepsFromCenterFront\":-40,\"useAsReference\":true,\"visible\":true},{\"id\":6,\"name\":\"30 yard line\",\"axis\":\"x\",\"terseName\":\"30\",\"stepsFromCenterFront\":-32,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"30\"},{\"id\":7,\"name\":\"35 yard line\",\"axis\":\"x\",\"terseName\":\"35\",\"stepsFromCenterFront\":-24,\"useAsReference\":true,\"visible\":true},{\"id\":8,\"name\":\"40 yard line\",\"axis\":\"x\",\"terseName\":\"40\",\"stepsFromCenterFront\":-16,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"40\"},{\"id\":9,\"name\":\"45 yard line\",\"axis\":\"x\",\"terseName\":\"45\",\"stepsFromCenterFront\":-8,\"useAsReference\":true,\"visible\":true},{\"id\":10,\"name\":\"50 yard line\",\"axis\":\"x\",\"terseName\":\"50\",\"stepsFromCenterFront\":0,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"50\"},{\"id\":11,\"name\":\"45 yard line\",\"axis\":\"x\",\"terseName\":\"45\",\"stepsFromCenterFront\":8,\"useAsReference\":true,\"visible\":true},{\"id\":12,\"name\":\"40 yard line\",\"axis\":\"x\",\"terseName\":\"40\",\"stepsFromCenterFront\":16,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"40\"},{\"id\":13,\"name\":\"35 yard line\",\"axis\":\"x\",\"terseName\":\"35\",\"stepsFromCenterFront\":24,\"useAsReference\":true,\"visible\":true},{\"id\":14,\"name\":\"30 yard line\",\"axis\":\"x\",\"terseName\":\"30\",\"stepsFromCenterFront\":32,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"30\"},{\"id\":15,\"name\":\"25 yard line\",\"axis\":\"x\",\"terseName\":\"25\",\"stepsFromCenterFront\":40,\"useAsReference\":true,\"visible\":true},{\"id\":16,\"name\":\"20 yard line\",\"axis\":\"x\",\"terseName\":\"20\",\"stepsFromCenterFront\":48,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"20\"},{\"id\":17,\"name\":\"15 yard line\",\"axis\":\"x\",\"terseName\":\"15\",\"stepsFromCenterFront\":56,\"useAsReference\":true,\"visible\":true},{\"id\":18,\"name\":\"10 yard line\",\"axis\":\"x\",\"terseName\":\"10\",\"stepsFromCenterFront\":64,\"useAsReference\":true,\"visible\":true,\"fieldLabel\":\"10\"},{\"id\":19,\"name\":\"5 yard line\",\"axis\":\"x\",\"terseName\":\"5\",\"stepsFromCenterFront\":72,\"useAsReference\":true,\"visible\":true},{\"id\":20,\"name\":\"0 yard line\",\"axis\":\"x\",\"terseName\":\"0\",\"stepsFromCenterFront\":80,\"useAsReference\":true,\"visible\":true}],\"yCheckpoints\":[{\"name\":\"front sideline\",\"axis\":\"y\",\"stepsFromCenterFront\":0,\"useAsReference\":true,\"terseName\":\"FSL\",\"visible\":false,\"id\":0},{\"name\":\"HS front hash\",\"axis\":\"y\",\"stepsFromCenterFront\":-28,\"useAsReference\":true,\"terseName\":\"FH\",\"visible\":true,\"id\":1},{\"name\":\"HS back hash\",\"axis\":\"y\",\"stepsFromCenterFront\":-56,\"useAsReference\":true,\"terseName\":\"BH\",\"visible\":true,\"id\":2},{\"name\":\"grid back sideline\",\"axis\":\"y\",\"stepsFromCenterFront\":-85,\"useAsReference\":true,\"terseName\":\"grid:BSL\",\"visible\":false,\"id\":3},{\"name\":\"real back sideline\",\"axis\":\"y\",\"stepsFromCenterFront\":-85.33,\"useAsReference\":false,\"terseName\":\"real:BSL\",\"visible\":false,\"id\":4}],\"stepSizeInches\":22.5,\"name\":\"High school football field (no end zones)\",\"width\":1800,\"height\":959.9625,\"yardNumberCoordinates\":{\"homeStepsFromFrontToOutside\":11.2,\"homeStepsFromFrontToInside\":14.4,\"awayStepsFromFrontToInside\":70.9333,\"awayStepsFromFrontToOutside\":74.1333},\"sideDescriptions\":{\"verboseLeft\":\"Side 1\",\"verboseRight\":\"Side 2\",\"terseLeft\":\"S1\",\"terseRight\":\"S2\"},\"halfLineXInterval\":4,\"halfLineYInterval\":4,\"measurementSystem\":\"imperial\",\"topLabelsVisible\":true,\"bottomLabelsVisible\":true,\"leftLabelsVisible\":true,\"rightLabelsVisible\":true,\"useHashes\":true,\"isCustom\":false,\"showFieldImage\":true,\"imageFillOrFit\":\"fit\",\"theme\":{\"primaryStroke\":{\"r\":0,\"g\":0,\"b\":0,\"a\":1},\"secondaryStroke\":{\"r\":170,\"g\":170,\"b\":170,\"a\":1},\"tertiaryStroke\":{\"r\":221,\"g\":221,\"b\":221,\"a\":1},\"background\":{\"r\":255,\"g\":255,\"b\":255,\"a\":1},\"fieldLabel\":{\"r\":136,\"g\":136,\"b\":136,\"a\":1},\"externalLabel\":{\"r\":136,\"g\":136,\"b\":136,\"a\":1},\"previousPath\":{\"r\":0,\"g\":0,\"b\":0,\"a\":1},\"nextPath\":{\"r\":0,\"g\":175,\"b\":13,\"a\":1},\"shape\":{\"r\":126,\"g\":34,\"b\":206,\"a\":1},\"tempPath\":{\"r\":192,\"g\":132,\"b\":252,\"a\":1},\"defaultMarcher\":{\"fill\":{\"r\":255,\"g\":0,\"b\":0,\"a\":1},\"outline\":{\"r\":0,\"g\":0,\"b\":0,\"a\":0},\"label\":{\"r\":0,\"g\":0,\"b\":0,\"a\":1}}}}",
+    "image": null
+  }
+]
+
+Table history_redo:
+[]
+
+Table history_stats:
+[
+  {
+    "id": 1,
+    "cur_undo_group": 0,
+    "cur_redo_group": 0,
+    "group_limit": 500
+  }
+]
+
+Table history_undo:
+[]
+
+Table marcher_pages:
+[]
+
+Table marchers:
+[]
+
+Table measures:
+[]
+
+Table pages:
+[
+  {
+    "id": 0,
+    "is_subset": 0,
+    "notes": null,
+    "start_beat": 0
+  }
+]
+
+Table section_appearances:
+[]
+
+Table shape_page_marchers:
+[]
+
+Table shape_pages:
+[]
+
+Table shapes:
+[]
+
+Table utility:
+[
+  {
+    "id": 0,
+    "last_page_counts": 8
+  }
+]
