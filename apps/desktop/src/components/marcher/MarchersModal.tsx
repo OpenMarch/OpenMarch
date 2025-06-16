@@ -5,10 +5,7 @@ import NewMarcherForm from "./NewMarcherForm";
 import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
-<<<<<<< HEAD
 import SectionAppearanceList from "./section/SectionAppearanceList";
-=======
->>>>>>> 1f8fe29 (ui: add new sidebar layout, fix icon imports)
 
 export default function MarchersModal() {
     return (
@@ -53,7 +50,7 @@ export function MarcherListContents() {
                 </div>
             </header>
 
-            <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
+            <div className="flex grow flex-col gap-16 overflow-scroll">
                 <MarcherList />
             </div>
         </div>
@@ -85,7 +82,7 @@ export function MarcherNewFormContents() {
                 </button>
             </header>
 
-            <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
+            <div className="flex grow flex-col gap-16 overflow-scroll">
                 <NewMarcherForm />
             </div>
         </div>
