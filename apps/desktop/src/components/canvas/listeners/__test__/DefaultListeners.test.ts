@@ -26,10 +26,6 @@ describe.skip("DefaultListeners", () => {
                 success: true,
                 data: [1, 2, 3] as any as Buffer,
             }),
-            getSectionAppearances: vi.fn().mockResolvedValue({
-                success: true,
-                data: mockSectionAppearances,
-            }),
         } as Partial<ElectronApi> as ElectronApi;
         global.URL.createObjectURL = vi.fn(() => "mock-url");
         canvas = new OpenMarchCanvas({

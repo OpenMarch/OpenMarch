@@ -6,6 +6,7 @@ import {
     index,
     blob,
 } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 export const history_undo = sqliteTable("history_undo", {
     sequence: integer().primaryKey(),
@@ -36,7 +37,7 @@ export const beats = sqliteTable("beats", {
     updated_at: text()
         .default("sql`(CURRENT_TIMESTAMP)`")
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const measures = sqliteTable("measures", {
@@ -50,7 +51,7 @@ export const measures = sqliteTable("measures", {
     updated_at: text()
         .default("sql`(CURRENT_TIMESTAMP)`")
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const pages = sqliteTable("pages", {
@@ -61,7 +62,7 @@ export const pages = sqliteTable("pages", {
     updated_at: text()
         .default("sql`(CURRENT_TIMESTAMP)`")
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     start_beat: integer()
         .notNull()
         .references(() => beats.id),
@@ -78,7 +79,7 @@ export const marchers = sqliteTable("marchers", {
     created_at: text().notNull(),
     updated_at: text()
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const marcher_pages = sqliteTable(
@@ -97,7 +98,7 @@ export const marcher_pages = sqliteTable(
         created_at: text().notNull(),
         updated_at: text()
             .notNull()
-            .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         notes: text(),
     },
     (table) => [
@@ -121,7 +122,7 @@ export const audio_files = sqliteTable("audio_files", {
     created_at: text().notNull(),
     updated_at: text()
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const shapes = sqliteTable("shapes", {
@@ -131,7 +132,7 @@ export const shapes = sqliteTable("shapes", {
     updated_at: text()
         .default("sql`(CURRENT_TIMESTAMP)`")
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     notes: text(),
 });
 
@@ -148,7 +149,7 @@ export const shape_pages = sqliteTable("shape_pages", {
     updated_at: text()
         .default("sql`(CURRENT_TIMESTAMP)`")
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     notes: text(),
 });
 
@@ -167,7 +168,7 @@ export const shape_page_marchers = sqliteTable(
         updated_at: text()
             .default("sql`(CURRENT_TIMESTAMP)`")
             .notNull()
-            .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         notes: text(),
     },
     (table) => [
@@ -186,7 +187,7 @@ export const section_appearances = sqliteTable("section_appearances", {
     updated_at: text()
         .default("sql`(CURRENT_TIMESTAMP)`")
         .notNull()
-        .$onUpdate(() => "sql`(CURRENT_TIMESTAMP)`"),
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const utility = sqliteTable("utility", {
