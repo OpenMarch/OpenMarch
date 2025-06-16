@@ -25,6 +25,7 @@ module.exports = {
         "Dumouchelle",
         "dorico",
         "musescore",
+        "undocs",
         "acceelerandos",
         "endzones",
         "fielddots",
