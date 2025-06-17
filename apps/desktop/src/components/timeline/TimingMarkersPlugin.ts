@@ -20,24 +20,25 @@ export class TimingMarkersPlugin {
      */
     createTimingMarkers = () => {
         const rootStyles = getComputedStyle(document.documentElement);
-        const textColor = rootStyles.getPropertyValue("--color-text").trim();
+
+        // Counts
         this.beats.forEach((beat) => {
             const newRegion = this.wsRegions.addRegion({
                 id: `beat beat-${beat.id}`,
                 start: beat.timestamp,
-                color: textColor,
                 drag: false,
                 resize: false,
             });
             this.beatRegions.set(beat.id, newRegion);
         });
+
+        // Measures
         this.measures.forEach((measure) => {
             const hasRehearsalMark =
                 !!measure.rehearsalMark && measure.rehearsalMark.trim() !== "";
             const newRegion = this.wsRegions.addRegion({
                 id: `${hasRehearsalMark ? "rehearsalMark" : "measure"} measure-${measure.id}`,
                 start: measure.timestamp,
-                // color: "rgba(100, 66, 255, 1)",
                 content: measure.rehearsalMark ?? measure.number.toString(),
                 drag: false,
                 resize: false,
