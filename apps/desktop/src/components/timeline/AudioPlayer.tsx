@@ -92,7 +92,7 @@ export default function AudioPlayer() {
 
                 // make it dumb
                 interact: false,
-                hideScrollbar: true,
+                hideScrollbar: false,
                 autoScroll: false,
             });
 
@@ -140,7 +140,7 @@ export default function AudioPlayer() {
     };
 
     return (
-        <div className="pl-[40px]">
+        <div className="w-fit pl-[40px]">
             {audioFileUrl && (
                 <audio
                     ref={audioRef}
