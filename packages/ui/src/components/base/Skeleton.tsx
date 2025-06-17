@@ -7,7 +7,7 @@ export function Skeleton({
     return (
         <div
             className={clsx(
-                "bg-fg-2 rounded-6 h-full w-full animate-pulse",
+                "bg-text/5 rounded-6 h-full w-full animate-pulse",
                 className,
             )}
             {...props}
