@@ -1,13 +1,10 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { Input, Switch } from "@openmarch/ui";
+import { Input } from "@openmarch/ui";
 import { useEffect, useState } from "react";
 import * as Form from "@radix-ui/react-form";
 import clsx from "clsx";
-import { ToggleGroupRoot, ToggleGroupItem } from "@openmarch/ui";
-
-const formFieldClassname = clsx("grid grid-cols-12  h-[40px] ml-16");
-const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
-const inputClassname = clsx("col-span-6 self-center");
+import { ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
+import FormField from "../ui/FormField";
 
 const STEP_OPTIONS = [2, 1, 0.5, 0.25];
 
@@ -49,30 +46,25 @@ function AxisSettings({
     }, [nearestSteps]);
 
     return (
-        <div className="flex flex-col">
+        <div className="border-stroke rounded-6 flex flex-col gap-8 border p-8">
             {showReferencePoint && (
                 <Form.Root>
-                    <Form.Field
-                        name={`${axis} Reference Point`}
-                        className={formFieldClassname}
-                    >
-                        <Form.Label className={labelClassname}>
-                            Reference Point (steps)
-                        </Form.Label>
-                        <Form.Control asChild>
+                    <FormField label="Reference Point" className="px-0">
+                        <div className="w-[3rem] min-w-0">
                             <Input
                                 type="text"
                                 inputMode="numeric"
                                 pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
+                                className="w-full"
+                                compact
                                 value={referencePoint ?? ""}
                                 onChange={(e) =>
                                     handleReferencePointChange(e.target.value)
                                 }
-                                placeholder="Enter steps..."
+                                placeholder="steps"
                             />
-                        </Form.Control>
-                    </Form.Field>
+                        </div>
+                    </FormField>
                 </Form.Root>
             )}
 
@@ -80,8 +72,7 @@ function AxisSettings({
                 <span className="text-body text-text/80">
                     Nearest {axis}-steps
                 </span>
-                <ToggleGroupRoot
-                    size="sm"
+                <ToggleGroup
                     type="single"
                     value={
                         customIsSelected
@@ -137,7 +128,7 @@ function AxisSettings({
                     >
                         Custom
                     </ToggleGroupItem>
-                </ToggleGroupRoot>
+                </ToggleGroup>
                 <Input
                     type="text"
                     inputMode="numeric"
@@ -196,10 +187,10 @@ export default function CoordinateRoundingSettings() {
                 <button
                     onClick={() => setShowReferencePoint(!showReferencePoint)}
                     className={clsx(
-                        "rounded border px-2 py-1 text-xs transition-colors",
+                        "text-sub rounded-6 bg-fg-2 border px-2 py-1 transition-colors",
                         showReferencePoint
-                            ? "bg-accent/10 text-accent border-accent/20 hover:bg-accent/20"
-                            : "bg-surface-raised text-text/60 border-border hover:bg-surface-raised/80",
+                            ? "border-accent"
+                            : "text-text border-stroke hover:bg-white/20",
                     )}
                 >
                     Reference Points
