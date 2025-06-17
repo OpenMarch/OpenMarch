@@ -142,8 +142,8 @@ a:disabled {
 }
 
 ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -151,12 +151,12 @@ a:disabled {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(var(--text), 0.075);
+    background: var(--color-stroke);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--text), 0.15);
+    background: var(--color-accent);
 }
 
 ::selection {
