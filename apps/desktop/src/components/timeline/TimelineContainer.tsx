@@ -302,12 +302,12 @@ export function PageTimeline() {
                 return (
                     <ContextMenu.Root
                         key={index}
-                        timeline-page-id={page.id}
                         aria-label={`Page ${page.name}`}
                     >
                         <ContextMenu.Trigger>
                             <div
                                 className="relative h-full"
+                                timeline-page-id={page.id}
                                 style={{ width: `${width}px` }}
                             >
                                 {/* ------ PAGES ------ */}
@@ -430,7 +430,7 @@ export default function TimelineContainer() {
 
         const container = timelineRef.current;
         const selectedPageElement = document.querySelector(
-            `[data-timeline-page-id="${selectedPage.id}"]`,
+            `[timeline-page-id="${selectedPage.id}"]`,
         );
 
         if (!container || !selectedPageElement) return;
@@ -447,7 +447,7 @@ export default function TimelineContainer() {
                 containerRect.left -
                 (containerRect.width - elementRect.width) / 2;
 
-            container.style.transition = `scroll-left ${selectedPage.duration}s linear`;
+            // Set the scroll directly without transition (animation handled by CSS)
             container.scrollLeft = targetScroll;
         } else {
             // Manual selection: Smooth scroll
