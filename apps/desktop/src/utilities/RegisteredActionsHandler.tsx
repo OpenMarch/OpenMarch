@@ -57,6 +57,12 @@ export enum RegisteredActionsEnum {
     moveSelectedMarchersDown = "moveSelectedMarchersDown",
     moveSelectedMarchersLeft = "moveSelectedMarchersLeft",
     moveSelectedMarchersRight = "moveSelectedMarchersRight",
+    turnSnappingOn = "turnSnappingOn",
+    turnSnappingOff = "turnSnappingOff",
+    setDistanceTo1 = "setDistanceTo1",
+    setDistanceTo4 = "setDistanceTo4",
+    setDistanceTo0_5 = "setDistanceTo0_5",
+    setDistanceTo0_1 = "setDistanceTo0_1",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -319,6 +325,30 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "ArrowRight" }),
         enumString: "moveSelectedMarchersRight",
     }),
+    turnSnappingOn: new RegisteredAction({
+        desc: "Turn snapping ON for subsequent moves",
+        enumString: "turnSnappingOn",
+    }),
+    turnSnappingOff: new RegisteredAction({
+        desc: "Turn snapping OFF for subsequent moves",
+        enumString: "turnSnappingOff",
+    }),
+    setDistanceTo1: new RegisteredAction({
+        desc: "Set movement distance to 1",
+        enumString: "setDistanceTo1",
+    }),
+    setDistanceTo4: new RegisteredAction({
+        desc: "Set movement distance to 4",
+        enumString: "setDistanceTo4",
+    }),
+    setDistanceTo0_5: new RegisteredAction({
+        desc: "Set movement distance to 0.5",
+        enumString: "setDistanceTo0_5",
+    }),
+    setDistanceTo0_1: new RegisteredAction({
+        desc: "Set movement distance to 0.1",
+        enumString: "setDistanceTo0_1",
+    }),
 
     // Alignment
     snapToNearestWhole: new RegisteredAction({
@@ -485,6 +515,10 @@ function RegisteredActionsHandler() {
         });
         return selectedMarcherPages;
     }, [marcherPages, selectedMarchers, selectedPage]);
+
+    // Arrow movement defaults
+    const snap = useRef(true);
+    const distance = useRef(1);
 
     /**
      * Trigger a RegisteredAction.
@@ -679,12 +713,30 @@ function RegisteredActionsHandler() {
                     }
                     break;
                 }
+                case RegisteredActionsEnum.turnSnappingOn:
+                    snap.current = true;
+                    break;
+                case RegisteredActionsEnum.turnSnappingOff:
+                    snap.current = false;
+                    break;
+                case RegisteredActionsEnum.setDistanceTo1:
+                    distance.current = 1;
+                    break;
+                case RegisteredActionsEnum.setDistanceTo4:
+                    distance.current = 4;
+                    break;
+                case RegisteredActionsEnum.setDistanceTo0_5:
+                    distance.current = 0.5;
+                    break;
+                case RegisteredActionsEnum.setDistanceTo0_1:
+                    distance.current = 0.1;
+                    break;
                 case RegisteredActionsEnum.moveSelectedMarchersUp: {
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "up",
-                        distance: 1,
-                        snap: true,
+                        distance: distance.current,
+                        snap: snap.current,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
@@ -694,8 +746,8 @@ function RegisteredActionsHandler() {
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "down",
-                        distance: 1,
-                        snap: true,
+                        distance: distance.current,
+                        snap: snap.current,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
@@ -705,8 +757,8 @@ function RegisteredActionsHandler() {
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "left",
-                        distance: 1,
-                        snap: true,
+                        distance: distance.current,
+                        snap: snap.current,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
@@ -716,8 +768,8 @@ function RegisteredActionsHandler() {
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "right",
-                        distance: 1,
-                        snap: true,
+                        distance: distance.current,
+                        snap: snap.current,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
@@ -988,12 +1040,47 @@ function RegisteredActionsHandler() {
                 } else if (code.includes("Digit")) {
                     key = code.replace("Digit", "");
                 } else if (
-                    code === "ArrowLeft" ||
-                    code === "ArrowRight" ||
                     code === "ArrowUp" ||
-                    code === "ArrowDown"
+                    code === "ArrowDown" ||
+                    code === "ArrowLeft" ||
+                    code === "ArrowRight"
                 ) {
-                    key = code;
+                    type ArrowKey =
+                        | "ArrowUp"
+                        | "ArrowDown"
+                        | "ArrowLeft"
+                        | "ArrowRight";
+                    const actionMap: Record<ArrowKey, RegisteredActionsEnum> = {
+                        ArrowUp: RegisteredActionsEnum.moveSelectedMarchersUp,
+                        ArrowDown:
+                            RegisteredActionsEnum.moveSelectedMarchersDown,
+                        ArrowLeft:
+                            RegisteredActionsEnum.moveSelectedMarchersLeft,
+                        ArrowRight:
+                            RegisteredActionsEnum.moveSelectedMarchersRight,
+                    };
+
+                    // toggle snapping and distance changes
+                    if (e.shiftKey) {
+                        triggerAction(RegisteredActionsEnum.turnSnappingOn);
+                    } else {
+                        triggerAction(RegisteredActionsEnum.turnSnappingOff);
+                    }
+
+                    // Example: Set distance based on modifiers
+                    if (e.ctrlKey && e.altKey) {
+                        triggerAction(RegisteredActionsEnum.setDistanceTo0_1);
+                    } else if (e.ctrlKey) {
+                        triggerAction(RegisteredActionsEnum.setDistanceTo4);
+                    } else if (e.altKey) {
+                        triggerAction(RegisteredActionsEnum.setDistanceTo0_5);
+                    } else {
+                        triggerAction(RegisteredActionsEnum.setDistanceTo1);
+                    }
+
+                    triggerAction(actionMap[code as ArrowKey]);
+                    e.preventDefault();
+                    return;
                 } else if (!ignoredKeys.has(key)) {
                     console.error(
                         `RegisteredAction Warning: No keyCode handler found for "${code}".`,
