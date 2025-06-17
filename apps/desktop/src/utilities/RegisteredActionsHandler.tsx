@@ -684,7 +684,7 @@ function RegisteredActionsHandler() {
                         marcherPages: getSelectedMarcherPages(),
                         direction: "up",
                         distance: 1,
-                        snap: false,
+                        snap: true,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
@@ -695,7 +695,7 @@ function RegisteredActionsHandler() {
                         marcherPages: getSelectedMarcherPages(),
                         direction: "down",
                         distance: 1,
-                        snap: false,
+                        snap: true,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
@@ -706,7 +706,7 @@ function RegisteredActionsHandler() {
                         marcherPages: getSelectedMarcherPages(),
                         direction: "left",
                         distance: 1,
-                        snap: false,
+                        snap: true,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
@@ -717,7 +717,7 @@ function RegisteredActionsHandler() {
                         marcherPages: getSelectedMarcherPages(),
                         direction: "right",
                         distance: 1,
-                        snap: false,
+                        snap: true,
                         fieldProperties: fieldProperties,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);

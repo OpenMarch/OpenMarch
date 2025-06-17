@@ -346,38 +346,29 @@ export function evenlyDistributeVertically({
     return changes;
 }
 
-// @todo write these
-export function snapToGridX(): number {
-    return 0;
-}
-
-export function snapToGridY(): number {
-    return 0;
-}
-
 export function moveMarchersXY({
     marcherPages,
     direction,
     distance = 1,
     snap = true,
     fieldProperties,
+    snapDenominator = 1, // default for grid
 }: {
     marcherPages: MarcherPage[];
     direction: "up" | "down" | "left" | "right";
     distance?: number;
     snap?: boolean;
     fieldProperties: FieldProperties;
+    snapDenominator?: number;
 }): ModifiedMarcherPageArgs[] {
     checkMarcherPagesAreSamePage(marcherPages);
 
     // calculate actual distance to move
     const stepSize = fieldProperties.pixelsPerStep * distance;
 
-    // adjust coordinates based on direction, distance, and snapping
-    return marcherPages.map((page) => {
+    // Move all marchers
+    const movedPages = marcherPages.map((page) => {
         let { x, y } = page;
-
-        // adjust direction
         switch (direction) {
             case "up":
                 y -= stepSize;
@@ -392,21 +383,18 @@ export function moveMarchersXY({
                 x += stepSize;
                 break;
         }
-
-        // snap if needed
-        if (snap) {
-            switch (direction) {
-                case "up":
-                case "down":
-                    y = snapToGridY();
-                    break;
-                case "left":
-                case "right":
-                    x = snapToGridX();
-                    break;
-            }
-        }
-
         return { ...page, x, y };
     });
+
+    if (snap) {
+        return getRoundCoordinates({
+            marcherPages: movedPages,
+            denominator: snapDenominator,
+            fieldProperties,
+            xAxis: direction === "left" || direction === "right",
+            yAxis: direction === "up" || direction === "down",
+        });
+    }
+
+    return movedPages;
 }
