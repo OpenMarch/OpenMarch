@@ -36,11 +36,7 @@ import Measure from "@/global/classes/Measure";
  * Editable version of the AudioPlayer component.
  * Pass the ref of the timeline container so this component can scroll
  */
-export default function EditableAudioPlayer({
-    timelineRef,
-}: {
-    timelineRef: React.RefObject<HTMLDivElement>;
-}) {
+export default function EditableAudioPlayer() {
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
     // We'll use beats later for creating regions based on timing objects
@@ -300,14 +296,14 @@ export default function EditableAudioPlayer({
             <div className="flex items-center">
                 <button
                     onClick={() => waveSurfer?.seekTo(0)}
-                    className="hover:text-accent mr-2 rounded-md px-4 py-2 font-medium text-white transition-colors"
+                    className="hover:text-accent text-text transition-colors"
                     disabled={!waveSurfer || !audioFileUrl}
                 >
                     <RewindIcon size={24} />
                 </button>
                 <button
                     onClick={togglePlayPause}
-                    className="hover:text-accent mr-2 rounded-md px-4 py-2 font-medium text-white transition-colors"
+                    className="hover:text-accent text-text transition-colors"
                     disabled={!waveSurfer || !audioFileUrl}
                 >
                     {isAudioPlaying ? (

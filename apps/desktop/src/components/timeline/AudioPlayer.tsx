@@ -92,7 +92,7 @@ export default function AudioPlayer() {
 
                 // make it dumb
                 interact: false,
-                hideScrollbar: false,
+                hideScrollbar: true,
                 autoScroll: false,
             });
 

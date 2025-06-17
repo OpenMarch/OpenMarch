@@ -19,8 +19,6 @@ export class TimingMarkersPlugin {
      * Markers are non-draggable and non-resizable point regions
      */
     createTimingMarkers = () => {
-        const rootStyles = getComputedStyle(document.documentElement);
-
         // Counts
         this.beats.forEach((beat) => {
             const newRegion = this.wsRegions.addRegion({
@@ -32,7 +30,7 @@ export class TimingMarkersPlugin {
             this.beatRegions.set(beat.id, newRegion);
         });
 
-        // Measures
+        // Measure lines, measure numbers & rehearsal Marks
         this.measures.forEach((measure) => {
             const hasRehearsalMark =
                 !!measure.rehearsalMark && measure.rehearsalMark.trim() !== "";
