@@ -68,7 +68,7 @@ export const SelectTriggerText = forwardRef<
             ref={ref}
             className={twMerge(
                 clsx(
-                    "text-body text-text enabled:hover:text-accent flex h-fit w-fit items-center justify-center gap-2 p-0 leading-none outline-1 duration-150 ease-out data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "text-body text-text enabled:hover:text-accent focus-visible:text-accent flex h-fit w-fit items-center justify-center gap-2 p-0 leading-none outline-0 duration-150 ease-out data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -154,7 +154,7 @@ export const SelectGroup = ({ children }: { children: ReactNode }) => {
 
 export const SelectLabel = ({ children }: { children: ReactNode }) => {
     return (
-        <RadixSelect.Label className="text-sub text-text/90 px-24">
+        <RadixSelect.Label className="text-sub text-text/90 w-full self-start px-24 text-left">
             {children}
         </RadixSelect.Label>
     );
