@@ -301,22 +301,22 @@ export const RegisteredActionsObjects: {
     }),
     moveSelectedMarchersUp: new RegisteredAction({
         desc: "Move selected marcher(s) up",
-        keyboardShortcut: new KeyboardShortcut({ key: "w" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowUp" }),
         enumString: "moveSelectedMarchersUp",
     }),
     moveSelectedMarchersDown: new RegisteredAction({
         desc: "Move selected marcher(s) down",
-        keyboardShortcut: new KeyboardShortcut({ key: "s" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowDown" }),
         enumString: "moveSelectedMarchersDown",
     }),
     moveSelectedMarchersLeft: new RegisteredAction({
         desc: "Move selected marcher(s) left",
-        keyboardShortcut: new KeyboardShortcut({ key: "a" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowLeft" }),
         enumString: "moveSelectedMarchersLeft",
     }),
     moveSelectedMarchersRight: new RegisteredAction({
         desc: "Move selected marcher(s) right",
-        keyboardShortcut: new KeyboardShortcut({ key: "d" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowRight" }),
         enumString: "moveSelectedMarchersRight",
     }),
 
@@ -987,6 +987,13 @@ function RegisteredActionsHandler() {
                     key = code.replace("Key", "");
                 } else if (code.includes("Digit")) {
                     key = code.replace("Digit", "");
+                } else if (
+                    code === "ArrowLeft" ||
+                    code === "ArrowRight" ||
+                    code === "ArrowUp" ||
+                    code === "ArrowDown"
+                ) {
+                    key = code;
                 } else if (!ignoredKeys.has(key)) {
                     console.error(
                         `RegisteredAction Warning: No keyCode handler found for "${code}".`,
