@@ -38,7 +38,6 @@ export default function AlignmentTab() {
                     )}
                 >
                     <ArrowsVerticalIcon size={24} />
-                    Lock X
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     instructionalString={
@@ -52,7 +51,6 @@ export default function AlignmentTab() {
                     className={`flex gap-6 ${uiSettings.lockY ? "text-accent" : "text-text"}`}
                 >
                     <ArrowsHorizontalIcon size={24} />
-                    Lock Y
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
@@ -61,7 +59,6 @@ export default function AlignmentTab() {
                     className={`flex gap-6`}
                 >
                     <ArrowsInCardinalIcon size={24} />
-                    Snap marcher
                 </RegisteredActionButton>
                 {/* -- */}
             </ToolbarSection>
@@ -107,7 +104,7 @@ function CoordinateRoundingPopover() {
                     Coordinate rounding
                 </Popover.Trigger>
                 <Popover.Portal>
-                    <Popover.Content className="bg-modal text-text rounded-6 shadow-modal backdrop-blur-32 border-stroke m-8 flex flex-col items-start gap-0 border p-8">
+                    <Popover.Content className="bg-modal text-text rounded-6 shadow-modal backdrop-blur-32 border-stroke z-50 m-8 flex flex-col items-start gap-0 border p-8">
                         <CoordinateRoundingSettings />
                     </Popover.Content>
                 </Popover.Portal>
