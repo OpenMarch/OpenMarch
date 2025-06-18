@@ -649,7 +649,7 @@ export default function Canvas({
 
     return (
         <div
-            className={`rounded-6 h-full overflow-hidden ${className} relative`}
+            className={`rounded-6 h-full w-full overflow-hidden ${className} relative`}
         >
             {pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />

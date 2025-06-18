@@ -51,7 +51,7 @@ export function FileTab() {
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <SignOutIcon size={24} />
-                    Close File
+                    Exit File
                 </button>
             </ToolbarSection>
             <ToolbarSection>
