@@ -299,6 +299,12 @@ ipcMain.handle("set-theme", (event, theme) => {
     store.set("theme", theme);
 });
 
+// file management
+
+ipcMain.handle("closeCurrentFile", () => {
+    closeCurrentFile();
+});
+
 // Show waveform
 // TODO refactor to settings
 ipcMain.handle("set:showWaveform", async (_, showWaveform: boolean) => {

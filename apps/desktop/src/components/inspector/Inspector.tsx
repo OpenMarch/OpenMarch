@@ -2,7 +2,6 @@ import MarcherEditor from "./MarcherEditor";
 import PageEditor from "./PageEditor";
 import AlignmentEditor from "./AlignmentEditor";
 import ShapeEditor from "./ShapeEditor";
-import CoordinateRoundingSettings from "../field/CoordinateRoundingSettings";
 
 function Inspector() {
     return (
@@ -13,7 +12,6 @@ function Inspector() {
                 <MarcherEditor />
                 <ShapeEditor />
                 <AlignmentEditor />
-                <CoordinateRoundingSettings />
             </div>
         </div>
     );

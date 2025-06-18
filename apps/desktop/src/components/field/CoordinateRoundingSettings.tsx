@@ -181,21 +181,18 @@ export default function CoordinateRoundingSettings() {
     };
 
     return (
-        <div className="flex flex-col gap-16">
-            <div className="flex items-center gap-4">
-                <h4 className="text-h5 leading-none">Coordinate Rounding</h4>
-                <button
-                    onClick={() => setShowReferencePoint(!showReferencePoint)}
-                    className={clsx(
-                        "text-sub rounded-6 bg-fg-2 border px-2 py-1 transition-colors",
-                        showReferencePoint
-                            ? "border-accent"
-                            : "text-text border-stroke hover:bg-white/20",
-                    )}
-                >
-                    Reference Points
-                </button>
-            </div>
+        <div className="flex flex-col gap-8">
+            <button
+                onClick={() => setShowReferencePoint(!showReferencePoint)}
+                className={clsx(
+                    "text-sub rounded-6 bg-fg-2 w-fit border px-6 py-4 transition-colors",
+                    showReferencePoint
+                        ? "border-accent"
+                        : "text-text border-stroke hover:bg-white/20",
+                )}
+            >
+                Reference Points
+            </button>
 
             <AxisSettings
                 axis="X"

@@ -172,12 +172,13 @@ const APP_API = {
     setShowWaveform: (showWaveform: boolean) =>
         ipcRenderer.invoke("set:showWaveform", showWaveform),
 
-    // Database
+    // Database / file management
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
 
     // Triggers
     onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>
