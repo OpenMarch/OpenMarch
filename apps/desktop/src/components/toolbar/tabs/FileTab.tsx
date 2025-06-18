@@ -5,6 +5,7 @@ import {
     ArrowUUpLeftIcon,
     ArrowUUpRightIcon,
     FloppyDiskIcon,
+    SignOutIcon,
 } from "@phosphor-icons/react";
 import * as api from "@/api/api";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
@@ -43,6 +44,15 @@ export function FileTab() {
                     <FloppyDiskIcon size={24} />
                     Save File
                 </RegisteredActionButton>
+            </ToolbarSection>
+            <ToolbarSection>
+                <button
+                    onClick={api.closeCurrentFile}
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
+                    <SignOutIcon size={24} />
+                    Close File
+                </button>
             </ToolbarSection>
             <ToolbarSection>
                 <button
