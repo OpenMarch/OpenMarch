@@ -1,5 +1,5 @@
 import { Button, ListItem } from "@openmarch/ui";
-import TitleBar from "./titlebar/TitleBar";
+import TitleBar from "../titlebar/TitleBar";
 import clsx from "clsx";
 import {
     DiscordLogoIcon,
@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { useState } from "react";
+import SettingsContent from "./settings/SettingsContent";
 
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
@@ -37,7 +38,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 />
                 <FilesTabContent />
                 <LearnTabContent />
-                <SettingsTabContent />
+                <SettingsContent />
                 <PluginsTabContent />
             </Tabs.Root>
         </div>
@@ -55,13 +56,6 @@ function LearnTabContent() {
     return (
         <Tabs.Content value="learn" className="w-full min-w-0">
             Learn
-        </Tabs.Content>
-    );
-}
-function SettingsTabContent() {
-    return (
-        <Tabs.Content value="settings" className="w-full min-w-0">
-            Settings
         </Tabs.Content>
     );
 }
@@ -167,16 +161,16 @@ function Sidebar({
                 </div>
                 <hr className="border-stroke w-full border" />
                 <div className="flex flex-col">
-                    <Tabs.Trigger value="settings">
-                        <ListItem selected={selectedTab === "settings"}>
-                            <GearSixIcon size={24} />
-                            Settings
-                        </ListItem>
-                    </Tabs.Trigger>
                     <Tabs.Trigger value="plugins">
                         <ListItem selected={selectedTab === "plugins"}>
                             <PuzzlePieceIcon size={24} />
                             Plugins
+                        </ListItem>
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="settings">
+                        <ListItem selected={selectedTab === "settings"}>
+                            <GearSixIcon size={24} />
+                            Settings
                         </ListItem>
                     </Tabs.Trigger>
                 </div>

@@ -11,7 +11,6 @@ import * as api from "@/api/api";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
-import SettingsModal from "@/components/settings/SettingsModal";
 
 export function FileTab() {
     return (
@@ -72,9 +71,6 @@ export function FileTab() {
             </ToolbarSection>
             <ToolbarSection>
                 <ExportCoordinatesModal />
-            </ToolbarSection>
-            <ToolbarSection>
-                <SettingsModal />
             </ToolbarSection>
         </div>
     );

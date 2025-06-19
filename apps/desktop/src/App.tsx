@@ -6,7 +6,7 @@ import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
-import LaunchPage from "@/components/LaunchPage";
+import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
 import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
@@ -98,9 +98,7 @@ function App() {
     return (
         <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
             {!databaseIsReady ? (
-                <>
-                    <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
-                </>
+                <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
             ) : (
                 <TooltipProvider delayDuration={500} skipDelayDuration={500}>
                     <IsPlayingProvider>
