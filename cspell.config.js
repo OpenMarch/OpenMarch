@@ -20,6 +20,7 @@ module.exports = {
         "ehlert",
         "aleksi",
         "saario",
+        "cooldown",
         "behance",
         "alexdumo",
         "Dumouchelle",

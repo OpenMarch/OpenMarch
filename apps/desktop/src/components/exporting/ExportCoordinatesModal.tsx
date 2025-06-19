@@ -388,7 +388,6 @@ function DrillChartExport() {
                         nextPaths: false,
                         gridLines: true,
                         halfLines: true,
-                        showWaveform: false,
                         timelinePixelsPerSecond: 40,
                         focussedComponent: "canvas",
                         mouseSettings: {

@@ -347,4 +347,9 @@ export default function MarcherList({
                 </div>
             </form>
         );
+    return (
+        <div className="flex flex-col">
+            <p className="text-body text-text/90">No marchers created yet.</p>
+        </div>
+    );
 }

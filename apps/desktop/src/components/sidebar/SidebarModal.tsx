@@ -1,5 +1,7 @@
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import clsx from "clsx";
 import { type ReactNode, useEffect, useState } from "react";
+import { twMerge } from "tailwind-merge";
 
 export default function SidebarModal() {
     const { isOpen, content, setOpen } = useSidebarModalStore();
@@ -44,9 +46,11 @@ export default function SidebarModal() {
 export function SidebarModalLauncher({
     buttonLabel,
     contents,
+    className,
 }: {
     buttonLabel: string | ReactNode;
     contents: ReactNode;
+    className?: string;
 }) {
     const { toggleOpen, setContent, isOpen } = useSidebarModalStore();
     return (
@@ -59,7 +63,12 @@ export function SidebarModalLauncher({
                     setContent(contents);
                 }
             }}
-            className="hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+            className={twMerge(
+                clsx(
+                    "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
+                    className,
+                ),
+            )}
         >
             {buttonLabel}
         </button>

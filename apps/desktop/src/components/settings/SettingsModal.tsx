@@ -7,12 +7,8 @@ import {
     DialogTrigger,
 } from "@openmarch/ui";
 import { GearSixIcon } from "@phosphor-icons/react";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { Switch } from "@openmarch/ui";
 
 export default function SettingsModal() {
-    const { uiSettings, setUiSettings } = useUiSettingsStore();
-
     return (
         <Dialog>
             <DialogTrigger
@@ -33,19 +29,6 @@ export default function SettingsModal() {
                             <div className="flex w-full items-center justify-between gap-16">
                                 <p className="text-body">Theme</p>
                                 <ThemeSwitcher />
-                            </div>
-                            <div className="flex w-full items-center justify-between gap-16">
-                                <p className="text-body">Show waveform</p>
-                                <Switch
-                                    id="waveform"
-                                    checked={uiSettings.showWaveform}
-                                    onCheckedChange={(checked) =>
-                                        setUiSettings({
-                                            ...uiSettings,
-                                            showWaveform: checked,
-                                        })
-                                    }
-                                />
                             </div>
                         </div>
                     </div>

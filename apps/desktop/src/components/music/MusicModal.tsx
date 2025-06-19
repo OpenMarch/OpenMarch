@@ -15,13 +15,16 @@ import { MusicNotesIcon } from "@phosphor-icons/react";
 
 export default function MusicModal({
     label = <MusicNotesIcon size={24} />,
+    buttonClassName,
 }: {
     label?: string | React.ReactNode;
+    buttonClassName?: string;
 }) {
     return (
         <SidebarModalLauncher
             contents={<MusicModalContents />}
             buttonLabel={label}
+            className={buttonClassName}
         />
     );
 }

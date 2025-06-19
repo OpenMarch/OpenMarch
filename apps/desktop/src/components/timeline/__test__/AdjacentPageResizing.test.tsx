@@ -143,7 +143,6 @@ describe("Adjacent Page Resizing", () => {
         vi.mocked(useUiSettingsStore).mockReturnValue({
             uiSettings: {
                 timelinePixelsPerSecond: 100,
-                showWaveform: false,
             },
             setPixelsPerSecond: vi.fn(),
         });

@@ -305,16 +305,6 @@ ipcMain.handle("closeCurrentFile", () => {
     closeCurrentFile();
 });
 
-// Show waveform
-// TODO refactor to settings
-ipcMain.handle("set:showWaveform", async (_, showWaveform: boolean) => {
-    store.set("showWaveform", showWaveform as boolean);
-});
-
-ipcMain.handle("get:showWaveform", async () => {
-    return store.get("showWaveform", true);
-});
-
 // Plugins
 ipcMain.handle("plugins:list", async () => {
     const pluginsDir = join(app.getPath("userData"), "plugins");
