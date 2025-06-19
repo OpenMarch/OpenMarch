@@ -6,7 +6,6 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 window.electron = {
     sendLockX: vi.fn(),
     sendLockY: vi.fn(),
-    setShowWaveform: vi.fn(),
 } as Partial<ElectronApi> as ElectronApi;
 
 describe("uiSettings Store", () => {
@@ -18,7 +17,6 @@ describe("uiSettings Store", () => {
         nextPaths: true,
         gridLines: true,
         halfLines: true,
-        showWaveform: true,
         timelinePixelsPerSecond: 16,
         focussedComponent: "canvas",
         mouseSettings: {

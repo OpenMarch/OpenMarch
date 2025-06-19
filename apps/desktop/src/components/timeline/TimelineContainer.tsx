@@ -343,17 +343,10 @@ export function PageTimeline() {
                                             <div
                                                 className={clsx(
                                                     "absolute top-0 left-0 z-0 h-full w-full",
-                                                    uiSettings.showWaveform
-                                                        ? ""
-                                                        : "bg-accent/25",
                                                 )}
-                                                style={
-                                                    uiSettings.showWaveform
-                                                        ? {}
-                                                        : {
-                                                              animation: `progress ${page.duration}s linear forwards`,
-                                                          }
-                                                }
+                                                style={{
+                                                    animation: `progress ${page.duration}s linear forwards`,
+                                                }}
                                             />
                                         )}
                                 </div>
@@ -393,13 +386,9 @@ export function PageTimeline() {
                     </ContextMenu.Root>
                 );
             })}
-            <div
-                className={clsx(
-                    "bg-accent text-sub text-text-invert ml-8 flex cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2",
-                    beats.length > 1 ? "size-[28px]" : "h-[28px] px-8 py-4",
-                )}
+            <button
+                className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
                 onClick={() =>
-                    beats.length > 1 &&
                     createLastPage({
                         currentLastPage: pages[pages.length - 1],
                         allBeats: beats,
@@ -408,12 +397,8 @@ export function PageTimeline() {
                     })
                 }
             >
-                {beats.length > 1 ? (
-                    <PlusIcon size={20} />
-                ) : (
-                    <MusicModal label="Add tempo data" />
-                )}
-            </div>
+                <PlusIcon size={20} />
+            </button>
         </div>
     );
 }
@@ -423,6 +408,7 @@ export default function TimelineContainer() {
     const { measures } = useTimingObjectsStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();
+    const { beats } = useTimingObjectsStore()!;
     const timelineRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -469,6 +455,8 @@ export default function TimelineContainer() {
         // do nothing, just re-render
     }, [measures]);
 
+    console.log(beats);
+
     return (
         <div className="flex gap-8">
             <TimelineControls />
@@ -478,22 +466,24 @@ export default function TimelineContainer() {
                 className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto border p-8 transition-all duration-200"
             >
                 <div className="flex h-fit min-h-0 w-fit grid-rows-2 flex-col gap-8">
-                    <div className="flex items-center">
-                        <div>
-                            <p className="text-sub w-[4rem]">Pages</p>
+                    {beats.length > 1 ? (
+                        <div className="flex items-center">
+                            <div>
+                                <p className="text-sub w-[4rem]">Pages</p>
+                            </div>
+                            <PageTimeline />
                         </div>
-                        <PageTimeline />
-                    </div>
-                    <div
-                        className={
-                            (uiSettings.showWaveform ? "" : "hidden") +
-                            "flex items-center"
-                        }
-                    >
+                    ) : (
+                        <MusicModal
+                            label="Add Music"
+                            buttonClassName="bg-accent rounded-full text-text-invert hover:text-text-invert border border-stroke px-8 w-fit enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out"
+                        />
+                    )}
+
+                    <div className={"flex items-center"}>
                         <div className="flex flex-col gap-6">
                             <p className="text-sub w-[4rem]">Audio</p>
-                            {uiSettings.showWaveform &&
-                            uiSettings.focussedComponent !== "timeline" ? (
+                            {uiSettings.focussedComponent !== "timeline" ? (
                                 <RegisteredActionButton
                                     registeredAction={
                                         RegisteredActionsObjects.focusTimeline
@@ -514,11 +504,7 @@ export default function TimelineContainer() {
                         {uiSettings.focussedComponent === "timeline" ? (
                             <EditableAudioPlayer />
                         ) : (
-                            <div
-                                className={
-                                    uiSettings.showWaveform ? "" : "hidden"
-                                }
-                            >
+                            <div>
                                 <AudioPlayer />
                             </div>
                         )}
