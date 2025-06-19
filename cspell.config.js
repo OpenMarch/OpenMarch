@@ -74,6 +74,7 @@ module.exports = {
         "shouldn",
         "aren", // for aren&apos;t
         "apos",
+        "launchpage",
         "GLHF",
         "NSIS",
         "blockmap",
