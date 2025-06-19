@@ -346,11 +346,23 @@ export function evenlyDistributeVertically({
     return changes;
 }
 
+/**
+ * Moves the given marcherPages in the specified direction by the specified distance.
+ * If snap is true, the coordinates will be snapped to the grid.
+ *
+ * @param marcherPages - The marcherPages to move.
+ * @param direction - The direction to move the marcherPages in. Can be "up", "down", "left", or "right".
+ * @param distance - The distance to move the marcherPages in steps. Default is 1 step.
+ * @param snap - Whether to snap the coordinates to the grid. Default is false.
+ * @param fieldProperties - The field properties to use for snapping.
+ * @param snapDenominator - The denominator for snapping. Default is 1 (grid).
+ * @returns The modified marcherPages with updated coordinates.
+ */
 export function moveMarchersXY({
     marcherPages,
     direction,
     distance = 1,
-    snap = true,
+    snap = false,
     fieldProperties,
     snapDenominator = 1, // default for grid
 }: {

@@ -57,12 +57,6 @@ export enum RegisteredActionsEnum {
     moveSelectedMarchersDown = "moveSelectedMarchersDown",
     moveSelectedMarchersLeft = "moveSelectedMarchersLeft",
     moveSelectedMarchersRight = "moveSelectedMarchersRight",
-    turnSnappingOn = "turnSnappingOn",
-    turnSnappingOff = "turnSnappingOff",
-    setDistanceTo1 = "setDistanceTo1",
-    setDistanceTo4 = "setDistanceTo4",
-    setDistanceTo0_5 = "setDistanceTo0_5",
-    setDistanceTo0_1 = "setDistanceTo0_1",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -324,30 +318,6 @@ export const RegisteredActionsObjects: {
         desc: "Move selected marcher(s) right",
         keyboardShortcut: new KeyboardShortcut({ key: "ArrowRight" }),
         enumString: "moveSelectedMarchersRight",
-    }),
-    turnSnappingOn: new RegisteredAction({
-        desc: "Turn snapping ON for subsequent moves",
-        enumString: "turnSnappingOn",
-    }),
-    turnSnappingOff: new RegisteredAction({
-        desc: "Turn snapping OFF for subsequent moves",
-        enumString: "turnSnappingOff",
-    }),
-    setDistanceTo1: new RegisteredAction({
-        desc: "Set movement distance to 1",
-        enumString: "setDistanceTo1",
-    }),
-    setDistanceTo4: new RegisteredAction({
-        desc: "Set movement distance to 4",
-        enumString: "setDistanceTo4",
-    }),
-    setDistanceTo0_5: new RegisteredAction({
-        desc: "Set movement distance to 0.5",
-        enumString: "setDistanceTo0_5",
-    }),
-    setDistanceTo0_1: new RegisteredAction({
-        desc: "Set movement distance to 0.1",
-        enumString: "setDistanceTo0_1",
     }),
 
     // Alignment
@@ -713,24 +683,6 @@ function RegisteredActionsHandler() {
                     }
                     break;
                 }
-                case RegisteredActionsEnum.turnSnappingOn:
-                    snap.current = true;
-                    break;
-                case RegisteredActionsEnum.turnSnappingOff:
-                    snap.current = false;
-                    break;
-                case RegisteredActionsEnum.setDistanceTo1:
-                    distance.current = 1;
-                    break;
-                case RegisteredActionsEnum.setDistanceTo4:
-                    distance.current = 4;
-                    break;
-                case RegisteredActionsEnum.setDistanceTo0_5:
-                    distance.current = 0.5;
-                    break;
-                case RegisteredActionsEnum.setDistanceTo0_1:
-                    distance.current = 0.1;
-                    break;
                 case RegisteredActionsEnum.moveSelectedMarchersUp: {
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
@@ -1060,22 +1012,18 @@ function RegisteredActionsHandler() {
                             RegisteredActionsEnum.moveSelectedMarchersRight,
                     };
 
-                    // toggle snapping and distance changes
-                    if (e.shiftKey) {
-                        triggerAction(RegisteredActionsEnum.turnSnappingOn);
-                    } else {
-                        triggerAction(RegisteredActionsEnum.turnSnappingOff);
-                    }
+                    // toggle snapping
+                    snap.current = e.shiftKey;
 
-                    // Example: Set distance based on modifiers
-                    if (e.ctrlKey && e.altKey) {
-                        triggerAction(RegisteredActionsEnum.setDistanceTo0_1);
-                    } else if (e.ctrlKey) {
-                        triggerAction(RegisteredActionsEnum.setDistanceTo4);
+                    // set distance based on modifiers
+                    if (e.metaKey && e.altKey) {
+                        distance.current = 0.1;
+                    } else if (e.metaKey) {
+                        distance.current = 4;
                     } else if (e.altKey) {
-                        triggerAction(RegisteredActionsEnum.setDistanceTo0_5);
+                        distance.current = 0.5;
                     } else {
-                        triggerAction(RegisteredActionsEnum.setDistanceTo1);
+                        distance.current = 1;
                     }
 
                     triggerAction(actionMap[code as ArrowKey]);
