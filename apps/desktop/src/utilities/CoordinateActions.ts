@@ -345,3 +345,68 @@ export function evenlyDistributeVertically({
 
     return changes;
 }
+
+/**
+ * Moves the given marcherPages in the specified direction by the specified distance.
+ * If snap is true, the coordinates will be snapped to the grid.
+ *
+ * @param marcherPages - The marcherPages to move.
+ * @param direction - The direction to move the marcherPages in. Can be "up", "down", "left", or "right".
+ * @param distance - The distance to move the marcherPages in steps. Default is 1 step.
+ * @param snap - Whether to snap the coordinates to the grid. Default is false.
+ * @param fieldProperties - The field properties to use for snapping.
+ * @param snapDenominator - The denominator for snapping. Default is 1 (grid).
+ * @returns The modified marcherPages with updated coordinates.
+ */
+export function moveMarchersXY({
+    marcherPages,
+    direction,
+    distance = 1,
+    snap = false,
+    fieldProperties,
+    snapDenominator = 1, // default for grid
+}: {
+    marcherPages: MarcherPage[];
+    direction: "up" | "down" | "left" | "right";
+    distance?: number;
+    snap?: boolean;
+    fieldProperties: FieldProperties;
+    snapDenominator?: number;
+}): ModifiedMarcherPageArgs[] {
+    checkMarcherPagesAreSamePage(marcherPages);
+
+    // calculate actual distance to move
+    const stepSize = fieldProperties.pixelsPerStep * distance;
+
+    // Move all marchers
+    const movedPages = marcherPages.map((page) => {
+        let { x, y } = page;
+        switch (direction) {
+            case "up":
+                y -= stepSize;
+                break;
+            case "down":
+                y += stepSize;
+                break;
+            case "left":
+                x -= stepSize;
+                break;
+            case "right":
+                x += stepSize;
+                break;
+        }
+        return { ...page, x, y };
+    });
+
+    if (snap) {
+        return getRoundCoordinates({
+            marcherPages: movedPages,
+            denominator: snapDenominator,
+            fieldProperties,
+            xAxis: direction === "left" || direction === "right",
+            yAxis: direction === "up" || direction === "down",
+        });
+    }
+
+    return movedPages;
+}
