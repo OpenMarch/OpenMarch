@@ -35,6 +35,7 @@ export const TablesWithHistory = [
     Constants.FieldPropertiesTableName,
     Constants.MeasureTableName,
     Constants.SectionAppearancesTableName,
+    Constants.BeatsTableName,
 ] as const;
 
 export default Constants;
