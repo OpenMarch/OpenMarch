@@ -1013,15 +1013,15 @@ function RegisteredActionsHandler() {
                     };
 
                     // toggle snapping
-                    snap.current = e.shiftKey;
+                    snap.current = !e.altKey && !e.shiftKey;
 
                     // set distance based on modifiers
-                    if (e.metaKey && e.altKey) {
+                    if (e.metaKey && e.shiftKey) {
                         distance.current = 0.1;
                     } else if (e.metaKey) {
                         distance.current = 4;
-                    } else if (e.altKey) {
-                        distance.current = 0.5;
+                    } else if (e.shiftKey) {
+                        distance.current = 0.25;
                     } else {
                         distance.current = 1;
                     }
