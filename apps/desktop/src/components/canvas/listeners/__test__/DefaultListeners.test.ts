@@ -7,7 +7,6 @@ import {
     mockMarcherPages,
     mockMarchers,
     mockPages,
-    mockSectionAppearances,
 } from "../../__test__/MocksForCanvas";
 import { cleanup } from "@testing-library/react";
 import { fabric } from "fabric";
