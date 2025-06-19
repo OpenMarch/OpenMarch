@@ -690,6 +690,7 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
                     break;
@@ -701,6 +702,7 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
                     break;
@@ -712,6 +714,7 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
                     break;
@@ -723,6 +726,7 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
                     });
                     MarcherPage.updateMarcherPages(updatedPagesArray);
                     break;
@@ -1022,8 +1026,12 @@ function RegisteredActionsHandler() {
                         distance.current = 4;
                     } else if (e.shiftKey) {
                         distance.current = 0.25;
-                    } else {
-                        distance.current = 1;
+                    } else if (code === "ArrowUp" || code === "ArrowDown") {
+                        distance.current =
+                            uiSettings.coordinateRounding?.nearestYSteps || 1;
+                    } else if (code === "ArrowLeft" || code === "ArrowRight") {
+                        distance.current =
+                            uiSettings.coordinateRounding?.nearestXSteps || 1;
                     }
 
                     triggerAction(actionMap[code as ArrowKey]);
