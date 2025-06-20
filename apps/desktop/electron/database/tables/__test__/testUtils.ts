@@ -6,6 +6,7 @@ export const initTestDatabase = async (): Promise<Database.Database> => {
     const db = new Database(":memory:");
     const orm = getOrm(db);
     const migrator = new DrizzleMigrationService(orm, db);
+    db.pragma("user_version = 7");
     await migrator.applyPendingMigrations();
     await migrator.initializeDatabase(db);
 
