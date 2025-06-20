@@ -3,6 +3,10 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import Database from "better-sqlite3";
 import * as schema from "../migrations/schema";
 import path from "path";
+import fs from "fs";
+import Constants, { TablesWithHistory } from "@/global/Constants";
+import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import { createUndoTriggers } from "../database.history";
 
 export type DB = BetterSQLite3Database<typeof schema>;
 
@@ -54,5 +58,64 @@ export class DrizzleMigrationService {
         return this.rawDb
             .prepare(`SELECT * FROM __drizzle_migrations ORDER BY created_at`)
             .all() as Array<{ id: number; hash: string; created_at: number }>;
+    }
+
+    /**
+     * Checks if there are pending migrations to apply
+     * Compares the number of applied migrations with the number of migration files
+     *
+     * @param migrationsFolder Optional path to migrations folder, defaults to "./electron/database/migrations"
+     * @returns true if there are pending migrations, false otherwise
+     */
+    hasPendingMigrations(migrationsFolder?: string): boolean {
+        const folder = migrationsFolder || "./electron/database/migrations";
+
+        try {
+            // Get applied migrations from the database
+            const appliedMigrations = this.getAppliedMigrations();
+            const appliedCount = appliedMigrations.length;
+
+            // Count migration files in the folder
+            const migrationFiles = fs
+                .readdirSync(folder)
+                .filter((file) => file.endsWith(".sql"))
+                .sort();
+
+            const fileCount = migrationFiles.length;
+
+            console.log(
+                `Applied migrations: ${appliedCount}, Migration files: ${fileCount}`,
+            );
+
+            // If there are more files than applied migrations, we have pending migrations
+            return fileCount > appliedCount;
+        } catch (error) {
+            console.error("Error checking for pending migrations:", error);
+            // If we can't read the folder or there's an error, assume no pending migrations
+            return false;
+        }
+    }
+
+    /** Run any ts migrations that are not in drizzle */
+    async initializeDatabase(db: Database.Database) {
+        // Easier to do this here than in the migration
+        const stmt = db.prepare(`
+            INSERT INTO ${Constants.FieldPropertiesTableName} (
+                id,
+                json_data
+            ) VALUES (
+                1,
+                @json_data
+            );
+        `);
+        stmt.run({
+            json_data: JSON.stringify(
+                FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
+            ),
+        });
+
+        for (const table of TablesWithHistory) {
+            createUndoTriggers(db, table);
+        }
     }
 }

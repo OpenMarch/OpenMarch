@@ -11,14 +11,14 @@ import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
 import { init, captureException } from "@sentry/electron/main";
 
-// Modify this when the database is updated
-import CurrentDatabase from "../database/versions/CurrentDatabase";
 import {
     getFieldPropertiesJson,
     updateFieldProperties,
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
 import { FIRST_PAGE_ID } from "../database/constants";
+import { DrizzleMigrationService } from "electron/database/services/DrizzleMigrationService";
+import { getOrm } from "electron/database/db";
 
 // The built directory structure
 //
@@ -139,7 +139,7 @@ app.whenReady().then(async () => {
     if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
         pathToOpen = process.argv[1];
     }
-    if (pathToOpen && pathToOpen.length > 0) setActiveDb(pathToOpen);
+    if (pathToOpen && pathToOpen.length > 0) await setActiveDb(pathToOpen);
     DatabaseServices.initHandlers();
 
     // Database handlers
@@ -237,9 +237,9 @@ app.on("window-all-closed", () => {
     if (process.platform !== "darwin") app.quit();
 });
 
-app.on("open-file", (event, path) => {
+app.on("open-file", async (event, path) => {
     event.preventDefault();
-    setActiveDb(path);
+    await setActiveDb(path);
 });
 
 // Handle instances where the app is already running and a file is opened
@@ -419,9 +419,8 @@ export async function newFile() {
         fs.unlinkSync(path.filePath);
     }
 
-    setActiveDb(path.filePath, true);
-    const dbVersion = new CurrentDatabase(DatabaseServices.connect);
-    dbVersion.createTables(app.getAppPath());
+    await setActiveDb(path.filePath, true);
+
     win?.webContents.reload();
 
     return 200;
@@ -449,7 +448,7 @@ export async function saveFile() {
             buttonLabel: "Save Copy",
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         })
-        .then((path) => {
+        .then(async (path) => {
             if (path.canceled || !path.filePath) return -1;
 
             const serializedDb = db.serialize();
@@ -457,7 +456,7 @@ export async function saveFile() {
 
             fs.writeFileSync(path.filePath, uint8Array);
 
-            setActiveDb(path.filePath);
+            await setActiveDb(path.filePath);
             return 200;
         })
         .catch((err) => {
@@ -484,14 +483,14 @@ export async function loadDatabaseFile() {
                 { name: "All Files", extensions: ["*"] },
             ],
         })
-        .then((path) => {
+        .then(async (path) => {
             DatabaseServices.setDbPath(path.filePaths[0]);
             store.set("databasePath", path.filePaths[0]); // Save the path for next time
 
             // If the user cancels the dialog, and there is no previous path, return -1
             if (path.canceled || !path.filePaths[0]) return -1;
 
-            setActiveDb(path.filePaths[0]);
+            await setActiveDb(path.filePaths[0]);
             return 200;
         })
         .catch((err) => {
@@ -721,7 +720,7 @@ export async function insertAudioFile(): Promise<
                     },
                 };
 
-            // setActiveDb(path.filePaths[0]);
+            // await setActiveDb(path.filePaths[0]);
             return databaseResponse;
         })
         .catch((err) => {
@@ -818,7 +817,7 @@ export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
  * @param path path to the database file
  * @param isNewFile True if this is a new file, false if it is an existing file
  */
-function setActiveDb(path: string, isNewFile = false) {
+async function setActiveDb(path: string, isNewFile = false) {
     try {
         // Get the current path from the store if the path is "."
         // I.e. last opened file
@@ -832,25 +831,21 @@ function setActiveDb(path: string, isNewFile = false) {
         DatabaseServices.setDbPath(path, isNewFile);
         win?.setTitle("OpenMarch - " + path);
 
-        const migrator = new CurrentDatabase(DatabaseServices.connect);
         const db = DatabaseServices.connect();
         if (!db) {
             console.error("Error connecting to database");
             return;
         }
 
-        // If this is a new file, create the tables
-        // If this isn't a new file, check if a migration is needed
-        if (isNewFile) {
-            console.log(`Creating new database at ${path}`);
-            migrator.createTables(app.getAppPath());
-        } else {
+        const drizzleDb = getOrm(db);
+        const migrator = new DrizzleMigrationService(drizzleDb, db);
+
+        // If this isn't a new file, create backups before applying migrations
+        if (!isNewFile) {
             console.log(
                 "Checking database version to see if migration is needed",
             );
-            CurrentDatabase.getVersion(db);
-            // Create backup before migration
-            if (CurrentDatabase.getVersion(db) !== migrator.version) {
+            if (migrator.hasPendingMigrations()) {
                 const backupDir = join(app.getPath("userData"), "backups");
                 if (!fs.existsSync(backupDir)) {
                     fs.mkdirSync(backupDir);
@@ -880,7 +875,13 @@ function setActiveDb(path: string, isNewFile = false) {
                     }
                 });
             }
-            migrator.migrateToThisVersion();
+        }
+        await migrator.applyPendingMigrations(
+            join(app.getAppPath(), "electron", "database", "migrations"),
+        );
+
+        if (isNewFile) {
+            await migrator.initializeDatabase(db);
         }
 
         store.set("databasePath", path); // Save current db path
