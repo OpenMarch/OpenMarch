@@ -871,6 +871,8 @@ async function setActiveDb(path: string, isNewFile = false) {
                     }
                 });
             }
+        } else {
+            db.pragma("user_version = 7");
         }
         await migrator.applyPendingMigrations();
 
