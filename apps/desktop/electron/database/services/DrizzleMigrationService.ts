@@ -23,11 +23,21 @@ export class DrizzleMigrationService {
         this.rawDb = rawDb;
     }
 
+    private async canApplyMigrations(): Promise<boolean> {
+        const userVersion = this.rawDb.pragma("user_version", { simple: true });
+        return userVersion === 7;
+    }
+
     /**
      * Applies pending migrations from the migrations folder
      * This uses Drizzle's built-in migration functionality
      */
     async applyPendingMigrations(migrationsFolder?: string): Promise<void> {
+        if (!(await this.canApplyMigrations())) {
+            throw new Error(
+                "Cannot apply migrations, user version is not 7. If you have a file from 0.0.9 or earlier, please open your file in 0.0.10, then open it again in the current version",
+            );
+        }
         const folder =
             migrationsFolder || path.join(__dirname, "../migrations");
         console.log("migrationsFolder", folder);
@@ -98,6 +108,10 @@ export class DrizzleMigrationService {
 
     /** Run any ts migrations that are not in drizzle */
     async initializeDatabase(db: Database.Database) {
+        // User version 7 is an artifact of the previous migration system
+        // but we will keep it at 7 to indicate we are on drizzle
+        db.pragma("user_version = 7");
+
         // Easier to do this here than in the migration
         const stmt = db.prepare(`
             INSERT INTO ${Constants.FieldPropertiesTableName} (
