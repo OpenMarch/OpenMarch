@@ -11,8 +11,8 @@ import { initTestDatabase } from "./testUtils";
 describe("MarcherShapeTable", () => {
     let db: Database.Database;
 
-    beforeEach(() => {
-        db = initTestDatabase();
+    beforeEach(async () => {
+        db = await initTestDatabase();
     });
 
     afterEach(() => {

@@ -32,8 +32,8 @@ const addFirstBeat = (beats: Partial<BeatTable.DatabaseBeat>[]) => {
 describe("BeatsTable", () => {
     let db: Database.Database;
 
-    beforeEach(() => {
-        db = initTestDatabase();
+    beforeEach(async () => {
+        db = await initTestDatabase();
 
         // Delete all beats from the database
         db.prepare(

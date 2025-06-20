@@ -19,8 +19,8 @@ const trimData = (data: any[]) =>
 describe("MeasureTable", () => {
     let db: Database.Database;
 
-    beforeEach(() => {
-        db = initTestDatabase();
+    beforeEach(async () => {
+        db = await initTestDatabase();
 
         // Create some beats that we can use for measures
         const newBeats: BeatTable.NewBeatArgs[] = [
