@@ -22,11 +22,20 @@ export class DrizzleMigrationService {
         this.rawDb = rawDb;
     }
 
+    private async canApplyMigrations(): Promise<boolean> {
+        const userVersion = this.rawDb.pragma("user_version", { simple: true });
+        return userVersion === 7;
+    }
+
     /**
      * Applies pending migrations from the migrations folder
      * This uses Drizzle's built-in migration functionality
      */
     async applyPendingMigrations(migrationsFolder?: string): Promise<void> {
+        if (!(await this.canApplyMigrations())) {
+            throw new Error("Cannot apply migrations, user version is not 7");
+        }
+
         const folder = migrationsFolder || "./electron/database/migrations";
 
         try {
@@ -92,6 +101,10 @@ export class DrizzleMigrationService {
 
     /** Run any ts migrations that are not in drizzle */
     async initializeDatabase(db: Database.Database) {
+        // User version 7 is an artifact of the previous migration system
+        // but we will keep it at 7 to indicate we are on drizzle
+        db.pragma("user_version = 7");
+
         // Easier to do this here than in the migration
         const stmt = db.prepare(`
             INSERT INTO ${Constants.FieldPropertiesTableName} (
