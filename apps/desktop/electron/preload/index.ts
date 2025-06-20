@@ -234,6 +234,8 @@ const APP_API = {
         ipcRenderer.invoke("history:getCurrentRedoGroup") as Promise<
             DatabaseResponse<number>
         >,
+    getUndoStackLength: () => ipcRenderer.invoke("history:getUndoStackLength"),
+    getRedoStackLength: () => ipcRenderer.invoke("history:getRedoStackLength"),
 
     // FieldProperties
     /** Get the FieldProperties associated with this file */

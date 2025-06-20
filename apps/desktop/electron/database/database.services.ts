@@ -525,6 +525,20 @@ export function initHandlers() {
         }),
     );
 
+    ipcMain.handle("history:getUndoStackLength", async () =>
+        connectWrapper(({ db }) => {
+            const undoLength = History.getUndoStackLength(db);
+            return { success: true, data: undoLength };
+        }),
+    );
+
+    ipcMain.handle("history:getRedoStackLength", async () =>
+        connectWrapper(({ db }) => {
+            const redoLength = History.getRedoStackLength(db);
+            return { success: true, data: redoLength };
+        }),
+    );
+
     ipcMain.handle(
         "section_appearances:createSectionAppearances",
         async (_event, newSectionAppearances) =>
