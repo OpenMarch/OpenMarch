@@ -3,8 +3,8 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import Database from "better-sqlite3";
 import * as schema from "../migrations/schema";
 import fs from "fs";
-import Constants, { TablesWithHistory } from "@/global/Constants";
-import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import Constants, { TablesWithHistory } from "../../../src/global/Constants";
+import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
 import { createUndoTriggers } from "../database.history";
 
 export type DB = BetterSQLite3Database<typeof schema>;

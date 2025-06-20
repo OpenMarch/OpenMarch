@@ -17,8 +17,8 @@ import {
     updateFieldPropertiesImage,
 } from "../database/tables/FieldPropertiesTable";
 import { FIRST_PAGE_ID } from "../database/constants";
-import { DrizzleMigrationService } from "electron/database/services/DrizzleMigrationService";
-import { getOrm } from "electron/database/db";
+import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
+import { getOrm } from "../database/db";
 
 // The built directory structure
 //
