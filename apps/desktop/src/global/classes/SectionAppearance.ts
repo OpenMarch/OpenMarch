@@ -1,9 +1,10 @@
 import { RgbaColor } from "@uiw/react-color";
 import { rgbaToString } from "./FieldTheme";
-import { db } from "../database/db";
-import { section_appearances } from "../../../electron/database/migrations/schema";
+import { db, schema } from "../database/db";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "./History";
+
+const { section_appearances } = schema;
 
 // Define types from the existing schema
 type DatabaseSectionAppearance = typeof section_appearances.$inferSelect;

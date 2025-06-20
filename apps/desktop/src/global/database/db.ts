@@ -21,3 +21,4 @@ export type DBTransaction = SQLiteProxyTransaction<
     typeof schema,
     ExtractTablesWithRelations<typeof schema>
 >;
+export { schema };
