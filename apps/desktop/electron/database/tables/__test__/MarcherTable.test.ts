@@ -17,8 +17,8 @@ describe("MarcherTable", () => {
     describe("createMarcherTable", () => {
         let db: Database.Database;
 
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
         });
 
         it("should create the marcher table if it does not exist", () => {
@@ -51,8 +51,8 @@ describe("MarcherTable", () => {
     describe("database interactions", () => {
         let db: Database.Database;
 
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
         });
 
         describe("createMarchers", () => {
@@ -805,8 +805,8 @@ describe("MarcherTable", () => {
     describe("undoRedo", () => {
         let db: Database.Database;
 
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
         });
 
         describe("createMarchers", () => {

@@ -18,8 +18,8 @@ import { initTestDatabase } from "./testUtils";
 describe("ShapePageTable CRUD Operations", () => {
     let db: Database.Database;
 
-    beforeEach(() => {
-        db = initTestDatabase();
+    beforeEach(async () => {
+        db = await initTestDatabase();
 
         // Create a shape
         expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
@@ -263,8 +263,8 @@ describe("ShapePageTable CRUD Operations", () => {
     describe("ShapePageTable Cascade Delete Operations", () => {
         let db: Database.Database;
 
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
             expect(createShapes({ db, args: DbMocks.NewShapes }).success).toBe(
                 true,
             );

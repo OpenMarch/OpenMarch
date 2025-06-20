@@ -13,9 +13,9 @@ import { initTestDatabase } from "./testUtils";
 describe("UtilityTable", () => {
     let db: Database.Database;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // Create in-memory database
-        db = initTestDatabase();
+        db = await initTestDatabase();
 
         // Ensure the utility table exists with a default record
         db.exec(`
