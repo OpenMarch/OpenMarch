@@ -6,7 +6,6 @@ import {
     mockMarcherPages,
     mockMarchers,
     mockPages,
-    mockSectionAppearances,
 } from "@/components/canvas/__test__/MocksForCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";

@@ -177,7 +177,6 @@ export default function SectionAppearanceList() {
         <Form.Root
             onSubmit={(event) => {
                 event.preventDefault();
-                handleSubmit();
             }}
             className="text-body text-text flex flex-col gap-16"
         >
