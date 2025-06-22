@@ -13,9 +13,6 @@ permissions:
 jobs:
     build-and-release:
         runs-on: ${{ matrix.os }}
-        env:
-            VITE_PUBLIC_POSTHOG_KEY: ${{ secrets.VITE_PUBLIC_POSTHOG_KEY }}
-            VITE_PUBLIC_POSTHOG_HOST: ${{ secrets.VITE_PUBLIC_POSTHOG_HOST }}
 
         strategy:
             matrix:
