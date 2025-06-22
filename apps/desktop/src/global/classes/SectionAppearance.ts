@@ -1,8 +1,10 @@
 import { RgbaColor } from "@uiw/react-color";
 import { rgbaToString } from "./FieldTheme";
-import { db } from "../database/db";
-import { section_appearances } from "../../../electron/database/migrations/schema";
-import { eq } from "drizzle-orm";
+import { db, schema } from "../database/db";
+import { eq, inArray } from "drizzle-orm";
+import { incrementUndoGroup } from "./History";
+
+const { section_appearances } = schema;
 
 // Define types from the existing schema
 type DatabaseSectionAppearance = typeof section_appearances.$inferSelect;
@@ -130,20 +132,17 @@ export class SectionAppearance {
     static async createSectionAppearances(
         newAppearances: NewSectionAppearanceArgs[],
     ): Promise<SectionAppearance[]> {
-        const response = await window.electron.createSectionAppearances(
-            newAppearances.map(createDatabaseSectionAppearance),
-        );
-        if (response.success) {
-            return response.data.map(
-                (appearance) => new SectionAppearance(appearance),
-            );
-        } else {
-            console.error(
-                "Failed to create section appearances:",
-                response.error,
-            );
-            return [];
-        }
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const results = await tx
+                .insert(section_appearances)
+                .values(newAppearances.map(createDatabaseSectionAppearance))
+                .returning()
+                .all();
+
+            return results.map((row) => new SectionAppearance(row));
+        });
     }
 
     /**
@@ -154,20 +153,23 @@ export class SectionAppearance {
     static async updateSectionAppearances(
         modifiedAppearances: ModifiedSectionAppearanceArgs[],
     ): Promise<SectionAppearance[]> {
-        const response = await window.electron.updateSectionAppearances(
-            modifiedAppearances.map(createDatabaseSectionAppearance),
-        );
-        if (response.success) {
-            return response.data.map(
-                (appearance) => new SectionAppearance(appearance),
-            );
-        } else {
-            console.error(
-                "Failed to update section appearances:",
-                response.error,
-            );
-            return [];
-        }
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const results: DatabaseSectionAppearance[] = [];
+
+            for (const modifiedAppearance of modifiedAppearances) {
+                const result = await tx
+                    .update(section_appearances)
+                    .set(createDatabaseSectionAppearance(modifiedAppearance))
+                    .where(eq(section_appearances.id, modifiedAppearance.id))
+                    .returning()
+                    .get();
+                results.push(result);
+            }
+
+            return results.map((row) => new SectionAppearance(row));
+        });
     }
 
     /**
@@ -178,18 +180,16 @@ export class SectionAppearance {
     static async deleteSectionAppearances(
         appearanceIds: number[],
     ): Promise<SectionAppearance[]> {
-        const response =
-            await window.electron.deleteSectionAppearances(appearanceIds);
-        if (response.success) {
-            return response.data.map(
-                (appearance) => new SectionAppearance(appearance),
-            );
-        } else {
-            console.error(
-                "Failed to delete section appearances:",
-                response.error,
-            );
-            return [];
-        }
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const results = await tx
+                .delete(section_appearances)
+                .where(inArray(section_appearances.id, appearanceIds))
+                .returning()
+                .all();
+
+            return results.map((row) => new SectionAppearance(row));
+        });
     }
 }
