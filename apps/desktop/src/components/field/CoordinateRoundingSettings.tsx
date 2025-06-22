@@ -1,13 +1,10 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { Input, Switch } from "@openmarch/ui";
-import { useEffect, useState } from "react";
-import * as Form from "@radix-ui/react-form";
+import { UnitInput } from "@openmarch/ui";
+import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
 import { ToggleGroupRoot, ToggleGroupItem } from "@openmarch/ui";
 
-const formFieldClassname = clsx("grid grid-cols-12  h-[40px] ml-16");
 const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
-const inputClassname = clsx("col-span-6 self-center");
 
 const STEP_OPTIONS = [2, 1, 0.5, 0.25];
 
@@ -50,32 +47,6 @@ function AxisSettings({
 
     return (
         <div className="flex flex-col">
-            {showReferencePoint && (
-                <Form.Root>
-                    <Form.Field
-                        name={`${axis} Reference Point`}
-                        className={formFieldClassname}
-                    >
-                        <Form.Label className={labelClassname}>
-                            Reference Point (steps)
-                        </Form.Label>
-                        <Form.Control asChild>
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                value={referencePoint ?? ""}
-                                onChange={(e) =>
-                                    handleReferencePointChange(e.target.value)
-                                }
-                                placeholder="Enter steps..."
-                            />
-                        </Form.Control>
-                    </Form.Field>
-                </Form.Root>
-            )}
-
             <div className="flex flex-col gap-4">
                 <span className="text-body text-text/80">
                     Nearest {axis}-steps
@@ -94,7 +65,7 @@ function AxisSettings({
                             if (customSteps) {
                                 onStepsChange(parseFloat(customSteps));
                             }
-                        } else {
+                        } else if (value) {
                             onStepsChange(parseFloat(value));
                         }
                     }}
@@ -138,16 +109,18 @@ function AxisSettings({
                         Custom
                     </ToggleGroupItem>
                 </ToggleGroupRoot>
-                <Input
-                    type="text"
+                <UnitInput
+                    unit="steps"
+                    type="number"
                     inputMode="numeric"
                     pattern="[0-9]*\.?[0-9]*"
-                    className="w-[80px]"
+                    className="w-[6rem]"
                     value={customSteps}
                     hidden={!customIsSelected}
                     onChange={(e) => {
                         setCustomSteps(e.target.value);
                     }}
+                    step={1}
                     onBlur={() => {
                         if (customSteps === "") {
                             setCustomSteps(nearestSteps?.toString() ?? "0");
@@ -157,6 +130,24 @@ function AxisSettings({
                     }}
                     placeholder="steps"
                 />
+                {showReferencePoint && (
+                    <div className={"flex h-[40px] w-full justify-end gap-8"}>
+                        <label className={labelClassname}>Offset</label>
+                        <UnitInput
+                            unit="steps"
+                            type="number"
+                            size={8}
+                            className="w-[6rem]"
+                            inputMode="numeric"
+                            pattern="-?[0-9]*\.?[0-9]*"
+                            value={referencePoint ?? ""}
+                            onChange={(e) =>
+                                handleReferencePointChange(e.target.value)
+                            }
+                            placeholder="0"
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -164,7 +155,11 @@ function AxisSettings({
 
 export default function CoordinateRoundingSettings() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
-    const [showReferencePoint, setShowReferencePoint] = useState(true);
+    const [showReferencePoint, setShowReferencePoint] = useState(() =>
+        JSON.parse(
+            localStorage.getItem("coordinateRounding.offsetEnabled") ?? "true",
+        ),
+    );
 
     const handleStepChange = (axis: "X" | "Y", value: number) => {
         setUiSettings({
@@ -176,18 +171,33 @@ export default function CoordinateRoundingSettings() {
         });
     };
 
-    const handleReferencePointChange = (
-        axis: "X" | "Y",
-        value: number | undefined,
-    ) => {
-        setUiSettings({
-            ...uiSettings,
-            coordinateRounding: {
-                ...uiSettings.coordinateRounding,
-                [`referencePoint${axis}`]: value,
-            },
-        });
-    };
+    const handleReferencePointChange = useCallback(
+        (axis: "X" | "Y", value: number | undefined) => {
+            const currentValue =
+                uiSettings.coordinateRounding?.[`referencePoint${axis}`];
+            if (currentValue !== value) {
+                setUiSettings({
+                    ...uiSettings,
+                    coordinateRounding: {
+                        ...uiSettings.coordinateRounding,
+                        [`referencePoint${axis}`]: value,
+                    },
+                });
+            }
+        },
+        [setUiSettings, uiSettings],
+    );
+
+    useEffect(() => {
+        localStorage.setItem(
+            "coordinateRounding.offsetEnabled",
+            JSON.stringify(showReferencePoint),
+        );
+        if (!showReferencePoint) {
+            handleReferencePointChange("X", 0);
+            handleReferencePointChange("Y", 0);
+        }
+    }, [handleReferencePointChange, showReferencePoint]);
 
     return (
         <div className="flex flex-col gap-16">
@@ -202,9 +212,12 @@ export default function CoordinateRoundingSettings() {
                             : "bg-surface-raised text-text/60 border-border hover:bg-surface-raised/80",
                     )}
                 >
-                    Reference Points
+                    {showReferencePoint ? "Disable Offset" : "Enable Offset"}
                 </button>
             </div>
+            <p className="text-sub text-text-subtitle">
+                Does not yet work with groups
+            </p>
 
             <AxisSettings
                 axis="X"
