@@ -13,6 +13,7 @@ import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 
 /**
  * A component that initializes the state of the application.
@@ -28,6 +29,7 @@ function StateInitializer() {
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
     const { fetchFieldProperties } = useFieldProperties()!;
+    const updateUndoRedo = useUndoRedoStore((s) => s.updateUndoRedo);
 
     /**
      * These functions set the fetch function in each respective class.
@@ -164,6 +166,8 @@ function StateInitializer() {
                         fetchFieldProperties();
                 }
             }
+
+            updateUndoRedo();
         };
 
         window.electron.onHistoryAction(handler);
@@ -171,6 +175,8 @@ function StateInitializer() {
         window.electron.onImportFieldPropertiesFile(() =>
             fetchFieldProperties(),
         );
+
+        updateUndoRedo();
 
         return () => {
             window.electron.removeHistoryActionListener(); // Remove the event listener

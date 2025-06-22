@@ -10,34 +10,11 @@ import { useEffect, useState } from "react";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ExportCoordinatesModal from "../exporting/ExportCoordinatesModal";
+import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 
 function FileControls() {
-    const [canUndo, setCanUndo] = useState(false);
-    const [canRedo, setCanRedo] = useState(false);
-
-    async function updateHistoryAvailability() {
-        const undoLength = await window.electron.getUndoStackLength();
-        const redoLength = await window.electron.getRedoStackLength();
-        setCanUndo(undoLength.data > 0);
-        setCanRedo(redoLength.data > 0);
-    }
-
-    useEffect(() => {
-        updateHistoryAvailability();
-
-        // DEBUG: poll every 1s to catch any missed events
-        const poll = setInterval(updateHistoryAvailability, 1000);
-
-        const handler = () => updateHistoryAvailability();
-        window.electron.onHistoryAction(handler);
-        window.electron.onFetch(handler);
-
-        return () => {
-            clearInterval(poll);
-            window.electron.removeHistoryActionListener();
-            window.electron.removeFetchListener();
-        };
-    }, []);
+    const canUndo = useUndoRedoStore((s) => s.canUndo);
+    const canRedo = useUndoRedoStore((s) => s.canRedo);
 
     return (
         <div className="titlebar-button flex gap-12" aria-label="File controls">
