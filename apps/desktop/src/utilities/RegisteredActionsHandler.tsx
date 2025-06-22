@@ -14,6 +14,7 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -907,9 +908,15 @@ function RegisteredActionsHandler() {
                 }
 
                 /****************** Select ******************/
-                case RegisteredActionsEnum.selectAllMarchers:
-                    setSelectedMarchers(marchers);
+                case RegisteredActionsEnum.selectAllMarchers: {
+                    const canvas = window.canvas as OpenMarchCanvas | undefined;
+                    if (!canvas) {
+                        break;
+                    }
+
+                    canvas.setActiveObjects(canvas.getCanvasMarchers());
                     break;
+                }
 
                 default:
                     console.error(
