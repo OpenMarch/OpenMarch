@@ -53,6 +53,10 @@ export enum RegisteredActionsEnum {
     evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
     evenlyDistributeVertically = "evenlyDistributeVertically",
     swapMarchers = "swapMarchers",
+    moveSelectedMarchersUp = "moveSelectedMarchersUp",
+    moveSelectedMarchersDown = "moveSelectedMarchersDown",
+    moveSelectedMarchersLeft = "moveSelectedMarchersLeft",
+    moveSelectedMarchersRight = "moveSelectedMarchersRight",
 
     // UI settings
     toggleNextPagePaths = "toggleNextPagePaths",
@@ -295,6 +299,26 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
         enumString: "setSelectedMarchersToNextPage",
     }),
+    moveSelectedMarchersUp: new RegisteredAction({
+        desc: "Move selected marcher(s) up",
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowUp" }),
+        enumString: "moveSelectedMarchersUp",
+    }),
+    moveSelectedMarchersDown: new RegisteredAction({
+        desc: "Move selected marcher(s) down",
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowDown" }),
+        enumString: "moveSelectedMarchersDown",
+    }),
+    moveSelectedMarchersLeft: new RegisteredAction({
+        desc: "Move selected marcher(s) left",
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowLeft" }),
+        enumString: "moveSelectedMarchersLeft",
+    }),
+    moveSelectedMarchersRight: new RegisteredAction({
+        desc: "Move selected marcher(s) right",
+        keyboardShortcut: new KeyboardShortcut({ key: "ArrowRight" }),
+        enumString: "moveSelectedMarchersRight",
+    }),
 
     // Alignment
     snapToNearestWhole: new RegisteredAction({
@@ -461,6 +485,10 @@ function RegisteredActionsHandler() {
         });
         return selectedMarcherPages;
     }, [marcherPages, selectedMarchers, selectedPage]);
+
+    // Arrow movement defaults
+    const snap = useRef(true);
+    const distance = useRef(1);
 
     /**
      * Trigger a RegisteredAction.
@@ -653,6 +681,54 @@ function RegisteredActionsHandler() {
                             `Successfully set ${nextMarcherPages.length} marcher coordinate${nextMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
                         );
                     }
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersUp: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "up",
+                        distance: distance.current,
+                        snap: snap.current,
+                        fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersDown: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "down",
+                        distance: distance.current,
+                        snap: snap.current,
+                        fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersLeft: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "left",
+                        distance: distance.current,
+                        snap: snap.current,
+                        fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    break;
+                }
+                case RegisteredActionsEnum.moveSelectedMarchersRight: {
+                    const updatedPagesArray = CoordinateActions.moveMarchersXY({
+                        marcherPages: getSelectedMarcherPages(),
+                        direction: "right",
+                        distance: distance.current,
+                        snap: snap.current,
+                        fieldProperties: fieldProperties,
+                        snapDenominator: 1.0 / distance.current,
+                    });
+                    MarcherPage.updateMarcherPages(updatedPagesArray);
                     break;
                 }
 
@@ -919,6 +995,48 @@ function RegisteredActionsHandler() {
                     key = code.replace("Key", "");
                 } else if (code.includes("Digit")) {
                     key = code.replace("Digit", "");
+                } else if (
+                    code === "ArrowUp" ||
+                    code === "ArrowDown" ||
+                    code === "ArrowLeft" ||
+                    code === "ArrowRight"
+                ) {
+                    type ArrowKey =
+                        | "ArrowUp"
+                        | "ArrowDown"
+                        | "ArrowLeft"
+                        | "ArrowRight";
+                    const actionMap: Record<ArrowKey, RegisteredActionsEnum> = {
+                        ArrowUp: RegisteredActionsEnum.moveSelectedMarchersUp,
+                        ArrowDown:
+                            RegisteredActionsEnum.moveSelectedMarchersDown,
+                        ArrowLeft:
+                            RegisteredActionsEnum.moveSelectedMarchersLeft,
+                        ArrowRight:
+                            RegisteredActionsEnum.moveSelectedMarchersRight,
+                    };
+
+                    // toggle snapping
+                    snap.current = !e.altKey && !e.shiftKey;
+
+                    // set distance based on modifiers
+                    if (e.metaKey && e.shiftKey) {
+                        distance.current = 0.1;
+                    } else if (e.metaKey) {
+                        distance.current = 4;
+                    } else if (e.shiftKey) {
+                        distance.current = 0.25;
+                    } else if (code === "ArrowUp" || code === "ArrowDown") {
+                        distance.current =
+                            uiSettings.coordinateRounding?.nearestYSteps || 1;
+                    } else if (code === "ArrowLeft" || code === "ArrowRight") {
+                        distance.current =
+                            uiSettings.coordinateRounding?.nearestXSteps || 1;
+                    }
+
+                    triggerAction(actionMap[code as ArrowKey]);
+                    e.preventDefault();
+                    return;
                 } else if (!ignoredKeys.has(key)) {
                     console.error(
                         `RegisteredAction Warning: No keyCode handler found for "${code}".`,

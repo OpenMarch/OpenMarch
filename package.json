@@ -24,7 +24,8 @@
         "format": "turbo run format",
         "fix": "turbo run fix",
         "spellcheck": "turbo run spellcheck",
-        "prepare": "husky"
+        "prepare": "husky",
+        "desktop:run": "pnpm desktop app:prepare && pnpm desktop dev"
     },
     "devDependencies": {
         "@types/bun": "latest",
