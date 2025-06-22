@@ -20,7 +20,6 @@ import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
-import * as SectionAppearanceTable from "./tables/SectionAppearanceTable";
 import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
@@ -201,6 +200,8 @@ async function handleSqlProxyWithDb(
     }
 }
 
+let persistentConnection: Database.Database | null = null;
+let persistentConnectionPath: string | null = null;
 async function handleSqlProxy(
     _: any,
     sql: string,
@@ -208,11 +209,24 @@ async function handleSqlProxy(
     method: "all" | "run" | "get" | "values",
 ) {
     try {
-        const db = connect();
-        db.pragma("foreign_keys = ON");
-        const result = await handleSqlProxyWithDb(db, sql, params, method);
-        db.close();
-        return result;
+        if (persistentConnectionPath !== DB_PATH) {
+            persistentConnection?.close();
+            persistentConnection = null;
+            persistentConnectionPath = null;
+        }
+
+        if (!persistentConnection) {
+            persistentConnection = connect();
+            persistentConnection.pragma("foreign_keys = ON");
+            persistentConnectionPath = DB_PATH;
+        }
+
+        return await handleSqlProxyWithDb(
+            persistentConnection,
+            sql,
+            params,
+            method,
+        );
     } catch (error: any) {
         console.error("Error from SQL proxy:", error);
         throw error;
@@ -537,30 +551,6 @@ export function initHandlers() {
             const redoLength = History.getRedoStackLength(db);
             return { success: true, data: redoLength };
         }),
-    );
-
-    ipcMain.handle(
-        "section_appearances:createSectionAppearances",
-        async (_event, newSectionAppearances) =>
-            connectWrapper(SectionAppearanceTable.createSectionAppearances, {
-                newSectionAppearances,
-            }),
-    );
-
-    ipcMain.handle(
-        "section_appearances:updateSectionAppearances",
-        async (_event, modifiedSectionAppearances) =>
-            connectWrapper(SectionAppearanceTable.updateSectionAppearances, {
-                modifiedSectionAppearances,
-            }),
-    );
-
-    ipcMain.handle(
-        "section_appearances:deleteSectionAppearances",
-        async (_event, sectionAppearanceIds) =>
-            connectWrapper(SectionAppearanceTable.deleteSectionAppearances, {
-                sectionAppearanceIds: new Set(sectionAppearanceIds),
-            }),
     );
 
     // for (const tableController of Object.values(ALL_TABLES)) {

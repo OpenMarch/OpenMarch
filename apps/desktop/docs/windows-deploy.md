@@ -32,6 +32,7 @@ Remove-Item -Recurse -Force C:\Users\AlexD\AppData\Local\electron-builder\Cache
 winget install NSIS.NSIS
 
 # Package the app
+# FIGURE OUT ENVIRONMENT VARIABLES
 # IN ELEVATED SHELL
 # CLOSE VSCODE OR CURSOR
 .\node_modules\.bin\electron-builder --publish=never --win

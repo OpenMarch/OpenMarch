@@ -42,11 +42,7 @@ import {
     NewShapeArgs,
     Shape,
 } from "electron/database/tables/ShapeTable";
-import {
-    SectionAppearance,
-    NewSectionAppearanceArgs,
-    ModifiedSectionAppearanceArgs,
-} from "electron/database/tables/SectionAppearanceTable";
+
 import {
     UtilityRecord,
     ModifiedUtilityRecord,
@@ -473,29 +469,6 @@ const APP_API = {
             utilityRecord,
             useNextUndoGroup,
         ) as Promise<DatabaseResponse<UtilityRecord>>,
-
-    // Section Appearances
-    createSectionAppearances: (
-        newSectionAppearances: NewSectionAppearanceArgs[],
-    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke(
-            "section_appearances:createSectionAppearances",
-            newSectionAppearances,
-        ),
-    updateSectionAppearances: (
-        modifiedSectionAppearances: ModifiedSectionAppearanceArgs[],
-    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke(
-            "section_appearances:updateSectionAppearances",
-            modifiedSectionAppearances,
-        ),
-    deleteSectionAppearances: (
-        sectionAppearanceIds: number[],
-    ): Promise<DatabaseResponse<SectionAppearance[]>> =>
-        ipcRenderer.invoke(
-            "section_appearances:deleteSectionAppearances",
-            sectionAppearanceIds,
-        ),
 
     // SQL Proxy for Drizzle
     sqlProxy: (

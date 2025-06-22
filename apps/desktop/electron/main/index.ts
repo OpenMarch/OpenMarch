@@ -93,7 +93,7 @@ async function createWindow(title?: string) {
                 responseHeaders: {
                     ...details.responseHeaders,
                     "Content-Security-Policy": [
-                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com",
+                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com https://us-assets.i.posthog.com",
                     ],
                 },
             });
