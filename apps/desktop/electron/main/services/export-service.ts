@@ -58,10 +58,8 @@ export class PDFExportService {
             const combinedHtml = pages
                 .map(
                     (pageContent) => `
-                    <div style="page-break-after: always">
-                        <div class="page-content">${pageContent}</div>
-                    </div>
-                `,
+            <div class="page-content">${pageContent}</div>
+        `,
                 )
                 .join("");
 
@@ -79,7 +77,11 @@ export class PDFExportService {
                 win.webContents
                     .printToPDF({
                         margins: {
-                            marginType: "default",
+                            marginType: "custom",
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
                         },
                         pageSize: "Letter",
                         printBackground: true,

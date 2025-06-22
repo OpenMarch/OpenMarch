@@ -23,6 +23,14 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import * as Tabs from "@radix-ui/react-tabs";
 
+function chunkArray<T>(arr: T[], size: number): T[][] {
+    const result: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) {
+        result.push(arr.slice(i, i + size));
+    }
+    return result;
+}
+
 function CoordinateSheetExport() {
     const [isTerse, setIsTerse] = useState(false);
     const [includeMeasures, setIncludeMeasures] = useState(true);
@@ -88,11 +96,61 @@ function CoordinateSheetExport() {
                 };
             });
 
+            // TODO
+            const groupedSheets = chunkArray(coordinateSheets, 4).map(
+                (group, groupIdx) => {
+                    const gridItems = Array(4)
+                        .fill(null)
+                        .map((_, idx) =>
+                            group[idx]
+                                ? `<div class="marcher-table">${group[idx].renderedPage}</div>`
+                                : `<div class="marcher-table"></div>`,
+                        )
+                        .join("");
+
+                    const pageHtml = `
+                    <div style="
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        grid-template-rows: 1fr 1fr;
+                        gap: 0.5rem;
+                        width: 100%;
+                        height: 100%;
+                        box-sizing: border-box;
+                        padding: 1rem;
+                    ">
+                        ${gridItems}
+                    </div>
+                    <style>
+                        .marcher-table {
+                            box-sizing: border-box;
+                            width: 100%;
+                            height: 100%;
+                            overflow: hidden;
+                            border: 1px solid #e5e7eb;
+                            padding: 0.5rem;
+                            font-size: 80%;
+                        }
+                        .marcher-table table {
+                            width: 100% !important;
+                            font-size: 90% !important;
+                        }
+                    </style>
+                `;
+                    return {
+                        name: `Page ${groupIdx + 1}`,
+                        drillNumber: "",
+                        section: group[0]?.section,
+                        renderedPage: pageHtml,
+                    };
+                },
+            );
+
             setCurrentStep("Generating PDF...");
             setProgress(85);
 
             const result = await window.electron.export.pdf({
-                sheets: coordinateSheets,
+                sheets: groupedSheets,
                 organizeBySection,
             });
 
