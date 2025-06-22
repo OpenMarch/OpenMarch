@@ -954,6 +954,38 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
+     * Set the coordinates of objects without updating them in the database.
+     *
+     * @param objects The objects to set the local coordinates of
+     */
+    setLocalCoordinates = (objects: { x: number; y: number; id: number }[]) => {
+        const canvasMarchers = this.getCanvasMarchersByIds(
+            objects.map((o) => o.id),
+        );
+        // Sort the objects and canvasMarchers by id to ensure matching order
+        const sortedObjects = [...objects].sort((a, b) => a.id - b.id);
+        const sortedCanvasMarchers = [...canvasMarchers].sort(
+            (a, b) => a.marcherObj.id - b.marcherObj.id,
+        );
+        if (sortedObjects.length !== sortedCanvasMarchers.length) {
+            console.warn(
+                "Number of objects and canvasMarchers do not match - setLocalCoordinates: Canvas.tsx",
+                objects,
+                canvasMarchers,
+            );
+        }
+
+        sortedCanvasMarchers.forEach((canvasMarcher, index) => {
+            canvasMarcher.set({
+                top: sortedObjects[index].x,
+                left: sortedObjects[index].y,
+            });
+            canvasMarcher.setCoords();
+        });
+        this.requestRenderAll();
+    };
+
+    /**
      * Brings all of the canvasMarchers to the front of the canvas
      */
     sendCanvasMarchersToFront = () => {

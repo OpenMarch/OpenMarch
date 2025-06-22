@@ -8,15 +8,45 @@ export type DragInputProps = Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
     "onChange"
 > & {
+    /**
+     * Additional class name(s) for the input element.
+     */
     className?: string;
+    /**
+     * Additional class name(s) for the container div.
+     */
     containerClassName?: string;
+    /**
+     * If true, renders a more compact input style.
+     */
     compact?: boolean;
+    /**
+     * Optional unit label to display (e.g., 'px', '%').
+     */
     unit?: string;
+    /**
+     * The current value of the input (number or string).
+     */
     value: number | string | undefined;
+    /**
+     * Called when the value changes via typing or blur (not drag).
+     */
     onChange?: (value: number) => void;
+    /**
+     * Called continuously as the value changes during dragging.
+     */
     onDragChange?: (value: number) => void;
+    /**
+     * Called once when dragging ends, with the final value.
+     */
     onDragEnd?: (value: number) => void;
+    /**
+     * Sensitivity multiplier for drag-to-change (higher = faster changes). Default is 0.5.
+     */
     dragSensitivity?: number;
+    /**
+     * Axis to drag for value change: 'x' (horizontal) or 'y' (vertical).
+     */
     dragAxis?: "x" | "y";
     /**
      * Optional custom icon component to use instead of the default ArrowsDownUpIcon.
@@ -106,7 +136,6 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                         (deltaX * dragSensitivity) / stepNum,
                     );
                 }
-                console.log("start value", startValue.current, valueChange);
                 let newValue = startValue.current + valueChange;
 
                 // Apply min/max constraints
@@ -124,7 +153,6 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                         : undefined;
                 if (minNum !== undefined) newValue = Math.max(minNum, newValue);
                 if (maxNum !== undefined) newValue = Math.min(maxNum, newValue);
-
                 onDragChange?.(newValue);
                 setLocalValue(newValue.toString());
             },
@@ -159,7 +187,6 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
         const handleMouseDown = useCallback(
             (e: React.MouseEvent) => {
                 e.preventDefault();
-                console.log("mouse down", startValue.current);
                 setIsDragging(true);
                 if (dragAxis === "y") {
                     setStartY(e.clientY);
@@ -183,7 +210,6 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
 
             // Cleanup function to remove listeners when the component unmounts
             return () => {
-                console.log("removing");
                 document.removeEventListener("mousemove", handleMouseMove);
                 document.removeEventListener("mouseup", handleMouseUp);
             };

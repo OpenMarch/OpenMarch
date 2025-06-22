@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
-import { useSelectedPage } from "../../context/SelectedPageContext";
+import { useSelectedMarchers } from "../../../context/SelectedMarchersContext";
+import { useSelectedPage } from "../../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
-import RegisteredActionButton from "../RegisteredActionButton";
+import RegisteredActionButton from "../../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import { Button, Input } from "@openmarch/ui";
 import {
+    getButtonClassName,
+    Input,
     Select,
     SelectContent,
     SelectItem,
@@ -17,95 +18,7 @@ import {
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
 import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
-import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
-
-function RotationHandle({
-    value,
-    onChange,
-    onDragStart,
-    onDragEnd,
-}: {
-    value: number;
-    onChange: (value: number) => void;
-    onDragStart?: () => void;
-    onDragEnd?: () => void;
-}) {
-    const handleRef = useRef<HTMLDivElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startY, setStartY] = useState(0);
-    const [startValue, setStartValue] = useState(0);
-
-    const handleMouseDown = useCallback(
-        (e: React.MouseEvent) => {
-            e.preventDefault();
-            setIsDragging(true);
-            setStartY(e.clientY);
-            setStartValue(value);
-            onDragStart?.();
-
-            // Add global mouse event listeners
-            const handleMouseMove = (e: MouseEvent) => {
-                if (!isDragging) return;
-
-                const deltaY = startY - e.clientY;
-                // Convert pixel movement to degrees (adjust sensitivity as needed)
-                const degreesPerPixel = 0.5;
-                const newValue = startValue + deltaY * degreesPerPixel;
-
-                // Normalize to -180 to 180 degrees
-                const normalizedValue =
-                    ((((newValue + 180) % 360) + 360) % 360) - 180;
-
-                // Update the value and trigger rotation
-                onChange(normalizedValue);
-
-                // Force a re-render of the handle's rotation
-                if (handleRef.current) {
-                    handleRef.current.style.transform = `rotate(${normalizedValue}deg)`;
-                }
-            };
-
-            const handleMouseUp = () => {
-                setIsDragging(false);
-                onDragEnd?.();
-                document.removeEventListener("mousemove", handleMouseMove);
-                document.removeEventListener("mouseup", handleMouseUp);
-            };
-
-            document.addEventListener("mousemove", handleMouseMove);
-            document.addEventListener("mouseup", handleMouseUp);
-        },
-        [
-            isDragging,
-            startY,
-            startValue,
-            value,
-            onChange,
-            onDragStart,
-            onDragEnd,
-        ],
-    );
-
-    // Update the handle's rotation when value changes
-    useEffect(() => {
-        if (handleRef.current) {
-            handleRef.current.style.transform = `rotate(${value}deg)`;
-        }
-    }, [value]);
-
-    return (
-        <div
-            ref={handleRef}
-            className={`flex h-8 w-8 cursor-grab items-center justify-center rounded-full active:cursor-grabbing ${isDragging ? "bg-primary/10" : "hover:bg-primary/5"}`}
-            onMouseDown={handleMouseDown}
-        >
-            <ArrowsClockwiseIcon
-                className="text-text/80 h-4 w-4"
-                weight="regular"
-            />
-        </div>
-    );
-}
+import MarcherRotationInput from "./MarcherRotationInput";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -119,8 +32,6 @@ function MarcherEditor() {
     const [spmsForThisPage, setSpmsForThisPage] = useState<ShapePageMarcher[]>(
         [],
     );
-    const [rotationAngle, setRotationAngle] = useState<number>(0);
-    const [isRotating, setIsRotating] = useState(false);
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
@@ -260,33 +171,6 @@ function MarcherEditor() {
         resetForm();
     }, [selectedMarchers, rCoords, resetForm]);
 
-    const handleRotation = useCallback(() => {
-        // TODO: Implement rotation logic
-        // This will need to:
-        // 1. Get the center point of the selected marchers
-        // 2. Convert marcherPages to IdPoint format
-        // 3. Call the rotate function
-        // 4. Update the marcherPages with the new coordinates
-        console.log("Rotating to:", rotationAngle.toFixed(1), "degrees");
-    }, [selectedMarchers, marcherPages, selectedPage, rotationAngle]);
-
-    const handleRotationStart = useCallback(() => {
-        setIsRotating(true);
-    }, []);
-
-    const handleRotationEnd = useCallback(() => {
-        setIsRotating(false);
-    }, []);
-
-    const handleRotationChange = useCallback(
-        (newAngle: number) => {
-            setRotationAngle(newAngle);
-            // Fire rotation immediately for visual feedback
-            handleRotation();
-        },
-        [handleRotation],
-    );
-
     return (
         <>
             {selectedMarchers.length > 0 && fieldProperties && (
@@ -354,69 +238,35 @@ function MarcherEditor() {
                                     registeredAction={
                                         RegisteredActionsObjects.swapMarchers
                                     }
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        size: "compact",
+                                    })}
                                 >
-                                    <Button
-                                        size="compact"
-                                        className="w-full"
-                                        variant="secondary"
-                                    >
-                                        Swap marchers
-                                    </Button>
+                                    Swap marchers
                                 </RegisteredActionButton>
                             )}
                             {selectedMarchers.length >= 3 &&
                                 createLineIsVisible() && (
                                     <RegisteredActionButton
-                                        className="btn-secondary"
+                                        className={getButtonClassName({
+                                            variant: "primary",
+                                            size: "compact",
+                                        })}
                                         registeredAction={
                                             RegisteredActionsObjects.alignmentEventLine
                                         }
                                     >
-                                        <Button
-                                            size="compact"
-                                            className="w-full"
-                                        >
-                                            Create Line
-                                        </Button>
+                                        Create Line
                                     </RegisteredActionButton>
                                 )}
                             {/* Add rotation controls */}
                             <div className="w-full px-6">
-                                <div className="flex flex-col gap-8">
-                                    <label className="text-body leading-none opacity-80">
-                                        Rotation
-                                    </label>
-                                    <div className="flex items-center gap-4">
-                                        <RotationHandle
-                                            value={rotationAngle}
-                                            onChange={handleRotationChange}
-                                            onDragStart={handleRotationStart}
-                                            onDragEnd={handleRotationEnd}
-                                        />
-                                        <Input
-                                            type="number"
-                                            value={rotationAngle.toFixed(1)}
-                                            onChange={(e) =>
-                                                handleRotationChange(
-                                                    Number(e.target.value),
-                                                )
-                                            }
-                                            className="w-64"
-                                            placeholder="0"
-                                        />
-                                        <span className="text-body">
-                                            degrees
-                                        </span>
-                                        <Button
-                                            size="compact"
-                                            onClick={handleRotation}
-                                            className="ml-auto"
-                                            disabled={isRotating}
-                                        >
-                                            Apply
-                                        </Button>
-                                    </div>
-                                </div>
+                                <MarcherRotationInput
+                                    selectedMarchers={selectedMarchers}
+                                    marcherPages={marcherPages}
+                                    selectedPage={selectedPage}
+                                />
                             </div>
                         </SidebarCollapsible>
                     ) : (
