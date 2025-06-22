@@ -82,6 +82,8 @@ module.exports = {
         "Woodgrove",
         "skyrim",
         "lightridge",
+        "posthog",
+        "vite",
         "clsx",
         "signup",
         "supabase",
