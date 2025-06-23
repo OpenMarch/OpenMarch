@@ -203,6 +203,7 @@ function initGetters() {
         return await PDFExportService.export(
             params.sheets,
             params.organizeBySection,
+            params.quarterPages,
         );
     });
 

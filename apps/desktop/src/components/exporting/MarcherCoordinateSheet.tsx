@@ -528,3 +528,325 @@ export function StaticMarcherCoordinateSheet({
         </div>
     );
 }
+
+/**
+ * Compact version of marcher coordinate sheet.
+ * Format: Pg. | S to S | F to B | Ct. | Ms.
+ */
+interface StaticCompactMarcherSheetProps {
+    marcher: Marcher;
+    pages: Page[];
+    marcherPages: MarcherPage[];
+    fieldProperties: FieldProperties;
+    roundingDenominator?: number;
+    terse?: boolean;
+    quarterPageNumber: number;
+}
+
+/**
+ * Format measure as X-X (e.g. 12A-14), max 11 chars.
+ * Discards count of the measure.
+ * Accepts strings like "12A(9) → 14(16)" or "12(9)".
+ */
+function compactMeasureFormat(measureStr: string): string {
+    const match = measureStr.match(
+        /([A-Za-z0-9]+)\(\d+\)\s*[→\-]\s*([A-Za-z0-9]+)\(\d+\)/,
+    );
+    if (match) {
+        return `${match[1]}-${match[2]}`.slice(0, 11);
+    }
+    const match2 = measureStr.match(/([A-Za-z0-9]+)\(\d+\)/);
+    if (match2) {
+        return match2[1];
+    }
+
+    return measureStr;
+}
+
+export function StaticCompactMarcherSheet({
+    marcher,
+    fieldProperties,
+    marcherPages,
+    pages,
+    roundingDenominator = 4,
+    terse = false,
+    quarterPageNumber,
+}: StaticCompactMarcherSheetProps) {
+    const [marcherState, setMarcherState] = useState<Marcher>(marcher);
+    const [fieldPropertiesState, setFieldPropertiesState] =
+        useState<FieldProperties>(fieldProperties);
+    const [marcherPagesState, setMarcherPagesState] =
+        useState<MarcherPage[]>(marcherPages);
+    const [pagesState, setPagesState] = useState<Page[]>(pages);
+
+    useEffect(() => {
+        setMarcherState(marcher);
+        setFieldPropertiesState(fieldProperties);
+        setMarcherPagesState(marcherPages);
+        setPagesState(pages);
+    }, [marcher, fieldProperties, marcherPages, pages]);
+
+    // Ensure ReadableCoords has the field properties
+    if (!ReadableCoords.getFieldProperties())
+        ReadableCoords.setFieldProperties(fieldPropertiesState!);
+
+    // Sort function for marcher pages
+    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
+        const pageA = pagesState.find((page) => page.id === a.page_id);
+        const pageB = pagesState.find((page) => page.id === b.page_id);
+        return pageA && pageB ? pageA.order - pageB.order : 0;
+    };
+
+    return (
+        <div
+            title="Marcher Coordinate Sheet Container"
+            style={{
+                fontFamily: "ui-sans-serif, system-ui, sans-serif",
+            }}
+        >
+            <div
+                title="header container"
+                aria-label="marcher header"
+                className="sheetHeader"
+                style={{
+                    backgroundColor: "#ddd",
+                    display: "flex",
+                }}
+            >
+                <div
+                    title="drill number header"
+                    style={{
+                        backgroundColor: "#ddd",
+                        paddingLeft: "1rem",
+                        padding: "1rem",
+                        width: "max-content",
+                        justifySelf: "baseline",
+                    }}
+                >
+                    <h4
+                        aria-label="marcher drill number"
+                        style={{
+                            margin: 0,
+                            padding: 0,
+                            fontSize: "1.2rem",
+                        }}
+                    >
+                        {marcherState.drill_number}
+                    </h4>
+                </div>
+                <div
+                    title="marcher name header"
+                    style={{
+                        flexGrow: 1,
+                        borderLeft: "1px dotted #888",
+                        backgroundColor: "#ddd",
+                        paddingLeft: "1rem",
+                        padding: "1rem",
+                        width: "max-content",
+                        justifySelf: "baseline",
+                    }}
+                >
+                    <h4
+                        aria-label="marcher name"
+                        style={{
+                            margin: 0,
+                            padding: 0,
+                            fontSize: "1.2rem",
+                        }}
+                    >
+                        {marcherState.name}
+                    </h4>
+                </div>
+                <div
+                    title="quarter-page number header"
+                    style={{
+                        borderLeft: "1px dotted #888",
+                        backgroundColor: "#ddd",
+                        paddingLeft: "1rem",
+                        padding: "1rem",
+                        width: "max-content",
+                        justifySelf: "baseline",
+                    }}
+                >
+                    <h4 aria-label="quarter page number" style={h4Style}>
+                        Page {quarterPageNumber}
+                    </h4>
+                </div>
+            </div>
+            <table
+                aria-label="individual marcher coordinates table"
+                style={{
+                    tableLayout: "fixed",
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    display: "block",
+                }}
+            >
+                <thead style={{ width: "100%" }}>
+                    <tr aria-label="coordinates header row">
+                        <th
+                            aria-label="page header"
+                            style={{
+                                border: "1px solid #888",
+                                padding: "0.25rem 0.5rem",
+                                textAlign: "center",
+                                width: "4ch",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            Pg.
+                        </th>
+                        <th
+                            aria-label="side to side header"
+                            style={{
+                                border: "1px solid #888",
+                                padding: "0.25rem 0.5rem",
+                                width: "auto",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            S. to S.
+                        </th>
+                        <th
+                            aria-label="front to back header"
+                            style={{
+                                border: "1px solid #888",
+                                padding: "0.25rem 0.5rem",
+                                width: "auto",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            F. to B.
+                        </th>
+                        <th
+                            aria-label="counts header"
+                            style={{
+                                border: "1px solid #888",
+                                padding: "0.25rem 0.5rem",
+                                textAlign: "center",
+                                width: "3ch",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            Ct.
+                        </th>
+                        <th
+                            aria-label="measure header"
+                            style={{
+                                border: "1px solid #888",
+                                padding: "0.25rem 0.5rem",
+                                textAlign: "center",
+                                width: "11ch",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            Ms.
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {marcherPagesState
+                        .filter((mp) => mp.marcher_id === marcherState.id)
+                        .sort(sortMarcherPages)
+                        .map((marcherPage: MarcherPage) => {
+                            if (!fieldPropertiesState) return null;
+                            const page = pagesState.find(
+                                (p) => p.id === marcherPage.page_id,
+                            );
+                            const rCoords = new ReadableCoords({
+                                x: marcherPage.x,
+                                y: marcherPage.y,
+                                roundingDenominator,
+                            });
+                            if (!page || !rCoords) return null;
+
+                            // S to S and F to B
+                            const sToS = terse
+                                ? rCoords.toTerseStringX()
+                                : rCoords.toVerboseStringX();
+                            const fToB = terse
+                                ? rCoords.toTerseStringY()
+                                : rCoords.toVerboseStringY();
+
+                            // Counts
+                            const counts = page.counts;
+
+                            // Measure (format as X-X)
+                            const origMeasure = measureRangeString(page);
+                            const msValue = compactMeasureFormat(origMeasure);
+
+                            return (
+                                <tr key={marcherPage.id_for_html}>
+                                    <td
+                                        style={{
+                                            border: "1px solid #888",
+                                            padding: "0.25rem 0.5rem",
+                                            textAlign: "center",
+                                            width: "4ch",
+                                            fontFamily:
+                                                "ui-sans-serif, system-ui, sans-serif",
+                                            fontSize: 11,
+                                        }}
+                                    >
+                                        {page.name}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #888",
+                                            padding: "0.25rem 0.5rem",
+                                            width: "18ch",
+                                            fontFamily:
+                                                "ui-sans-serif, system-ui, sans-serif",
+                                            textAlign: "left",
+                                            fontSize: 11,
+                                        }}
+                                    >
+                                        {sToS}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #888",
+                                            padding: "0.25rem 0.5rem",
+                                            width: "15ch",
+                                            fontFamily:
+                                                "ui-sans-serif, system-ui, sans-serif",
+                                            textAlign: "left",
+                                            fontSize: 11,
+                                        }}
+                                    >
+                                        {fToB}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #888",
+                                            padding: "0.25rem 0.5rem",
+                                            textAlign: "center",
+                                            width: "3ch",
+                                            fontFamily:
+                                                "ui-sans-serif, system-ui, sans-serif",
+                                            fontSize: 11,
+                                        }}
+                                    >
+                                        {counts}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #888",
+                                            padding: "0.25rem 0.5rem",
+                                            textAlign: "center",
+                                            width: "7ch",
+                                            fontFamily:
+                                                "ui-sans-serif, system-ui, sans-serif",
+                                            fontSize: 11,
+                                        }}
+                                    >
+                                        {msValue}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                </tbody>
+            </table>
+        </div>
+    );
+}
