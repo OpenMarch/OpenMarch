@@ -539,6 +539,20 @@ export function initHandlers() {
         }),
     );
 
+    ipcMain.handle("history:getUndoStackLength", async () =>
+        connectWrapper(({ db }) => {
+            const undoLength = History.getUndoStackLength(db);
+            return { success: true, data: undoLength };
+        }),
+    );
+
+    ipcMain.handle("history:getRedoStackLength", async () =>
+        connectWrapper(({ db }) => {
+            const redoLength = History.getRedoStackLength(db);
+            return { success: true, data: redoLength };
+        }),
+    );
+
     // for (const tableController of Object.values(ALL_TABLES)) {
     //     tableController.ipcCrudHandlers();
     // }

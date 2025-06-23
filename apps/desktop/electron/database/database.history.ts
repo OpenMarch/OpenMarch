@@ -611,6 +611,26 @@ export function getCurrentRedoGroup(db: Database.Database) {
     ).cur_redo_group;
 }
 
+export function getUndoStackLength(db: Database.Database): number {
+    return (
+        db
+            .prepare(
+                `SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName};`,
+            )
+            .get() as { count: number }
+    ).count;
+}
+
+export function getRedoStackLength(db: Database.Database): number {
+    return (
+        db
+            .prepare(
+                `SELECT COUNT(*) as count FROM ${Constants.RedoHistoryTableName};`,
+            )
+            .get() as { count: number }
+    ).count;
+}
+
 /**
  * Decrement all of the undo actions in the most recent group down by one.
  *
