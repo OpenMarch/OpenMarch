@@ -30,11 +30,16 @@ jobs:
               id: release
               shell: bash
               run: |
-                  if [ "${GITHUB_REF}" = refs/tags/v* ]; then
-                    echo "RELEASE=true" >> "$GITHUB_OUTPUT"
+                  if [[ "${GITHUB_REF}" =~ ^refs/tags/v ]]; then
+                    echo "RELEASE=true" >> $GITHUB_OUTPUT
                   else
-                    echo "RELEASE=false" >> "$GITHUB_OUTPUT"
+                    echo "RELEASE=false" >> $GITHUB_OUTPUT
                   fi
+
+            - name: Debug release output
+              run: |
+                  echo "GITHUB_REF=${GITHUB_REF}"
+                  echo "RELEASE=${{ steps.release.outputs.RELEASE }}"
 
             - name: Install Node.js
               uses: actions/setup-node@v1
@@ -89,7 +94,7 @@ jobs:
                   # (No need to define this secret in the repo settings)
                   github_token: ${{ secrets.github_token }}
                   # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
-                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
+                  release: ${{ steps.release.outputs.RELEASE }}
                   mac_certs: ${{ secrets.mac_certs }}
                   mac_certs_password: ${{ secrets.mac_certs_password }}
                   max_attempts: 5
