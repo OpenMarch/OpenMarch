@@ -224,13 +224,14 @@ function CoordinateSheetExport() {
     }, [
         fieldProperties,
         marchers,
-        pages,
-        marcherPages,
-        includeMeasures,
-        isTerse,
-        useXY,
-        roundingDenominator,
+        quarterPages,
         organizeBySection,
+        marcherPages,
+        pages,
+        roundingDenominator,
+        isTerse,
+        includeMeasures,
+        useXY,
     ]);
 
     return (
@@ -260,11 +261,10 @@ function CoordinateSheetExport() {
                 >
                     <Form.Control asChild>
                         <Checkbox
-                            checked={isTerse}
+                            checked={isTerse || quarterPages}
+                            disabled={quarterPages}
                             onCheckedChange={(checked: boolean) => {
-                                if (!quarterPages || checked) {
-                                    setIsTerse(checked);
-                                }
+                                setIsTerse(checked);
                             }}
                         />
                     </Form.Control>
@@ -300,7 +300,7 @@ function CoordinateSheetExport() {
                         <Checkbox
                             checked={quarterPages}
                             onCheckedChange={(checked: boolean) => {
-                                setIsTerse(checked);
+                                checked && setIsTerse(checked);
                                 setQuarterPages(checked);
                             }}
                         />
