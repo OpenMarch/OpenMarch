@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import MarcherCoordinateSheet, {
     StaticMarcherCoordinateSheet,
+    StaticCompactMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import ReactDOMServer from "react-dom/server";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
@@ -30,6 +31,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
     }
     return result;
 }
+const QUARTER_ROWS = 18;
 
 function CoordinateSheetExport() {
     const [isTerse, setIsTerse] = useState(false);
@@ -68,37 +70,45 @@ function CoordinateSheetExport() {
             setCurrentStep("Generating coordinate sheets...");
             setProgress(30);
 
-            const coordinateSheets = processedMarchers.map((marcher, index) => {
-                // Update progress for each marcher
-                const marcherProgress =
-                    30 + (index / processedMarchers.length) * 50;
-                setProgress(marcherProgress);
-                setCurrentStep(
-                    `Generating sheet for ${marcher.name} (${index + 1}/${processedMarchers.length})`,
-                );
+            // split to quarter sheets
+            const marcherQuarterSheets = processedMarchers.flatMap(
+                (marcher, mIdx) => {
+                    const marcherPagesForMarcher = marcherPages
+                        .filter((mp) => mp.marcher_id === marcher.id)
+                        .sort((a, b) => {
+                            const pageA = pages.find((p) => p.id === a.page_id);
+                            const pageB = pages.find((p) => p.id === b.page_id);
+                            return (pageA?.order ?? 0) - (pageB?.order ?? 0);
+                        });
 
-                return {
-                    name: marcher.name,
-                    drillNumber: marcher.drill_number,
-                    section: marcher.section || "Unsorted",
-                    renderedPage: ReactDOMServer.renderToString(
-                        <StaticMarcherCoordinateSheet
-                            marcher={marcher}
-                            pages={pages}
-                            marcherPages={marcherPages}
-                            fieldProperties={fieldProperties}
-                            includeMeasures={includeMeasures}
-                            terse={isTerse}
-                            useXY={useXY}
-                            roundingDenominator={roundingDenominator}
-                        />,
-                    ),
-                };
-            });
+                    const rowChunks = chunkArray(
+                        marcherPagesForMarcher,
+                        QUARTER_ROWS,
+                    );
+                    return rowChunks.map((rowChunk, chunkIdx) => {
+                        return {
+                            name: marcher.name,
+                            drillNumber: marcher.drill_number,
+                            section: marcher.section || "Unsorted",
+                            renderedPage: ReactDOMServer.renderToString(
+                                <StaticCompactMarcherSheet
+                                    marcher={marcher}
+                                    pages={pages}
+                                    marcherPages={rowChunk}
+                                    fieldProperties={fieldProperties}
+                                    roundingDenominator={roundingDenominator}
+                                    terse={isTerse}
+                                    quarterPageNumber={chunkIdx + 1}
+                                />,
+                            ),
+                        };
+                    });
+                },
+            );
 
-            // TODO
-            const groupedSheets = chunkArray(coordinateSheets, 4).map(
-                (group, groupIdx) => {
+            // group sheets to pages
+            const groupedSheets = chunkArray(marcherQuarterSheets, 4).map(
+                (group: any, groupIdx: any) => {
                     const gridItems = Array(4)
                         .fill(null)
                         .map((_, idx) =>
@@ -109,34 +119,35 @@ function CoordinateSheetExport() {
                         .join("");
 
                     const pageHtml = `
-                    <div style="
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        grid-template-rows: 1fr 1fr;
-                        gap: 0.5rem;
+                <div style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    grid-template-rows: 1fr 1fr;
+                    gap: 0.5rem;
+                    width: 100%;
+                    height: 100%;
+                    box-sizing: border-box;
+                    padding: 1rem;
+                ">
+                    ${gridItems}
+                </div>
+                <style>
+                    .marcher-table tr:nth-child(even) { background: #d0d0d0; }
+                    .marcher-table {
+                        box-sizing: border-box;
                         width: 100%;
                         height: 100%;
-                        box-sizing: border-box;
-                        padding: 1rem;
-                    ">
-                        ${gridItems}
-                    </div>
-                    <style>
-                        .marcher-table {
-                            box-sizing: border-box;
-                            width: 100%;
-                            height: 100%;
-                            overflow: hidden;
-                            border: 1px solid #e5e7eb;
-                            padding: 0.5rem;
-                            font-size: 80%;
-                        }
-                        .marcher-table table {
-                            width: 100% !important;
-                            font-size: 90% !important;
-                        }
-                    </style>
-                `;
+                        overflow: hidden;
+                        border: 1px solid #e5e7eb;
+                        padding: 0.5rem;
+                        font-size: 80%;
+                    }
+                    .marcher-table table {
+                        width: 100% !important;
+                        font-size: 90% !important;
+                    }
+                </style>
+            `;
                     return {
                         name: `Page ${groupIdx + 1}`,
                         drillNumber: "",

@@ -20,10 +20,7 @@ const headerHtml = ({ showName }: { showName: string }) =>
         display: flex;
         align-items: center;
         justify-content: space-between;
-        border-bottom: 1px solid #ddd;
     ">
-        <span style="font-weight: 600; color: #333;">${showName}</span>
-        <span style="font-size: 12px; color: #666;">Exported ${new Date().toLocaleDateString()}</span>
     </div>`;
 
 const footerHtml = `
@@ -33,7 +30,6 @@ const footerHtml = `
     display: flex;
     align-items: center;
     justify-content: center;
-    border-top: 1px solid #ddd;
     font-size: 10px;
     color: #999;
 ">
