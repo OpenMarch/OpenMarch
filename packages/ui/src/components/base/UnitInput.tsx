@@ -7,10 +7,11 @@ export type UnitInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
     containerClassName?: string;
     compact?: boolean;
     unit: string;
+    hidden?: boolean;
 };
 
 /**
- * An text input component that includes a unit descriptor.
+ * An text input component that includes a unit descriptor. This component is design for numerical input
  */
 export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
     ({ className, containerClassName, compact, unit, ...props }, ref) => (
@@ -24,6 +25,7 @@ export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
                     containerClassName,
                 ),
             )}
+            hidden={props.hidden ?? false}
         >
             <span className="text-body text-text-subtitle absolute mr-12 select-none">
                 {unit}
@@ -38,7 +40,7 @@ export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
                 )}
                 style={{ backgroundColor: "transparent" }}
                 ref={ref}
-                type="text"
+                type="number"
                 {...props}
             />
         </div>
