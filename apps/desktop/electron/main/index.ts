@@ -414,6 +414,9 @@ export async function newFile() {
         filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
     });
     if (path.canceled || !path.filePath) return;
+    if (fs.existsSync(path.filePath)) {
+        fs.unlinkSync(path.filePath);
+    }
 
     setActiveDb(path.filePath, true);
     const dbVersion = new CurrentDatabase(DatabaseServices.connect);
