@@ -39,6 +39,7 @@ function CoordinateSheetExport() {
     const [useXY, setUseXY] = useState(false);
     const [roundingDenominator, setRoundingDenominator] = useState(4);
     const [organizeBySection, setOrganizeBySection] = useState(false);
+    const [quarterPages, setQuarterPages] = useState(false);
     const { marchers } = useMarcherStore()!;
     const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
@@ -70,99 +71,129 @@ function CoordinateSheetExport() {
             setCurrentStep("Generating coordinate sheets...");
             setProgress(30);
 
+            let groupedSheets: any[];
+
             // split to quarter sheets
-            const marcherQuarterSheets = processedMarchers.flatMap(
-                (marcher, mIdx) => {
-                    const marcherPagesForMarcher = marcherPages
-                        .filter((mp) => mp.marcher_id === marcher.id)
-                        .sort((a, b) => {
-                            const pageA = pages.find((p) => p.id === a.page_id);
-                            const pageB = pages.find((p) => p.id === b.page_id);
-                            return (pageA?.order ?? 0) - (pageB?.order ?? 0);
+            if (quarterPages) {
+                const marcherQuarterSheets = processedMarchers.flatMap(
+                    (marcher, mIdx) => {
+                        const marcherPagesForMarcher = marcherPages
+                            .filter((mp) => mp.marcher_id === marcher.id)
+                            .sort((a, b) => {
+                                const pageA = pages.find(
+                                    (p) => p.id === a.page_id,
+                                );
+                                const pageB = pages.find(
+                                    (p) => p.id === b.page_id,
+                                );
+                                return (
+                                    (pageA?.order ?? 0) - (pageB?.order ?? 0)
+                                );
+                            });
+
+                        const rowChunks = chunkArray(
+                            marcherPagesForMarcher,
+                            QUARTER_ROWS,
+                        );
+                        return rowChunks.map((rowChunk, chunkIdx) => {
+                            return {
+                                name: marcher.name,
+                                drillNumber: marcher.drill_number,
+                                section: marcher.section || "Unsorted",
+                                renderedPage: ReactDOMServer.renderToString(
+                                    <StaticCompactMarcherSheet
+                                        marcher={marcher}
+                                        pages={pages}
+                                        marcherPages={rowChunk}
+                                        fieldProperties={fieldProperties}
+                                        roundingDenominator={
+                                            roundingDenominator
+                                        }
+                                        terse={isTerse}
+                                        quarterPageNumber={chunkIdx + 1}
+                                    />,
+                                ),
+                            };
                         });
+                    },
+                );
+                groupedSheets = chunkArray(marcherQuarterSheets, 4).map(
+                    (group: any, groupIdx: any) => {
+                        const gridItems = Array(4)
+                            .fill(null)
+                            .map((_, idx) =>
+                                group[idx]
+                                    ? `<div class="marcher-table">${group[idx].renderedPage}</div>`
+                                    : `<div class="marcher-table"></div>`,
+                            )
+                            .join("");
 
-                    const rowChunks = chunkArray(
-                        marcherPagesForMarcher,
-                        QUARTER_ROWS,
-                    );
-                    return rowChunks.map((rowChunk, chunkIdx) => {
+                        const pageHtml = `
+                            <div style="
+                                display: grid;
+                                grid-template-columns: 1fr 1fr;
+                                grid-template-rows: 1fr 1fr;
+                                gap: 0.5rem;
+                                width: 100%;
+                                height: 100%;
+                                box-sizing: border-box;
+                                padding: 1rem;
+                            ">
+                                ${gridItems}
+                            </div>
+                            <style>
+                                .marcher-table tr:nth-child(even) { background: #d0d0d0; }
+                                .marcher-table {
+                                    box-sizing: border-box;
+                                    width: 100%;
+                                    height: 100%;
+                                    overflow: hidden;
+                                    border: 1px solid #e5e7eb;
+                                    padding: 0.5rem;
+                                    font-size: 80%;
+                                }
+                                .marcher-table table {
+                                    width: 100% !important;
+                                    font-size: 90% !important;
+                                }
+                            </style>
+                            `;
                         return {
-                            name: marcher.name,
-                            drillNumber: marcher.drill_number,
-                            section: marcher.section || "Unsorted",
-                            renderedPage: ReactDOMServer.renderToString(
-                                <StaticCompactMarcherSheet
-                                    marcher={marcher}
-                                    pages={pages}
-                                    marcherPages={rowChunk}
-                                    fieldProperties={fieldProperties}
-                                    roundingDenominator={roundingDenominator}
-                                    terse={isTerse}
-                                    quarterPageNumber={chunkIdx + 1}
-                                />,
-                            ),
+                            name: `Page ${groupIdx + 1}`,
+                            drillNumber: "",
+                            section: group[0]?.section,
+                            renderedPage: pageHtml,
                         };
-                    });
-                },
-            );
-
-            // group sheets to pages
-            const groupedSheets = chunkArray(marcherQuarterSheets, 4).map(
-                (group: any, groupIdx: any) => {
-                    const gridItems = Array(4)
-                        .fill(null)
-                        .map((_, idx) =>
-                            group[idx]
-                                ? `<div class="marcher-table">${group[idx].renderedPage}</div>`
-                                : `<div class="marcher-table"></div>`,
-                        )
-                        .join("");
-
-                    const pageHtml = `
-                <div style="
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    grid-template-rows: 1fr 1fr;
-                    gap: 0.5rem;
-                    width: 100%;
-                    height: 100%;
-                    box-sizing: border-box;
-                    padding: 1rem;
-                ">
-                    ${gridItems}
-                </div>
-                <style>
-                    .marcher-table tr:nth-child(even) { background: #d0d0d0; }
-                    .marcher-table {
-                        box-sizing: border-box;
-                        width: 100%;
-                        height: 100%;
-                        overflow: hidden;
-                        border: 1px solid #e5e7eb;
-                        padding: 0.5rem;
-                        font-size: 80%;
-                    }
-                    .marcher-table table {
-                        width: 100% !important;
-                        font-size: 90% !important;
-                    }
-                </style>
-            `;
-                    return {
-                        name: `Page ${groupIdx + 1}`,
-                        drillNumber: "",
-                        section: group[0]?.section,
-                        renderedPage: pageHtml,
-                    };
-                },
-            );
+                    },
+                );
+            } else {
+                // regular format
+                groupedSheets = processedMarchers.map((marcher) => ({
+                    name: marcher.name,
+                    drillNumber: marcher.drill_number,
+                    section: marcher.section || "Unsorted",
+                    renderedPage: ReactDOMServer.renderToString(
+                        <StaticMarcherCoordinateSheet
+                            marcher={marcher}
+                            pages={pages}
+                            marcherPages={marcherPages}
+                            fieldProperties={fieldProperties}
+                            includeMeasures={includeMeasures}
+                            terse={isTerse}
+                            useXY={useXY}
+                            roundingDenominator={roundingDenominator}
+                        />,
+                    ),
+                }));
+            }
 
             setCurrentStep("Generating PDF...");
             setProgress(85);
 
             const result = await window.electron.export.pdf({
                 sheets: groupedSheets,
-                organizeBySection,
+                organizeBySection: organizeBySection,
+                quarterPages: quarterPages,
             });
 
             if (!result.success) {
@@ -222,6 +253,7 @@ function CoordinateSheetExport() {
                         Include measures{" "}
                     </Form.Label>
                 </Form.Field>
+
                 <Form.Field
                     name="abbreviateCoordinateDescriptions"
                     className="flex w-full items-center gap-12"
@@ -229,9 +261,11 @@ function CoordinateSheetExport() {
                     <Form.Control asChild>
                         <Checkbox
                             checked={isTerse}
-                            onCheckedChange={(checked: boolean) =>
-                                setIsTerse(checked)
-                            }
+                            onCheckedChange={(checked: boolean) => {
+                                if (!quarterPages || checked) {
+                                    setIsTerse(checked);
+                                }
+                            }}
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
@@ -239,6 +273,7 @@ function CoordinateSheetExport() {
                         Abbreviate coordinate descriptions{" "}
                     </Form.Label>
                 </Form.Field>
+
                 <Form.Field
                     name="useXYHeaders"
                     className="flex w-full items-center gap-12"
@@ -256,30 +291,24 @@ function CoordinateSheetExport() {
                         Use X/Y headers{" "}
                     </Form.Label>
                 </Form.Field>
+
                 <Form.Field
-                    name="roundingDenominator"
-                    className="flex w-full items-center justify-between gap-12"
+                    name="quarterPageLayout"
+                    className="flex w-full items-center gap-12"
                 >
-                    <Form.Label className="text-body">
-                        {" "}
-                        Rounding denominator:{" "}
-                    </Form.Label>
-                    <Form.Control asChild className="w-[6rem]">
-                        <Input
-                            type="number"
-                            className="w-fit"
-                            defaultValue={roundingDenominator}
-                            step={1}
-                            min={1}
-                            onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>,
-                            ) =>
-                                setRoundingDenominator(
-                                    parseInt(e.target.value) || 4,
-                                )
-                            }
+                    <Form.Control asChild>
+                        <Checkbox
+                            checked={quarterPages}
+                            onCheckedChange={(checked: boolean) => {
+                                setIsTerse(checked);
+                                setQuarterPages(checked);
+                            }}
                         />
                     </Form.Control>
+                    <Form.Label className="text-body">
+                        {" "}
+                        Quarter-page layout{" "}
+                    </Form.Label>
                 </Form.Field>
 
                 <Form.Field
@@ -317,6 +346,32 @@ function CoordinateSheetExport() {
                             </TooltipContents>
                         </Tooltip.Root>
                     </Tooltip.TooltipProvider>
+                </Form.Field>
+
+                <Form.Field
+                    name="roundingDenominator"
+                    className="flex w-full items-center justify-between gap-12"
+                >
+                    <Form.Label className="text-body">
+                        {" "}
+                        Rounding denominator:{" "}
+                    </Form.Label>
+                    <Form.Control asChild className="w-[6rem]">
+                        <Input
+                            type="number"
+                            className="w-fit"
+                            defaultValue={roundingDenominator}
+                            step={1}
+                            min={1}
+                            onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                            ) =>
+                                setRoundingDenominator(
+                                    parseInt(e.target.value) || 4,
+                                )
+                            }
+                        />
+                    </Form.Control>
                 </Form.Field>
             </Form.Root>
 

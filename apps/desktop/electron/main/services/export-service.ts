@@ -38,7 +38,10 @@ const footerHtml = `
 `;
 
 export class PDFExportService {
-    private static async generateSinglePDF(pages: string[]) {
+    private static async generateSinglePDF(
+        pages: string[],
+        quarterPages: boolean,
+    ) {
         return new Promise<Buffer>((resolve, reject) => {
             const win = new BrowserWindow({
                 width: 1200,
@@ -72,13 +75,17 @@ export class PDFExportService {
             win.webContents.on("did-finish-load", () => {
                 win.webContents
                     .printToPDF({
-                        margins: {
-                            marginType: "custom",
-                            top: 0,
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                        },
+                        margins: quarterPages
+                            ? {
+                                  marginType: "custom",
+                                  top: 0,
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                              }
+                            : {
+                                  marginType: "default", // or set custom values (e.g. top: 36, bottom: 36, etc.)
+                              },
                         pageSize: "Letter",
                         printBackground: true,
                         headerTemplate: headerHtml({
@@ -173,6 +180,7 @@ export class PDFExportService {
     public static async export(
         sheets: ExportSheet[],
         organizeBySection: boolean,
+        quarterPages: boolean,
     ) {
         try {
             if (organizeBySection) {
@@ -193,6 +201,7 @@ export class PDFExportService {
             } else {
                 const pdfBuffer = await this.generateSinglePDF(
                     sheets.map((s) => s.renderedPage),
+                    quarterPages,
                 );
 
                 const result = await dialog.showSaveDialog({
