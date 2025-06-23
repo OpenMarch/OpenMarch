@@ -55,7 +55,7 @@ jobs:
                   SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
 
             - name: Prepare for app notarization
-              if: startsWith(matrix.os, 'macos') && steps.release.outputs.RELEASE == 'true'
+              if: ${{ startsWith(matrix.os, 'macos') && steps.release.outputs.RELEASE == 'true' }}
               run: |
                   mkdir -p ~/private_keys/
                   echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
