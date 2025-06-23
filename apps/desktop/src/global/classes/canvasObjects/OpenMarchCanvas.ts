@@ -2,6 +2,7 @@ import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 import StaticCanvasMarcher from "./StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
+import { Midpoint } from "./Midpoint";
 import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
@@ -1056,6 +1057,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         dashed?: boolean;
     }) => {
         const createdPathways: Pathway[] = [];
+        const createdMidpoints: Midpoint[] = [];
+
         endPageMarcherPages.forEach((previousMarcherPage) => {
             const selectedMarcherPage = startPageMarcherPages.find(
                 (marcherPage) =>
@@ -1070,6 +1073,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 return;
             }
 
+            // Add pathways
             const pathway = new Pathway({
                 start: previousMarcherPage,
                 end: selectedMarcherPage,
@@ -1080,9 +1084,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             });
             createdPathways.push(pathway);
             this.add(pathway);
+
+            // Add midpoints
+            const midpoint = new Midpoint({
+                start: previousMarcherPage,
+                end: selectedMarcherPage,
+                color: "red",
+                marcherId: previousMarcherPage.marcher_id,
+            });
+            createdMidpoints.push(midpoint);
+            this.add(midpoint);
         });
         this.requestRenderAll();
-        return createdPathways;
+        return [createdPathways, createdMidpoints];
     };
 
     /**
