@@ -20,7 +20,7 @@ import { CURRENT_VERSION } from "@/constants";
                     Download the Modern <br /> Drill Writing App
                 </h1>
                 <p class="text-center text-lg max-[600px]:text-base">
-                    <span class="font-bold" id="download-count">4,000+</span>
+                    <span class="font-bold" id="download-count">5,000+</span>
                     downloads and counting!
                 </p>
             </div>
@@ -110,7 +110,7 @@ import { CURRENT_VERSION } from "@/constants";
                         cache: "no-cache",
                     },
                 );
-                if (!response.ok) return "4,000+";
+                if (!response.ok) return "5,000+";
                 const releases = await response.json();
                 let totalDownloads = 0;
                 for (const release of releases) {
@@ -120,7 +120,7 @@ import { CURRENT_VERSION } from "@/constants";
                 }
                 return totalDownloads.toLocaleString();
             } catch {
-                return "4,000+";
+                return "5,000+";
             }
         }
         getTotalDownloadCount().then((count) => {
