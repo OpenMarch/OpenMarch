@@ -1,5 +1,46 @@
 # Windows deploy script
 
+## Preparation
+
+1. Install chocolately
+1. Install required dependencies
+
+   ```powershell
+   choco install python
+   choco install nodejs --version 20
+   choco install gh
+   choco install git
+   choco install pnpm
+   pnpm install -g node-gyp
+   ```
+
+1. Install visual studio (is this needed?)
+1. Download windows sdk (for signtool)
+   - https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/
+
+## Building and packaging
+
+```powershell
+gh repo clone OpenMarch/OpenMarch
+cd OpenMarch
+
+# Change to the desktop folder
+cd apps/desktop
+
+pnpm i
+
+cd apps\desktop
+
+# Build for production
+pnpm run build
+
+$env:GH_TOKEN = gh auth token
+pnpm exec .\node_modules\.bin\electron-builder -w --publish=always
+
+```
+
+### Old instructions
+
 These are hacky instructions for deploying on windows.
 I hope to get this in a smoother powershell script.
 
