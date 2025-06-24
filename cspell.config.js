@@ -90,6 +90,7 @@ module.exports = {
         "apikey",
         "madripoor",
         "rgba",
+        "choco",
     ],
     ignorePaths: [
         "node_modules/**",
