@@ -1085,15 +1085,21 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             createdPathways.push(pathway);
             this.add(pathway);
 
-            // Add midpoints
-            const midpoint = new Midpoint({
-                start: previousMarcherPage,
-                end: selectedMarcherPage,
-                color: "red",
-                marcherId: previousMarcherPage.marcher_id,
-            });
-            createdMidpoints.push(midpoint);
-            this.add(midpoint);
+            // Add midpoints if the marcher moves
+            if (
+                previousMarcherPage.x !== selectedMarcherPage.x ||
+                previousMarcherPage.y !== selectedMarcherPage.y
+            ) {
+                const midpoint = new Midpoint({
+                    start: previousMarcherPage,
+                    end: selectedMarcherPage,
+                    color: "red",
+                    marcherId: previousMarcherPage.marcher_id,
+                });
+
+                createdMidpoints.push(midpoint);
+                this.add(midpoint);
+            }
         });
         this.requestRenderAll();
         return [createdPathways, createdMidpoints];
