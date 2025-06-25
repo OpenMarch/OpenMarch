@@ -461,12 +461,16 @@ function DrillChartExport() {
     const { fieldProperties } = useFieldProperties()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { marchers } = useMarcherStore()!;
+
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
 
-    // Export all pages as PDF
-    const exportAllPagesAsPdf = useCallback(async () => {
+    const padding = 30;
+    const zoom = 0.7;
+
+    // Create SVGs from pages and export
+    const generateExportSVGs = useCallback(async () => {
         setIsLoading(true);
         setProgress(0);
         setCurrentStep("Initializing export...");
@@ -478,44 +482,36 @@ function DrillChartExport() {
         const totalSteps = pages.length;
         const progressPerPage = 90 / totalSteps;
 
-        const exportCanvas: OpenMarchCanvas = window.canvas;
+        const exportCanvas = window.canvas;
         exportCanvas.setWidth(1320);
         exportCanvas.setHeight(730);
         exportCanvas.setZoom(1);
-        exportCanvas.viewportTransform = [0.7, 0, 0, 0.7, 30, 30];
+        exportCanvas.viewportTransform = [zoom, 0, 0, zoom, padding, padding];
         exportCanvas.requestRenderAll();
 
         for (let i = 0; i < pages.length; i++) {
-            const page = pages[i];
+            // Update page
+            exportCanvas.currentPage = pages[i];
             setCurrentStep(
-                `Processing page ${i + 1} of ${pages.length}: ${page.name}`,
+                `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
             );
 
-            // Set the current page
-            exportCanvas.currentPage = page;
-
-            // Get marcher pages for this page
+            // Get marcherPages for page
             const currentPageMarcherPages = marcherPages.filter(
-                (mp) => mp.page_id === page.id,
+                (mp) => mp.page_id === exportCanvas.currentPage.id,
             );
 
-            // Render marchers for this page using the same method as the main canvas
+            // Render marchers for this page
             await exportCanvas.renderMarchers({
                 currentMarcherPages: currentPageMarcherPages,
                 allMarchers: marchers,
             });
 
             // Generate SVG
-            let svg = exportCanvas.toSVG();
-
-            svgPages.push(svg);
+            svgPages.push(exportCanvas.toSVG());
 
             // Update progress smoothly
-            const newProgress = (i + 1) * progressPerPage;
-            setProgress(newProgress);
-
-            // Small delay to allow UI to update
-            await new Promise((resolve) => setTimeout(resolve, 50));
+            setProgress((i + 1) * progressPerPage);
         }
 
         // Final step: Generate PDF
@@ -526,19 +522,17 @@ function DrillChartExport() {
         const result = await window.electron.export.svgPagesToPdf(svgPages, {
             fileName,
         });
-
         if (!result.success) {
             console.error("PDF export failed with error:", result.error);
             throw new Error(result.error);
         }
 
+        // Success
         setProgress(100);
         setCurrentStep("Export completed!");
-
-        // Enhanced success toast with more details
         const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
-
         toast.success(successMessage);
+        setIsLoading(false);
     }, [pages, marcherPages, marchers]);
 
     // Check if we have the minimum requirements for export
@@ -550,30 +544,6 @@ function DrillChartExport() {
 
     return (
         <div className="flex flex-col gap-20">
-            {/* Export Options */}
-            <Form.Root className="flex flex-col gap-y-24">
-                <Form.Field
-                    name="includeTitle"
-                    className="flex w-full items-center gap-12"
-                >
-                    <Form.Label className="text-body">
-                        Include file title
-                    </Form.Label>
-                </Form.Field>
-            </Form.Root>
-
-            {/* Preview Section */}
-            {canExport && (
-                <div className="flex flex-col gap-8">
-                    <div className="flex w-full items-center justify-between">
-                        <h5 className="text-h5">Preview</h5>
-                        <p className="text-sub text-text/75">
-                            First drill page preview
-                        </p>
-                    </div>
-                </div>
-            )}
-
             {/* Export Status */}
             {!canExport && (
                 <div className="flex flex-col items-center justify-center gap-12 rounded-lg bg-gray-50 py-20">
@@ -598,7 +568,7 @@ function DrillChartExport() {
             <div className="flex w-full justify-end gap-8">
                 <Button
                     size="compact"
-                    onClick={exportAllPagesAsPdf}
+                    onClick={generateExportSVGs}
                     disabled={isLoading || !canExport}
                 >
                     {isLoading ? "Exporting... Please wait" : "Export"}
