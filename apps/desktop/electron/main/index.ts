@@ -421,7 +421,7 @@ export async function newFile() {
 
     setActiveDb(path.filePath, true);
     const dbVersion = new CurrentDatabase(DatabaseServices.connect);
-    dbVersion.createTables();
+    dbVersion.createTables(app.getAppPath());
     win?.webContents.reload();
 
     return 200;
@@ -843,7 +843,7 @@ function setActiveDb(path: string, isNewFile = false) {
         // If this isn't a new file, check if a migration is needed
         if (isNewFile) {
             console.log(`Creating new database at ${path}`);
-            migrator.createTables();
+            migrator.createTables(app.getAppPath());
         } else {
             console.log(
                 "Checking database version to see if migration is needed",

@@ -6,6 +6,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "../migrations/schema";
 import { Constants, TablesWithHistory } from "../../../src/global/Constants";
 import FieldPropertiesTemplates from "../../../src/global/classes/fieldTemplates/Football";
+import path from "path";
 
 export const DrizzleMigration0Hash =
     "62261a3070d5aa48d8ac995b86a64d8aefa2d48d37fb3924fe85a2a08a7fd67c";
@@ -59,7 +60,11 @@ export default class v7 extends v6 {
     /**
      * Creates tables for a fresh v7 database (includes Drizzle setup)
      */
-    async createTables(): Promise<void> {
+    async createTables(appPath?: string): Promise<void> {
+        if (!appPath) {
+            throw new Error("App path is required");
+        }
+
         const db = this.databaseConnector();
         if (!db) throw new Error("Failed to connect to database.");
 
@@ -75,7 +80,9 @@ export default class v7 extends v6 {
         await new DrizzleMigrationService(
             drizzle(db, { schema }),
             db,
-        ).applyPendingMigrations();
+        ).applyPendingMigrations(
+            path.join(appPath, "electron/database/migrations"),
+        );
 
         // Easier to do this here than in the migration
         const stmt = db.prepare(`

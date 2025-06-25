@@ -2,6 +2,7 @@ import { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import Database from "better-sqlite3";
 import * as schema from "../migrations/schema";
+import path from "path";
 
 export type DB = BetterSQLite3Database<typeof schema>;
 
@@ -23,12 +24,17 @@ export class DrizzleMigrationService {
      * This uses Drizzle's built-in migration functionality
      */
     async applyPendingMigrations(migrationsFolder?: string): Promise<void> {
-        const folder = migrationsFolder || "./electron/database/migrations";
+        const folder =
+            migrationsFolder || path.join(__dirname, "../migrations");
+        console.log("migrationsFolder", folder);
 
         try {
             console.log("Applying pending Drizzle migrations...");
 
-            await migrate(this.db, { migrationsFolder: folder });
+            await migrate(this.db, {
+                migrationsFolder: folder,
+                migrationsTable: "__drizzle_migrations",
+            });
 
             console.log("Drizzle migrations applied successfully.");
         } catch (error) {
