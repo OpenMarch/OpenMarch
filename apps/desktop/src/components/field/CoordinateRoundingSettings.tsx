@@ -1,9 +1,9 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { Input } from "@openmarch/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import * as Form from "@radix-ui/react-form";
 import clsx from "clsx";
-import { ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
+import { ToggleGroup, ToggleGroupItem, UnitInput } from "@openmarch/ui";
 import FormField from "../ui/FormField";
 
 const STEP_OPTIONS = [2, 1, 0.5, 0.25];
@@ -150,12 +150,17 @@ function AxisSettings({
                     placeholder="steps"
                 />
                 {showReferencePoint && (
-                    <div className={"flex h-[40px] w-full justify-end gap-8"}>
-                        <label className={labelClassname}>Offset</label>
+                    <div
+                        className={
+                            "flex h-fit w-full items-center justify-end gap-8 py-6"
+                        }
+                    >
+                        <p className="text-body text-text/80 w-full">Offset</p>
                         <UnitInput
                             unit="steps"
                             type="number"
                             size={8}
+                            compact
                             className="w-[6rem]"
                             inputMode="numeric"
                             pattern="-?[0-9]*\.?[0-9]*"
