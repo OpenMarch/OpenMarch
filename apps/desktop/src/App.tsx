@@ -28,7 +28,7 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 
-// app
+// The app
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
