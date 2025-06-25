@@ -471,24 +471,28 @@ function DrillChartExport() {
 
     // Create SVGs from pages and export
     const generateExportSVGs = useCallback(async () => {
+        // Setup
         setIsLoading(true);
-        setProgress(0);
         setCurrentStep("Initializing export...");
+        setProgress(0);
+        const progressPerPage = 90 / pages.length;
 
-        const svgPages: string[] = [];
-        let fileName = "drill-charts.pdf";
-
-        // Calculate progress steps: each page takes 90% of progress, final PDF generation takes 10%
-        const totalSteps = pages.length;
-        const progressPerPage = 90 / totalSteps;
-
+        // Setup canvas and store original state for SVG creation and restore
         const exportCanvas = window.canvas;
+        const originalWidth = exportCanvas.getWidth();
+        const originalHeight = exportCanvas.getHeight();
+        const originalViewportTransform =
+            exportCanvas.viewportTransform.slice();
+
         exportCanvas.setWidth(1320);
         exportCanvas.setHeight(730);
-        exportCanvas.setZoom(1);
         exportCanvas.viewportTransform = [zoom, 0, 0, zoom, padding, padding];
         exportCanvas.requestRenderAll();
 
+        const svgPages: string[] = [];
+        const fileName = "drill-charts.pdf";
+
+        // Generate SVGs for each page
         for (let i = 0; i < pages.length; i++) {
             // Update page
             exportCanvas.currentPage = pages[i];
@@ -514,7 +518,13 @@ function DrillChartExport() {
             setProgress((i + 1) * progressPerPage);
         }
 
-        // Final step: Generate PDF
+        // Restore canvas to original state
+        exportCanvas.setWidth(originalWidth);
+        exportCanvas.setHeight(originalHeight);
+        exportCanvas.viewportTransform = originalViewportTransform;
+        exportCanvas.requestRenderAll();
+
+        // Generate PDF
         setCurrentStep("Generating PDF file...");
         setProgress(95);
 
