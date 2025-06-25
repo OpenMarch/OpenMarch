@@ -556,7 +556,8 @@ function DrillChartExport() {
 
         try {
             const firstPage = pages[0];
-            const { exportCanvas, padding } = await createExportCanvas(true);
+            let padding = 10;
+            let exportCanvas = window.canvas;
 
             try {
                 // Set the current page
@@ -583,7 +584,7 @@ function DrillChartExport() {
 
                     // Move everything by the padding amount to center it, plus extra space for branding header
                     const brandingOffset = 60; // Reduced space for simpler header
-                    allObjects.forEach((obj) => {
+                    allObjects.forEach((obj: any) => {
                         if (obj.left !== undefined) {
                             obj.set({ left: obj.left + padding });
                         }
@@ -719,8 +720,8 @@ function DrillChartExport() {
                     `Processing page ${i + 1} of ${pages.length}: ${page.name}`,
                 );
 
-                const { exportCanvas, padding } =
-                    await createExportCanvas(true);
+                let padding = 10;
+                let exportCanvas = window.canvas;
 
                 try {
                     // Set the current page
@@ -747,7 +748,7 @@ function DrillChartExport() {
 
                         // Move everything by the padding amount to center it, plus extra space for branding header
                         const brandingOffset = 60; // Reduced space for simpler header
-                        allObjects.forEach((obj) => {
+                        allObjects.forEach((obj: any) => {
                             if (obj.left !== undefined) {
                                 obj.set({ left: obj.left + padding });
                             }
@@ -800,7 +801,7 @@ function DrillChartExport() {
                     svgPages.push(svg);
                 } finally {
                     // Clean up the export canvas
-                    exportCanvas.dispose();
+                    //exportCanvas.dispose();
                 }
 
                 // Update progress smoothly
