@@ -28,10 +28,11 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest",
-        "test:prepare": "pnpm rebuild better-sqlite3  ",
+        "test:prepare": "pnpm rebuild better-sqlite3",
         "test:run": "vitest run",
         "test:coverage": "pnpm test:run -- --coverage",
-        "test:clearCache": "vitest --clearCache"
+        "test:clearCache": "vitest --clearCache",
+        "create-migration": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate"
     },
     "dependencies": {
         "@fontsource/dm-mono": "^5.2.5",

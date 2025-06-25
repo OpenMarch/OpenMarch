@@ -26,7 +26,7 @@ export default abstract class DatabaseMigrator {
      * This method should be implemented by concrete subclasses of `DatabaseMigrator`
      * to handle the creation of tables specific to that database version.
      */
-    abstract createTables(version?: number): void;
+    abstract createTables(version?: number, appPath?: string): void;
 
     /**
      * Creates a database table with the specified schema and optionally creates undo triggers for the table.
