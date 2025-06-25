@@ -1,24 +1,24 @@
 import { useState, useCallback } from "react";
 import { DragInput } from "@openmarch/ui";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { rotate } from "@/utilities/CoordinateActions";
-import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import Marcher from "@/global/classes/Marcher";
+import MarcherPage from "@/global/classes/MarcherPage";
+import Page from "@/global/classes/Page";
+import { rotateGroup } from "@/global/classes/canvasObjects/GroupUtils";
 
 function MarcherRotationInput({
     selectedMarchers,
     marcherPages,
     selectedPage,
-}: any) {
+}: {
+    selectedMarchers: Marcher[];
+    marcherPages: MarcherPage[];
+    selectedPage: Page;
+}) {
     const [rotationAngle, setRotationAngle] = useState<number>(0);
     const [isRotating, setIsRotating] = useState(false);
 
     const handleRotation = useCallback(() => {
-        // TODO: Implement rotation logic
-        // This will need to:
-        // 1. Get the center point of the selected marchers
-        // 2. Convert marcherPages to IdPoint format
-        // 3. Call the rotate function
-        // 4. Update the marcherPages with the new coordinates
         console.log("Rotating to:", rotationAngle.toFixed(1), "degrees");
     }, [rotationAngle]);
 
@@ -33,22 +33,18 @@ function MarcherRotationInput({
 
     const handleRotationChange = useCallback((newAngle: number) => {
         const canvas: OpenMarchCanvas = window.canvas;
-        const objectsToRotate = canvas.getActiveObjectsByType(CanvasMarcher);
-        const rotatedObjects = rotate({
-            objects: objectsToRotate.map((o) => {
-                return { x: o.left!, y: o.top!, id: o.marcherObj.id };
-            }),
-            center: { x: 0, y: 0 },
-            angle: newAngle,
-        });
-        canvas.setLocalCoordinates(rotatedObjects);
-        setRotationAngle(newAngle);
+        if (canvas.activeGroup) {
+            rotateGroup({
+                group: canvas.activeGroup,
+                angle: newAngle,
+            });
+        }
     }, []);
 
     return (
         <div className="flex flex-col gap-8">
             <DragInput
-                dragSensitivity={0.01}
+                dragSensitivity={0.1}
                 value={rotationAngle}
                 onDragChange={handleRotationChange}
                 onDragStart={handleRotationStart}

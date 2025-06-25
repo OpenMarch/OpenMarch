@@ -171,6 +171,8 @@ function MarcherEditor() {
         resetForm();
     }, [selectedMarchers, rCoords, resetForm]);
 
+    if (!selectedPage) return <>No page selected</>;
+
     return (
         <>
             {selectedMarchers.length > 0 && fieldProperties && (

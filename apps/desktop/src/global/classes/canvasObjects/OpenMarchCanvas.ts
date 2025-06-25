@@ -144,6 +144,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private panSensitivity = 0.5; // Reduced for smoother panning
     private zoomSensitivity = 0.03; // Reduced for gentler zooming
     private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
+    private _activeGroup: fabric.Group | null = null;
 
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
@@ -226,8 +227,26 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.refreshBackgroundImage();
 
         this.requestRenderAll();
+
+        this.on("selection:created", this.handleGroupSelection);
+        this.on("selection:updated", this.handleGroupSelection);
+        this.on("selection:cleared", this.handleGroupSelection);
     }
 
+    /******************* GROUP SELECTION HANDLING *******************/
+
+    handleGroupSelection(event: fabric.IEvent<MouseEvent>) {
+        if (event.selected?.length && event.selected.length > 1) {
+            this._activeGroup = this.getActiveObject() as fabric.Group;
+        } else {
+            this._activeGroup = null;
+        }
+        console.log("handleGroupSelection", this._activeGroup);
+    }
+
+    get activeGroup() {
+        return this._activeGroup;
+    }
     /******************* ADVANCED EVENT HANDLERS ******************/
 
     /**

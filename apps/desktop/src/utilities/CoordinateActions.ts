@@ -409,38 +409,38 @@ export function moveMarchersXY({
 
     return movedPages;
 }
-type Point = {
-    x: number;
-    y: number;
-};
+// type Point = {
+//     x: number;
+//     y: number;
+// };
 
-type IdPoint = Point & {
-    id: number;
-};
+// type IdPoint = Point & {
+//     id: number;
+// };
 
-/**
- * Rotates the given objects around the given center point by the given angle.
- *
- * @param objects - The objects to rotate.
- * @param center - The center point to rotate around.
- * @param angle - The angle to rotate by in radians.
- * @returns The rotated objects.
- */
-export const rotate = ({
-    objects,
-    center,
-    angle,
-}: {
-    objects: IdPoint[];
-    center: Point;
-    angle: number;
-}) => {
-    const rotated = objects.map(({ id, x, y }) => {
-        const dx = x - center.x;
-        const dy = y - center.y;
-        const newX = center.x + dx * Math.cos(angle) - dy * Math.sin(angle);
-        const newY = center.y + dx * Math.sin(angle) + dy * Math.cos(angle);
-        return { id, x: newX, y: newY };
-    });
-    return rotated;
-};
+// /**
+//  * Rotates the given objects around the given center point by the given angle.
+//  *
+//  * @param objects - The objects to rotate.
+//  * @param center - The center point to rotate around.
+//  * @param angle - The angle to rotate by in radians.
+//  * @returns The rotated objects.
+//  */
+// export const rotate = ({
+//     objects,
+//     center,
+//     angle,
+// }: {
+//     objects: IdPoint[];
+//     center: Point;
+//     angle: number;
+// }) => {
+//     const rotated = objects.map(({ id, x, y }) => {
+//         const dx = x - center.x;
+//         const dy = y - center.y;
+//         const newX = center.x + dx * Math.cos(angle) - dy * Math.sin(angle);
+//         const newY = center.y + dx * Math.sin(angle) + dy * Math.cos(angle);
+//         return { id, x: newX, y: newY };
+//     });
+//     return rotated;
+// };
