@@ -5,7 +5,7 @@ export const initTestDatabase = (): Database.Database => {
     const db = new Database(":memory:");
     const dbBuilder = new CurrentDatabase(() => db);
 
-    dbBuilder.createTables();
+    dbBuilder.createTables(".");
     // create 16 beats
 
     for (let x = 0; x < 16; x++) {

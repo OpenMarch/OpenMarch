@@ -74,7 +74,7 @@ describe("Database v7 Migration Tests (Drizzle Transition)", () => {
             // create a new db on v7 directly
             const db2 = new Database(":memory:");
             const v7Migrator2 = new v7(() => db2);
-            await v7Migrator2.createTables();
+            await v7Migrator2.createTables(".");
 
             // expect their schemas to match
             const dbString = dumpSchema(db);

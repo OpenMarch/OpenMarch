@@ -558,97 +558,81 @@ function DrillChartExport() {
             const firstPage = pages[0];
             const { exportCanvas, padding } = await createExportCanvas(true);
 
-            try {
-                // Set the current page
-                exportCanvas.currentPage = firstPage;
+            // Set the current page
+            exportCanvas.currentPage = firstPage;
 
-                // Get marcher pages for this page
-                const currentPageMarcherPages = marcherPages.filter(
-                    (mp) => mp.page_id === firstPage.id,
-                );
+            // Get marcher pages for this page
+            const currentPageMarcherPages = marcherPages.filter(
+                (mp) => mp.page_id === firstPage.id,
+            );
 
-                // Render marchers for this page using the same method as the main canvas
-                await exportCanvas.renderMarchers({
-                    currentMarcherPages: currentPageMarcherPages,
-                    allMarchers: marchers,
+            // Render marchers for this page using the same method as the main canvas
+            await exportCanvas.renderMarchers({
+                currentMarcherPages: currentPageMarcherPages,
+                allMarchers: marchers,
+            });
+
+            // Wait for render to complete
+            await new Promise((resolve) => setTimeout(resolve, 200));
+
+            // If we have padding, translate the entire canvas content to center it
+            if (padding > 0) {
+                // Get all objects on the canvas
+                const allObjects = exportCanvas.getObjects();
+
+                // Move everything by the padding amount to center it, plus extra space for branding header
+                const brandingOffset = 60; // Reduced space for simpler header
+                allObjects.forEach((obj) => {
+                    if (obj.left !== undefined) {
+                        obj.set({ left: obj.left + padding });
+                    }
+                    if (obj.top !== undefined) {
+                        obj.set({
+                            top: obj.top + padding + brandingOffset,
+                        });
+                    }
+                    obj.setCoords();
                 });
 
-                // Wait for render to complete
-                await new Promise((resolve) => setTimeout(resolve, 200));
+                exportCanvas.requestRenderAll();
+            }
 
-                // If we have padding, translate the entire canvas content to center it
-                if (padding > 0) {
-                    // Get all objects on the canvas
-                    const allObjects = exportCanvas.getObjects();
+            // Generate SVG
+            let svg = exportCanvas.toSVG();
 
-                    // Move everything by the padding amount to center it, plus extra space for branding header
-                    const brandingOffset = 60; // Reduced space for simpler header
-                    allObjects.forEach((obj) => {
-                        if (obj.left !== undefined) {
-                            obj.set({ left: obj.left + padding });
-                        }
-                        if (obj.top !== undefined) {
-                            obj.set({
-                                top: obj.top + padding + brandingOffset,
-                            });
-                        }
-                        obj.setCoords();
-                    });
-
-                    exportCanvas.requestRenderAll();
-                }
-
-                // Generate SVG
-                let svg = exportCanvas.toSVG();
-
-                // Add title to preview if enabled
-                let titleElement = "";
-                if (includeTitle) {
-                    try {
-                        const currentFilename =
-                            await window.electron.getCurrentFilename();
-                        if (currentFilename) {
-                            // Extract just the filename without path and extension
-                            const baseFilename =
-                                currentFilename
-                                    .split("/")
-                                    .pop()
-                                    ?.split("\\")
-                                    .pop()
-                                    ?.replace(/\.[^/.]+$/, "") ||
-                                currentFilename;
-                            const titleText = `${baseFilename} - Page ${firstPage.name}`;
-                            titleElement = `
+            // Add title to preview if enabled
+            let titleElement = "";
+            if (includeTitle) {
+                try {
+                    const currentFilename =
+                        await window.electron.getCurrentFilename();
+                    if (currentFilename) {
+                        // Extract just the filename without path and extension
+                        const baseFilename =
+                            currentFilename
+                                .split("/")
+                                .pop()
+                                ?.split("\\")
+                                .pop()
+                                ?.replace(/\.[^/.]+$/, "") || currentFilename;
+                        const titleText = `${baseFilename} - Page ${firstPage.name}`;
+                        titleElement = `
                                 <!-- Page Title -->
                                 <text x="50%" y="90" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#1F2937">${titleText}</text>
                             `;
-                        }
-                    } catch (error) {
-                        console.warn(
-                            "Could not add title to preview SVG:",
-                            error,
-                        );
                     }
-                }
-
-                // Insert title after the opening SVG tag
-                if (titleElement) {
-                    svg = svg.replace(/(<svg[^>]*>)/, `$1${titleElement}`);
-                }
-
-                setPreviewSvg(svg);
-                setPreviewGenerated(true);
-            } finally {
-                // Clean up the export canvas
-                try {
-                    exportCanvas.dispose();
-                } catch (disposeError) {
-                    console.warn(
-                        "Error disposing export canvas:",
-                        disposeError,
-                    );
+                } catch (error) {
+                    console.warn("Could not add title to preview SVG:", error);
                 }
             }
+
+            // Insert title after the opening SVG tag
+            if (titleElement) {
+                svg = svg.replace(/(<svg[^>]*>)/, `$1${titleElement}`);
+            }
+
+            setPreviewSvg(svg);
+            setPreviewGenerated(true);
         } catch (error) {
             console.error("Error generating preview:", error);
             // Set an error state or show a fallback
@@ -722,86 +706,81 @@ function DrillChartExport() {
                 const { exportCanvas, padding } =
                     await createExportCanvas(true);
 
-                try {
-                    // Set the current page
-                    exportCanvas.currentPage = page;
+                // Set the current page
+                exportCanvas.currentPage = page;
 
-                    // Get marcher pages for this page
-                    const currentPageMarcherPages = marcherPages.filter(
-                        (mp) => mp.page_id === page.id,
-                    );
+                // Get marcher pages for this page
+                const currentPageMarcherPages = marcherPages.filter(
+                    (mp) => mp.page_id === page.id,
+                );
 
-                    // Render marchers for this page using the same method as the main canvas
-                    await exportCanvas.renderMarchers({
-                        currentMarcherPages: currentPageMarcherPages,
-                        allMarchers: marchers,
+                // Render marchers for this page using the same method as the main canvas
+                await exportCanvas.renderMarchers({
+                    currentMarcherPages: currentPageMarcherPages,
+                    allMarchers: marchers,
+                });
+
+                // Wait for render to complete
+                await new Promise((resolve) => setTimeout(resolve, 200));
+
+                // If we have padding, translate the entire canvas content to center it
+                if (padding > 0) {
+                    // Get all objects on the canvas
+                    const allObjects = exportCanvas.getObjects();
+
+                    // Move everything by the padding amount to center it, plus extra space for branding header
+                    const brandingOffset = 60; // Reduced space for simpler header
+                    allObjects.forEach((obj) => {
+                        if (obj.left !== undefined) {
+                            obj.set({ left: obj.left + padding });
+                        }
+                        if (obj.top !== undefined) {
+                            obj.set({
+                                top: obj.top + padding + brandingOffset,
+                            });
+                        }
+                        obj.setCoords();
                     });
 
-                    // Wait for render to complete
-                    await new Promise((resolve) => setTimeout(resolve, 200));
+                    exportCanvas.requestRenderAll();
+                }
 
-                    // If we have padding, translate the entire canvas content to center it
-                    if (padding > 0) {
-                        // Get all objects on the canvas
-                        const allObjects = exportCanvas.getObjects();
+                // Generate SVG
+                let svg = exportCanvas.toSVG();
 
-                        // Move everything by the padding amount to center it, plus extra space for branding header
-                        const brandingOffset = 60; // Reduced space for simpler header
-                        allObjects.forEach((obj) => {
-                            if (obj.left !== undefined) {
-                                obj.set({ left: obj.left + padding });
-                            }
-                            if (obj.top !== undefined) {
-                                obj.set({
-                                    top: obj.top + padding + brandingOffset,
-                                });
-                            }
-                            obj.setCoords();
-                        });
-
-                        exportCanvas.requestRenderAll();
-                    }
-
-                    // Generate SVG
-                    let svg = exportCanvas.toSVG();
-
-                    // Add title to SVG if enabled
-                    let titleElement = "";
-                    if (includeTitle) {
-                        try {
-                            const currentFilename =
-                                await window.electron.getCurrentFilename();
-                            if (currentFilename) {
-                                // Extract just the filename without path and extension
-                                const baseFilename =
-                                    currentFilename
-                                        .split("/")
-                                        .pop()
-                                        ?.split("\\")
-                                        .pop()
-                                        ?.replace(/\.[^/.]+$/, "") ||
-                                    currentFilename;
-                                const titleText = `${baseFilename} - Page ${page.name}`;
-                                titleElement = `
+                // Add title to SVG if enabled
+                let titleElement = "";
+                if (includeTitle) {
+                    try {
+                        const currentFilename =
+                            await window.electron.getCurrentFilename();
+                        if (currentFilename) {
+                            // Extract just the filename without path and extension
+                            const baseFilename =
+                                currentFilename
+                                    .split("/")
+                                    .pop()
+                                    ?.split("\\")
+                                    .pop()
+                                    ?.replace(/\.[^/.]+$/, "") ||
+                                currentFilename;
+                            const titleText = `${baseFilename} - Page ${page.name}`;
+                            titleElement = `
                                     <!-- Page Title -->
                                     <text x="50%" y="90" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#1F2937">${titleText}</text>
                                 `;
-                            }
-                        } catch (error) {
-                            console.warn("Could not add title to SVG:", error);
                         }
+                    } catch (error) {
+                        console.warn("Could not add title to SVG:", error);
                     }
-
-                    // Insert title after the opening SVG tag
-                    if (titleElement) {
-                        svg = svg.replace(/(<svg[^>]*>)/, `$1${titleElement}`);
-                    }
-
-                    svgPages.push(svg);
-                } finally {
-                    // Clean up the export canvas
-                    exportCanvas.dispose();
                 }
+
+                // Insert title after the opening SVG tag
+                if (titleElement) {
+                    svg = svg.replace(/(<svg[^>]*>)/, `$1${titleElement}`);
+                }
+
+                svgPages.push(svg);
 
                 // Update progress smoothly
                 const newProgress = (i + 1) * progressPerPage;
