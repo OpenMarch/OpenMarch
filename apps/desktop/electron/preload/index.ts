@@ -202,8 +202,16 @@ const APP_API = {
             organizeBySection: boolean;
             quarterPages: boolean;
         }) => ipcRenderer.invoke("export:pdf", params),
+
         svgPagesToPdf: (svgPages: string[], options: { fileName: string }) =>
             ipcRenderer.invoke("export:svgPagesToPdf", svgPages, options),
+
+        svgPagesToPdfSeparate: (svgPages: string[][], fileName?: string) =>
+            ipcRenderer.invoke(
+                "export:generateSeparateSVGPages",
+                svgPages,
+                fileName,
+            ),
     },
 
     buffer: {

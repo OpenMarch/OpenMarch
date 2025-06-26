@@ -475,7 +475,7 @@ function DrillChartExport() {
     const [currentStep, setCurrentStep] = useState("");
 
     // Export options
-    const [renderPathways, setRenderPathways] = useState(true);
+    const [individualCharts, setIndividualCharts] = useState(true);
     const padding = 30;
     const zoom = 0.7;
 
@@ -502,7 +502,6 @@ function DrillChartExport() {
             { length: marchers.length },
             () => [],
         );
-        const fileName = "drill-charts.pdf";
 
         // Get marcherPages for this, prev, and next page
         let currentMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
@@ -516,8 +515,8 @@ function DrillChartExport() {
         );
 
         // Generate SVGs for each page
-        for (let i = 0; i < pages.length; i++) {
-            exportCanvas.currentPage = pages[i];
+        for (let i = 0; i <= pages.length; i++) {
+            exportCanvas.currentPage = pages[i] || pages[pages.length - 1];
             setCurrentStep(
                 `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
             );
@@ -529,7 +528,7 @@ function DrillChartExport() {
             });
 
             // Render pathways for individual marchers
-            if (renderPathways) {
+            if (individualCharts) {
                 for (let m = 0; m < marchers.length; m++) {
                     const marcher = MarcherPage.filterByMarcherId(
                         currentMarcherPages,
@@ -621,13 +620,15 @@ function DrillChartExport() {
                         objectsToRemove.push(ring);
                     }
 
-                    // Convert to SVG after adding pathways
+                    // Send marcher to the front
                     exportCanvas.sendCanvasMarcherToFront(
                         CanvasMarcher.getCanvasMarcherForMarcher(
                             exportCanvas,
                             marchers[m],
                         )!,
                     );
+
+                    // Convert to SVG after adding pathways
                     exportCanvas.renderAll();
                     svgPages[m].push(exportCanvas.toSVG());
 
@@ -664,12 +665,11 @@ function DrillChartExport() {
         setProgress(95);
 
         // Export SVG pages to PDF
-        const result = await window.electron.export.svgPagesToPdf(
-            svgPages.flat(),
-            {
-                fileName,
-            },
-        );
+        const result = individualCharts
+            ? await window.electron.export.svgPagesToPdfSeparate(svgPages)
+            : await window.electron.export.svgPagesToPdf(svgPages[0], {
+                  fileName: "drill-charts.pdf",
+              });
         if (!result.success) {
             console.error("PDF export failed with error:", result.error);
             throw new Error(result.error);
@@ -681,7 +681,7 @@ function DrillChartExport() {
         const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
         toast.success(successMessage);
         setIsLoading(false);
-    }, [pages, marcherPages, marchers, renderPathways]);
+    }, [pages, marcherPages, marchers, individualCharts]);
 
     // Check if we have the minimum requirements for export
     const canExport = !!(

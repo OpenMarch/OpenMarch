@@ -56,17 +56,18 @@ export class PDFExportService {
             // Create HTML for each group of four pages
             const combinedHtml = pages
                 .map(
-                    (pageContent) => `
-            <div class="page-content">${pageContent}</div>
-        `,
+                    (pageContent) =>
+                        `
+                            <div class="page-content">${pageContent}</div>
+                        `,
                 )
                 .join("");
 
             const htmlContent = `
-        <html>
-          <body>${combinedHtml}</body>
-        </html>
-      `;
+                    <html>
+                      <body>${combinedHtml}</body>
+                    </html>
+                `;
 
             win.loadURL(
                 `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`,
@@ -84,7 +85,7 @@ export class PDFExportService {
                                   right: 0,
                               }
                             : {
-                                  marginType: "default", // or set custom values (e.g. top: 36, bottom: 36, etc.)
+                                  marginType: "default",
                               },
                         pageSize: "Letter",
                         printBackground: true,
@@ -324,6 +325,80 @@ export class PDFExportService {
                 error: error instanceof Error ? error.message : "Unknown error",
             };
         }
+    }
+
+    public static async generateSeparateSVGPages(
+        svgPages: string[][],
+        customFileName?: string,
+    ) {
+        // Prompt user for export location
+        const result = await dialog.showSaveDialog({
+            title: "Select Export Location",
+            defaultPath: path.join(
+                app.getPath("downloads"),
+                customFileName || "drill-charts-export",
+            ),
+            properties: ["createDirectory", "showOverwriteConfirmation"],
+            buttonLabel: "Export Here",
+        });
+        if (result.canceled || !result.filePath) {
+            throw new Error("Export cancelled");
+        }
+
+        // Create export directory
+        const exportDir = result.filePath;
+        await fs.promises.mkdir(exportDir, { recursive: true });
+
+        // Generate base file name
+        const baseName = customFileName ? customFileName : "drill-charts";
+        const filePaths: string[] = [];
+
+        // Loop through each marcher's SVG pages
+        for (let row = 0; row < svgPages.length; row++) {
+            const pdfFileName = `${baseName}-${row + 1}.pdf`;
+            const pdfFilePath = path.join(exportDir, pdfFileName);
+
+            // Create PDF document in landscape mode
+            const doc = new PDFDocument({
+                size: "LETTER",
+                layout: "landscape",
+                margins: {
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                },
+            });
+
+            // Create write stream
+            const stream = fs.createWriteStream(pdfFilePath);
+            doc.pipe(stream);
+
+            // Process each SVG in this row
+            for (let i = 0; i < svgPages[row].length; i++) {
+                if (i > 0) {
+                    doc.addPage();
+                }
+
+                SVGtoPDF(doc, svgPages[row][i], 40, 40, {
+                    width: doc.page.width - 80,
+                    height: doc.page.height - 80,
+                    preserveAspectRatio: "xMidYMid meet",
+                });
+            }
+
+            // Finalize the PDF
+            doc.end();
+
+            // Wait for the stream to finish and add PDF
+            await new Promise<void>((resolve, reject) => {
+                stream.on("finish", resolve);
+                stream.on("error", reject);
+            });
+            filePaths.push(pdfFilePath);
+        }
+
+        return { success: true, filePaths };
     }
 
     /**

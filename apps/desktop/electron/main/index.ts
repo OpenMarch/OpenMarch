@@ -218,6 +218,22 @@ function initGetters() {
         },
     );
 
+    // Export SVG pages to PDF
+    ipcMain.handle(
+        "export:generateSeparateSVGPages",
+        async (
+            _,
+            svgPages: string[][],
+            fileName?: string,
+            individualCharts?: boolean,
+        ) => {
+            return await PDFExportService.generateSeparateSVGPages(
+                svgPages,
+                fileName,
+            );
+        },
+    );
+
     // Get current filename
     ipcMain.handle("get-current-filename", async () => {
         return PDFExportService.getCurrentFilename();
