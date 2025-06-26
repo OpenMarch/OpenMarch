@@ -458,375 +458,92 @@ function CoordinateSheetExport() {
 
 function DrillChartExport() {
     const { pages } = useTimingObjectsStore()!;
-    const { selectedPage } = useSelectedPage()!;
     const { fieldProperties } = useFieldProperties()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { marchers } = useMarcherStore()!;
+
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
 
-    // Export options state
-    const [includeTitle, setIncludeTitle] = useState(true);
-    const paddingAmount = 64; // Fixed padding amount
+    const padding = 30;
+    const zoom = 0.7;
 
-    // Preview state
-    const [previewSvg, setPreviewSvg] = useState<string>("");
-    const [previewGenerated, setPreviewGenerated] = useState(false);
-    const previewContainerRef = useRef<HTMLDivElement>(null);
+    // Create SVGs from pages and export
+    const generateExportSVGs = useCallback(async () => {
+        // Setup
+        setIsLoading(true);
+        setCurrentStep("Initializing export...");
+        setProgress(0);
+        const progressPerPage = 90 / pages.length;
 
-    // Create a completely independent canvas for export
-    const createExportCanvas = useCallback(
-        async (withPadding: boolean = false) => {
-            if (!fieldProperties) {
-                throw new Error("Field properties not loaded");
-            }
+        // Setup canvas and store original state for SVG creation and restore
+        const exportCanvas = window.canvas;
+        const originalWidth = exportCanvas.getWidth();
+        const originalHeight = exportCanvas.getHeight();
+        const originalViewportTransform =
+            exportCanvas.viewportTransform.slice();
 
-            try {
-                // Create a temporary canvas element
-                const tempCanvasElement = document.createElement("canvas");
-                const padding = withPadding ? paddingAmount : 0;
-                const brandingHeight = 60; // Reduced space for simpler header
-                const canvasWidth = fieldProperties.width + padding * 2;
-                const canvasHeight =
-                    fieldProperties.height +
-                    padding * 2 +
-                    (withPadding ? brandingHeight : 0);
+        exportCanvas.setWidth(1320);
+        exportCanvas.setHeight(730);
+        exportCanvas.viewportTransform = [zoom, 0, 0, zoom, padding, padding];
+        exportCanvas.requestRenderAll();
 
-                tempCanvasElement.width = canvasWidth;
-                tempCanvasElement.height = canvasHeight;
+        const svgPages: string[] = [];
+        const fileName = "drill-charts.pdf";
 
-                // Create a new OpenMarchCanvas instance specifically for export
-                const exportCanvas = new OpenMarchCanvas({
-                    canvasRef: tempCanvasElement,
-                    fieldProperties: fieldProperties,
-                    uiSettings: {
-                        isPlaying: false,
-                        lockX: false,
-                        lockY: false,
-                        previousPaths: false,
-                        nextPaths: false,
-                        gridLines: true,
-                        halfLines: true,
-                        showWaveform: false,
-                        timelinePixelsPerSecond: 40,
-                        focussedComponent: "canvas",
-                        mouseSettings: {
-                            trackpadMode: true,
-                            trackpadPanSensitivity: 0.5,
-                            zoomSensitivity: 0.03,
-                            panSensitivity: 0.5,
-                        },
-                    },
-                    currentPage: selectedPage || pages[0],
-                });
-
-                // Set the canvas size to match our desired dimensions
-                exportCanvas.setWidth(canvasWidth);
-                exportCanvas.setHeight(canvasHeight);
-
-                // Render the field grid and background normally
-                exportCanvas.renderFieldGrid();
-
-                // Refresh background image if it exists
-                await exportCanvas.refreshBackgroundImage(false);
-
-                // Wait for canvas to initialize
-                await new Promise((resolve) => setTimeout(resolve, 100));
-
-                return { exportCanvas, padding };
-            } catch (error) {
-                console.error("Error creating export canvas:", error);
-                throw new Error(
-                    `Failed to create export canvas: ${error instanceof Error ? error.message : "Unknown error"}`,
-                );
-            }
-        },
-        [fieldProperties, selectedPage, pages, paddingAmount],
-    );
-
-    // Generate preview of the first page
-    const generatePreview = useCallback(async () => {
-        if (!fieldProperties || pages.length === 0) {
-            console.log(
-                "Cannot generate preview: missing field properties or pages",
+        // Generate SVGs for each page
+        for (let i = 0; i < pages.length; i++) {
+            // Update page
+            exportCanvas.currentPage = pages[i];
+            setCurrentStep(
+                `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
             );
-            return;
-        }
 
-        try {
-            const firstPage = pages[0];
-            const { exportCanvas, padding } = await createExportCanvas(true);
-
-            // Set the current page
-            exportCanvas.currentPage = firstPage;
-
-            // Get marcher pages for this page
+            // Get marcherPages for page
             const currentPageMarcherPages = marcherPages.filter(
-                (mp) => mp.page_id === firstPage.id,
+                (mp) => mp.page_id === exportCanvas.currentPage.id,
             );
 
-            // Render marchers for this page using the same method as the main canvas
+            // Render marchers for this page
             await exportCanvas.renderMarchers({
                 currentMarcherPages: currentPageMarcherPages,
                 allMarchers: marchers,
             });
 
-            // Wait for render to complete
-            await new Promise((resolve) => setTimeout(resolve, 200));
-
-            // If we have padding, translate the entire canvas content to center it
-            if (padding > 0) {
-                // Get all objects on the canvas
-                const allObjects = exportCanvas.getObjects();
-
-                // Move everything by the padding amount to center it, plus extra space for branding header
-                const brandingOffset = 60; // Reduced space for simpler header
-                allObjects.forEach((obj) => {
-                    if (obj.left !== undefined) {
-                        obj.set({ left: obj.left + padding });
-                    }
-                    if (obj.top !== undefined) {
-                        obj.set({
-                            top: obj.top + padding + brandingOffset,
-                        });
-                    }
-                    obj.setCoords();
-                });
-
-                exportCanvas.requestRenderAll();
-            }
-
             // Generate SVG
-            let svg = exportCanvas.toSVG();
+            svgPages.push(exportCanvas.toSVG());
 
-            // Add title to preview if enabled
-            let titleElement = "";
-            if (includeTitle) {
-                try {
-                    const currentFilename =
-                        await window.electron.getCurrentFilename();
-                    if (currentFilename) {
-                        // Extract just the filename without path and extension
-                        const baseFilename =
-                            currentFilename
-                                .split("/")
-                                .pop()
-                                ?.split("\\")
-                                .pop()
-                                ?.replace(/\.[^/.]+$/, "") || currentFilename;
-                        const titleText = `${baseFilename} - Page ${firstPage.name}`;
-                        titleElement = `
-                                <!-- Page Title -->
-                                <text x="50%" y="90" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#1F2937">${titleText}</text>
-                            `;
-                    }
-                } catch (error) {
-                    console.warn("Could not add title to preview SVG:", error);
-                }
-            }
-
-            // Insert title after the opening SVG tag
-            if (titleElement) {
-                svg = svg.replace(/(<svg[^>]*>)/, `$1${titleElement}`);
-            }
-
-            setPreviewSvg(svg);
-            setPreviewGenerated(true);
-        } catch (error) {
-            console.error("Error generating preview:", error);
-            // Set an error state or show a fallback
-            setPreviewSvg("");
-            setPreviewGenerated(true);
+            // Update progress smoothly
+            setProgress((i + 1) * progressPerPage);
         }
-    }, [
-        fieldProperties,
-        pages,
-        marcherPages,
-        marchers,
-        createExportCanvas,
-        includeTitle,
-    ]);
 
-    // Generate preview when component mounts or options change
-    useEffect(() => {
-        // Only generate preview if we haven't generated one yet and we have the required data
-        if (!previewGenerated && fieldProperties && pages.length > 0) {
-            generatePreview();
+        // Restore canvas to original state
+        exportCanvas.setWidth(originalWidth);
+        exportCanvas.setHeight(originalHeight);
+        exportCanvas.viewportTransform = originalViewportTransform;
+        exportCanvas.requestRenderAll();
+
+        // Generate PDF
+        setCurrentStep("Generating PDF file...");
+        setProgress(95);
+
+        // Export SVG pages to PDF
+        const result = await window.electron.export.svgPagesToPdf(svgPages, {
+            fileName,
+        });
+        if (!result.success) {
+            console.error("PDF export failed with error:", result.error);
+            throw new Error(result.error);
         }
-    }, [generatePreview, previewGenerated, fieldProperties, pages.length]);
 
-    // Regenerate preview when options change (but only if preview was already generated)
-    useEffect(() => {
-        if (previewGenerated && fieldProperties && pages.length > 0) {
-            generatePreview();
-        }
-    }, [
-        includeTitle,
-        generatePreview,
-        previewGenerated,
-        fieldProperties,
-        pages.length,
-    ]);
-
-    // Export all pages as PDF
-    const exportAllPagesAsPdf = useCallback(async () => {
-        setIsLoading(true);
-        setProgress(0);
-        setCurrentStep("Initializing export...");
-
-        try {
-            const svgPages: string[] = [];
-            let fileName = "drill-charts.pdf";
-
-            // Get current filename for title if enabled
-            if (includeTitle) {
-                setCurrentStep("Getting filename...");
-                try {
-                    const currentFilename =
-                        await window.electron.getCurrentFilename();
-                    if (currentFilename) {
-                        fileName = `${currentFilename.replace(/\.[^/.]+$/, "")}-drill-charts.pdf`;
-                    }
-                } catch (error) {
-                    console.warn("Could not get current filename:", error);
-                }
-            }
-
-            // Calculate progress steps: each page takes 90% of progress, final PDF generation takes 10%
-            const totalSteps = pages.length;
-            const progressPerPage = 90 / totalSteps;
-
-            for (let i = 0; i < pages.length; i++) {
-                const page = pages[i];
-                setCurrentStep(
-                    `Processing page ${i + 1} of ${pages.length}: ${page.name}`,
-                );
-
-                const { exportCanvas, padding } =
-                    await createExportCanvas(true);
-
-                // Set the current page
-                exportCanvas.currentPage = page;
-
-                // Get marcher pages for this page
-                const currentPageMarcherPages = marcherPages.filter(
-                    (mp) => mp.page_id === page.id,
-                );
-
-                // Render marchers for this page using the same method as the main canvas
-                await exportCanvas.renderMarchers({
-                    currentMarcherPages: currentPageMarcherPages,
-                    allMarchers: marchers,
-                });
-
-                // Wait for render to complete
-                await new Promise((resolve) => setTimeout(resolve, 200));
-
-                // If we have padding, translate the entire canvas content to center it
-                if (padding > 0) {
-                    // Get all objects on the canvas
-                    const allObjects = exportCanvas.getObjects();
-
-                    // Move everything by the padding amount to center it, plus extra space for branding header
-                    const brandingOffset = 60; // Reduced space for simpler header
-                    allObjects.forEach((obj) => {
-                        if (obj.left !== undefined) {
-                            obj.set({ left: obj.left + padding });
-                        }
-                        if (obj.top !== undefined) {
-                            obj.set({
-                                top: obj.top + padding + brandingOffset,
-                            });
-                        }
-                        obj.setCoords();
-                    });
-
-                    exportCanvas.requestRenderAll();
-                }
-
-                // Generate SVG
-                let svg = exportCanvas.toSVG();
-
-                // Add title to SVG if enabled
-                let titleElement = "";
-                if (includeTitle) {
-                    try {
-                        const currentFilename =
-                            await window.electron.getCurrentFilename();
-                        if (currentFilename) {
-                            // Extract just the filename without path and extension
-                            const baseFilename =
-                                currentFilename
-                                    .split("/")
-                                    .pop()
-                                    ?.split("\\")
-                                    .pop()
-                                    ?.replace(/\.[^/.]+$/, "") ||
-                                currentFilename;
-                            const titleText = `${baseFilename} - Page ${page.name}`;
-                            titleElement = `
-                                    <!-- Page Title -->
-                                    <text x="50%" y="90" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#1F2937">${titleText}</text>
-                                `;
-                        }
-                    } catch (error) {
-                        console.warn("Could not add title to SVG:", error);
-                    }
-                }
-
-                // Insert title after the opening SVG tag
-                if (titleElement) {
-                    svg = svg.replace(/(<svg[^>]*>)/, `$1${titleElement}`);
-                }
-
-                svgPages.push(svg);
-
-                // Update progress smoothly
-                const newProgress = (i + 1) * progressPerPage;
-                setProgress(newProgress);
-
-                // Small delay to allow UI to update
-                await new Promise((resolve) => setTimeout(resolve, 50));
-            }
-
-            // Final step: Generate PDF
-            setCurrentStep("Generating PDF file...");
-            setProgress(95);
-
-            // Export SVG pages to PDF
-            const result = await window.electron.export.svgPagesToPdf(
-                svgPages,
-                { fileName },
-            );
-
-            if (!result.success) {
-                console.error("PDF export failed with error:", result.error);
-                throw new Error(result.error);
-            }
-
-            setProgress(100);
-            setCurrentStep("Export completed!");
-
-            // Enhanced success toast with more details
-            const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
-
-            toast.success(successMessage);
-        } catch (error) {
-            console.error("Export error:", error);
-            setCurrentStep("Export failed");
-            toast.error(
-                `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-            );
-        } finally {
-            // Keep the completed state visible for a moment before hiding
-            setTimeout(() => {
-                setIsLoading(false);
-                setProgress(0);
-                setCurrentStep("");
-            }, 1500);
-        }
-    }, [pages, createExportCanvas, marcherPages, marchers, includeTitle]);
+        // Success
+        setProgress(100);
+        setCurrentStep("Export completed!");
+        const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
+        toast.success(successMessage);
+        setIsLoading(false);
+    }, [pages, marcherPages, marchers]);
 
     // Check if we have the minimum requirements for export
     const canExport = !!(
@@ -835,147 +552,8 @@ function DrillChartExport() {
         marchers.length > 0
     );
 
-    // Manual preview generation
-    const handleGeneratePreview = useCallback(() => {
-        setPreviewGenerated(false);
-        setPreviewSvg("");
-        generatePreview();
-    }, [generatePreview]);
-
     return (
         <div className="flex flex-col gap-20">
-            {/* Export Options */}
-            <Form.Root className="flex flex-col gap-y-24">
-                <Form.Field
-                    name="includeTitle"
-                    className="flex w-full items-center gap-12"
-                >
-                    <Form.Control asChild>
-                        <Checkbox
-                            checked={includeTitle}
-                            onCheckedChange={(checked: boolean) =>
-                                setIncludeTitle(checked)
-                            }
-                        />
-                    </Form.Control>
-                    <Form.Label className="text-body">
-                        Include file title
-                    </Form.Label>
-                </Form.Field>
-            </Form.Root>
-
-            {/* Preview Section */}
-            {canExport && (
-                <div className="flex flex-col gap-8">
-                    <div className="flex w-full items-center justify-between">
-                        <h5 className="text-h5">Preview</h5>
-                        <p className="text-sub text-text/75">
-                            First drill page preview
-                        </p>
-                    </div>
-                    <div
-                        ref={previewContainerRef}
-                        className="border-stroke overflow-hidden rounded-lg border bg-white p-8"
-                    >
-                        {!previewGenerated ? (
-                            <div className="flex flex-col items-center justify-center gap-4 py-20">
-                                <p className="text-body text-text/75">
-                                    Click to generate preview
-                                </p>
-                                <Button
-                                    size="compact"
-                                    onClick={handleGeneratePreview}
-                                    disabled={!canExport}
-                                >
-                                    Generate Preview
-                                </Button>
-                            </div>
-                        ) : previewSvg ? (
-                            <div
-                                className="flex w-full items-center justify-center"
-                                style={{
-                                    height: "250px",
-                                }}
-                            >
-                                <div
-                                    dangerouslySetInnerHTML={{
-                                        __html: previewSvg,
-                                    }}
-                                    style={(() => {
-                                        // Parse SVG dimensions to calculate dynamic scale
-                                        const svgMatch = previewSvg.match(
-                                            /<svg[^>]*width="([^"]*)"[^>]*height="([^"]*)"[^>]*>/,
-                                        );
-                                        if (svgMatch) {
-                                            const svgWidth = parseFloat(
-                                                svgMatch[1],
-                                            );
-                                            const svgHeight = parseFloat(
-                                                svgMatch[2],
-                                            );
-
-                                            // Get actual container dimensions
-                                            const containerElement =
-                                                previewContainerRef.current;
-                                            const containerWidth =
-                                                containerElement
-                                                    ? containerElement.clientWidth -
-                                                      32
-                                                    : 600; // Subtract padding (16px * 2)
-                                            const containerHeight = 250; // Fixed container height
-                                            const targetPadding = 24; // Desired padding on each side
-
-                                            // Calculate available space for the SVG
-                                            const availableWidth =
-                                                containerWidth -
-                                                targetPadding * 2;
-                                            const availableHeight =
-                                                containerHeight -
-                                                targetPadding * 2;
-
-                                            // Calculate scale to fit within available space
-                                            const scaleX =
-                                                availableWidth / svgWidth;
-                                            const scaleY =
-                                                availableHeight / svgHeight;
-                                            const scale = Math.min(
-                                                scaleX,
-                                                scaleY,
-                                                1,
-                                            ); // Don't scale up beyond 100%
-
-                                            return {
-                                                transform: `scale(${scale})`,
-                                                transformOrigin:
-                                                    "center center",
-                                                width: "fit-content",
-                                                height: "fit-content",
-                                            };
-                                        }
-
-                                        // Fallback if SVG parsing fails
-                                        return {
-                                            transform: "scale(0.25)",
-                                            transformOrigin: "center center",
-                                            width: "fit-content",
-                                            height: "fit-content",
-                                        };
-                                    })()}
-                                />
-                            </div>
-                        ) : (
-                            <div className="text-text/60 flex h-32 items-center justify-center">
-                                <CircleNotch
-                                    className="mr-2 animate-spin"
-                                    size={16}
-                                />
-                                Generating preview...
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
             {/* Export Status */}
             {!canExport && (
                 <div className="flex flex-col items-center justify-center gap-12 rounded-lg bg-gray-50 py-20">
@@ -1000,7 +578,7 @@ function DrillChartExport() {
             <div className="flex w-full justify-end gap-8">
                 <Button
                     size="compact"
-                    onClick={exportAllPagesAsPdf}
+                    onClick={generateExportSVGs}
                     disabled={isLoading || !canExport}
                 >
                     {isLoading ? "Exporting... Please wait" : "Export"}
