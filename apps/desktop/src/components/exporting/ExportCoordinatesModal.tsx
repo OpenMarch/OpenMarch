@@ -475,7 +475,7 @@ function DrillChartExport() {
     const [currentStep, setCurrentStep] = useState("");
 
     // Export options
-    const [individualCharts, setIndividualCharts] = useState(true);
+    const [individualCharts, setIndividualCharts] = useState(false);
     const padding = 30;
     const zoom = 0.7;
 
@@ -515,7 +515,11 @@ function DrillChartExport() {
         );
 
         // Generate SVGs for each page
-        for (let i = 0; i <= pages.length; i++) {
+        for (
+            let i = 0;
+            i < (individualCharts ? pages.length + 1 : pages.length);
+            i++
+        ) {
             exportCanvas.currentPage = pages[i] || pages[pages.length - 1];
             setCurrentStep(
                 `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
@@ -647,7 +651,12 @@ function DrillChartExport() {
                 );
             } else {
                 // No pathway rendering, just generate SVG
+                exportCanvas.renderAll();
                 svgPages[0].push(exportCanvas.toSVG());
+                currentMarcherPages = MarcherPage.filterByPageId(
+                    marcherPages,
+                    pages[i + 1]?.id,
+                );
             }
 
             // Update progress smoothly
@@ -678,8 +687,7 @@ function DrillChartExport() {
         // Success
         setProgress(100);
         setCurrentStep("Export completed!");
-        const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
-        toast.success(successMessage);
+        toast.success(`Successfully exported as PDF!`);
         setIsLoading(false);
     }, [pages, marcherPages, marchers, individualCharts]);
 
