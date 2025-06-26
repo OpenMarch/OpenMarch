@@ -6,6 +6,7 @@ import MarcherCoordinateSheet, {
 import ReactDOMServer from "react-dom/server";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
     Dialog,
@@ -23,6 +24,10 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import * as Tabs from "@radix-ui/react-tabs";
+import { rgbaToString } from "@/global/classes/FieldTheme";
+import LineListeners from "@/components/canvas/listeners/LineListeners";
+import { Pathway } from "@/global/classes/canvasObjects/Pathway";
+import FieldProperties from "@/global/classes/FieldProperties";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -462,34 +467,39 @@ function DrillChartExport() {
     const { marcherPages } = useMarcherPageStore()!;
     const { marchers } = useMarcherStore()!;
 
+    // Loading bar
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
 
+    // Export options
+    const [renderPathways, setRenderPathways] = useState(true);
     const padding = 30;
     const zoom = 0.7;
 
     // Create SVGs from pages and export
     const generateExportSVGs = useCallback(async () => {
-        // Setup
         setIsLoading(true);
         setCurrentStep("Initializing export...");
         setProgress(0);
         const progressPerPage = 90 / pages.length;
 
         // Setup canvas and store original state for SVG creation and restore
-        const exportCanvas = window.canvas;
+        const exportCanvas: OpenMarchCanvas = window.canvas;
         const originalWidth = exportCanvas.getWidth();
         const originalHeight = exportCanvas.getHeight();
         const originalViewportTransform =
-            exportCanvas.viewportTransform.slice();
+            exportCanvas.viewportTransform!.slice();
 
         exportCanvas.setWidth(1320);
         exportCanvas.setHeight(730);
         exportCanvas.viewportTransform = [zoom, 0, 0, zoom, padding, padding];
         exportCanvas.requestRenderAll();
 
-        const svgPages: string[] = [];
+        const svgPages: string[][] = Array.from(
+            { length: marchers.length },
+            () => [],
+        );
         const fileName = "drill-charts.pdf";
 
         // Generate SVGs for each page
@@ -501,18 +511,97 @@ function DrillChartExport() {
             );
 
             // Get marcherPages for page
-            const currentPageMarcherPages = marcherPages.filter(
-                (mp) => mp.page_id === exportCanvas.currentPage.id,
+            const currentMarcherPages = MarcherPage.filterByPageId(
+                marcherPages,
+                exportCanvas.currentPage.id,
             );
 
             // Render marchers for this page
             await exportCanvas.renderMarchers({
-                currentMarcherPages: currentPageMarcherPages,
+                currentMarcherPages: currentMarcherPages,
                 allMarchers: marchers,
             });
 
-            // Generate SVG
-            svgPages.push(exportCanvas.toSVG());
+            // Render pathways for individual marchers
+            if (renderPathways) {
+                for (let m = 0; m < marchers.length; m++) {
+                    const marcher = marchers[m];
+                    // Find the marcher pages for prev/current/next
+                    const prevMarcherPage = marcherPages.find(
+                        (mp) =>
+                            mp.page_id ===
+                                exportCanvas.currentPage.previousPageId &&
+                            mp.marcher_id === marcher.id,
+                    );
+                    const currentMarcherPage = marcherPages.find(
+                        (mp) =>
+                            mp.page_id === exportCanvas.currentPage.id &&
+                            mp.marcher_id === marcher.id,
+                    );
+                    const nextMarcherPage = marcherPages.find(
+                        (mp) =>
+                            mp.page_id ===
+                                exportCanvas.currentPage.nextPageId &&
+                            mp.marcher_id === marcher.id,
+                    );
+
+                    // Collect pathways to add/remove
+                    const pathwaysToRemove: Pathway[] = [];
+
+                    // Render previous pathway if possible
+                    if (prevMarcherPage && currentMarcherPage) {
+                        const prevPathway = new Pathway({
+                            start: {
+                                x: prevMarcherPage.x,
+                                y: prevMarcherPage.y,
+                            },
+                            end: {
+                                x: currentMarcherPage.x,
+                                y: currentMarcherPage.y,
+                            },
+                            color: rgbaToString(
+                                exportCanvas.fieldProperties.theme.previousPath,
+                            ),
+                            marcherId: marcher.id,
+                            dashed: true,
+                            strokeWidth: 4,
+                        });
+                        exportCanvas.add(prevPathway);
+                        pathwaysToRemove.push(prevPathway);
+                    }
+
+                    // Render next pathway if possible
+                    if (currentMarcherPage && nextMarcherPage) {
+                        const nextPathway = new Pathway({
+                            start: {
+                                x: currentMarcherPage.x,
+                                y: currentMarcherPage.y,
+                            },
+                            end: { x: nextMarcherPage.x, y: nextMarcherPage.y },
+                            color: rgbaToString(
+                                exportCanvas.fieldProperties.theme.nextPath,
+                            ),
+                            marcherId: marcher.id,
+                            dashed: false,
+                            strokeWidth: 3,
+                        });
+                        exportCanvas.add(nextPathway);
+                        pathwaysToRemove.push(nextPathway);
+                    }
+
+                    // Convert to SVG after adding pathways
+                    exportCanvas.renderAll();
+                    svgPages[m].push(exportCanvas.toSVG());
+
+                    // Remove the pathways to keep the canvas clean for the next marcher
+                    pathwaysToRemove.forEach((pathway) =>
+                        exportCanvas.remove(pathway),
+                    );
+                }
+                // No pathway rendering, just generate SVG
+            } else {
+                svgPages[0].push(exportCanvas.toSVG());
+            }
 
             // Update progress smoothly
             setProgress((i + 1) * progressPerPage);
@@ -529,9 +618,12 @@ function DrillChartExport() {
         setProgress(95);
 
         // Export SVG pages to PDF
-        const result = await window.electron.export.svgPagesToPdf(svgPages, {
-            fileName,
-        });
+        const result = await window.electron.export.svgPagesToPdf(
+            svgPages.flat(),
+            {
+                fileName,
+            },
+        );
         if (!result.success) {
             console.error("PDF export failed with error:", result.error);
             throw new Error(result.error);
@@ -543,7 +635,7 @@ function DrillChartExport() {
         const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
         toast.success(successMessage);
         setIsLoading(false);
-    }, [pages, marcherPages, marchers]);
+    }, [pages, marcherPages, marchers, renderPathways]);
 
     // Check if we have the minimum requirements for export
     const canExport = !!(

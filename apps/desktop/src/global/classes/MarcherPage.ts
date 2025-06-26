@@ -89,6 +89,7 @@ export default class MarcherPage {
 
     /**
      * A simple filter function to filter MarcherPages by page_id.
+     * If given a null page_id, it will return an empty array.
      *
      * @param marcherPages All MarcherPages to filter
      * @param page_id The page_id to filter by
@@ -96,7 +97,7 @@ export default class MarcherPage {
      */
     static filterByPageId(
         marcherPages: MarcherPage[],
-        page_id: number,
+        page_id: number | null,
     ): MarcherPage[] {
         return marcherPages.filter(
             (marcherPage) => marcherPage.page_id === page_id,
