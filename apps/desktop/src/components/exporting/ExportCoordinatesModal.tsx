@@ -28,6 +28,8 @@ import { rgbaToString } from "@/global/classes/FieldTheme";
 import LineListeners from "@/components/canvas/listeners/LineListeners";
 import { Pathway } from "@/global/classes/canvasObjects/Pathway";
 import FieldProperties from "@/global/classes/FieldProperties";
+import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import { fabric } from "fabric";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -490,30 +492,34 @@ function DrillChartExport() {
         const originalHeight = exportCanvas.getHeight();
         const originalViewportTransform =
             exportCanvas.viewportTransform!.slice();
-
         exportCanvas.setWidth(1320);
         exportCanvas.setHeight(730);
         exportCanvas.viewportTransform = [zoom, 0, 0, zoom, padding, padding];
         exportCanvas.requestRenderAll();
 
+        // SVG storage setup
         const svgPages: string[][] = Array.from(
             { length: marchers.length },
             () => [],
         );
         const fileName = "drill-charts.pdf";
 
+        // Get marcherPages for this, prev, and next page
+        let currentMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+            marcherPages,
+            pages[0].id,
+        );
+        let prevMarcherPages: MarcherPage[] = [];
+        let nextMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+            marcherPages,
+            pages[1].id,
+        );
+
         // Generate SVGs for each page
         for (let i = 0; i < pages.length; i++) {
-            // Update page
             exportCanvas.currentPage = pages[i];
             setCurrentStep(
                 `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
-            );
-
-            // Get marcherPages for page
-            const currentMarcherPages = MarcherPage.filterByPageId(
-                marcherPages,
-                exportCanvas.currentPage.id,
             );
 
             // Render marchers for this page
@@ -525,39 +531,32 @@ function DrillChartExport() {
             // Render pathways for individual marchers
             if (renderPathways) {
                 for (let m = 0; m < marchers.length; m++) {
-                    const marcher = marchers[m];
-                    // Find the marcher pages for prev/current/next
-                    const prevMarcherPage = marcherPages.find(
-                        (mp) =>
-                            mp.page_id ===
-                                exportCanvas.currentPage.previousPageId &&
-                            mp.marcher_id === marcher.id,
-                    );
-                    const currentMarcherPage = marcherPages.find(
-                        (mp) =>
-                            mp.page_id === exportCanvas.currentPage.id &&
-                            mp.marcher_id === marcher.id,
-                    );
-                    const nextMarcherPage = marcherPages.find(
-                        (mp) =>
-                            mp.page_id ===
-                                exportCanvas.currentPage.nextPageId &&
-                            mp.marcher_id === marcher.id,
-                    );
+                    const marcher = MarcherPage.filterByMarcherId(
+                        currentMarcherPages,
+                        marchers[m].id,
+                    )[0];
+                    const prevMarcher = MarcherPage.filterByMarcherId(
+                        prevMarcherPages,
+                        marchers[m].id,
+                    )[0];
+                    const nextMarcher = MarcherPage.filterByMarcherId(
+                        nextMarcherPages,
+                        marchers[m].id,
+                    )[0];
 
                     // Collect pathways to add/remove
-                    const pathwaysToRemove: Pathway[] = [];
+                    const objectsToRemove: fabric.Object[] = [];
 
                     // Render previous pathway if possible
-                    if (prevMarcherPage && currentMarcherPage) {
+                    if (prevMarcherPages.length > 0 && currentMarcherPages) {
                         const prevPathway = new Pathway({
                             start: {
-                                x: prevMarcherPage.x,
-                                y: prevMarcherPage.y,
+                                x: prevMarcher.x,
+                                y: prevMarcher.y,
                             },
                             end: {
-                                x: currentMarcherPage.x,
-                                y: currentMarcherPage.y,
+                                x: marcher.x,
+                                y: marcher.y,
                             },
                             color: rgbaToString(
                                 exportCanvas.fieldProperties.theme.previousPath,
@@ -567,17 +566,34 @@ function DrillChartExport() {
                             strokeWidth: 4,
                         });
                         exportCanvas.add(prevPathway);
-                        pathwaysToRemove.push(prevPathway);
+                        objectsToRemove.push(prevPathway);
+
+                        // Add box around prevPathway origin
+                        const box = new fabric.Rect({
+                            left: prevPathway.x1, // or prevPathway.start.x
+                            top: prevPathway.y1,
+                            width: 20,
+                            height: 20,
+                            fill: "transparent",
+                            stroke: "blue",
+                            strokeWidth: 3,
+                            originX: "center",
+                            originY: "center",
+                            selectable: false,
+                            evented: false,
+                        });
+                        exportCanvas.add(box);
+                        objectsToRemove.push(box);
                     }
 
                     // Render next pathway if possible
-                    if (currentMarcherPage && nextMarcherPage) {
+                    if (currentMarcherPages && nextMarcherPages.length > 0) {
                         const nextPathway = new Pathway({
                             start: {
-                                x: currentMarcherPage.x,
-                                y: currentMarcherPage.y,
+                                x: marcher.x,
+                                y: marcher.y,
                             },
-                            end: { x: nextMarcherPage.x, y: nextMarcherPage.y },
+                            end: { x: nextMarcher.x, y: nextMarcher.y },
                             color: rgbaToString(
                                 exportCanvas.fieldProperties.theme.nextPath,
                             ),
@@ -586,20 +602,50 @@ function DrillChartExport() {
                             strokeWidth: 3,
                         });
                         exportCanvas.add(nextPathway);
-                        pathwaysToRemove.push(nextPathway);
+                        objectsToRemove.push(nextPathway);
+
+                        // Add box around nextPathways origin
+                        const ring = new fabric.Circle({
+                            left: nextPathway.x2, // or nextPathway.end.x if using custom class
+                            top: nextPathway.y2,
+                            radius: 10,
+                            fill: "transparent",
+                            stroke: "red", // or your preferred color
+                            strokeWidth: 3,
+                            originX: "center",
+                            originY: "center",
+                            selectable: false,
+                            evented: false,
+                        });
+                        exportCanvas.add(ring);
+                        objectsToRemove.push(ring);
                     }
 
                     // Convert to SVG after adding pathways
+                    exportCanvas.sendCanvasMarcherToFront(
+                        CanvasMarcher.getCanvasMarcherForMarcher(
+                            exportCanvas,
+                            marchers[m],
+                        )!,
+                    );
                     exportCanvas.renderAll();
                     svgPages[m].push(exportCanvas.toSVG());
 
                     // Remove the pathways to keep the canvas clean for the next marcher
-                    pathwaysToRemove.forEach((pathway) =>
-                        exportCanvas.remove(pathway),
+                    objectsToRemove.forEach((object: fabric.Object) =>
+                        exportCanvas.remove(object),
                     );
                 }
-                // No pathway rendering, just generate SVG
+
+                // Update current, prev, and next marcher pages
+                prevMarcherPages = currentMarcherPages;
+                currentMarcherPages = nextMarcherPages;
+                nextMarcherPages = MarcherPage.filterByPageId(
+                    marcherPages,
+                    pages[i + 1]?.id ?? -1,
+                );
             } else {
+                // No pathway rendering, just generate SVG
                 svgPages[0].push(exportCanvas.toSVG());
             }
 

@@ -362,6 +362,19 @@ export default class CanvasMarcher
     static isCanvasMarcher(object: fabric.Object): object is CanvasMarcher {
         return object instanceof CanvasMarcher;
     }
+
+    static getCanvasMarcherForMarcher(
+        canvas: fabric.Canvas,
+        marcher: Marcher,
+    ): CanvasMarcher | undefined {
+        return canvas
+            .getObjects()
+            .find(
+                (obj): obj is CanvasMarcher =>
+                    CanvasMarcher.isCanvasMarcher(obj) && obj.id === marcher.id,
+            );
+    }
+
     /**
      * Sets the coordinates of the marcher on the canvas from a MarcherPage object.
      * This adjusts the position of the fabric group object to match the MarcherPage object.
