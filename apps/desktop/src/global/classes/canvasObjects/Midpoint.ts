@@ -11,19 +11,22 @@ export class Midpoint extends fabric.Circle {
     /**
      * @param start The starting MarcherPage
      * @param end The ending MarcherPage
-     * @param color Color of the Midpoint
+     * @param innerColor Inner color of the Midpoint
+     * @param outerColor Outer color of the Midpoint
      * @param radius Radius of the Midpoint
      */
     constructor({
         start,
         end,
-        color,
+        innerColor,
+        outerColor,
         radius = 3,
         marcherId,
     }: {
         start: { x: number; y: number };
         end: { x: number; y: number };
-        color: string;
+        innerColor: string;
+        outerColor: string;
         radius?: number;
         marcherId: number;
     }) {
@@ -33,7 +36,9 @@ export class Midpoint extends fabric.Circle {
             left: midX - radius,
             top: midY - radius,
             radius,
-            fill: color,
+            fill: innerColor,
+            stroke: outerColor,
+            strokeWidth: 2,
             ...NoControls,
         });
         this.marcherId = marcherId;

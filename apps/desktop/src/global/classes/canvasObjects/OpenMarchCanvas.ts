@@ -1093,7 +1093,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 const midpoint = new Midpoint({
                     start: previousMarcherPage,
                     end: selectedMarcherPage,
-                    color: "red",
+                    innerColor: "white",
+                    outerColor: color,
                     marcherId: previousMarcherPage.marcher_id,
                 });
 
