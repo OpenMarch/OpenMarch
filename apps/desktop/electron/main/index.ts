@@ -32,11 +32,19 @@ import { FIRST_PAGE_ID } from "../database/constants";
 //
 
 const store = new Store();
-const enableSentry = process.env.NODE_ENV !== "development";
+
+const enableSentry =
+    process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
 console.log("Sentry error reporting enabled:", enableSentry);
 init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
     enabled: enableSentry,
+});
+
+ipcMain.on("settings:set", (_, settings) => {
+    for (const [key, value] of Object.entries(settings)) {
+        store.set(key, value);
+    }
 });
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
@@ -421,7 +429,7 @@ export async function newFile() {
 
     setActiveDb(path.filePath, true);
     const dbVersion = new CurrentDatabase(DatabaseServices.connect);
-    dbVersion.createTables(app.getAppPath());
+    dbVersion.createTables();
     win?.webContents.reload();
 
     return 200;
@@ -843,7 +851,7 @@ function setActiveDb(path: string, isNewFile = false) {
         // If this isn't a new file, check if a migration is needed
         if (isNewFile) {
             console.log(`Creating new database at ${path}`);
-            migrator.createTables(app.getAppPath());
+            migrator.createTables();
         } else {
             console.log(
                 "Checking database version to see if migration is needed",
@@ -880,7 +888,7 @@ function setActiveDb(path: string, isNewFile = false) {
                     }
                 });
             }
-            migrator.migrateToThisVersion();
+            migrator.migrateToThisVersion(db);
         }
 
         store.set("databasePath", path); // Save current db path

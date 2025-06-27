@@ -13,6 +13,7 @@ import { Switch } from "@openmarch/ui";
 import { usePostHog } from "posthog-js/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import * as Sentry from "@sentry/electron/renderer";
 
 export default function SettingsModal() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
@@ -101,10 +102,24 @@ export default function SettingsModal() {
                                         onCheckedChange={(checked) => {
                                             if (checked) {
                                                 posthog.opt_in_capturing();
+                                                Sentry.init({
+                                                    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+                                                    enabled: true,
+                                                });
                                             } else {
                                                 posthog.opt_out_capturing();
+                                                Sentry.init({
+                                                    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+                                                    enabled: false,
+                                                });
                                             }
                                             setHasOptedOut(!checked);
+                                            window.electron.send(
+                                                "settings:set",
+                                                {
+                                                    optOutAnalytics: !checked,
+                                                },
+                                            );
                                         }}
                                     />
                                 </div>
