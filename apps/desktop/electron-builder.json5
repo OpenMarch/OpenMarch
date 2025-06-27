@@ -51,6 +51,12 @@
     win: {
         target: "nsis",
         artifactName: "${productName}_${buildVersion}.${ext}",
+
+        signtoolOptions: {
+            certificateSubjectName: "Open Source Developer, Alexander Dumouchelle",
+            timeStampServer: "http://time.certum.pl/",
+            signingHashAlgorithms: ["sha256"],
+        },
     },
     nsis: {
         oneClick: false,
@@ -63,7 +69,5 @@
         category: "Graphics",
         synopsis: "OpenMarch is an open source drill writing software built on web app frameworks. Our goal is to be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles. OpenMarch hopes to be enough for 90% of ensembles with reasonable design needs. We want to make drill writing effortless. OpenMarch is designed with three principles: stay free, stay fast, and stay simple.\nOpenMarch is designed with three principles:\n\tStay free - All of the technologies OpenMarch uses have been intentionally chosen to minimize operation costs. This ensures that OpenMarch remains accessible to everyone, regardless of their financial situation.\n\tStay fast - OpenMarch is built with performance in mind. We want to ensure that the software runs smoothly on any device, making the drill writing process efficient and enjoyable.\n\tStay simple - We focus on providing essential features without unnecessary complexity. Our interface is intuitive and easy to use, allowing you to create drill without a steep learning curve.",
     },
-    "files": [
-        "!**/node_modules/canvas/**"
-    ]
+    files: ["!**/node_modules/canvas/**"],
 }

@@ -559,7 +559,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.lastPage: {
-                    const lastPage = pages[0];
+                    const lastPage = pages[pages.length - 1];
                     if (lastPage && !isPlaying) setSelectedPage(lastPage);
                     break;
                 }
@@ -570,7 +570,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.firstPage: {
-                    const firstPage = pages[pages.length - 1];
+                    const firstPage = pages[0];
                     if (firstPage && !isPlaying) setSelectedPage(firstPage);
                     break;
                 }
