@@ -300,24 +300,27 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
         enumString: "setSelectedMarchersToNextPage",
     }),
+
+    // Marcher movement
+    // The following special commands are triggered by WASD/Arrows in handleKeyDown
     moveSelectedMarchersUp: new RegisteredAction({
         desc: "Move selected marcher(s) up",
-        keyboardShortcut: new KeyboardShortcut({ key: "ArrowUp" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersUp",
     }),
     moveSelectedMarchersDown: new RegisteredAction({
         desc: "Move selected marcher(s) down",
-        keyboardShortcut: new KeyboardShortcut({ key: "ArrowDown" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersDown",
     }),
     moveSelectedMarchersLeft: new RegisteredAction({
         desc: "Move selected marcher(s) left",
-        keyboardShortcut: new KeyboardShortcut({ key: "ArrowLeft" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersLeft",
     }),
     moveSelectedMarchersRight: new RegisteredAction({
         desc: "Move selected marcher(s) right",
-        keyboardShortcut: new KeyboardShortcut({ key: "ArrowRight" }),
+        keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersRight",
     }),
 
@@ -363,7 +366,7 @@ export const RegisteredActionsObjects: {
     }),
     swapMarchers: new RegisteredAction({
         desc: "Swap marchers",
-        keyboardShortcut: new KeyboardShortcut({ key: "s", shift: true }),
+        keyboardShortcut: new KeyboardShortcut({ key: "s", control: true }),
         enumString: "swapMarchers",
     }),
 
@@ -684,6 +687,8 @@ function RegisteredActionsHandler() {
                     }
                     break;
                 }
+
+                /******************* Marcher Movement ******************/
                 case RegisteredActionsEnum.moveSelectedMarchersUp: {
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
@@ -988,62 +993,100 @@ function RegisteredActionsHandler() {
                 // This must happen rather than using e.key because e.key changes on MacOS with the option key
                 const code = e.code;
                 let key = e.key;
+
                 // These do not change with the option key
                 const ignoredKeys = new Set([
                     "Shift",
                     "Control",
                     "Alt",
                     "Meta",
-                    " ", // Space
+                    " ",
                     "Enter",
                     "Escape",
+                    "ArrowUp",
+                    "ArrowDown",
+                    "ArrowLeft",
+                    "ArrowRight",
                 ]);
-                if (code.includes("Key")) {
-                    key = code.replace("Key", "");
-                } else if (code.includes("Digit")) {
-                    key = code.replace("Digit", "");
-                } else if (
+
+                // Special handling for WASD/Arrow keys
+                if (
+                    code === "KeyW" ||
+                    code === "KeyA" ||
+                    code === "KeyS" ||
+                    code === "KeyD" ||
                     code === "ArrowUp" ||
                     code === "ArrowDown" ||
                     code === "ArrowLeft" ||
                     code === "ArrowRight"
                 ) {
-                    type ArrowKey =
-                        | "ArrowUp"
-                        | "ArrowDown"
-                        | "ArrowLeft"
-                        | "ArrowRight";
-                    const actionMap: Record<ArrowKey, RegisteredActionsEnum> = {
-                        ArrowUp: RegisteredActionsEnum.moveSelectedMarchersUp,
-                        ArrowDown:
-                            RegisteredActionsEnum.moveSelectedMarchersDown,
-                        ArrowLeft:
-                            RegisteredActionsEnum.moveSelectedMarchersLeft,
-                        ArrowRight:
-                            RegisteredActionsEnum.moveSelectedMarchersRight,
-                    };
+                    e.preventDefault();
 
                     // toggle snapping
                     snap.current = !e.altKey && !e.shiftKey;
 
                     // set distance based on modifiers
-                    if (e.metaKey && e.shiftKey) {
+                    if (e.metaKey && e.shiftKey && !code.includes("Key")) {
                         distance.current = 0.1;
-                    } else if (e.metaKey) {
+                    } else if (e.metaKey && !code.includes("Key")) {
                         distance.current = 4;
                     } else if (e.shiftKey) {
                         distance.current = 0.25;
-                    } else if (code === "ArrowUp" || code === "ArrowDown") {
+                    } else if (
+                        code === "ArrowUp" ||
+                        code === "ArrowDown" ||
+                        code === "KeyW" ||
+                        code === "KeyS"
+                    ) {
                         distance.current =
                             uiSettings.coordinateRounding?.nearestYSteps || 1;
-                    } else if (code === "ArrowLeft" || code === "ArrowRight") {
+                    } else if (
+                        code === "ArrowLeft" ||
+                        code === "ArrowRight" ||
+                        code === "KeyA" ||
+                        code === "KeyD"
+                    ) {
                         distance.current =
                             uiSettings.coordinateRounding?.nearestXSteps || 1;
                     }
 
-                    triggerAction(actionMap[code as ArrowKey]);
-                    e.preventDefault();
-                    return;
+                    // Prevent meta+WASD
+                    if (!(e.metaKey && code.includes("Key"))) {
+                        // Trigger the action based on the key code
+                        switch (code) {
+                            case "KeyW":
+                            case "ArrowUp":
+                                triggerAction(
+                                    RegisteredActionsEnum.moveSelectedMarchersUp,
+                                );
+                                break;
+                            case "KeyA":
+                            case "ArrowLeft":
+                                triggerAction(
+                                    RegisteredActionsEnum.moveSelectedMarchersLeft,
+                                );
+                                break;
+                            case "KeyS":
+                            case "ArrowDown":
+                                triggerAction(
+                                    RegisteredActionsEnum.moveSelectedMarchersDown,
+                                );
+                                break;
+                            case "KeyD":
+                            case "ArrowRight":
+                                triggerAction(
+                                    RegisteredActionsEnum.moveSelectedMarchersRight,
+                                );
+                                break;
+                        }
+                    }
+                }
+
+                // Standard RegisteredAction handling
+                if (code.includes("Key")) {
+                    key = code.replace("Key", "");
+                } else if (code.includes("Digit")) {
+                    key = code.replace("Digit", "");
                 } else if (!ignoredKeys.has(key)) {
                     console.error(
                         `RegisteredAction Warning: No keyCode handler found for "${code}".`,
