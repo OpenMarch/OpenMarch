@@ -32,11 +32,19 @@ import { getOrm } from "../database/db";
 //
 
 const store = new Store();
-const enableSentry = process.env.NODE_ENV !== "development";
+
+const enableSentry =
+    process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
 console.log("Sentry error reporting enabled:", enableSentry);
 init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
     enabled: enableSentry,
+});
+
+ipcMain.on("settings:set", (_, settings) => {
+    for (const [key, value] of Object.entries(settings)) {
+        store.set(key, value);
+    }
 });
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
@@ -418,7 +426,6 @@ export async function newFile() {
     if (fs.existsSync(path.filePath)) {
         fs.unlinkSync(path.filePath);
     }
-
     await setActiveDb(path.filePath, true);
 
     win?.webContents.reload();

@@ -164,6 +164,9 @@ const APP_API = {
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 
     // Settings
+    send: (channel: string, ...args: any[]) => {
+        ipcRenderer.send(channel, ...args);
+    },
     getShowWaveform: () => ipcRenderer.invoke("get:showWaveform"),
     setShowWaveform: (showWaveform: boolean) =>
         ipcRenderer.invoke("set:showWaveform", showWaveform),
