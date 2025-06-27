@@ -1,0 +1,15 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Prose from "@/components/Prose.astro";
+
+const posts = await Astro.glob("../../content/privacy/index.md");
+const post = posts[0];
+---
+
+<Layout title="Privacy Policy">
+    <section class="m-16 flex flex-col items-center py-128">
+        <article class="flex w-full max-w-[48rem] flex-col items-center gap-16">
+            <Prose>{post && <post.Content />}</Prose>
+        </article>
+    </section>
+</Layout>
