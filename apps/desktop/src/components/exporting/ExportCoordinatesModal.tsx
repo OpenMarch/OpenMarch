@@ -475,7 +475,7 @@ function DrillChartExport() {
     const [currentStep, setCurrentStep] = useState("");
 
     // Export options
-    const [individualCharts, setIndividualCharts] = useState(false);
+    const [individualCharts, setIndividualCharts] = useState(true);
     const padding = 30;
     const zoom = 0.7;
 
@@ -675,7 +675,11 @@ function DrillChartExport() {
 
         // Export SVG pages to PDF
         const result = individualCharts
-            ? await window.electron.export.svgPagesToPdfSeparate(svgPages)
+            ? await window.electron.export.svgPagesToPdfSeparate(
+                  svgPages,
+                  marchers.map((marcher) => marcher.drill_number),
+                  await window.electron.getCurrentFilename(),
+              )
             : await window.electron.export.svgPagesToPdf(svgPages[0], {
                   fileName: "drill-charts.pdf",
               });

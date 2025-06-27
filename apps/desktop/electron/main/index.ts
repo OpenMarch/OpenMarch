@@ -224,11 +224,12 @@ function initGetters() {
         async (
             _,
             svgPages: string[][],
-            fileName?: string,
-            individualCharts?: boolean,
+            drillNumbers: string[],
+            fileName: string,
         ) => {
             return await PDFExportService.generateSeparateSVGPages(
                 svgPages,
+                drillNumbers,
                 fileName,
             );
         },

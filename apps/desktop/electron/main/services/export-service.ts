@@ -5,6 +5,7 @@ import sanitize from "sanitize-filename";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
+import marcher from "@/global/classes/Marcher";
 
 interface ExportSheet {
     name: string;
@@ -329,14 +330,15 @@ export class PDFExportService {
 
     public static async generateSeparateSVGPages(
         svgPages: string[][],
-        customFileName?: string,
+        drillNumbers: string[],
+        showPath: string,
     ) {
         // Prompt user for export location
         const result = await dialog.showSaveDialog({
             title: "Select Export Location",
             defaultPath: path.join(
                 app.getPath("downloads"),
-                customFileName || "drill-charts-export",
+                showPath || "drill-charts-export",
             ),
             properties: ["createDirectory", "showOverwriteConfirmation"],
             buttonLabel: "Export Here",
@@ -350,13 +352,17 @@ export class PDFExportService {
         await fs.promises.mkdir(exportDir, { recursive: true });
 
         // Generate base file name
-        const baseName = customFileName ? customFileName : "drill-charts";
+        const baseName = path.basename(
+            path.basename(showPath) == path.basename(result.filePath)
+                ? showPath
+                : result.filePath,
+        );
         const filePaths: string[] = [];
 
         // Loop through each marcher's SVG pages
         for (let row = 0; row < svgPages.length; row++) {
-            const pdfFileName = `${baseName}-${row + 1}.pdf`;
-            const pdfFilePath = path.join(exportDir, pdfFileName);
+            const pdfFileName = `${baseName}-${drillNumbers[row]}.pdf`;
+            const pdfFilePath = `${exportDir}/${sanitize(pdfFileName)}`;
 
             // Create PDF document in landscape mode
             const doc = new PDFDocument({

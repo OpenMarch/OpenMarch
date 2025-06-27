@@ -206,10 +206,15 @@ const APP_API = {
         svgPagesToPdf: (svgPages: string[], options: { fileName: string }) =>
             ipcRenderer.invoke("export:svgPagesToPdf", svgPages, options),
 
-        svgPagesToPdfSeparate: (svgPages: string[][], fileName?: string) =>
+        svgPagesToPdfSeparate: (
+            svgPages: string[][],
+            drillNumbers: string[],
+            fileName: string,
+        ) =>
             ipcRenderer.invoke(
                 "export:generateSeparateSVGPages",
                 svgPages,
+                drillNumbers,
                 fileName,
             ),
     },
