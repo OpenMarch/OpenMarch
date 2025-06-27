@@ -24,9 +24,9 @@ const defaultFieldProperties =
 describe("FieldPropertiesTable", () => {
     let db: Database.Database;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // Create in-memory database
-        db = initTestDatabase();
+        db = await initTestDatabase();
     });
 
     afterEach(() => {
