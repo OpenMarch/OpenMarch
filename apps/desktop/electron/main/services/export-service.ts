@@ -353,7 +353,7 @@ export class PDFExportService {
 
         // Generate base file name
         const baseName = path.basename(
-            path.basename(showPath) == path.basename(result.filePath)
+            path.basename(showPath) === path.basename(result.filePath)
                 ? showPath
                 : result.filePath,
         );
@@ -363,48 +363,178 @@ export class PDFExportService {
         for (let row = 0; row < svgPages.length; row++) {
             const pdfFileName = `${baseName}-${drillNumbers[row]}.pdf`;
             const pdfFilePath = `${exportDir}/${sanitize(pdfFileName)}`;
+            let htmlPages: string[] = [];
 
-            // Create PDF document in landscape mode
-            const doc = new PDFDocument({
-                size: "LETTER",
-                layout: "landscape",
-                margins: {
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
+            for (let i = 0; i < svgPages[row].length; i++) {
+                // Generate HTML
+                htmlPages.push(
+                    PDFExportService.generateDrillHtml({
+                        drillNumber: "drillNumber",
+                        showTitle: "showTitle",
+                        pageNumber: "pageNumber",
+                        setNumber: "setNumber",
+                        counts: "counts",
+                        measureNumbers: "measureNumbers",
+                        prevCoord: "prevCoord",
+                        currCoord: "currCoord",
+                        nextCoord: "nextCoord",
+                        notes: "notes",
+                        svg: svgPages[row][i],
+                    }),
+                );
+            }
+
+            // Create a hidden BrowserWindow for PDF (must be in main process)
+            const win = new BrowserWindow({
+                width: 1400,
+                height: 900,
+                show: false,
+                webPreferences: {
+                    offscreen: true,
                 },
             });
 
-            // Create write stream
-            const stream = fs.createWriteStream(pdfFilePath);
-            doc.pipe(stream);
+            win.loadURL(
+                `data:text/html;charset=utf-8,${encodeURIComponent(htmlPages.join(""))}`,
+            );
+            await new Promise((resolve) =>
+                win.webContents.once("did-finish-load", resolve),
+            );
 
-            // Process each SVG in this row
-            for (let i = 0; i < svgPages[row].length; i++) {
-                if (i > 0) {
-                    doc.addPage();
-                }
-
-                SVGtoPDF(doc, svgPages[row][i], 40, 40, {
-                    width: doc.page.width - 80,
-                    height: doc.page.height - 80,
-                    preserveAspectRatio: "xMidYMid meet",
-                });
-            }
-
-            // Finalize the PDF
-            doc.end();
-
-            // Wait for the stream to finish and add PDF
-            await new Promise<void>((resolve, reject) => {
-                stream.on("finish", resolve);
-                stream.on("error", reject);
+            // Print to PDF
+            const pdfData = await win.webContents.printToPDF({
+                pageSize: "Letter",
+                landscape: true,
+                printBackground: true,
+                margins: { top: 0, bottom: 0, left: 0, right: 0 },
             });
+
+            fs.writeFileSync(pdfFilePath, pdfData);
             filePaths.push(pdfFilePath);
+            win.destroy();
         }
 
         return { success: true, filePaths };
+    }
+
+    private static generateDrillHtml({
+        drillNumber,
+        showTitle,
+        pageNumber,
+        setNumber,
+        counts,
+        measureNumbers,
+        prevCoord,
+        currCoord,
+        nextCoord,
+        notes,
+        svg,
+    }: {
+        drillNumber: string;
+        showTitle: string;
+        pageNumber: number | string;
+        setNumber: string;
+        counts: string;
+        measureNumbers: string;
+        prevCoord: string;
+        currCoord: string;
+        nextCoord: string;
+        notes: string;
+        svg: string;
+    }): string {
+        return `
+            <html>
+                <head>
+                    <style>
+                        body { margin: 0; font-family: Arial, sans-serif; }
+                        .page-content {
+                            margin: 32px;
+                        }
+                        .top-table {
+                            display: table;
+                            width: 100%;
+                            table-layout: fixed;
+                            margin-top: 0;
+                            margin-bottom: 16px;
+                            border-radius: 8px;
+                            overflow: hidden;
+                        }
+                        .top-row { display: table-row; }
+                        .top-cell {
+                            display: table-cell;
+                            background: #f0f0f0;
+                            padding: 12px;
+                            border-right: 2px dashed #aaa;
+                            text-align: center;
+                            font-size: 18px;
+                        }
+                        .top-cell:last-child { border-right: none; }
+                        .svg-container {
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            margin: 0 0 16px 0;
+                        }
+                        .svg-container svg {
+                            max-width: 100%;
+                            max-height: 1000px;
+                            height: auto;
+                            width: auto;
+                            display: block;
+                        }
+                        .bottom-table {
+                            width: 100%;
+                            margin-top: 16px;
+                            display: table;
+                            table-layout: fixed;
+                        }
+                        .bottom-row { display: table-row; }
+                        .bottom-cell {
+                            display: table-cell;
+                            vertical-align: top;
+                            padding: 8px 12px;
+                            font-size: 13px;
+                        }
+                        .notes {
+                            white-space: pre-line;
+                            font-size: 13px;
+                        }
+                    </style>
+                </head>
+                <body style="font-family: Arial, sans-serif">
+                    <div class="page-content">
+                        <div class="top-table">
+                            <div class="top-row">
+                                <div class="top-cell">${drillNumber}</div>
+                                <div class="top-cell">${showTitle}</div>
+                                <div class="top-cell">${pageNumber}</div>
+                            </div>
+                        </div>
+                        <div class="svg-container">
+                            ${svg}
+                        </div>
+                        <div class="bottom-table">
+                            <div class="bottom-row">
+                                <div class="bottom-cell">
+                                    Set Number: ${setNumber}<br>
+                                    Counts: ${counts}<br>
+                                    Measure Numbers: ${measureNumbers}
+                                </div>
+                                <div class="bottom-cell">
+                                    Previous Coordinate: ${prevCoord}<br>
+                                    Current Coordinate: ${currCoord}<br>
+                                    Next Coordinate: ${nextCoord}
+                                </div>
+                                <div class="bottom-cell notes">
+                                    Notes: <br>${notes}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="page-break-after: always"></div>
+                </body>
+            </html>
+        `;
     }
 
     /**
