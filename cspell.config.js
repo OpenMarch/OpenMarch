@@ -101,6 +101,7 @@ module.exports = {
         "spinbutton",
         "monokai",
         "openmarchdev",
+        "ccpa",
     ],
     ignorePaths: [
         "node_modules/**",
