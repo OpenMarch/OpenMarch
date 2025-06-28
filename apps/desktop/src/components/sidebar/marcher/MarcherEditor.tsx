@@ -264,11 +264,7 @@ function MarcherEditor() {
                                 )}
                             {/* Add rotation controls */}
                             <div className="w-full px-6">
-                                <MarcherRotationInput
-                                    selectedMarchers={selectedMarchers}
-                                    marcherPages={marcherPages}
-                                    selectedPage={selectedPage}
-                                />
+                                <MarcherRotationInput />
                             </div>
                         </SidebarCollapsible>
                     ) : (

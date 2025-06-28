@@ -1,54 +1,93 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { DragInput } from "@openmarch/ui";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import Marcher from "@/global/classes/Marcher";
-import MarcherPage from "@/global/classes/MarcherPage";
-import Page from "@/global/classes/Page";
 import { rotateGroup } from "@/global/classes/canvasObjects/GroupUtils";
+import { fabric } from "fabric";
+import DefaultListeners from "@/components/canvas/listeners/DefaultListeners";
 
-function MarcherRotationInput({
-    selectedMarchers,
-    marcherPages,
-    selectedPage,
-}: {
-    selectedMarchers: Marcher[];
-    marcherPages: MarcherPage[];
-    selectedPage: Page;
-}) {
+function MarcherRotationInput() {
     const [rotationAngle, setRotationAngle] = useState<number>(0);
-    const [isRotating, setIsRotating] = useState(false);
+    const [activeGroup, setActiveGroup] = useState<fabric.Group | null>(null);
 
-    const handleRotation = useCallback(() => {
-        console.log("Rotating to:", rotationAngle.toFixed(1), "degrees");
-    }, [rotationAngle]);
+    const handleRotationChange = useCallback(
+        (newAngle: number) => {
+            if (activeGroup) {
+                rotateGroup({
+                    group: activeGroup,
+                    angle: newAngle,
+                });
+            }
+        },
+        [activeGroup],
+    );
 
-    const handleRotationStart = useCallback(() => {
-        console.log("Rotation started");
-        setIsRotating(true);
-    }, []);
-
-    const handleRotationEnd = useCallback(() => {
-        setIsRotating(false);
-    }, []);
-
-    const handleRotationChange = useCallback((newAngle: number) => {
+    useEffect(() => {
         const canvas: OpenMarchCanvas = window.canvas;
+
+        const handleGroupSelection = (e: fabric.IEvent) => {
+            const group = (e as any).group as fabric.Group | null;
+            setActiveGroup(group);
+            setRotationAngle(group?.angle || 0);
+        };
+
+        canvas.on("group:selection", handleGroupSelection);
+
+        // Set initial group
         if (canvas.activeGroup) {
-            rotateGroup({
-                group: canvas.activeGroup,
-                angle: newAngle,
-            });
+            setActiveGroup(canvas.activeGroup);
+            setRotationAngle(canvas.activeGroup.angle || 0);
         }
+
+        return () => {
+            canvas.off("group:selection", handleGroupSelection);
+        };
     }, []);
+
+    useEffect(() => {
+        if (!activeGroup) return;
+
+        const updateAngle = () => {
+            setRotationAngle(activeGroup.angle || 0);
+        };
+
+        activeGroup.on("rotating", updateAngle);
+        activeGroup.on("modified", updateAngle);
+
+        return () => {
+            activeGroup.off("rotating", updateAngle);
+            activeGroup.off("modified", updateAngle);
+        };
+    }, [activeGroup]);
+
+    function handleRotationDragEnd() {
+        if (!activeGroup) {
+            console.error("No group selected");
+            return;
+        }
+        const canvas = activeGroup.canvas as OpenMarchCanvas;
+        if (canvas.listeners instanceof DefaultListeners) {
+            canvas.listeners.handleObjectModified();
+        }
+        setRotationAngle(activeGroup.angle ?? 0);
+    }
 
     return (
         <div className="flex flex-col gap-8">
             <DragInput
-                dragSensitivity={0.1}
-                value={rotationAngle}
-                onDragChange={handleRotationChange}
-                onDragStart={handleRotationStart}
-                onDragEnd={handleRotationEnd}
+                dragSensitivity={0.5}
+                dragSensitivityWithShift={0.1}
+                value={Math.round(rotationAngle) % 360}
+                roundToNearest={15}
+                roundToNearestWithShift={1}
+                onDragChange={(value) => {
+                    handleRotationChange(value);
+                }}
+                onChange={(value) => {
+                    handleRotationChange(value);
+                }}
+                onBlur={handleRotationDragEnd}
+                onDragEnd={handleRotationDragEnd}
+                disabled={!activeGroup}
             />
         </div>
     );

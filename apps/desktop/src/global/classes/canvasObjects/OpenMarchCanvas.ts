@@ -246,7 +246,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         } else {
             this._activeGroup = null;
         }
-        console.log("handleGroupSelection", this._activeGroup);
+        this.fire("group:selection", { group: this._activeGroup });
     }
 
     get activeGroup() {
@@ -820,6 +820,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.setHeight(window.innerHeight);
     }
 
+    get listeners() {
+        return this._listeners;
+    }
     /**
      * Set the listeners on the canvas. This should be changed based on the cursor mode.
      *
