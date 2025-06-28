@@ -19,6 +19,7 @@ import {
     SectionAppearance,
     getSectionAppearance,
 } from "@/global/classes/SectionAppearance";
+import { setGroupAttributes } from "./GroupUtils";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -237,7 +238,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     handleGroupSelection(event: fabric.IEvent<MouseEvent>) {
         if (event.selected?.length && event.selected.length > 1) {
-            this._activeGroup = this.getActiveObject() as fabric.Group;
+            const group = this.getActiveObject();
+            if (group && group instanceof fabric.Group) {
+                this._activeGroup = group;
+                setGroupAttributes(this._activeGroup);
+            }
         } else {
             this._activeGroup = null;
         }
