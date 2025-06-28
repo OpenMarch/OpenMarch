@@ -1,5 +1,4 @@
 import { fabric } from "fabric";
-import OpenMarchCanvas from "./OpenMarchCanvas";
 
 export const rotateGroup = ({
     group,
@@ -27,6 +26,14 @@ export const rotateGroup = ({
 // };
 
 const handleGroupRotating = (e: fabric.IEvent<Event>, group: fabric.Group) => {
+    const shiftKey = (e.e as MouseEvent).shiftKey;
+    const angle = group.angle ?? 0;
+
+    if (!shiftKey) {
+        const snappedAngle = Math.round(angle / 15) * 15;
+        group.rotate(snappedAngle);
+    }
+
     const currentAngle = group.angle ?? 0;
     for (const object of group.getObjects()) {
         object.rotate(-currentAngle);
