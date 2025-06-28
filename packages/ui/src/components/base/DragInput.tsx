@@ -110,14 +110,22 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
         ref,
     ) => {
         const [isDragging, setIsDragging] = useState(false);
-        const [startX, setStartX] = useState(0);
-        const [startY, setStartY] = useState(0);
         const startValue = useRef(0);
         const [localValue, setLocalValue] = useState(value?.toString());
         const inputRef = useRef<HTMLInputElement>(null);
         const combinedRef = useCombinedRefs(ref, inputRef);
-        // Track if shift is pressed during drag
-        const shiftPressedRef = useRef(false);
+        // Track the last mouse position and shift state during drag
+        const lastDragState = useRef<{
+            x: number;
+            y: number;
+            shift: boolean;
+            value: number;
+        }>({
+            x: 0,
+            y: 0,
+            shift: false,
+            value: 0,
+        });
 
         // Helper to round a value based on shift key and props
         const applyRounding = useCallback(
@@ -181,29 +189,57 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
             }
         };
 
+        const handleMouseDown = useCallback(
+            (e: React.MouseEvent) => {
+                e.preventDefault();
+                setIsDragging(true);
+                const startVal = parseFloat(value?.toString() ?? "0");
+                startValue.current = startVal;
+                // Initialize lastDragState
+                lastDragState.current = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    shift: e.shiftKey,
+                    value: startVal,
+                };
+            },
+            [value],
+        );
+
         const handleMouseMove = useCallback(
             (e: MouseEvent) => {
                 if (!isDragging) return;
-                shiftPressedRef.current = e.shiftKey;
 
-                const stepNum =
+                const prev = lastDragState.current;
+                const currShift = e.shiftKey;
+                let stepNum =
                     typeof step === "number"
                         ? step
                         : parseFloat(step.toString());
-                let valueChange = 0;
-                const sensitivity =
-                    e.shiftKey && typeof dragSensitivityWithShift === "number"
+                let sensitivity =
+                    currShift && typeof dragSensitivityWithShift === "number"
                         ? dragSensitivityWithShift
                         : dragSensitivity;
 
-                if (dragAxis === "y") {
-                    const deltaY = startY - e.clientY;
-                    valueChange = Math.floor((deltaY * sensitivity) / stepNum);
-                } else {
-                    const deltaX = e.clientX - startX;
-                    valueChange = Math.floor((deltaX * sensitivity) / stepNum);
+                // If shift state changed, reset baseline
+                if (currShift !== prev.shift) {
+                    lastDragState.current = {
+                        x: e.clientX,
+                        y: e.clientY,
+                        shift: currShift,
+                        value: parseFloat(localValue ?? "0"),
+                    };
+                    return; // Don't update value on the exact shift toggle event
                 }
-                let newValue = startValue.current + valueChange;
+
+                let delta = 0;
+                if (dragAxis === "y") {
+                    delta = prev.y - e.clientY;
+                } else {
+                    delta = e.clientX - prev.x;
+                }
+                let valueChange = (delta * sensitivity) / stepNum;
+                let newValue = prev.value + valueChange;
 
                 // Apply min/max constraints
                 const minNum =
@@ -220,22 +256,21 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                         : undefined;
                 if (minNum !== undefined) newValue = Math.max(minNum, newValue);
                 if (maxNum !== undefined) newValue = Math.min(maxNum, newValue);
-                newValue = applyRounding(newValue, e.shiftKey);
+                newValue = applyRounding(newValue, currShift);
                 onDragChange?.(newValue, e);
                 setLocalValue(newValue.toString());
             },
             [
                 isDragging,
-                startY,
-                startX,
+                dragAxis,
+                dragSensitivity,
+                dragSensitivityWithShift,
                 step,
                 min,
                 max,
-                dragSensitivity,
-                dragSensitivityWithShift,
                 onDragChange,
-                dragAxis,
                 applyRounding,
+                localValue,
             ],
         );
 
@@ -256,20 +291,6 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                 }
             },
             [isDragging, localValue, onDragEnd, applyRounding],
-        );
-
-        const handleMouseDown = useCallback(
-            (e: React.MouseEvent) => {
-                e.preventDefault();
-                setIsDragging(true);
-                if (dragAxis === "y") {
-                    setStartY(e.clientY);
-                } else {
-                    setStartX(e.clientX);
-                }
-                startValue.current = parseFloat(value?.toString() ?? "0");
-            },
-            [value, dragAxis],
         );
 
         // Effect to add/remove global event listeners for dragging
