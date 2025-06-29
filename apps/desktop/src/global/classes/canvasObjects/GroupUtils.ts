@@ -11,10 +11,6 @@ export const rotateGroup = ({
     angle: number;
 }) => {
     group.rotate(angle);
-    for (const object of group.getObjects()) {
-        object.rotate(-angle);
-        object.setCoords();
-    }
     group.setCoords();
     group.canvas?.requestRenderAll();
 };
@@ -35,11 +31,6 @@ const handleGroupRotating = (e: fabric.IEvent<Event>, group: fabric.Group) => {
         group.rotate(snappedAngle);
     }
 
-    const currentAngle = group.angle ?? 0;
-    for (const object of group.getObjects()) {
-        object.rotate(-currentAngle);
-        object.setCoords();
-    }
     group.setCoords();
     group.canvas?.requestRenderAll();
 };
@@ -56,12 +47,17 @@ export const handleGroupScaling = (
     e: fabric.IEvent<Event>,
     group: fabric.Group,
 ) => {
-    // console.log("scaling", e.transform?.action);
     const transformMatrix = group.calcTransformMatrix();
+    console.log("transform", transformMatrix);
     const scaleX = transformMatrix[0];
     const scaleY = transformMatrix[3];
 
+    console.debug("SCALE X", scaleX);
+    console.debug("SCALE Y", scaleY);
     for (const object of group.getObjects()) {
+        console.debug("original scale", object.scaleX, object.scaleY);
+        object.scaleX = 1;
+        object.scaleY = 1;
         // Apply the inverse scale to the child so it visually stays the same size
         object.scaleX = 1 / scaleX;
         object.scaleY = 1 / scaleY;
@@ -73,6 +69,12 @@ export const handleGroupScaling = (
     // Reset the group's scale to 1 so the frame stays at the new size
     group.setCoords();
     group.canvas?.requestRenderAll();
+};
+
+export const resetMarcherRotation = (group: fabric.Group) => {
+    group._objects.forEach((o) => {
+        if (o instanceof CanvasMarcher) o.angle = 0;
+    });
 };
 
 export const setGroupAttributes = (group: fabric.Group) => {

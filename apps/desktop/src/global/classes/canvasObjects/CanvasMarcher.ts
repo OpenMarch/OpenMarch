@@ -128,7 +128,7 @@ export default class CanvasMarcher
             hasBorders: true,
             originX: "center",
             originY: "center",
-            lockRotation: true,
+            // lockRotation: true,
             hoverCursor: "pointer",
             ...ActiveObjectArgs,
         });

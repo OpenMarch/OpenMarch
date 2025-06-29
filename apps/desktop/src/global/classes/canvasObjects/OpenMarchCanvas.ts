@@ -20,7 +20,7 @@ import {
     SectionAppearance,
     getSectionAppearance,
 } from "@/global/classes/SectionAppearance";
-import { setGroupAttributes } from "./GroupUtils";
+import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -230,22 +230,34 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         this.requestRenderAll();
 
-        this.on("selection:created", this.handleGroupSelection);
-        this.on("selection:updated", this.handleGroupSelection);
-        this.on("selection:cleared", this.handleGroupSelection);
+        this.on("selection:created", this.handleSelection);
+        this.on("selection:updated", this.handleSelection);
+        this.on("selection:cleared", this.handleSelection);
     }
 
     /******************* GROUP SELECTION HANDLING *******************/
 
-    handleGroupSelection(event: fabric.IEvent<MouseEvent>) {
+    handleSelection(event: fabric.IEvent<MouseEvent>) {
         if (event.selected?.length && event.selected.length > 1) {
             const group = this.getActiveObject();
             if (group && group instanceof fabric.Group) {
                 this._activeGroup = group;
                 setGroupAttributes(this._activeGroup);
+                console.log();
+                resetMarcherRotation(group);
             }
         } else {
             this._activeGroup = null;
+
+            // If a marcher was selected, reset the rotation
+            if (
+                event.selected &&
+                event.selected.length &&
+                event.selected[0] instanceof CanvasMarcher
+            ) {
+                console.debug("SELECTED MARCHER", event.selected[0]);
+                event.selected[0].angle = 0;
+            }
         }
         this.fire("group:selection", { group: this._activeGroup });
     }
@@ -253,6 +265,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     get activeGroup() {
         return this._activeGroup;
     }
+
     /******************* ADVANCED EVENT HANDLERS ******************/
 
     /**
