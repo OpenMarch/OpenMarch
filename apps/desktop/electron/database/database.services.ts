@@ -906,3 +906,81 @@ async function deleteAudioFile(
     }
     return output;
 }
+
+/* ============================ Music Xml Files ============================ */
+/**
+ * Gets the information on the music xml files in the database.
+ * I.e. just the path and nickname. This is to save memory so the whole music xml file isn't loaded when not needed.
+ *
+ * @param db The database connection
+ * @returns Array of measures
+ */
+async function getMusicXmlFilesDetails(
+    db?: Database.Database,
+): Promise<MusicXmlFile[]> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(
+        `SELECT id, path, nickname, selected FROM ${Constants.MusicXmlFilesTableName}`,
+    );
+    const response = stmt.all() as MusicXmlFile[];
+    if (!db) dbToUse.close();
+    return response;
+}
+
+/**
+ * Gets the currently selected music xml file in the database.
+ *
+ * If no music xml file is selected, the first music xml file in the database is selected.
+ *
+ * @returns The currently selected music xml file in the database. Includes music xml data.
+ */
+export async function getSelectedMusicXmlFile(
+    db?: Database.Database,
+): Promise<MusicXmlFile | null> {
+    const dbToUse = db || connect();
+    const stmt = dbToUse.prepare(
+        `SELECT * FROM ${Constants.MusicXmlFilesTableName} WHERE selected = 1`,
+    );
+    const result = await stmt.get();
+    if (!result) {
+        const firstMusicXmlFileStmt = dbToUse.prepare(
+            `SELECT * FROM ${Constants.MusicXmlFilesTableName} LIMIT 1`,
+        );
+        const firstMusicXmlFile =
+            (await firstMusicXmlFileStmt.get()) as MusicXmlFile;
+        if (!firstMusicXmlFile) {
+            console.error("No music xml files in the database");
+            return null;
+        }
+        await setSelectedMusicXmlFile(firstMusicXmlFile.id);
+        return firstMusicXmlFile as MusicXmlFile;
+    }
+    dbToUse.close();
+    return result as MusicXmlFile;
+}
+
+/**
+ * Sets the music xml file with the given ID as "selected" meaning that this music xml file will be used for measure/beat data
+ * This is done by setting the selected column to 1 for the selected music xml file and 0 for all others.
+ *
+ * @param musicXmlFileId The ID of the music xml file to get
+ * @returns The newly selected MusicXmlFile object including the music xml data
+ */
+async function setSelectedMusicXmlFile(
+    musicXmlFileId: number,
+): Promise<MusicXmlFile | null> {
+    const db = connect();
+    History.incrementUndoGroup(db);
+    const stmt = db.prepare(
+        `UPDATE ${Constants.MusicXmlFilesTableName} SET selected = 0`,
+    );
+    stmt.run();
+    const selectStmt = db.prepare(
+        `UPDATE ${Constants.MusicXmlFilesTableName} SET selected = 1 WHERE id = @musicXmlFileId`,
+    );
+    await selectStmt.run({ musicXmlFileId });
+    const result = await getSelectedMusicXmlFile(db);
+    History.incrementUndoGroup(db);
+    db.close();
+    return result as MusicXmlFile;
+}

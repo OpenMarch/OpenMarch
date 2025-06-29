@@ -8,6 +8,7 @@ export const Constants = {
     FieldPropertiesTableName: "field_properties",
     MeasureTableName: "measures",
     AudioFilesTableName: "audio_files",
+    MusicXmlFilesTableName: "musicxml_files",
     ShapeTableName: "shapes",
     ShapePageTableName: "shape_pages",
     ShapePageMarcherTableName: "shape_page_marchers",
