@@ -940,13 +940,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     curMarcher.section,
                     sectionAppearances,
                 );
-                this.add(
-                    new CanvasMarcher({
-                        marcher: curMarcher,
-                        marcherPage,
-                        sectionAppearance,
-                    }),
-                );
+                const canvasMarcher = new CanvasMarcher({
+                    marcher: curMarcher,
+                    marcherPage,
+                    sectionAppearance,
+                });
+                this.add(canvasMarcher);
+                this.add(canvasMarcher.textLabel);
             }
             // Marcher exists on the Canvas, move it to the new location if it has changed
             else {
