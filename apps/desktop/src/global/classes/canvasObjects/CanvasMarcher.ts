@@ -26,6 +26,7 @@ export default class CanvasMarcher
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
     readonly classString = Selectable.SelectableClasses.MARCHER;
     backgroundRectangle: fabric.Rect;
+    textLabel: fabric.Text;
 
     /** The object that represents the dot on the canvas */
     readonly dotObject: fabric.Object;
@@ -122,33 +123,30 @@ export default class CanvasMarcher
             });
         }
 
-        super(
-            [
-                markerShape,
-                new fabric.Text(marcher.drill_number, {
-                    left: marcherPage.x,
-                    top: marcherPage.y - CanvasMarcher.dotRadius * 2.2,
-                    originX: "center",
-                    originY: "center",
-                    fontFamily: "courier new",
-                    fill: rgbaToString(
-                        CanvasMarcher.theme.defaultMarcher.label,
-                    ),
-                    fontWeight: "bold",
-                    fontSize: 14,
-                }),
-            ],
-            {
-                hasControls: false,
-                hasBorders: true,
-                originX: "center",
-                originY: "center",
-                lockRotation: true,
-                hoverCursor: "pointer",
-                ...ActiveObjectArgs,
-            },
-        );
+        super([markerShape], {
+            hasControls: false,
+            hasBorders: true,
+            originX: "center",
+            originY: "center",
+            // lockRotation: true,
+            hoverCursor: "pointer",
+            ...ActiveObjectArgs,
+        });
         this.dotObject = markerShape;
+
+        this.textLabel = new fabric.Text(marcher.drill_number, {
+            left: marcherPage.x,
+            top: marcherPage.y - CanvasMarcher.dotRadius * 2.2,
+            originX: "center",
+            originY: "center",
+            fontFamily: "courier new",
+            fill: rgbaToString(CanvasMarcher.theme.defaultMarcher.label),
+            fontWeight: "bold",
+            fontSize: 14,
+            selectable: false,
+            hasControls: false,
+            hasBorders: false,
+        });
 
         // add a rectangle for stroke and fill
         this.backgroundRectangle = new fabric.Rect({
@@ -205,6 +203,7 @@ export default class CanvasMarcher
             left: roundedCanvasCoords.x,
             top: roundedCanvasCoords.y,
         } as Partial<this>);
+        this.updateTextLabelPosition();
     }
 
     /******* CANVAS ACCESSORS *******/
@@ -224,7 +223,7 @@ export default class CanvasMarcher
      */
     private getDotOffset(): { x: number; y: number } {
         // Get the first object, which should be the marker shape (circle, square, or triangle)
-        const shape = this._objects[0] as fabric.Object;
+        const shape = this.dotObject;
 
         if (!shape) {
             throw new Error(
@@ -243,9 +242,20 @@ export default class CanvasMarcher
                 "Shape does not have left or top properties - getDotOffset: CanvasMarcher.ts",
             );
 
+        let yOffset = 0;
+        // if (this.group) {
+        //     const groupTransform = this.group.calcTransformMatrix();
+        //     const scaleY = groupTransform[3];
+        //     console.log("shape.top", shape.top! - shape.height!);
+        //     yOffset =
+        //         scaleY *
+        //         (shape.height! - shape.getBoundingRect(false, false).top!);
+        //     console.log("yOffset", yOffset);
+        // }
+
         return {
             x: shape.left,
-            y: shape.top,
+            y: shape.top + yOffset,
         };
     }
 
@@ -282,12 +292,14 @@ export default class CanvasMarcher
 
             // The group's position will be set to the relative dot position, offset by the dot's position within the group
             const groupAngle = this.group.angle || 0;
+            let rotatedDotOffset = dotOffset;
+            // if (groupAngle !== 0) {
             const angleRad = fabric.util.degreesToRadians(groupAngle);
             const cos = Math.cos(angleRad);
             const sin = Math.sin(angleRad);
 
             // Rotate the dot offset by the group's angle
-            const rotatedDotOffset = {
+            rotatedDotOffset = {
                 x: dotOffset.x * cos - dotOffset.y * sin,
                 y: dotOffset.x * sin - dotOffset.y * cos,
             };
@@ -375,6 +387,30 @@ export default class CanvasMarcher
     }
 
     /**
+     * Updates the position of the text label to follow the dot.
+     */
+    updateTextLabelPosition() {
+        const absoluteCoords = this.getAbsoluteCoords();
+        this.textLabel.set({
+            left: absoluteCoords.x,
+            top: absoluteCoords.y - CanvasMarcher.dotRadius * 2.2,
+        });
+        this.textLabel.setCoords();
+    }
+
+    /**
+     * Overrides the default setCoords to update the text label position.
+     * @returns {this}
+     */
+    setCoords() {
+        super.setCoords();
+        if (this.textLabel) {
+            this.updateTextLabelPosition();
+        }
+        return this;
+    }
+
+    /**
      * Get the coordinates of the marcher on the canvas that should be stored in the database.
      * This is the actual position of the center of the dot, not the position of the fabric group.
      *
@@ -447,6 +483,15 @@ export default class CanvasMarcher
             hoverCursor: "default",
             evented: false,
         } as Partial<this>);
+    }
+
+    /**
+     * Overrides the scale method to prevent scaling of CanvasMarcher objects.
+     * Calling this method will have no effect.
+     */
+    scale(_value: number): this {
+        // Prevent scaling
+        return this;
     }
 }
 
