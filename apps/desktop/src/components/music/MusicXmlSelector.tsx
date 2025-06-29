@@ -1,3 +1,5 @@
+import { useSelectedMusicXmlFile } from "@/context/SelectedMusicXmlFileContext";
+import MusicXmlFile from "@/global/classes/MusicXmlFile";
 import { useState, useEffect, useCallback } from "react";
 import {
     Select,
@@ -8,33 +10,35 @@ import {
 } from "@openmarch/ui";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
-
-// Dummy class/utility -- replace with your actual MusicXmlFile class or API.
-import MusicXmlFile from "@/global/classes/MusicXmlFile";
-import { useSelectedMusicXmlFile } from "@/context/SelectedMusicXmlFileContext";
+import AudioFile from "@/global/classes/AudioFile";
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 
 export default function MusicXmlSelector() {
-    const [xmlFiles, setXmlFiles] = useState<MusicXmlFile[]>([]);
+    const [musicXmlFiles, setMusicXmlFiles] = useState<MusicXmlFile[]>([]);
     const { selectedMusicXmlFile, setSelectedMusicXmlFile } =
-        useSelectedMusicXmlFile();
+        useSelectedMusicXmlFile()!;
 
-    const refreshXmlFiles = useCallback(() => {
-        MusicXmlFile.getMusicXmlFilesDetails().then(setXmlFiles);
-    }, []);
+    const refreshMusicXmlFiles = useCallback(() => {
+        MusicXmlFile.getMusicXmlFilesDetails().then((musicXmlFiles) => {
+            setMusicXmlFiles(musicXmlFiles);
+        });
+    }, [setMusicXmlFiles]);
 
     const handleSelectChange = useCallback(
         (value: string) => {
-            const selectedFileId = parseInt(value);
-            MusicXmlFile.setSelectedMusicXmlFile(selectedFileId).then(
-                setSelectedMusicXmlFile,
+            const selectedMusicXmlFileId = parseInt(value);
+            MusicXmlFile.setSelectedMusicXmlFile(selectedMusicXmlFileId).then(
+                (musicXmlFile: any) => {
+                    setSelectedMusicXmlFile(musicXmlFile);
+                },
             );
         },
         [setSelectedMusicXmlFile],
     );
 
     useEffect(() => {
-        refreshXmlFiles();
-    }, [refreshXmlFiles, selectedMusicXmlFile]);
+        refreshMusicXmlFiles();
+    }, [refreshMusicXmlFiles, selectedMusicXmlFile]);
 
     return (
         <div className="mt-8 flex items-center justify-between gap-8 px-12">
@@ -44,7 +48,7 @@ export default function MusicXmlSelector() {
             >
                 MusicXML File
             </label>
-            <div id="musicxml-selector" onClick={refreshXmlFiles}>
+            <div id="musicxml-selector" onClick={refreshMusicXmlFiles}>
                 <Select
                     onValueChange={handleSelectChange}
                     value={
@@ -65,13 +69,13 @@ export default function MusicXmlSelector() {
                         >
                             Import MusicXML file
                         </RegisteredActionButton>
-                        {xmlFiles.length > 0 && <SelectSeparator />}
-                        {xmlFiles.map((xmlFile) => (
+                        {musicXmlFiles.length > 0 && <SelectSeparator />}
+                        {musicXmlFiles.map((musicXmlFile) => (
                             <SelectItem
-                                key={xmlFile.id}
-                                value={`${xmlFile.id}`}
+                                key={musicXmlFile.id}
+                                value={`${musicXmlFile.id}`}
                             >
-                                {xmlFile.nickname}
+                                {musicXmlFile.nickname}
                             </SelectItem>
                         ))}
                     </SelectContent>

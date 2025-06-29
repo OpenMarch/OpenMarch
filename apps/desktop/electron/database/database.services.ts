@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { ipcMain, ipcRenderer } from "electron";
 import Database from "better-sqlite3";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
@@ -21,6 +21,7 @@ import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
 import { getOrm } from "./db";
+import MusicXmlFile from "@/global/classes/MusicXmlFile";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -362,7 +363,7 @@ export function initHandlers() {
     );
 
     // Audio Files
-    // Insert audio file is defined in main index.ts
+    // ipcMain.handle("audio:insert") is defined in main/index.ts
     ipcMain.handle("audio:getAll", async () => getAudioFilesDetails());
     ipcMain.handle("audio:getSelected", async () => getSelectedAudioFile());
     ipcMain.handle("audio:select", async (_, audioFileId: number) =>
@@ -373,6 +374,16 @@ export function initHandlers() {
     );
     ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
         deleteAudioFile(audioFileId),
+    );
+
+    // MusicXml Files
+    // ipcMain.handle("musicXml:insert") is defined in main/index.ts
+    ipcMain.handle("musicXml:getAll", async () => getMusicXmlFilesDetails());
+    ipcMain.handle("musicXml:getSelected", async () =>
+        getSelectedMusicXmlFile(),
+    );
+    ipcMain.handle("musicXml:select", async (_, musicXmlFileId: number) =>
+        setSelectedMusicXmlFile(musicXmlFileId),
     );
 
     /*********** SHAPES ***********/

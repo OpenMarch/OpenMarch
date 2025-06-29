@@ -49,6 +49,7 @@ import {
 } from "electron/database/tables/UtilityTable";
 
 import Plugin from "../../src/global/classes/Plugin";
+import MusicXmlFile from "@/global/classes/MusicXmlFile";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -383,6 +384,17 @@ const APP_API = {
         >,
     deleteAudioFile: (audioFileId: number) =>
         ipcRenderer.invoke("audio:delete", audioFileId) as Promise<AudioFile[]>,
+
+    // MusicXml File
+    getMusicXmlFilesDetails: () =>
+        ipcRenderer.invoke("musicXml:getAll") as Promise<MusicXmlFile[]>,
+    getSelectedMusicXmlFile: () =>
+        ipcRenderer.invoke("musicXml:getSelected") as Promise<MusicXmlFile>,
+    setSelectedMusicXmlFile: (musicXmlFileId: number) =>
+        ipcRenderer.invoke(
+            "musicXml:select",
+            musicXmlFileId,
+        ) as Promise<MusicXmlFile>,
 
     /*********** SHAPES ***********/
     // Shape

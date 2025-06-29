@@ -1,37 +1,37 @@
-import AudioFile from "@/global/classes/MusicXmlFile";
 import { ReactNode, createContext, useContext, useState } from "react";
+import MusicXmlFile from "@/global/classes/MusicXmlFile";
 
 // Define the type for the context value
-type SelectedMusicXmlFileContextFileContextProps = {
-    selectedAudioFile: XmlFile | null;
-    setSelectedAudioFile: (selectedXmlFile: File) => void;
+type SelectedMusicXmlFileContextProps = {
+    selectedMusicXmlFile: MusicXmlFile | null;
+    setSelectedMusicXmlFile: (selectedXmlFile: MusicXmlFile) => void;
 };
 
-const SelectedAudioFileContext = createContext<
-    SelectedAudioFileContextProps | undefined
+const SelectedMusicXmlFileContext = createContext<
+    SelectedMusicXmlFileContextProps | undefined
 >(undefined);
 
-export function SelectedAudioFileProvider({
+export function SelectedMusicXmlFileProvider({
     children,
 }: {
     children: ReactNode;
 }) {
-    const [selectedAudioFile, setSelectedAudioFile] =
-        useState<AudioFile | null>(null);
+    const [selectedMusicXmlFile, setSelectedMusicXmlFile] =
+        useState<MusicXmlFile | null>(null);
 
     // Create the context value object
-    const contextValue: SelectedAudioFileContextProps = {
-        selectedAudioFile,
-        setSelectedAudioFile,
+    const contextValue: SelectedMusicXmlFileContextProps = {
+        selectedMusicXmlFile,
+        setSelectedMusicXmlFile,
     };
 
     return (
-        <SelectedAudioFileContext.Provider value={contextValue}>
+        <SelectedMusicXmlFileContext.Provider value={contextValue}>
             {children}
-        </SelectedAudioFileContext.Provider>
+        </SelectedMusicXmlFileContext.Provider>
     );
 }
 
-export function useSelectedAudioFile() {
-    return useContext(SelectedAudioFileContext);
+export function useSelectedMusicXmlFile() {
+    return useContext(SelectedMusicXmlFileContext);
 }
