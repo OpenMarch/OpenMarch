@@ -10,8 +10,6 @@ import {
 } from "@openmarch/ui";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
-import AudioFile from "@/global/classes/AudioFile";
-import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 
 export default function MusicXmlSelector() {
     const [musicXmlFiles, setMusicXmlFiles] = useState<MusicXmlFile[]>([]);
