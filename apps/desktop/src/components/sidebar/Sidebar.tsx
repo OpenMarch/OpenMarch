@@ -1,4 +1,4 @@
-import MarcherEditor from "./MarcherEditor";
+import MarcherEditor from "./marcher/MarcherEditor";
 import PageEditor from "./PageEditor";
 import AlignmentEditor from "./AlignmentEditor";
 import ShapeEditor from "./ShapeEditor";

@@ -27,6 +27,9 @@ export default class CanvasMarcher
     readonly classString = Selectable.SelectableClasses.MARCHER;
     backgroundRectangle: fabric.Rect;
 
+    /** The object that represents the dot on the canvas */
+    readonly dotObject: fabric.Object;
+
     readonly objectToGloballySelect: Marcher;
 
     /** The id of the marcher in the database */
@@ -145,6 +148,8 @@ export default class CanvasMarcher
                 ...ActiveObjectArgs,
             },
         );
+        this.dotObject = markerShape;
+
         // add a rectangle for stroke and fill
         this.backgroundRectangle = new fabric.Rect({
             left: this.left,
@@ -166,7 +171,7 @@ export default class CanvasMarcher
         this.marcherObj = marcher;
 
         // Set the initial coordinates to the appropriate offset
-        const newCoords = this.databaseCoordsToCanvasCoords(marcherPage, false);
+        const newCoords = this.databaseCoordsToCanvasCoords(marcherPage);
         this.left = newCoords.x;
         this.top = newCoords.y;
 
@@ -183,19 +188,12 @@ export default class CanvasMarcher
         if (!canvas.uiSettings?.coordinateRounding) return;
 
         // Get current canvas coordinates
-        const currentCanvasCoords = {
-            x: this.left || 0,
-            y: this.top || 0,
-        };
-
-        // Convert to database coordinates
-        const databaseCoords =
-            this.canvasCoordsToDatabaseCoords(currentCanvasCoords);
+        const currentCanvasCoords = this.getAbsoluteCoords();
 
         // Apply rounding if shift is not held
         const roundedDatabaseCoords = event.e.shiftKey
-            ? databaseCoords
-            : this.roundCoordinates(databaseCoords, canvas.uiSettings);
+            ? currentCanvasCoords
+            : this.roundCoordinates(currentCanvasCoords, canvas.uiSettings);
 
         // Convert back to canvas coordinates
         const roundedCanvasCoords = this.databaseCoordsToCanvasCoords(
@@ -252,91 +250,59 @@ export default class CanvasMarcher
     }
 
     /**
-     * Get the offset of the group object when multiple marchers are selected.
-     * This is used to adjust the coordinates of the marcher when multiple marchers are selected,
-     * as the coordinates are relative to the center of the group.
-     *
-     * @returns {multipleSelected: boolean, thisIsSelected: boolean, groupOffset: {x: number, y: number}}
-     */
-    private getGroupOffset(): { x: number; y: number } {
-        const canvas = this.getCanvas();
-
-        // Check if multiple marchers are selected and if the current marcher is one of them
-        let groupOffset = { x: 0, y: 0 };
-        const activeObjects = canvas.getActiveObjects();
-        const isActiveObject = activeObjects.includes(this);
-        if (activeObjects.length > 1 && isActiveObject) {
-            const groupObject = canvas.getActiveObject();
-
-            // Get the center of the group (when multiple objects are selected, the coordinates are relative to the group's center)
-            groupOffset = {
-                x: (groupObject?.left || 0) + (groupObject?.width || 0) / 2,
-                y: (groupObject?.top || 0) + (groupObject?.height || 0) / 2,
-            };
-        }
-        return groupOffset;
-    }
-
-    /**
      * Converts the coordinates from the database to the canvas coordinates of the dot/label fabric group.
      *
      * @param databaseCoords The coordinates from the database where the actual dot should be. I.e. a marcherPage object
-     * @param _adjustForGroup Whether to adjust the coordinates for when multiple marchers are selected. This should always be true, except when setting the initial coordinates in this class's constructor.
      * @returns {x: number, y: number}, The coordinates of the center of the dot/label fabric group on the canvas.
      */
-    private databaseCoordsToCanvasCoords(
-        databaseCoords: {
-            x: number;
-            y: number;
-        },
-        _adjustForGroup = true,
-    ) {
-        let groupOffset = { x: 0, y: 0 };
-        if (_adjustForGroup) groupOffset = this.getGroupOffset();
-        const dotOffset = this.getDotOffset();
-
-        const newCanvasCoords = {
-            x:
-                databaseCoords.x -
-                groupOffset.x -
-                dotOffset.x +
-                CanvasMarcher.gridOffset,
-            y:
-                databaseCoords.y -
-                groupOffset.y -
-                dotOffset.y +
-                CanvasMarcher.gridOffset,
-        };
-        return newCanvasCoords;
-    }
-
-    /**
-     * Converts the coordinates from the canvas to the coordinates of the center of the dot which should be stored in
-     * the database.
-     *
-     * @param canvasCoords The coordinates of the dot/label fabric group on the canvas.
-     * @returns {x: number, y: number}, coordinates of the center of the dot which, should be stored in the database.
-     */
-    private canvasCoordsToDatabaseCoords(canvasCoords: {
+    private databaseCoordsToCanvasCoords(databaseCoords: {
         x: number;
         y: number;
     }) {
-        const groupOffset = this.getGroupOffset();
         const dotOffset = this.getDotOffset();
 
-        const databaseCoords = {
-            x:
-                canvasCoords.x +
-                groupOffset.x +
-                dotOffset.x -
-                CanvasMarcher.gridOffset,
-            y:
-                canvasCoords.y +
-                groupOffset.y +
-                dotOffset.y -
-                CanvasMarcher.gridOffset,
+        // The absolute position of the dot on the canvas
+        const absoluteDotPosition = {
+            x: databaseCoords.x + CanvasMarcher.gridOffset,
+            y: databaseCoords.y + CanvasMarcher.gridOffset,
         };
-        return databaseCoords;
+
+        // If the object is in a group, we need to calculate the position relative to the group
+        if (this.group) {
+            // Get the inverse transform of the group
+            const groupTransform = this.group.calcTransformMatrix();
+            const invertedGroupTransform =
+                fabric.util.invertTransform(groupTransform);
+
+            // Transform the absolute dot position to be relative to the group
+            const relativeDotPosition = fabric.util.transformPoint(
+                new fabric.Point(absoluteDotPosition.x, absoluteDotPosition.y),
+                invertedGroupTransform,
+            );
+
+            // The group's position will be set to the relative dot position, offset by the dot's position within the group
+            const groupAngle = this.group.angle || 0;
+            const angleRad = fabric.util.degreesToRadians(groupAngle);
+            const cos = Math.cos(angleRad);
+            const sin = Math.sin(angleRad);
+
+            // Rotate the dot offset by the group's angle
+            const rotatedDotOffset = {
+                x: dotOffset.x * cos - dotOffset.y * sin,
+                y: dotOffset.x * sin - dotOffset.y * cos,
+            };
+
+            return {
+                x: relativeDotPosition.x + rotatedDotOffset.x,
+                y: relativeDotPosition.y + rotatedDotOffset.y,
+            };
+        }
+
+        // If not in a group, the group's position is the absolute dot position, offset by the dot's position within the group
+        return {
+            x: absoluteDotPosition.x - dotOffset.x,
+            y: absoluteDotPosition.y - dotOffset.y,
+        };
     }
 
     /**
@@ -396,27 +362,36 @@ export default class CanvasMarcher
     }
 
     /**
+     * Get the absolute coordinates of the dotObject (the marcher marker)
+     * @returns {x: number, y: number}
+     */
+    getAbsoluteCoords() {
+        // Get the center point of the dotObject (the marcher marker)
+        const transformMatrix = this.dotObject.calcTransformMatrix();
+        const x = transformMatrix[4];
+        const y = transformMatrix[5];
+
+        return { x, y };
+    }
+
+    /**
      * Get the coordinates of the marcher on the canvas that should be stored in the database.
      * This is the actual position of the center of the dot, not the position of the fabric group.
      *
      * @returns {x: number, y: number}
      */
     getMarcherCoords(uiSettings?: UiSettings): { x: number; y: number } {
-        if (this.left === undefined || this.top === undefined)
-            throw new Error(
-                "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
-            );
-        const databaseCoords = this.canvasCoordsToDatabaseCoords({
-            x: this.left,
-            y: this.top,
-        });
+        const databaseCoords = this.getAbsoluteCoords();
 
         // Apply coordinate rounding if UI settings are provided
         if (uiSettings) {
             return this.roundCoordinates(databaseCoords, uiSettings);
         }
 
-        return databaseCoords;
+        return {
+            x: databaseCoords.x - CanvasMarcher.gridOffset,
+            y: databaseCoords.y - CanvasMarcher.gridOffset,
+        };
     }
 
     /**

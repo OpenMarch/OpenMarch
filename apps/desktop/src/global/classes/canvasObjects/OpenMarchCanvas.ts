@@ -20,6 +20,7 @@ import {
     SectionAppearance,
     getSectionAppearance,
 } from "@/global/classes/SectionAppearance";
+import { setGroupAttributes } from "./GroupUtils";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -145,6 +146,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private panSensitivity = 0.5; // Reduced for smoother panning
     private zoomSensitivity = 0.03; // Reduced for gentler zooming
     private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
+    private _activeGroup: fabric.Group | null = null;
 
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
@@ -227,8 +229,30 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.refreshBackgroundImage();
 
         this.requestRenderAll();
+
+        this.on("selection:created", this.handleGroupSelection);
+        this.on("selection:updated", this.handleGroupSelection);
+        this.on("selection:cleared", this.handleGroupSelection);
     }
 
+    /******************* GROUP SELECTION HANDLING *******************/
+
+    handleGroupSelection(event: fabric.IEvent<MouseEvent>) {
+        if (event.selected?.length && event.selected.length > 1) {
+            const group = this.getActiveObject();
+            if (group && group instanceof fabric.Group) {
+                this._activeGroup = group;
+                setGroupAttributes(this._activeGroup);
+            }
+        } else {
+            this._activeGroup = null;
+        }
+        this.fire("group:selection", { group: this._activeGroup });
+    }
+
+    get activeGroup() {
+        return this._activeGroup;
+    }
     /******************* ADVANCED EVENT HANDLERS ******************/
 
     /**
@@ -797,6 +821,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.setHeight(window.innerHeight);
     }
 
+    get listeners() {
+        return this._listeners;
+    }
     /**
      * Set the listeners on the canvas. This should be changed based on the cursor mode.
      *
@@ -951,6 +978,38 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
+        this.requestRenderAll();
+    };
+
+    /**
+     * Set the coordinates of objects without updating them in the database.
+     *
+     * @param objects The objects to set the local coordinates of
+     */
+    setLocalCoordinates = (objects: { x: number; y: number; id: number }[]) => {
+        const canvasMarchers = this.getCanvasMarchersByIds(
+            objects.map((o) => o.id),
+        );
+        // Sort the objects and canvasMarchers by id to ensure matching order
+        const sortedObjects = [...objects].sort((a, b) => a.id - b.id);
+        const sortedCanvasMarchers = [...canvasMarchers].sort(
+            (a, b) => a.marcherObj.id - b.marcherObj.id,
+        );
+        if (sortedObjects.length !== sortedCanvasMarchers.length) {
+            console.warn(
+                "Number of objects and canvasMarchers do not match - setLocalCoordinates: Canvas.tsx",
+                objects,
+                canvasMarchers,
+            );
+        }
+
+        sortedCanvasMarchers.forEach((canvasMarcher, index) => {
+            canvasMarcher.set({
+                top: sortedObjects[index].x,
+                left: sortedObjects[index].y,
+            });
+            canvasMarcher.setCoords();
+        });
         this.requestRenderAll();
     };
 
