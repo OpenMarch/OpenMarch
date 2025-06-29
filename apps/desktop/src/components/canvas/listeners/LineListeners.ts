@@ -68,13 +68,18 @@ export default class LineListeners
     };
 
     /**
-     * Clears the static marchers and pathways from the marchers to the active line
+     * Clears the static marchers, pathways, and their midpoints from the marchers to the active line
      */
     clearPathwaysAndStaticMarchers = () => {
         this._pathways.forEach((pathway) => {
             this.canvas.remove(pathway);
         });
+        this._midpoints.forEach((midpoint) => {
+            this.canvas.remove(midpoint);
+        });
         this._pathways.clear();
+        this._midpoints.clear();
+
         this._staticMarchers.forEach((staticMarcher) => {
             this.canvas.remove(staticMarcher);
         });
