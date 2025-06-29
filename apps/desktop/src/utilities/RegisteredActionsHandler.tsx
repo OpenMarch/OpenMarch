@@ -524,7 +524,6 @@ function RegisteredActionsHandler() {
                     });
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
-                    console.log("launchImportMusicXmlFileDialogue");
                     break;
                 default:
                     isElectronAction = false;
