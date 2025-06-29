@@ -1,26 +1,29 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 
-export const rotateGroup = ({
-    group,
-    centerOffset,
-    angle,
-}: {
-    group: fabric.Group;
-    centerOffset?: { x: number; y: number };
-    angle: number;
-}) => {
-    group.rotate(angle);
+/**
+ * Actions that must be taken when a group is rotated
+ */
+const rotationSideEffects = (group: fabric.Group) => {
+    for (const object of group.getObjects()) {
+        if (object instanceof CanvasMarcher) {
+            object.updateTextLabelPosition();
+        }
+    }
     group.setCoords();
     group.canvas?.requestRenderAll();
 };
 
-// const handleGroupModified = (e: fabric.IEvent<Event>) => {
-//     const group = e.target as fabric.Group;
-//     const canvas: OpenMarchCanvas = group.canvas as OpenMarchCanvas;
-//     console.log("canvas", canvas.getCanvasMarchers());
-//     console.log("modified", e);
-// };
+export const rotateGroup = ({
+    group,
+    angle,
+}: {
+    group: fabric.Group;
+    angle: number;
+}) => {
+    group.rotate(angle);
+    rotationSideEffects(group);
+};
 
 const handleGroupRotating = (e: fabric.IEvent<Event>, group: fabric.Group) => {
     const shiftKey = (e.e as MouseEvent).shiftKey;
@@ -30,9 +33,7 @@ const handleGroupRotating = (e: fabric.IEvent<Event>, group: fabric.Group) => {
         const snappedAngle = Math.round(angle / 15) * 15;
         group.rotate(snappedAngle);
     }
-
-    group.setCoords();
-    group.canvas?.requestRenderAll();
+    rotationSideEffects(group);
 };
 
 const handleGroupMoving = (e: fabric.IEvent<Event>, group: fabric.Group) => {
