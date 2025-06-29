@@ -48,19 +48,12 @@ export const handleGroupScaling = (
     group: fabric.Group,
 ) => {
     const transformMatrix = group.calcTransformMatrix();
-    console.log("transform", transformMatrix);
-    const scaleX = transformMatrix[0];
-    const scaleY = transformMatrix[3];
+    const decomposed = fabric.util.qrDecompose(transformMatrix);
 
-    console.debug("SCALE X", scaleX);
-    console.debug("SCALE Y", scaleY);
     for (const object of group.getObjects()) {
-        console.debug("original scale", object.scaleX, object.scaleY);
-        object.scaleX = 1;
-        object.scaleY = 1;
         // Apply the inverse scale to the child so it visually stays the same size
-        object.scaleX = 1 / scaleX;
-        object.scaleY = 1 / scaleY;
+        object.scaleX = 1 / decomposed.scaleX;
+        object.scaleY = 1 / decomposed.scaleY;
 
         // Optionally, update position if needed (usually not necessary for simple groups)
         object.setCoords();
