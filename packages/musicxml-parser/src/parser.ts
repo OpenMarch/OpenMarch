@@ -1,6 +1,3 @@
-import fs from "fs/promises";
-import JSZip from "jszip";
-
 /**
  * Represents a beat in a musical performance or composition.
  * Provides details about the beat's position, duration, and optional notes.
@@ -125,6 +122,7 @@ export function parseMusicXml(xmlText: string): Measure[] {
  * This function reads the .mxl file, unzips it, and returns the content of the first XML file found.
  * Assumes that the zipped .mxl file contains only one desired XML file.
  */
+/*
 export async function extractXmlFromMxlFile(filePath: string): Promise<string> {
     // load file
     const fileBuffer = await fs.readFile(filePath);
@@ -144,4 +142,4 @@ export async function extractXmlFromMxlFile(filePath: string): Promise<string> {
 
     // unzipped, but no xml or musicxml file found
     throw new Error("No XML file found.");
-}
+}*/
