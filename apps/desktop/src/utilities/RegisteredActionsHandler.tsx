@@ -18,7 +18,6 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import MusicXmlFile from "@/global/classes/MusicXmlFile";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -526,20 +525,6 @@ function RegisteredActionsHandler() {
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     console.log("launchImportMusicXmlFileDialogue");
-
-                    window.electron
-                        .launchInsertMusicXmlFileDialogue()
-                        .then(() => {
-                            MusicXmlFile.getSelectedMusicXmlFile().then(
-                                (response) => {
-                                    if (response) {
-                                        MusicXmlFile.setSelectedMusicXmlFile(
-                                            response.id,
-                                        );
-                                    }
-                                },
-                            );
-                        });
                     break;
                 default:
                     isElectronAction = false;

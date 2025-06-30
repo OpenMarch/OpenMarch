@@ -125,18 +125,6 @@ export const audio_files = sqliteTable("audio_files", {
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
-export const music_xml_files = sqliteTable("music_xml_files", {
-    id: integer().primaryKey(),
-    path: text().notNull(),
-    nickname: text(),
-    data: blob(),
-    selected: integer().default(0).notNull(),
-    created_at: text().notNull(),
-    updated_at: text()
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-});
-
 export const shapes = sqliteTable("shapes", {
     id: integer().primaryKey(),
     name: text(),

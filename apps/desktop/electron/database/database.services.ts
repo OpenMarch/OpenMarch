@@ -1,4 +1,4 @@
-import { ipcMain, ipcRenderer } from "electron";
+import { ipcMain } from "electron";
 import Database from "better-sqlite3";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
@@ -21,7 +21,6 @@ import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
 import { getOrm } from "./db";
-import MusicXmlFile from "@/global/classes/MusicXmlFile";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -374,16 +373,6 @@ export function initHandlers() {
     );
     ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
         deleteAudioFile(audioFileId),
-    );
-
-    // MusicXml Files
-    // ipcMain.handle("musicXml:insert") is defined in main/index.ts
-    ipcMain.handle("musicXml:getAll", async () => getMusicXmlFilesDetails());
-    ipcMain.handle("musicXml:getSelected", async () =>
-        getSelectedMusicXmlFile(),
-    );
-    ipcMain.handle("musicXml:select", async (_, musicXmlFileId: number) =>
-        setSelectedMusicXmlFile(musicXmlFileId),
     );
 
     /*********** SHAPES ***********/
@@ -905,158 +894,4 @@ async function deleteAudioFile(
         db.close();
     }
     return output;
-}
-
-/* ============================ Music Xml Files ============================ */
-
-/**
- * Inserts a new MusicXML file record into the database and sets it as selected.
- * This also deselects all other music XML files.
- *
- * @param musicXmlFile The MusicXmlFile object to insert
- * @returns LegacyDatabaseResponse
- */
-export async function insertMusicXmlFile(
-    musicXmlFile: MusicXmlFile,
-): Promise<LegacyDatabaseResponse<MusicXmlFile[]>> {
-    const db = connect();
-    // Deselect all other entries
-    db.prepare(
-        `UPDATE ${Constants.MusicXmlFilesTableName} SET selected = 0`,
-    ).run();
-    let output: LegacyDatabaseResponse<MusicXmlFile[]> = { success: false };
-    try {
-        History.incrementUndoGroup(db);
-        const insertStmt = db.prepare(`
-            INSERT INTO ${Constants.MusicXmlFilesTableName} (
-                data,
-                path,
-                nickname,
-                selected,
-                created_at,
-                updated_at
-            )
-            VALUES (
-                       @data,
-                       @path,
-                       @nickname,
-                       @selected,
-                       @created_at,
-                       @updated_at
-                   )
-        `);
-        const created_at = new Date().toISOString();
-        const insertResult = insertStmt.run({
-            ...musicXmlFile,
-            selected: 1,
-            created_at,
-            updated_at: created_at,
-        });
-        const id = insertResult.lastInsertRowid;
-
-        output = {
-            success: true,
-            result: [{ ...musicXmlFile, id: id as number }],
-        };
-    } catch (error: any) {
-        console.error("Insert music xml file error:", error);
-        output = {
-            success: false,
-            error: { message: error.message, stack: error.stack },
-        };
-    } finally {
-        History.incrementUndoGroup(db);
-        db.close();
-    }
-    return output;
-}
-
-/**
- * Gets the information on the music xml files in the database.
- * I.e. just the path and nickname. This is to save memory so the whole music xml file isn't loaded when not needed.
- *
- * @param db The database connection
- * @returns Array of measures
- */
-async function getMusicXmlFilesDetails(
-    db?: Database.Database,
-): Promise<MusicXmlFile[]> {
-    const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT id, path, nickname, selected FROM ${Constants.MusicXmlFilesTableName}`,
-    );
-    const response = stmt.all() as MusicXmlFile[];
-    if (!db) dbToUse.close();
-    return response;
-}
-
-/**
- * Gets the currently selected music xml file in the database.
- *
- * If no music xml file is selected, the first music xml file in the database is selected.
- *
- * @returns The currently selected music xml file in the database. Includes music xml data.
- */
-export async function getSelectedMusicXmlFile(
-    db?: Database.Database,
-): Promise<MusicXmlFile | null> {
-    // If no db is provided, open a new connection
-    const openedHere = !db;
-    const dbToUse = db || connect();
-
-    // Get the selected music xml file
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.MusicXmlFilesTableName} WHERE selected = 1`,
-    );
-    const result = stmt.get();
-
-    // If no result, select the first music xml file
-    if (!result) {
-        const firstMusicXmlFileStmt = dbToUse.prepare(
-            `SELECT * FROM ${Constants.MusicXmlFilesTableName} LIMIT 1`,
-        );
-        const firstMusicXmlFile = firstMusicXmlFileStmt.get() as MusicXmlFile;
-
-        // If no music xml files in the database, return null
-        if (!firstMusicXmlFile) {
-            console.error("No music xml files in the database");
-            if (openedHere) dbToUse.close();
-            return null;
-        }
-
-        // Select the first file and return it
-        await setSelectedMusicXmlFile(firstMusicXmlFile.id);
-        if (openedHere) dbToUse.close();
-        return firstMusicXmlFile as MusicXmlFile;
-    }
-
-    // Close DB if needed
-    if (openedHere) dbToUse.close();
-    return result as MusicXmlFile;
-}
-
-/**
- * Sets the music xml file with the given ID as "selected" meaning that this music xml file will be used for measure/beat data
- * This is done by setting the selected column to 1 for the selected music xml file and 0 for all others.
- *
- * @param musicXmlFileId The ID of the music xml file to get
- * @returns The newly selected MusicXmlFile object including the music xml data
- */
-async function setSelectedMusicXmlFile(
-    musicXmlFileId: number,
-): Promise<MusicXmlFile | null> {
-    const db = connect();
-    History.incrementUndoGroup(db);
-    const stmt = db.prepare(
-        `UPDATE ${Constants.MusicXmlFilesTableName} SET selected = 0`,
-    );
-    stmt.run();
-    const selectStmt = db.prepare(
-        `UPDATE ${Constants.MusicXmlFilesTableName} SET selected = 1 WHERE id = @musicXmlFileId`,
-    );
-    await selectStmt.run({ musicXmlFileId });
-    const result = await getSelectedMusicXmlFile(db);
-    History.incrementUndoGroup(db);
-    db.close();
-    return result as MusicXmlFile;
 }

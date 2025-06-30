@@ -1,87 +1,42 @@
-import { useSelectedMusicXmlFile } from "@/context/SelectedMusicXmlFileContext";
-import MusicXmlFile from "@/global/classes/MusicXmlFile";
-import { useState, useEffect, useCallback } from "react";
-import {
-    Select,
-    SelectItem,
-    SelectContent,
-    SelectSeparator,
-    SelectTriggerButton,
-} from "@openmarch/ui";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "../RegisteredActionButton";
+import { useRef, useState } from "react";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { Button } from "@openmarch/ui";
 
 export default function MusicXmlSelector() {
-    const [musicXmlFiles, setMusicXmlFiles] = useState<MusicXmlFile[]>([]);
-    const { selectedMusicXmlFile, setSelectedMusicXmlFile } =
-        useSelectedMusicXmlFile()!;
-
-    const refreshMusicXmlFiles = useCallback(() => {
-        MusicXmlFile.getMusicXmlFilesDetails().then((musicXmlFiles) => {
-            setMusicXmlFiles(musicXmlFiles);
-        });
-    }, [setMusicXmlFiles]);
-
-    const handleSelectChange = useCallback(
-        (value: string) => {
-            const selectedMusicXmlFileId = parseInt(value);
-            MusicXmlFile.setSelectedMusicXmlFile(selectedMusicXmlFileId).then(
-                (musicXmlFile: any) => {
-                    setSelectedMusicXmlFile(musicXmlFile);
-                },
-            );
-        },
-        [setSelectedMusicXmlFile],
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [importedFileName, setImportedFileName] = useState<string | null>(
+        null,
     );
+    const [importing, setImporting] = useState(false);
+    //const { setMeasures } = useTimingObjectsStore(); // make sure your store exposes setMeasures
 
-    useEffect(() => {
-        refreshMusicXmlFiles();
-    }, [refreshMusicXmlFiles, selectedMusicXmlFile]);
+    const handleFileChange = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {};
 
     return (
-        <div className="mt-8 flex items-center justify-between gap-8 px-12">
-            <label
-                htmlFor="musicxml-selector"
-                className="text-body text-text/80 w-full"
-            >
-                MusicXML File
+        <div className="mt-8 flex items-center gap-8 px-12">
+            <label className="text-body text-text/80 w-full">
+                MusicXML Import
             </label>
-            <div id="musicxml-selector" onClick={refreshMusicXmlFiles}>
-                <Select
-                    onValueChange={handleSelectChange}
-                    value={
-                        selectedMusicXmlFile ? `${selectedMusicXmlFile.id}` : ""
-                    }
-                >
-                    <SelectTriggerButton
-                        label={selectedMusicXmlFile?.nickname || "Import"}
-                        className="w-[384px] px-12"
-                    />
-                    <SelectContent>
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.launchImportMusicXmlFileDialogue
-                            }
-                            showTooltip={false}
-                            className="text-text"
-                        >
-                            Import MusicXML file
-                        </RegisteredActionButton>
-                        {musicXmlFiles.length > 0 && <SelectSeparator />}
-                        {musicXmlFiles.map((musicXmlFile) => (
-                            <SelectItem
-                                key={musicXmlFile.id}
-                                value={`${musicXmlFile.id}`}
-                            >
-                                {musicXmlFile.nickname}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                    <div className="text-text-subtitle text-sub mx-2 mt-4">
-                        You may need to refresh the page to see new files.
-                    </div>
-                </Select>
-            </div>
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xml,.musicxml"
+                className="hidden"
+                onChange={handleFileChange}
+            />
+            <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+            >
+                {importing ? "Importing..." : "Import MusicXML File"}
+            </Button>
+            {importedFileName && (
+                <span className="text-text-subtitle text-sub ml-4">
+                    Imported: {importedFileName}
+                </span>
+            )}
         </div>
     );
 }

@@ -12,7 +12,6 @@ import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
-import { SelectedMusicXmlFileProvider } from "@/context/SelectedMusicXmlFileContext";
 import {
     CheckCircle,
     Warning,
@@ -107,81 +106,79 @@ function App() {
                         <SelectedPageProvider>
                             <SelectedMarchersProvider>
                                 <SelectedAudioFileProvider>
-                                    <SelectedMusicXmlFileProvider>
-                                        <FieldPropertiesProvider>
-                                            <StateInitializer />
-                                            <RegisteredActionsHandler />
-                                            <TitleBar />
+                                    <FieldPropertiesProvider>
+                                        <StateInitializer />
+                                        <RegisteredActionsHandler />
+                                        <TitleBar />
+                                        <div
+                                            id="app"
+                                            className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                        >
+                                            <Sidebar />
                                             <div
-                                                id="app"
-                                                className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                                id="workspace"
+                                                className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                             >
-                                                <Sidebar />
-                                                <div
-                                                    id="workspace"
-                                                    className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
-                                                >
-                                                    <Toolbar />
-                                                    <div className="relative h-full min-h-0">
-                                                        <SidebarModal />
-                                                        <Canvas
-                                                            onCanvasReady={
-                                                                setAppCanvas
-                                                            }
-                                                        />
-                                                        <CanvasZoomControls
-                                                            canvas={appCanvas}
-                                                        />
-                                                    </div>
-                                                    <TimelineContainer />
+                                                <Toolbar />
+                                                <div className="relative h-full min-h-0">
+                                                    <SidebarModal />
+                                                    <Canvas
+                                                        onCanvasReady={
+                                                            setAppCanvas
+                                                        }
+                                                    />
+                                                    <CanvasZoomControls
+                                                        canvas={appCanvas}
+                                                    />
                                                 </div>
+                                                <TimelineContainer />
                                             </div>
-                                            <Toaster
-                                                visibleToasts={6}
-                                                toastOptions={{
-                                                    unstyled: true,
-                                                    classNames: {
-                                                        title: "text-body text-text leading-none",
-                                                        description:
-                                                            "text-sub text-text",
-                                                        toast: "p-20 flex gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
-                                                    },
-                                                }}
-                                                icons={{
-                                                    success: (
-                                                        <CheckCircle
-                                                            size={24}
-                                                            className="text-green"
-                                                        />
-                                                    ),
-                                                    info: (
-                                                        <Info
-                                                            size={24}
-                                                            className="text-text"
-                                                        />
-                                                    ),
-                                                    warning: (
-                                                        <Warning
-                                                            size={24}
-                                                            className="text-yellow"
-                                                        />
-                                                    ),
-                                                    error: (
-                                                        <SealWarning
-                                                            size={24}
-                                                            className="text-red"
-                                                        />
-                                                    ),
-                                                    loading: (
-                                                        <CircleNotch
-                                                            size={24}
-                                                            className="text-text"
-                                                        />
-                                                    ),
-                                                }}
-                                            />
-                                        </FieldPropertiesProvider>
-                                    </SelectedMusicXmlFileProvider>
+                                        </div>
+                                        <Toaster
+                                            visibleToasts={6}
+                                            toastOptions={{
+                                                unstyled: true,
+                                                classNames: {
+                                                    title: "text-body text-text leading-none",
+                                                    description:
+                                                        "text-sub text-text",
+                                                    toast: "p-20 flex gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
+                                                },
+                                            }}
+                                            icons={{
+                                                success: (
+                                                    <CheckCircle
+                                                        size={24}
+                                                        className="text-green"
+                                                    />
+                                                ),
+                                                info: (
+                                                    <Info
+                                                        size={24}
+                                                        className="text-text"
+                                                    />
+                                                ),
+                                                warning: (
+                                                    <Warning
+                                                        size={24}
+                                                        className="text-yellow"
+                                                    />
+                                                ),
+                                                error: (
+                                                    <SealWarning
+                                                        size={24}
+                                                        className="text-red"
+                                                    />
+                                                ),
+                                                loading: (
+                                                    <CircleNotch
+                                                        size={24}
+                                                        className="text-text"
+                                                    />
+                                                ),
+                                            }}
+                                        />
+                                    </FieldPropertiesProvider>
                                 </SelectedAudioFileProvider>
                             </SelectedMarchersProvider>
                         </SelectedPageProvider>

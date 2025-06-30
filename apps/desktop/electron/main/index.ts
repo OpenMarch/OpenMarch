@@ -8,7 +8,6 @@ import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
 import AudioFile from "../../src/global/classes/AudioFile";
-import MusicXmlFile from "../../src/global/classes/MusicXmlFile";
 import { parseMxl } from "../mxl/MxlUtil";
 import { init, captureException } from "@sentry/electron/main";
 
@@ -165,7 +164,6 @@ app.whenReady().then(async () => {
     ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
     ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
     ipcMain.handle("audio:insert", async () => insertAudioFile());
-    ipcMain.handle("musicXml:insert", async () => insertMusicXmlFile());
     ipcMain.handle("field_properties:export", async () =>
         exportFieldPropertiesFile(),
     );
@@ -744,110 +742,6 @@ export async function insertAudioFile(): Promise<
         }
     );
 }
-
-/**
- * Opens a dialog to import a music xml file to the database.
- *
- * @returns 200 for success, -1 for failure
- */
-export async function insertMusicXmlFile(): Promise<
-    DatabaseServices.LegacyDatabaseResponse<MusicXmlFile[]>
-> {
-    if (!win)
-        return {
-            success: false,
-            error: { message: "insertAudioFile: window not loaded" },
-        };
-
-    // Prompt user for xml file
-    const dialogueResponse = await dialog.showOpenDialog(win, {
-        filters: [
-            { name: "MusicXML File", extensions: ["mxl", "musicxml", "xml"] },
-            { name: "All Files", extensions: ["*"] },
-        ],
-    });
-    if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
-        return {
-            success: false,
-            error: {
-                message:
-                    "launchImportMusicXmlFileDialogue: Operation was cancelled or no file was provided",
-            },
-        };
-    }
-
-    // Read the file
-    const filePath = dialogueResponse.filePaths[0];
-    let xmlData: Buffer;
-
-    if (filePath.endsWith(".mxl")) {
-        console.log("XML");
-
-        xmlData = fs.readFileSync(filePath); // Already a Buffer
-    } else {
-        // Read as string, encode as UTF-8 to ArrayBuffer
-        const xmlString = fs.readFileSync(filePath, "utf8");
-        xmlData = Buffer.from(xmlString, "utf8"); // Convert string to Buffer
-    }
-
-    // Insert into DB
-    const dbResponse = await DatabaseServices.insertMusicXmlFile({
-        id: -1,
-        data: xmlData,
-        path: filePath,
-        nickname: filePath,
-        selected: true,
-    });
-
-    return dbResponse;
-}
-
-/**
- * Opens a dialog to import a MusicXML file into OpenMarch.
- *
- * This function does not actually insert the file into the database, but rather reads the file and returns the xml data.
- * This was done due to issues getting xml2abc to work in the main process.
- *
- * @returns Promise<string | undefined> - The string xml data of the musicxml file, or undefined if the operation was cancelled/failed.
- */
-/*
-export async function launchImportMusicXmlFileDialogue(): Promise<
-    string | undefined
-> {
-    console.log("readMusicXmlFile");
-
-    if (!win) {
-        console.error("window not loaded");
-        return;
-    }
-
-    // If there is no previous path, open a dialog
-    const dialogueResponse = await dialog.showOpenDialog(win, {
-        filters: [
-            {
-                name: "MusicXML File",
-                extensions: ["mxl", "musicxml", "xml"],
-            },
-            { name: "All Files", extensions: ["*"] },
-        ],
-    });
-
-    if (dialogueResponse.canceled || !dialogueResponse.filePaths[0]) {
-        console.error("Operation was cancelled or no file was provided");
-        return;
-    }
-
-    console.log("loading musicxml file:", dialogueResponse.filePaths[0]);
-    const filePath = dialogueResponse.filePaths[0];
-
-    let xmlString;
-    if (filePath.endsWith(".mxl")) {
-        xmlString = parseMxl(filePath);
-    } else {
-        xmlString = fs.readFileSync(filePath, "utf8");
-    }
-    return xmlString;
-}*/
 
 /**
  * Performs an undo or redo action on the history stacks based on the type.
