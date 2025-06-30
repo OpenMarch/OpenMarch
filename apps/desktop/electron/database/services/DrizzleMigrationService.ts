@@ -7,6 +7,7 @@ import fs from "fs";
 import Constants, { TablesWithHistory } from "../../../src/global/Constants";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
 import { createUndoTriggers } from "../database.history";
+import { isCodegen } from "../../main/index";
 
 export type DB = BetterSQLite3Database<typeof schema>;
 
@@ -40,8 +41,12 @@ export class DrizzleMigrationService {
                 "Cannot apply migrations, user version is not 7. If you have a file from 0.0.9 or earlier, please open your file in 0.0.10, then open it again in the current version",
             );
         }
-        const folder =
-            migrationsFolder || path.join(__dirname, "../migrations");
+
+        let folder = migrationsFolder || path.join(__dirname, "../migrations");
+        if (isCodegen) {
+            folder = folder.replace("/dist-electron/main", "");
+        }
+
         console.log("migrationsFolder", folder);
 
         try {

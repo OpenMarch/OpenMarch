@@ -33,6 +33,9 @@ import { getOrm } from "../database/db";
 
 const store = new Store();
 
+// Check if running in Playwright codegen mode
+export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
+
 const enableSentry =
     process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
 console.log("Sentry error reporting enabled:", enableSentry);
@@ -86,7 +89,8 @@ async function createWindow(title?: string) {
         minWidth: 1000,
         minHeight: 400,
         autoHideMenuBar: true,
-        frame: false,
+        // Show frame in codegen mode for easier interaction
+        frame: isCodegen,
         trafficLightPosition: { x: 24, y: 9 },
         titleBarStyle: "hidden",
         webPreferences: {
@@ -116,7 +120,10 @@ async function createWindow(title?: string) {
         // electron-vite-vue#298
         win.loadURL(url);
         win.on("ready-to-show", () => {
-            if (win) win.webContents.openDevTools();
+            // Always open DevTools in codegen mode for debugging
+            if (win && (isCodegen || process.env.NODE_ENV === "development")) {
+                win.webContents.openDevTools();
+            }
         });
     } else {
         win.loadFile(indexHtml);
@@ -124,7 +131,10 @@ async function createWindow(title?: string) {
 
     // Test actively push message to the Electron-Renderer
     win.webContents.on("did-finish-load", () => {
-        win?.maximize();
+        // Don't maximize in codegen mode to keep window manageable
+        if (!isCodegen) {
+            win?.maximize();
+        }
         win?.webContents.send(
             "main-process-message",
             new Date().toLocaleString(),
@@ -143,13 +153,21 @@ async function createWindow(title?: string) {
 
 app.whenReady().then(async () => {
     app.setName("OpenMarch");
-    console.log("NODE:", process.versions.node);
+    console.log("NODE-jeff:", process.versions.node);
+
+    if (isCodegen) {
+        console.log("🎭 Running in Playwright Codegen mode");
+    } else {
+        console.log("Not running in codegen mode");
+    }
 
     Menu.setApplicationMenu(applicationMenu);
 
     let pathToOpen = store.get("databasePath") as string;
     if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
         pathToOpen = process.argv[1];
+    } else if (process.argv.length >= 3 && process.argv[2].endsWith(".dots")) {
+        pathToOpen = process.argv[2];
     }
     if (pathToOpen && pathToOpen.length > 0) await setActiveDb(pathToOpen);
     DatabaseServices.initHandlers();

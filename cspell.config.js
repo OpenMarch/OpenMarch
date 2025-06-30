@@ -93,6 +93,8 @@ module.exports = {
         "choco",
         "WASD",
         "viewports",
+        "codegen",
+        "spinbutton",
     ],
     ignorePaths: [
         "node_modules/**",

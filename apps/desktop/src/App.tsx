@@ -41,6 +41,12 @@ function App() {
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
 
+    // Check if running in codegen mode
+    const isCodegen = window.electron.isCodegen;
+    if (isCodegen) {
+        console.log("🎭 React app running in Playwright Codegen mode");
+    }
+
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
@@ -116,6 +122,12 @@ function App() {
                 <AnalyticsOptInModal
                     onChoice={(choice) => setAnalyticsConsent(choice)}
                 />
+            )}
+            {/* Codegen mode indicator */}
+            {isCodegen && (
+                <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
+                    🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
+                </div>
             )}
             {!databaseIsReady ? (
                 <>

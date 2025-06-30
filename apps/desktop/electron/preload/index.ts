@@ -159,6 +159,9 @@ const APP_API = {
     openMenu: () => ipcRenderer.send("menu:open"),
     isMacOS: process.platform === "darwin",
 
+    // Environment
+    isCodegen: process.env.PLAYWRIGHT_CODEGEN === "1",
+
     // Themes
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
