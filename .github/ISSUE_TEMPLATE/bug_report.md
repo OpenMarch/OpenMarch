@@ -1,27 +1,32 @@
 ---
 name: Bug Report
 about: Something didn’t work the way you expected? Let us know here!
-title: "[BUG] - Brief description"
+title: "[BUG]: "
 labels: bug
 assignees: ""
 ---
 
 **What happened?**
-Tell us what went wrong or what didn’t work the way you expected.
+_Tell us what went wrong or what didn’t work the way you expected_
 
-**What did you try to do?**
-Walk us through what you were doing before the issue came up. If you’re not sure, just give us your best guess!
+YOUR RESPONSE
 
-**What did you expect to happen?**
-Help us understand what you were hoping would happen instead.
+**How could we repeat this?**
+_Walk us through what you were doing before the issue came up. If you’re not sure, just give us your best guess!_
+
+YOUR RESPONSE
 
 **Any screenshots or screen recordings?**
-If it helps show what went wrong, feel free to include a screenshot or recording (GIFs are great too!).
+_If it helps show what went wrong, feel free to include a screenshot or recording (GIFs are great too!)_
+
+YOUR RESPONSE
 
 **What kind of computer are you using?**
 
-- Operating system (e.g. Windows 11, macOS 14)
-- OpenMarch version (you can find this in the app settings or title bar)
+- _Operating system_: (e.g. Windows 11, macOS 14)
+- _OpenMarch version_: (you can find this in the app settings or title bar)
 
-**Anything else you’d like us to know?**
-Add anything else you think might be helpful!
+**If willing, upload your `.dots` file**
+_Being able to debug with the file itself is very helpful_
+
+Before uploading your `.dots` file here, change the extension to `.txt` so GitHub allows uploading.
