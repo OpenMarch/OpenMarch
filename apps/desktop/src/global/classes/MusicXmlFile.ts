@@ -9,7 +9,7 @@ export default class MusicXmlFile {
     /** ID of the Xml file in the database */
     readonly id: number;
     /** The data buffer of which is the makeup of the Xml file */
-    readonly data?: ArrayBuffer;
+    readonly data?: Buffer;
     /** The original file path of the Xml file */
     readonly path: string;
     /** The user defined nickname of the Xml file. By default, just the file name */
@@ -61,3 +61,15 @@ export default class MusicXmlFile {
         return new MusicXmlFile(response);
     }
 }
+
+/*
+CREATE TABLE `music_xml_files` (
+    `id` integer PRIMARY KEY,
+    `path` text NOT NULL,
+    `nickname` text,
+    `data` blob,
+    `selected` integer NOT NULL DEFAULT 0,
+    `created_at` text NOT NULL,
+    `updated_at` text NOT NULL
+);
+ */

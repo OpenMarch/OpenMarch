@@ -908,6 +908,69 @@ async function deleteAudioFile(
 }
 
 /* ============================ Music Xml Files ============================ */
+
+/**
+ * Inserts a new MusicXML file record into the database and sets it as selected.
+ * This also deselects all other music XML files.
+ *
+ * @param musicXmlFile The MusicXmlFile object to insert
+ * @returns LegacyDatabaseResponse
+ */
+export async function insertMusicXmlFile(
+    musicXmlFile: MusicXmlFile,
+): Promise<LegacyDatabaseResponse<MusicXmlFile[]>> {
+    const db = connect();
+    // Deselect all other entries
+    db.prepare(
+        `UPDATE ${Constants.MusicXmlFilesTableName} SET selected = 0`,
+    ).run();
+    let output: LegacyDatabaseResponse<MusicXmlFile[]> = { success: false };
+    try {
+        History.incrementUndoGroup(db);
+        const insertStmt = db.prepare(`
+            INSERT INTO ${Constants.MusicXmlFilesTableName} (
+                data,
+                path,
+                nickname,
+                selected,
+                created_at,
+                updated_at
+            )
+            VALUES (
+                       @data,
+                       @path,
+                       @nickname,
+                       @selected,
+                       @created_at,
+                       @updated_at
+                   )
+        `);
+        const created_at = new Date().toISOString();
+        const insertResult = insertStmt.run({
+            ...musicXmlFile,
+            selected: 1,
+            created_at,
+            updated_at: created_at,
+        });
+        const id = insertResult.lastInsertRowid;
+
+        output = {
+            success: true,
+            result: [{ ...musicXmlFile, id: id as number }],
+        };
+    } catch (error: any) {
+        console.error("Insert music xml file error:", error);
+        output = {
+            success: false,
+            error: { message: error.message, stack: error.stack },
+        };
+    } finally {
+        History.incrementUndoGroup(db);
+        db.close();
+    }
+    return output;
+}
+
 /**
  * Gets the information on the music xml files in the database.
  * I.e. just the path and nickname. This is to save memory so the whole music xml file isn't loaded when not needed.
@@ -937,25 +1000,38 @@ async function getMusicXmlFilesDetails(
 export async function getSelectedMusicXmlFile(
     db?: Database.Database,
 ): Promise<MusicXmlFile | null> {
+    // If no db is provided, open a new connection
+    const openedHere = !db;
     const dbToUse = db || connect();
+
+    // Get the selected music xml file
     const stmt = dbToUse.prepare(
         `SELECT * FROM ${Constants.MusicXmlFilesTableName} WHERE selected = 1`,
     );
-    const result = await stmt.get();
+    const result = stmt.get();
+
+    // If no result, select the first music xml file
     if (!result) {
         const firstMusicXmlFileStmt = dbToUse.prepare(
             `SELECT * FROM ${Constants.MusicXmlFilesTableName} LIMIT 1`,
         );
-        const firstMusicXmlFile =
-            (await firstMusicXmlFileStmt.get()) as MusicXmlFile;
+        const firstMusicXmlFile = firstMusicXmlFileStmt.get() as MusicXmlFile;
+
+        // If no music xml files in the database, return null
         if (!firstMusicXmlFile) {
             console.error("No music xml files in the database");
+            if (openedHere) dbToUse.close();
             return null;
         }
+
+        // Select the first file and return it
         await setSelectedMusicXmlFile(firstMusicXmlFile.id);
+        if (openedHere) dbToUse.close();
         return firstMusicXmlFile as MusicXmlFile;
     }
-    dbToUse.close();
+
+    // Close DB if needed
+    if (openedHere) dbToUse.close();
     return result as MusicXmlFile;
 }
 

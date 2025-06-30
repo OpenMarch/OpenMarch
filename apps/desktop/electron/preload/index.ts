@@ -386,6 +386,10 @@ const APP_API = {
         ipcRenderer.invoke("audio:delete", audioFileId) as Promise<AudioFile[]>,
 
     // MusicXml File
+    launchInsertMusicXmlFileDialogue: () =>
+        ipcRenderer.invoke("musicXml:insert") as Promise<
+            DbServices.LegacyDatabaseResponse<MusicXmlFile[]>
+        >,
     getMusicXmlFilesDetails: () =>
         ipcRenderer.invoke("musicXml:getAll") as Promise<MusicXmlFile[]>,
     getSelectedMusicXmlFile: () =>
