@@ -1,3 +1,5 @@
+import JSZip from "jszip";
+
 /**
  * Represents a beat in a musical performance or composition.
  * Provides details about the beat's position, duration, and optional notes.
@@ -122,10 +124,10 @@ export function parseMusicXml(xmlText: string): Measure[] {
  * This function reads the .mxl file, unzips it, and returns the content of the first XML file found.
  * Assumes that the zipped .mxl file contains only one desired XML file.
  */
-/*
-export async function extractXmlFromMxlFile(filePath: string): Promise<string> {
+export async function extractXmlFromMxlFile(
+    fileBuffer: ArrayBuffer,
+): Promise<string> {
     // load file
-    const fileBuffer = await fs.readFile(filePath);
     const zip = await JSZip.loadAsync(fileBuffer);
 
     // loop through files in zip
@@ -142,4 +144,41 @@ export async function extractXmlFromMxlFile(filePath: string): Promise<string> {
 
     // unzipped, but no xml or musicxml file found
     throw new Error("No XML file found.");
+}
+
+/**
+ * Parses score xml as a string from an MXL file
+ * @param filePath path to .mxl file on disk
+ * @returns parsed XML or undefined if an error occurred
+ *
+ * Legacy function to parse MXL files.
+ */
+/*
+export function parseMxl(filePath: string): string | undefined {
+    try {
+        var zip = new AdmZip(filePath);
+        var zipEntries = zip.getEntries();
+
+        // Find the root container, this will tell us which zip entry contains the actual score data we care about.
+        const rootContainer = zipEntries.find(
+            (entry: any) => entry.entryName === "META-INF/container.xml",
+        );
+
+        // Parse the root container data to a string
+        const rootContainerData = rootContainer.getData().toString("utf8");
+
+        // Pull out the root file path using a regex (I gave up on parsing this "correctly" using xml)
+        const regex = /rootfile full-path="([^"]*)"/;
+        const match = rootContainerData.match(regex);
+        let scorePath = match ? match[1] : undefined;
+
+        // Find the score container and create a string from its xml data
+        let scoreContainer = zipEntries.find(
+            (zipEntry: any) => zipEntry.entryName === scorePath,
+        );
+        return scoreContainer.getData().toString("utf8");
+    } catch (error) {
+        console.error("Error parsing MXL:", error);
+        return undefined;
+    }
 }*/

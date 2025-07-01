@@ -1,19 +1,20 @@
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
-import { parseMusicXml } from "musicxml-parser/src/parser";
+import {
+    Measure as ParserMeasure,
+    extractXmlFromMxlFile,
+    parseMusicXml,
+} from "musicxml-parser/src/parser";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import {
     cascadeDeleteMeasures,
     createMeasures,
 } from "@/global/classes/Measure";
 import { createBeats } from "@/global/classes/Beat";
-import { Measure as ParserMeasure } from "musicxml-parser/src/parser";
 
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [importedFileName, setImportedFileName] = useState<string | null>(
-        null,
-    );
     const [importing, setImporting] = useState(false);
     const { fetchTimingObjects, measures } = useTimingObjectsStore();
 
@@ -24,9 +25,10 @@ export default function MusicXmlSelector() {
         setImporting(true);
 
         try {
-            // Import and parse file
-            setImportedFileName(null);
-            const xmlText = await file.text();
+            // Import & parse MusicXML file + handle MXL files.
+            const xmlText = file.name.endsWith(".mxl")
+                ? await extractXmlFromMxlFile(await file.arrayBuffer())
+                : await file.text();
             const parsedMeasures: ParserMeasure[] = parseMusicXml(xmlText);
 
             // Clear existing measures
@@ -72,8 +74,11 @@ export default function MusicXmlSelector() {
 
             // Refresh UI
             await fetchTimingObjects();
-            setImportedFileName(file.name);
+            toast.success(
+                "MusicXML file: '" + file.name + "' imported successfully!",
+            );
         } catch (err) {
+            toast.error("Failed to import MusicXML file: " + err);
             console.error("Error importing MusicXML file:", err);
         } finally {
             setImporting(false);
@@ -89,7 +94,7 @@ export default function MusicXmlSelector() {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xml,.musicxml"
+                accept=".xml,.musicxml,.mxl"
                 className="hidden"
                 onChange={handleFileChange}
             />
@@ -100,11 +105,6 @@ export default function MusicXmlSelector() {
             >
                 {importing ? "Importing..." : "Import MusicXML File"}
             </Button>
-            {importedFileName && (
-                <span className="text-text-subtitle text-sub ml-4">
-                    Imported: {importedFileName}
-                </span>
-            )}
         </div>
     );
 }
