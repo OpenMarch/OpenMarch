@@ -13,6 +13,8 @@ At OpenMarch, we are committed to respecting your privacy and being transparent 
 
 We collect certain information automatically when you use the OpenMarch application to improve your experience, monitor performance, and debug issues. This data is collected through third-party services, namely **PostHog** and **Sentry**.
 
+**Important:** We **DO NOT** sell user data to any third parties. All data collection is purely for internal testing and decision-making purposes to improve the OpenMarch application.
+
 ---
 
 ## 3. Analytics and Session Recording
