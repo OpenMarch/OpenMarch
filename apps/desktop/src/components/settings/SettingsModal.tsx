@@ -144,42 +144,17 @@ export default function SettingsModal() {
                                     <p>
                                         You are not sharing analytics. If you
                                         experience issues or bugs, we will not
-                                        know about them. If you would still like
-                                        to report issues, please{" "}
-                                        <button
-                                            type="button"
-                                            className="text-accent cursor-pointer border-0 bg-transparent p-0 underline"
-                                            onClick={async (e) => {
-                                                e.preventDefault();
-                                                await navigator.clipboard.writeText(
-                                                    "contact@openmarch.com",
-                                                );
-                                                toast.success(
-                                                    "Email copied to clipboard",
-                                                );
-                                            }}
-                                        >
-                                            email us
-                                        </button>
-                                        , post in the{" "}
+                                        know about them. If you have an issue,
+                                        please{" "}
                                         <a
-                                            href="https://discord.openmarch.com"
+                                            href="https://openmarch.com/about/submitting-feedback"
                                             target="_blank"
                                             rel="noreferrer"
                                             className="text-accent underline"
                                         >
-                                            Discord
-                                        </a>
-                                        , or on the{" "}
-                                        <a
-                                            href="https://facebook-group.openmarch.com"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="text-accent underline"
-                                        >
-                                            Facebook user group
-                                        </a>
-                                        .
+                                            submit feedback
+                                        </a>{" "}
+                                        so we can address it.
                                     </p>
                                 </div>
                             )}

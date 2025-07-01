@@ -65,9 +65,22 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                         </WarningNote>
 
                         <BugNote>
-                            You also agree to the collecting of anonymous error
-                            logs and crash reports.
+                            You also agree to the collecting of error logs,
+                            crash reports, analytics, and session replays.
                         </BugNote>
+                        <div className="bg-fg-1 rounded-6 border-stroke border px-16 py-8 text-xs">
+                            You can opt out of data collection at any time in
+                            the app settings. See our{" "}
+                            <a
+                                href="https://openmarch.com/privacy"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-accent underline"
+                            >
+                                privacy policy
+                            </a>{" "}
+                            for more details.
+                        </div>
 
                         <div className="border-stroke bg-fg-1 rounded-full border px-16 py-8">
                             <BugReport />
