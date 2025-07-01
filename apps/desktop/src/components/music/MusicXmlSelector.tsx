@@ -7,16 +7,32 @@ import {
     parseMusicXml,
 } from "musicxml-parser/src/parser";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import {
-    cascadeDeleteMeasures,
-    createMeasures,
-} from "@/global/classes/Measure";
+import { deleteMeasures, createMeasures } from "@/global/classes/Measure";
 import { createBeats } from "@/global/classes/Beat";
+import { updatePages } from "@/global/classes/Page";
+
+// Helper to clear all page start_beat references
+async function clearAllPageStartBeats(fetchTimingObjects: () => Promise<void>) {
+    const allPagesResponse = await window.electron.getPages();
+    if (!allPagesResponse.success) {
+        throw new Error("Failed to fetch pages");
+    }
+
+    // Prepare updates for all pages
+    const modifiedPagesArgs = allPagesResponse.data.map((page: any) => ({
+        id: page.id,
+        start_beat: -1,
+    }));
+
+    if (modifiedPagesArgs.length > 0) {
+        await updatePages(modifiedPagesArgs, fetchTimingObjects);
+    }
+}
 
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState(false);
-    const { fetchTimingObjects, measures } = useTimingObjectsStore();
+    const { fetchTimingObjects, measures, beats } = useTimingObjectsStore();
 
     // XML import handler
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,10 +47,23 @@ export default function MusicXmlSelector() {
                 : await file.text();
             const parsedMeasures: ParserMeasure[] = parseMusicXml(xmlText);
 
-            // Clear existing measures
-            await cascadeDeleteMeasures(measures, fetchTimingObjects);
+            // Clear beat references in all pages
+            await clearAllPageStartBeats(fetchTimingObjects);
 
-            // Convert ParserBeat to Beat format
+            // Delete existing measures and beats
+            if (measures.length > 0) {
+                await deleteMeasures(
+                    new Set(measures.map((m) => m.id)),
+                    fetchTimingObjects,
+                );
+            }
+            if (beats.length > 0) {
+                await window.electron.deleteBeats(
+                    new Set(beats.map((b) => b.id)),
+                );
+            }
+
+            // Prepare new beats for measures
             let beatPosition = 0;
             const measureStartBeatPositions: number[] = [];
             const newBeats = parsedMeasures.flatMap((measure) => {
@@ -57,7 +86,7 @@ export default function MusicXmlSelector() {
                 throw new Error("Failed to create beats");
             const dbBeats = beatsResponse.data;
 
-            // Convert ParserMeasure to Measure format
+            // Convert ParserMeasure to Measure format, adding beat IDs
             const newMeasures = parsedMeasures.map((measure, i) => ({
                 start_beat: dbBeats[measureStartBeatPositions[i]].id,
                 rehearsal_mark: measure.rehearsalMark,

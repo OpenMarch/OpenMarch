@@ -143,6 +143,27 @@ export const deleteMeasures = async (
     return response;
 };
 
+/** Deletes all measures and beats associated with the measures */
+export const deleteMeasuresAndBeats = async (
+    measures: Measure[],
+    fetchMeasuresFunction: () => Promise<void>,
+) => {
+    const beatIdsToDelete = new Set(
+        measures.flatMap((m) => m.beats.map((b) => b.id)),
+    );
+
+    const fakeFetch = async () => {};
+
+    return GroupFunction({
+        functionsToExecute: [
+            () => deleteMeasures(new Set(measures.map((m) => m.id)), fakeFetch),
+            () => deleteBeats(beatIdsToDelete, fakeFetch),
+        ],
+        refreshFunction: fetchMeasuresFunction,
+        useNextUndoGroup: true,
+    });
+};
+
 /** Deletes all measures, beats, and pages associated with the measures */
 export const cascadeDeleteMeasures = async (
     measures: Measure[],
