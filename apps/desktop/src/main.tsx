@@ -13,17 +13,17 @@ const options = {
     api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
     capture_exceptions: true,
     debug: import.meta.env.MODE === "development",
+    opt_out_capturing_by_default: true,
 };
 
 if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {
     posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
 }
 
-if (!posthog.has_opted_out_capturing()) {
-    Sentry.init({
-        dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
-    });
-}
+Sentry.init({
+    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+    enabled: false,
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>

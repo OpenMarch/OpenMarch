@@ -9,30 +9,14 @@ import MarcherPage, {
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
-    private lastPinchDistance: number = 0;
-    private isGesturing: boolean = false;
     private momentumX: number = 0;
     private momentumY: number = 0;
-    private lastGestureTime: number = 0;
-    private readonly ZOOM_SENSITIVITY: number = 0.008;
     private readonly MOMENTUM_DECAY: number = 0.95;
     private readonly MOMENTUM_THRESHOLD: number = 0.01;
-    private readonly SCROLL_SENSITIVITY: number = 0.8;
-    private readonly TOUCHPAD_SCROLL_SENSITIVITY: number = 0.4;
-    private readonly HORIZONTAL_SCROLL_SENSITIVITY: number = 0.2;
     private isMiddleMouseDown: boolean = false;
     private lastMousePosition = { x: 0, y: 0 };
-    private readonly WHEEL_TIMEOUT = 50;
-    private lastDeltaX: number = 0;
-    private lastDeltaY: number = 0;
-    private readonly SMOOTH_FACTOR: number = 0.15;
-    private scale: number = 1;
-    private isTouchPadGesture: boolean = false;
-    private lastTouchpadPinchScale: number = 1;
-    private _zoomTimeout: NodeJS.Timeout | undefined;
     private _scrollAnimationFrame: number | null = null;
     private _isZooming: boolean = false;
-    private _originalInteractive: boolean | undefined;
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         this.canvas = canvas as OpenMarchCanvas & fabric.Canvas;
@@ -63,7 +47,7 @@ export default class DefaultListeners implements CanvasListeners {
     /**
      * Update the marcher's position when it is moved
      */
-    handleObjectModified(fabricEvent: fabric.IEvent<MouseEvent>) {
+    handleObjectModified(fabricEvent?: fabric.IEvent<MouseEvent>) {
         /*
             ---- Determine if the mouse was clicked or dragged ----
             If the mouse was clicked, likely the user does not want to move the marcher
@@ -71,8 +55,9 @@ export default class DefaultListeners implements CanvasListeners {
         */
         // Check if the timing threshold has past before checking the distance (saves compute)
         if (
+            fabricEvent &&
             Date.now() - this.canvas.selectDragStart.time <
-            this.canvas.DRAG_TIMER_MILLISECONDS
+                this.canvas.DRAG_TIMER_MILLISECONDS
         ) {
             const mouseDistance = Math.sqrt(
                 (fabricEvent.e.clientX - this.canvas.selectDragStart.x) ** 2 +

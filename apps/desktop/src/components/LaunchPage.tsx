@@ -1,4 +1,4 @@
-import { Button, BugNote, WarningNote } from "@openmarch/ui";
+import { Button, WarningNote } from "@openmarch/ui";
 import BugReport from "./ui/BugReport";
 import ThemeSwitcher from "./titlebar/ThemeSwitcher";
 import TitleBar from "./titlebar/TitleBar";
@@ -11,6 +11,7 @@ interface LaunchPageProps {
 
 export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     const { theme } = useTheme();
+
     async function handleCreateNew() {
         const dataBaseIsReady = await window.electron.databaseCreate();
         setDatabaseIsReady(dataBaseIsReady > 0);
@@ -63,11 +64,6 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                             OpenMarch is still in development. By using it, you
                             accept there may be potential glitches and bugs.
                         </WarningNote>
-
-                        <BugNote>
-                            You also agree to the collecting of anonymous error
-                            logs and crash reports.
-                        </BugNote>
 
                         <div className="border-stroke bg-fg-1 rounded-full border px-16 py-8">
                             <BugReport />
