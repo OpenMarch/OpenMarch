@@ -11,6 +11,23 @@ import { deleteMeasures, createMeasures } from "@/global/classes/Measure";
 import { createBeats } from "@/global/classes/Beat";
 import { updatePages } from "@/global/classes/Page";
 
+// generates standard 120bpm 4/4 measures
+function generateStandardMeasures(count: number): ParserMeasure[] {
+    const measures: ParserMeasure[] = [];
+    for (let i = 0; i < count; i++) {
+        measures.push({
+            number: i + 1, // or i, depending on your convention
+            rehearsalMark: undefined,
+            notes: undefined,
+            beats: Array.from({ length: 4 }, () => ({
+                duration: 0.5, // 120bpm
+                notes: undefined,
+            })),
+        });
+    }
+    return measures;
+}
+
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState(false);
@@ -29,7 +46,6 @@ export default function MusicXmlSelector() {
         // Modify pages to point to new start beats
         const modifiedPagesArgs = allPages.data.map(
             (page: any, idx: number) => {
-                // TODO: Prompt user when there are more pages than measures, this is a temporary fix
                 const measureIdx =
                     idx < measureStartBeatPositions.length
                         ? idx
@@ -73,7 +89,22 @@ export default function MusicXmlSelector() {
             const xmlText = file.name.endsWith(".mxl")
                 ? await extractXmlFromMxlFile(await file.arrayBuffer())
                 : await file.text();
-            const parsedMeasures: ParserMeasure[] = parseMusicXml(xmlText);
+            let parsedMeasures: ParserMeasure[] = parseMusicXml(xmlText);
+
+            // Get page count
+            const allPages = await window.electron.getPages();
+            if (!allPages.success) throw new Error("Failed to fetch pages");
+            const pageCount = allPages.data.length;
+
+            // Add standard measures if more pages than measures
+            if (parsedMeasures.length < pageCount) {
+                parsedMeasures = [
+                    ...parsedMeasures,
+                    ...generateStandardMeasures(
+                        pageCount - parsedMeasures.length,
+                    ),
+                ];
+            }
 
             // Delete existing measures
             if (measures.length > 0) {
