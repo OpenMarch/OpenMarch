@@ -175,6 +175,14 @@ const APP_API = {
     isFileSelected: () => ipcRenderer.invoke("database:isFileSelected"),
     resetFileSelected: () => ipcRenderer.invoke("database:resetFileSelected"),
 
+    // Recent files
+    getRecentFiles: () => ipcRenderer.invoke("recent-files:get"),
+    removeRecentFile: (filePath: string) =>
+        ipcRenderer.invoke("recent-files:remove", filePath),
+    clearRecentFiles: () => ipcRenderer.invoke("recent-files:clear"),
+    openRecentFile: (filePath: string) =>
+        ipcRenderer.invoke("recent-files:open", filePath),
+
     // Triggers
     onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>
         ipcRenderer.on("fetch:all", (event, type) => callback(type)),
@@ -506,5 +514,18 @@ const PLUGINS_API = {
 
 contextBridge.exposeInMainWorld("plugins", PLUGINS_API);
 
-export type ElectronApi = typeof APP_API;
+// Define the RecentFile interface for the type system
+export interface RecentFile {
+    path: string;
+    name: string;
+    lastOpened: number;
+}
+
+export type ElectronApi = typeof APP_API & {
+    // Recent files
+    getRecentFiles: () => Promise<RecentFile[]>;
+    removeRecentFile: (filePath: string) => Promise<void>;
+    clearRecentFiles: () => Promise<void>;
+    openRecentFile: (filePath: string) => Promise<number>; // Returns 200 on success or -1 on failure
+};
 export type PluginsApi = typeof PLUGINS_API;

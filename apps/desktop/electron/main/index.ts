@@ -7,6 +7,12 @@ import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
+import {
+    addRecentFile,
+    getRecentFiles,
+    removeRecentFile,
+    clearRecentFiles,
+} from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
 import { init, captureException } from "@sentry/electron/main";
@@ -173,6 +179,24 @@ app.whenReady().then(async () => {
         "selectedPageId:get",
         async () => store.get("selectedPageId") || FIRST_PAGE_ID,
     );
+
+    // Recent files handlers
+    ipcMain.handle("recent-files:get", async () => getRecentFiles());
+    ipcMain.handle("recent-files:remove", async (_, filePath) =>
+        removeRecentFile(filePath),
+    );
+    ipcMain.handle("recent-files:clear", async () => clearRecentFiles());
+    ipcMain.handle("recent-files:open", async (_, filePath) => {
+        if (!filePath || !fs.existsSync(filePath)) return -1;
+
+        DatabaseServices.setDbPath(filePath);
+        store.set("databasePath", filePath);
+        store.set("fileSelected", true);
+        addRecentFile(filePath);
+
+        setActiveDb(filePath);
+        return 200;
+    });
 
     // Getters
     initGetters();
@@ -426,6 +450,10 @@ export async function newFile() {
 
     // Save that a file has been selected
     store.set("fileSelected", true);
+
+    // Add to recent files
+    addRecentFile(path.filePath);
+
     win?.webContents.reload();
 
     return 200;
@@ -496,6 +524,9 @@ export async function loadDatabaseFile() {
             store.set("databasePath", path.filePaths[0]); // Save the path for next time
             // Save that a file has been selected
             store.set("fileSelected", true);
+
+            // Add to recent files
+            addRecentFile(path.filePaths[0]);
 
             setActiveDb(path.filePaths[0]);
             return 200;
