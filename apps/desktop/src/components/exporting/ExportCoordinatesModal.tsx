@@ -559,31 +559,44 @@ function DrillChartExport() {
                     // Collect pathways to add/remove
                     const objectsToRemove: fabric.Object[] = [];
 
-                    // Render previous pathway if possible
+                    // Render previous pathway and midpoint
                     if (prevMarcherPages.length > 0 && currentMarcherPages) {
-                        const prevPathway = new Pathway({
-                            start: {
-                                x: prevMarcher.x,
-                                y: prevMarcher.y,
-                            },
-                            end: {
-                                x: marcher.x,
-                                y: marcher.y,
-                            },
-                            color: rgbaToString(
-                                exportCanvas.fieldProperties.theme.previousPath,
-                            ),
-                            marcherId: marcher.id,
-                            dashed: true,
-                            strokeWidth: 4,
-                        });
-                        exportCanvas.add(prevPathway);
-                        objectsToRemove.push(prevPathway);
+                        const [prevPathways, prevMidpoints] =
+                            exportCanvas.renderPathways({
+                                startPageMarcherPages: [prevMarcher],
+                                endPageMarcherPages: [marcher],
+                                color: rgbaToString(
+                                    exportCanvas.fieldProperties.theme
+                                        .previousPath,
+                                ),
+                                strokeWidth: 4,
+                                dashed: true,
+                            });
 
-                        // Add box around prevPathway origin
-                        const box = new fabric.Rect({
-                            left: prevPathway.x1,
-                            top: prevPathway.y1,
+                        objectsToRemove.push(...prevPathways, ...prevMidpoints);
+                    }
+
+                    // Render next pathway and midpoint
+                    if (currentMarcherPages && nextMarcherPages.length > 0) {
+                        const [nextPathways, nextMidpoints] =
+                            exportCanvas.renderPathways({
+                                startPageMarcherPages: [marcher],
+                                endPageMarcherPages: [nextMarcher],
+                                color: rgbaToString(
+                                    exportCanvas.fieldProperties.theme.nextPath,
+                                ),
+                                strokeWidth: 3,
+                                dashed: false,
+                            });
+
+                        objectsToRemove.push(...nextPathways, ...nextMidpoints);
+                    }
+
+                    // Add box around prev coordinate
+                    if (prevMarcherPages.length > 0) {
+                        const square = new fabric.Rect({
+                            left: prevMarcher.x,
+                            top: prevMarcher.y,
                             width: 20,
                             height: 20,
                             fill: "transparent",
@@ -593,42 +606,25 @@ function DrillChartExport() {
                             originY: "center",
                             ...NoControls,
                         });
-                        exportCanvas.add(box);
-                        objectsToRemove.push(box);
+                        exportCanvas.add(square);
+                        objectsToRemove.push(square);
                     }
 
-                    // Render next pathway if possible
-                    if (currentMarcherPages && nextMarcherPages.length > 0) {
-                        const nextPathway = new Pathway({
-                            start: {
-                                x: marcher.x,
-                                y: marcher.y,
-                            },
-                            end: { x: nextMarcher.x, y: nextMarcher.y },
-                            color: rgbaToString(
-                                exportCanvas.fieldProperties.theme.nextPath,
-                            ),
-                            marcherId: marcher.id,
-                            dashed: false,
-                            strokeWidth: 3,
-                        });
-                        exportCanvas.add(nextPathway);
-                        objectsToRemove.push(nextPathway);
-
-                        // Add box around nextPathways origin
-                        const ring = new fabric.Circle({
-                            left: nextPathway.x2,
-                            top: nextPathway.y2,
+                    // Add circle around next coordinate
+                    if (nextMarcherPages.length > 0) {
+                        const circle = new fabric.Circle({
+                            left: nextMarcher.x,
+                            top: nextMarcher.y,
                             radius: 10,
                             fill: "transparent",
-                            stroke: "red",
+                            stroke: "hsl(281, 82%, 63%)",
                             strokeWidth: 3,
                             originX: "center",
                             originY: "center",
                             ...NoControls,
                         });
-                        exportCanvas.add(ring);
-                        objectsToRemove.push(ring);
+                        exportCanvas.add(circle);
+                        objectsToRemove.push(circle);
                     }
 
                     // Send marcher to the front
