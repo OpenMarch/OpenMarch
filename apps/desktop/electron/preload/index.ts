@@ -172,6 +172,8 @@ const APP_API = {
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+    isFileSelected: () => ipcRenderer.invoke("database:isFileSelected"),
+    resetFileSelected: () => ipcRenderer.invoke("database:resetFileSelected"),
 
     // Triggers
     onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>

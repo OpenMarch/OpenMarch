@@ -9,18 +9,23 @@ import {
     LightbulbIcon,
     PatreonLogoIcon,
     PlusIcon,
-    PuzzlePieceIcon,
     TShirtIcon,
 } from "@phosphor-icons/react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { useState } from "react";
 import SettingsContent from "./settings/SettingsContent";
+import FilesContent from "./files/FilesContent";
+import LearnContent from "./learn/LearnContent";
 
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
+    setFileSelected: (selected: boolean) => void;
 }
 
-export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
+export default function LaunchPage({
+    setDatabaseIsReady,
+    setFileSelected,
+}: LaunchPageProps) {
     const [selectedTab, setSelectedTab] = useState("files");
     return (
         <div className="from-bg-1 to-accent flex h-screen w-screen flex-col bg-linear-to-br from-[60%] to-[150%]">
@@ -34,50 +39,54 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
             >
                 <Sidebar
                     setDatabaseIsReady={setDatabaseIsReady}
+                    setFileSelected={setFileSelected}
                     selectedTab={selectedTab}
                 />
-                <FilesTabContent />
-                <LearnTabContent />
+                <FilesContent />
+                <LearnContent />
                 <SettingsContent />
-                <PluginsTabContent />
             </Tabs.Root>
         </div>
     );
 }
 
-function FilesTabContent() {
-    return (
-        <Tabs.Content value="files" className="w-full min-w-0">
-            Files
-        </Tabs.Content>
-    );
-}
-function LearnTabContent() {
-    return (
-        <Tabs.Content value="learn" className="w-full min-w-0">
-            Learn
-        </Tabs.Content>
-    );
-}
-function PluginsTabContent() {
-    return (
-        <Tabs.Content value="plugins" className="w-full min-w-0">
-            Plugins
-        </Tabs.Content>
-    );
-}
 function Sidebar({
     setDatabaseIsReady,
+    setFileSelected,
     selectedTab,
 }: LaunchPageProps & { selectedTab: string }) {
     async function handleCreateNew() {
-        const dataBaseIsReady = await window.electron.databaseCreate();
-        setDatabaseIsReady(dataBaseIsReady > 0);
+        console.log("Creating new file...");
+        try {
+            const dataBaseIsReady = await window.electron.databaseCreate();
+            console.log("Database create result:", dataBaseIsReady);
+
+            // If database creation was successful, update the state
+            if (dataBaseIsReady > 0) {
+                setDatabaseIsReady(true);
+                // The app will reload, but in case it doesn't, also update the React state
+                setFileSelected(true);
+            }
+        } catch (error) {
+            console.error("Error creating new file:", error);
+        }
     }
 
     async function handleOpenExisting() {
-        const dataBaseIsReady = await window.electron.databaseLoad();
-        setDatabaseIsReady(dataBaseIsReady > 0);
+        console.log("Opening existing file...");
+        try {
+            const dataBaseIsReady = await window.electron.databaseLoad();
+            console.log("Database load result:", dataBaseIsReady);
+
+            // If database loading was successful, update the state
+            if (dataBaseIsReady > 0) {
+                setDatabaseIsReady(true);
+                // The app will reload, but in case it doesn't, also update the React state
+                setFileSelected(true);
+            }
+        } catch (error) {
+            console.error("Error opening existing file:", error);
+        }
     }
     return (
         <Tabs.List className="bg-fg-2 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
@@ -161,12 +170,6 @@ function Sidebar({
                 </div>
                 <hr className="border-stroke w-full border" />
                 <div className="flex flex-col">
-                    <Tabs.Trigger value="plugins">
-                        <ListItem selected={selectedTab === "plugins"}>
-                            <PuzzlePieceIcon size={24} />
-                            Plugins
-                        </ListItem>
-                    </Tabs.Trigger>
                     <Tabs.Trigger value="settings">
                         <ListItem selected={selectedTab === "settings"}>
                             <GearSixIcon size={24} />

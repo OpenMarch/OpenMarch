@@ -153,6 +153,10 @@ app.whenReady().then(async () => {
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("database:isFileSelected", () =>
+        store.get("fileSelected", false),
+    );
+    ipcMain.handle("database:resetFileSelected", () => resetFileSelection());
     ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
     ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
     ipcMain.handle("audio:insert", async () => insertAudioFile());
@@ -281,6 +285,7 @@ ipcMain.on("window:maximize", () => {
 });
 
 ipcMain.on("window:close", () => {
+    resetFileSelection();
     win?.close();
 });
 
@@ -418,6 +423,9 @@ export async function newFile() {
     setActiveDb(path.filePath, true);
     const dbVersion = new CurrentDatabase(DatabaseServices.connect);
     dbVersion.createTables();
+
+    // Save that a file has been selected
+    store.set("fileSelected", true);
     win?.webContents.reload();
 
     return 200;
@@ -481,11 +489,13 @@ export async function loadDatabaseFile() {
             ],
         })
         .then((path) => {
-            DatabaseServices.setDbPath(path.filePaths[0]);
-            store.set("databasePath", path.filePaths[0]); // Save the path for next time
-
             // If the user cancels the dialog, and there is no previous path, return -1
             if (path.canceled || !path.filePaths[0]) return -1;
+
+            DatabaseServices.setDbPath(path.filePaths[0]);
+            store.set("databasePath", path.filePaths[0]); // Save the path for next time
+            // Save that a file has been selected
+            store.set("fileSelected", true);
 
             setActiveDb(path.filePaths[0]);
             return 200;
@@ -509,10 +519,22 @@ export async function closeCurrentFile() {
     // Close the current file
     DatabaseServices.setDbPath("", false);
     store.set("databasePath", "");
+    store.set("fileSelected", false);
 
     win?.webContents.reload();
 
     return 200;
+}
+
+/**
+ * Resets the file selection flag in the store.
+ *
+ * @returns true if successful
+ */
+export async function resetFileSelection() {
+    console.log("resetFileSelection");
+    store.set("fileSelected", false);
+    return true;
 }
 
 // Field properties

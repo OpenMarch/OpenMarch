@@ -32,6 +32,7 @@ import Sidebar from "@/components/sidebar/Sidebar";
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
+    const [fileSelected, setFileSelected] = useState(false);
     const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
         undefined,
     );
@@ -86,8 +87,15 @@ function App() {
     }, []);
 
     useEffect(() => {
+        // Check if database is ready
         window.electron.databaseIsReady().then((result) => {
             setDatabaseIsReady(result);
+        });
+
+        // Check if a file has been selected from electron-store
+        window.electron.isFileSelected().then((result) => {
+            console.log("File selected check:", result);
+            setFileSelected(result);
         });
     }, []);
 
@@ -97,8 +105,12 @@ function App() {
 
     return (
         <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
-            {!databaseIsReady ? (
-                <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+            {/* Always show LaunchPage when no file is selected, regardless of database state */}
+            {!fileSelected ? (
+                <LaunchPage
+                    setDatabaseIsReady={setDatabaseIsReady}
+                    setFileSelected={setFileSelected}
+                />
             ) : (
                 <TooltipProvider delayDuration={500} skipDelayDuration={500}>
                     <IsPlayingProvider>
