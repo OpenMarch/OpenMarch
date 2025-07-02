@@ -11,28 +11,56 @@ import { deleteMeasures, createMeasures } from "@/global/classes/Measure";
 import { createBeats } from "@/global/classes/Beat";
 import { updatePages } from "@/global/classes/Page";
 
-// Helper to clear all page start_beat references
-async function clearAllPageStartBeats(fetchTimingObjects: () => Promise<void>) {
-    const allPagesResponse = await window.electron.getPages();
-    if (!allPagesResponse.success) {
-        throw new Error("Failed to fetch pages");
-    }
-
-    // Prepare updates for all pages
-    const modifiedPagesArgs = allPagesResponse.data.map((page: any) => ({
-        id: page.id,
-        start_beat: -1,
-    }));
-
-    if (modifiedPagesArgs.length > 0) {
-        await updatePages(modifiedPagesArgs, fetchTimingObjects);
-    }
-}
-
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState(false);
     const { fetchTimingObjects, measures, beats } = useTimingObjectsStore();
+
+    // Reassign existing pages to start of new measures
+    async function reassignAllPagesToNewMeasureStarts(
+        dbBeats: any[],
+        measureStartBeatPositions: number[],
+    ) {
+        const allPages = await window.electron.getPages();
+        if (!allPages.success) {
+            throw new Error("Failed to fetch pages");
+        }
+
+        // Modify pages to point to new start beats
+        const modifiedPagesArgs = allPages.data.map(
+            (page: any, idx: number) => {
+                // TODO: Prompt user when there are more pages than measures, this is a temporary fix
+                const measureIdx =
+                    idx < measureStartBeatPositions.length
+                        ? idx
+                        : measureStartBeatPositions.length - 1;
+                return {
+                    ...page,
+                    start_beat:
+                        dbBeats[measureStartBeatPositions[measureIdx]].id,
+                };
+            },
+        );
+        if (modifiedPagesArgs.length > 0) {
+            await updatePages(modifiedPagesArgs, fetchTimingObjects);
+        }
+    }
+
+    // Delete all beats that are not in the new set of beats
+    async function deleteBeatsNotIn(newBeatIds: Set<number>) {
+        const allBeats = await window.electron.getBeats();
+        if (!allBeats.success) throw new Error("Failed to fetch all beats");
+
+        // Filter out old beats
+        const unusedBeats = allBeats.data.filter(
+            (b: any) => !newBeatIds.has(b.id),
+        );
+        if (unusedBeats.length > 0) {
+            await window.electron.deleteBeats(
+                new Set(unusedBeats.map((b: any) => b.id)),
+            );
+        }
+    }
 
     // XML import handler
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,23 +75,15 @@ export default function MusicXmlSelector() {
                 : await file.text();
             const parsedMeasures: ParserMeasure[] = parseMusicXml(xmlText);
 
-            // Clear beat references in all pages
-            await clearAllPageStartBeats(fetchTimingObjects);
-
-            // Delete existing measures and beats
+            // Delete existing measures
             if (measures.length > 0) {
                 await deleteMeasures(
                     new Set(measures.map((m) => m.id)),
                     fetchTimingObjects,
                 );
             }
-            if (beats.length > 0) {
-                await window.electron.deleteBeats(
-                    new Set(beats.map((b) => b.id)),
-                );
-            }
 
-            // Prepare new beats for measures
+            // Prepare new beats and store their grouping to measures
             let beatPosition = 0;
             const measureStartBeatPositions: number[] = [];
             const newBeats = parsedMeasures.flatMap((measure) => {
@@ -76,7 +96,7 @@ export default function MusicXmlSelector() {
                 }));
             });
 
-            // Insert Beats
+            // Insert new beats
             const beatsResponse = await createBeats(
                 newBeats,
                 fetchTimingObjects,
@@ -86,20 +106,28 @@ export default function MusicXmlSelector() {
                 throw new Error("Failed to create beats");
             const dbBeats = beatsResponse.data;
 
-            // Convert ParserMeasure to Measure format, adding beat IDs
+            // Insert new measures with their new start beats
             const newMeasures = parsedMeasures.map((measure, i) => ({
                 start_beat: dbBeats[measureStartBeatPositions[i]].id,
                 rehearsal_mark: measure.rehearsalMark,
                 notes: measure.notes,
             }));
-
-            // Insert Measures
             const measuresResponse = await createMeasures(
                 newMeasures,
                 fetchTimingObjects,
             );
             if (!measuresResponse.success)
                 throw new Error("Failed to create measures");
+
+            // Reassign start_beat for all pages to new measures
+            await reassignAllPagesToNewMeasureStarts(
+                dbBeats,
+                measureStartBeatPositions,
+            );
+
+            // Delete old beats now that they are not referenced
+            const newBeatIds = new Set(dbBeats.map((b: any) => b.id));
+            await deleteBeatsNotIn(newBeatIds);
 
             // Refresh UI
             await fetchTimingObjects();
