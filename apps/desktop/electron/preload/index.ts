@@ -8,6 +8,7 @@ import {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
+import Page from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
@@ -209,12 +210,16 @@ const APP_API = {
         svgPagesToPdfSeparate: (
             svgPages: string[][],
             drillNumbers: string[],
+            marcherCoordinates: string[][],
+            pages: Page[],
             fileName: string,
         ) =>
             ipcRenderer.invoke(
                 "export:generateSeparateSVGPages",
                 svgPages,
                 drillNumbers,
+                marcherCoordinates,
+                pages,
                 fileName,
             ),
     },

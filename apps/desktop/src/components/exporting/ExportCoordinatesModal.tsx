@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useState } from "react";
+import ReactDOMServer from "react-dom/server";
+import { fabric } from "fabric";
+import { NoControls } from "@/components/canvas/CanvasConstants";
 import MarcherCoordinateSheet, {
     StaticMarcherCoordinateSheet,
     StaticCompactMarcherSheet,
 } from "./MarcherCoordinateSheet";
-import ReactDOMServer from "react-dom/server";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -21,15 +23,12 @@ import { TooltipContents, Button, Input, Checkbox } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import * as Tabs from "@radix-ui/react-tabs";
 import { rgbaToString } from "@/global/classes/FieldTheme";
-import LineListeners from "@/components/canvas/listeners/LineListeners";
 import { Pathway } from "@/global/classes/canvasObjects/Pathway";
-import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { fabric } from "fabric";
+import { ReadableCoords } from "@/global/classes/ReadableCoords";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -514,6 +513,12 @@ function DrillChartExport() {
             pages[1].id,
         );
 
+        // Readable coordinates storage for each marcher
+        const readableCoords: string[][] = Array.from(
+            { length: marchers.length },
+            () => Array.from({ length: pages.length }, () => ""),
+        );
+
         // Generate SVGs for each page
         for (
             let i = 0;
@@ -547,6 +552,10 @@ function DrillChartExport() {
                         marchers[m].id,
                     )[0];
 
+                    // Store readable coordinates for this marcher
+                    readableCoords[m][i] =
+                        ReadableCoords.fromMarcherPage(marcher).toString();
+
                     // Collect pathways to add/remove
                     const objectsToRemove: fabric.Object[] = [];
 
@@ -573,7 +582,7 @@ function DrillChartExport() {
 
                         // Add box around prevPathway origin
                         const box = new fabric.Rect({
-                            left: prevPathway.x1, // or prevPathway.start.x
+                            left: prevPathway.x1,
                             top: prevPathway.y1,
                             width: 20,
                             height: 20,
@@ -582,8 +591,7 @@ function DrillChartExport() {
                             strokeWidth: 3,
                             originX: "center",
                             originY: "center",
-                            selectable: false,
-                            evented: false,
+                            ...NoControls,
                         });
                         exportCanvas.add(box);
                         objectsToRemove.push(box);
@@ -609,16 +617,15 @@ function DrillChartExport() {
 
                         // Add box around nextPathways origin
                         const ring = new fabric.Circle({
-                            left: nextPathway.x2, // or nextPathway.end.x if using custom class
+                            left: nextPathway.x2,
                             top: nextPathway.y2,
                             radius: 10,
                             fill: "transparent",
-                            stroke: "red", // or your preferred color
+                            stroke: "red",
                             strokeWidth: 3,
                             originX: "center",
                             originY: "center",
-                            selectable: false,
-                            evented: false,
+                            ...NoControls,
                         });
                         exportCanvas.add(ring);
                         objectsToRemove.push(ring);
@@ -678,6 +685,8 @@ function DrillChartExport() {
             ? await window.electron.export.svgPagesToPdfSeparate(
                   svgPages,
                   marchers.map((marcher) => marcher.drill_number),
+                  readableCoords,
+                  pages,
                   await window.electron.getCurrentFilename(),
               )
             : await window.electron.export.svgPagesToPdf(svgPages[0], {

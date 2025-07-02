@@ -5,7 +5,7 @@ import sanitize from "sanitize-filename";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
-import marcher from "@/global/classes/Marcher";
+import Page from "@/global/classes/Page";
 
 interface ExportSheet {
     name: string;
@@ -331,6 +331,8 @@ export class PDFExportService {
     public static async generateSeparateSVGPages(
         svgPages: string[][],
         drillNumbers: string[],
+        marcherCoordinates: string[][],
+        pages: Page[],
         showPath: string,
     ) {
         // Prompt user for export location
@@ -352,7 +354,7 @@ export class PDFExportService {
         await fs.promises.mkdir(exportDir, { recursive: true });
 
         // Generate base file name
-        const baseName = path.basename(
+        const showName = path.basename(
             path.basename(showPath) === path.basename(result.filePath)
                 ? showPath
                 : result.filePath,
@@ -360,31 +362,40 @@ export class PDFExportService {
         const filePaths: string[] = [];
 
         // Loop through each marcher's SVG pages
-        for (let row = 0; row < svgPages.length; row++) {
-            const pdfFileName = `${baseName}-${drillNumbers[row]}.pdf`;
+        for (let marcher = 0; marcher < svgPages.length; marcher++) {
+            const pdfFileName = `${showName}-${drillNumbers[marcher]}.pdf`;
             const pdfFilePath = `${exportDir}/${sanitize(pdfFileName)}`;
             let htmlPages: string[] = [];
 
-            for (let i = 0; i < svgPages[row].length; i++) {
+            for (let i = 0; i < svgPages[marcher].length; i++) {
                 // Generate HTML
+                const page = pages?.[i];
+
                 htmlPages.push(
                     PDFExportService.generateDrillHtml({
-                        drillNumber: "drillNumber",
-                        showTitle: "showTitle",
-                        pageNumber: "pageNumber",
-                        setNumber: "setNumber",
-                        counts: "counts",
-                        measureNumbers: "measureNumbers",
-                        prevCoord: "prevCoord",
-                        currCoord: "currCoord",
-                        nextCoord: "nextCoord",
-                        notes: "notes",
-                        svg: svgPages[row][i],
+                        drillNumber: drillNumbers[marcher],
+                        showTitle: showName,
+                        setNumber: page?.name ?? "END",
+                        counts:
+                            page?.counts != null ? String(page.counts) : "END",
+                        measureNumbers:
+                            page?.measures && page.measures.length > 0
+                                ? page.measures.length === 1
+                                    ? String(page.measures[0].number)
+                                    : `${page.measures[0].number}-${page.measures[page.measures.length - 1].number}`
+                                : i === 0
+                                  ? "START"
+                                  : "END",
+                        prevCoord: marcherCoordinates[marcher][i - 1] ?? "N/A",
+                        currCoord: marcherCoordinates[marcher][i] ?? "N/A",
+                        nextCoord: marcherCoordinates[marcher][i + 1] ?? "N/A",
+                        notes: page?.notes ?? "",
+                        svg: svgPages[marcher][i],
                     }),
                 );
             }
 
-            // Create a hidden BrowserWindow for PDF (must be in main process)
+            // Create a hidden BrowserWindow for PDF
             const win = new BrowserWindow({
                 width: 1400,
                 height: 900,
@@ -420,7 +431,6 @@ export class PDFExportService {
     private static generateDrillHtml({
         drillNumber,
         showTitle,
-        pageNumber,
         setNumber,
         counts,
         measureNumbers,
@@ -432,7 +442,6 @@ export class PDFExportService {
     }: {
         drillNumber: string;
         showTitle: string;
-        pageNumber: number | string;
         setNumber: string;
         counts: string;
         measureNumbers: string;
@@ -456,17 +465,25 @@ export class PDFExportService {
                             table-layout: fixed;
                             margin-top: 0;
                             margin-bottom: 16px;
-                            border-radius: 8px;
                             overflow: hidden;
                         }
                         .top-row { display: table-row; }
                         .top-cell {
                             display: table-cell;
-                            background: #f0f0f0;
+                            background: #ddd;
                             padding: 12px;
-                            border-right: 2px dashed #aaa;
+                            border-right: 1px dotted #888;
                             text-align: center;
                             font-size: 18px;
+                        }
+                        .top-cell:first-child{
+                            width: 10%;
+                        }
+                        .top-cell:last-child {
+                            width: 20%;
+                        }
+                        .top-cell:nth-child(2) {
+                            width: 70%;
                         }
                         .top-cell:last-child { border-right: none; }
                         .svg-container {
@@ -495,6 +512,15 @@ export class PDFExportService {
                             padding: 8px 12px;
                             font-size: 13px;
                         }
+                        .bottom-cell:first-child{
+                            width: 18%;
+                        }
+                        .bottom-cell:last-child {
+                            width: 26%;
+                        }
+                        .bottom-cell:nth-child(2) {
+                            width: 56%;
+                        }
                         .notes {
                             white-space: pre-line;
                             font-size: 13px;
@@ -504,10 +530,10 @@ export class PDFExportService {
                 <body style="font-family: Arial, sans-serif">
                     <div class="page-content">
                         <div class="top-table">
-                            <div class="top-row">
+                            <div class="top-row" style="font-weight: bold">                 
                                 <div class="top-cell">${drillNumber}</div>
                                 <div class="top-cell">${showTitle}</div>
-                                <div class="top-cell">${pageNumber}</div>
+                                <div class="top-cell">Set: ${setNumber}</div>
                             </div>
                         </div>
                         <div class="svg-container">
@@ -516,17 +542,17 @@ export class PDFExportService {
                         <div class="bottom-table">
                             <div class="bottom-row">
                                 <div class="bottom-cell">
-                                    Set Number: ${setNumber}<br>
-                                    Counts: ${counts}<br>
-                                    Measure Numbers: ${measureNumbers}
+                                    <b>Set:</b> ${setNumber}<br>
+                                    <b>Counts:</b> ${counts}<br>
+                                    <b>Measures:</b> ${measureNumbers}
                                 </div>
                                 <div class="bottom-cell">
-                                    Previous Coordinate: ${prevCoord}<br>
-                                    Current Coordinate: ${currCoord}<br>
-                                    Next Coordinate: ${nextCoord}
+                                    <b>Previous Coordinate:</b> ${prevCoord}<br>
+                                    <b>Current Coordinate:</b> ${currCoord}<br>
+                                    <b>Next Coordinate:</b> ${nextCoord}
                                 </div>
-                                <div class="bottom-cell notes">
-                                    Notes: <br>${notes}
+                                <div class="bottom-cell">
+                                    <b>Notes:</b> <br>${notes}
                                 </div>
                             </div>
                         </div>

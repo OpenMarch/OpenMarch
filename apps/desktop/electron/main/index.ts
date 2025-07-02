@@ -9,6 +9,7 @@ import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
+import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
 // Modify this when the database is updated
@@ -225,11 +226,15 @@ function initGetters() {
             _,
             svgPages: string[][],
             drillNumbers: string[],
+            marcherCoordinates: string[][],
+            pages: Page[],
             fileName: string,
         ) => {
             return await PDFExportService.generateSeparateSVGPages(
                 svgPages,
                 drillNumbers,
+                marcherCoordinates,
+                pages,
                 fileName,
             );
         },
