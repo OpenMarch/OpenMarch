@@ -26,6 +26,7 @@ import { useUiSettingsStore } from "./stores/UiSettingsStore";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
+import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 
 // app
 
@@ -33,6 +34,9 @@ function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
     const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
         undefined,
+    );
+    const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(
+        null,
     );
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
@@ -94,8 +98,25 @@ function App() {
         fetchUiSettings();
     }, [fetchUiSettings]);
 
+    useEffect(() => {
+        window.electron
+            .invoke("settings:get", "optOutAnalytics")
+            .then((optOut) => {
+                if (optOut === undefined) {
+                    setAnalyticsConsent(null);
+                } else {
+                    setAnalyticsConsent(!optOut);
+                }
+            });
+    }, []);
+
     return (
         <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+            {analyticsConsent === null && (
+                <AnalyticsOptInModal
+                    onChoice={(choice) => setAnalyticsConsent(choice)}
+                />
+            )}
             {!databaseIsReady ? (
                 <>
                     <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />

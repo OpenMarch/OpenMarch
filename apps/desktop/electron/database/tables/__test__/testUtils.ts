@@ -1,17 +1,20 @@
 import Database from "better-sqlite3";
-import CurrentDatabase from "../../../database/versions/CurrentDatabase";
+import { getOrm, schema } from "electron/database/db";
+import { DrizzleMigrationService } from "electron/database/services/DrizzleMigrationService";
 
-export const initTestDatabase = (): Database.Database => {
+export const initTestDatabase = async (): Promise<Database.Database> => {
     const db = new Database(":memory:");
-    const dbBuilder = new CurrentDatabase(() => db);
+    const orm = getOrm(db);
+    const migrator = new DrizzleMigrationService(orm, db);
+    db.pragma("user_version = 7");
+    await migrator.applyPendingMigrations();
+    await migrator.initializeDatabase(db);
 
-    dbBuilder.createTables(".");
     // create 16 beats
-
-    for (let x = 0; x < 16; x++) {
-        db.prepare(
-            `INSERT INTO beats ("duration", "position") VALUES (0.5, ${x + 1})`,
-        ).run();
-    }
+    const beatValues = Array.from({ length: 16 }, (_, i) => ({
+        duration: 0.5,
+        position: i + 1,
+    }));
+    orm.insert(schema.beats).values(beatValues).run();
     return db;
 };

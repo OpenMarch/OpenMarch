@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
-import { useSelectedPage } from "../../context/SelectedPageContext";
+import { useSelectedMarchers } from "../../../context/SelectedMarchersContext";
+import { useSelectedPage } from "../../../context/SelectedPageContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { SidebarCollapsible } from "@/components/sidebar/SidebarCollapsible";
-import RegisteredActionButton from "../RegisteredActionButton";
+import RegisteredActionButton from "../../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import { Button, Input } from "@openmarch/ui";
 import {
+    getButtonClassName,
+    Input,
     Select,
     SelectContent,
     SelectItem,
@@ -17,6 +18,7 @@ import {
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
 import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
+import MarcherRotationInput from "./MarcherRotationInput";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -169,6 +171,8 @@ function MarcherEditor() {
         resetForm();
     }, [selectedMarchers, rCoords, resetForm]);
 
+    if (!selectedPage) return <>No page selected</>;
+
     return (
         <>
             {selectedMarchers.length > 0 && fieldProperties && (
@@ -236,32 +240,32 @@ function MarcherEditor() {
                                     registeredAction={
                                         RegisteredActionsObjects.swapMarchers
                                     }
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        size: "compact",
+                                    })}
                                 >
-                                    <Button
-                                        size="compact"
-                                        className="w-full"
-                                        variant="secondary"
-                                    >
-                                        Swap marchers
-                                    </Button>
+                                    Swap marchers
                                 </RegisteredActionButton>
                             )}
                             {selectedMarchers.length >= 3 &&
                                 createLineIsVisible() && (
                                     <RegisteredActionButton
-                                        className="btn-secondary"
+                                        className={getButtonClassName({
+                                            variant: "primary",
+                                            size: "compact",
+                                        })}
                                         registeredAction={
                                             RegisteredActionsObjects.alignmentEventLine
                                         }
                                     >
-                                        <Button
-                                            size="compact"
-                                            className="w-full"
-                                        >
-                                            Create Line
-                                        </Button>
+                                        Create Line
                                     </RegisteredActionButton>
                                 )}
+                            {/* Add rotation controls */}
+                            <div className="w-full px-6">
+                                <MarcherRotationInput />
+                            </div>
                         </SidebarCollapsible>
                     ) : (
                         // One marcher selected

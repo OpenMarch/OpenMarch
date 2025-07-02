@@ -28,6 +28,22 @@ export default function Topbar() {
                 <TipsAndTricks />
                 <Plugins />
                 <BugReport />
+                <a
+                    href="https://openmarch.com/about/submitting-feedback"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-accent duration-150 ease-out"
+                >
+                    Submit feedback
+                </a>
+                <a
+                    href="https://store.openmarch.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-accent duration-150 ease-out"
+                >
+                    Buy Merch{" "}
+                </a>
             </ToolbarSection>
         </div>
     );

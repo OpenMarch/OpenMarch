@@ -2,6 +2,7 @@ import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 import StaticCanvasMarcher from "./StaticCanvasMarcher";
 import { Pathway } from "./Pathway";
+import { Midpoint } from "./Midpoint";
 import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
@@ -19,6 +20,7 @@ import {
     SectionAppearance,
     getSectionAppearance,
 } from "@/global/classes/SectionAppearance";
+import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -144,6 +146,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private panSensitivity = 0.5; // Reduced for smoother panning
     private zoomSensitivity = 0.03; // Reduced for gentler zooming
     private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
+    private _activeGroup: fabric.Group | null = null;
 
     // TODO - not sure what either of these are for. I had them on the Canvas in commit 4023b18
     perfLimitSizeTotal = 225000000;
@@ -226,6 +229,41 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.refreshBackgroundImage();
 
         this.requestRenderAll();
+
+        this.on("selection:created", this.handleSelection);
+        this.on("selection:updated", this.handleSelection);
+        this.on("selection:cleared", this.handleSelection);
+    }
+
+    /******************* GROUP SELECTION HANDLING *******************/
+
+    handleSelection(event: fabric.IEvent<MouseEvent>) {
+        if (event.selected?.length && event.selected.length > 1) {
+            const group = this.getActiveObject();
+            if (group && group instanceof fabric.Group) {
+                this._activeGroup = group;
+                setGroupAttributes(this._activeGroup);
+                console.log();
+                resetMarcherRotation(group);
+            }
+        } else {
+            this._activeGroup = null;
+
+            // If a marcher was selected, reset the rotation
+            if (
+                event.selected &&
+                event.selected.length &&
+                event.selected[0] instanceof CanvasMarcher
+            ) {
+                console.debug("SELECTED MARCHER", event.selected[0]);
+                event.selected[0].angle = 0;
+            }
+        }
+        this.fire("group:selection", { group: this._activeGroup });
+    }
+
+    get activeGroup() {
+        return this._activeGroup;
     }
 
     /******************* ADVANCED EVENT HANDLERS ******************/
@@ -796,6 +834,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.setHeight(window.innerHeight);
     }
 
+    get listeners() {
+        return this._listeners;
+    }
     /**
      * Set the listeners on the canvas. This should be changed based on the cursor mode.
      *
@@ -912,13 +953,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     curMarcher.section,
                     sectionAppearances,
                 );
-                this.add(
-                    new CanvasMarcher({
-                        marcher: curMarcher,
-                        marcherPage,
-                        sectionAppearance,
-                    }),
-                );
+                const canvasMarcher = new CanvasMarcher({
+                    marcher: curMarcher,
+                    marcherPage,
+                    sectionAppearance,
+                });
+                this.add(canvasMarcher);
+                this.add(canvasMarcher.textLabel);
             }
             // Marcher exists on the Canvas, move it to the new location if it has changed
             else {
@@ -950,6 +991,38 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
+        this.requestRenderAll();
+    };
+
+    /**
+     * Set the coordinates of objects without updating them in the database.
+     *
+     * @param objects The objects to set the local coordinates of
+     */
+    setLocalCoordinates = (objects: { x: number; y: number; id: number }[]) => {
+        const canvasMarchers = this.getCanvasMarchersByIds(
+            objects.map((o) => o.id),
+        );
+        // Sort the objects and canvasMarchers by id to ensure matching order
+        const sortedObjects = [...objects].sort((a, b) => a.id - b.id);
+        const sortedCanvasMarchers = [...canvasMarchers].sort(
+            (a, b) => a.marcherObj.id - b.marcherObj.id,
+        );
+        if (sortedObjects.length !== sortedCanvasMarchers.length) {
+            console.warn(
+                "Number of objects and canvasMarchers do not match - setLocalCoordinates: Canvas.tsx",
+                objects,
+                canvasMarchers,
+            );
+        }
+
+        sortedCanvasMarchers.forEach((canvasMarcher, index) => {
+            canvasMarcher.set({
+                top: sortedObjects[index].x,
+                left: sortedObjects[index].y,
+            });
+            canvasMarcher.setCoords();
+        });
         this.requestRenderAll();
     };
 
@@ -1064,6 +1137,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         dashed?: boolean;
     }) => {
         const createdPathways: Pathway[] = [];
+        const createdMidpoints: Midpoint[] = [];
+
         endPageMarcherPages.forEach((previousMarcherPage) => {
             const selectedMarcherPage = startPageMarcherPages.find(
                 (marcherPage) =>
@@ -1078,6 +1153,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 return;
             }
 
+            // Add pathways
             const pathway = new Pathway({
                 start: previousMarcherPage,
                 end: selectedMarcherPage,
@@ -1088,9 +1164,26 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             });
             createdPathways.push(pathway);
             this.add(pathway);
+
+            // Add midpoints if the marcher moves
+            if (
+                previousMarcherPage.x !== selectedMarcherPage.x ||
+                previousMarcherPage.y !== selectedMarcherPage.y
+            ) {
+                const midpoint = new Midpoint({
+                    start: previousMarcherPage,
+                    end: selectedMarcherPage,
+                    innerColor: "white",
+                    outerColor: color,
+                    marcherId: previousMarcherPage.marcher_id,
+                });
+
+                createdMidpoints.push(midpoint);
+                this.add(midpoint);
+            }
         });
         this.requestRenderAll();
-        return createdPathways;
+        return [createdPathways, createdMidpoints];
     };
 
     /**
