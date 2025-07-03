@@ -94,13 +94,15 @@ export default function FilesTabContent() {
                             >
                                 <div className="bg-fg-2 border-stroke rounded-6 flex aspect-video h-auto w-full items-center justify-center border">
                                     {file.svgPreview ? (
-                                        <div className="flex h-fit w-full items-center justify-center">
-                                            <img
-                                                src={`data:image/svg+xml;base64,${btoa(file.svgPreview)}`}
-                                                alt="Field Preview"
-                                                className="max-h-full max-w-full object-contain"
-                                            />
-                                        </div>
+                                        <div
+                                            className="flex h-fit w-full items-center justify-center"
+                                            dangerouslySetInnerHTML={{
+                                                __html: file.svgPreview.replace(
+                                                    "<svg ",
+                                                    '<svg style="max-width:100%; max-height:0%; height:100%; object-fit:contain;" ',
+                                                ),
+                                            }}
+                                        />
                                     ) : (
                                         <FileDottedIcon
                                             size={32}
