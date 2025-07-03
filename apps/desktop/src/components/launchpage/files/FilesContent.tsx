@@ -6,11 +6,13 @@ import {
     CircleNotchIcon,
 } from "@phosphor-icons/react";
 import WelcomeContent from "./WelcomeContent";
+import { toast } from "sonner";
 
 interface RecentFile {
     path: string;
     name: string;
     lastOpened: number;
+    svgPreview?: string;
 }
 
 export default function FilesTabContent() {
@@ -28,6 +30,7 @@ export default function FilesTabContent() {
             setRecentFiles(files);
         } catch (error) {
             console.error("Failed to load recent files:", error);
+            toast.error("Failed to load recent files");
         } finally {
             setIsLoading(false);
         }
@@ -42,6 +45,7 @@ export default function FilesTabContent() {
             }
         } catch (error) {
             console.error("Failed to open file:", error);
+            toast.error("Failed to open file");
         }
     };
 
@@ -55,6 +59,7 @@ export default function FilesTabContent() {
             loadRecentFiles(); // Reload the list
         } catch (error) {
             console.error("Failed to remove file from recent list:", error);
+            toast.error("Failed to remove file from recent list");
         }
     };
 
@@ -63,7 +68,7 @@ export default function FilesTabContent() {
             value="files"
             className="flex w-full min-w-0 flex-col items-center p-6"
         >
-            <div className="flex h-full w-fit min-w-[56rem] flex-col p-6">
+            <div className="flex h-full w-fit min-w-[60rem] flex-col p-6">
                 {recentFiles.length !== 0 && (
                     <h2 className="text-h3 font-medium">Files</h2>
                 )}
@@ -86,11 +91,28 @@ export default function FilesTabContent() {
                                 onClick={() => handleOpenFile(file.path)}
                                 className="bg-fg-2 border-stroke rounded-6 hover:bg-fg-3 flex cursor-pointer items-center justify-between border p-3 transition-colors"
                             >
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <FileDottedIcon
-                                        size={24}
-                                        className="flex-shrink-0"
-                                    />
+                                <div className="flex items-center gap-4 overflow-hidden">
+                                    <p>SVG PREVIEW {file.svgPreview}</p>
+                                    <div className="relative h-full flex-shrink-0">
+                                        <div className="border-stroke/50 bg-fg-1 flex h-full w-40 flex-shrink-0 items-center justify-center overflow-hidden border shadow-sm">
+                                            {file.svgPreview ? (
+                                                <div
+                                                    className="flex h-full w-full items-center justify-center"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: file.svgPreview.replace(
+                                                            "<svg ",
+                                                            '<svg style="max-width:100%; max-height:100%; object-fit:contain;" ',
+                                                        ),
+                                                    }}
+                                                />
+                                            ) : (
+                                                <FileDottedIcon
+                                                    size={32}
+                                                    className="text-text/40"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
                                     <div className="overflow-hidden">
                                         <div className="truncate font-medium">
                                             {file.name}
@@ -98,13 +120,24 @@ export default function FilesTabContent() {
                                         <div className="text-text/60 truncate text-sm">
                                             {file.path}
                                         </div>
+                                        <div className="text-text/40 mt-1 text-xs">
+                                            {new Date(
+                                                file.lastOpened,
+                                            ).toLocaleDateString()}{" "}
+                                            {new Date(
+                                                file.lastOpened,
+                                            ).toLocaleTimeString(undefined, {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                                 <button
                                     onClick={(e) =>
                                         handleRemoveFile(file.path, e)
                                     }
-                                    className="text-text/40 hover:text-destructive hover:bg-fg-1 rounded-full p-1 transition-colors"
+                                    className="text-text/40 hover:text-destructive hover:bg-fg-1 ml-2 rounded-full p-1 transition-colors"
                                     title="Remove from recent files"
                                 >
                                     <TrashIcon size={16} />

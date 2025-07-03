@@ -6,6 +6,7 @@ export interface RecentFile {
     path: string;
     name: string;
     lastOpened: number; // timestamp
+    svgPreview?: string; // SVG preview of the first page
 }
 
 // Create a typed store
@@ -25,8 +26,9 @@ const store = new Store<StoreSchema>({
 /**
  * Adds a file to the recent files list
  * @param filePath The full path to the file
+ * @param svgPreview Optional SVG preview of the file's first page
  */
-export function addRecentFile(filePath: string): void {
+export function addRecentFile(filePath: string, svgPreview?: string): void {
     if (!filePath) return;
 
     const maxRecentFiles = store.get("maxRecentFiles", 10);
@@ -40,6 +42,7 @@ export function addRecentFile(filePath: string): void {
         path: filePath,
         name,
         lastOpened: Date.now(),
+        svgPreview,
     };
 
     // Filter out any existing entry with the same path

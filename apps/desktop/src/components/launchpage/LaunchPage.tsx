@@ -16,17 +16,15 @@ import { useState } from "react";
 import SettingsContent from "./settings/SettingsContent";
 import FilesContent from "./files/FilesContent";
 import LearnContent from "./learn/LearnContent";
+import Toaster from "../ui/Toaster";
 
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
-    setFileSelected: (selected: boolean) => void;
 }
 
-export default function LaunchPage({
-    setDatabaseIsReady,
-    setFileSelected,
-}: LaunchPageProps) {
+export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     const [selectedTab, setSelectedTab] = useState("files");
+
     return (
         <div className="from-bg-1 to-accent flex h-screen w-screen flex-col bg-linear-to-br from-[60%] to-[150%]">
             <TitleBar />
@@ -39,20 +37,20 @@ export default function LaunchPage({
             >
                 <Sidebar
                     setDatabaseIsReady={setDatabaseIsReady}
-                    setFileSelected={setFileSelected}
                     selectedTab={selectedTab}
                 />
                 <FilesContent />
                 <LearnContent />
                 <SettingsContent />
             </Tabs.Root>
+
+            <Toaster />
         </div>
     );
 }
 
 function Sidebar({
     setDatabaseIsReady,
-    setFileSelected,
     selectedTab,
 }: LaunchPageProps & { selectedTab: string }) {
     async function handleCreateNew() {
@@ -64,8 +62,6 @@ function Sidebar({
             // If database creation was successful, update the state
             if (dataBaseIsReady > 0) {
                 setDatabaseIsReady(true);
-                // The app will reload, but in case it doesn't, also update the React state
-                setFileSelected(true);
             }
         } catch (error) {
             console.error("Error creating new file:", error);
@@ -81,8 +77,6 @@ function Sidebar({
             // If database loading was successful, update the state
             if (dataBaseIsReady > 0) {
                 setDatabaseIsReady(true);
-                // The app will reload, but in case it doesn't, also update the React state
-                setFileSelected(true);
             }
         } catch (error) {
             console.error("Error opening existing file:", error);

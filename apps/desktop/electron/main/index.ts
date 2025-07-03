@@ -159,10 +159,6 @@ app.whenReady().then(async () => {
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
-    ipcMain.handle("database:isFileSelected", () =>
-        store.get("fileSelected", false),
-    );
-    ipcMain.handle("database:resetFileSelected", () => resetFileSelection());
     ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
     ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
     ipcMain.handle("audio:insert", async () => insertAudioFile());
@@ -191,7 +187,6 @@ app.whenReady().then(async () => {
 
         DatabaseServices.setDbPath(filePath);
         store.set("databasePath", filePath);
-        store.set("fileSelected", true);
         addRecentFile(filePath);
 
         setActiveDb(filePath);
@@ -261,6 +256,7 @@ function initGetters() {
 }
 
 app.on("window-all-closed", () => {
+    closeCurrentFile();
     win = null;
     if (process.platform !== "darwin") app.quit();
 });
@@ -309,7 +305,7 @@ ipcMain.on("window:maximize", () => {
 });
 
 ipcMain.on("window:close", () => {
-    resetFileSelection();
+    closeCurrentFile();
     win?.close();
 });
 
@@ -448,9 +444,6 @@ export async function newFile() {
     const dbVersion = new CurrentDatabase(DatabaseServices.connect);
     dbVersion.createTables();
 
-    // Save that a file has been selected
-    store.set("fileSelected", true);
-
     // Add to recent files
     addRecentFile(path.filePath);
 
@@ -522,8 +515,6 @@ export async function loadDatabaseFile() {
 
             DatabaseServices.setDbPath(path.filePaths[0]);
             store.set("databasePath", path.filePaths[0]); // Save the path for next time
-            // Save that a file has been selected
-            store.set("fileSelected", true);
 
             // Add to recent files
             addRecentFile(path.filePaths[0]);
@@ -550,22 +541,10 @@ export async function closeCurrentFile() {
     // Close the current file
     DatabaseServices.setDbPath("", false);
     store.set("databasePath", "");
-    store.set("fileSelected", false);
 
     win?.webContents.reload();
 
     return 200;
-}
-
-/**
- * Resets the file selection flag in the store.
- *
- * @returns true if successful
- */
-export async function resetFileSelection() {
-    console.log("resetFileSelection");
-    store.set("fileSelected", false);
-    return true;
 }
 
 // Field properties

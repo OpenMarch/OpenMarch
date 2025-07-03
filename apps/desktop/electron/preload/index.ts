@@ -172,8 +172,6 @@ const APP_API = {
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
-    isFileSelected: () => ipcRenderer.invoke("database:isFileSelected"),
-    resetFileSelected: () => ipcRenderer.invoke("database:resetFileSelected"),
 
     // Recent files
     getRecentFiles: () => ipcRenderer.invoke("recent-files:get"),
@@ -519,6 +517,7 @@ export interface RecentFile {
     path: string;
     name: string;
     lastOpened: number;
+    svgPreview?: string;
 }
 
 export type ElectronApi = typeof APP_API & {

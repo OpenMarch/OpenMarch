@@ -12,14 +12,6 @@ import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
-import {
-    CheckCircleIcon,
-    WarningIcon,
-    SealWarningIcon,
-    InfoIcon,
-    CircleNotchIcon,
-} from "@phosphor-icons/react";
-import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "@/components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
@@ -27,12 +19,12 @@ import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
+import Toaster from "./components/ui/Toaster";
 
 // The app
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
-    const [fileSelected, setFileSelected] = useState(false);
     const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
         undefined,
     );
@@ -91,12 +83,6 @@ function App() {
         window.electron.databaseIsReady().then((result) => {
             setDatabaseIsReady(result);
         });
-
-        // Check if a file has been selected from electron-store
-        window.electron.isFileSelected().then((result) => {
-            console.log("File selected check:", result);
-            setFileSelected(result);
-        });
     }, []);
 
     useEffect(() => {
@@ -106,11 +92,8 @@ function App() {
     return (
         <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
             {/* Always show LaunchPage when no file is selected, regardless of database state */}
-            {!fileSelected ? (
-                <LaunchPage
-                    setDatabaseIsReady={setDatabaseIsReady}
-                    setFileSelected={setFileSelected}
-                />
+            {!databaseIsReady ? (
+                <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
             ) : (
                 <TooltipProvider delayDuration={500} skipDelayDuration={500}>
                     <IsPlayingProvider>
@@ -146,50 +129,7 @@ function App() {
                                             </div>
                                             <Inspector />
                                         </div>
-                                        <Toaster
-                                            visibleToasts={6}
-                                            toastOptions={{
-                                                unstyled: true,
-                                                classNames: {
-                                                    title: "text-body text-text leading-none",
-                                                    description:
-                                                        "text-sub text-text",
-                                                    toast: "p-20 flex gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
-                                                },
-                                            }}
-                                            icons={{
-                                                success: (
-                                                    <CheckCircleIcon
-                                                        size={24}
-                                                        className="text-green"
-                                                    />
-                                                ),
-                                                info: (
-                                                    <InfoIcon
-                                                        size={24}
-                                                        className="text-text"
-                                                    />
-                                                ),
-                                                warning: (
-                                                    <WarningIcon
-                                                        size={24}
-                                                        className="text-yellow"
-                                                    />
-                                                ),
-                                                error: (
-                                                    <SealWarningIcon
-                                                        size={24}
-                                                        className="text-red"
-                                                    />
-                                                ),
-                                                loading: (
-                                                    <CircleNotchIcon
-                                                        size={24}
-                                                        className="text-text"
-                                                    />
-                                                ),
-                                            }}
-                                        />
+                                        <Toaster />
                                     </FieldPropertiesProvider>
                                 </SelectedAudioFileProvider>
                             </SelectedMarchersProvider>
