@@ -101,3 +101,30 @@ export function setMaxRecentFiles(max: number): void {
         store.set("recentFiles", recentFiles.slice(0, max));
     }
 }
+
+/**
+ * Updates the SVG preview for a specific recent file
+ * @param filePath The path of the file to update
+ * @param svgPreview The new SVG preview string
+ * @returns boolean indicating if the update was successful
+ */
+export function updateRecentFileSvgPreview(
+    filePath: string,
+    svgPreview: string,
+): boolean {
+    if (!filePath || !svgPreview) return false;
+
+    const recentFiles = store.get("recentFiles", []);
+    const fileIndex = recentFiles.findIndex((file) => file.path === filePath);
+
+    // If file not found in recent files
+    if (fileIndex === -1) return false;
+
+    // Update the SVG preview for the file
+    recentFiles[fileIndex].svgPreview = svgPreview;
+
+    // Save the updated list
+    store.set("recentFiles", recentFiles);
+
+    return true;
+}

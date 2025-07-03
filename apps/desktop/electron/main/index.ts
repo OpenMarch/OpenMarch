@@ -12,6 +12,7 @@ import {
     getRecentFiles,
     removeRecentFile,
     clearRecentFiles,
+    updateRecentFileSvgPreview,
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
@@ -577,7 +578,7 @@ export async function closeCurrentFile(isAppQuitting = false) {
 
     try {
         const svgResult = await requestSvgBeforeClose(win);
-        console.log("SVG generated on close:", svgResult);
+        updateRecentFileSvgPreview(DatabaseServices.getDbPath(), svgResult);
     } catch (error) {
         console.error("Error getting SVG on close:", error);
     }
