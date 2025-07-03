@@ -520,12 +520,8 @@ function DrillChartExport() {
         );
 
         // Generate SVGs for each page
-        for (
-            let i = 0;
-            i < (individualCharts ? pages.length + 1 : pages.length);
-            i++
-        ) {
-            exportCanvas.currentPage = pages[i] || pages[pages.length - 1];
+        for (let i = 0; i < pages.length; i++) {
+            exportCanvas.currentPage = pages[i];
             setCurrentStep(
                 `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
             );
@@ -650,7 +646,7 @@ function DrillChartExport() {
                 currentMarcherPages = nextMarcherPages;
                 nextMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
-                    pages[i + 1]?.id ?? -1,
+                    pages[i + 2]?.id ?? -1,
                 );
             } else {
                 // No pathway rendering, just generate SVG
