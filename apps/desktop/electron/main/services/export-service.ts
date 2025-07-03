@@ -367,16 +367,19 @@ export class PDFExportService {
             const pdfFilePath = path.join(exportDir, sanitize(pdfFileName));
             const doc = new PDFDocument({
                 size: "LETTER",
-                layout: "portrait",
-                margins: { top: 40, bottom: 40, left: 40, right: 40 },
+                layout: "landscape",
+                margins: { top: 0, bottom: 0, left: 0, right: 0 },
             });
             const stream = fs.createWriteStream(pdfFilePath);
             doc.pipe(stream);
 
+            const margin = 20;
+            const topBarHeight = 34;
+
             for (let i = 0; i < svgPages[marcher].length; i++) {
                 if (i > 0) doc.addPage();
 
-                // Gather metadata
+                // Metadata
                 const page = pages?.[i];
                 const drillNumber = drillNumbers[marcher];
                 const setNumber = page?.name ?? "END";
@@ -394,55 +397,178 @@ export class PDFExportService {
                 const currCoord = marcherCoordinates[marcher][i] ?? "N/A";
                 const nextCoord = marcherCoordinates[marcher][i + 1] ?? "N/A";
                 const notes = page?.notes ?? "";
+                const pageWidth = doc.page.width;
+                const pageHeight = doc.page.height;
 
-                // Layout: Top table
-                doc.fontSize(16).font("Helvetica-Bold");
-                doc.text(`Drill Number: ${drillNumber}`, {
-                    continued: true,
-                    width: 180,
-                });
-                doc.text(`Show: ${showName}`, {
+                // === TOP BAR ===
+                doc.rect(
+                    margin,
+                    margin,
+                    pageWidth - 2 * margin,
+                    topBarHeight,
+                ).fill("#ddd");
+                const titleBarY = margin + topBarHeight / 2 - 6;
+
+                doc.fillColor("black").fontSize(16).font("Helvetica-Bold");
+                doc.fillColor("black").text(
+                    `${drillNumber}`,
+                    margin,
+                    titleBarY,
+                    {
+                        width: pageWidth * 0.15,
+                        align: "center",
+                    },
+                );
+                doc.text(showName, pageWidth * 0.15, titleBarY, {
+                    width: pageWidth * 0.65,
                     align: "center",
-                    continued: true,
-                    width: 180,
                 });
-                doc.text(`Set: ${setNumber}`, { align: "right", width: 180 });
-                doc.moveDown(0.5);
+                doc.text(`Set: ${setNumber}`, pageWidth * 0.8, titleBarY, {
+                    width: pageWidth * 0.2,
+                    align: "center",
+                });
 
-                // Layout: SVG
+                // === SVG FIELD ===
                 try {
-                    // Position SVG with some margin
-                    SVGtoPDF(doc, svgPages[marcher][i], 40, doc.y + 10, {
-                        width: doc.page.width - 80,
-                        height: 220,
+                    SVGtoPDF(doc, svgPages[marcher][i], margin, -30, {
+                        width: pageWidth - margin * 2,
                         preserveAspectRatio: "xMidYMid meet",
                     });
                 } catch (svgError) {
-                    doc.moveDown();
-                    doc.fontSize(12)
-                        .fillColor("red")
+                    doc.fillColor("red")
+                        .fontSize(12)
                         .text(
                             `Error rendering SVG: ${svgError instanceof Error ? svgError.message : svgError}`,
-                            { width: doc.page.width - 80 },
+                            pageHeight / 2,
+                            pageWidth / 2,
+                            { width: pageWidth - margin * 2 },
                         );
                     doc.fillColor("black");
                 }
-                doc.moveDown(0.5);
 
-                // Layout: Bottom info table
-                doc.fontSize(12).font("Helvetica");
-                doc.text(`Set: ${setNumber}`);
-                doc.text(`Counts: ${counts}`);
-                doc.text(`Measures: ${measureNumbers}`);
-                doc.moveDown(0.2);
-                doc.text(`Previous Coordinate: ${prevCoord}`);
-                doc.text(`Current Coordinate: ${currCoord}`);
-                doc.text(`Next Coordinate: ${nextCoord}`);
-                doc.moveDown(0.3);
-                if (notes && notes.trim()) {
-                    doc.font("Helvetica-Oblique").text(`Notes: ${notes}`);
+                // === BOTTOM COLUMNS ===
+                const bottomY = doc.page.height - 110;
+                const columnPadding = 12;
+                const marginSize = margin * 1.5;
+                const contentWidth =
+                    pageWidth - marginSize * 2 - columnPadding * 2;
+
+                // Variable column widths (18%, 56%, 26%)
+                const leftColWidth = contentWidth * 0.18;
+                const midColWidth = contentWidth * 0.56;
+                const rightColWidth = contentWidth * 0.26;
+
+                // X positions for three columns
+                const leftX = marginSize;
+                const midX = leftX + leftColWidth + columnPadding;
+                const rightX = midX + midColWidth + columnPadding;
+
+                // Font size for all text
+                const fontSize = 11;
+                const padding = 2;
+
+                // Initialize Y positions for each column (all start at bottomY)
+                let yLeft = bottomY;
+                let yMid = bottomY;
+                let yRight = bottomY;
+
+                // Helper to draw a bold header and value with proper wrapping and y advancement
+                // eslint-disable-next-line no-inner-declarations
+                function drawLabelValue(
+                    doc: PDFKit.PDFDocument,
+                    label: string,
+                    value: string,
+                    x: number,
+                    y: number,
+                    width: number,
+                    fontSize: number = 11, // default to 11
+                ): number {
+                    // Always set font and size before measuring
+                    doc.fontSize(fontSize).font("Helvetica-Bold");
+                    const combined = `${label} ${value}`;
+                    const h = doc.heightOfString(combined, { width });
+
+                    // Always set font and size before drawing
+                    doc.fontSize(fontSize)
+                        .font("Helvetica-Bold")
+                        .text(label, x, y, { width, continued: true });
+                    doc.fontSize(fontSize)
+                        .font("Helvetica")
+                        .text(` ${value}`, { width, continued: false });
+
+                    return y + h + 2;
                 }
-                doc.font("Helvetica");
+
+                // LEFT COLUMN
+                yLeft = drawLabelValue(
+                    doc,
+                    "Set:",
+                    setNumber,
+                    leftX,
+                    yLeft,
+                    leftColWidth,
+                );
+                yLeft = drawLabelValue(
+                    doc,
+                    "Counts:",
+                    counts,
+                    leftX,
+                    yLeft,
+                    leftColWidth,
+                );
+                yLeft = drawLabelValue(
+                    doc,
+                    "Measures:",
+                    measureNumbers,
+                    leftX,
+                    yLeft,
+                    leftColWidth,
+                );
+
+                // MIDDLE COLUMN
+                yMid = drawLabelValue(
+                    doc,
+                    "Previous Coordinate:",
+                    prevCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+                yMid = drawLabelValue(
+                    doc,
+                    "Current Coordinate:",
+                    currCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+                yMid = drawLabelValue(
+                    doc,
+                    "Next Coordinate:",
+                    nextCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+
+                // RIGHT COLUMN (Notes label and value, label on first line, value on following lines)
+                doc.fontSize(fontSize);
+                doc.font("Helvetica-Bold").text("Notes:", rightX, yRight, {
+                    width: rightColWidth,
+                });
+                const labelHeight = doc.heightOfString("Notes:", {
+                    width: rightColWidth,
+                });
+                yRight += labelHeight;
+
+                doc.fontSize(fontSize);
+                doc.font("Helvetica").text(notes, rightX, yRight, {
+                    width: rightColWidth,
+                });
+                const notesHeight = doc.heightOfString(notes, {
+                    width: rightColWidth,
+                });
+                yRight += notesHeight + padding;
             }
 
             doc.end();
@@ -450,145 +576,11 @@ export class PDFExportService {
                 stream.on("finish", resolve);
                 stream.on("error", reject);
             });
+
             filePaths.push(pdfFilePath);
         }
 
         return { success: true, filePaths };
-    }
-
-    private static generateDrillHtml({
-        drillNumber,
-        showTitle,
-        setNumber,
-        counts,
-        measureNumbers,
-        prevCoord,
-        currCoord,
-        nextCoord,
-        notes,
-        svg,
-    }: {
-        drillNumber: string;
-        showTitle: string;
-        setNumber: string;
-        counts: string;
-        measureNumbers: string;
-        prevCoord: string;
-        currCoord: string;
-        nextCoord: string;
-        notes: string;
-        svg: string;
-    }): string {
-        return `
-            <html>
-                <head>
-                    <style>
-                        body { margin: 0; font-family: Arial, sans-serif; }
-                        .page-content {
-                            margin: 32px;
-                        }
-                        .top-table {
-                            display: table;
-                            width: 100%;
-                            table-layout: fixed;
-                            margin-top: 0;
-                            margin-bottom: 16px;
-                            overflow: hidden;
-                        }
-                        .top-row { display: table-row; }
-                        .top-cell {
-                            display: table-cell;
-                            background: #ddd;
-                            padding: 12px;
-                            border-right: 1px dotted #888;
-                            text-align: center;
-                            font-size: 18px;
-                        }
-                        .top-cell:first-child{
-                            width: 10%;
-                        }
-                        .top-cell:last-child {
-                            width: 20%;
-                        }
-                        .top-cell:nth-child(2) {
-                            width: 70%;
-                        }
-                        .top-cell:last-child { border-right: none; }
-                        .svg-container {
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            margin: 0 0 16px 0;
-                        }
-                        .svg-container svg {
-                            max-width: 100%;
-                            max-height: 1000px;
-                            height: auto;
-                            width: auto;
-                            display: block;
-                        }
-                        .bottom-table {
-                            width: 100%;
-                            margin-top: 16px;
-                            display: table;
-                            table-layout: fixed;
-                        }
-                        .bottom-row { display: table-row; }
-                        .bottom-cell {
-                            display: table-cell;
-                            vertical-align: top;
-                            padding: 8px 12px;
-                            font-size: 13px;
-                        }
-                        .bottom-cell:first-child{
-                            width: 18%;
-                        }
-                        .bottom-cell:last-child {
-                            width: 26%;
-                        }
-                        .bottom-cell:nth-child(2) {
-                            width: 56%;
-                        }
-                        .notes {
-                            white-space: pre-line;
-                            font-size: 13px;
-                        }
-                    </style>
-                </head>
-                <body style="font-family: Arial, sans-serif">
-                    <div class="page-content">
-                        <div class="top-table">
-                            <div class="top-row" style="font-weight: bold">                 
-                                <div class="top-cell">${drillNumber}</div>
-                                <div class="top-cell">${showTitle}</div>
-                                <div class="top-cell">Set: ${setNumber}</div>
-                            </div>
-                        </div>
-                        <div class="svg-container">
-                            ${svg}
-                        </div>
-                        <div class="bottom-table">
-                            <div class="bottom-row">
-                                <div class="bottom-cell">
-                                    <b>Set:</b> ${setNumber}<br>
-                                    <b>Counts:</b> ${counts}<br>
-                                    <b>Measures:</b> ${measureNumbers}
-                                </div>
-                                <div class="bottom-cell">
-                                    <b>Previous Coordinate:</b> ${prevCoord}<br>
-                                    <b>Current Coordinate:</b> ${currCoord}<br>
-                                    <b>Next Coordinate:</b> ${nextCoord}
-                                </div>
-                                <div class="bottom-cell">
-                                    <b>Notes:</b> <br>${notes}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="page-break-after: always"></div>
-                </body>
-            </html>
-        `;
     }
 
     /**
