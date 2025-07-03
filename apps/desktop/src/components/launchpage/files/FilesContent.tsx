@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import WelcomeContent from "./WelcomeContent";
 import { toast } from "sonner";
+import { Button } from "@openmarch/ui";
 
 interface RecentFile {
     path: string;
@@ -68,7 +69,7 @@ export default function FilesTabContent() {
             value="files"
             className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6"
         >
-            <div className="flex h-fit w-fit min-w-[60rem] flex-col p-6">
+            <div className="flex h-fit w-full flex-col p-6">
                 {recentFiles.length !== 0 && (
                     <h2 className="text-h3 font-medium">Files</h2>
                 )}
@@ -84,7 +85,7 @@ export default function FilesTabContent() {
                 ) : recentFiles.length === 0 ? (
                     <WelcomeContent />
                 ) : (
-                    <div className="grid grid-cols-4 gap-12">
+                    <div className="grid grid-cols-4 gap-12 max-[1420px]:grid-cols-3 max-[1150px]:grid-cols-2">
                         {recentFiles.map((file) => (
                             <div
                                 key={file.path}
@@ -109,33 +110,36 @@ export default function FilesTabContent() {
                                         />
                                     )}
                                 </div>
-                                <div className="flex flex-col gap-6">
-                                    <div className="truncate font-medium">
-                                        {file.name}
+                                <div className="flex w-full items-start justify-between p-4">
+                                    <div className="flex flex-col gap-6">
+                                        <div className="text-h5 truncate">
+                                            {file.name}
+                                        </div>
+                                        <div className="text-text-subtitle text-body">
+                                            {new Date(
+                                                file.lastOpened,
+                                            ).toLocaleDateString()}{" "}
+                                            {new Date(
+                                                file.lastOpened,
+                                            ).toLocaleTimeString(undefined, {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                            })}
+                                        </div>
                                     </div>
-                                    <div className="text-text/60 truncate text-sm">
-                                        {file.path}
-                                    </div>
-                                    <div className="text-text/40 mt-1 text-xs">
-                                        {new Date(
-                                            file.lastOpened,
-                                        ).toLocaleDateString()}{" "}
-                                        {new Date(
-                                            file.lastOpened,
-                                        ).toLocaleTimeString(undefined, {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        })}
-                                    </div>
-                                    <button
+                                    <Button
+                                        size="compact"
+                                        variant="secondary"
+                                        tooltipText="Remove from recent files"
+                                        tooltipDelay={300}
+                                        tooltipSide="top"
                                         onClick={(e) =>
                                             handleRemoveFile(file.path, e)
                                         }
-                                        className="text-text/40 hover:text-destructive hover:bg-fg-1 ml-2 rounded-full p-1 transition-colors"
-                                        title="Remove from recent files"
+                                        className="text-text/40 hover:text-red w-fit rounded-full p-2 transition-all"
                                     >
                                         <TrashIcon size={16} />
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         ))}

@@ -67,6 +67,7 @@ export interface ButtonProps
     content?: "text" | "icon";
     tooltipText?: string;
     tooltipSide?: "top" | "bottom" | "left" | "right";
+    tooltipDelay?: number;
 }
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     (
@@ -78,6 +79,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             className,
             tooltipText,
             tooltipSide = "bottom",
+            tooltipDelay = 500,
             ...props
         },
         ref,
@@ -85,7 +87,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         <>
             {tooltipText !== undefined ? (
                 <RadixTooltip.Provider>
-                    <RadixTooltip.Root>
+                    <RadixTooltip.Root delayDuration={tooltipDelay}>
                         <RadixTooltip.Trigger
                             ref={ref}
                             className={twMerge(

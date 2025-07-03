@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -41,23 +41,26 @@ const SvgPreviewHandler: React.FC = () => {
     }, [marchers]);
 
     // Static default UI settings
-    const defaultUISettings = {
-        isPlaying: false,
-        lockX: false,
-        lockY: false,
-        previousPaths: false,
-        nextPaths: false,
-        gridLines: true,
-        halfLines: true,
-        timelinePixelsPerSecond: 40,
-        focussedComponent: "canvas" as const,
-        mouseSettings: {
-            trackpadMode: true,
-            trackpadPanSensitivity: 0.5,
-            zoomSensitivity: 0.03,
-            panSensitivity: 0.5,
-        },
-    };
+    const defaultUISettings = useMemo(
+        () => ({
+            isPlaying: false,
+            lockX: false,
+            lockY: false,
+            previousPaths: false,
+            nextPaths: false,
+            gridLines: true,
+            halfLines: true,
+            timelinePixelsPerSecond: 40,
+            focussedComponent: "canvas" as const,
+            mouseSettings: {
+                trackpadMode: true,
+                trackpadPanSensitivity: 0.5,
+                zoomSensitivity: 0.03,
+                panSensitivity: 0.5,
+            },
+        }),
+        [],
+    );
 
     /**
      * Create a minimal canvas for SVG export
