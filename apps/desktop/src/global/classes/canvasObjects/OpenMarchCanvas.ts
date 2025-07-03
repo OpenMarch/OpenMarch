@@ -1874,19 +1874,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
             const loadImage = async (): Promise<HTMLImageElement> => {
                 return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const base64Url = reader.result as string;
-                        const img = new Image();
-                        img.onload = () => resolve(img);
-                        img.onerror = reject;
-                        img.src = base64Url;
-                    };
-                    reader.onerror = reject;
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
 
                     const buffer = backgroundImageResponse.data as Buffer;
                     const blob = new Blob([buffer]);
-                    reader.readAsDataURL(blob);
+                    img.src = URL.createObjectURL(blob);
+
+                    return img;
                 });
             };
 

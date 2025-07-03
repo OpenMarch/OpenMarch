@@ -4,6 +4,7 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useMarcherStore } from "@/stores/MarcherStore";
+import { UiSettings } from "@/stores/UiSettingsStore";
 
 /**
  * Handler for generating canvas preview SVGs on app close for launchpage
@@ -41,7 +42,7 @@ const SvgPreviewHandler: React.FC = () => {
     }, [marchers]);
 
     // Static default UI settings
-    const defaultUISettings = useMemo(
+    const defaultUISettings: UiSettings = useMemo(
         () => ({
             isPlaying: false,
             lockX: false,
@@ -84,7 +85,6 @@ const SvgPreviewHandler: React.FC = () => {
             svgCanvas.setHeight(fieldProps.height);
 
             svgCanvas.renderFieldGrid();
-            await svgCanvas.refreshBackgroundImage(false);
 
             return svgCanvas;
         },

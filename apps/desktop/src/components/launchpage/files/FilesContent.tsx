@@ -69,7 +69,7 @@ export default function FilesTabContent() {
             value="files"
             className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6"
         >
-            <div className="flex h-fit w-full flex-col p-6">
+            <div className="flex h-full w-full flex-col p-6">
                 {recentFiles.length !== 0 && (
                     <h2 className="text-h3 font-medium">Files</h2>
                 )}
@@ -94,15 +94,16 @@ export default function FilesTabContent() {
                             >
                                 <div className="bg-fg-2 border-stroke rounded-6 flex aspect-video h-auto w-full items-center justify-center border">
                                     {file.svgPreview ? (
-                                        <div
-                                            className="flex h-fit w-full items-center justify-center"
-                                            dangerouslySetInnerHTML={{
-                                                __html: file.svgPreview.replace(
-                                                    "<svg ",
-                                                    '<svg style="max-width:100%; max-height:0%; height:100%; object-fit:contain;" ',
-                                                ),
-                                            }}
-                                        />
+                                        <div className="flex h-fit w-full items-center justify-center">
+                                            <img
+                                                src={`data:image/svg+xml;base64,${btoa(
+                                                    file.svgPreview,
+                                                )}`}
+                                                alt="Field Preview"
+                                                className="max-h-full max-w-full object-contain"
+                                                loading="lazy"
+                                            />
+                                        </div>
                                     ) : (
                                         <FileDottedIcon
                                             size={32}
