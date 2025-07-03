@@ -361,68 +361,96 @@ export class PDFExportService {
         );
         const filePaths: string[] = [];
 
-        // Loop through each marcher's SVG pages
+        // For each marcher, create a PDF of their pages
         for (let marcher = 0; marcher < svgPages.length; marcher++) {
             const pdfFileName = `${showName}-${drillNumbers[marcher]}.pdf`;
-            const pdfFilePath = `${exportDir}/${sanitize(pdfFileName)}`;
-            let htmlPages: string[] = [];
+            const pdfFilePath = path.join(exportDir, sanitize(pdfFileName));
+            const doc = new PDFDocument({
+                size: "LETTER",
+                layout: "portrait",
+                margins: { top: 40, bottom: 40, left: 40, right: 40 },
+            });
+            const stream = fs.createWriteStream(pdfFilePath);
+            doc.pipe(stream);
 
             for (let i = 0; i < svgPages[marcher].length; i++) {
-                // Generate HTML
-                const page = pages?.[i];
+                if (i > 0) doc.addPage();
 
-                htmlPages.push(
-                    PDFExportService.generateDrillHtml({
-                        drillNumber: drillNumbers[marcher],
-                        showTitle: showName,
-                        setNumber: page?.name ?? "END",
-                        counts:
-                            page?.counts != null ? String(page.counts) : "END",
-                        measureNumbers:
-                            page?.measures && page.measures.length > 0
-                                ? page.measures.length === 1
-                                    ? String(page.measures[0].number)
-                                    : `${page.measures[0].number}-${page.measures[page.measures.length - 1].number}`
-                                : i === 0
-                                  ? "START"
-                                  : "END",
-                        prevCoord: marcherCoordinates[marcher][i - 1] ?? "N/A",
-                        currCoord: marcherCoordinates[marcher][i] ?? "N/A",
-                        nextCoord: marcherCoordinates[marcher][i + 1] ?? "N/A",
-                        notes: page?.notes ?? "",
-                        svg: svgPages[marcher][i],
-                    }),
-                );
+                // Gather metadata
+                const page = pages?.[i];
+                const drillNumber = drillNumbers[marcher];
+                const setNumber = page?.name ?? "END";
+                const counts =
+                    page?.counts != null ? String(page.counts) : "END";
+                const measureNumbers =
+                    page?.measures && page.measures.length > 0
+                        ? page.measures.length === 1
+                            ? String(page.measures[0].number)
+                            : `${page.measures[0].number}-${page.measures[page.measures.length - 1].number}`
+                        : i === 0
+                          ? "START"
+                          : "END";
+                const prevCoord = marcherCoordinates[marcher][i - 1] ?? "N/A";
+                const currCoord = marcherCoordinates[marcher][i] ?? "N/A";
+                const nextCoord = marcherCoordinates[marcher][i + 1] ?? "N/A";
+                const notes = page?.notes ?? "";
+
+                // Layout: Top table
+                doc.fontSize(16).font("Helvetica-Bold");
+                doc.text(`Drill Number: ${drillNumber}`, {
+                    continued: true,
+                    width: 180,
+                });
+                doc.text(`Show: ${showName}`, {
+                    align: "center",
+                    continued: true,
+                    width: 180,
+                });
+                doc.text(`Set: ${setNumber}`, { align: "right", width: 180 });
+                doc.moveDown(0.5);
+
+                // Layout: SVG
+                try {
+                    // Position SVG with some margin
+                    SVGtoPDF(doc, svgPages[marcher][i], 40, doc.y + 10, {
+                        width: doc.page.width - 80,
+                        height: 220,
+                        preserveAspectRatio: "xMidYMid meet",
+                    });
+                } catch (svgError) {
+                    doc.moveDown();
+                    doc.fontSize(12)
+                        .fillColor("red")
+                        .text(
+                            `Error rendering SVG: ${svgError instanceof Error ? svgError.message : svgError}`,
+                            { width: doc.page.width - 80 },
+                        );
+                    doc.fillColor("black");
+                }
+                doc.moveDown(0.5);
+
+                // Layout: Bottom info table
+                doc.fontSize(12).font("Helvetica");
+                doc.text(`Set: ${setNumber}`);
+                doc.text(`Counts: ${counts}`);
+                doc.text(`Measures: ${measureNumbers}`);
+                doc.moveDown(0.2);
+                doc.text(`Previous Coordinate: ${prevCoord}`);
+                doc.text(`Current Coordinate: ${currCoord}`);
+                doc.text(`Next Coordinate: ${nextCoord}`);
+                doc.moveDown(0.3);
+                if (notes && notes.trim()) {
+                    doc.font("Helvetica-Oblique").text(`Notes: ${notes}`);
+                }
+                doc.font("Helvetica");
             }
 
-            // Create a hidden BrowserWindow for PDF
-            const win = new BrowserWindow({
-                width: 1400,
-                height: 900,
-                show: false,
-                webPreferences: {
-                    offscreen: true,
-                },
+            doc.end();
+            await new Promise<void>((resolve, reject) => {
+                stream.on("finish", resolve);
+                stream.on("error", reject);
             });
-
-            win.loadURL(
-                `data:text/html;charset=utf-8,${encodeURIComponent(htmlPages.join(""))}`,
-            );
-            await new Promise((resolve) =>
-                win.webContents.once("did-finish-load", resolve),
-            );
-
-            // Print to PDF
-            const pdfData = await win.webContents.printToPDF({
-                pageSize: "Letter",
-                landscape: true,
-                printBackground: true,
-                margins: { top: 0, bottom: 0, left: 0, right: 0 },
-            });
-
-            fs.writeFileSync(pdfFilePath, pdfData);
             filePaths.push(pdfFilePath);
-            win.destroy();
         }
 
         return { success: true, filePaths };
