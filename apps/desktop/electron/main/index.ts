@@ -37,6 +37,7 @@ import { FIRST_PAGE_ID } from "../database/constants";
 // │ └── index.html    > Electron-Renderer
 //
 
+let isQuitting = false;
 const store = new Store();
 const enableSentry = process.env.NODE_ENV !== "development";
 console.log("Sentry error reporting enabled:", enableSentry);
@@ -123,6 +124,24 @@ async function createWindow(title?: string) {
             "main-process-message",
             new Date().toLocaleString(),
         );
+    });
+
+    win.on("close", async (event: Electron.Event) => {
+        if (isQuitting) return;
+
+        event.preventDefault();
+        win!.hide(); // use non-null assertion now that we're inside the if-block
+
+        try {
+            await closeCurrentFile(true);
+        } catch (e) {
+            console.error("Error closing file:", e);
+        }
+
+        isQuitting = true;
+        win!.destroy();
+        win = null;
+        app.quit();
     });
 
     // Make all links open with the browser, not with the application
@@ -255,8 +274,7 @@ function initGetters() {
     //);
 }
 
-app.on("window-all-closed", () => {
-    closeCurrentFile();
+app.on("window-all-closed", async () => {
     win = null;
     if (process.platform !== "darwin") app.quit();
 });
@@ -528,21 +546,50 @@ export async function loadDatabaseFile() {
         });
 }
 
+// Custom function to send request and wait for response
+function requestSvgBeforeClose(win: BrowserWindow): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const requestId = `get-svg-${Date.now()}`;
+
+        ipcMain.once(`get-svg-response-${requestId}`, (event, svg) => {
+            resolve(svg);
+        });
+
+        win.webContents.send("get-svg-on-close", requestId);
+
+        // Optional timeout to avoid hanging
+        setTimeout(
+            () => reject(new Error("Timeout waiting for SVG response")),
+            5000,
+        );
+    });
+}
+
 /**
  * Closes the current database file.
  *
  * @returns 200 for success, -1 for failure
  */
-export async function closeCurrentFile() {
+export async function closeCurrentFile(isAppQuitting = false) {
     console.log("closeCurrentFile");
 
     if (!win) return -1;
+
+    try {
+        const svgResult = await requestSvgBeforeClose(win);
+        console.log("SVG generated on close:", svgResult);
+    } catch (error) {
+        console.error("Error getting SVG on close:", error);
+    }
 
     // Close the current file
     DatabaseServices.setDbPath("", false);
     store.set("databasePath", "");
 
-    win?.webContents.reload();
+    // Only reload if we’re NOT quitting the app
+    if (!isAppQuitting) {
+        win.webContents.reload();
+    }
 
     return 200;
 }

@@ -173,6 +173,14 @@ const APP_API = {
     databaseCreate: () => ipcRenderer.invoke("database:create"),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
 
+    // SVG Generation
+    onGetSvgForClose: (callback: () => Promise<string>) => {
+        ipcRenderer.on("get-svg-on-close", async (event, requestId) => {
+            const result = await callback();
+            ipcRenderer.send(`get-svg-response-${requestId}`, result);
+        });
+    },
+
     // Recent files
     getRecentFiles: () => ipcRenderer.invoke("recent-files:get"),
     removeRecentFile: (filePath: string) =>
@@ -520,11 +528,4 @@ export interface RecentFile {
     svgPreview?: string;
 }
 
-export type ElectronApi = typeof APP_API & {
-    // Recent files
-    getRecentFiles: () => Promise<RecentFile[]>;
-    removeRecentFile: (filePath: string) => Promise<void>;
-    clearRecentFiles: () => Promise<void>;
-    openRecentFile: (filePath: string) => Promise<number>; // Returns 200 on success or -1 on failure
-};
 export type PluginsApi = typeof PLUGINS_API;

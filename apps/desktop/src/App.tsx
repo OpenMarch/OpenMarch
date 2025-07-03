@@ -20,6 +20,7 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
+import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 
 // The app
 
@@ -103,6 +104,7 @@ function App() {
                                     <FieldPropertiesProvider>
                                         <StateInitializer />
                                         <RegisteredActionsHandler />
+                                        <SvgPreviewHandler />
                                         <TitleBar />
                                         <div
                                             id="app"
