@@ -4,7 +4,7 @@ import { twMerge } from "tailwind-merge";
 
 const variants = cva(
     [
-        "text-sub w-fit flex gap-4 leading-none px-6 py-[3px] justify-center items-center rounded-6 border border-stroke min-h-0",
+        "text-sub w-fit flex gap-4 leading-none px-6 py-[2px] justify-center items-center rounded-6 border border-stroke min-h-0",
     ],
     {
         variants: {

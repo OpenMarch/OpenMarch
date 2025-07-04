@@ -81,7 +81,7 @@ function App() {
 
     useEffect(() => {
         // Check if database is ready
-        window.electron.databaseIsReady().then((result) => {
+        window.electron.databaseIsReady().then((result: boolean) => {
             setDatabaseIsReady(result);
         });
     }, []);

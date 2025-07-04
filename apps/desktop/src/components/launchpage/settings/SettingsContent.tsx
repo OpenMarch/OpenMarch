@@ -1,24 +1,22 @@
-import ThemeSwitcher from "./ThemeSwitcher";
 import MouseSettings from "./MouseSettings";
 import * as Tabs from "@radix-ui/react-tabs";
+import AppearanceSettings from "./AppearanceSettings";
+import PluginsContents from "./plugins/Plugins";
 
 export default function SettingsContent() {
     return (
         <Tabs.Content
             value="settings"
-            className="flex w-full flex-col items-center p-16"
+            className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6 select-text"
         >
-            <div className="border-stroke rounded-16 flex w-[50rem] flex-col gap-48 border p-32">
-                <div className="flex flex-col gap-16">
-                    <h4 className="text-h5 leading-none">General</h4>
-                    <div className="flex flex-col gap-16 px-12">
-                        <div className="flex w-full items-center justify-between gap-16">
-                            <p className="text-body">Theme</p>
-                            <ThemeSwitcher />
-                        </div>
-                    </div>
-                </div>
+            <div className="flex h-fit w-full max-w-[512px] flex-col gap-16">
+                <h3 className="text-h3">Settings</h3>
+                <h5 className="text-h5 leading-none">Appearance</h5>
+                <AppearanceSettings />
+                <h4 className="text-h5 leading-none">Mouse & trackpad</h4>
                 <MouseSettings />
+                <h3 className="text-h3">Plugins</h3>
+                <PluginsContents />
             </div>
         </Tabs.Content>
     );

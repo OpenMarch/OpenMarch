@@ -63,11 +63,14 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Disable text selection */
 
-:not(input):not(textarea),
-:not(input):not(textarea)::after,
-:not(input):not(textarea)::before {
-    -webkit-user-select: none;
+body {
     user-select: none;
+}
+
+input,
+textarea,
+.select-text {
+    user-select: text;
 }
 
 input,

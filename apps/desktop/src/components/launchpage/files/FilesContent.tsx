@@ -1,10 +1,6 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import { useEffect, useState } from "react";
-import {
-    TrashIcon,
-    FileDottedIcon,
-    CircleNotchIcon,
-} from "@phosphor-icons/react";
+import { FileDottedIcon, CircleNotchIcon, XIcon } from "@phosphor-icons/react";
 import WelcomeContent from "./WelcomeContent";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
@@ -137,9 +133,9 @@ export default function FilesTabContent() {
                                         onClick={(e) =>
                                             handleRemoveFile(file.path, e)
                                         }
-                                        className="text-text/40 hover:text-red w-fit rounded-full p-2 transition-all"
+                                        className="text-text/40 hover:text-red w-fit rounded-full px-4 transition-all"
                                     >
-                                        <TrashIcon size={16} />
+                                        <XIcon size={16} />
                                     </Button>
                                 </div>
                             </div>

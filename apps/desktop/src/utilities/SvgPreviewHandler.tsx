@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { UiSettings } from "@/stores/UiSettingsStore";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 /**
  * Handler for generating canvas preview SVGs on app close for launchpage
@@ -14,24 +14,20 @@ const SvgPreviewHandler: React.FC = () => {
 
     // Get current values
     const { fieldProperties } = useFieldProperties() ?? {};
-    const { selectedPage } = useSelectedPage() ?? {};
     const { marcherPages = [] } = useMarcherPageStore() ?? {};
     const { marchers = [] } = useMarcherStore() ?? {};
+    const { pages = [] } = useTimingObjectsStore() ?? {};
 
     // Refs to store current values for use in the IPC handler
     const fieldPropertiesRef = useRef(fieldProperties);
-    const selectedPageRef = useRef(selectedPage);
     const marcherPagesRef = useRef(marcherPages);
     const marchersRef = useRef(Array.isArray(marchers) ? marchers : []);
+    const pagesRef = useRef(pages);
 
     // Keep refs updated
     useEffect(() => {
         fieldPropertiesRef.current = fieldProperties;
     }, [fieldProperties]);
-
-    useEffect(() => {
-        selectedPageRef.current = selectedPage;
-    }, [selectedPage]);
 
     useEffect(() => {
         marcherPagesRef.current = marcherPages;
@@ -40,6 +36,10 @@ const SvgPreviewHandler: React.FC = () => {
     useEffect(() => {
         marchersRef.current = Array.isArray(marchers) ? marchers : [];
     }, [marchers]);
+
+    useEffect(() => {
+        pagesRef.current = Array.isArray(pages) ? pages : [];
+    }, [pages]);
 
     // Static default UI settings
     const defaultUISettings: UiSettings = useMemo(
@@ -144,29 +144,38 @@ const SvgPreviewHandler: React.FC = () => {
 
         window.electron.onGetSvgForClose(async () => {
             const currentFieldProps = fieldPropertiesRef.current;
-            const currentSelectedPage = selectedPageRef.current;
+            const currentPages = pagesRef.current;
             const currentMarcherPages = marcherPagesRef.current;
             const currentMarchers = marchersRef.current;
 
-            if (!currentFieldProps || !currentSelectedPage) {
-                console.error("Missing required data for SVG generation");
-                return "ERROR: Missing required data";
+            // Explicitly get the first page only
+            const firstPage =
+                currentPages && currentPages.length > 0
+                    ? currentPages[0]
+                    : null;
+
+            if (!currentFieldProps || !firstPage) {
+                console.error(
+                    "Missing required data for SVG generation. Field properties or first page not available.",
+                );
             }
 
             const svg = await generateSvgPreview(
                 currentFieldProps,
-                currentSelectedPage,
+                firstPage,
                 currentMarcherPages,
                 currentMarchers,
             );
 
-            console.log("SVG generated successfully on app close");
+            console.log(
+                "SVG generated successfully for first page on app close",
+            );
             return svg;
         });
 
         handlerRegisteredRef.current = true;
         console.log("SVG preview handler registered");
-    }, [generateSvgPreview]);
+    }, [generateSvgPreview, pages]);
 
     return null;
 };
