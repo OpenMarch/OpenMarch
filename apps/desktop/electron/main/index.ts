@@ -8,7 +8,6 @@ import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
 import AudioFile from "../../src/global/classes/AudioFile";
-import { parseMxl } from "../mxl/MxlUtil";
 import { init, captureException } from "@sentry/electron/main";
 
 import {
