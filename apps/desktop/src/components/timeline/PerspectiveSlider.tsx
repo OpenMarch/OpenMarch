@@ -20,14 +20,13 @@ export default function PerspectiveSlider() {
     return (
         <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-4 border px-16 py-12">
             <div className="text-text-subtitle text-sub flex justify-between">
-                <span>0°</span>
                 <span>Perspective</span>
-                <span>75°</span>
+                <span>{value}°</span>
             </div>
             <Slider
                 value={[value]}
                 min={0}
-                max={75}
+                max={65}
                 step={1}
                 onValueChange={handleValueChange}
             />

@@ -38,7 +38,10 @@ export default function TimelineControls() {
                     })}
                 >
                     <ZoomControls />
-                    <button onClick={toggleFullscreen}>
+                    <button
+                        className="text-text hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={toggleFullscreen}
+                    >
                         {isFullscreen ? (
                             <CornersInIcon size={24} />
                         ) : (
@@ -57,7 +60,7 @@ function ZoomControls() {
     return (
         <div className="flex gap-10" id="zoomIcons">
             <button
-                className="text-text active:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() =>
                     setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 0.8)
                 }
@@ -66,7 +69,7 @@ function ZoomControls() {
                 <MagnifyingGlassMinusIcon size={24} />
             </button>
             <button
-                className="text-text active:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() =>
                     setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 1.2)
                 }

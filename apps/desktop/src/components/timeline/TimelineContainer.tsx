@@ -269,7 +269,7 @@ export function PageTimeline() {
             {/* ------ FIRST PAGE ------ */}
             {pages.length > 0 && (
                 <div
-                    className={`rounded-l-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 ${
+                    className={`rounded-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 font-mono ${
                         !isPlaying && "cursor-pointer"
                     } ${
                         pages[0].id === selectedPage?.id
@@ -306,15 +306,17 @@ export function PageTimeline() {
                         key={index}
                         aria-label={`Page ${page.name}`}
                     >
-                        <ContextMenu.Trigger disabled={isPlaying}>
+                        <ContextMenu.Trigger
+                            disabled={isPlaying || isFullscreen}
+                        >
                             <div
-                                className="relative h-full"
+                                className="relative h-full overflow-clip"
                                 timeline-page-id={page.id}
                                 style={{ width: `${width}px` }}
                             >
                                 {/* ------ PAGES ------ */}
                                 <div
-                                    className={`first:rounded-l-0 last:rounded-r-6 bg-fg-2 text-body text-text relative flex h-full items-center justify-end overflow-clip border px-8 py-4 ${
+                                    className={`rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono ${
                                         !isPlaying && "cursor-pointer"
                                     } ${
                                         page.id === selectedPage?.id
@@ -358,37 +360,26 @@ export function PageTimeline() {
                                                 }
                                             />
                                         )}
-                                    {(selectedIndex === index - 1 ||
-                                        (selectedIndex === 0 &&
-                                            index === pages.length)) &&
-                                        isPlaying && (
-                                            <div
-                                                className={clsx(
-                                                    "absolute top-0 left-0 z-0 h-full w-full",
-                                                )}
-                                                style={{
-                                                    animation: `progress ${page.duration}s linear forwards`,
-                                                }}
-                                            />
+                                </div>
+                                {!isFullscreen && (
+                                    <div
+                                        className={clsx(
+                                            "rounded-r-6 absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize transition-colors",
+                                            resizingPage.current?.id === page.id
+                                                ? "bg-accent/50"
+                                                : "hover:bg-accent/30 bg-transparent",
                                         )}
-                                </div>
-                                <div
-                                    className={clsx(
-                                        "absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize transition-colors",
-                                        resizingPage.current?.id === page.id
-                                            ? "bg-accent/50"
-                                            : "hover:bg-accent/30 bg-transparent",
-                                    )}
-                                    hidden={isPlaying}
-                                    onMouseDown={(e) =>
-                                        handlePageResizeStart(
-                                            e.nativeEvent,
-                                            page,
-                                        )
-                                    }
-                                >
-                                    &nbsp;
-                                </div>
+                                        hidden={isPlaying}
+                                        onMouseDown={(e) =>
+                                            handlePageResizeStart(
+                                                e.nativeEvent,
+                                                page,
+                                            )
+                                        }
+                                    >
+                                        &nbsp;
+                                    </div>
+                                )}
                             </div>
                         </ContextMenu.Trigger>
                         <ContextMenu.Portal>

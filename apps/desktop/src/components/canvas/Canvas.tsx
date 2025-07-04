@@ -55,7 +55,7 @@ export default function Canvas({
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
 
-    const { isFullscreen, perspective } = useFullscreenStore();
+    const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -646,8 +646,21 @@ export default function Canvas({
         if (isFullscreen) {
             // Small delay to ensure the fullscreen transition has completed
             setTimeout(() => centerAndFitCanvas(), 100);
+            setTimeout(() => setSelectedMarchers([]), 100);
+            setTimeout(() => setSelectedMarcherShapes([]), 100);
         }
-    }, [isFullscreen, canvas, centerAndFitCanvas]);
+
+        if (!isFullscreen) {
+            setPerspective(0);
+        }
+    }, [
+        isFullscreen,
+        canvas,
+        centerAndFitCanvas,
+        setSelectedMarchers,
+        setSelectedMarcherShapes,
+        setPerspective,
+    ]);
 
     // Set up container resize observer and window resize handler to keep canvas centered in fullscreen mode
     useEffect(() => {
@@ -755,11 +768,11 @@ export default function Canvas({
             className={clsx(
                 `rounded-6 relative h-full w-full overflow-hidden`,
                 {
-                    "pointer-events-none pt-20": isFullscreen,
+                    "pointer-events-none pt-128": isFullscreen,
                 },
             )}
             style={{
-                perspective: `${1000}px`,
+                perspective: `${1500}px`,
                 perspectiveOrigin: "center center",
                 transformStyle: "preserve-3d",
             }}
@@ -771,7 +784,7 @@ export default function Canvas({
                         transform: `rotateX(${perspective}deg)`,
                         transformOrigin:
                             "center 70%" /* Position pivot point below center for more natural look */,
-                        transition: "transform 0.3s ease-out",
+                        transition: "transform 0.2s ease-out",
                         height: "100%",
                         width: "100%",
                         display: "flex",

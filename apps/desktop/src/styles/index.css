@@ -2,10 +2,6 @@
 @import "@openmarch/ui/src/tailwind.css";
 @source "../../../../packages/ui/src/components";
 
-@plugin "@tailwindcss/typography";
-@plugin "tailwindcss-motion";
-@plugin "tailwindcss-intersect";
-
 @keyframes progress {
     from {
         width: 0;
@@ -181,6 +177,7 @@ textarea,
     background-color: var(--color-bg-1);
     border-radius: 6px;
     opacity: 1 !important; /* Ensure content stays visible */
+    font-family: "DM Mono";
 }
 
 /* BEATS */

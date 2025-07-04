@@ -73,7 +73,7 @@ export default function RegisteredActionButton({
                     ref={buttonRef}
                     className={twMerge(
                         clsx(
-                            "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
+                            "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
                             rest.className,
                         ),
                     )}
