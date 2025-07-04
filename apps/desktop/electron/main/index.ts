@@ -231,23 +231,35 @@ function initGetters() {
         },
     );
 
+    // Create Export Directory
+    ipcMain.handle(
+        "export:createExportDirectory",
+        async (_, defaultName: string) => {
+            return await PDFExportService.createExportDirectory(defaultName);
+        },
+    );
+
     // Export SVG pages to PDF
     ipcMain.handle(
-        "export:generateSeparateSVGPages",
+        "export:generateSVGsForMarcher",
         async (
             _,
-            svgPages: string[][],
-            drillNumbers: string[],
-            marcherCoordinates: string[][],
+            svgPages: string[],
+            drillNumber: string,
+            marcherCoordinates: string[],
             pages: Page[],
-            fileName: string,
+            showName: string,
+            exportDir: string,
+            individualCharts: boolean,
         ) => {
-            return await PDFExportService.generateSeparateSVGPages(
+            return await PDFExportService.generateSVGsForMarcher(
                 svgPages,
-                drillNumbers,
+                drillNumber,
                 marcherCoordinates,
                 pages,
-                fileName,
+                showName,
+                exportDir,
+                individualCharts,
             );
         },
     );

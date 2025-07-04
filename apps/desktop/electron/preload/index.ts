@@ -213,20 +213,27 @@ const APP_API = {
         svgPagesToPdf: (svgPages: string[], options: { fileName: string }) =>
             ipcRenderer.invoke("export:svgPagesToPdf", svgPages, options),
 
-        svgPagesToPdfSeparate: (
-            svgPages: string[][],
-            drillNumbers: string[],
-            marcherCoordinates: string[][],
+        createExportDirectory: (defaultName: string) =>
+            ipcRenderer.invoke("export:createExportDirectory", defaultName),
+
+        generateSVGsForMarcher: (
+            svgPages: string[],
+            drillNumber: string,
+            marcherCoordinates: string[],
             pages: Page[],
-            fileName: string,
+            showName: string,
+            exportDir: string,
+            individualCharts: boolean,
         ) =>
             ipcRenderer.invoke(
-                "export:generateSeparateSVGPages",
+                "export:generateSVGsForMarcher",
                 svgPages,
-                drillNumbers,
+                drillNumber,
                 marcherCoordinates,
                 pages,
-                fileName,
+                showName,
+                exportDir,
+                individualCharts,
             ),
     },
 

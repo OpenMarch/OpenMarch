@@ -328,19 +328,15 @@ export class PDFExportService {
         }
     }
 
-    public static async generateSeparateSVGPages(
-        svgPages: string[][],
-        drillNumbers: string[],
-        marcherCoordinates: string[][],
-        pages: Page[],
-        showPath: string,
-    ) {
+    public static async createExportDirectory(
+        defaultName: string,
+    ): Promise<{ exportName: string; exportDir: string }> {
         // Prompt user for export location
         const result = await dialog.showSaveDialog({
             title: "Select Export Location",
             defaultPath: path.join(
                 app.getPath("downloads"),
-                showPath || "drill-charts-export",
+                defaultName || "Untitled",
             ),
             properties: ["createDirectory", "showOverwriteConfirmation"],
             buttonLabel: "Export Here",
@@ -354,233 +350,230 @@ export class PDFExportService {
         await fs.promises.mkdir(exportDir, { recursive: true });
 
         // Generate base file name
-        const showName = path.basename(
-            path.basename(showPath) === path.basename(result.filePath)
-                ? showPath
+        const exportName = path.basename(
+            path.basename(defaultName) === path.basename(result.filePath)
+                ? defaultName
                 : result.filePath,
         );
-        const filePaths: string[] = [];
 
+        return { exportName, exportDir };
+    }
+
+    public static async generateSVGsForMarcher(
+        svgPages: string[],
+        drillNumber: string,
+        marcherCoordinates: string[],
+        pages: Page[],
+        showName: string,
+        exportDir: string,
+        individualCharts: boolean,
+    ) {
         // For each marcher, create a PDF of their pages
-        for (let marcher = 0; marcher < svgPages.length; marcher++) {
-            const pdfFileName = `${showName}-${drillNumbers[marcher]}.pdf`;
-            const pdfFilePath = path.join(exportDir, sanitize(pdfFileName));
-            const doc = new PDFDocument({
-                size: "LETTER",
-                layout: "landscape",
-                margins: { top: 0, bottom: 0, left: 0, right: 0 },
+        const pdfFileName = `${showName}-${drillNumber}.pdf`;
+        const pdfFilePath = path.join(exportDir, sanitize(pdfFileName));
+        const doc = new PDFDocument({
+            size: "LETTER",
+            layout: "landscape",
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+        });
+        const stream = fs.createWriteStream(pdfFilePath);
+        doc.pipe(stream);
+
+        const margin = 20;
+        const topBarHeight = 34;
+
+        for (let i = 0; i < svgPages.length; i++) {
+            if (i > 0) doc.addPage();
+
+            // Metadata
+            const page = pages?.[i];
+            const setNumber = page?.name ?? "END";
+            const counts = page?.counts != null ? String(page.counts) : "END";
+            const measureNumbers =
+                page?.measures && page.measures.length > 0
+                    ? page.measures.length === 1
+                        ? String(page.measures[0].number)
+                        : `${page.measures[0].number}-${page.measures[page.measures.length - 1].number}`
+                    : i === 0
+                      ? "START"
+                      : "END";
+            const prevCoord = marcherCoordinates[i - 1] ?? "N/A";
+            const currCoord = marcherCoordinates[i] ?? "N/A";
+            const nextCoord = marcherCoordinates[i + 1] ?? "N/A";
+            const notes = page?.notes ?? "";
+            const pageWidth = doc.page.width;
+            const pageHeight = doc.page.height;
+
+            // === TOP BAR ===
+            doc.rect(margin, margin, pageWidth - 2 * margin, topBarHeight).fill(
+                "#ddd",
+            );
+            const titleBarY = margin + topBarHeight / 2 - 6;
+
+            doc.fillColor("black").fontSize(16).font("Helvetica-Bold");
+            doc.fillColor("black").text(`${drillNumber}`, margin, titleBarY, {
+                width: pageWidth * 0.15,
+                align: "center",
             });
-            const stream = fs.createWriteStream(pdfFilePath);
-            doc.pipe(stream);
+            doc.text(showName, pageWidth * 0.15, titleBarY, {
+                width: pageWidth * 0.65,
+                align: "center",
+            });
+            doc.text(`Set: ${setNumber}`, pageWidth * 0.8, titleBarY, {
+                width: pageWidth * 0.2,
+                align: "center",
+            });
 
-            const margin = 20;
-            const topBarHeight = 34;
-
-            for (let i = 0; i < svgPages[marcher].length; i++) {
-                if (i > 0) doc.addPage();
-
-                // Metadata
-                const page = pages?.[i];
-                const drillNumber = drillNumbers[marcher];
-                const setNumber = page?.name ?? "END";
-                const counts =
-                    page?.counts != null ? String(page.counts) : "END";
-                const measureNumbers =
-                    page?.measures && page.measures.length > 0
-                        ? page.measures.length === 1
-                            ? String(page.measures[0].number)
-                            : `${page.measures[0].number}-${page.measures[page.measures.length - 1].number}`
-                        : i === 0
-                          ? "START"
-                          : "END";
-                const prevCoord = marcherCoordinates[marcher][i - 1] ?? "N/A";
-                const currCoord = marcherCoordinates[marcher][i] ?? "N/A";
-                const nextCoord = marcherCoordinates[marcher][i + 1] ?? "N/A";
-                const notes = page?.notes ?? "";
-                const pageWidth = doc.page.width;
-                const pageHeight = doc.page.height;
-
-                // === TOP BAR ===
-                doc.rect(
-                    margin,
-                    margin,
-                    pageWidth - 2 * margin,
-                    topBarHeight,
-                ).fill("#ddd");
-                const titleBarY = margin + topBarHeight / 2 - 6;
-
-                doc.fillColor("black").fontSize(16).font("Helvetica-Bold");
-                doc.fillColor("black").text(
-                    `${drillNumber}`,
-                    margin,
-                    titleBarY,
-                    {
-                        width: pageWidth * 0.15,
-                        align: "center",
-                    },
-                );
-                doc.text(showName, pageWidth * 0.15, titleBarY, {
-                    width: pageWidth * 0.65,
-                    align: "center",
+            // === SVG FIELD ===
+            try {
+                SVGtoPDF(doc, svgPages[i], margin, -30, {
+                    width: pageWidth - margin * 2,
+                    preserveAspectRatio: "xMidYMid meet",
                 });
-                doc.text(`Set: ${setNumber}`, pageWidth * 0.8, titleBarY, {
-                    width: pageWidth * 0.2,
-                    align: "center",
-                });
-
-                // === SVG FIELD ===
-                try {
-                    SVGtoPDF(doc, svgPages[marcher][i], margin, -30, {
-                        width: pageWidth - margin * 2,
-                        preserveAspectRatio: "xMidYMid meet",
-                    });
-                } catch (svgError) {
-                    doc.fillColor("red")
-                        .fontSize(12)
-                        .text(
-                            `Error rendering SVG: ${svgError instanceof Error ? svgError.message : svgError}`,
-                            pageHeight / 2,
-                            pageWidth / 2,
-                            { width: pageWidth - margin * 2 },
-                        );
-                    doc.fillColor("black");
-                }
-
-                // === BOTTOM COLUMNS ===
-                const bottomY = doc.page.height - 110;
-                const columnPadding = 12;
-                const marginSize = margin * 1.5;
-                const contentWidth =
-                    pageWidth - marginSize * 2 - columnPadding * 2;
-
-                // Variable column widths (18%, 56%, 26%)
-                const leftColWidth = contentWidth * 0.18;
-                const midColWidth = contentWidth * 0.56;
-                const rightColWidth = contentWidth * 0.26;
-
-                // X positions for three columns
-                const leftX = marginSize;
-                const midX = leftX + leftColWidth + columnPadding;
-                const rightX = midX + midColWidth + columnPadding;
-
-                // Font size for all text
-                const fontSize = 11;
-                const padding = 2;
-
-                // Initialize Y positions for each column (all start at bottomY)
-                let yLeft = bottomY;
-                let yMid = bottomY;
-                let yRight = bottomY;
-
-                // Helper to draw a bold header and value with proper wrapping and y advancement
-                // eslint-disable-next-line no-inner-declarations
-                function drawLabelValue(
-                    doc: PDFKit.PDFDocument,
-                    label: string,
-                    value: string,
-                    x: number,
-                    y: number,
-                    width: number,
-                    fontSize: number = 11, // default to 11
-                ): number {
-                    // Always set font and size before measuring
-                    doc.fontSize(fontSize).font("Helvetica-Bold");
-                    const combined = `${label} ${value}`;
-                    const h = doc.heightOfString(combined, { width });
-
-                    // Always set font and size before drawing
-                    doc.fontSize(fontSize)
-                        .font("Helvetica-Bold")
-                        .text(label, x, y, { width, continued: true });
-                    doc.fontSize(fontSize)
-                        .font("Helvetica")
-                        .text(` ${value}`, { width, continued: false });
-
-                    return y + h + 2;
-                }
-
-                // LEFT COLUMN
-                yLeft = drawLabelValue(
-                    doc,
-                    "Set:",
-                    setNumber,
-                    leftX,
-                    yLeft,
-                    leftColWidth,
-                );
-                yLeft = drawLabelValue(
-                    doc,
-                    "Counts:",
-                    counts,
-                    leftX,
-                    yLeft,
-                    leftColWidth,
-                );
-                yLeft = drawLabelValue(
-                    doc,
-                    "Measures:",
-                    measureNumbers,
-                    leftX,
-                    yLeft,
-                    leftColWidth,
-                );
-
-                // MIDDLE COLUMN
-                yMid = drawLabelValue(
-                    doc,
-                    "Previous Coordinate:",
-                    prevCoord,
-                    midX,
-                    yMid,
-                    midColWidth,
-                );
-                yMid = drawLabelValue(
-                    doc,
-                    "Current Coordinate:",
-                    currCoord,
-                    midX,
-                    yMid,
-                    midColWidth,
-                );
-                yMid = drawLabelValue(
-                    doc,
-                    "Next Coordinate:",
-                    nextCoord,
-                    midX,
-                    yMid,
-                    midColWidth,
-                );
-
-                // RIGHT COLUMN (Notes label and value, label on first line, value on following lines)
-                doc.fontSize(fontSize);
-                doc.font("Helvetica-Bold").text("Notes:", rightX, yRight, {
-                    width: rightColWidth,
-                });
-                const labelHeight = doc.heightOfString("Notes:", {
-                    width: rightColWidth,
-                });
-                yRight += labelHeight;
-
-                doc.fontSize(fontSize);
-                doc.font("Helvetica").text(notes, rightX, yRight, {
-                    width: rightColWidth,
-                });
-                const notesHeight = doc.heightOfString(notes, {
-                    width: rightColWidth,
-                });
-                yRight += notesHeight + padding;
+            } catch (svgError) {
+                doc.fillColor("red")
+                    .fontSize(12)
+                    .text(
+                        `Error rendering SVG: ${svgError instanceof Error ? svgError.message : svgError}`,
+                        pageHeight / 2,
+                        pageWidth / 2,
+                        { width: pageWidth - margin * 2 },
+                    );
+                doc.fillColor("black");
             }
 
-            doc.end();
-            await new Promise<void>((resolve, reject) => {
-                stream.on("finish", resolve);
-                stream.on("error", reject);
-            });
+            // === BOTTOM COLUMNS ===
+            const bottomY = doc.page.height - 110;
+            const columnPadding = 12;
+            const marginSize = margin * 1.5;
+            const contentWidth = pageWidth - marginSize * 2 - columnPadding * 2;
 
-            filePaths.push(pdfFilePath);
+            // Variable column widths (18%, 56%, 26%)
+            const leftColWidth = contentWidth * 0.18;
+            const midColWidth = contentWidth * 0.56;
+            const rightColWidth = contentWidth * 0.26;
+
+            // X positions for three columns
+            const leftX = marginSize;
+            const midX = leftX + leftColWidth + columnPadding;
+            const rightX = midX + midColWidth + columnPadding;
+
+            // Font size for all text
+            const fontSize = 11;
+            const padding = 2;
+
+            // Initialize Y positions for each column (all start at bottomY)
+            let yLeft = bottomY;
+            let yMid = bottomY;
+            let yRight = bottomY;
+
+            // Helper to draw a bold header and value with proper wrapping and y advancement
+            // TODO fix this
+            // eslint-disable-next-line no-inner-declarations
+            function drawLabelValue(
+                doc: PDFKit.PDFDocument,
+                label: string,
+                value: string,
+                x: number,
+                y: number,
+                width: number,
+                fontSize: number = 11, // default to 11
+            ): number {
+                // Always set font and size before measuring
+                doc.fontSize(fontSize).font("Helvetica-Bold");
+                const combined = `${label} ${value}`;
+                const h = doc.heightOfString(combined, { width });
+
+                // Always set font and size before drawing
+                doc.fontSize(fontSize)
+                    .font("Helvetica-Bold")
+                    .text(label, x, y, { width, continued: true });
+                doc.fontSize(fontSize)
+                    .font("Helvetica")
+                    .text(` ${value}`, { width, continued: false });
+
+                return y + h + 2;
+            }
+
+            // LEFT COLUMN
+            yLeft = drawLabelValue(
+                doc,
+                "Set:",
+                setNumber,
+                leftX,
+                yLeft,
+                leftColWidth,
+            );
+            yLeft = drawLabelValue(
+                doc,
+                "Counts:",
+                counts,
+                leftX,
+                yLeft,
+                leftColWidth,
+            );
+            yLeft = drawLabelValue(
+                doc,
+                "Measures:",
+                measureNumbers,
+                leftX,
+                yLeft,
+                leftColWidth,
+            );
+
+            // MIDDLE COLUMN
+            yMid = drawLabelValue(
+                doc,
+                "Previous Coordinate:",
+                prevCoord,
+                midX,
+                yMid,
+                midColWidth,
+            );
+            yMid = drawLabelValue(
+                doc,
+                "Current Coordinate:",
+                currCoord,
+                midX,
+                yMid,
+                midColWidth,
+            );
+            yMid = drawLabelValue(
+                doc,
+                "Next Coordinate:",
+                nextCoord,
+                midX,
+                yMid,
+                midColWidth,
+            );
+
+            // RIGHT COLUMN (Notes label and value, label on first line, value on following lines)
+            doc.fontSize(fontSize);
+            doc.font("Helvetica-Bold").text("Notes:", rightX, yRight, {
+                width: rightColWidth,
+            });
+            const labelHeight = doc.heightOfString("Notes:", {
+                width: rightColWidth,
+            });
+            yRight += labelHeight;
+
+            doc.fontSize(fontSize);
+            doc.font("Helvetica").text(notes, rightX, yRight, {
+                width: rightColWidth,
+            });
+            const notesHeight = doc.heightOfString(notes, {
+                width: rightColWidth,
+            });
+            yRight += notesHeight + padding;
         }
 
-        return { success: true, filePaths };
+        doc.end();
+        await new Promise<void>((resolve, reject) => {
+            stream.on("finish", resolve);
+            stream.on("error", reject);
+        });
+
+        return { success: true };
     }
 
     /**

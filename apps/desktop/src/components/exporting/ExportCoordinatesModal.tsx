@@ -474,16 +474,15 @@ function DrillChartExport() {
     const [currentStep, setCurrentStep] = useState("");
 
     // Export options
-    const [individualCharts, setIndividualCharts] = useState(true);
+    const [individualCharts, setIndividualCharts] = useState(false);
     const padding = 30;
     const zoom = 0.7;
 
     // Create SVGs from pages and export
     const generateExportSVGs = useCallback(async () => {
         setIsLoading(true);
-        setCurrentStep("Initializing export...");
         setProgress(0);
-        const progressPerPage = 90 / pages.length;
+        setCurrentStep("Initializing export...");
 
         // Setup canvas and store original state for SVG creation and restore
         const exportCanvas: OpenMarchCanvas = window.canvas;
@@ -521,10 +520,11 @@ function DrillChartExport() {
 
         // Generate SVGs for each page
         for (let i = 0; i < pages.length; i++) {
-            exportCanvas.currentPage = pages[i];
             setCurrentStep(
                 `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
             );
+
+            exportCanvas.currentPage = pages[i];
 
             // Render marchers for this page
             await exportCanvas.renderMarchers({
@@ -659,7 +659,7 @@ function DrillChartExport() {
             }
 
             // Update progress smoothly
-            setProgress((i + 1) * progressPerPage);
+            setProgress(50 * ((i + 1) / pages.length));
         }
 
         // Restore canvas to original state
@@ -668,25 +668,38 @@ function DrillChartExport() {
         exportCanvas.viewportTransform = originalViewportTransform;
         exportCanvas.requestRenderAll();
 
-        // Generate PDF
-        setCurrentStep("Generating PDF file...");
-        setProgress(95);
+        // SVG creation done, start exporting
+        setCurrentStep("Generating PDF files...");
 
-        // Export SVG pages to PDF
-        const result = individualCharts
-            ? await window.electron.export.svgPagesToPdfSeparate(
-                  svgPages,
-                  marchers.map((marcher) => marcher.drill_number),
-                  readableCoords,
-                  pages,
-                  await window.electron.getCurrentFilename(),
-              )
-            : await window.electron.export.svgPagesToPdf(svgPages[0], {
-                  fileName: "drill-charts.pdf",
-              });
-        if (!result.success) {
-            console.error("PDF export failed with error:", result.error);
-            throw new Error(result.error);
+        // Create export directory
+        const { exportName, exportDir } =
+            await window.electron.export.createExportDirectory(
+                await window.electron.getCurrentFilename(),
+            );
+
+        // Generate PDFs for each marcher or MAIN if individual charts are not selected
+        for (let marcher = 0; marcher < svgPages.length; marcher++) {
+            const result = await window.electron.export.generateSVGsForMarcher(
+                svgPages[marcher],
+                individualCharts ? marchers[marcher].drill_number : "MAIN",
+                readableCoords[marcher],
+                pages,
+                exportName,
+                exportDir,
+                individualCharts,
+            );
+
+            if (!individualCharts) marcher = svgPages.length;
+            setProgress(50 + (50 * marcher) / svgPages.length);
+            setCurrentStep(
+                `Generating PDF file for: ${marchers[marcher]?.drill_number ?? "MAIN"}`,
+            );
+            if (!result.success) {
+                console.error("SVG export failed with error:", result.error);
+                toast.error(
+                    `SVG export for ${marchers[marcher]?.drill_number ?? "MAIN"} failed with error: ${result.error}`,
+                );
+            }
         }
 
         // Success
