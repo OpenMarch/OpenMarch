@@ -18,6 +18,8 @@ import Marcher from "@/global/classes/Marcher";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useFullscreenStore } from "@/stores/FullscreenStore";
+import clsx from "clsx";
 
 /**
  * The field/stage UI of OpenMarch
@@ -52,11 +54,57 @@ export default function Canvas({
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
+
+    const { isFullscreen } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
     const pagePathways = useRef<fabric.Object[]>([]);
+
+    // Function to center and fit the canvas to the container
+    const centerAndFitCanvas = useCallback(() => {
+        if (
+            !canvas ||
+            !fieldProperties ||
+            !containerRef.current ||
+            !isFullscreen
+        )
+            return;
+
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+
+        if (containerWidth <= 0 || containerHeight <= 0) return;
+
+        const fieldWidth = fieldProperties.width;
+        const fieldHeight = fieldProperties.height;
+
+        if (fieldWidth <= 0 || fieldHeight <= 0) return;
+
+        // Calculate the zoom factor to fit the field in the container
+        // Apply a small margin (0.95) to ensure the field doesn't touch the edges
+        const horizontalZoom = (containerWidth / fieldWidth) * 0.95;
+        const verticalZoom = (containerHeight / fieldHeight) * 0.95;
+
+        // Use the smaller zoom factor to ensure the entire field fits
+        const newZoom = Math.min(horizontalZoom, verticalZoom);
+
+        // Calculate translation to center the field within the container
+        const panX = (containerWidth - fieldWidth * newZoom) / 2;
+        const panY = (containerHeight - fieldHeight * newZoom) / 2;
+
+        // Apply the new viewport transform
+        canvas.setViewportTransform([newZoom, 0, 0, newZoom, panX, panY]);
+
+        // Reset any CSS transforms if that function exists
+        if (typeof canvas.resetCSSTransform === "function") {
+            canvas.resetCSSTransform();
+        }
+
+        canvas.requestRenderAll();
+    }, [canvas, fieldProperties, isFullscreen]);
 
     /* -------------------------- Selection Functions -------------------------- */
     const unimplementedError = (
@@ -369,12 +417,23 @@ export default function Canvas({
                 alignmentEventMarchers.map((marcher) => marcher.id),
             );
 
+            // Center and fit canvas when it's first initialized if in fullscreen mode
+            if (isFullscreen) {
+                centerAndFitCanvas();
+            }
+
             // Cleanup
             return () => {
                 canvas.eventMarchers = [];
             };
         }
-    }, [canvas, alignmentEvent, alignmentEventMarchers]);
+    }, [
+        canvas,
+        alignmentEvent,
+        alignmentEventMarchers,
+        centerAndFitCanvas,
+        isFullscreen,
+    ]);
 
     // Setters for alignmentEvent state
     useEffect(() => {
@@ -572,8 +631,51 @@ export default function Canvas({
         if (canvas && fieldProperties) {
             // canvas.refreshBackgroundImage();
             canvas.fieldProperties = fieldProperties;
+            // Recalculate zoom and position after field properties update if in fullscreen mode
+            if (isFullscreen) {
+                setTimeout(() => centerAndFitCanvas(), 100);
+            }
         }
-    }, [canvas, fieldProperties]);
+    }, [canvas, fieldProperties, centerAndFitCanvas, isFullscreen]);
+
+    // Handle fullscreen state changes
+    useEffect(() => {
+        if (!canvas || !containerRef.current) return;
+
+        // When fullscreen mode is activated, center and fit the canvas
+        if (isFullscreen) {
+            // Small delay to ensure the fullscreen transition has completed
+            setTimeout(() => centerAndFitCanvas(), 100);
+        }
+    }, [isFullscreen, canvas, centerAndFitCanvas]);
+
+    // Set up container resize observer and window resize handler to keep canvas centered in fullscreen mode
+    useEffect(() => {
+        if (!canvas || !containerRef.current) return;
+
+        // Use ResizeObserver to detect container size changes
+        const resizeObserver = new ResizeObserver(() => {
+            if (isFullscreen) {
+                centerAndFitCanvas();
+            }
+        });
+
+        resizeObserver.observe(containerRef.current);
+
+        // Also handle window resize events
+        const handleResize = () => {
+            if (isFullscreen) {
+                centerAndFitCanvas();
+            }
+        };
+
+        window.addEventListener("resize", handleResize);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener("resize", handleResize);
+        };
+    }, [canvas, centerAndFitCanvas, isFullscreen]);
 
     /* --------------------------Animation Functions-------------------------- */
 
@@ -649,7 +751,13 @@ export default function Canvas({
 
     return (
         <div
-            className={`rounded-6 h-full w-full overflow-hidden ${className} relative`}
+            ref={containerRef}
+            className={clsx(
+                `rounded-6 relative h-full w-full overflow-hidden`,
+                {
+                    "pointer-events-none": isFullscreen,
+                },
+            )}
         >
             {pages.length > 0 ? (
                 <canvas ref={canvasRef} id="fieldCanvas" />
