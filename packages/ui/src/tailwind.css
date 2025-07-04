@@ -51,8 +51,8 @@
     --color-yellow: rgb(200, 170, 0);
     --color-green: rgb(72, 158, 51);
     --background-image-fg-1: linear-gradient(
-        rgba(0, 0, 0, 0.03),
-        rgba(0, 0, 0, 0.05)
+        rgba(0, 0, 0, 0.015),
+        rgba(0, 0, 0, 0.025)
     );
     --background-image-fg-2: linear-gradient(
         rgba(255, 255, 255, 0.17),

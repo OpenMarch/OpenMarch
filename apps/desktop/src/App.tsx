@@ -21,6 +21,7 @@ import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
+import { useFullscreenStore } from "./stores/FullscreenStore";
 
 // The app
 
@@ -31,6 +32,7 @@ function App() {
     );
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
+    const { isFullscreen } = useFullscreenStore();
 
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
@@ -116,8 +118,12 @@ function App() {
                                             >
                                                 <Toolbar />
                                                 <div className="relative flex h-full min-h-0 min-w-0 gap-8">
-                                                    <Sidebar />
-                                                    <SidebarModal />
+                                                    {!isFullscreen && (
+                                                        <>
+                                                            <Sidebar />
+                                                            <SidebarModal />
+                                                        </>
+                                                    )}
                                                     <Canvas
                                                         onCanvasReady={
                                                             setAppCanvas
@@ -129,7 +135,7 @@ function App() {
                                                 </div>
                                                 <TimelineContainer />
                                             </div>
-                                            <Inspector />
+                                            {!isFullscreen && <Inspector />}
                                         </div>
                                         <Toaster />
                                     </FieldPropertiesProvider>

@@ -11,8 +11,10 @@ import * as api from "@/api/api";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
+import { useFullscreenStore } from "@/stores/FullscreenStore";
 
 export function FileTab() {
+    const { isFullscreen } = useFullscreenStore();
     return (
         <div className="flex w-full flex-wrap gap-8">
             <ToolbarSection>
@@ -53,22 +55,24 @@ export function FileTab() {
                     Exit File
                 </button>
             </ToolbarSection>
-            <ToolbarSection>
-                <button
-                    onClick={api.performUndo}
-                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                >
-                    <ArrowUUpLeftIcon size={24} />
-                    Undo
-                </button>
-                <button
-                    onClick={api.performRedo}
-                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                >
-                    <ArrowUUpRightIcon size={24} />
-                    Redo
-                </button>
-            </ToolbarSection>
+            {!isFullscreen && (
+                <ToolbarSection>
+                    <button
+                        onClick={api.performUndo}
+                        className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                    >
+                        <ArrowUUpLeftIcon size={24} />
+                        Undo
+                    </button>
+                    <button
+                        onClick={api.performRedo}
+                        className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                    >
+                        <ArrowUUpRightIcon size={24} />
+                        Redo
+                    </button>
+                </ToolbarSection>
+            )}
             <ToolbarSection>
                 <ExportCoordinatesModal />
             </ToolbarSection>

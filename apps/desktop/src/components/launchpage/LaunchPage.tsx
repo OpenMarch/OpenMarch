@@ -83,7 +83,7 @@ function Sidebar({
         }
     }
     return (
-        <Tabs.List className="bg-fg-2 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
+        <Tabs.List className="bg-fg-1 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
             <section className="flex flex-col gap-12">
                 <p className="text-body text-text/60">Launch Page</p>
                 <div className="flex gap-8">

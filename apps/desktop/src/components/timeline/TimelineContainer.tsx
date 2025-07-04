@@ -23,6 +23,7 @@ import TimelineControls from "./TimelineControls";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { Button } from "@openmarch/ui";
 import { toast } from "sonner";
+import { useFullscreenStore } from "@/stores/FullscreenStore";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -79,7 +80,7 @@ export function PageTimeline() {
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
-
+    const { isFullscreen } = useFullscreenStore();
     const { pages, beats, fetchTimingObjects } = useTimingObjectsStore()!;
     // Page clicking and dragging
     const resizingPage = useRef<Page | null>(null);
@@ -304,7 +305,7 @@ export function PageTimeline() {
                         key={index}
                         aria-label={`Page ${page.name}`}
                     >
-                        <ContextMenu.Trigger>
+                        <ContextMenu.Trigger disabled={isPlaying}>
                             <div
                                 className="relative h-full"
                                 timeline-page-id={page.id}
@@ -386,19 +387,21 @@ export function PageTimeline() {
                     </ContextMenu.Root>
                 );
             })}
-            <button
-                className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
-                onClick={() =>
-                    createLastPage({
-                        currentLastPage: pages[pages.length - 1],
-                        allBeats: beats,
-                        counts: 8,
-                        fetchPagesFunction: fetchTimingObjects,
-                    })
-                }
-            >
-                <PlusIcon size={20} />
-            </button>
+            {!isFullscreen && (
+                <button
+                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
+                    onClick={() =>
+                        createLastPage({
+                            currentLastPage: pages[pages.length - 1],
+                            allBeats: beats,
+                            counts: 8,
+                            fetchPagesFunction: fetchTimingObjects,
+                        })
+                    }
+                >
+                    <PlusIcon size={20} />
+                </button>
+            )}
         </div>
     );
 }
@@ -409,6 +412,7 @@ export default function TimelineContainer() {
     const { selectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();
     const { beats } = useTimingObjectsStore()!;
+    const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -465,9 +469,9 @@ export default function TimelineContainer() {
                 id="timeline"
                 className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto border p-8 transition-all duration-200"
             >
-                <div className="flex h-fit min-h-0 w-fit grid-rows-2 flex-col gap-8">
+                <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
                     {beats.length > 1 ? (
-                        <div className="flex items-center">
+                        <div className="flex h-fit items-center">
                             <div>
                                 <p className="text-sub w-[4rem]">Pages</p>
                             </div>
@@ -480,35 +484,37 @@ export default function TimelineContainer() {
                         />
                     )}
 
-                    <div className={"flex items-center"}>
-                        <div className="flex flex-col gap-6">
-                            <p className="text-sub w-[4rem]">Audio</p>
-                            {uiSettings.focussedComponent !== "timeline" ? (
-                                <RegisteredActionButton
-                                    registeredAction={
-                                        RegisteredActionsObjects.focusTimeline
-                                    }
-                                >
-                                    <PencilSimpleIcon />
-                                </RegisteredActionButton>
+                    {!isFullscreen && (
+                        <div className={"flex items-center"}>
+                            <div className="flex flex-col gap-6">
+                                <p className="text-sub w-[4rem]">Audio</p>
+                                {uiSettings.focussedComponent !== "timeline" ? (
+                                    <RegisteredActionButton
+                                        registeredAction={
+                                            RegisteredActionsObjects.focusTimeline
+                                        }
+                                    >
+                                        <PencilSimpleIcon />
+                                    </RegisteredActionButton>
+                                ) : (
+                                    <RegisteredActionButton
+                                        registeredAction={
+                                            RegisteredActionsObjects.focusCanvas
+                                        }
+                                    >
+                                        <XIcon />
+                                    </RegisteredActionButton>
+                                )}
+                            </div>
+                            {uiSettings.focussedComponent === "timeline" ? (
+                                <EditableAudioPlayer />
                             ) : (
-                                <RegisteredActionButton
-                                    registeredAction={
-                                        RegisteredActionsObjects.focusCanvas
-                                    }
-                                >
-                                    <XIcon />
-                                </RegisteredActionButton>
+                                <div>
+                                    <AudioPlayer />
+                                </div>
                             )}
                         </div>
-                        {uiSettings.focussedComponent === "timeline" ? (
-                            <EditableAudioPlayer />
-                        ) : (
-                            <div>
-                                <AudioPlayer />
-                            </div>
-                        )}
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
