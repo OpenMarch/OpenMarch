@@ -22,7 +22,7 @@ export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
 
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-12 border px-16 py-12">
+        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col justify-center gap-12 border px-16 py-12">
             {!isFullscreen && (
                 <p className="text-body text-text/60">Timeline</p>
             )}

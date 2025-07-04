@@ -24,6 +24,7 @@ import * as ContextMenu from "@radix-ui/react-context-menu";
 import { Button } from "@openmarch/ui";
 import { toast } from "sonner";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
+import PerspectiveSlider from "./PerspectiveSlider";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -344,6 +345,26 @@ export function PageTimeline() {
                                             <div
                                                 className={clsx(
                                                     "absolute top-0 left-0 z-0 h-full w-full",
+                                                    !isFullscreen
+                                                        ? ""
+                                                        : "bg-accent/25",
+                                                )}
+                                                style={
+                                                    !isFullscreen
+                                                        ? {}
+                                                        : {
+                                                              animation: `progress ${page.duration}s linear forwards`,
+                                                          }
+                                                }
+                                            />
+                                        )}
+                                    {(selectedIndex === index - 1 ||
+                                        (selectedIndex === 0 &&
+                                            index === pages.length)) &&
+                                        isPlaying && (
+                                            <div
+                                                className={clsx(
+                                                    "absolute top-0 left-0 z-0 h-full w-full",
                                                 )}
                                                 style={{
                                                     animation: `progress ${page.duration}s linear forwards`,
@@ -464,6 +485,7 @@ export default function TimelineContainer() {
     return (
         <div className="flex gap-8">
             <TimelineControls />
+            {isFullscreen && <PerspectiveSlider />}
             <div
                 ref={timelineRef}
                 id="timeline"

@@ -55,7 +55,7 @@ export default function Canvas({
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
 
-    const { isFullscreen } = useFullscreenStore();
+    const { isFullscreen, perspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -755,12 +755,32 @@ export default function Canvas({
             className={clsx(
                 `rounded-6 relative h-full w-full overflow-hidden`,
                 {
-                    "pointer-events-none": isFullscreen,
+                    "pointer-events-none pt-20": isFullscreen,
                 },
             )}
+            style={{
+                perspective: `${1000}px`,
+                perspectiveOrigin: "center center",
+                transformStyle: "preserve-3d",
+            }}
         >
             {pages.length > 0 ? (
-                <canvas ref={canvasRef} id="fieldCanvas" />
+                <div
+                    className="h-full w-full"
+                    style={{
+                        transform: `rotateX(${perspective}deg)`,
+                        transformOrigin:
+                            "center 70%" /* Position pivot point below center for more natural look */,
+                        transition: "transform 0.3s ease-out",
+                        height: "100%",
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}
+                >
+                    <canvas ref={canvasRef} id="fieldCanvas" />
+                </div>
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
                     <CircleNotchIcon

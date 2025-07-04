@@ -15,12 +15,16 @@ export default function Topbar() {
         if (isFullscreen) {
             setActiveTab("view");
         }
+        if (!isFullscreen) {
+            setActiveTab("alignment");
+        }
     }, [isFullscreen]);
 
     return (
         <div
             className={clsx("group", {
-                "border-stroke rounded-[10px] border p-4": isFullscreen,
+                "border-stroke bg-modal backdrop-blur-32 shadow-modal absolute z-50 rounded-[10px] border p-4":
+                    isFullscreen,
             })}
         >
             <Tabs
