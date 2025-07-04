@@ -31,9 +31,6 @@ jobs:
             - name: Test Prepare (for desktop)
               run: pnpm desktop test:prepare
 
-            - name: Test Prepare (for musicxml-parser)
-              run: pnpm musicxml-parser test:prepare
-
             - name: Test all packages
               run: pnpm run test
             # - name: "Upload Coverage"
