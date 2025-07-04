@@ -5,7 +5,7 @@ import {
     Measure as ParserMeasure,
     extractXmlFromMxlFile,
     parseMusicXml,
-} from "musicxml-parser/src/parser";
+} from "musicxml-parser";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { deleteMeasures, createMeasures } from "@/global/classes/Measure";
 import { createBeats } from "@/global/classes/Beat";

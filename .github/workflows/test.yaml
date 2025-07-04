@@ -1,4 +1,4 @@
-name: Test Desktop
+name: Run Tests
 
 on:
     pull_request:
@@ -21,20 +21,23 @@ jobs:
 
         steps:
             - uses: actions/checkout@v4
+
             - name: Setup pnpm
               uses: pnpm/action-setup@v4.1.0
+
             - name: Install project dependencies
               run: pnpm install
-            # - name: Install canvas dependencies
-            #   # This step might not be needed if canvas is a project dependency
-            #   # If it's not a project dependency managed by pnpm, keep this.
-            #   run: cd apps/desktop && pnpm install canvas && cd ..
-            - name: Test Prepare
+
+            - name: Test Prepare (for desktop)
               run: pnpm desktop test:prepare
-            - name: Test
-              run: pnpm desktop test:coverage
-            - name: "Upload Coverage"
-              uses: actions/upload-artifact@v4
-              with:
-                  name: coverage-${{ matrix.artifact }}
-                  path: coverage
+
+            - name: Test Prepare (for musicxml-parser)
+              run: pnpm musicxml-parser test:prepare
+
+            - name: Test all packages
+              run: pnpm run test
+            # - name: "Upload Coverage"
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #       name: coverage-${{ matrix.artifact }}
+            #       path: coverage
