@@ -72,7 +72,7 @@ export interface ModifyPagesRequest {
 /**
  * Creates one or more new pages in the database and updates the store.
  *
- * @param newPagesArg - The new pages to be created in order of how they should be created.
+ * @param newPagesArgs - The new pages to be created in order of how they should be created.
  * @param fetchPagesFunction - The function to call to fetch the pages from the database. This function updates the store.
  * @returns DatabaseResponse with the new pages.
  */
@@ -82,7 +82,7 @@ export async function createPages(
 ): Promise<DatabaseResponse<DatabasePage[]>> {
     const createResponse = await window.electron.createPages(newPagesArgs);
 
-    if (createResponse.success) fetchPagesFunction();
+    if (createResponse.success) await fetchPagesFunction();
     return createResponse;
 }
 
@@ -99,7 +99,7 @@ export async function updatePages(
     if (Array.isArray(modifiedPagesArgs)) {
         const response = await window.electron.updatePages(modifiedPagesArgs);
         // fetch the pages to update the store
-        if (response.success) fetchPagesFunction();
+        if (response.success) await fetchPagesFunction();
         return response;
     } else {
         // ModifyPagesRequest object was provided
