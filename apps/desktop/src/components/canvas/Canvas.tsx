@@ -85,8 +85,8 @@ export default function Canvas({
 
         // Calculate the zoom factor to fit the field in the container
         // Apply a small margin (0.95) to ensure the field doesn't touch the edges
-        const horizontalZoom = (containerWidth / fieldWidth) * 0.95;
-        const verticalZoom = (containerHeight / fieldHeight) * 0.95;
+        const horizontalZoom = (containerWidth / fieldWidth) * 0.87;
+        const verticalZoom = (containerHeight / fieldHeight) * 0.87;
 
         // Use the smaller zoom factor to ensure the entire field fits
         const newZoom = Math.min(horizontalZoom, verticalZoom);

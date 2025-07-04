@@ -96,17 +96,6 @@ describe("MarcherList", () => {
         validateMarcherRows(marcherRows, mockMarchers);
     });
 
-    // Header was removed. TODO - add this test back or remove if we're not going to have a header.
-    it.skip("has header when hasHeader prop is true", () => {
-        const { getByRole } = render(<MarcherList hasHeader={true} />);
-        expect(getByRole("heading")).toBeDefined();
-    });
-
-    it("does not have header when hasHeader prop is false", () => {
-        const { queryByRole } = render(<MarcherList hasHeader={false} />);
-        expect(queryByRole("heading")).toBeNull();
-    });
-
     // TODO - fix these tests. Isn't showing the "edit" UX
     // https://github.com/OpenMarch/OpenMarch/issues/254
     describe.skip("editing", () => {

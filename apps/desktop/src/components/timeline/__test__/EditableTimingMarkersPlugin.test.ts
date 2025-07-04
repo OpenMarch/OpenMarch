@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { EditableTimingMarkersPlugin } from "../EditableTimingMarkersPlugin";
+import { EditableTimingMarkersPlugin } from "../audio/EditableTimingMarkersPlugin";
 import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 

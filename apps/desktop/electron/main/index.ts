@@ -80,7 +80,7 @@ async function createWindow(title?: string) {
         title: title || "OpenMarch",
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
         minWidth: 1000,
-        minHeight: 400,
+        minHeight: 600,
         autoHideMenuBar: true,
         frame: false,
         trafficLightPosition: { x: 24, y: 9 },

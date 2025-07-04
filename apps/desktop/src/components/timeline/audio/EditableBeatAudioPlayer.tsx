@@ -137,7 +137,7 @@ export default function EditableBeatAudioPlayer() {
     };
 
     return (
-        <div className="pl-[40px]">
+        <div className="bg-red pl-[40px]">
             <div className="text-text/70 mb-2 text-sm">
                 Drag the right edge of any beat to adjust its duration
             </div>

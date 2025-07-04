@@ -81,7 +81,7 @@ export default function FilesTabContent() {
                 ) : recentFiles.length === 0 ? (
                     <WelcomeContent />
                 ) : (
-                    <div className="grid grid-cols-4 gap-12 max-[1420px]:grid-cols-3 max-[1150px]:grid-cols-2">
+                    <div className="grid grid-cols-5 gap-12 max-[2000px]:grid-cols-4 max-[1420px]:grid-cols-3 max-[1150px]:grid-cols-2">
                         {recentFiles.map((file) => (
                             <div
                                 key={file.path}

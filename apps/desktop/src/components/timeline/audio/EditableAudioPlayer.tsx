@@ -19,7 +19,12 @@ import {
     lightProgressColor,
     waveColor,
 } from "./AudioPlayer";
-import { PauseIcon, PlayIcon, RewindIcon } from "@phosphor-icons/react";
+import {
+    BooksIcon,
+    PauseIcon,
+    PlayIcon,
+    RewindIcon,
+} from "@phosphor-icons/react";
 import Beat from "@/global/classes/Beat";
 import { Button } from "@openmarch/ui";
 import {
@@ -282,7 +287,7 @@ export default function EditableAudioPlayer() {
     };
 
     return (
-        <div className="h-fit pl-[40px]">
+        <div className="relative h-128 pl-[40px]">
             {audioFileUrl && (
                 <audio
                     ref={audioRef}
@@ -293,139 +298,93 @@ export default function EditableAudioPlayer() {
             )}
 
             <div id="waveform" ref={waveformRef}></div>
-            <div className="flex items-center">
-                <button
-                    onClick={() => waveSurfer?.seekTo(0)}
-                    className="hover:text-accent text-text transition-colors"
-                    disabled={!waveSurfer || !audioFileUrl}
-                >
-                    <RewindIcon size={24} />
-                </button>
-                <button
-                    onClick={togglePlayPause}
-                    className="hover:text-accent text-text transition-colors"
-                    disabled={!waveSurfer || !audioFileUrl}
-                >
-                    {isAudioPlaying ? (
-                        <PauseIcon size={24} />
-                    ) : (
-                        <PlayIcon size={24} />
-                    )}
-                </button>
-            </div>
+            <div className="border-stroke rounded-6 bg-modal backdrop-blur-32 shadow-modal fixed bottom-[212px] flex w-fit min-w-0 items-center gap-12 border p-6">
+                <p className="text-sub text-text-subtitle whitespace-nowrap">
+                    Tap Tempo
+                </p>
+                <div className="flex items-center gap-6">
+                    <button
+                        onClick={() => waveSurfer?.seekTo(0)}
+                        className="hover:text-accent text-text transition-colors"
+                        disabled={!waveSurfer || !audioFileUrl}
+                    >
+                        <RewindIcon size={24} />
+                    </button>
+                    <button
+                        onClick={togglePlayPause}
+                        className="hover:text-accent text-text transition-colors"
+                        disabled={!waveSurfer || !audioFileUrl}
+                    >
+                        {isAudioPlaying ? (
+                            <PauseIcon size={24} />
+                        ) : (
+                            <PlayIcon size={24} />
+                        )}
+                    </button>
+                </div>
 
-            {beatsToDisplay === "real" ? (
-                <div className="flex h-fit min-h-0 gap-8">
+                {beatsToDisplay === "real" ? (
+                    <div className="flex h-fit min-h-0 gap-8">
+                        <Button
+                            onClick={triggerTapNewTempo}
+                            size={"compact"}
+                            className="w-fit min-w-0 whitespace-nowrap"
+                        >
+                            Tap New Tempo
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex h-fit min-h-0 w-full min-w-0 gap-16">
+                        <div
+                            id="timeline-editor-button-container"
+                            className="flex gap-4"
+                        >
+                            <Button
+                                className="w-full whitespace-nowrap"
+                                size={"compact"}
+                                disabled={isAudioPlaying}
+                                onClick={handleSave}
+                            >
+                                Save New Beats
+                            </Button>
+                            <Button
+                                className="w-full"
+                                variant={"red"}
+                                onClick={() => {
+                                    triggerTapNewTempo();
+                                    waveSurfer?.seekTo(0);
+                                }}
+                                size={"compact"}
+                            >
+                                Restart
+                            </Button>
+                            <Button
+                                className="w-full"
+                                size="compact"
+                                variant="secondary"
+                                onClick={handleCancel}
+                            >
+                                Exit
+                            </Button>
+                        </div>
+                    </div>
+                )}
+                <div className="bg-text-disabled size-4 rounded-full" />
+                <a
+                    href="https://github.com/OpenMarch/OpenMarch"
+                    target="_blank"
+                    rel="noreferrer"
+                >
                     <Button
-                        onClick={triggerTapNewTempo}
                         size={"compact"}
-                        className="w-fit min-w-0 px-16 whitespace-nowrap"
+                        variant="primary"
+                        className="w-fit min-w-fit whitespace-nowrap"
                     >
-                        Tap New Tempo
+                        <BooksIcon size={22} />
+                        See docs
                     </Button>
-                    <div className="w-full">
-                        Tempo tapping is not very polished and is currently
-                        &quot;all-or-nothing.&quot;
-                        <br />
-                        You must tap all in one shot and will need to restart in
-                        order to edit.
-                        <br />
-                        The result is a fun jam session with you and your
-                        keyboard. It will certainly be quick and not at all
-                        frustrating.
-                        <br />
-                        Please let us know if you find the tap-tempo feature
-                        useful, as we just aren&apos;t predicting that many
-                        people will use it.
-                        <br />
-                        GLHF!
-                    </div>
-                </div>
-            ) : (
-                <div className="flex h-fit min-h-0 w-full min-w-0 gap-16">
-                    <div
-                        id="timeline-editor-button-container"
-                        className="flex flex-col gap-4"
-                    >
-                        <Button
-                            className="w-full whitespace-nowrap"
-                            size={"compact"}
-                            disabled={isAudioPlaying}
-                            onClick={handleSave}
-                        >
-                            Save New Beats
-                        </Button>
-                        <Button
-                            className="w-full"
-                            variant={"red"}
-                            onClick={() => {
-                                triggerTapNewTempo();
-                                waveSurfer?.seekTo(0);
-                            }}
-                            size={"compact"}
-                        >
-                            Restart
-                        </Button>
-                        <Button
-                            className="w-full"
-                            size="compact"
-                            variant="secondary"
-                            onClick={handleCancel}
-                        >
-                            Exit
-                        </Button>
-                    </div>
-                    <div className="flex w-full flex-col gap-4">
-                        <p className="text-text-subtitle text-sm">
-                            Instructions
-                        </p>
-                        <ol className="list-inside list-decimal">
-                            <li>Start at the beginning of the audio</li>
-                            <li>
-                                Press play{" "}
-                                <span className="text-text-subtitle">
-                                    (space bar works)
-                                </span>
-                            </li>
-                            <li>
-                                Tap the tempo{" "}
-                                <span className="text-text-subtitle">
-                                    (instructions on the right)
-                                </span>
-                            </li>
-                            <li>
-                                Pause the audio. Either save the new beats or
-                                retry
-                            </li>
-                        </ol>
-                    </div>
-                    <div className="flex w-full flex-col gap-4">
-                        <p className="text-text-subtitle text-sm">
-                            Tapping the tempo
-                        </p>
-
-                        <ul className="list-inside list-disc">
-                            <li>
-                                OpenMarch uses the number keys{" "}
-                                <span className="font-mono">[1-9]</span> to tap
-                                the tempo
-                            </li>
-                            <li>
-                                The number you press corresponds to the number
-                                of beats in the measure
-                            </li>
-                            <li>
-                                For instance in 4/4, you would press the
-                                &quot;4&quot; key
-                            </li>
-                            <li>
-                                Press the key at the downbeat of the next
-                                measure
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            )}
+                </a>
+            </div>
         </div>
     );
 }

@@ -20,9 +20,15 @@ import { clsx } from "clsx";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
+    const { uiSettings } = useUiSettingsStore();
 
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col justify-center gap-12 border px-16 py-12">
+        <div
+            className={clsx(
+                "bg-fg-1 border-stroke rounded-6 flex flex-col gap-12 border px-16 py-12",
+                { "justify-center": isFullscreen },
+            )}
+        >
             {!isFullscreen && (
                 <p className="text-body text-text/60">Timeline</p>
             )}
@@ -39,8 +45,9 @@ export default function TimelineControls() {
                 >
                     <ZoomControls />
                     <button
-                        className="text-text hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={toggleFullscreen}
+                        disabled={uiSettings.focussedComponent === "timeline"}
                     >
                         {isFullscreen ? (
                             <CornersInIcon size={24} />
@@ -84,15 +91,17 @@ function ZoomControls() {
 function PlaybackControls() {
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
+    const { uiSettings } = useUiSettingsStore();
 
     return (
-        <div className="flex gap-12" aria-label="Playback Controls">
+        <div className={clsx("flex gap-12")} aria-label="Playback Controls">
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
                 disabled={
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
-                    isPlaying
+                    isPlaying ||
+                    uiSettings.focussedComponent === "timeline"
                 }
             >
                 <RewindIcon size={24} />
@@ -103,7 +112,8 @@ function PlaybackControls() {
                 disabled={
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
-                    isPlaying
+                    isPlaying ||
+                    uiSettings.focussedComponent === "timeline"
                 }
             >
                 <SkipBackIcon size={24} />
@@ -111,7 +121,11 @@ function PlaybackControls() {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                disabled={!selectedPage || selectedPage.nextPageId === null}
+                disabled={
+                    !selectedPage ||
+                    selectedPage.nextPageId === null ||
+                    uiSettings.focussedComponent === "timeline"
+                }
             >
                 {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
             </RegisteredActionButton>
@@ -121,7 +135,8 @@ function PlaybackControls() {
                 disabled={
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
-                    isPlaying
+                    isPlaying ||
+                    uiSettings.focussedComponent === "timeline"
                 }
             >
                 <SkipForwardIcon size={24} />
@@ -132,7 +147,8 @@ function PlaybackControls() {
                 disabled={
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
-                    isPlaying
+                    isPlaying ||
+                    uiSettings.focussedComponent === "timeline"
                 }
             >
                 <FastForwardIcon size={24} />

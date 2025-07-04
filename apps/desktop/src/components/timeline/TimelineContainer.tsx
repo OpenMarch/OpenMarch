@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { XIcon, PlusIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import AudioPlayer from "./AudioPlayer";
+import AudioPlayer from "./audio/AudioPlayer";
 import Page, {
     createLastPage,
     ModifyPagesRequest,
@@ -17,7 +17,7 @@ import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import EditableAudioPlayer from "./EditableAudioPlayer";
+import EditableAudioPlayer from "./audio/EditableAudioPlayer";
 import MusicModal from "../music/MusicModal";
 import TimelineControls from "./TimelineControls";
 import * as ContextMenu from "@radix-ui/react-context-menu";
@@ -348,16 +348,12 @@ export function PageTimeline() {
                                                 className={clsx(
                                                     "absolute top-0 left-0 z-0 h-full w-full",
                                                     !isFullscreen
-                                                        ? ""
+                                                        ? "bg-accent/25"
                                                         : "bg-accent/25",
                                                 )}
-                                                style={
-                                                    !isFullscreen
-                                                        ? {}
-                                                        : {
-                                                              animation: `progress ${page.duration}s linear forwards`,
-                                                          }
-                                                }
+                                                style={{
+                                                    animation: `progress ${page.duration}s linear forwards`,
+                                                }}
                                             />
                                         )}
                                 </div>
