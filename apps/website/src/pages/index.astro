@@ -179,11 +179,14 @@ type Blog = CollectionEntry<"blog">;
                 >
                     <h2 class="text-h2">Partners</h2>
                     <div
-                        class="grid grid-cols-2 gap-16 justify-center items-center mb-16"
+                        class="grid grid-cols-2 max-[640px]:grid-cols-1 gap-32 justify-center items-center mb-16"
                     >
-                        <a href="https://silentcommand.org" target="_blank"
+                        <a
+                            href="https://silentcommand.org"
+                            target="_blank"
+                            class="flex justify-center"
                             ><div
-                                class="aspect-[328/125] h-auto w-[16rem] bg-[url('/partners/sicommandDark.png')] bg-cover dark:bg-[url('/partners/sicommandLight.png')]"
+                                class="aspect-[328/125] h-auto w-[16rem] max-[640px]:w-[12rem] bg-[url('/partners/sicommandDark.png')] bg-cover dark:bg-[url('/partners/sicommandLight.png')]"
                             >
                             </div></a
                         >
@@ -192,7 +195,7 @@ type Blog = CollectionEntry<"blog">;
                             target="_blank"
                             class="flex items-center justify-center"
                             ><div
-                                class="aspect-[328/125] h-[7rem] w-[7rem] bg-[url('/partners/CorpsClash-dark.svg')] bg-cover bg-center dark:bg-[url('/partners/CorpsClash-light.svg')]"
+                                class="aspect-[328/125] h-[7rem] w-[7rem] max-[640px]:h-[5rem] max-[640px]:w-[5rem] bg-[url('/partners/CorpsClash-dark.svg')] bg-cover bg-center dark:bg-[url('/partners/CorpsClash-light.svg')]"
                             >
                             </div></a
                         >
