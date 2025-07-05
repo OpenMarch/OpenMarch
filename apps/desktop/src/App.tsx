@@ -27,6 +27,8 @@ import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
+import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
+import DevTools from "./components/devTools/DevTools";
 
 // app
 
@@ -116,9 +118,17 @@ function App() {
             });
     }, []);
 
+    useEffect(() => {
+        if (appCanvas && isCodegen) {
+            window.electron.codegen.clearMouseActions();
+            const cleanup = attachCodegenListeners(appCanvas);
+            return cleanup;
+        }
+    }, [appCanvas, isCodegen]);
+
     return (
         <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
-            {analyticsConsent === null && (
+            {analyticsConsent === null && !isCodegen && (
                 <AnalyticsOptInModal
                     onChoice={(choice) => setAnalyticsConsent(choice)}
                 />
@@ -148,6 +158,9 @@ function App() {
                                             className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                         >
                                             <Sidebar />
+                                            {import.meta.env.DEV && (
+                                                <DevTools />
+                                            )}
                                             <div
                                                 id="workspace"
                                                 className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
