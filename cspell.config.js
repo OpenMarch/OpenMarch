@@ -95,6 +95,7 @@ module.exports = {
         "viewports",
         "codegen",
         "spinbutton",
+        "monokai",
     ],
     ignorePaths: [
         "node_modules/**",
