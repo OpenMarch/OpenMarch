@@ -298,7 +298,7 @@ export default function EditableAudioPlayer() {
             )}
 
             <div id="waveform" ref={waveformRef}></div>
-            <div className="border-stroke rounded-6 bg-modal backdrop-blur-32 shadow-modal fixed bottom-[212px] flex w-fit min-w-0 items-center gap-12 border p-6">
+            <div className="border-stroke rounded-6 bg-modal backdrop-blur-32 shadow-modal fixed bottom-[212px] z-50 flex w-fit min-w-0 items-center gap-12 border p-6">
                 <p className="text-sub text-text-subtitle whitespace-nowrap">
                     Tap Tempo
                 </p>
