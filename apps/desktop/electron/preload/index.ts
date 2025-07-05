@@ -160,7 +160,13 @@ const APP_API = {
     isMacOS: process.platform === "darwin",
 
     // Environment
-    isCodegen: process.env.PLAYWRIGHT_CODEGEN === "1",
+    isCodegen: !!process.env.PLAYWRIGHT_CODEGEN,
+    codegen: {
+        clearMouseActions: () =>
+            ipcRenderer.invoke("codegen:clear-mouse-actions"),
+        addMouseAction: (action: string) =>
+            ipcRenderer.send("codegen:add-mouse-action", action),
+    },
 
     // Themes
     getTheme: () => ipcRenderer.invoke("get-theme"),

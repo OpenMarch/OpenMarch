@@ -3,3 +3,5 @@
 intro.png
 playwright-report/*
 test-results/*
+
+e2e/_temp/

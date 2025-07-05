@@ -96,6 +96,7 @@ module.exports = {
         "codegen",
         "spinbutton",
         "monokai",
+        "openmarchdev",
     ],
     ignorePaths: [
         "node_modules/**",

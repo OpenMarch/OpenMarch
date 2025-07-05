@@ -35,6 +35,7 @@ const store = new Store();
 
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
+console.log("isCodegen:", isCodegen);
 
 const enableSentry =
     process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
@@ -131,10 +132,7 @@ async function createWindow(title?: string) {
 
     // Test actively push message to the Electron-Renderer
     win.webContents.on("did-finish-load", () => {
-        // Don't maximize in codegen mode to keep window manageable
-        if (!isCodegen) {
-            win?.maximize();
-        }
+        win?.maximize();
         win?.webContents.send(
             "main-process-message",
             new Date().toLocaleString(),
