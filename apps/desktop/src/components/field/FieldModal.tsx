@@ -7,6 +7,7 @@ export default function FieldModal() {
     return (
         <SidebarModalLauncher
             contents={<FieldPropertiesContents />}
+            newContentId="field"
             buttonLabel={<FieldIcon />}
         />
     );

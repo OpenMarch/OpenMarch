@@ -74,7 +74,6 @@ let win: BrowserWindow | null = null;
 const preload = join(__dirname, "../preload/index.js");
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
-
 async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
@@ -94,6 +93,7 @@ async function createWindow(title?: string) {
             contextIsolation: true, // protect against prototype pollution
         },
     });
+    app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
 
     win.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {

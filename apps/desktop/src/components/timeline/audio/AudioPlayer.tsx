@@ -10,6 +10,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { useTheme } from "@/context/ThemeContext";
+import { toast } from "sonner";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -41,7 +42,10 @@ export default function AudioPlayer() {
         const audio = audioRef.current;
 
         if (isPlaying) {
-            audio.play();
+            audio.play().catch((error) => {
+                toast.error("Failed to play audio");
+                console.error("Error playing audio:", error);
+            });
         } else {
             audio.currentTime = selectedPage
                 ? selectedPage.timestamp + selectedPage.duration

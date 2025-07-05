@@ -46,26 +46,30 @@ export default function SidebarModal() {
 export function SidebarModalLauncher({
     buttonLabel,
     contents,
+    newContentId,
     className,
 }: {
     buttonLabel: string | ReactNode;
     contents: ReactNode;
+    newContentId: string;
     className?: string;
 }) {
-    const { toggleOpen, setContent, isOpen } = useSidebarModalStore();
+    const { toggleOpen, setContent, isOpen, contentId } =
+        useSidebarModalStore();
     return (
         <button
             onClick={() => {
-                if (!isOpen) {
-                    setContent(contents);
-                    toggleOpen();
+                if (isOpen && contentId === newContentId) {
+                    toggleOpen(); // close if already open with same content
                 } else {
-                    setContent(contents);
+                    setContent(contents, newContentId);
+                    if (!isOpen) toggleOpen(); // open if not already open
                 }
             }}
             className={twMerge(
                 clsx(
                     "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
+                    { "text-accent": isOpen && contentId === newContentId },
                     className,
                 ),
             )}

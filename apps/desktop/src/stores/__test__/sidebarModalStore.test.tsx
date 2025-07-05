@@ -60,7 +60,7 @@ describe("useSidebarModalStore", () => {
 
         const newContent: ReactNode = <div>New Sidebar Content</div>;
 
-        setContent(newContent);
+        setContent(newContent, "new-content");
 
         expect(useSidebarModalStore.getState().content).toEqual(newContent);
     });

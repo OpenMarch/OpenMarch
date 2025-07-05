@@ -23,7 +23,7 @@ export default function Topbar() {
     return (
         <div
             className={clsx("group", {
-                "border-stroke bg-modal backdrop-blur-32 shadow-modal absolute z-50 rounded-[10px] border p-4":
+                "border-stroke bg-modal backdrop-blur-32 shadow-modal absolute z-50 w-full rounded-[18px] border p-8":
                     isFullscreen,
             })}
         >
@@ -33,7 +33,7 @@ export default function Topbar() {
                 className={clsx(
                     "flex flex-col gap-0 overflow-hidden transition-[max-height,opacity] duration-250 ease-in-out",
                     {
-                        "pointer-events-none max-h-8 flex-row items-center gap-8 opacity-0":
+                        "pointer-events-none max-h-4 flex-row items-center gap-8 opacity-0":
                             isFullscreen,
                         "group-hover:pointer-events-auto group-hover:max-h-[80px] group-hover:opacity-100":
                             isFullscreen,

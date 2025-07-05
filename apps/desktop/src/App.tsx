@@ -114,7 +114,7 @@ function App() {
                                         >
                                             <div
                                                 id="workspace"
-                                                className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
+                                                className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                             >
                                                 <Toolbar />
                                                 <div className="relative flex h-full min-h-0 min-w-0 gap-8">

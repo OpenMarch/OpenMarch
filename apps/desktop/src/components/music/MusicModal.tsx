@@ -23,6 +23,7 @@ export default function MusicModal({
     return (
         <SidebarModalLauncher
             contents={<MusicModalContents />}
+            newContentId="music"
             buttonLabel={label}
             className={buttonClassName}
         />

@@ -11,6 +11,7 @@ export default function MarchersModal() {
     return (
         <SidebarModalLauncher
             contents={<MarcherListContents />}
+            newContentId="marchers"
             buttonLabel={<UsersThreeIcon size={24} />}
         />
     );
@@ -26,7 +27,7 @@ export function MarcherListContents() {
                 <div className="flex items-center gap-8">
                     <Button
                         onClick={() => {
-                            setContent(<SectionAppearanceList />);
+                            setContent(<SectionAppearanceList />, "marchers");
                         }}
                         size="compact"
                         variant="secondary"
@@ -35,7 +36,7 @@ export function MarcherListContents() {
                     </Button>
                     <Button
                         onClick={() => {
-                            setContent(<MarcherNewFormContents />);
+                            setContent(<MarcherNewFormContents />, "marchers");
                         }}
                         size="compact"
                     >
@@ -66,7 +67,7 @@ export function MarcherNewFormContents() {
                 <div className="flex items-center gap-8">
                     <button
                         onClick={() => {
-                            setContent(<MarcherListContents />);
+                            setContent(<MarcherListContents />, "marchers");
                         }}
                         className="hover:text-accent duration-150 ease-out"
                     >

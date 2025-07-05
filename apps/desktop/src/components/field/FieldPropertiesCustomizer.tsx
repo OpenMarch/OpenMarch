@@ -30,7 +30,7 @@ import {
 import { RgbaColor } from "@uiw/react-color";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
 import ColorPicker from "../ui/ColorPicker";
-import FormField from "../ui/FormField";
+import FormField, { StaticFormField } from "../ui/FormField";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -47,7 +47,7 @@ function CheckpointEditor({
     checkpoint,
     updateCheckpoint,
     deleteCheckpoint,
-    axis,z
+    axis,
 }: {
     checkpoint: Checkpoint;
     deleteCheckpoint: (checkpoint: Checkpoint) => void;
@@ -913,7 +913,6 @@ export default function FieldPropertiesCustomizer() {
                         </FormField>
                     </div>
                     <div className="flex flex-col gap-12">
-                        {/* <div className="mb-16">Field </div> */}
                         <h4 className="text-h4 mb-8">Field Labels</h4>
                         <FormField
                             label="Steps from front to home label bottom"
@@ -1471,7 +1470,7 @@ export default function FieldPropertiesCustomizer() {
                             >
                                 Import Image
                             </Button>
-                            <div className="text-sub text-body/60 h-fit min-h-0 w-fit leading-none whitespace-nowrap">
+                            <div className="text-sub text-text-subtitle h-fit min-h-0 w-fit leading-none whitespace-nowrap">
                                 Refresh after importing [Ctrl + R]
                             </div>
                         </div>

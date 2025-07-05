@@ -171,7 +171,7 @@ export default function SectionAppearanceList() {
                 <div className="flex items-center gap-8">
                     <button
                         onClick={() => {
-                            setContent(<MarcherListContents />);
+                            setContent(<MarcherListContents />, "marchers");
                         }}
                         className="hover:text-accent duration-150 ease-out"
                     >

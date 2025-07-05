@@ -77,7 +77,7 @@ export default function AudioSelector() {
                             ))}
                         </SelectContent>
                         <div className="text-text-subtitle text-sub mx-2 mt-4">
-                            Refresh after importing audio file.
+                            Refresh after importing [Ctrl + R]
                         </div>
                     </Select>
                 </div>
