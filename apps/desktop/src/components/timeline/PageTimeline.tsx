@@ -283,6 +283,7 @@ export default function PageTimeline() {
                     }}
                     title="First page"
                     aria-label="First page"
+                    timeline-page-id={pages[0].id}
                 >
                     <div>{pages[0].name}</div>
                 </div>
