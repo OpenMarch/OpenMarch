@@ -693,8 +693,10 @@ export default function ExportCoordinatesModal() {
                 asChild
                 className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
-                <ArrowSquareOutIcon size={24} />
-                Export
+                <button type="button" className="flex items-center gap-8">
+                    <ArrowSquareOutIcon size={24} />
+                    Export
+                </button>
             </DialogTrigger>
 
             {/* Dialog Setup */}
