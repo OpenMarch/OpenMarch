@@ -528,4 +528,5 @@ export interface RecentFile {
     svgPreview?: string;
 }
 
+export type ElectronApi = typeof APP_API;
 export type PluginsApi = typeof PLUGINS_API;
