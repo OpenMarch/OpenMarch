@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
@@ -470,203 +470,298 @@ function DrillChartExport() {
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);
+    const isCancelled = useRef(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
 
     // Export options
-    const [individualCharts, setIndividualCharts] = useState(false);
+    const [individualCharts, setIndividualCharts] = useState(true);
     const marginSVG = 40;
-    const zoom = 1;
 
     // Create SVGs from pages and export
-    const generateExportSVGs = useCallback(async () => {
+    const generateExportSVGs = useCallback(
+        async (
+            exportCanvas: OpenMarchCanvas,
+        ): Promise<{
+            SVGs: string[][];
+            coords: string[][];
+        }> => {
+            // Setup export canvas for SVG generation
+            exportCanvas.setWidth(fieldProperties!.width + marginSVG * 2);
+            exportCanvas.setHeight(fieldProperties!.height + marginSVG * 2);
+            exportCanvas.viewportTransform = [1, 0, 0, 1, marginSVG, marginSVG];
+            exportCanvas.requestRenderAll();
+
+            // SVG storage setup
+            const svgPages: string[][] = Array.from(
+                { length: marchers.length },
+                () => [],
+            );
+
+            // Get marcherPages for this, prev, and next page
+            let currentMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+                marcherPages,
+                pages[0].id,
+            );
+            let prevMarcherPages: MarcherPage[] = [];
+            let nextMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+                marcherPages,
+                pages[1].id,
+            );
+
+            // Readable coordinates storage for each marcher
+            const readableCoords: string[][] = Array.from(
+                { length: marchers.length },
+                () => Array.from({ length: pages.length }, () => ""),
+            );
+
+            // Generate SVGs for each page
+            for (let i = 0; i < pages.length; i++) {
+                setCurrentStep(
+                    `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
+                );
+
+                exportCanvas.currentPage = pages[i];
+
+                // Render marchers for this page
+                await exportCanvas.renderMarchers({
+                    currentMarcherPages: currentMarcherPages,
+                    allMarchers: marchers,
+                });
+
+                // Render pathways for individual marchers
+                if (individualCharts) {
+                    for (let m = 0; m < marchers.length; m++) {
+                        const marcher = MarcherPage.filterByMarcherId(
+                            currentMarcherPages,
+                            marchers[m].id,
+                        )[0];
+                        const prevMarcher = MarcherPage.filterByMarcherId(
+                            prevMarcherPages,
+                            marchers[m].id,
+                        )[0];
+                        const nextMarcher = MarcherPage.filterByMarcherId(
+                            nextMarcherPages,
+                            marchers[m].id,
+                        )[0];
+
+                        // Store readable coordinates for this marcher
+                        readableCoords[m][i] =
+                            ReadableCoords.fromMarcherPage(marcher).toString();
+
+                        // Collect pathways to add/remove
+                        const objectsToRemove: fabric.Object[] = [];
+
+                        // Render previous pathway and midpoint
+                        if (
+                            prevMarcherPages.length > 0 &&
+                            currentMarcherPages
+                        ) {
+                            const [prevPathways, prevMidpoints] =
+                                exportCanvas.renderPathways({
+                                    startPageMarcherPages: [prevMarcher],
+                                    endPageMarcherPages: [marcher],
+                                    color: rgbaToString(
+                                        exportCanvas.fieldProperties.theme
+                                            .previousPath,
+                                    ),
+                                    strokeWidth: 4,
+                                    dashed: true,
+                                });
+
+                            objectsToRemove.push(
+                                ...prevPathways,
+                                ...prevMidpoints,
+                            );
+                        }
+
+                        // Render next pathway and midpoint
+                        if (
+                            currentMarcherPages &&
+                            nextMarcherPages.length > 0
+                        ) {
+                            const [nextPathways, nextMidpoints] =
+                                exportCanvas.renderPathways({
+                                    startPageMarcherPages: [marcher],
+                                    endPageMarcherPages: [nextMarcher],
+                                    color: rgbaToString(
+                                        exportCanvas.fieldProperties.theme
+                                            .nextPath,
+                                    ),
+                                    strokeWidth: 3,
+                                    dashed: false,
+                                });
+
+                            objectsToRemove.push(
+                                ...nextPathways,
+                                ...nextMidpoints,
+                            );
+                        }
+
+                        // Add box around prev coordinate
+                        if (prevMarcherPages.length > 0) {
+                            const square = new fabric.Rect({
+                                left: prevMarcher.x,
+                                top: prevMarcher.y,
+                                width: 20,
+                                height: 20,
+                                fill: "transparent",
+                                stroke: "blue",
+                                strokeWidth: 3,
+                                originX: "center",
+                                originY: "center",
+                                ...NoControls,
+                            });
+                            exportCanvas.add(square);
+                            objectsToRemove.push(square);
+                        }
+
+                        // Add circle around next coordinate
+                        if (nextMarcherPages.length > 0) {
+                            const circle = new fabric.Circle({
+                                left: nextMarcher.x,
+                                top: nextMarcher.y,
+                                radius: 10,
+                                fill: "transparent",
+                                stroke: "hsl(281, 82%, 63%)",
+                                strokeWidth: 3,
+                                originX: "center",
+                                originY: "center",
+                                ...NoControls,
+                            });
+                            exportCanvas.add(circle);
+                            objectsToRemove.push(circle);
+                        }
+
+                        // Send marcher to the front
+                        exportCanvas.sendCanvasMarcherToFront(
+                            CanvasMarcher.getCanvasMarcherForMarcher(
+                                exportCanvas,
+                                marchers[m],
+                            )!,
+                        );
+
+                        // Convert to SVG after adding pathways
+                        exportCanvas.renderAll();
+                        svgPages[m].push(exportCanvas.toSVG());
+
+                        // Remove the pathways to keep the canvas clean for the next marcher
+                        objectsToRemove.forEach((object: fabric.Object) =>
+                            exportCanvas.remove(object),
+                        );
+                    }
+
+                    // Update current, prev, and next marcher pages
+                    prevMarcherPages = currentMarcherPages;
+                    currentMarcherPages = nextMarcherPages;
+                    nextMarcherPages = MarcherPage.filterByPageId(
+                        marcherPages,
+                        pages[i + 2]?.id ?? -1,
+                    );
+                } else {
+                    // No pathway rendering, just generate SVG
+                    exportCanvas.renderAll();
+                    svgPages[0].push(exportCanvas.toSVG());
+                    currentMarcherPages = MarcherPage.filterByPageId(
+                        marcherPages,
+                        pages[i + 1]?.id,
+                    );
+                }
+
+                // Update progress smoothly
+                setProgress(50 * ((i + 1) / pages.length));
+                if (isCancelled.current) {
+                    throw new Error("Export cancelled by user");
+                }
+            }
+
+            // Success
+            return { SVGs: svgPages, coords: readableCoords };
+        },
+        [fieldProperties, marchers, marcherPages, pages, individualCharts],
+    );
+
+    const exportMarcherSVGs = useCallback(
+        async (svgPages: string[][], readableCoords: string[][]) => {
+            // Create export directory
+            const { exportName, exportDir } =
+                await window.electron.export.createExportDirectory(
+                    await window.electron.getCurrentFilename(),
+                );
+
+            // Generate PDFs for each marcher or MAIN if individual charts are not selected
+            for (let marcher = 0; marcher < svgPages.length; marcher++) {
+                const result =
+                    await window.electron.export.generatePDFsForMarcher(
+                        svgPages[marcher],
+                        individualCharts
+                            ? marchers[marcher].drill_number
+                            : "MAIN",
+                        readableCoords[marcher],
+                        pages,
+                        exportName,
+                        exportDir,
+                        individualCharts,
+                    );
+
+                if (!individualCharts) break; // just one PDF for MAIN
+
+                setProgress(50 + (50 * marcher) / svgPages.length);
+                setCurrentStep(
+                    `Generating PDF file for: ${marchers[marcher]?.drill_number ?? "MAIN"}`,
+                );
+
+                // Individual PDF failed, log error and continue
+                if (!result.success) {
+                    console.error(
+                        "SVG export failed with error:",
+                        result.error,
+                    );
+                    toast.error(
+                        `SVG export for ${marchers[marcher]?.drill_number ?? "MAIN"} failed with error: ${result.error}`,
+                    );
+                }
+                if (isCancelled.current) {
+                    throw new Error("Export cancelled by user");
+                }
+            }
+        },
+        [individualCharts, marchers, pages],
+    );
+
+    // Check if we have the minimum requirements for export
+    const canExport = !!(
+        fieldProperties &&
+        pages.length > 0 &&
+        marchers.length > 0
+    );
+
+    // Export generate SVGs and print PDFs
+    const handleExport = useCallback(async () => {
+        isCancelled.current = false;
         setIsLoading(true);
         setProgress(0);
         setCurrentStep("Initializing export...");
 
-        // Setup canvas and store original state for SVG creation and restore
+        // Store original state of canvas for restoration
         const exportCanvas: OpenMarchCanvas = window.canvas;
         const originalWidth = exportCanvas.getWidth();
         const originalHeight = exportCanvas.getHeight();
         const originalViewportTransform =
             exportCanvas.viewportTransform!.slice();
-        exportCanvas.setWidth(fieldProperties!.width + marginSVG * 2);
-        exportCanvas.setHeight(fieldProperties!.height + marginSVG * 2);
-        exportCanvas.viewportTransform = [
-            zoom,
-            0,
-            0,
-            zoom,
-            marginSVG,
-            marginSVG,
-        ];
-        exportCanvas.requestRenderAll();
 
-        // SVG storage setup
-        const svgPages: string[][] = Array.from(
-            { length: marchers.length },
-            () => [],
-        );
-
-        // Get marcherPages for this, prev, and next page
-        let currentMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
-            marcherPages,
-            pages[0].id,
-        );
-        let prevMarcherPages: MarcherPage[] = [];
-        let nextMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
-            marcherPages,
-            pages[1].id,
-        );
-
-        // Readable coordinates storage for each marcher
-        const readableCoords: string[][] = Array.from(
-            { length: marchers.length },
-            () => Array.from({ length: pages.length }, () => ""),
-        );
-
-        // Generate SVGs for each page
-        for (let i = 0; i < pages.length; i++) {
-            setCurrentStep(
-                `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
+        // Generate SVGs from the canvas
+        let SVGs: string[][] = [];
+        let coords: string[][] = [];
+        try {
+            ({ SVGs, coords } = await generateExportSVGs(exportCanvas));
+        } catch (error) {
+            toast.error(
+                "SVG Generation failed: " +
+                    (error instanceof Error ? error.message : "Unknown error"),
             );
-
-            exportCanvas.currentPage = pages[i];
-
-            // Render marchers for this page
-            await exportCanvas.renderMarchers({
-                currentMarcherPages: currentMarcherPages,
-                allMarchers: marchers,
-            });
-
-            // Render pathways for individual marchers
-            if (individualCharts) {
-                for (let m = 0; m < marchers.length; m++) {
-                    const marcher = MarcherPage.filterByMarcherId(
-                        currentMarcherPages,
-                        marchers[m].id,
-                    )[0];
-                    const prevMarcher = MarcherPage.filterByMarcherId(
-                        prevMarcherPages,
-                        marchers[m].id,
-                    )[0];
-                    const nextMarcher = MarcherPage.filterByMarcherId(
-                        nextMarcherPages,
-                        marchers[m].id,
-                    )[0];
-
-                    // Store readable coordinates for this marcher
-                    readableCoords[m][i] =
-                        ReadableCoords.fromMarcherPage(marcher).toString();
-
-                    // Collect pathways to add/remove
-                    const objectsToRemove: fabric.Object[] = [];
-
-                    // Render previous pathway and midpoint
-                    if (prevMarcherPages.length > 0 && currentMarcherPages) {
-                        const [prevPathways, prevMidpoints] =
-                            exportCanvas.renderPathways({
-                                startPageMarcherPages: [prevMarcher],
-                                endPageMarcherPages: [marcher],
-                                color: rgbaToString(
-                                    exportCanvas.fieldProperties.theme
-                                        .previousPath,
-                                ),
-                                strokeWidth: 4,
-                                dashed: true,
-                            });
-
-                        objectsToRemove.push(...prevPathways, ...prevMidpoints);
-                    }
-
-                    // Render next pathway and midpoint
-                    if (currentMarcherPages && nextMarcherPages.length > 0) {
-                        const [nextPathways, nextMidpoints] =
-                            exportCanvas.renderPathways({
-                                startPageMarcherPages: [marcher],
-                                endPageMarcherPages: [nextMarcher],
-                                color: rgbaToString(
-                                    exportCanvas.fieldProperties.theme.nextPath,
-                                ),
-                                strokeWidth: 3,
-                                dashed: false,
-                            });
-
-                        objectsToRemove.push(...nextPathways, ...nextMidpoints);
-                    }
-
-                    // Add box around prev coordinate
-                    if (prevMarcherPages.length > 0) {
-                        const square = new fabric.Rect({
-                            left: prevMarcher.x,
-                            top: prevMarcher.y,
-                            width: 20,
-                            height: 20,
-                            fill: "transparent",
-                            stroke: "blue",
-                            strokeWidth: 3,
-                            originX: "center",
-                            originY: "center",
-                            ...NoControls,
-                        });
-                        exportCanvas.add(square);
-                        objectsToRemove.push(square);
-                    }
-
-                    // Add circle around next coordinate
-                    if (nextMarcherPages.length > 0) {
-                        const circle = new fabric.Circle({
-                            left: nextMarcher.x,
-                            top: nextMarcher.y,
-                            radius: 10,
-                            fill: "transparent",
-                            stroke: "hsl(281, 82%, 63%)",
-                            strokeWidth: 3,
-                            originX: "center",
-                            originY: "center",
-                            ...NoControls,
-                        });
-                        exportCanvas.add(circle);
-                        objectsToRemove.push(circle);
-                    }
-
-                    // Send marcher to the front
-                    exportCanvas.sendCanvasMarcherToFront(
-                        CanvasMarcher.getCanvasMarcherForMarcher(
-                            exportCanvas,
-                            marchers[m],
-                        )!,
-                    );
-
-                    // Convert to SVG after adding pathways
-                    exportCanvas.renderAll();
-                    svgPages[m].push(exportCanvas.toSVG());
-
-                    // Remove the pathways to keep the canvas clean for the next marcher
-                    objectsToRemove.forEach((object: fabric.Object) =>
-                        exportCanvas.remove(object),
-                    );
-                }
-
-                // Update current, prev, and next marcher pages
-                prevMarcherPages = currentMarcherPages;
-                currentMarcherPages = nextMarcherPages;
-                nextMarcherPages = MarcherPage.filterByPageId(
-                    marcherPages,
-                    pages[i + 2]?.id ?? -1,
-                );
-            } else {
-                // No pathway rendering, just generate SVG
-                exportCanvas.renderAll();
-                svgPages[0].push(exportCanvas.toSVG());
-                currentMarcherPages = MarcherPage.filterByPageId(
-                    marcherPages,
-                    pages[i + 1]?.id,
-                );
-            }
-
-            // Update progress smoothly
-            setProgress(50 * ((i + 1) / pages.length));
+            setCurrentStep("Export failed");
+            return;
         }
 
         // Restore canvas to original state
@@ -677,51 +772,23 @@ function DrillChartExport() {
 
         // SVG creation done, start exporting
         setCurrentStep("Generating PDF files...");
+        try {
+            await exportMarcherSVGs(SVGs, coords);
 
-        // Create export directory
-        const { exportName, exportDir } =
-            await window.electron.export.createExportDirectory(
-                await window.electron.getCurrentFilename(),
+            setProgress(100);
+            setCurrentStep("Export completed!");
+            toast.success(`Successfully exported as PDF!`);
+        } catch (error) {
+            toast.error(
+                "PDF Export failed: " +
+                    (error instanceof Error ? error.message : "Unknown error"),
             );
-
-        // Generate PDFs for each marcher or MAIN if individual charts are not selected
-        for (let marcher = 0; marcher < svgPages.length; marcher++) {
-            const result = await window.electron.export.generateSVGsForMarcher(
-                svgPages[marcher],
-                individualCharts ? marchers[marcher].drill_number : "MAIN",
-                readableCoords[marcher],
-                pages,
-                exportName,
-                exportDir,
-                individualCharts,
-            );
-
-            if (!individualCharts) marcher = svgPages.length;
-            setProgress(50 + (50 * marcher) / svgPages.length);
-            setCurrentStep(
-                `Generating PDF file for: ${marchers[marcher]?.drill_number ?? "MAIN"}`,
-            );
-            if (!result.success) {
-                console.error("SVG export failed with error:", result.error);
-                toast.error(
-                    `SVG export for ${marchers[marcher]?.drill_number ?? "MAIN"} failed with error: ${result.error}`,
-                );
-            }
+            setCurrentStep("Export failed");
         }
 
-        // Success
-        setProgress(100);
-        setCurrentStep("Export completed!");
-        toast.success(`Successfully exported as PDF!`);
+        isCancelled.current = false;
         setIsLoading(false);
-    }, [pages, marcherPages, marchers, individualCharts]);
-
-    // Check if we have the minimum requirements for export
-    const canExport = !!(
-        fieldProperties &&
-        pages.length > 0 &&
-        marchers.length > 0
-    );
+    }, [generateExportSVGs, exportMarcherSVGs]);
 
     return (
         <div className="flex flex-col gap-20">
@@ -749,13 +816,17 @@ function DrillChartExport() {
             <div className="flex w-full justify-end gap-8">
                 <Button
                     size="compact"
-                    onClick={generateExportSVGs}
+                    onClick={handleExport}
                     disabled={isLoading || !canExport}
                 >
                     {isLoading ? "Exporting... Please wait" : "Export"}
                 </Button>
                 <DialogClose>
-                    <Button size="compact" variant="secondary">
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        onClick={() => (isCancelled.current = true)}
+                    >
                         Cancel
                     </Button>
                 </DialogClose>

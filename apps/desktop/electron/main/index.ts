@@ -252,7 +252,7 @@ function initGetters() {
             exportDir: string,
             individualCharts: boolean,
         ) => {
-            return await PDFExportService.generateSVGsForMarcher(
+            return await PDFExportService.generatePDFsForMarcher(
                 svgPages,
                 drillNumber,
                 marcherCoordinates,

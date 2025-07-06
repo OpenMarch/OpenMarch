@@ -216,7 +216,7 @@ const APP_API = {
         createExportDirectory: (defaultName: string) =>
             ipcRenderer.invoke("export:createExportDirectory", defaultName),
 
-        generateSVGsForMarcher: (
+        generatePDFsForMarcher: (
             svgPages: string[],
             drillNumber: string,
             marcherCoordinates: string[],

@@ -341,8 +341,13 @@ export class PDFExportService {
             properties: ["createDirectory", "showOverwriteConfirmation"],
             buttonLabel: "Export Here",
         });
-        if (result.canceled || !result.filePath) {
+
+        // Error handling
+        if (result.canceled) {
             throw new Error("Export cancelled");
+        }
+        if (!result.filePath) {
+            throw new Error("No file path selected for export");
         }
 
         // Create export directory
@@ -359,7 +364,7 @@ export class PDFExportService {
         return { exportName, exportDir };
     }
 
-    public static async generateSVGsForMarcher(
+    public static async generatePDFsForMarcher(
         svgPages: string[],
         drillNumber: string,
         marcherCoordinates: string[],
