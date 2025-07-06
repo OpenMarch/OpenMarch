@@ -25,10 +25,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                             child.type === SelectTriggerText ||
                             child.type === SelectTriggerCompact)
                     ) {
-                        return React.cloneElement(child, {
-                            ...child.props,
-                            ref: ref as any, // or use a more specific type if needed
-                        });
+                        return React.cloneElement(
+                            child as React.ReactElement<any>,
+                            { ref },
+                        );
                     }
                     return child;
                 })}

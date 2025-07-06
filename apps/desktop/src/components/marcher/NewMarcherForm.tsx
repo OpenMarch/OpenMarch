@@ -57,7 +57,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        setContent(<MarcherListContents />);
+        setContent(<MarcherListContents />, "marchers");
         event.preventDefault();
         let newDrillOrderOffset = 0;
         const existingDrillOrders = new Set<number>(

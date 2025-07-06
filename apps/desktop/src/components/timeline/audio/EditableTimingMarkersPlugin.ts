@@ -1,7 +1,7 @@
 import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
-import type { ModifiedBeatArgs } from "../../../electron/database/tables/BeatTable";
+import type { ModifiedBeatArgs } from "../../../../electron/database/tables/BeatTable";
 import { updateBeats } from "@/global/classes/Beat";
 
 /**
