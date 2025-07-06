@@ -475,8 +475,8 @@ function DrillChartExport() {
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
-    const padding = 30;
-    const zoom = 0.7;
+    const marginSVG = 40;
+    const zoom = 1;
 
     // Create SVGs from pages and export
     const generateExportSVGs = useCallback(async () => {
@@ -490,9 +490,16 @@ function DrillChartExport() {
         const originalHeight = exportCanvas.getHeight();
         const originalViewportTransform =
             exportCanvas.viewportTransform!.slice();
-        exportCanvas.setWidth(1320);
-        exportCanvas.setHeight(730);
-        exportCanvas.viewportTransform = [zoom, 0, 0, zoom, padding, padding];
+        exportCanvas.setWidth(fieldProperties!.width + marginSVG * 2);
+        exportCanvas.setHeight(fieldProperties!.height + marginSVG * 2);
+        exportCanvas.viewportTransform = [
+            zoom,
+            0,
+            0,
+            zoom,
+            marginSVG,
+            marginSVG,
+        ];
         exportCanvas.requestRenderAll();
 
         // SVG storage setup

@@ -425,9 +425,12 @@ export class PDFExportService {
             });
 
             // === SVG FIELD ===
+            const maxSVGHeight = 425;
+            const maxSVGWidth = pageWidth - 2 * margin;
             try {
-                SVGtoPDF(doc, svgPages[i], margin, -30, {
-                    width: pageWidth - margin * 2,
+                SVGtoPDF(doc, svgPages[i], margin, 65, {
+                    height: maxSVGHeight,
+                    width: maxSVGWidth,
                     preserveAspectRatio: "xMidYMid meet",
                 });
             } catch (svgError) {
