@@ -29,6 +29,8 @@ import { rgbaToString } from "@/global/classes/FieldTheme";
 import { Pathway } from "@/global/classes/canvasObjects/Pathway";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
+import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -732,7 +734,7 @@ function DrillChartExport() {
     // Check if we have the minimum requirements for export
     const canExport = !!(
         fieldProperties &&
-        pages.length > 0 &&
+        pages.length > 1 &&
         marchers.length > 0
     );
 
@@ -761,7 +763,7 @@ function DrillChartExport() {
                     (error instanceof Error ? error.message : "Unknown error"),
             );
             setCurrentStep("Export failed");
-            return;
+            isCancelled.current = true;
         }
 
         // Restore canvas to original state
@@ -769,6 +771,9 @@ function DrillChartExport() {
         exportCanvas.setHeight(originalHeight);
         exportCanvas.viewportTransform = originalViewportTransform;
         exportCanvas.requestRenderAll();
+
+        // Error occurred during SVG generation
+        if (isCancelled.current) return;
 
         // SVG creation done, start exporting
         setCurrentStep("Generating PDF files...");
@@ -792,25 +797,87 @@ function DrillChartExport() {
 
     return (
         <div className="flex flex-col gap-20">
-            {/* Export Status */}
-            {!canExport && (
-                <div className="flex flex-col items-center justify-center gap-12 rounded-lg bg-gray-50 py-20">
-                    <h4 className="text-h4 text-gray-600">
-                        Export Not Available
-                    </h4>
-                    <p className="text-body max-w-md text-center text-gray-500">
-                        Export requires field properties, pages, and marchers to
-                        be loaded.
-                    </p>
-                    <div className="text-center text-xs text-gray-400">
-                        <div>
-                            Field Properties: {fieldProperties ? "✓" : "✗"}
-                        </div>
-                        <div>Pages: {pages.length}</div>
-                        <div>Marchers: {marchers.length}</div>
-                    </div>
+            {/* Export Options */}
+            <Form.Root className="flex flex-col gap-y-24">
+                <Form.Field
+                    name="includeTitle"
+                    className="flex w-full items-center gap-12"
+                >
+                    <Form.Control asChild>
+                        <Checkbox
+                            checked={individualCharts}
+                            onCheckedChange={(checked: boolean) =>
+                                setIndividualCharts(checked)
+                            }
+                        />
+                    </Form.Control>
+                    <Form.Label className="text-body">
+                        Individual Drill Charts
+                    </Form.Label>
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <Info size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div>
+                                    Create customized drill chart PDFs for each
+                                    individual marcher.
+                                </div>
+                                <div>
+                                    If this is not checked, one overview drill
+                                    chart PDF will be created.
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
+                </Form.Field>
+            </Form.Root>
+
+            {/* Preview Section */}
+            <div className="flex flex-col gap-8">
+                <div className="flex w-full items-center justify-between">
+                    <h5 className="text-h5">Preview</h5>
                 </div>
-            )}
+
+                {/* Show Demo SVGs or Error if Export Requirement Not Met */}
+                {canExport ? (
+                    <div className="flex flex-col items-center gap-8">
+                        <div className="mx-auto w-full max-w-2xl bg-white text-black">
+                            <img
+                                src={
+                                    individualCharts
+                                        ? individualDemoSVG
+                                        : overviewDemoSVG
+                                }
+                                alt="Drill Chart Preview"
+                                className="h-auto w-full max-w-full"
+                                style={{
+                                    border: "1px solid #eee",
+                                    borderRadius: "4px",
+                                }}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center gap-12 bg-white py-20 text-black">
+                        <h4 className="text-h4">Export Not Available</h4>
+                        <p className="text-body max-w-md text-center text-gray-600">
+                            Export requires field properties, at least one
+                            non-default page, and at least one marcher.
+                        </p>
+                        <div className="text-center text-xs text-gray-500">
+                            <div>
+                                Field Properties: {fieldProperties ? "✓" : "✗"}
+                            </div>
+                            <div>Page: {pages.length > 1 ? "✓" : "✗"}</div>
+                            <div>
+                                Marcher: {marchers.length > 0 ? "✓" : "✗"}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Export Button */}
             <div className="flex w-full justify-end gap-8">
