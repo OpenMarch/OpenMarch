@@ -21,8 +21,8 @@ describe("PageTable", () => {
                 const { created_at, updated_at, ...rest } = page;
                 return { ...rest, notes: rest.notes ? rest.notes : null };
             });
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
         });
 
         it("should create the page table if it does not exist", () => {
@@ -110,8 +110,8 @@ describe("PageTable", () => {
             return [firstPage(sortedPages[0].id), ...sortedPages];
         }
 
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
         });
 
         describe("createPages", () => {
@@ -1285,8 +1285,8 @@ describe("PageTable", () => {
             });
         };
 
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
         });
         describe("CreatePages", () => {
             describe("without any marchers", () => {
@@ -2519,8 +2519,8 @@ describe("PageTable", () => {
     describe("updateLastPageCounts", () => {
         let db: Database.Database;
 
-        beforeEach(() => {
-            db = initTestDatabase();
+        beforeEach(async () => {
+            db = await initTestDatabase();
         });
 
         it("should update the last page counts in the utility record", () => {

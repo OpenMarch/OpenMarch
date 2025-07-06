@@ -2,6 +2,7 @@ import MouseSettings from "./MouseSettings";
 import * as Tabs from "@radix-ui/react-tabs";
 import AppearanceSettings from "./AppearanceSettings";
 import PluginsContents from "./plugins/Plugins";
+import PrivacySettings from "./PrivacySettings";
 
 export default function SettingsContent() {
     return (
@@ -17,6 +18,8 @@ export default function SettingsContent() {
                 <MouseSettings />
                 <h3 className="text-h3">Plugins</h3>
                 <PluginsContents />
+                <h3 className="text-h3">Privacy</h3>
+                <PrivacySettings />
             </div>
         </Tabs.Content>
     );

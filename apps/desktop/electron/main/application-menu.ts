@@ -48,7 +48,7 @@ template.push(
                 },
                 {
                     label: "Save As Copy",
-                    accelerator: "CommandOrControl+S",
+                    //accelerator: "CommandOrControl+S",
                     click(item: any, focusedWindow: any) {
                         if (!focusedWindow) {
                             return dialog.showErrorBox(

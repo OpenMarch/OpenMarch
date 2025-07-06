@@ -4,6 +4,7 @@ import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { Pathway } from "@/global/classes/canvasObjects/Pathway";
+import { Midpoint } from "@/global/classes/canvasObjects/Midpoint";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 
 /**
@@ -18,6 +19,7 @@ export default class LineListeners
     private _activeLine: MarcherLine | null = null;
     /** All of the pathways for the active line keyed by the marcherId */
     private _pathways = new Map<number, fabric.Object>();
+    private _midpoints = new Map<number, fabric.Object>();
     private _staticMarchers = new Map<number, fabric.Object>();
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
@@ -66,13 +68,18 @@ export default class LineListeners
     };
 
     /**
-     * Clears the static marchers and pathways from the marchers to the active line
+     * Clears the static marchers, pathways, and their midpoints from the marchers to the active line
      */
     clearPathwaysAndStaticMarchers = () => {
         this._pathways.forEach((pathway) => {
             this.canvas.remove(pathway);
         });
+        this._midpoints.forEach((midpoint) => {
+            this.canvas.remove(midpoint);
+        });
         this._pathways.clear();
+        this._midpoints.clear();
+
         this._staticMarchers.forEach((staticMarcher) => {
             this.canvas.remove(staticMarcher);
         });
@@ -215,15 +222,18 @@ export default class LineListeners
         const offsetNewDots = newDots.map((dot) => {
             return { ...dot, x: dot.x - gridOffset, y: dot.y - gridOffset };
         });
-        const createdPathways = this.canvas.renderPathways({
+        const [createdPathways, createdMidpoints] = this.canvas.renderPathways({
             startPageMarcherPages: oldDots,
             endPageMarcherPages: offsetNewDots,
             color: rgbaToString(this.canvas.fieldProperties.theme.tempPath),
             strokeWidth: 2,
             dashed: true,
         });
-        this._pathways = new Map<number, Pathway>(
+        this._pathways = new Map<number, fabric.Object>(
             createdPathways.map((pathway) => [pathway.marcherId, pathway]),
+        );
+        this._midpoints = new Map<number, fabric.Object>(
+            createdMidpoints.map((midpoint) => [midpoint.marcherId, midpoint]),
         );
 
         const createdStaticMarchers = this.canvas.renderStaticMarchers({
