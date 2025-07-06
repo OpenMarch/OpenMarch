@@ -233,7 +233,9 @@ async function handleSqlProxy(
     }
 }
 
+// exported for use in tests
 export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
+
 /**
  * Handlers for the app api.
  * Whenever modifying this, you must also modify the app api in electron/preload/index.ts
