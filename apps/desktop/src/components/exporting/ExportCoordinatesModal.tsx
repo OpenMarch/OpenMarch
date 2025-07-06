@@ -475,7 +475,7 @@ function DrillChartExport() {
     const [currentStep, setCurrentStep] = useState("");
 
     // Export options
-    const [individualCharts, setIndividualCharts] = useState(true);
+    const [individualCharts, setIndividualCharts] = useState(false);
     const marginSVG = 40;
 
     // Create SVGs from pages and export

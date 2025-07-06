@@ -384,13 +384,41 @@ export class PDFExportService {
         const stream = fs.createWriteStream(pdfFilePath);
         doc.pipe(stream);
 
+        // Helper to draw bold header and value with proper wrapping and y advancement
+        function drawLabelValue(
+            doc: PDFKit.PDFDocument,
+            label: string,
+            value: string,
+            x: number,
+            y: number,
+            width: number,
+            fontSize: number = 11,
+        ): number {
+            doc.fontSize(fontSize).font("Helvetica-Bold");
+            doc.text(label, x, y, {
+                width: width,
+                continued: true,
+            });
+
+            doc.font("Helvetica");
+            doc.text(` ${value}`, {
+                width: width,
+                continued: false,
+            });
+
+            const afterY = doc.y;
+            return afterY + 2;
+        }
+
+        // Set up margins and top bar height
         const margin = 20;
         const topBarHeight = 34;
 
+        // Loop through each SVG page and create a PDF page for it
         for (let i = 0; i < svgPages.length; i++) {
             if (i > 0) doc.addPage();
 
-            // Metadata
+            // Data for each page
             const page = pages?.[i];
             const setNumber = page?.name ?? "END";
             const counts = page?.counts != null ? String(page.counts) : "END";
@@ -409,7 +437,7 @@ export class PDFExportService {
             const pageWidth = doc.page.width;
             const pageHeight = doc.page.height;
 
-            // === TOP BAR ===
+            // Top bar, drill number, show name, and set number
             doc.rect(margin, margin, pageWidth - 2 * margin, topBarHeight).fill(
                 "#ddd",
             );
@@ -429,7 +457,7 @@ export class PDFExportService {
                 align: "center",
             });
 
-            // === SVG FIELD ===
+            // Field SVG
             const maxSVGHeight = 425;
             const maxSVGWidth = pageWidth - 2 * margin;
             try {
@@ -440,70 +468,45 @@ export class PDFExportService {
                 });
             } catch (svgError) {
                 doc.fillColor("red")
-                    .fontSize(12)
+                    .fontSize(20)
                     .text(
                         `Error rendering SVG: ${svgError instanceof Error ? svgError.message : svgError}`,
+                        margin * 2,
                         pageHeight / 2,
-                        pageWidth / 2,
-                        { width: pageWidth - margin * 2 },
+                        {
+                            height: maxSVGHeight,
+                            width: maxSVGWidth,
+                            continued: true,
+                        },
                     );
                 doc.fillColor("black");
             }
 
-            // === BOTTOM COLUMNS ===
+            // Set, Counts, Measures, Coordinates, and Notes setup
             const bottomY = doc.page.height - 110;
             const columnPadding = 12;
             const marginSize = margin * 1.5;
             const contentWidth = pageWidth - marginSize * 2 - columnPadding * 2;
 
             // Variable column widths (18%, 56%, 26%)
+            // If main sheet, no middle coordinates column
             const leftColWidth = contentWidth * 0.18;
-            const midColWidth = contentWidth * 0.56;
-            const rightColWidth = contentWidth * 0.26;
-
-            // X positions for three columns
+            const midColWidth = individualCharts ? contentWidth * 0.56 : 0;
+            const rightColWidth = individualCharts
+                ? contentWidth * 0.26
+                : contentWidth * 0.82;
             const leftX = marginSize;
             const midX = leftX + leftColWidth + columnPadding;
-            const rightX = midX + midColWidth + columnPadding;
+            const rightX = individualCharts
+                ? midX + midColWidth + columnPadding
+                : leftX + leftColWidth + columnPadding;
 
-            // Font size for all text
-            const fontSize = 11;
-            const padding = 2;
-
-            // Initialize Y positions for each column (all start at bottomY)
+            // Initialize Y positions for each column
             let yLeft = bottomY;
             let yMid = bottomY;
             let yRight = bottomY;
 
-            // Helper to draw a bold header and value with proper wrapping and y advancement
-            // TODO fix this
-            // eslint-disable-next-line no-inner-declarations
-            function drawLabelValue(
-                doc: PDFKit.PDFDocument,
-                label: string,
-                value: string,
-                x: number,
-                y: number,
-                width: number,
-                fontSize: number = 11, // default to 11
-            ): number {
-                // Always set font and size before measuring
-                doc.fontSize(fontSize).font("Helvetica-Bold");
-                const combined = `${label} ${value}`;
-                const h = doc.heightOfString(combined, { width });
-
-                // Always set font and size before drawing
-                doc.fontSize(fontSize)
-                    .font("Helvetica-Bold")
-                    .text(label, x, y, { width, continued: true });
-                doc.fontSize(fontSize)
-                    .font("Helvetica")
-                    .text(` ${value}`, { width, continued: false });
-
-                return y + h + 2;
-            }
-
-            // LEFT COLUMN
+            // Left column (Set, Counts, Measures)
             yLeft = drawLabelValue(
                 doc,
                 "Set:",
@@ -529,50 +532,43 @@ export class PDFExportService {
                 leftColWidth,
             );
 
-            // MIDDLE COLUMN
-            yMid = drawLabelValue(
-                doc,
-                "Previous Coordinate:",
-                prevCoord,
-                midX,
-                yMid,
-                midColWidth,
-            );
-            yMid = drawLabelValue(
-                doc,
-                "Current Coordinate:",
-                currCoord,
-                midX,
-                yMid,
-                midColWidth,
-            );
-            yMid = drawLabelValue(
-                doc,
-                "Next Coordinate:",
-                nextCoord,
-                midX,
-                yMid,
-                midColWidth,
-            );
+            // Middle column (Coordinates)
+            if (individualCharts) {
+                yMid = drawLabelValue(
+                    doc,
+                    "Previous Coordinate:",
+                    prevCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+                yMid = drawLabelValue(
+                    doc,
+                    "Current Coordinate:",
+                    currCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+                yMid = drawLabelValue(
+                    doc,
+                    "Next Coordinate:",
+                    nextCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+            }
 
-            // RIGHT COLUMN (Notes label and value, label on first line, value on following lines)
-            doc.fontSize(fontSize);
-            doc.font("Helvetica-Bold").text("Notes:", rightX, yRight, {
-                width: rightColWidth,
-            });
-            const labelHeight = doc.heightOfString("Notes:", {
-                width: rightColWidth,
-            });
-            yRight += labelHeight;
-
-            doc.fontSize(fontSize);
-            doc.font("Helvetica").text(notes, rightX, yRight, {
-                width: rightColWidth,
-            });
-            const notesHeight = doc.heightOfString(notes, {
-                width: rightColWidth,
-            });
-            yRight += notesHeight + padding;
+            // Right column (Notes)
+            yMid = drawLabelValue(
+                doc,
+                "Notes:",
+                notes,
+                rightX,
+                yRight,
+                rightColWidth,
+            );
         }
 
         doc.end();
