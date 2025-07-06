@@ -15,15 +15,15 @@ export default function PrivacySettings() {
         setHasOptedOut(posthog.has_opted_out_capturing());
     }, [posthog]);
     return (
-        <div>
+        <div className="flex flex-col gap-16">
             <Collapsible
                 trigger={<p className="text-body">Share usage analytics</p>}
                 className="flex flex-col gap-16 pt-16"
             >
                 <p className="text-text-subtitle px-12 text-sm">
-                    To help us improve OpenMarch, we collect anonymous analytics
-                    data and screen recordings. This helps us understand how you
-                    use the app and identify bugs. Read our{" "}
+                    To help us improve OpenMarch, we collect analytics data,
+                    error logs, and session recordings. This helps us understand
+                    how you use the app and identify bugs. Read our{" "}
                     <a
                         href="https://openmarch.com/privacy"
                         target="_blank"
