@@ -26,7 +26,6 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import * as Tabs from "@radix-ui/react-tabs";
 import { rgbaToString } from "@/global/classes/FieldTheme";
-import { Pathway } from "@/global/classes/canvasObjects/Pathway";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
@@ -480,7 +479,11 @@ function DrillChartExport() {
     const [individualCharts, setIndividualCharts] = useState(false);
     const marginSVG = 40;
 
-    // Create SVGs from pages and export
+    /**
+     * Generates SVGs for each marcher on each page, including pathways and coordinates.
+     * @param exportCanvas - The canvas to render the SVGs on.
+     * @return A promise that resolves to an object containing SVG strings and readable coordinates.
+     */
     const generateExportSVGs = useCallback(
         async (
             exportCanvas: OpenMarchCanvas,
@@ -683,6 +686,11 @@ function DrillChartExport() {
         [fieldProperties, marchers, marcherPages, pages, individualCharts],
     );
 
+    /**
+     * Exports the generated SVGs as PDF files for each marcher or a single overview PDF.
+     * @param svgPages - 2D array of SVG strings for each marcher.
+     * @param readableCoords - 2D array of readable coordinates for each marcher.
+     */
     const exportMarcherSVGs = useCallback(
         async (svgPages: string[][], readableCoords: string[][]) => {
             // Create export directory
@@ -694,7 +702,7 @@ function DrillChartExport() {
             // Generate PDFs for each marcher or MAIN if individual charts are not selected
             for (let marcher = 0; marcher < svgPages.length; marcher++) {
                 const result =
-                    await window.electron.export.generatePDFsForMarcher(
+                    await window.electron.export.generateDocForMarcher(
                         svgPages[marcher],
                         individualCharts
                             ? marchers[marcher].drill_number
@@ -738,7 +746,9 @@ function DrillChartExport() {
         marchers.length > 0
     );
 
-    // Export generate SVGs and print PDFs
+    /**
+     * Handles the export process, generating SVGs and exporting them as PDFs.
+     */
     const handleExport = useCallback(async () => {
         isCancelled.current = false;
         setIsLoading(true);
@@ -843,7 +853,7 @@ function DrillChartExport() {
                 {/* Show Demo SVGs or Error if Export Requirement Not Met */}
                 {canExport ? (
                     <div className="flex flex-col items-center gap-8">
-                        <div className="mx-auto w-full max-w-2xl bg-white text-black">
+                        <div className="mx-auto w-full max-w-full bg-white text-black">
                             <img
                                 src={
                                     individualCharts

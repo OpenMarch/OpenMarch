@@ -247,87 +247,11 @@ export class PDFExportService {
         );
     }
 
-    public static async exportSvgPagesToPdf(
-        svgPages: string[],
-        options: { fileName?: string } = {},
-    ) {
-        try {
-            const { fileName = "drill-charts.pdf" } = options;
-
-            // Show save dialog
-            const result = await dialog.showSaveDialog({
-                title: "Save Drill Charts PDF",
-                defaultPath: path.join(app.getPath("documents"), fileName),
-                filters: [{ name: "PDF", extensions: ["pdf"] }],
-                properties: ["showOverwriteConfirmation"],
-            });
-
-            if (result.canceled || !result.filePath) {
-                throw new Error("Export cancelled");
-            }
-
-            // Create PDF document in landscape mode
-            const doc = new PDFDocument({
-                size: "LETTER",
-                layout: "landscape",
-                margins: {
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                },
-            });
-
-            // Create write stream
-            const stream = fs.createWriteStream(result.filePath);
-            doc.pipe(stream);
-
-            // Process each SVG page
-            for (let i = 0; i < svgPages.length; i++) {
-                if (i > 0) {
-                    doc.addPage();
-                }
-
-                try {
-                    // Convert SVG to PDF using svg-to-pdfkit with better scaling
-                    SVGtoPDF(doc, svgPages[i], 40, 40, {
-                        width: doc.page.width - 80,
-                        height: doc.page.height - 80,
-                        preserveAspectRatio: "xMidYMid meet",
-                    });
-                } catch (svgError: unknown) {
-                    console.warn(
-                        `Error processing SVG page ${i + 1}:`,
-                        svgError,
-                    );
-                    // Continue with other pages even if one fails
-                    doc.fontSize(12).text(
-                        `Error rendering page ${i + 1}: ${svgError instanceof Error ? svgError.message : "Unknown error"}`,
-                        50,
-                        50,
-                    );
-                }
-            }
-
-            // Finalize the PDF
-            doc.end();
-
-            // Wait for the stream to finish
-            await new Promise<void>((resolve, reject) => {
-                stream.on("finish", resolve);
-                stream.on("error", reject);
-            });
-
-            return { success: true, filePath: result.filePath };
-        } catch (error) {
-            console.error("PDF export error:", error);
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : "Unknown error",
-            };
-        }
-    }
-
+    /**
+     * Create a directory for exporting files
+     * @param defaultName - Default name for the export directory
+     * @returns An object containing the export name and directory path
+     */
     public static async createExportDirectory(
         defaultName: string,
     ): Promise<{ exportName: string; exportDir: string }> {
@@ -364,7 +288,18 @@ export class PDFExportService {
         return { exportName, exportDir };
     }
 
-    public static async generatePDFsForMarcher(
+    /**
+     * Generate a PDF for each marcher based on their SVG pages and coordinates
+     * This will create a single PDF for each marcher with their respective pages.
+     * @param svgPages
+     * @param drillNumber
+     * @param marcherCoordinates
+     * @param pages
+     * @param showName
+     * @param exportDir
+     * @param individualCharts
+     */
+    public static async generateDocForMarcher(
         svgPages: string[],
         drillNumber: string,
         marcherCoordinates: string[],

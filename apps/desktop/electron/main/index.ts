@@ -220,17 +220,6 @@ function initGetters() {
         );
     });
 
-    // Export SVG pages to PDF
-    ipcMain.handle(
-        "export:svgPagesToPdf",
-        async (_, svgPages: string[], options: { fileName: string }) => {
-            return await PDFExportService.exportSvgPagesToPdf(
-                svgPages,
-                options,
-            );
-        },
-    );
-
     // Create Export Directory
     ipcMain.handle(
         "export:createExportDirectory",
@@ -252,7 +241,7 @@ function initGetters() {
             exportDir: string,
             individualCharts: boolean,
         ) => {
-            return await PDFExportService.generatePDFsForMarcher(
+            return await PDFExportService.generateDocForMarcher(
                 svgPages,
                 drillNumber,
                 marcherCoordinates,

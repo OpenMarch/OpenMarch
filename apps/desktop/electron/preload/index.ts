@@ -210,13 +210,10 @@ const APP_API = {
             quarterPages: boolean;
         }) => ipcRenderer.invoke("export:pdf", params),
 
-        svgPagesToPdf: (svgPages: string[], options: { fileName: string }) =>
-            ipcRenderer.invoke("export:svgPagesToPdf", svgPages, options),
-
         createExportDirectory: (defaultName: string) =>
             ipcRenderer.invoke("export:createExportDirectory", defaultName),
 
-        generatePDFsForMarcher: (
+        generateDocForMarcher: (
             svgPages: string[],
             drillNumber: string,
             marcherCoordinates: string[],
