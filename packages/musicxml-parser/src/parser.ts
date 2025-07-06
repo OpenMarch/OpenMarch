@@ -26,6 +26,11 @@ export interface Measure {
     beats: Beat[];
 }
 
+// 60 seconds in a minute, divided by tempo in beats per minute
+export function secondsPerQuarterNote(tempo: number): number {
+    return 60 / tempo;
+}
+
 /**
  * Parses a MusicXML string and converts it into an array of musical measures.
  * @param xmlText The raw XML text representing a musical score
@@ -37,17 +42,31 @@ export function parseMusicXml(xmlText: string): Measure[] {
     let tempo: number = 0;
     let timeSignature: string = "0/0";
 
-    // Defines the number of beats and tempo change based on time signature
+    /** Given a time signature, bigBeats maps it to the:
+     * - number of big beats per measure
+     * - number of quarter notes per big beat
+     * For example, in 6/8 time:
+     * - 2 big beats per measure
+     * - Each big beat contains 3 eighth notes, or 1.5 quarter notes.
+     * So, the bigBeats for 6/8 is [2, 1.5].
+     */
     const bigBeats: { [key: string]: [number, number] } = {
-        "2/2": [2, 1 / 2],
-        "3/2": [3, 1 / 2],
+        "2/2": [2, 2],
+        "3/2": [3, 2],
         "2/4": [2, 1],
         "3/4": [3, 1],
         "4/4": [4, 1],
         "6/4": [6, 1],
-        "6/8": [2, 2 / 3],
+        "6/8": [2, 1.5],
         "7/8": [7, 1], // Likely this will end up being 3 "big beats" (for situations like 2+2+3)
     };
+
+    // If the XML has multiple parts, stop after the first part
+    const partStart = xmlText.indexOf("<part");
+    if (partStart !== -1) {
+        const partEnd = xmlText.indexOf("</part>", partStart) + 7;
+        xmlText = xmlText.substring(partStart, partEnd);
+    }
 
     // Extract beats measure-by-measure
     while (pos < xmlText.length) {
@@ -63,10 +82,11 @@ export function parseMusicXml(xmlText: string): Measure[] {
             ? parseInt(measureNumber[1] as string)
             : -1;
 
-        // Update tempo if new tempo exists
-        const newTempo = measureText.match(/<sound tempo="(\d+)"/);
-        if (newTempo) {
-            tempo = parseInt(newTempo[1] as string);
+        // Update tempo if new tempo exists. If multiple tempos are defined, use the last one.
+        const tempoMatches = [...measureText.matchAll(/<sound tempo="(\d+)"/g)];
+        if (tempoMatches.length > 0) {
+            const lastTempo = tempoMatches[tempoMatches.length - 1];
+            tempo = parseInt(lastTempo![1] as string);
         }
 
         // Update time signature if new one exists
@@ -90,7 +110,9 @@ export function parseMusicXml(xmlText: string): Measure[] {
         const rehearsalMark = rehearsalMatch ? rehearsalMatch[1] : undefined;
 
         // Check for valid time signature
-        const [bigBeatCount, tempoChange] = bigBeats[timeSignature] ?? [0, 0];
+        const [bigBeatCount, quarterNotesPerBigBeat] = bigBeats[
+            timeSignature
+        ] ?? [0, 0];
         if (bigBeatCount === 0) {
             throw new Error(`Unsupported time signature: ${timeSignature}`);
         }
@@ -98,7 +120,9 @@ export function parseMusicXml(xmlText: string): Measure[] {
         // Push associated number of big beats for time signature
         const beats: Beat[] = [];
         for (let i = 0; i < bigBeatCount; i++) {
-            beats.push({ duration: 60 / (tempo * tempoChange) });
+            beats.push({
+                duration: secondsPerQuarterNote(tempo) * quarterNotesPerBigBeat,
+            });
         }
 
         // Push measure

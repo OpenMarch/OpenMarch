@@ -1,7 +1,6 @@
-import type { Beat, Measure } from "../../parser";
+import { type Beat, type Measure, secondsPerQuarterNote } from "../../parser";
 
-// 132bpm = 132/60 seconds per beat
-const beatDuration = 132 / 60;
+const beatDuration = secondsPerQuarterNote(132);
 
 export const expected: Measure[] = [
     ...Array.from({ length: 80 }).map((_, i) => ({

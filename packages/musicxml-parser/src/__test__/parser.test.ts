@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseMusicXml, type Measure } from "../parser";
+import { parseMusicXml, type Measure, secondsPerQuarterNote } from "../parser";
 
 // "it" is the same as "test"
 it("dummy test", () => {
@@ -13,11 +13,11 @@ describe("real tests", () => {
         const musicXmlText = await import("fs/promises").then((fs) =>
             fs.readFile("src/__test__/assets/Test Score.musicxml", "utf-8"),
         );
-        const bpm144 = 60 / 144;
-        const hn80 = 60 / (80 * 2);
-        const bpm120 = 60 / 120;
-        const bpm180 = 60 / 180;
-        const bpm90 = 60 / 90;
+        const bpm144 = secondsPerQuarterNote(144);
+        const hn80 = secondsPerQuarterNote(80 * 2);
+        const bpm120 = secondsPerQuarterNote(120);
+        const bpm180 = secondsPerQuarterNote(180);
+        const bpm90 = secondsPerQuarterNote(90);
         const expectedMeasures: Measure[] = [
             {
                 number: 1,
