@@ -14,12 +14,11 @@ export async function getStaticPaths() {
     }));
 }
 
-const previews = await getCollection("previews");
 interface Props {
     preview: CollectionEntry<"previews">;
 }
 const { preview } = Astro.props;
-const { component, title = "Preview", variants = [] } = preview.data || {};
+const { component, variants = [] } = preview.data || {};
 ---
 
 <Layout title={preview.data.title}>

@@ -57,8 +57,8 @@ const noUpdatedOrCreatedAt = (object: any) => {
 describe("ShapePageMarcherTable CRUD Operations", () => {
     let db: Database.Database;
 
-    beforeEach(() => {
-        db = initTestDatabase();
+    beforeEach(async () => {
+        db = await initTestDatabase();
 
         // Create the pre-requisite objects
         expect(createPages({ db, newPages: DbMocks.NewPages }).success).toBe(

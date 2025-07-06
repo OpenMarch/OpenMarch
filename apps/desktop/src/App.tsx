@@ -22,6 +22,7 @@ import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useFullscreenStore } from "./stores/FullscreenStore";
+import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 
 // The app
 
@@ -29,6 +30,9 @@ function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
     const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
         undefined,
+    );
+    const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(
+        null,
     );
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
@@ -92,8 +96,25 @@ function App() {
         fetchUiSettings();
     }, [fetchUiSettings]);
 
+    useEffect(() => {
+        window.electron
+            .invoke("settings:get", "optOutAnalytics")
+            .then((optOut) => {
+                if (optOut === undefined) {
+                    setAnalyticsConsent(null);
+                } else {
+                    setAnalyticsConsent(!optOut);
+                }
+            });
+    }, []);
+
     return (
         <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+            {analyticsConsent === null && (
+                <AnalyticsOptInModal
+                    onChoice={(choice) => setAnalyticsConsent(choice)}
+                />
+            )}
             {/* Always show LaunchPage when no file is selected, regardless of database state */}
             {!databaseIsReady ? (
                 <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />

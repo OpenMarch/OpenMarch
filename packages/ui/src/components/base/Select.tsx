@@ -43,6 +43,7 @@ export const SelectTriggerButton = forwardRef<
 >(({ label, className }, ref) => {
     return (
         <RadixSelect.Trigger
+            ref={ref}
             className={twMerge(
                 clsx(
                     "rounded-6 border-stroke bg-fg-2 text-body text-text focus-visible:border-accent flex h-[2.5rem] w-fit items-center justify-between gap-8 overflow-clip border px-22 duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",

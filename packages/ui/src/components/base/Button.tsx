@@ -59,6 +59,14 @@ const variants = cva(
 
 export type ButtonVariantProps = VariantProps<typeof variants>;
 
+export const getButtonClassName = ({
+    variant,
+    size,
+    content,
+    className,
+}: ButtonVariantProps & { className?: string }) =>
+    twMerge(clsx(variants({ variant, size, content }), className));
+
 export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof variants> {
@@ -90,12 +98,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                     <RadixTooltip.Root delayDuration={tooltipDelay}>
                         <RadixTooltip.Trigger
                             ref={ref}
-                            className={twMerge(
-                                clsx(
-                                    variants({ variant, size, content }),
-                                    className,
-                                ),
-                            )}
+                            className={getButtonClassName({
+                                variant,
+                                size,
+                                content,
+                                className,
+                            })}
                             {...props}
                         >
                             {children}
@@ -107,9 +115,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 </RadixTooltip.Provider>
             ) : (
                 <button
-                    className={twMerge(
-                        clsx(variants({ variant, size, content }), className),
-                    )}
+                    className={getButtonClassName({
+                        variant,
+                        size,
+                        content,
+                        className,
+                    })}
                     {...props}
                 >
                     {children}

@@ -493,12 +493,16 @@ export default function Canvas({
                     color: rgbaToString(fieldProperties.theme.previousPath),
                     allMarchers: marchers,
                 });
-                const renderedPathways = canvas.renderPathways({
-                    startPageMarcherPages: prevPageMarcherPages,
-                    endPageMarcherPages: selectedPageMarcherPages,
-                    color: rgbaToString(fieldProperties.theme.previousPath),
-                });
-                pagePathways.current.push(...renderedPathways);
+                const [renderedPathways, renderedMidpoints] =
+                    canvas.renderPathways({
+                        startPageMarcherPages: prevPageMarcherPages,
+                        endPageMarcherPages: selectedPageMarcherPages,
+                        color: rgbaToString(fieldProperties.theme.previousPath),
+                    });
+                pagePathways.current.push(
+                    ...renderedPathways,
+                    ...renderedMidpoints,
+                );
             }
             if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
                 const nextPageMarcherPages = MarcherPage.filterByPageId(
@@ -511,12 +515,16 @@ export default function Canvas({
                     color: rgbaToString(fieldProperties.theme.nextPath),
                     allMarchers: marchers,
                 });
-                const renderedPathways = canvas.renderPathways({
-                    startPageMarcherPages: selectedPageMarcherPages,
-                    endPageMarcherPages: nextPageMarcherPages,
-                    color: rgbaToString(fieldProperties.theme.nextPath),
-                });
-                pagePathways.current.push(...renderedPathways);
+                const [renderedPathways, renderedMidpoints] =
+                    canvas.renderPathways({
+                        startPageMarcherPages: selectedPageMarcherPages,
+                        endPageMarcherPages: nextPageMarcherPages,
+                        color: rgbaToString(fieldProperties.theme.nextPath),
+                    });
+                pagePathways.current.push(
+                    ...renderedPathways,
+                    ...renderedMidpoints,
+                );
             }
 
             canvas.sendCanvasMarchersToFront();

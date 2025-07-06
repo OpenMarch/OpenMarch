@@ -164,6 +164,12 @@ const APP_API = {
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 
     // Settings
+    send: (channel: string, ...args: any[]) => {
+        ipcRenderer.send(channel, ...args);
+    },
+    invoke: (channel: string, ...args: any[]) => {
+        return ipcRenderer.invoke(channel, ...args);
+    },
 
     // Database / file management
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
@@ -528,4 +534,5 @@ export interface RecentFile {
     svgPreview?: string;
 }
 
+export type ElectronApi = typeof APP_API;
 export type PluginsApi = typeof PLUGINS_API;

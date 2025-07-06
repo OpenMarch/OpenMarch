@@ -95,6 +95,7 @@ module.exports = {
         "madripoor",
         "rgba",
         "choco",
+        "WASD",
     ],
     ignorePaths: [
         "node_modules/**",
