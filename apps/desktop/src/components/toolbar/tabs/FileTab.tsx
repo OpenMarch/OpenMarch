@@ -43,7 +43,7 @@ export function FileTab() {
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FloppyDiskIcon size={24} />
-                    Save File
+                    Save Copy
                 </RegisteredActionButton>
             </ToolbarSection>
             <ToolbarSection>
