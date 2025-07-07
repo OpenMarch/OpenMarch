@@ -211,9 +211,38 @@ function CoordinateSheetExport() {
             setCurrentStep("Export completed!");
 
             // Add success toast message
-            const successMessage = `Successfully exported coordinate sheets for ${marchers.length} marcher${marchers.length === 1 ? "" : "s"}!`;
-
-            toast.success(successMessage);
+            toast.success(
+                <span>
+                    Successfully exported coordinate sheets for{" "}
+                    {marchers.length} marcher{marchers.length === 1 ? "" : "s"}!{" "}
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            const error =
+                                await window.electron.openExportDirectory(
+                                    result.path,
+                                );
+                            if (error) {
+                                toast.error(
+                                    "Could not open export directory: " + error,
+                                );
+                            }
+                        }}
+                        style={{
+                            color: "#3b82f6",
+                            textDecoration: "underline",
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            font: "inherit",
+                            cursor: "pointer",
+                            marginLeft: "0.5em",
+                        }}
+                    >
+                        Click to open export
+                    </button>
+                </span>,
+            );
         } catch (error) {
             console.error("Export error:", error);
             setCurrentStep("Export failed");
@@ -379,43 +408,6 @@ function CoordinateSheetExport() {
                             }
                         />
                     </Form.Control>
-                </Form.Field>
-
-                <Form.Field
-                    name="organizeBySection"
-                    className="flex w-full items-center gap-12"
-                >
-                    <Form.Control asChild>
-                        <Checkbox
-                            checked={organizeBySection}
-                            onCheckedChange={(checked: boolean) =>
-                                setOrganizeBySection(checked)
-                            }
-                        />
-                    </Form.Control>
-                    <Form.Label className="text-body">
-                        {" "}
-                        Organize by Section{" "}
-                    </Form.Label>
-
-                    <Tooltip.TooltipProvider>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger type="button">
-                                <InfoIcon size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <TooltipContents className="p-16">
-                                <div>
-                                    Create PDF files for each individual marcher
-                                    organized in folders by section.
-                                </div>
-                                <div>
-                                    If this is not checked, one large PDF file
-                                    will be created with every coordinate sheet
-                                    in score order.
-                                </div>
-                            </TooltipContents>
-                        </Tooltip.Root>
-                    </Tooltip.TooltipProvider>
                 </Form.Field>
             </Form.Root>
 
@@ -732,8 +724,8 @@ function DrillChartExport() {
         async (
             svgPages: string[][],
             readableCoords: string[][],
-            exportName,
-            exportDir,
+            exportName: string,
+            exportDir: string,
         ) => {
             // Generate PDFs for each marcher or MAIN if individual charts are not selected
             for (let marcher = 0; marcher < svgPages.length; marcher++) {

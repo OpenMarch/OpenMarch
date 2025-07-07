@@ -185,8 +185,9 @@ export class PDFExportService {
         quarterPages: boolean,
     ) {
         try {
+            let result: Electron.SaveDialogReturnValue;
             if (organizeBySection) {
-                const result = await dialog.showSaveDialog({
+                result = await dialog.showSaveDialog({
                     title: "Select Export Location",
                     defaultPath: this.getDefaultPath(),
                     properties: [
@@ -206,7 +207,7 @@ export class PDFExportService {
                     quarterPages,
                 );
 
-                const result = await dialog.showSaveDialog({
+                result = await dialog.showSaveDialog({
                     title: "Save PDF",
                     defaultPath: `${this.getDefaultPath()}.pdf`,
                     filters: [{ name: "PDF", extensions: ["pdf"] }],
@@ -220,10 +221,11 @@ export class PDFExportService {
                     );
                 }
             }
-            return { success: true };
+            return { success: true, path: result.filePath };
         } catch (error) {
             return {
                 success: false,
+                path: "",
                 error: error instanceof Error ? error.message : String(error),
             };
         }
