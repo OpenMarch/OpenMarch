@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAvailableOffsets } from "../TimelineContainer";
+import { getAvailableOffsets } from "../PageTimeline";
 import Beat from "@/global/classes/Beat";
 import Page from "@/global/classes/Page";
 

@@ -1,50 +1,67 @@
-import PlaybackControls from "./sections/PlaybackControls";
-import UiSettingsToolbar from "./sections/UiSettingsToolbar";
-import AlignmentToolbar from "./sections/AlignmentToolbar";
-import PagesModal from "@/components/page/PagesModal";
-import MusicModal from "@/components/music/MusicModal";
-import FieldModal from "@/components/field/FieldModal";
-import MarchersModal from "@/components/marcher/MarchersModal";
-import SectionAppearanceModal from "@/components/section/SectionAppearanceModal";
-import ToolbarSection from "@/components/toolbar/ToolbarSection";
-import BugReport from "../ui/BugReport";
-import TipsAndTricks from "../guides/TipsAndTricks";
-import Plugins from "../plugins/Plugins";
+import { Tabs, TabContent, TabItem, TabsList } from "@openmarch/ui";
+import { FileTab } from "./tabs/FileTab";
+import AlignmentTab from "./tabs/AlignmentTab";
+import ViewTab from "./tabs/ViewTab";
+import { useFullscreenStore } from "@/stores/FullscreenStore";
+import { useEffect, useState } from "react";
+import { clsx } from "clsx";
 
 export default function Topbar() {
+    const { isFullscreen } = useFullscreenStore();
+    const [activeTab, setActiveTab] = useState("alignment");
+
+    // Switch to "view" tab when entering fullscreen mode
+    useEffect(() => {
+        if (isFullscreen) {
+            setActiveTab("view");
+        }
+        if (!isFullscreen) {
+            setActiveTab("alignment");
+        }
+    }, [isFullscreen]);
+
     return (
-        <div className="flex w-full flex-wrap gap-8">
-            <PlaybackControls />
-            <ToolbarSection>
-                <MarchersModal />
-                <SectionAppearanceModal />
-                <PagesModal />
-                <MusicModal />
-                <FieldModal />
-            </ToolbarSection>
-            <UiSettingsToolbar />
-            <AlignmentToolbar />
-            <ToolbarSection aria-label="Feedback and tips">
-                <TipsAndTricks />
-                <Plugins />
-                <BugReport />
-                <a
-                    href="https://openmarch.com/about/submitting-feedback"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-accent duration-150 ease-out"
-                >
-                    Submit feedback
-                </a>
-                <a
-                    href="https://store.openmarch.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-accent duration-150 ease-out"
-                >
-                    Buy Merch{" "}
-                </a>
-            </ToolbarSection>
+        <div
+            className={clsx("group", {
+                "border-stroke bg-modal backdrop-blur-32 shadow-modal absolute z-50 w-full rounded-[18px] border p-8":
+                    isFullscreen,
+            })}
+        >
+            <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className={clsx(
+                    "flex flex-col gap-0 overflow-hidden transition-[max-height,opacity] duration-250 ease-in-out",
+                    {
+                        "pointer-events-none max-h-4 flex-row items-center gap-8 opacity-0":
+                            isFullscreen,
+                        "group-hover:pointer-events-auto group-hover:max-h-[80px] group-hover:opacity-100":
+                            isFullscreen,
+                    },
+                )}
+            >
+                <TabsList className="gap-0 border-none">
+                    <TabItem value="file">File</TabItem>
+                    {!isFullscreen && (
+                        <TabItem value="alignment">Alignment</TabItem>
+                    )}
+                    <TabItem value="view">View</TabItem>
+                </TabsList>
+
+                <TabContent value="file">
+                    <FileTab />
+                </TabContent>
+
+                {!isFullscreen && (
+                    <TabContent value="alignment">
+                        <AlignmentTab />
+                    </TabContent>
+                )}
+
+                <TabContent value="view">
+                    <ViewTab />
+                </TabContent>
+            </Tabs>
         </div>
     );
 }

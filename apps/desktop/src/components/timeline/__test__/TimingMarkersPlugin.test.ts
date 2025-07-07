@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { TimingMarkersPlugin } from "../TimingMarkersPlugin";
+import { TimingMarkersPlugin } from "../audio/TimingMarkersPlugin";
 import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 

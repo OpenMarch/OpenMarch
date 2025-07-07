@@ -170,16 +170,30 @@ const APP_API = {
     invoke: (channel: string, ...args: any[]) => {
         return ipcRenderer.invoke(channel, ...args);
     },
-    getShowWaveform: () => ipcRenderer.invoke("get:showWaveform"),
-    setShowWaveform: (showWaveform: boolean) =>
-        ipcRenderer.invoke("set:showWaveform", showWaveform),
 
-    // Database
+    // Database / file management
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+
+    // SVG Generation
+    onGetSvgForClose: (callback: () => Promise<string>) => {
+        ipcRenderer.on("get-svg-on-close", async (event, requestId) => {
+            const result = await callback();
+            ipcRenderer.send(`get-svg-response-${requestId}`, result);
+        });
+    },
+
+    // Recent files
+    getRecentFiles: () => ipcRenderer.invoke("recent-files:get"),
+    removeRecentFile: (filePath: string) =>
+        ipcRenderer.invoke("recent-files:remove", filePath),
+    clearRecentFiles: () => ipcRenderer.invoke("recent-files:clear"),
+    openRecentFile: (filePath: string) =>
+        ipcRenderer.invoke("recent-files:open", filePath),
 
     // Triggers
     onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>
@@ -191,8 +205,7 @@ const APP_API = {
         ipcRenderer.send("send:selectedMarchers", selectedMarchersId),
     sendLockX: (lockX: boolean) => ipcRenderer.send("send:lockX", lockX),
     sendLockY: (lockY: boolean) => ipcRenderer.send("send:lockY", lockY),
-    sendShowWaveform: (showWaveform: boolean) =>
-        ipcRenderer.send("send:showWaveform", showWaveform),
+
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
 
@@ -512,6 +525,14 @@ const PLUGINS_API = {
 };
 
 contextBridge.exposeInMainWorld("plugins", PLUGINS_API);
+
+// Define the RecentFile interface for the type system
+export interface RecentFile {
+    path: string;
+    name: string;
+    lastOpened: number;
+    svgPreview?: string;
+}
 
 export type ElectronApi = typeof APP_API;
 export type PluginsApi = typeof PLUGINS_API;

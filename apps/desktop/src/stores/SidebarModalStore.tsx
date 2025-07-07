@@ -4,9 +4,10 @@ import { ReactNode } from "react";
 type SidebarModalStore = {
     isOpen: boolean;
     content: ReactNode;
+    contentId: string;
     toggleOpen: () => void;
     setOpen: (open: boolean) => void;
-    setContent: (content: ReactNode) => void;
+    setContent: (content: ReactNode, id: string) => void;
 };
 
 // stores its open state and the content inside
@@ -18,6 +19,7 @@ export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
             Sidebar modal content failed to render
         </h4>
     ), // default
+    contentId: "",
     toggleOpen: () =>
         set((state) => ({
             isOpen: !state.isOpen,
@@ -26,8 +28,9 @@ export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
         set(() => ({
             isOpen: open,
         })),
-    setContent: (newContent) =>
+    setContent: (newContent, id) =>
         set(() => ({
             content: newContent,
+            contentId: id,
         })),
 }));

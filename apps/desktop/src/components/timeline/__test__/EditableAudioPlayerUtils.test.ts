@@ -9,7 +9,7 @@ import {
     prepareMeasuresForCreation,
     preparePageUpdates,
     createNewBeatsForTempoChange,
-} from "../EditableAudioPlayerUtils";
+} from "../audio/EditableAudioPlayerUtils";
 import Beat from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
 import Page from "@/global/classes/Page";
