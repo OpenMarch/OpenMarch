@@ -12,7 +12,6 @@ export default function TroubleshootingTips() {
                     When in doubt, refresh the page (Ctrl/Cmd + R). If OpenMarch
                     ever seems broken, refreshing will often fix it.
                 </p>
-                <h5 className="text-h5">Refresh the page</h5>
                 <p className="text-body leading-[180%]">
                     Deleting the cache and metadata folder can often fix
                     performance issues. (this will also delete your recent files
