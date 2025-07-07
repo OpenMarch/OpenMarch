@@ -506,18 +506,23 @@ function DrillChartExport() {
 
     // Create SVGs from pages and export
     const generateExportSVGs = useCallback(async () => {
-        // Setup
-        setIsLoading(true);
-        setCurrentStep("Initializing export...");
-        setProgress(0);
-        const progressPerPage = 90 / pages.length;
+        try {
+            // Setup
+            setIsLoading(true);
+            setCurrentStep("Initializing export...");
+            setProgress(0);
+            const progressPerPage = 90 / pages.length;
 
-        // Setup canvas and store original state for SVG creation and restore
-        const exportCanvas = window.canvas;
-        const originalWidth = exportCanvas.getWidth();
-        const originalHeight = exportCanvas.getHeight();
-        const originalViewportTransform =
-            exportCanvas.viewportTransform.slice();
+            // Setup canvas and store original state for SVG creation and restore
+            const exportCanvas = window.canvas;
+            if (!exportCanvas) {
+                throw new Error("Canvas is not available for export");
+            }
+            
+            const originalWidth = exportCanvas.getWidth();
+            const originalHeight = exportCanvas.getHeight();
+            const originalViewportTransform =
+                exportCanvas.viewportTransform.slice();
 
         exportCanvas.setWidth(1320);
         exportCanvas.setHeight(730);
@@ -531,6 +536,10 @@ function DrillChartExport() {
         for (let i = 0; i < pages.length; i++) {
             // Update page
             exportCanvas.currentPage = pages[i];
+            if (!exportCanvas.currentPage) {
+                throw new Error(`Page ${i + 1} is not available`);
+            }
+            
             setCurrentStep(
                 `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
             );
@@ -547,7 +556,11 @@ function DrillChartExport() {
             });
 
             // Generate SVG
-            svgPages.push(exportCanvas.toSVG());
+            const svgString = exportCanvas.toSVG();
+            if (!svgString) {
+                throw new Error(`Failed to generate SVG for page ${i + 1}`);
+            }
+            svgPages.push(svgString);
 
             // Update progress smoothly
             setProgress((i + 1) * progressPerPage);
@@ -572,12 +585,25 @@ function DrillChartExport() {
             throw new Error(result.error);
         }
 
-        // Success
-        setProgress(100);
-        setCurrentStep("Export completed!");
-        const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
-        toast.success(successMessage);
-        setIsLoading(false);
+            // Success
+            setProgress(100);
+            setCurrentStep("Export completed!");
+            const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
+            toast.success(successMessage);
+        } catch (error) {
+            console.error("Export error:", error);
+            setCurrentStep("Export failed");
+            toast.error(
+                `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+            );
+        } finally {
+            // Keep the completed state visible for a moment before hiding
+            setTimeout(() => {
+                setIsLoading(false);
+                setProgress(0);
+                setCurrentStep("");
+            }, 1500);
+        }
     }, [pages, marcherPages, marchers]);
 
     // Check if we have the minimum requirements for export
