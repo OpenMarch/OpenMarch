@@ -210,8 +210,6 @@ const APP_API = {
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
 
-    getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),
-
     export: {
         pdf: (params: {
             sheets: Array<{
@@ -246,6 +244,10 @@ const APP_API = {
                 individualCharts,
             ),
     },
+
+    getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),
+    openExportDirectory: (exportDir: string) =>
+        ipcRenderer.invoke("open-export-directory", exportDir),
 
     buffer: {
         from: (data: any) => Buffer.from(data),

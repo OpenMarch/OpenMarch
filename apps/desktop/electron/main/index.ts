@@ -301,6 +301,11 @@ function initGetters() {
         return PDFExportService.getCurrentFilename();
     });
 
+    // Opens the export directory
+    ipcMain.handle("open-export-directory", async (_, exportDir: string) => {
+        return PDFExportService.openExportDirectory(exportDir);
+    });
+
     // Export Full Charts
     // ipcMain.handle(
 
