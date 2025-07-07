@@ -3,7 +3,7 @@ import {
     TempoGroup,
 } from "@/components/music/TempoGroup/TempoGroup";
 import { useMemo, useState } from "react";
-import { PencilIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import EditableTempoGroup from "./EditableTempoGroup";
 import {
     AlertDialogContent,
@@ -142,7 +142,7 @@ function StaticTempoGroupCard({
                     <div className="flex items-center gap-4">
                         <AlertDialog>
                             <AlertDialogTrigger>
-                                <button className="hover:text-red text-text-subtitle">
+                                <button className="hover:text-red text-text duration-150 ease-out">
                                     <TrashIcon size={24} />
                                 </button>
                             </AlertDialogTrigger>
@@ -198,7 +198,7 @@ function StaticTempoGroupCard({
                                             setNewGroupFormIndex(index);
                                             setIsEditing(false);
                                         }}
-                                        className="hover:text-accent text-text-subtitle"
+                                        className="hover:text-accent text-text duration-150 ease-out"
                                     >
                                         <PlusIcon size={24} />
                                     </button>
@@ -210,9 +210,9 @@ function StaticTempoGroupCard({
                         </RadixTooltip.Provider>
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="hover:text-accent text-text-subtitle"
+                            className="hover:text-accent text-text duration-150 ease-out"
                         >
-                            <PencilIcon size={24} />
+                            <PencilSimpleIcon size={24} />
                         </button>
                     </div>
                 </div>

@@ -26,6 +26,15 @@ export async function launchNewFileDialogue() {
 }
 
 /**
+ * Closes the current open .dots file,
+ * @returns Response data from the server.
+ */
+export async function closeCurrentFile() {
+    const response = await window.electron.closeCurrentFile();
+    return response;
+}
+
+/**
  * Performs an undo action by popping the last action off the history stack.
  * @returns Response data from the server.
  */

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useState } from "react";
 import MarcherCoordinateSheet, {
     StaticMarcherCoordinateSheet,
     StaticCompactMarcherSheet,
@@ -14,15 +14,13 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@openmarch/ui";
-import { ArrowSquareOut, Info, CircleNotch } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipContents, Button, Input, Checkbox } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useSelectedPage } from "@/context/SelectedPageContext";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import * as Tabs from "@radix-ui/react-tabs";
+import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -331,7 +329,7 @@ function CoordinateSheetExport() {
                     <Tooltip.TooltipProvider>
                         <Tooltip.Root>
                             <Tooltip.Trigger type="button">
-                                <Info size={18} className="text-text/60" />
+                                <InfoIcon size={18} className="text-text/60" />
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16">
                                 <div>
@@ -372,6 +370,43 @@ function CoordinateSheetExport() {
                             }
                         />
                     </Form.Control>
+                </Form.Field>
+
+                <Form.Field
+                    name="organizeBySection"
+                    className="flex w-full items-center gap-12"
+                >
+                    <Form.Control asChild>
+                        <Checkbox
+                            checked={organizeBySection}
+                            onCheckedChange={(checked: boolean) =>
+                                setOrganizeBySection(checked)
+                            }
+                        />
+                    </Form.Control>
+                    <Form.Label className="text-body">
+                        {" "}
+                        Organize by Section{" "}
+                    </Form.Label>
+
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <InfoIcon size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div>
+                                    Create PDF files for each individual marcher
+                                    organized in folders by section.
+                                </div>
+                                <div>
+                                    If this is not checked, one large PDF file
+                                    will be created with every coordinate sheet
+                                    in score order.
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
                 </Form.Field>
             </Form.Root>
 
@@ -634,33 +669,20 @@ function DrillChartExport() {
 
 function ExportModalContents() {
     return (
-        <Tabs.Root
-            defaultValue="coordinate-sheets"
-            className="flex flex-col gap-20"
-        >
-            <Tabs.List className="border-stroke flex gap-8 border-b">
-                <Tabs.Trigger
-                    value="coordinate-sheets"
-                    className="text-body text-text/60 data-[state=active]:border-accent data-[state=active]:text-accent px-16 py-8 data-[state=active]:border-b-2"
-                >
-                    Coordinate Sheets
-                </Tabs.Trigger>
-                <Tabs.Trigger
-                    value="drill-charts"
-                    className="text-body text-text/60 data-[state=active]:border-accent data-[state=active]:text-accent px-16 py-8 data-[state=active]:border-b-2"
-                >
-                    Drill Charts
-                </Tabs.Trigger>
-            </Tabs.List>
+        <Tabs defaultValue="coordinate-sheets">
+            <TabsList>
+                <TabItem value="coordinate-sheets">Coordinate Sheets</TabItem>
+                <TabItem value="drill-charts">Drill Charts</TabItem>
+            </TabsList>
 
-            <Tabs.Content value="coordinate-sheets">
+            <TabContent value="coordinate-sheets">
                 <CoordinateSheetExport />
-            </Tabs.Content>
+            </TabContent>
 
-            <Tabs.Content value="drill-charts">
+            <TabContent value="drill-charts">
                 <DrillChartExport />
-            </Tabs.Content>
-        </Tabs.Root>
+            </TabContent>
+        </Tabs>
     );
 }
 
@@ -669,9 +691,12 @@ export default function ExportCoordinatesModal() {
         <Dialog>
             <DialogTrigger
                 asChild
-                className="hover:text-accent cursor-pointer duration-150 ease-out outline-none focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
-                <ArrowSquareOut size={18} />
+                <button type="button" className="flex items-center gap-8">
+                    <ArrowSquareOutIcon size={24} />
+                    Export
+                </button>
             </DialogTrigger>
 
             {/* Dialog Setup */}

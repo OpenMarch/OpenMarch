@@ -2,10 +2,6 @@
 @import "@openmarch/ui/src/tailwind.css";
 @source "../../../../packages/ui/src/components";
 
-@plugin "@tailwindcss/typography";
-@plugin "tailwindcss-motion";
-@plugin "tailwindcss-intersect";
-
 @keyframes progress {
     from {
         width: 0;
@@ -63,11 +59,14 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Disable text selection */
 
-:not(input):not(textarea),
-:not(input):not(textarea)::after,
-:not(input):not(textarea)::before {
-    -webkit-user-select: none;
+body {
     user-select: none;
+}
+
+input,
+textarea,
+.select-text {
+    user-select: text;
 }
 
 input,
@@ -145,40 +144,27 @@ textarea,
 
 /* MEASURES */
 #waveform ::part(measure) {
-    /* $SED background-color: rgba(var(--color-text)) !important; */
-    background-color: rgb(32, 32, 32) !important;
+    background-color: rgb(180, 180, 180) !important;
 }
 
 .dark #waveform ::part(measure) {
-    /* $SED_DARK background-color: rgba(var(--color-text)) !important; */
-    background-color: rgb(208, 208, 208) !important;
+    background-color: rgb(90, 90, 90) !important;
 }
 
 #waveform ::part(rehearsalMark) {
-    /* $SED background-color: rgba(var(--color-accent)) !important; */
-    background-color: rgb(100, 66, 255) !important;
-    width: 4px !important;
-    /* $SED border: 1px solid rgb(var(--color-text)) !important; */
-    border: 1px solid rgb(32, 32, 32) !important;
-    font-size: 24px;
+    background-color: var(--color-accent) !important;
+    width: 2px !important;
+    font-size: 20px;
 }
 
-.dark #waveform ::part(rehearsalMark) {
-    /* $SED_DARK background-color: rgba(var(--color-accent)) !important; */
-    background-color: rgb(150, 126, 255) !important;
-    width: 4px !important;
-    /* $SED_DARK border: 1px solid rgb(var(--color-text)) !important; */
-    border: 1px solid rgb(208, 208, 208) !important;
-    font-size: 24px;
+#waveform ::part(editable-rehearsalMark) {
+    background-color: var(--color-accent) !important;
+    width: 2px !important;
+    font-size: 20px;
 }
 
 #waveform ::part(editable-measure) {
     background-color: transparent !important;
-}
-
-#waveform ::part(editable-rehearsalMark) {
-    background-color: transparent !important;
-    font-size: 24px;
 }
 
 /* Keep the region content visible */
@@ -187,90 +173,44 @@ textarea,
     width: auto;
     text-align: center;
     padding: 0 4px;
-    /* $SED border: 1px solid rgb(var(--color-text)) !important; */
-    border: 1px solid rgb(32, 32, 32) !important;
-    /* $SED background-color: rgba(var(--color-bg-1)); */
-    background-color: rgb(236, 235, 240);
+    border: 1px solid var(--color-text-disabled) !important;
+    background-color: var(--color-bg-1);
     border-radius: 6px;
     opacity: 1 !important; /* Ensure content stays visible */
-}
-
-.dark #waveform ::part(region-content) {
-    margin-left: 6px;
-    width: auto;
-    text-align: center;
-    padding: 0 4px;
-    /* $SED_DARK border: 1px solid rgb(var(--color-text)) !important; */
-    border: 1px solid rgb(208, 208, 208) !important;
-    /* $SED_DARK background-color: rgba(var(--color-bg-1)); */
-    background-color: rgb(15, 14, 19);
-    border-radius: 6px;
-    opacity: 1 !important;
+    font-family: "DM Mono";
 }
 
 /* BEATS */
 
 #waveform ::part(beat) {
-    /* $SED background-color: rgb(var(--color-text)) !important; */
-    background-color: rgb(32, 32, 32) !important;
-    height: 10% !important;
+    background-color: rgb(205, 205, 205) !important;
+    height: 30% !important;
 }
 
 .dark #waveform ::part(beat) {
-    /* $SED_DARK background-color: rgb(var(--color-text)) !important; */
-    background-color: rgb(208, 208, 208) !important;
-    height: 10% !important;
+    background-color: rgb(60, 60, 60) !important;
 }
 
 #waveform ::part(editable-beat) {
-    /* $SED background-color: rgb(var(--color-bg-1)) !important; */
-    background-color: rgb(236, 235, 240) !important;
-    /* $SED border: 1px solid rgb(var(--color-text)) !important; */
-    border: 1px solid rgb(32, 32, 32) !important;
-    height: 100% !important;
-    width: 6px !important;
+    background-color: var(--color-text-disabled) !important;
+    height: 50% !important;
+    width: 4px !important;
     cursor: ew-resize;
 }
-
-.dark #waveform ::part(editable-beat) {
-    /* $SED_DARK background-color: rgb(var(--color-bg-1)) !important; */
-    background-color: rgb(15, 14, 19) !important;
-    /* $SED_DARK border: 1px solid rgb(var(--color-text)) !important; */
-    border: 1px solid rgb(208, 208, 208) !important;
-    height: 100% !important;
-    width: 6px !important;
-    cursor: ew-resize;
-}
-
 #waveform ::part(editable-beat)::after {
-    content: "•";
     position: absolute;
     bottom: -21px;
     left: -1px;
     transform: translateX(-50%);
-    /* $SED color: rgb(var(--color-text)); */
-    color: rgb(32, 32, 32);
-    font-size: 24px;
-}
-
-.dark #waveform ::part(editable-beat)::after {
-    content: "•";
-    position: absolute;
-    bottom: -21px;
-    left: -1px;
-    transform: translateX(-50%);
-    /* $SED_DARK color: rgb(var(--color-text)); */
-    color: rgb(208, 208, 208);
+    color: var(--color-text);
     font-size: 24px;
 }
 
 /* CURSOR */
 #waveform ::part(cursor) {
-    /* $SED background-color: rgb(var(--color-accent)) !important; */
-    background-color: rgb(100, 66, 255) !important;
+    background-color: var(--color-accent) !important;
 }
 
 .dark #waveform ::part(cursor) {
-    /* $SED_DARK background-color: rgb(var(--color-accent)) !important; */
-    background-color: rgb(150, 126, 255) !important;
+    background-color: var(--color-accent) !important;
 }
