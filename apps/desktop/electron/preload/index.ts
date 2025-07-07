@@ -8,6 +8,7 @@ import {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
+import Page from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
@@ -230,8 +231,29 @@ const APP_API = {
             organizeBySection: boolean;
             quarterPages: boolean;
         }) => ipcRenderer.invoke("export:pdf", params),
-        svgPagesToPdf: (svgPages: string[], options: { fileName: string }) =>
-            ipcRenderer.invoke("export:svgPagesToPdf", svgPages, options),
+
+        createExportDirectory: (defaultName: string) =>
+            ipcRenderer.invoke("export:createExportDirectory", defaultName),
+
+        generateDocForMarcher: (
+            svgPages: string[],
+            drillNumber: string,
+            marcherCoordinates: string[],
+            pages: Page[],
+            showName: string,
+            exportDir: string,
+            individualCharts: boolean,
+        ) =>
+            ipcRenderer.invoke(
+                "export:generateSVGsForMarcher",
+                svgPages,
+                drillNumber,
+                marcherCoordinates,
+                pages,
+                showName,
+                exportDir,
+                individualCharts,
+            ),
     },
 
     buffer: {

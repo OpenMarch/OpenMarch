@@ -15,6 +15,7 @@ interface registeredActionButtonProps
     instructionalString?: string;
     children?: React.ReactNode;
     showTooltip?: boolean;
+    tooltipPosition?: "top" | "bottom" | "left" | "right";
 }
 
 /**
@@ -33,6 +34,7 @@ export default function RegisteredActionButton({
     children,
     instructionalString,
     showTooltip = true,
+    tooltipPosition = "top",
     ...rest
 }: registeredActionButtonProps) {
     const { linkRegisteredAction, removeRegisteredAction } =
@@ -80,7 +82,7 @@ export default function RegisteredActionButton({
                 >
                     {children}
                 </RadixTooltip.Trigger>
-                <TooltipContents side="bottom">
+                <TooltipContents side={tooltipPosition}>
                     {instructionalString
                         ? instructionalString
                         : registeredAction.instructionalString}

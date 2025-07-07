@@ -1,6 +1,6 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import Guides from "./Guides";
-import TroubleshootingTips from "./TroubleshootingTIps";
+import TroubleshootingTips from "./TroubleshootingTips";
 
 export default function LearnContent() {
     return (

@@ -16,6 +16,7 @@ import {
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { parseMxl } from "../mxl/MxlUtil";
+import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
 import {
@@ -278,13 +279,35 @@ function initGetters() {
         );
     });
 
+    // Create Export Directory
+    ipcMain.handle(
+        "export:createExportDirectory",
+        async (_, defaultName: string) => {
+            return await PDFExportService.createExportDirectory(defaultName);
+        },
+    );
+
     // Export SVG pages to PDF
     ipcMain.handle(
-        "export:svgPagesToPdf",
-        async (_, svgPages: string[], options: { fileName: string }) => {
-            return await PDFExportService.exportSvgPagesToPdf(
+        "export:generateSVGsForMarcher",
+        async (
+            _,
+            svgPages: string[],
+            drillNumber: string,
+            marcherCoordinates: string[],
+            pages: Page[],
+            showName: string,
+            exportDir: string,
+            individualCharts: boolean,
+        ) => {
+            return await PDFExportService.generateDocForMarcher(
                 svgPages,
-                options,
+                drillNumber,
+                marcherCoordinates,
+                pages,
+                showName,
+                exportDir,
+                individualCharts,
             );
         },
     );

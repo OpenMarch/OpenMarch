@@ -133,6 +133,7 @@ function SetMarcherPositionsDropdown() {
                                 RegisteredActionsObjects.setAllMarchersToPreviousPage
                             }
                             className="text-text px-6 py-4"
+                            tooltipPosition="left"
                         >
                             to previous page positions
                         </RegisteredActionButton>
@@ -141,6 +142,7 @@ function SetMarcherPositionsDropdown() {
                                 RegisteredActionsObjects.setAllMarchersToNextPage
                             }
                             className="text-text px-6 py-4"
+                            tooltipPosition="left"
                         >
                             to next page positions
                         </RegisteredActionButton>
@@ -159,6 +161,7 @@ function SetMarcherPositionsDropdown() {
                                 RegisteredActionsObjects.setSelectedMarchersToPreviousPage
                             }
                             className="text-text px-6 py-4"
+                            tooltipPosition="left"
                         >
                             to previous page positions
                         </RegisteredActionButton>
@@ -167,6 +170,7 @@ function SetMarcherPositionsDropdown() {
                                 RegisteredActionsObjects.setSelectedMarchersToNextPage
                             }
                             className="text-text px-6 py-4"
+                            tooltipPosition="left"
                         >
                             to next page positions
                         </RegisteredActionButton>
