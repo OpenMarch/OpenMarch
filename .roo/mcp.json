@@ -9,11 +9,7 @@
         },
         "filesystem": {
             "command": "npx",
-            "args": [
-                "-y",
-                "@modelcontextprotocol/server-filesystem",
-                "/Users/openmarchdev/Documents/GitHub/OpenMarch"
-            ]
+            "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
         },
         "puppeteer": {
             "command": "npx",

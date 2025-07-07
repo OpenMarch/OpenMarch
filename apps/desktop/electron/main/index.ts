@@ -177,7 +177,7 @@ async function createWindow(title?: string) {
 
 app.whenReady().then(async () => {
     app.setName("OpenMarch");
-    console.log("NODE-jeff:", process.versions.node);
+    console.log("NODE:", process.versions.node);
 
     if (isCodegen) {
         console.log("🎭 Running in Playwright Codegen mode");
@@ -611,7 +611,7 @@ export async function closeCurrentFile(isAppQuitting = false) {
     DatabaseServices.setDbPath("", false);
     store.set("databasePath", "");
 
-    // Only reload if we’re NOT quitting the app
+    // Only reload if we're NOT quitting the app
     if (!isAppQuitting) {
         win.webContents.reload();
     }
