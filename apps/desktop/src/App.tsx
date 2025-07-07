@@ -1,34 +1,30 @@
 import Canvas from "@/components/canvas/Canvas";
 import Toolbar from "@/components/toolbar/Toolbar";
-import Sidebar from "@/components/sidebar/Sidebar";
+import Inspector from "@/components/inspector/Inspector";
 import SidebarModal from "@/components/sidebar/SidebarModal";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
-import LaunchPage from "@/components/LaunchPage";
+import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
 import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
-import {
-    CheckCircle,
-    Warning,
-    SealWarning,
-    Info,
-    CircleNotch,
-} from "@phosphor-icons/react";
-import { Toaster } from "sonner";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import TitleBar from "./components/titlebar/TitleBar";
+import TitleBar from "@/components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
+import Sidebar from "@/components/sidebar/Sidebar";
+import Toaster from "./components/ui/Toaster";
+import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
+import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 
-// app
+// The app
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -40,6 +36,7 @@ function App() {
     );
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
+    const { isFullscreen } = useFullscreenStore();
 
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
@@ -89,7 +86,8 @@ function App() {
     }, []);
 
     useEffect(() => {
-        window.electron.databaseIsReady().then((result) => {
+        // Check if database is ready
+        window.electron.databaseIsReady().then((result: boolean) => {
             setDatabaseIsReady(result);
         });
     }, []);
@@ -117,10 +115,9 @@ function App() {
                     onChoice={(choice) => setAnalyticsConsent(choice)}
                 />
             )}
+            {/* Always show LaunchPage when no file is selected, regardless of database state */}
             {!databaseIsReady ? (
-                <>
-                    <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
-                </>
+                <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
             ) : (
                 <TooltipProvider delayDuration={500} skipDelayDuration={500}>
                     <IsPlayingProvider>
@@ -130,19 +127,24 @@ function App() {
                                     <FieldPropertiesProvider>
                                         <StateInitializer />
                                         <RegisteredActionsHandler />
+                                        <SvgPreviewHandler />
                                         <TitleBar />
                                         <div
                                             id="app"
                                             className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                         >
-                                            <Sidebar />
                                             <div
                                                 id="workspace"
-                                                className="flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
+                                                className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                             >
                                                 <Toolbar />
-                                                <div className="relative h-full min-h-0">
-                                                    <SidebarModal />
+                                                <div className="relative flex h-full min-h-0 min-w-0 gap-8">
+                                                    {!isFullscreen && (
+                                                        <>
+                                                            <Sidebar />
+                                                            <SidebarModal />
+                                                        </>
+                                                    )}
                                                     <Canvas
                                                         onCanvasReady={
                                                             setAppCanvas
@@ -154,51 +156,9 @@ function App() {
                                                 </div>
                                                 <TimelineContainer />
                                             </div>
+                                            {!isFullscreen && <Inspector />}
                                         </div>
-                                        <Toaster
-                                            visibleToasts={6}
-                                            toastOptions={{
-                                                unstyled: true,
-                                                classNames: {
-                                                    title: "text-body text-text leading-none",
-                                                    description:
-                                                        "text-sub text-text",
-                                                    toast: "p-20 flex gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
-                                                },
-                                            }}
-                                            icons={{
-                                                success: (
-                                                    <CheckCircle
-                                                        size={24}
-                                                        className="text-green"
-                                                    />
-                                                ),
-                                                info: (
-                                                    <Info
-                                                        size={24}
-                                                        className="text-text"
-                                                    />
-                                                ),
-                                                warning: (
-                                                    <Warning
-                                                        size={24}
-                                                        className="text-yellow"
-                                                    />
-                                                ),
-                                                error: (
-                                                    <SealWarning
-                                                        size={24}
-                                                        className="text-red"
-                                                    />
-                                                ),
-                                                loading: (
-                                                    <CircleNotch
-                                                        size={24}
-                                                        className="text-text"
-                                                    />
-                                                ),
-                                            }}
-                                        />
+                                        <Toaster />
                                     </FieldPropertiesProvider>
                                 </SelectedAudioFileProvider>
                             </SelectedMarchersProvider>

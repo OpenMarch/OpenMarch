@@ -1,7 +1,7 @@
 import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
 import { usePostHog } from "posthog-js/react";
 import * as Sentry from "@sentry/electron/renderer";
-import AnalyticsMessage from "./settings/AnalyticsMessage";
+import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
 
 interface AnalyticsOptInModalProps {
     onChoice: (hasOptedIn: boolean) => void;

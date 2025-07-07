@@ -7,6 +7,7 @@ export default function FieldIoButtons() {
                 className="w-full"
                 tooltipText="Import a custom field"
                 variant="primary"
+                size="compact"
                 onClick={window.electron.importFieldPropertiesFile}
             >
                 Import Field
@@ -15,6 +16,7 @@ export default function FieldIoButtons() {
                 className="w-full"
                 tooltipText="Export this field to a file to use in other projects"
                 variant="secondary"
+                size="compact"
                 onClick={window.electron.exportFieldPropertiesFile}
             >
                 Export Field

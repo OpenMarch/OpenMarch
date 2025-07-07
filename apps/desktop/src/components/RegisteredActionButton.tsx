@@ -6,6 +6,8 @@ import {
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "@openmarch/ui";
+import clsx from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -69,7 +71,12 @@ export default function RegisteredActionButton({
                 <RadixTooltip.Trigger
                     {...rest}
                     ref={buttonRef}
-                    className={rest.className}
+                    className={twMerge(
+                        clsx(
+                            "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+                            rest.className,
+                        ),
+                    )}
                 >
                     {children}
                 </RadixTooltip.Trigger>
@@ -82,7 +89,16 @@ export default function RegisteredActionButton({
         );
     else
         return (
-            <button {...rest} ref={buttonRef} className={rest.className}>
+            <button
+                {...rest}
+                ref={buttonRef}
+                className={twMerge(
+                    clsx(
+                        "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+                        rest.className,
+                    ),
+                )}
+            >
                 {children}
             </button>
         );
