@@ -3,7 +3,8 @@
     "module": "index.ts",
     "type": "module",
     "scripts": {
-        "test": "bun test"
+        "test": "vitest",
+        "test:run": "vitest run"
     },
     "peerDependencies": {
         "typescript": "^5"

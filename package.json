@@ -19,7 +19,7 @@
         "desktop": "turbo run --filter=@openmarch/desktop",
         "site": "turbo run --filter=@openmarch/website",
         "ui": "turbo run --filter=@openmarch/ui",
-        "test": "turbo run test",
+        "test": "turbo run test:run",
         "lint": "turbo run lint",
         "format": "turbo run format",
         "fix": "turbo run fix",
