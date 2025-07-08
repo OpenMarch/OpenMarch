@@ -14,7 +14,6 @@ export const falsyUiSettings: UiSettings = {
     nextPaths: false,
     gridLines: false,
     halfLines: false,
-    showWaveform: false,
     timelinePixelsPerSecond: 40,
     focussedComponent: "canvas",
     mouseSettings: {

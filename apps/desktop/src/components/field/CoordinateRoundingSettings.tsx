@@ -1,10 +1,10 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { UnitInput } from "@openmarch/ui";
-import { useCallback, useEffect, useState } from "react";
+import { Input } from "@openmarch/ui";
+import { useEffect, useState, useCallback } from "react";
+import * as Form from "@radix-ui/react-form";
 import clsx from "clsx";
-import { ToggleGroupRoot, ToggleGroupItem } from "@openmarch/ui";
-
-const labelClassname = clsx("text-body text-text/80 self-center col-span-5");
+import { ToggleGroup, ToggleGroupItem, UnitInput } from "@openmarch/ui";
+import FormField from "../ui/FormField";
 
 const STEP_OPTIONS = [2, 1, 0.5, 0.25];
 
@@ -46,13 +46,33 @@ function AxisSettings({
     }, [nearestSteps]);
 
     return (
-        <div className="flex flex-col">
+        <div className="border-stroke rounded-6 flex flex-col gap-8 border p-8">
+            {showReferencePoint && (
+                <Form.Root>
+                    <FormField label="Reference Point" className="px-0">
+                        <div className="w-[3rem] min-w-0">
+                            <Input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="-?[0-9]*\.?[0-9]*"
+                                className="w-full"
+                                compact
+                                value={referencePoint ?? ""}
+                                onChange={(e) =>
+                                    handleReferencePointChange(e.target.value)
+                                }
+                                placeholder="steps"
+                            />
+                        </div>
+                    </FormField>
+                </Form.Root>
+            )}
+
             <div className="flex flex-col gap-4">
                 <span className="text-body text-text/80">
                     Nearest {axis}-steps
                 </span>
-                <ToggleGroupRoot
-                    size="sm"
+                <ToggleGroup
                     type="single"
                     value={
                         customIsSelected
@@ -108,10 +128,9 @@ function AxisSettings({
                     >
                         Custom
                     </ToggleGroupItem>
-                </ToggleGroupRoot>
-                <UnitInput
-                    unit="steps"
-                    type="number"
+                </ToggleGroup>
+                <Input
+                    type="text"
                     inputMode="numeric"
                     pattern="[0-9]*\.?[0-9]*"
                     className="w-[6rem]"
@@ -131,12 +150,17 @@ function AxisSettings({
                     placeholder="steps"
                 />
                 {showReferencePoint && (
-                    <div className={"flex h-[40px] w-full justify-end gap-8"}>
-                        <label className={labelClassname}>Offset</label>
+                    <div
+                        className={
+                            "flex h-fit w-full items-center justify-end gap-8 py-6"
+                        }
+                    >
+                        <p className="text-body text-text/80 w-full">Offset</p>
                         <UnitInput
                             unit="steps"
                             type="number"
                             size={8}
+                            compact
                             className="w-[6rem]"
                             inputMode="numeric"
                             pattern="-?[0-9]*\.?[0-9]*"
@@ -206,10 +230,10 @@ export default function CoordinateRoundingSettings() {
                 <button
                     onClick={() => setShowReferencePoint(!showReferencePoint)}
                     className={clsx(
-                        "rounded border px-2 py-1 text-xs transition-colors",
+                        "text-sub rounded-6 bg-fg-2 border px-2 py-1 transition-colors",
                         showReferencePoint
-                            ? "bg-accent/10 text-accent border-accent/20 hover:bg-accent/20"
-                            : "bg-surface-raised text-text/60 border-border hover:bg-surface-raised/80",
+                            ? "border-accent"
+                            : "text-text border-stroke hover:bg-white/20",
                     )}
                 >
                     {showReferencePoint ? "Disable Offset" : "Enable Offset"}

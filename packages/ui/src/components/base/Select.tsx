@@ -25,10 +25,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                             child.type === SelectTriggerText ||
                             child.type === SelectTriggerCompact)
                     ) {
-                        return React.cloneElement(child, {
-                            ...child.props,
-                            ref: ref as any, // or use a more specific type if needed
-                        });
+                        return React.cloneElement(
+                            child as React.ReactElement<any>,
+                            { ref },
+                        );
                     }
                     return child;
                 })}
@@ -46,7 +46,7 @@ export const SelectTriggerButton = forwardRef<
             ref={ref}
             className={twMerge(
                 clsx(
-                    "rounded-6 border-stroke bg-fg-2 text-body text-text focus-visible:border-accent flex h-[2.5rem] w-fit items-center justify-between gap-12 overflow-clip border px-22 duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "rounded-6 border-stroke bg-fg-2 text-body text-text focus-visible:border-accent flex h-[2.5rem] w-fit items-center justify-between gap-8 overflow-clip border px-22 duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:active:translate-y-4 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -54,7 +54,7 @@ export const SelectTriggerButton = forwardRef<
         >
             <RadixSelect.Value placeholder={label} />
             <RadixSelect.Icon>
-                <CaretDownIcon size={24} />
+                <CaretDownIcon size={18} />
             </RadixSelect.Icon>
         </RadixSelect.Trigger>
     );
@@ -69,7 +69,7 @@ export const SelectTriggerText = forwardRef<
             ref={ref}
             className={twMerge(
                 clsx(
-                    "text-body text-text enabled:hover:text-accent flex h-fit w-fit items-center justify-center gap-2 p-0 leading-none outline-1 duration-150 ease-out data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
+                    "text-body text-text enabled:hover:text-accent focus-visible:text-accent flex h-fit w-fit items-center justify-center gap-2 p-0 leading-none outline-0 duration-150 ease-out data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50",
                     className,
                 ),
             )}
@@ -155,7 +155,7 @@ export const SelectGroup = ({ children }: { children: ReactNode }) => {
 
 export const SelectLabel = ({ children }: { children: ReactNode }) => {
     return (
-        <RadixSelect.Label className="text-sub text-text/90 px-24">
+        <RadixSelect.Label className="text-sub text-text/90 w-full self-start px-24 text-left">
             {children}
         </RadixSelect.Label>
     );

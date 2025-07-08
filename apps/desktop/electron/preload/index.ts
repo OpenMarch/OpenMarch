@@ -8,6 +8,7 @@ import {
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
+import Page from "@/global/classes/Page";
 import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
@@ -159,6 +160,15 @@ const APP_API = {
     openMenu: () => ipcRenderer.send("menu:open"),
     isMacOS: process.platform === "darwin",
 
+    // Environment
+    isCodegen: !!process.env.PLAYWRIGHT_CODEGEN,
+    codegen: {
+        clearMouseActions: () =>
+            ipcRenderer.invoke("codegen:clear-mouse-actions"),
+        addMouseAction: (action: string) =>
+            ipcRenderer.send("codegen:add-mouse-action", action),
+    },
+
     // Themes
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
@@ -170,16 +180,30 @@ const APP_API = {
     invoke: (channel: string, ...args: any[]) => {
         return ipcRenderer.invoke(channel, ...args);
     },
-    getShowWaveform: () => ipcRenderer.invoke("get:showWaveform"),
-    setShowWaveform: (showWaveform: boolean) =>
-        ipcRenderer.invoke("set:showWaveform", showWaveform),
 
-    // Database
+    // Database / file management
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+
+    // SVG Generation
+    onGetSvgForClose: (callback: () => Promise<string>) => {
+        ipcRenderer.on("get-svg-on-close", async (event, requestId) => {
+            const result = await callback();
+            ipcRenderer.send(`get-svg-response-${requestId}`, result);
+        });
+    },
+
+    // Recent files
+    getRecentFiles: () => ipcRenderer.invoke("recent-files:get"),
+    removeRecentFile: (filePath: string) =>
+        ipcRenderer.invoke("recent-files:remove", filePath),
+    clearRecentFiles: () => ipcRenderer.invoke("recent-files:clear"),
+    openRecentFile: (filePath: string) =>
+        ipcRenderer.invoke("recent-files:open", filePath),
 
     // Triggers
     onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>
@@ -191,12 +215,9 @@ const APP_API = {
         ipcRenderer.send("send:selectedMarchers", selectedMarchersId),
     sendLockX: (lockX: boolean) => ipcRenderer.send("send:lockX", lockX),
     sendLockY: (lockY: boolean) => ipcRenderer.send("send:lockY", lockY),
-    sendShowWaveform: (showWaveform: boolean) =>
-        ipcRenderer.send("send:showWaveform", showWaveform),
+
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
-
-    getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),
 
     export: {
         pdf: (params: {
@@ -208,9 +229,34 @@ const APP_API = {
             organizeBySection: boolean;
             quarterPages: boolean;
         }) => ipcRenderer.invoke("export:pdf", params),
-        svgPagesToPdf: (svgPages: string[], options: { fileName: string }) =>
-            ipcRenderer.invoke("export:svgPagesToPdf", svgPages, options),
+
+        createExportDirectory: (defaultName: string) =>
+            ipcRenderer.invoke("export:createExportDirectory", defaultName),
+
+        generateDocForMarcher: (
+            svgPages: string[],
+            drillNumber: string,
+            marcherCoordinates: string[],
+            pages: Page[],
+            showName: string,
+            exportDir: string,
+            individualCharts: boolean,
+        ) =>
+            ipcRenderer.invoke(
+                "export:generateSVGsForMarcher",
+                svgPages,
+                drillNumber,
+                marcherCoordinates,
+                pages,
+                showName,
+                exportDir,
+                individualCharts,
+            ),
     },
+
+    getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),
+    openExportDirectory: (exportDir: string) =>
+        ipcRenderer.invoke("open-export-directory", exportDir),
 
     buffer: {
         from: (data: any) => Buffer.from(data),
@@ -512,6 +558,14 @@ const PLUGINS_API = {
 };
 
 contextBridge.exposeInMainWorld("plugins", PLUGINS_API);
+
+// Define the RecentFile interface for the type system
+export interface RecentFile {
+    path: string;
+    name: string;
+    lastOpened: number;
+    svgPreview?: string;
+}
 
 export type ElectronApi = typeof APP_API;
 export type PluginsApi = typeof PLUGINS_API;

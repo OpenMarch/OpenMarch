@@ -4,7 +4,7 @@ import { create } from "zustand";
 type RegisteredActionsStoreType = {
     registeredButtonActions: {
         registeredAction: RegisteredActionsEnum;
-        buttonRef: React.RefObject<HTMLButtonElement>;
+        buttonRef: React.RefObject<HTMLButtonElement | null>;
     }[];
     /**
      * If you want a button in a component to trigger a RegisteredAction,
@@ -15,7 +15,7 @@ type RegisteredActionsStoreType = {
      */
     linkRegisteredAction: (
         registeredAction: RegisteredActionsEnum,
-        buttonRef: React.RefObject<HTMLButtonElement>,
+        buttonRef: React.RefObject<HTMLButtonElement | null>,
     ) => void;
     /**
      * Removes a button ref from the store of registered actions. Use this on unmount.
@@ -25,7 +25,7 @@ type RegisteredActionsStoreType = {
      */
     removeRegisteredAction: (
         registeredAction: RegisteredActionsEnum,
-        buttonRef: React.RefObject<HTMLButtonElement>,
+        buttonRef: React.RefObject<HTMLButtonElement | null>,
     ) => void;
 };
 

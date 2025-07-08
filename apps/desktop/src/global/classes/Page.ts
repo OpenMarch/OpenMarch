@@ -550,6 +550,11 @@ export const generatePageNames = (isSubsetArr: boolean[]) => {
  * @param allPages An array of all available pages to search through.
  * @returns The next page if found, or null if no next page exists.
  */
+// Cooldown timestamps for toast messages
+let lastNextPageToastTime = 0;
+let lastPrevPageToastTime = 0;
+const TOAST_COOLDOWN_MS = 2000; // 2 seconds cooldown
+
 export const getNextPage = (
     currentPage: Page,
     allPages: Page[],
@@ -558,7 +563,11 @@ export const getNextPage = (
         (page) => page.id === currentPage.nextPageId,
     );
     if (!nextPage) {
-        toast.info("No next page");
+        const now = Date.now();
+        if (now - lastNextPageToastTime > TOAST_COOLDOWN_MS) {
+            toast.info("No next page");
+            lastNextPageToastTime = now;
+        }
         return null;
     }
     return nextPage;
@@ -579,7 +588,11 @@ export const getPreviousPage = (
         (page) => page.id === currentPage.previousPageId,
     );
     if (!prevPage) {
-        toast.info("No previous page");
+        const now = Date.now();
+        if (now - lastPrevPageToastTime > TOAST_COOLDOWN_MS) {
+            toast.info("No previous page");
+            lastPrevPageToastTime = now;
+        }
         return null;
     }
     return prevPage;

@@ -40,8 +40,12 @@ export class DrizzleMigrationService {
                 "Cannot apply migrations, user version is not 7. If you have a file from 0.0.9 or earlier, please open your file in 0.0.10, then open it again in the current version",
             );
         }
-        const folder =
-            migrationsFolder || path.join(__dirname, "../migrations");
+
+        let folder = migrationsFolder || path.join(__dirname, "../migrations");
+        if (process.env.PLAYWRIGHT_CODEGEN || process.env.PLAYWRIGHT_SESSION) {
+            folder = folder.replace("/dist-electron/main", "");
+        }
+
         console.log("migrationsFolder", folder);
 
         try {

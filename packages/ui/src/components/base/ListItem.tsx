@@ -15,7 +15,7 @@ export const ListItem = ({
     return (
         <div
             className={clsx(
-                `flex w-full items-center justify-start gap-x-10 ${selected && "rounded-6 border-stroke bg-fg-2 border"} text-text h-[2.5rem] px-22`,
+                `rounded-6 flex w-full items-center justify-start gap-8 ${selected && "border-stroke bg-fg-2 border"} text-text h-[2.5rem] px-12`,
                 className,
             )}
         >

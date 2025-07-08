@@ -1,10 +1,11 @@
-import { dialog, BrowserWindow, app } from "electron";
+import { dialog, BrowserWindow, app, shell } from "electron";
 import * as path from "path";
 import * as fs from "fs";
 import sanitize from "sanitize-filename";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
+import Page from "@/global/classes/Page";
 
 interface ExportSheet {
     name: string;
@@ -56,17 +57,18 @@ export class PDFExportService {
             // Create HTML for each group of four pages
             const combinedHtml = pages
                 .map(
-                    (pageContent) => `
-            <div class="page-content">${pageContent}</div>
-        `,
+                    (pageContent) =>
+                        `
+                            <div class="page-content">${pageContent}</div>
+                        `,
                 )
                 .join("");
 
             const htmlContent = `
-        <html>
-          <body>${combinedHtml}</body>
-        </html>
-      `;
+                    <html>
+                      <body>${combinedHtml}</body>
+                    </html>
+                `;
 
             win.loadURL(
                 `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`,
@@ -84,7 +86,7 @@ export class PDFExportService {
                                   right: 0,
                               }
                             : {
-                                  marginType: "default", // or set custom values (e.g. top: 36, bottom: 36, etc.)
+                                  marginType: "default",
                               },
                         pageSize: "Letter",
                         printBackground: true,
@@ -183,8 +185,9 @@ export class PDFExportService {
         quarterPages: boolean,
     ) {
         try {
+            let result: Electron.SaveDialogReturnValue;
             if (organizeBySection) {
-                const result = await dialog.showSaveDialog({
+                result = await dialog.showSaveDialog({
                     title: "Select Export Location",
                     defaultPath: this.getDefaultPath(),
                     properties: [
@@ -204,7 +207,7 @@ export class PDFExportService {
                     quarterPages,
                 );
 
-                const result = await dialog.showSaveDialog({
+                result = await dialog.showSaveDialog({
                     title: "Save PDF",
                     defaultPath: `${this.getDefaultPath()}.pdf`,
                     filters: [{ name: "PDF", extensions: ["pdf"] }],
@@ -218,10 +221,11 @@ export class PDFExportService {
                     );
                 }
             }
-            return { success: true };
+            return { success: true, path: result.filePath };
         } catch (error) {
             return {
                 success: false,
+                path: "",
                 error: error instanceof Error ? error.message : String(error),
             };
         }
@@ -245,85 +249,282 @@ export class PDFExportService {
         );
     }
 
-    public static async exportSvgPagesToPdf(
-        svgPages: string[],
-        options: { fileName?: string } = {},
-    ) {
-        try {
-            const { fileName = "drill-charts.pdf" } = options;
+    /**
+     * Open the export directory in the file explorer
+     * @param exportDir - The directory to open
+     */
+    public static async openExportDirectory(
+        exportDir: string,
+    ): Promise<string> {
+        return await shell.openPath(exportDir);
+    }
 
-            // Show save dialog
-            const result = await dialog.showSaveDialog({
-                title: "Save Drill Charts PDF",
-                defaultPath: path.join(app.getPath("documents"), fileName),
-                filters: [{ name: "PDF", extensions: ["pdf"] }],
-                properties: ["showOverwriteConfirmation"],
-            });
+    /**
+     * Create a directory for exporting files
+     * @param defaultName - Default name for the export directory
+     * @returns An object containing the export name and directory path
+     */
+    public static async createExportDirectory(
+        defaultName: string,
+    ): Promise<{ exportName: string; exportDir: string }> {
+        // Prompt user for export location
+        const result = await dialog.showSaveDialog({
+            title: "Select Export Location",
+            defaultPath: path.join(
+                app.getPath("downloads"),
+                defaultName || "Untitled",
+            ),
+            properties: ["createDirectory", "showOverwriteConfirmation"],
+            buttonLabel: "Export Here",
+        });
 
-            if (result.canceled || !result.filePath) {
-                throw new Error("Export cancelled");
-            }
-
-            // Create PDF document in landscape mode
-            const doc = new PDFDocument({
-                size: "LETTER",
-                layout: "landscape",
-                margins: {
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                },
-            });
-
-            // Create write stream
-            const stream = fs.createWriteStream(result.filePath);
-            doc.pipe(stream);
-
-            // Process each SVG page
-            for (let i = 0; i < svgPages.length; i++) {
-                if (i > 0) {
-                    doc.addPage();
-                }
-
-                try {
-                    // Convert SVG to PDF using svg-to-pdfkit with better scaling
-                    SVGtoPDF(doc, svgPages[i], 40, 40, {
-                        width: doc.page.width - 80,
-                        height: doc.page.height - 80,
-                        preserveAspectRatio: "xMidYMid meet",
-                    });
-                } catch (svgError: unknown) {
-                    console.warn(
-                        `Error processing SVG page ${i + 1}:`,
-                        svgError,
-                    );
-                    // Continue with other pages even if one fails
-                    doc.fontSize(12).text(
-                        `Error rendering page ${i + 1}: ${svgError instanceof Error ? svgError.message : "Unknown error"}`,
-                        50,
-                        50,
-                    );
-                }
-            }
-
-            // Finalize the PDF
-            doc.end();
-
-            // Wait for the stream to finish
-            await new Promise<void>((resolve, reject) => {
-                stream.on("finish", resolve);
-                stream.on("error", reject);
-            });
-
-            return { success: true, filePath: result.filePath };
-        } catch (error) {
-            console.error("PDF export error:", error);
-            return {
-                success: false,
-                error: error instanceof Error ? error.message : "Unknown error",
-            };
+        // Error handling
+        if (result.canceled) {
+            throw new Error("Export cancelled");
         }
+        if (!result.filePath) {
+            throw new Error("No file path selected for export");
+        }
+
+        // Create export directory
+        const exportDir = result.filePath;
+        await fs.promises.mkdir(exportDir, { recursive: true });
+
+        // Generate base file name
+        const exportName = path.basename(
+            path.basename(defaultName) === path.basename(result.filePath)
+                ? defaultName
+                : result.filePath,
+        );
+
+        return { exportName, exportDir };
+    }
+
+    /**
+     * Generate a PDF for each marcher based on their SVG pages and coordinates
+     * This will create a single PDF for each marcher with their respective pages.
+     * @param svgPages
+     * @param drillNumber
+     * @param marcherCoordinates
+     * @param pages
+     * @param showName
+     * @param exportDir
+     * @param individualCharts
+     */
+    public static async generateDocForMarcher(
+        svgPages: string[],
+        drillNumber: string,
+        marcherCoordinates: string[],
+        pages: Page[],
+        showName: string,
+        exportDir: string,
+        individualCharts: boolean,
+    ) {
+        // For each marcher, create a PDF of their pages
+        const pdfFileName = `${showName}-${drillNumber}.pdf`;
+        const pdfFilePath = path.join(exportDir, sanitize(pdfFileName));
+        const doc = new PDFDocument({
+            size: "LETTER",
+            layout: "landscape",
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+        });
+        const stream = fs.createWriteStream(pdfFilePath);
+        doc.pipe(stream);
+
+        // Helper to draw bold header and value with proper wrapping and y advancement
+        function drawLabelValue(
+            doc: PDFKit.PDFDocument,
+            label: string,
+            value: string,
+            x: number,
+            y: number,
+            width: number,
+            fontSize: number = 11,
+        ): number {
+            doc.fontSize(fontSize).font("Helvetica-Bold");
+            doc.text(label, x, y, {
+                width: width,
+                continued: true,
+            });
+
+            doc.font("Helvetica");
+            doc.text(` ${value}`, {
+                width: width,
+                continued: false,
+            });
+
+            const afterY = doc.y;
+            return afterY + 2;
+        }
+
+        // Set up margins and top bar height
+        const margin = 20;
+        const topBarHeight = 34;
+
+        // Loop through each SVG page and create a PDF page for it
+        for (let i = 0; i < svgPages.length; i++) {
+            if (i > 0) doc.addPage();
+
+            // Data for each page
+            const page = pages?.[i];
+            const setNumber = page?.name ?? "END";
+            const counts = page?.counts != null ? String(page.counts) : "END";
+            const measureNumbers =
+                page?.measures && page.measures.length > 0
+                    ? page.measures.length === 1
+                        ? String(page.measures[0].number)
+                        : `${page.measures[0].number}-${page.measures[page.measures.length - 1].number}`
+                    : i === 0
+                      ? "START"
+                      : "END";
+            const prevCoord = marcherCoordinates[i - 1] ?? "N/A";
+            const currCoord = marcherCoordinates[i] ?? "N/A";
+            const nextCoord = marcherCoordinates[i + 1] ?? "N/A";
+            const notes = page?.notes ?? "";
+            const pageWidth = doc.page.width;
+            const pageHeight = doc.page.height;
+
+            // Top bar, drill number, show name, and set number
+            doc.rect(margin, margin, pageWidth - 2 * margin, topBarHeight).fill(
+                "#ddd",
+            );
+            const titleBarY = margin + topBarHeight / 2 - 6;
+
+            doc.fillColor("black").fontSize(16).font("Helvetica-Bold");
+            doc.fillColor("black").text(`${drillNumber}`, margin, titleBarY, {
+                width: pageWidth * 0.15,
+                align: "center",
+            });
+            doc.text(showName, pageWidth * 0.15, titleBarY, {
+                width: pageWidth * 0.65,
+                align: "center",
+            });
+            doc.text(`Set: ${setNumber}`, pageWidth * 0.8, titleBarY, {
+                width: pageWidth * 0.2,
+                align: "center",
+            });
+
+            // Field SVG
+            const maxSVGHeight = 425;
+            const maxSVGWidth = pageWidth - 2 * margin;
+            try {
+                SVGtoPDF(doc, svgPages[i], margin, 65, {
+                    height: maxSVGHeight,
+                    width: maxSVGWidth,
+                    preserveAspectRatio: "xMidYMid meet",
+                });
+            } catch (svgError) {
+                doc.fillColor("red")
+                    .fontSize(20)
+                    .text(
+                        `Error rendering SVG: ${svgError instanceof Error ? svgError.message : svgError}`,
+                        margin * 2,
+                        pageHeight / 2,
+                        {
+                            height: maxSVGHeight,
+                            width: maxSVGWidth,
+                            continued: true,
+                        },
+                    );
+                doc.fillColor("black");
+            }
+
+            // Set, Counts, Measures, Coordinates, and Notes setup
+            const bottomY = doc.page.height - 110;
+            const columnPadding = 12;
+            const marginSize = margin * 1.5;
+            const contentWidth = pageWidth - marginSize * 2 - columnPadding * 2;
+
+            // Variable column widths (18%, 56%, 26%)
+            // If main sheet, no middle coordinates column
+            const leftColWidth = contentWidth * 0.18;
+            const midColWidth = individualCharts ? contentWidth * 0.56 : 0;
+            const rightColWidth = individualCharts
+                ? contentWidth * 0.26
+                : contentWidth * 0.82;
+            const leftX = marginSize;
+            const midX = leftX + leftColWidth + columnPadding;
+            const rightX = individualCharts
+                ? midX + midColWidth + columnPadding
+                : leftX + leftColWidth + columnPadding;
+
+            // Initialize Y positions for each column
+            let yLeft = bottomY;
+            let yMid = bottomY;
+            let yRight = bottomY;
+
+            // Left column (Set, Counts, Measures)
+            yLeft = drawLabelValue(
+                doc,
+                "Set:",
+                setNumber,
+                leftX,
+                yLeft,
+                leftColWidth,
+            );
+            yLeft = drawLabelValue(
+                doc,
+                "Counts:",
+                counts,
+                leftX,
+                yLeft,
+                leftColWidth,
+            );
+            yLeft = drawLabelValue(
+                doc,
+                "Measures:",
+                measureNumbers,
+                leftX,
+                yLeft,
+                leftColWidth,
+            );
+
+            // Middle column (Coordinates)
+            if (individualCharts) {
+                yMid = drawLabelValue(
+                    doc,
+                    "Previous Coordinate:",
+                    prevCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+                yMid = drawLabelValue(
+                    doc,
+                    "Current Coordinate:",
+                    currCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+                yMid = drawLabelValue(
+                    doc,
+                    "Next Coordinate:",
+                    nextCoord,
+                    midX,
+                    yMid,
+                    midColWidth,
+                );
+            }
+
+            // Right column (Notes)
+            yMid = drawLabelValue(
+                doc,
+                "Notes:",
+                notes,
+                rightX,
+                yRight,
+                rightColWidth,
+            );
+        }
+
+        doc.end();
+        await new Promise<void>((resolve, reject) => {
+            stream.on("finish", resolve);
+            stream.on("error", reject);
+        });
+
+        return { success: true };
     }
 
     /**

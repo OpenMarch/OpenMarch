@@ -7,7 +7,16 @@ import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
 import { update } from "./update";
+import {
+    addRecentFile,
+    getRecentFiles,
+    removeRecentFile,
+    clearRecentFiles,
+    updateRecentFileSvgPreview,
+} from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
+import { parseMxl } from "../mxl/MxlUtil";
+import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
 import {
@@ -30,7 +39,14 @@ import { getOrm } from "../database/db";
 // │ └── index.html    > Electron-Renderer
 //
 
+let isQuitting = false;
 const store = new Store();
+
+// Check if running in Playwright codegen mode
+export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
+console.log("isCodegen:", isCodegen);
+export const isPlaywrightSession = !!process.env.PLAYWRIGHT_SESSION;
+console.log("isPlaywrightSession:", isPlaywrightSession);
 
 const enableSentry =
     process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
@@ -77,15 +93,15 @@ let win: BrowserWindow | null = null;
 const preload = join(__dirname, "../preload/index.js");
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
-
 async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
         minWidth: 1000,
-        minHeight: 400,
+        minHeight: 600,
         autoHideMenuBar: true,
-        frame: false,
+        // Show frame in codegen mode for easier interaction
+        frame: isCodegen,
         trafficLightPosition: { x: 24, y: 9 },
         titleBarStyle: "hidden",
         webPreferences: {
@@ -97,6 +113,7 @@ async function createWindow(title?: string) {
             contextIsolation: true, // protect against prototype pollution
         },
     });
+    app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
 
     win.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {
@@ -115,7 +132,10 @@ async function createWindow(title?: string) {
         // electron-vite-vue#298
         win.loadURL(url);
         win.on("ready-to-show", () => {
-            if (win) win.webContents.openDevTools();
+            // Always open DevTools in codegen mode for debugging
+            if (win && (isCodegen || process.env.NODE_ENV === "development")) {
+                win.webContents.openDevTools();
+            }
         });
     } else {
         win.loadFile(indexHtml);
@@ -128,6 +148,24 @@ async function createWindow(title?: string) {
             "main-process-message",
             new Date().toLocaleString(),
         );
+    });
+
+    win.on("close", async (event: Electron.Event) => {
+        if (isQuitting) return;
+
+        event.preventDefault();
+        win!.hide(); // use non-null assertion now that we're inside the if-block
+
+        try {
+            await closeCurrentFile(true);
+        } catch (e) {
+            console.error("Error closing file:", e);
+        }
+
+        isQuitting = true;
+        win!.destroy();
+        win = null;
+        app.quit();
     });
 
     // Make all links open with the browser, not with the application
@@ -144,12 +182,21 @@ app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
 
+    if (isCodegen) {
+        console.log("🎭 Running in Playwright Codegen mode");
+    } else {
+        console.log("Not running in codegen mode");
+    }
+
     Menu.setApplicationMenu(applicationMenu);
 
     let pathToOpen = store.get("databasePath") as string;
     if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
         pathToOpen = process.argv[1];
+    } else if (process.argv.length >= 3 && process.argv[2].endsWith(".dots")) {
+        pathToOpen = process.argv[2];
     }
+    console.log("Path to Open:", pathToOpen);
     if (pathToOpen && pathToOpen.length > 0) await setActiveDb(pathToOpen);
     DatabaseServices.initHandlers();
 
@@ -180,6 +227,23 @@ app.whenReady().then(async () => {
         "selectedPageId:get",
         async () => store.get("selectedPageId") || FIRST_PAGE_ID,
     );
+
+    // Recent files handlers
+    ipcMain.handle("recent-files:get", async () => getRecentFiles());
+    ipcMain.handle("recent-files:remove", async (_, filePath) =>
+        removeRecentFile(filePath),
+    );
+    ipcMain.handle("recent-files:clear", async () => clearRecentFiles());
+    ipcMain.handle("recent-files:open", async (_, filePath) => {
+        if (!filePath || !fs.existsSync(filePath)) return -1;
+
+        DatabaseServices.setDbPath(filePath);
+        store.set("databasePath", filePath);
+        addRecentFile(filePath);
+
+        setActiveDb(filePath);
+        return 200;
+    });
 
     // Getters
     initGetters();
@@ -218,13 +282,35 @@ function initGetters() {
         );
     });
 
+    // Create Export Directory
+    ipcMain.handle(
+        "export:createExportDirectory",
+        async (_, defaultName: string) => {
+            return await PDFExportService.createExportDirectory(defaultName);
+        },
+    );
+
     // Export SVG pages to PDF
     ipcMain.handle(
-        "export:svgPagesToPdf",
-        async (_, svgPages: string[], options: { fileName: string }) => {
-            return await PDFExportService.exportSvgPagesToPdf(
+        "export:generateSVGsForMarcher",
+        async (
+            _,
+            svgPages: string[],
+            drillNumber: string,
+            marcherCoordinates: string[],
+            pages: Page[],
+            showName: string,
+            exportDir: string,
+            individualCharts: boolean,
+        ) => {
+            return await PDFExportService.generateDocForMarcher(
                 svgPages,
-                options,
+                drillNumber,
+                marcherCoordinates,
+                pages,
+                showName,
+                exportDir,
+                individualCharts,
             );
         },
     );
@@ -232,6 +318,11 @@ function initGetters() {
     // Get current filename
     ipcMain.handle("get-current-filename", async () => {
         return PDFExportService.getCurrentFilename();
+    });
+
+    // Opens the export directory
+    ipcMain.handle("open-export-directory", async (_, exportDir: string) => {
+        return PDFExportService.openExportDirectory(exportDir);
     });
 
     // Export Full Charts
@@ -243,7 +334,7 @@ function initGetters() {
     //);
 }
 
-app.on("window-all-closed", () => {
+app.on("window-all-closed", async () => {
     win = null;
     if (process.platform !== "darwin") app.quit();
 });
@@ -292,6 +383,7 @@ ipcMain.on("window:maximize", () => {
 });
 
 ipcMain.on("window:close", () => {
+    closeCurrentFile();
     win?.close();
 });
 
@@ -311,14 +403,10 @@ ipcMain.handle("set-theme", (event, theme) => {
     store.set("theme", theme);
 });
 
-// Show waveform
-// TODO refactor to settings
-ipcMain.handle("set:showWaveform", async (_, showWaveform: boolean) => {
-    store.set("showWaveform", showWaveform as boolean);
-});
+// file management
 
-ipcMain.handle("get:showWaveform", async () => {
-    return store.get("showWaveform", true);
+ipcMain.handle("closeCurrentFile", () => {
+    closeCurrentFile();
 });
 
 // Plugins
@@ -431,6 +519,8 @@ export async function newFile() {
     }
     await setActiveDb(path.filePath, true);
 
+    // Add to recent files
+    addRecentFile(path.filePath);
     win?.webContents.reload();
 
     return 200;
@@ -494,11 +584,14 @@ export async function loadDatabaseFile() {
             ],
         })
         .then(async (path) => {
+            // If the user cancels the dialog, and there is no previous path, return -1
+            // if (path.canceled || !path.filePaths[0]) return -1;
+
             DatabaseServices.setDbPath(path.filePaths[0]);
             store.set("databasePath", path.filePaths[0]); // Save the path for next time
 
-            // If the user cancels the dialog, and there is no previous path, return -1
-            if (path.canceled || !path.filePaths[0]) return -1;
+            // Add to recent files
+            addRecentFile(path.filePaths[0]);
 
             await setActiveDb(path.filePaths[0]);
             return 200;
@@ -509,21 +602,50 @@ export async function loadDatabaseFile() {
         });
 }
 
+// Custom function to send request and wait for response
+function requestSvgBeforeClose(win: BrowserWindow): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const requestId = `get-svg-${Date.now()}`;
+
+        ipcMain.once(`get-svg-response-${requestId}`, (event, svg) => {
+            resolve(svg);
+        });
+
+        win.webContents.send("get-svg-on-close", requestId);
+
+        // Optional timeout to avoid hanging
+        setTimeout(
+            () => reject(new Error("Timeout waiting for SVG response")),
+            5000,
+        );
+    });
+}
+
 /**
  * Closes the current database file.
  *
  * @returns 200 for success, -1 for failure
  */
-export async function closeCurrentFile() {
+export async function closeCurrentFile(isAppQuitting = false) {
     console.log("closeCurrentFile");
 
     if (!win) return -1;
+
+    try {
+        const svgResult = await requestSvgBeforeClose(win);
+        updateRecentFileSvgPreview(DatabaseServices.getDbPath(), svgResult);
+    } catch (error) {
+        console.error("Error getting SVG on close:", error);
+    }
 
     // Close the current file
     DatabaseServices.setDbPath("", false);
     store.set("databasePath", "");
 
-    win?.webContents.reload();
+    // Only reload if we're NOT quitting the app
+    if (!isAppQuitting) {
+        win.webContents.reload();
+    }
 
     return 200;
 }

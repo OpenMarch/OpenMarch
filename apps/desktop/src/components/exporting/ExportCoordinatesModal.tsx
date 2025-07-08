@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
+import ReactDOMServer from "react-dom/server";
+import { fabric } from "fabric";
+import { NoControls } from "@/components/canvas/CanvasConstants";
 import MarcherCoordinateSheet, {
     StaticMarcherCoordinateSheet,
     StaticCompactMarcherSheet,
 } from "./MarcherCoordinateSheet";
-import ReactDOMServer from "react-dom/server";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
     Dialog,
@@ -14,15 +17,28 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@openmarch/ui";
-import { ArrowSquareOut, Info, CircleNotch } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents, Button, Input, Checkbox } from "@openmarch/ui";
+import {
+    TooltipContents,
+    Button,
+    Checkbox,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTriggerButton,
+} from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import * as Tabs from "@radix-ui/react-tabs";
+import { rgbaToString } from "@/global/classes/FieldTheme";
+import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
+import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
+import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
+import { coordinateRoundingOptions } from "../../config/exportOptions";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -204,9 +220,38 @@ function CoordinateSheetExport() {
             setCurrentStep("Export completed!");
 
             // Add success toast message
-            const successMessage = `Successfully exported coordinate sheets for ${marchers.length} marcher${marchers.length === 1 ? "" : "s"}!`;
-
-            toast.success(successMessage);
+            toast.success(
+                <span>
+                    Successfully exported coordinate sheets for{" "}
+                    {marchers.length} marcher{marchers.length === 1 ? "" : "s"}!{" "}
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            const error =
+                                await window.electron.openExportDirectory(
+                                    result.path,
+                                );
+                            if (error) {
+                                toast.error(
+                                    "Could not open export directory: " + error,
+                                );
+                            }
+                        }}
+                        style={{
+                            color: "#3b82f6",
+                            textDecoration: "underline",
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            font: "inherit",
+                            cursor: "pointer",
+                            marginLeft: "0.5em",
+                        }}
+                    >
+                        Click to open export
+                    </button>
+                </span>,
+            );
         } catch (error) {
             console.error("Export error:", error);
             setCurrentStep("Export failed");
@@ -331,7 +376,7 @@ function CoordinateSheetExport() {
                     <Tooltip.TooltipProvider>
                         <Tooltip.Root>
                             <Tooltip.Trigger type="button">
-                                <Info size={18} className="text-text/60" />
+                                <InfoIcon size={18} className="text-text/60" />
                             </Tooltip.Trigger>
                             <TooltipContents className="p-16">
                                 <div>
@@ -353,25 +398,33 @@ function CoordinateSheetExport() {
                     className="flex w-full items-center justify-between gap-12"
                 >
                     <Form.Label className="text-body">
-                        {" "}
-                        Rounding denominator:{" "}
+                        Coordinate rounding:
                     </Form.Label>
-                    <Form.Control asChild className="w-[6rem]">
-                        <Input
-                            type="number"
-                            className="w-fit"
-                            defaultValue={roundingDenominator}
-                            step={1}
-                            min={1}
-                            onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>,
-                            ) =>
-                                setRoundingDenominator(
-                                    parseInt(e.target.value) || 4,
-                                )
+                    <Select
+                        value={roundingDenominator.toString()}
+                        onValueChange={(value: string) =>
+                            setRoundingDenominator(parseInt(value))
+                        }
+                    >
+                        <SelectTriggerButton
+                            label={
+                                coordinateRoundingOptions.find(
+                                    (opt) => opt.value === roundingDenominator,
+                                )?.label || "Select rounding"
                             }
+                            className="w-[16rem] whitespace-nowrap"
                         />
-                    </Form.Control>
+                        <SelectContent>
+                            {coordinateRoundingOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value.toString()}
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </Form.Field>
             </Form.Root>
 
@@ -379,10 +432,6 @@ function CoordinateSheetExport() {
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
                     <h5 className="text-h5">Preview</h5>
-                    <p className="text-sub text-text/75">
-                        {"4 -> 1/4 = nearest quarter step"} {" | "}{" "}
-                        {"10 -> 1/10 = nearest tenth step"}
-                    </p>
                 </div>
                 <div>
                     <div className="mx-2 bg-white text-black">
@@ -462,60 +511,310 @@ function DrillChartExport() {
     const { marcherPages } = useMarcherPageStore()!;
     const { marchers } = useMarcherStore()!;
 
+    // Loading bar
     const [isLoading, setIsLoading] = useState(false);
+    const isCancelled = useRef(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
 
-    const padding = 30;
-    const zoom = 0.7;
+    // Export options
+    const [individualCharts, setIndividualCharts] = useState(false);
+    const marginSVG = 40;
 
-    // Create SVGs from pages and export
-    const generateExportSVGs = useCallback(async () => {
-        // Setup
+    /**
+     * Generates SVGs for each marcher on each page, including pathways and coordinates.
+     * @param exportCanvas - The canvas to render the SVGs on.
+     * @return A promise that resolves to an object containing SVG strings and readable coordinates.
+     */
+    const generateExportSVGs = useCallback(
+        async (
+            exportCanvas: OpenMarchCanvas,
+        ): Promise<{
+            SVGs: string[][];
+            coords: string[][];
+        }> => {
+            // Setup export canvas for SVG generation
+            exportCanvas.setWidth(fieldProperties!.width + marginSVG * 2);
+            exportCanvas.setHeight(fieldProperties!.height + marginSVG * 2);
+            exportCanvas.viewportTransform = [1, 0, 0, 1, marginSVG, marginSVG];
+            exportCanvas.requestRenderAll();
+
+            // SVG storage setup
+            const svgPages: string[][] = Array.from(
+                { length: marchers.length },
+                () => [],
+            );
+
+            // Get marcherPages for this, prev, and next page
+            let currentMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+                marcherPages,
+                pages[0].id,
+            );
+            let prevMarcherPages: MarcherPage[] = [];
+            let nextMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+                marcherPages,
+                pages[1].id,
+            );
+
+            // Readable coordinates storage for each marcher
+            const readableCoords: string[][] = Array.from(
+                { length: marchers.length },
+                () => Array.from({ length: pages.length }, () => ""),
+            );
+
+            // Generate SVGs for each page
+            for (let i = 0; i < pages.length; i++) {
+                setCurrentStep(
+                    `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
+                );
+
+                exportCanvas.currentPage = pages[i];
+
+                // Render marchers for this page
+                await exportCanvas.renderMarchers({
+                    currentMarcherPages: currentMarcherPages,
+                    allMarchers: marchers,
+                });
+
+                // Render pathways for individual marchers
+                if (individualCharts) {
+                    for (let m = 0; m < marchers.length; m++) {
+                        const marcher = MarcherPage.filterByMarcherId(
+                            currentMarcherPages,
+                            marchers[m].id,
+                        )[0];
+                        const prevMarcher = MarcherPage.filterByMarcherId(
+                            prevMarcherPages,
+                            marchers[m].id,
+                        )[0];
+                        const nextMarcher = MarcherPage.filterByMarcherId(
+                            nextMarcherPages,
+                            marchers[m].id,
+                        )[0];
+
+                        // Store readable coordinates for this marcher
+                        readableCoords[m][i] =
+                            ReadableCoords.fromMarcherPage(marcher).toString();
+
+                        // Collect pathways to add/remove
+                        const objectsToRemove: fabric.Object[] = [];
+
+                        // Render previous pathway and midpoint
+                        if (
+                            prevMarcherPages.length > 0 &&
+                            currentMarcherPages
+                        ) {
+                            const [prevPathways, prevMidpoints] =
+                                exportCanvas.renderPathways({
+                                    startPageMarcherPages: [prevMarcher],
+                                    endPageMarcherPages: [marcher],
+                                    color: rgbaToString(
+                                        exportCanvas.fieldProperties.theme
+                                            .previousPath,
+                                    ),
+                                    strokeWidth: 4,
+                                    dashed: true,
+                                });
+
+                            objectsToRemove.push(
+                                ...prevPathways,
+                                ...prevMidpoints,
+                            );
+                        }
+
+                        // Render next pathway and midpoint
+                        if (
+                            currentMarcherPages &&
+                            nextMarcherPages.length > 0
+                        ) {
+                            const [nextPathways, nextMidpoints] =
+                                exportCanvas.renderPathways({
+                                    startPageMarcherPages: [marcher],
+                                    endPageMarcherPages: [nextMarcher],
+                                    color: rgbaToString(
+                                        exportCanvas.fieldProperties.theme
+                                            .nextPath,
+                                    ),
+                                    strokeWidth: 3,
+                                    dashed: false,
+                                });
+
+                            objectsToRemove.push(
+                                ...nextPathways,
+                                ...nextMidpoints,
+                            );
+                        }
+
+                        // Add box around prev coordinate
+                        if (prevMarcherPages.length > 0) {
+                            const square = new fabric.Rect({
+                                left: prevMarcher.x,
+                                top: prevMarcher.y,
+                                width: 20,
+                                height: 20,
+                                fill: "transparent",
+                                stroke: "blue",
+                                strokeWidth: 3,
+                                originX: "center",
+                                originY: "center",
+                                ...NoControls,
+                            });
+                            exportCanvas.add(square);
+                            objectsToRemove.push(square);
+                        }
+
+                        // Add circle around next coordinate
+                        if (nextMarcherPages.length > 0) {
+                            const circle = new fabric.Circle({
+                                left: nextMarcher.x,
+                                top: nextMarcher.y,
+                                radius: 10,
+                                fill: "transparent",
+                                stroke: "hsl(281, 82%, 63%)",
+                                strokeWidth: 3,
+                                originX: "center",
+                                originY: "center",
+                                ...NoControls,
+                            });
+                            exportCanvas.add(circle);
+                            objectsToRemove.push(circle);
+                        }
+
+                        // Send marcher to the front
+                        exportCanvas.sendCanvasMarcherToFront(
+                            CanvasMarcher.getCanvasMarcherForMarcher(
+                                exportCanvas,
+                                marchers[m],
+                            )!,
+                        );
+
+                        // Convert to SVG after adding pathways
+                        exportCanvas.renderAll();
+                        svgPages[m].push(exportCanvas.toSVG());
+
+                        // Remove the pathways to keep the canvas clean for the next marcher
+                        objectsToRemove.forEach((object: fabric.Object) =>
+                            exportCanvas.remove(object),
+                        );
+                    }
+
+                    // Update current, prev, and next marcher pages
+                    prevMarcherPages = currentMarcherPages;
+                    currentMarcherPages = nextMarcherPages;
+                    nextMarcherPages = MarcherPage.filterByPageId(
+                        marcherPages,
+                        pages[i + 2]?.id ?? -1,
+                    );
+                } else {
+                    // No pathway rendering, just generate SVG
+                    exportCanvas.renderAll();
+                    svgPages[0].push(exportCanvas.toSVG());
+                    currentMarcherPages = MarcherPage.filterByPageId(
+                        marcherPages,
+                        pages[i + 1]?.id,
+                    );
+                }
+
+                // Update progress smoothly
+                setProgress(50 * ((i + 1) / pages.length));
+                if (isCancelled.current) {
+                    throw new Error("Export cancelled by user");
+                }
+            }
+
+            // Success
+            return { SVGs: svgPages, coords: readableCoords };
+        },
+        [fieldProperties, marchers, marcherPages, pages, individualCharts],
+    );
+
+    /**
+     * Exports the generated SVGs as PDF files for each marcher or a single overview PDF.
+     * @param svgPages - 2D array of SVG strings for each marcher.
+     * @param readableCoords - 2D array of readable coordinates for each marcher.
+     */
+    const exportMarcherSVGs = useCallback(
+        async (
+            svgPages: string[][],
+            readableCoords: string[][],
+            exportName: string,
+            exportDir: string,
+        ) => {
+            // Generate PDFs for each marcher or MAIN if individual charts are not selected
+            for (let marcher = 0; marcher < svgPages.length; marcher++) {
+                const result =
+                    await window.electron.export.generateDocForMarcher(
+                        svgPages[marcher],
+                        individualCharts
+                            ? marchers[marcher].drill_number
+                            : "MAIN",
+                        readableCoords[marcher],
+                        pages,
+                        exportName,
+                        exportDir,
+                        individualCharts,
+                    );
+
+                if (!individualCharts) break; // just one PDF for MAIN
+
+                setProgress(50 + (50 * marcher) / svgPages.length);
+                setCurrentStep(
+                    `Generating PDF file for: ${marchers[marcher]?.drill_number ?? "MAIN"}`,
+                );
+
+                // Individual PDF failed, log error and continue
+                if (!result.success) {
+                    console.error(
+                        "SVG export failed with error:",
+                        result.error,
+                    );
+                    toast.error(
+                        `SVG export for ${marchers[marcher]?.drill_number ?? "MAIN"} failed with error: ${result.error}`,
+                    );
+                }
+                if (isCancelled.current) {
+                    throw new Error("Export cancelled by user");
+                }
+            }
+        },
+        [individualCharts, marchers, pages],
+    );
+
+    // Check if we have the minimum requirements for export
+    const canExport = !!(
+        fieldProperties &&
+        pages.length > 1 &&
+        marchers.length > 0
+    );
+
+    /**
+     * Handles the export process, generating SVGs and exporting them as PDFs.
+     */
+    const handleExport = useCallback(async () => {
+        isCancelled.current = false;
         setIsLoading(true);
-        setCurrentStep("Initializing export...");
         setProgress(0);
-        const progressPerPage = 90 / pages.length;
+        setCurrentStep("Initializing export...");
 
-        // Setup canvas and store original state for SVG creation and restore
-        const exportCanvas = window.canvas;
+        // Store original state of canvas for restoration
+        const exportCanvas: OpenMarchCanvas = window.canvas;
         const originalWidth = exportCanvas.getWidth();
         const originalHeight = exportCanvas.getHeight();
         const originalViewportTransform =
-            exportCanvas.viewportTransform.slice();
+            exportCanvas.viewportTransform!.slice();
 
-        exportCanvas.setWidth(1320);
-        exportCanvas.setHeight(730);
-        exportCanvas.viewportTransform = [zoom, 0, 0, zoom, padding, padding];
-        exportCanvas.requestRenderAll();
-
-        const svgPages: string[] = [];
-        const fileName = "drill-charts.pdf";
-
-        // Generate SVGs for each page
-        for (let i = 0; i < pages.length; i++) {
-            // Update page
-            exportCanvas.currentPage = pages[i];
-            setCurrentStep(
-                `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
+        // Generate SVGs from the canvas
+        let SVGs: string[][] = [];
+        let coords: string[][] = [];
+        try {
+            ({ SVGs, coords } = await generateExportSVGs(exportCanvas));
+        } catch (error) {
+            toast.error(
+                "SVG Generation failed: " +
+                    (error instanceof Error ? error.message : "Unknown error"),
             );
-
-            // Get marcherPages for page
-            const currentPageMarcherPages = marcherPages.filter(
-                (mp) => mp.page_id === exportCanvas.currentPage.id,
-            );
-
-            // Render marchers for this page
-            await exportCanvas.renderMarchers({
-                currentMarcherPages: currentPageMarcherPages,
-                allMarchers: marchers,
-            });
-
-            // Generate SVG
-            svgPages.push(exportCanvas.toSVG());
-
-            // Update progress smoothly
-            setProgress((i + 1) * progressPerPage);
+            setCurrentStep("Export failed");
+            isCancelled.current = true;
         }
 
         // Restore canvas to original state
@@ -524,67 +823,157 @@ function DrillChartExport() {
         exportCanvas.viewportTransform = originalViewportTransform;
         exportCanvas.requestRenderAll();
 
-        // Generate PDF
-        setCurrentStep("Generating PDF file...");
-        setProgress(95);
+        // Error occurred during SVG generation
+        if (isCancelled.current) return;
 
-        // Export SVG pages to PDF
-        const result = await window.electron.export.svgPagesToPdf(svgPages, {
-            fileName,
-        });
-        if (!result.success) {
-            console.error("PDF export failed with error:", result.error);
-            throw new Error(result.error);
+        // SVG creation done, start exporting
+        setCurrentStep("Generating PDF files...");
+        try {
+            // Create export directory
+            const { exportName, exportDir } =
+                await window.electron.export.createExportDirectory(
+                    await window.electron.getCurrentFilename(),
+                );
+            // Create documents for each marcher
+            await exportMarcherSVGs(SVGs, coords, exportName, exportDir);
+
+            setProgress(100);
+            setCurrentStep("Export completed!");
+
+            // Prompt user to open the export directory
+            toast.success(
+                <span>
+                    Successfully exported as PDF!{" "}
+                    <button
+                        type="button"
+                        onClick={() =>
+                            window.electron.openExportDirectory(exportDir)
+                        }
+                        style={{
+                            color: "#3b82f6",
+                            textDecoration: "underline",
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            font: "inherit",
+                            cursor: "pointer",
+                        }}
+                    >
+                        Click to open folder
+                    </button>
+                </span>,
+            );
+        } catch (error) {
+            toast.error(
+                "PDF Export failed: " +
+                    (error instanceof Error ? error.message : "Unknown error"),
+            );
+            setCurrentStep("Export failed");
         }
 
-        // Success
-        setProgress(100);
-        setCurrentStep("Export completed!");
-        const successMessage = `Successfully exported ${pages.length} page${pages.length === 1 ? "" : "s"} as PDF!`;
-        toast.success(successMessage);
+        isCancelled.current = false;
         setIsLoading(false);
-    }, [pages, marcherPages, marchers]);
-
-    // Check if we have the minimum requirements for export
-    const canExport = !!(
-        fieldProperties &&
-        pages.length > 0 &&
-        marchers.length > 0
-    );
+    }, [generateExportSVGs, exportMarcherSVGs]);
 
     return (
         <div className="flex flex-col gap-20">
-            {/* Export Status */}
-            {!canExport && (
-                <div className="flex flex-col items-center justify-center gap-12 rounded-lg bg-gray-50 py-20">
-                    <h4 className="text-h4 text-gray-600">
-                        Export Not Available
-                    </h4>
-                    <p className="text-body max-w-md text-center text-gray-500">
-                        Export requires field properties, pages, and marchers to
-                        be loaded.
-                    </p>
-                    <div className="text-center text-xs text-gray-400">
-                        <div>
-                            Field Properties: {fieldProperties ? "✓" : "✗"}
-                        </div>
-                        <div>Pages: {pages.length}</div>
-                        <div>Marchers: {marchers.length}</div>
-                    </div>
+            {/* Export Options */}
+            <Form.Root className="flex flex-col gap-y-24">
+                <Form.Field
+                    name="includeTitle"
+                    className="flex w-full items-center gap-12"
+                >
+                    <Form.Control asChild>
+                        <Checkbox
+                            checked={individualCharts}
+                            onCheckedChange={(checked: boolean) =>
+                                setIndividualCharts(checked)
+                            }
+                        />
+                    </Form.Control>
+                    <Form.Label className="text-body">
+                        Individual Drill Charts
+                    </Form.Label>
+                    <Tooltip.TooltipProvider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <InfoIcon size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <TooltipContents className="p-16">
+                                <div>
+                                    Create customized drill chart PDFs for each
+                                    individual marcher.
+                                </div>
+                                <div>
+                                    If this is not checked, one overview drill
+                                    chart PDF will be created.
+                                </div>
+                            </TooltipContents>
+                        </Tooltip.Root>
+                    </Tooltip.TooltipProvider>
+                </Form.Field>
+            </Form.Root>
+
+            {/* Preview Section */}
+            <div className="flex flex-col gap-8">
+                <div className="flex w-full items-center justify-between">
+                    <h5 className="text-h5">Preview</h5>
                 </div>
-            )}
+
+                {/* Show Demo SVGs or Error if Export Requirement Not Met */}
+                {canExport ? (
+                    <div className="flex flex-col items-center gap-8">
+                        <div className="mx-auto w-full max-w-full bg-white text-black">
+                            <img
+                                src={
+                                    individualCharts
+                                        ? individualDemoSVG
+                                        : overviewDemoSVG
+                                }
+                                alt="Drill Chart Preview"
+                                className="h-auto w-full max-w-full"
+                                style={{
+                                    border: "1px solid #eee",
+                                    borderRadius: "4px",
+                                }}
+                            />
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center gap-12 bg-white py-20 text-black">
+                        <h4 className="text-h4">Export Not Available</h4>
+                        <p className="text-body max-w-md text-center text-gray-600">
+                            Export requires field properties, at least one
+                            non-default page, and at least one marcher.
+                        </p>
+                        <div className="text-center text-xs text-gray-500">
+                            <div>
+                                Field Properties: {fieldProperties ? "✓" : "✗"}
+                            </div>
+                            <div>Page: {pages.length > 1 ? "✓" : "✗"}</div>
+                            <div>
+                                Marcher: {marchers.length > 0 ? "✓" : "✗"}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Export Button */}
             <div className="flex w-full justify-end gap-8">
                 <Button
                     size="compact"
-                    onClick={generateExportSVGs}
+                    onClick={handleExport}
                     disabled={isLoading || !canExport}
                 >
                     {isLoading ? "Exporting... Please wait" : "Export"}
                 </Button>
                 <DialogClose>
-                    <Button size="compact" variant="secondary">
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        onClick={() => (isCancelled.current = true)}
+                    >
                         Cancel
                     </Button>
                 </DialogClose>
@@ -634,33 +1023,20 @@ function DrillChartExport() {
 
 function ExportModalContents() {
     return (
-        <Tabs.Root
-            defaultValue="coordinate-sheets"
-            className="flex flex-col gap-20"
-        >
-            <Tabs.List className="border-stroke flex gap-8 border-b">
-                <Tabs.Trigger
-                    value="coordinate-sheets"
-                    className="text-body text-text/60 data-[state=active]:border-accent data-[state=active]:text-accent px-16 py-8 data-[state=active]:border-b-2"
-                >
-                    Coordinate Sheets
-                </Tabs.Trigger>
-                <Tabs.Trigger
-                    value="drill-charts"
-                    className="text-body text-text/60 data-[state=active]:border-accent data-[state=active]:text-accent px-16 py-8 data-[state=active]:border-b-2"
-                >
-                    Drill Charts
-                </Tabs.Trigger>
-            </Tabs.List>
+        <Tabs defaultValue="coordinate-sheets">
+            <TabsList>
+                <TabItem value="coordinate-sheets">Coordinate Sheets</TabItem>
+                <TabItem value="drill-charts">Drill Charts</TabItem>
+            </TabsList>
 
-            <Tabs.Content value="coordinate-sheets">
+            <TabContent value="coordinate-sheets">
                 <CoordinateSheetExport />
-            </Tabs.Content>
+            </TabContent>
 
-            <Tabs.Content value="drill-charts">
+            <TabContent value="drill-charts">
                 <DrillChartExport />
-            </Tabs.Content>
-        </Tabs.Root>
+            </TabContent>
+        </Tabs>
     );
 }
 
@@ -669,9 +1045,12 @@ export default function ExportCoordinatesModal() {
         <Dialog>
             <DialogTrigger
                 asChild
-                className="hover:text-accent cursor-pointer duration-150 ease-out outline-none focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
+                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
-                <ArrowSquareOut size={18} />
+                <button type="button" className="flex items-center gap-8">
+                    <ArrowSquareOutIcon size={24} />
+                    Export
+                </button>
             </DialogTrigger>
 
             {/* Dialog Setup */}

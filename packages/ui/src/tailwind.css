@@ -43,15 +43,16 @@
     --color-modal-overlay: rgba(255, 255, 255, 0.25);
     --color-stroke: rgba(0, 0, 0, 0.1);
     --color-text: rgb(32, 32, 32);
-    --color-text-subtitle: rgb(100, 100, 100);
+    --color-text-subtitle: rgb(32, 32, 32, 0.6);
+    --color-text-disabled: rgb(32, 32, 32, 0.3);
     --color-text-invert: rgb(255, 255, 255);
     --color-accent: rgb(100, 66, 255);
     --color-red: rgb(176, 51, 51);
     --color-yellow: rgb(200, 170, 0);
     --color-green: rgb(72, 158, 51);
     --background-image-fg-1: linear-gradient(
-        rgba(0, 0, 0, 0.03),
-        rgba(0, 0, 0, 0.05)
+        rgba(0, 0, 0, 0.015),
+        rgba(0, 0, 0, 0.025)
     );
     --background-image-fg-2: linear-gradient(
         rgba(255, 255, 255, 0.17),
@@ -109,7 +110,8 @@
     --color-modal-overlay: rgba(0, 0, 0, 0.15);
     --color-stroke: rgba(255, 255, 255, 0.06);
     --color-text: rgb(208, 208, 208);
-    --color-text-subtitle: rgb(128, 128, 128);
+    --color-text-subtitle: rgb(208, 208, 208, 0.6);
+    --color-text-disabled: rgb(208, 208, 208, 0.3);
     --color-text-invert: rgb(0, 0, 0);
     --color-accent: rgb(150, 126, 255);
     --color-red: rgb(227, 74, 74);
@@ -140,8 +142,8 @@ a:disabled {
 }
 
 ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -149,12 +151,12 @@ a:disabled {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(var(--text), 0.075);
+    background: var(--color-stroke);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--text), 0.15);
+    background: var(--color-accent);
 }
 
 ::selection {

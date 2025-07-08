@@ -2,14 +2,17 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import MarcherList from "./MarcherList";
 import NewMarcherForm from "./NewMarcherForm";
-import { X, CaretLeft } from "@phosphor-icons/react";
+import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
+import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
+import SectionAppearanceList from "./section/SectionAppearanceList";
 
 export default function MarchersModal() {
     return (
         <SidebarModalLauncher
             contents={<MarcherListContents />}
-            buttonLabel="Marchers"
+            newContentId="marchers"
+            buttonLabel={<UsersThreeIcon size={24} />}
         />
     );
 }
@@ -24,7 +27,16 @@ export function MarcherListContents() {
                 <div className="flex items-center gap-8">
                     <Button
                         onClick={() => {
-                            setContent(<MarcherNewFormContents />);
+                            setContent(<SectionAppearanceList />, "marchers");
+                        }}
+                        size="compact"
+                        variant="secondary"
+                    >
+                        Section Styles
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setContent(<MarcherNewFormContents />, "marchers");
                         }}
                         size="compact"
                     >
@@ -34,12 +46,12 @@ export function MarcherListContents() {
                         onClick={toggleOpen}
                         className="hover:text-red duration-150 ease-out"
                     >
-                        <X size={24} />
+                        <XIcon size={24} />
                     </button>
                 </div>
             </header>
 
-            <div className="flex grow flex-col gap-16 overflow-scroll">
+            <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
                 <MarcherList />
             </div>
         </div>
@@ -55,11 +67,11 @@ export function MarcherNewFormContents() {
                 <div className="flex items-center gap-8">
                     <button
                         onClick={() => {
-                            setContent(<MarcherListContents />);
+                            setContent(<MarcherListContents />, "marchers");
                         }}
                         className="hover:text-accent duration-150 ease-out"
                     >
-                        <CaretLeft size={24} />
+                        <CaretLeftIcon size={24} />
                     </button>
                     <h4 className="text-h4 leading-none">Add Marchers</h4>
                 </div>
@@ -67,11 +79,11 @@ export function MarcherNewFormContents() {
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >
-                    <X size={24} />
+                    <XIcon size={24} />
                 </button>
             </header>
 
-            <div className="flex grow flex-col gap-16 overflow-scroll">
+            <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
                 <NewMarcherForm />
             </div>
         </div>

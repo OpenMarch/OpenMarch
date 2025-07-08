@@ -13,8 +13,6 @@ export interface UiSettings {
     gridLines: boolean;
     /** Boolean to view lines for every four steps on the field */
     halfLines: boolean;
-    /** Boolean to view audio waveform */
-    showWaveform: boolean;
     /** The number of pixels per second in the timeline */
     timelinePixelsPerSecond: number;
     /** The component that is currently focussed */
@@ -51,7 +49,6 @@ const defaultSettings: UiSettings = {
     nextPaths: false,
     gridLines: true,
     halfLines: true,
-    showWaveform: false,
     timelinePixelsPerSecond: 40,
     focussedComponent: "canvas",
     mouseSettings: {
@@ -111,15 +108,12 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
         uiSettings: loadSettings(),
 
         fetchUiSettings: () => {
-            window.electron.getShowWaveform().then((showWaveform: boolean) => {
-                const currentSettings = get().uiSettings;
-                const newSettings = {
-                    ...currentSettings,
-                    showWaveform: showWaveform,
-                };
-                set({ uiSettings: newSettings });
-                saveSettings(newSettings);
-            });
+            const currentSettings = get().uiSettings;
+            const newSettings = {
+                ...currentSettings,
+            };
+            set({ uiSettings: newSettings });
+            saveSettings(newSettings);
         },
 
         setUiSettings: (newUiSettings, type) => {
@@ -135,7 +129,6 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
 
             window.electron.sendLockX(uiSettings.lockX);
             window.electron.sendLockY(uiSettings.lockY);
-            window.electron.setShowWaveform(uiSettings.showWaveform);
 
             set({ uiSettings: uiSettings });
             saveSettings(uiSettings);

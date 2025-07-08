@@ -6,6 +6,8 @@ import {
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 import { TooltipContents } from "@openmarch/ui";
+import clsx from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,6 +15,7 @@ interface registeredActionButtonProps
     instructionalString?: string;
     children?: React.ReactNode;
     showTooltip?: boolean;
+    tooltipPosition?: "top" | "bottom" | "left" | "right";
 }
 
 /**
@@ -31,6 +34,7 @@ export default function RegisteredActionButton({
     children,
     instructionalString,
     showTooltip = true,
+    tooltipPosition = "top",
     ...rest
 }: registeredActionButtonProps) {
     const { linkRegisteredAction, removeRegisteredAction } =
@@ -69,11 +73,16 @@ export default function RegisteredActionButton({
                 <RadixTooltip.Trigger
                     {...rest}
                     ref={buttonRef}
-                    className={rest.className}
+                    className={twMerge(
+                        clsx(
+                            "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+                            rest.className,
+                        ),
+                    )}
                 >
                     {children}
                 </RadixTooltip.Trigger>
-                <TooltipContents side="bottom">
+                <TooltipContents side={tooltipPosition}>
                     {instructionalString
                         ? instructionalString
                         : registeredAction.instructionalString}
@@ -82,7 +91,16 @@ export default function RegisteredActionButton({
         );
     else
         return (
-            <button {...rest} ref={buttonRef} className={rest.className}>
+            <button
+                {...rest}
+                ref={buttonRef}
+                className={twMerge(
+                    clsx(
+                        "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+                        rest.className,
+                    ),
+                )}
+            >
                 {children}
             </button>
         );

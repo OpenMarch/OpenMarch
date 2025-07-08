@@ -1038,6 +1038,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
+     * Brings the specified canvasMarcher to the front of the canvas
+     */
+    sendCanvasMarcherToFront = (canvasMarcher: CanvasMarcher) => {
+        this.bringToFront(canvasMarcher);
+        this.bringAllControlPointsTooFront();
+    };
+
+    /**
      * Render static marchers for the given page
      *
      * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")

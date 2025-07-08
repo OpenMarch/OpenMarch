@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getModifiedBeats } from "../EditableTimingMarkersPlugin";
+import { getModifiedBeats } from "../audio/EditableTimingMarkersPlugin";
 import type Beat from "@/global/classes/Beat";
 
 describe("getModifiedBeats", () => {
