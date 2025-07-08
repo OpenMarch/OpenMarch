@@ -63,7 +63,7 @@ export const test = base.extend<MyFixtures>({
                     ...process.env,
                     ELECTRON_ENABLE_LOGGING: "1",
                     ELECTRON_ENABLE_STACK_DUMPING: "1",
-                    PLAYWRIGHT_CODEGEN: "true",
+                    PLAYWRIGHT_SESSION: "true",
                 },
             });
 

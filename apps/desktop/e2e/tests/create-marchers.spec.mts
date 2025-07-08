@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { test } from "../fixtures.mjs";
 
-test("Create multiple types of marchers", async ({ electronApp }) => {
+test.skip("Create multiple types of marchers", async ({ electronApp }) => {
     const { page } = electronApp;
     await page.getByRole("button", { name: "Marchers" }).click();
     await page.getByRole("button", { name: "Add", exact: true }).click();

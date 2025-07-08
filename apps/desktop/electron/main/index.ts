@@ -45,6 +45,8 @@ const store = new Store();
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
 console.log("isCodegen:", isCodegen);
+export const isPlaywrightSession = !!process.env.PLAYWRIGHT_SESSION;
+console.log("isPlaywrightSession:", isPlaywrightSession);
 
 const enableSentry =
     process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
@@ -194,6 +196,7 @@ app.whenReady().then(async () => {
     } else if (process.argv.length >= 3 && process.argv[2].endsWith(".dots")) {
         pathToOpen = process.argv[2];
     }
+    console.log("Path to Open:", pathToOpen);
     if (pathToOpen && pathToOpen.length > 0) await setActiveDb(pathToOpen);
     DatabaseServices.initHandlers();
 

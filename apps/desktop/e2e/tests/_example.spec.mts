@@ -10,6 +10,4 @@ test("example test", async ({ electronApp }) => {
     });
 
     expect(isPackaged).toBe(false);
-
-    await page.screenshot({ path: "intro.png" });
 });

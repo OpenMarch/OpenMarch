@@ -39,6 +39,6 @@ jobs:
             - uses: actions/upload-artifact@v4
               if: ${{ !cancelled() }}
               with:
-                  name: desktop-playwright-report-${{ github.run_number }}
+                  name: desktop-playwright-report-${{ github.run_number }}-${{ github.sha }}
                   path: apps/desktop/playwright-report/
                   retention-days: 30

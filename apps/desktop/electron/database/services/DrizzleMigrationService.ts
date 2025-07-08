@@ -7,7 +7,6 @@ import fs from "fs";
 import Constants, { TablesWithHistory } from "../../../src/global/Constants";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
 import { createUndoTriggers } from "../database.history";
-import { isCodegen } from "../../main/index";
 
 export type DB = BetterSQLite3Database<typeof schema>;
 
@@ -43,7 +42,7 @@ export class DrizzleMigrationService {
         }
 
         let folder = migrationsFolder || path.join(__dirname, "../migrations");
-        if (isCodegen) {
+        if (process.env.PLAYWRIGHT_CODEGEN || process.env.PLAYWRIGHT_SESSION) {
             folder = folder.replace("/dist-electron/main", "");
         }
 
