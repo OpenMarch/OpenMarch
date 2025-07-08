@@ -64,8 +64,12 @@ export function parseMusicXml(xmlText: string): Measure[] {
     // If the XML has multiple parts, stop after the first part
     const partStart = xmlText.indexOf("<part");
     if (partStart !== -1) {
-        const partEnd = xmlText.indexOf("</part>", partStart) + 7;
-        xmlText = xmlText.substring(partStart, partEnd);
+        const partEnd = xmlText.indexOf("</part>", partStart);
+        if (partEnd === -1) {
+            throw new Error("Malformed XML: Missing closing </part> tag.");
+        }
+
+        xmlText = xmlText.substring(partStart, partEnd + 7);
     }
 
     // Extract beats measure-by-measure
