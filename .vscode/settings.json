@@ -25,35 +25,11 @@
     "editor.formatOnSave": true, // optional
     "editor.formatOnSaveMode": "file", // required to format on save
     "vs-code-prettier-eslint.prettierLast": false,
-    "cSpell.words": [
-        "Classname",
-        "customizer",
-        "dbstat",
-        "Dumouchelle",
-        "fieldots",
-        "Frontfield",
-        "openmarch",
-        "posthog",
-        "Rowid",
-        "shouldn",
-        "Signup",
-        "Skyrim",
-        "spms",
-        "SUPABASE",
-        "testid",
-        "Topbar",
-        "trackpad",
-        "undoable",
-        "Woodgrove",
-        "zustand"
-    ],
     "[typescriptreact]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "jest.jestCommandLine": "node_modules/.bin/jest",
     "prettier.configPath": ".prettierrc.mjs",
-    "[typescript]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
-    }, // set as "true" to run 'prettier' last not first
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "cSpell.import": ["cspell.config.js"]
 }
