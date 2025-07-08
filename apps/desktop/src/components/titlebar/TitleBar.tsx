@@ -12,8 +12,9 @@ import {
     Button,
 } from "@openmarch/ui";
 import VersionChecker from "../VersionCheck";
+import FileControls from "./FileControls";
 
-export default function TitleBar() {
+export default function TitleBar({ showControls }: { showControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
 
     const [dbPath, setDbPath] = useState<string>("");
@@ -84,6 +85,7 @@ export default function TitleBar() {
                             {currentVersion}
                         </p>
                         <VersionChecker />
+                        {showControls && <FileControls />}
                     </div>
                 </div>
                 <p className="text-sub absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">

@@ -1,6 +1,7 @@
 import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
 import { usePostHog } from "posthog-js/react";
 import * as Sentry from "@sentry/electron/renderer";
+import { useState, useEffect } from "react";
 import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
 
 interface AnalyticsOptInModalProps {
@@ -11,6 +12,15 @@ export default function AnalyticsOptInModal({
     onChoice,
 }: AnalyticsOptInModalProps) {
     const posthog = usePostHog();
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsOpen(true);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleOptIn = () => {
         posthog.opt_in_capturing();
@@ -35,7 +45,7 @@ export default function AnalyticsOptInModal({
     };
 
     return (
-        <Dialog open={true}>
+        <Dialog open={isOpen}>
             <DialogContent
                 className="w-[40rem]"
                 aria-describedby="Analytics Opt-In"
