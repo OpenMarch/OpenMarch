@@ -14,6 +14,7 @@ module.exports = {
         "turborepo",
         "colours",
         "sicommand",
+        "vmin",
         "bostick",
         "dukc",
         "tabler",
