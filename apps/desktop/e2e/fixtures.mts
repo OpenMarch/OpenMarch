@@ -37,6 +37,7 @@ if (!fs.existsSync(blankDatabaseFile)) {
 
 type MyFixtures = {
     electronApp: { app: ElectronApplication; databasePath: string; page: Page };
+    electronAppEmpty: { app: ElectronApplication; page: Page };
 };
 
 export const test = base.extend<MyFixtures>({
@@ -88,6 +89,37 @@ export const test = base.extend<MyFixtures>({
                 "Cleaned up temporary database file:",
                 tempDatabaseFile,
             );
+        }
+    },
+    electronAppEmpty: async ({}, use) => {
+        let browser: ElectronApplication | undefined;
+        try {
+            browser = await electron.launch({
+                args: [mainFile, "."],
+                env: {
+                    ...process.env,
+                    ELECTRON_ENABLE_LOGGING: "1",
+                    ELECTRON_ENABLE_STACK_DUMPING: "1",
+                    PLAYWRIGHT_SESSION: "true",
+                },
+            });
+
+            // Capture main process logs (optional, but good for debugging)
+            browser.process().stdout?.on("data", (data) => {
+                console.log("[MAIN STDOUT]", data.toString().trim());
+            });
+            browser.process().stderr?.on("data", (data) => {
+                console.log("[MAIN STDERR]", data.toString().trim());
+            });
+            const page = await browser.firstWindow();
+
+            // Provide the ElectronApp instance to the test
+            await use({ app: browser, page });
+        } finally {
+            // Cleanup: Close the browser and delete the temporary database file
+            if (browser) {
+                await browser.close();
+            }
         }
     },
 });
