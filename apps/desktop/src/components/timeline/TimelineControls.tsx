@@ -96,8 +96,7 @@ function PlaybackControls() {
     return (
         <div className={clsx("flex gap-12")} aria-label="Playback Controls">
             <RegisteredActionButton
-                // for some reason the lastPage and nextPage actions are reversed? reversed them here as temp fix
-                registeredAction={RegisteredActionsObjects.lastPage}
+                registeredAction={RegisteredActionsObjects.firstPage}
                 disabled={
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
@@ -144,7 +143,7 @@ function PlaybackControls() {
             </RegisteredActionButton>
 
             <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.firstPage}
+                registeredAction={RegisteredActionsObjects.lastPage}
                 disabled={
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
