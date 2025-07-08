@@ -2,7 +2,6 @@
 import "@fontsource/dm-sans";
 import "@fontsource/dm-mono";
 import "@/styles/base.css";
-import "@phosphor-icons/web/regular";
 
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer.astro";
@@ -18,9 +17,13 @@ const { title } = Astro.props;
         <link rel="sitemap" href="/sitemap-index.xml" />
         <title>{title} | OpenMarch</title>
     </head>
-    <body class="overflow-x-hidden bg-bg-1 text-text">
-        <Nav client:load />
-        <slot />
-        <Footer />
+    <body
+        class="overflow-x-hidden bg-bg-1 text-text flex justify-center items-start px-8"
+    >
+        <main class="max-w-[75rem] py-8 flex flex-col gap-96">
+            <Nav client:load />
+            <slot />
+            <Footer />
+        </main>
     </body>
 </html>
