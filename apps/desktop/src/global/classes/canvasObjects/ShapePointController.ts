@@ -2,7 +2,6 @@ import { fabric } from "fabric";
 import { rgbaToString } from "../FieldTheme";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { StaticMarcherShape, VanillaPoint } from "./StaticMarcherShape";
-import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 import { roundCoordinatesHandler } from "./handlers/RoundCoordinates";
 
 /**

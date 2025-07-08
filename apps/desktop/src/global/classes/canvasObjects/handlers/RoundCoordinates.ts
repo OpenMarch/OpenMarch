@@ -11,6 +11,7 @@ import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 export const roundCoordinatesHandler = (
     object: fabric.Object,
     event: fabric.IEvent<MouseEvent>,
+    customOrigin?: { xPixels: number; yPixels: number },
 ) => {
     const canvas = object.canvas;
     if (!canvas) throw new Error("Canvas is not defined");
@@ -25,6 +26,7 @@ export const roundCoordinatesHandler = (
               coordinate: { xPixels: object.left, yPixels: object.top },
               fieldProperties: (canvas as OpenMarchCanvas).fieldProperties,
               uiSettings: (canvas as OpenMarchCanvas).uiSettings,
+              customOrigin,
           });
 
     object.set({

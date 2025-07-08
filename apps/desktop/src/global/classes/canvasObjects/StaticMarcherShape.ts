@@ -6,6 +6,7 @@ import { ShapePoint } from "./ShapePoint";
 import { Coordinate, SvgCommandEnum } from "./SvgCommand";
 import { ShapePath } from "./ShapePath";
 import { ShapePointController } from "./ShapePointController";
+import { roundCoordinatesHandler } from "./handlers/RoundCoordinates";
 
 /**
  * An SVG point in the StaticMarcherShape path.
@@ -158,12 +159,27 @@ export class StaticMarcherShape {
             });
     }
 
+    private _moveStartPoint?: { xPixels: number; yPixels: number };
     /**
      * Handles the movement of the shape by updating the control points' coordinates
      *
      * @param e The event that triggered the move
      */
-    moveHandler(e: fabric.IEvent) {
+    moveHandler(e: fabric.IEvent<MouseEvent>) {
+        if (!this._moveStartPoint) {
+            if (
+                this._shapePath.left === undefined ||
+                this._shapePath.top === undefined
+            ) {
+                console.error("The shape does not have coordinates");
+                return;
+            }
+            this._moveStartPoint = {
+                xPixels: this._shapePath.left,
+                yPixels: this._shapePath.top,
+            };
+        }
+        roundCoordinatesHandler(this._shapePath, e, this._moveStartPoint);
         if (!this._shapePath) {
             console.error("The shapePath is not defined");
             return;
@@ -202,6 +218,7 @@ export class StaticMarcherShape {
      * @param e The fabric.js event object that triggered the modification.
      */
     modifiedHandler(e: fabric.IEvent) {
+        this._moveStartPoint = undefined;
         this.recreatePath(this._shapePath.path as any as VanillaPoint[]);
     }
 
