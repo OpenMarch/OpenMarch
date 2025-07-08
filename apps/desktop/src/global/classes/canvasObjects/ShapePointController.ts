@@ -2,6 +2,8 @@ import { fabric } from "fabric";
 import { rgbaToString } from "../FieldTheme";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { StaticMarcherShape, VanillaPoint } from "./StaticMarcherShape";
+import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
+import { roundCoordinatesHandler } from "./handlers/RoundCoordinates";
 
 /**
  * Represents a control point for a StaticMarcherShape object, which is part of a path in a canvas.
@@ -181,7 +183,8 @@ export class ShapePointController extends fabric.Circle {
      *
      * @param e - The fabric.js event object containing information about the move event.
      */
-    moveHandler(e: fabric.IEvent) {
+    moveHandler(event: fabric.IEvent<MouseEvent>) {
+        roundCoordinatesHandler(this, event);
         this.marcherShape.shapePath.objectCaching = false;
         if (this.marcherShape.shapePath.path && this.left && this.top) {
             this.refreshParentPathCoordinates();
