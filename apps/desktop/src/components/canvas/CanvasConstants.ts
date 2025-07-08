@@ -1,4 +1,4 @@
-import { IGroupOptions } from "fabric/fabric-impl";
+import { IGroupOptions } from "fabric";
 
 /**
  * Options for the background image on the canvas.
