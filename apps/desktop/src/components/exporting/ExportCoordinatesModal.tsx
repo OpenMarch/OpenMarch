@@ -19,7 +19,15 @@ import {
 } from "@openmarch/ui";
 import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents, Button, Input, Checkbox } from "@openmarch/ui";
+import {
+    TooltipContents,
+    Button,
+    Checkbox,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTriggerButton,
+} from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -30,6 +38,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
+import { coordinateRoundingOptions } from "../../config/exportOptions";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -389,25 +398,33 @@ function CoordinateSheetExport() {
                     className="flex w-full items-center justify-between gap-12"
                 >
                     <Form.Label className="text-body">
-                        {" "}
-                        Rounding denominator:{" "}
+                        Coordinate rounding:
                     </Form.Label>
-                    <Form.Control asChild className="w-[6rem]">
-                        <Input
-                            type="number"
-                            className="w-fit"
-                            defaultValue={roundingDenominator}
-                            step={1}
-                            min={1}
-                            onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>,
-                            ) =>
-                                setRoundingDenominator(
-                                    parseInt(e.target.value) || 4,
-                                )
+                    <Select
+                        value={roundingDenominator.toString()}
+                        onValueChange={(value: string) =>
+                            setRoundingDenominator(parseInt(value))
+                        }
+                    >
+                        <SelectTriggerButton
+                            label={
+                                coordinateRoundingOptions.find(
+                                    (opt) => opt.value === roundingDenominator,
+                                )?.label || "Select rounding"
                             }
+                            className="w-[16rem] whitespace-nowrap"
                         />
-                    </Form.Control>
+                        <SelectContent>
+                            {coordinateRoundingOptions.map((option) => (
+                                <SelectItem
+                                    key={option.value}
+                                    value={option.value.toString()}
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </Form.Field>
             </Form.Root>
 
@@ -415,10 +432,6 @@ function CoordinateSheetExport() {
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
                     <h5 className="text-h5">Preview</h5>
-                    <p className="text-sub text-text/75">
-                        {"4 -> 1/4 = nearest quarter step"} {" | "}{" "}
-                        {"10 -> 1/10 = nearest tenth step"}
-                    </p>
                 </div>
                 <div>
                     <div className="mx-2 bg-white text-black">
