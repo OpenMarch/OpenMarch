@@ -364,7 +364,7 @@ export function initHandlers() {
     );
 
     // Audio Files
-    // Insert audio file is defined in main index.ts
+    // ipcMain.handle("audio:insert") is defined in main/index.ts
     ipcMain.handle("audio:getAll", async () => getAudioFilesDetails());
     ipcMain.handle("audio:getSelected", async () => getSelectedAudioFile());
     ipcMain.handle("audio:select", async (_, audioFileId: number) =>

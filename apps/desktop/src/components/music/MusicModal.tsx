@@ -1,4 +1,5 @@
 import AudioSelector from "./AudioSelector";
+import MusicXmlSelector from "./MusicXmlSelector";
 import { SidebarModalLauncher } from "../sidebar/SidebarModal";
 import { BooksIcon, XIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
@@ -101,6 +102,9 @@ function MusicModalContents() {
                             See docs
                         </Button>
                     </a>
+                </div>
+                <div className="flex flex-col gap-16">
+                    <MusicXmlSelector />
                 </div>
                 <div id="tempo-groups" className="mx-12 flex flex-col gap-8">
                     {tempoGroups.map((tempoGroup, i) => (
