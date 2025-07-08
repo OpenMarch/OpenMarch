@@ -96,6 +96,11 @@ module.exports = {
         "rgba",
         "choco",
         "WASD",
+        "viewports",
+        "codegen",
+        "spinbutton",
+        "monokai",
+        "openmarchdev",
     ],
     ignorePaths: [
         "node_modules/**",

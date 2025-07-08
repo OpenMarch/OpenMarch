@@ -44,6 +44,9 @@
             "outputs": [],
             "cache": false
         },
+        "e2e": {
+            "outputs": []
+        },
         "preview": {
             "outputs": []
         },
