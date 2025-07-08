@@ -15,7 +15,6 @@ import {
     updateRecentFileSvgPreview,
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
-import { parseMxl } from "../mxl/MxlUtil";
 import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
