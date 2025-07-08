@@ -22,7 +22,6 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import {
     TooltipContents,
     Button,
-    Input,
     Checkbox,
     Select,
     SelectContent,
@@ -481,7 +480,7 @@ function CoordinateSheetExport() {
                     <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                         {/* Background Progress Bar */}
                         <div
-                            className="bg-accent absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out"
+                            className="bg-accent absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
                             style={{
                                 width: `${progress}%`,
                                 transform: `translateX(${progress < 100 ? "0" : "0"})`,
@@ -490,7 +489,7 @@ function CoordinateSheetExport() {
 
                         {/* Animated Shimmer Effect */}
                         <div
-                            className="absolute left-0 top-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            className="absolute top-0 left-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             style={{
                                 animation:
                                     progress > 0 && progress < 100
@@ -997,7 +996,7 @@ function DrillChartExport() {
                     <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                         {/* Background Progress Bar */}
                         <div
-                            className="bg-accent absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out"
+                            className="bg-accent absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
                             style={{
                                 width: `${progress}%`,
                                 transform: `translateX(${progress < 100 ? "0" : "0"})`,
@@ -1006,7 +1005,7 @@ function DrillChartExport() {
 
                         {/* Animated Shimmer Effect */}
                         <div
-                            className="absolute left-0 top-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            className="absolute top-0 left-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             style={{
                                 animation:
                                     progress > 0 && progress < 100
@@ -1046,7 +1045,7 @@ export default function ExportCoordinatesModal() {
         <Dialog>
             <DialogTrigger
                 asChild
-                className="hover:text-accent outline-hidden flex items-center gap-8 duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
                 <button type="button" className="flex items-center gap-8">
                     <ArrowSquareOutIcon size={24} />
