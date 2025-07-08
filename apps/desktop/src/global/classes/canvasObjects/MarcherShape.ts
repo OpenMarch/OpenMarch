@@ -330,6 +330,7 @@ export class MarcherShape extends StaticMarcherShape {
         }
         this.checkForFetchShapePages();
         this.fetchShapePages();
+        MarcherPage.fetchMarcherPages();
     }
 
     /**
