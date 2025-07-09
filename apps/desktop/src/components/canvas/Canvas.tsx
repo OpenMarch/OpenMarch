@@ -344,11 +344,15 @@ export default function Canvas({
                 mp.page_id === selectedPage.nextPageId,
         );
 
-        // Remove old pathways
+        // Remove pathways for selected marchers
         for (const pathway of pagePathways.current) {
-            canvas.remove(pathway);
+            if (selectedIds.includes(pathway.marcherId)) {
+                canvas.remove(pathway);
+            }
         }
-        pagePathways.current = [];
+        pagePathways.current = pagePathways.current.filter(
+            (pathway) => !selectedIds.includes(pathway.marcherId),
+        );
 
         // Draw previous/next pathways
         selectedCanvasMarchers.forEach((cm: any) => {
