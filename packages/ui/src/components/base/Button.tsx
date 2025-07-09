@@ -2,8 +2,8 @@ import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "./Tooltip";
+import { TooltipClassName } from "..";
+import * as Tooltip from "@radix-ui/react-tooltip";
 
 const variants = cva(
     [
@@ -94,9 +94,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ) => (
         <>
             {tooltipText !== undefined ? (
-                <RadixTooltip.Provider>
-                    <RadixTooltip.Root delayDuration={tooltipDelay}>
-                        <RadixTooltip.Trigger
+                <Tooltip.Provider>
+                    <Tooltip.Root delayDuration={tooltipDelay}>
+                        <Tooltip.Trigger
                             ref={ref}
                             className={getButtonClassName({
                                 variant,
@@ -107,12 +107,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                             {...props}
                         >
                             {children}
-                        </RadixTooltip.Trigger>
-                        <TooltipContents side={tooltipSide}>
-                            {tooltipText}
-                        </TooltipContents>
-                    </RadixTooltip.Root>
-                </RadixTooltip.Provider>
+                        </Tooltip.Trigger>
+                        <Tooltip.Portal>
+                            <Tooltip.Content
+                                className={TooltipClassName}
+                                side={tooltipSide}
+                            >
+                                {tooltipText}
+                            </Tooltip.Content>
+                        </Tooltip.Portal>
+                    </Tooltip.Root>
+                </Tooltip.Provider>
             ) : (
                 <button
                     className={getButtonClassName({

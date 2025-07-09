@@ -15,12 +15,34 @@ export default function AnalyticsOptInModal({
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsOpen(true);
-        }, 300);
+        let timer: NodeJS.Timeout | null = null;
 
-        return () => clearTimeout(timer);
-    }, []);
+        const checkEnv = async () => {
+            const env = await window.electron.getEnv();
+            if (env.isPlaywright || env.isCI) {
+                posthog.opt_out_capturing();
+                Sentry.init({
+                    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+                    enabled: false,
+                });
+                window.electron.send("settings:set", {
+                    optOutAnalytics: true,
+                });
+                onChoice(false);
+                setIsOpen(false);
+            } else {
+                timer = setTimeout(() => {
+                    setIsOpen(true);
+                }, 300);
+            }
+        };
+
+        checkEnv();
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [onChoice, posthog]);
 
     const handleOptIn = () => {
         posthog.opt_in_capturing();

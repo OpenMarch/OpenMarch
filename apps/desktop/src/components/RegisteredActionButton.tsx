@@ -5,9 +5,9 @@ import {
 } from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "@openmarch/ui";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
+import { TooltipClassName } from "@openmarch/ui";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -82,11 +82,16 @@ export default function RegisteredActionButton({
                 >
                     {children}
                 </RadixTooltip.Trigger>
-                <TooltipContents side={tooltipPosition}>
-                    {instructionalString
-                        ? instructionalString
-                        : registeredAction.instructionalString}
-                </TooltipContents>
+                <RadixTooltip.Portal>
+                    <RadixTooltip.Content
+                        className={TooltipClassName}
+                        side={tooltipPosition}
+                    >
+                        {instructionalString
+                            ? instructionalString
+                            : registeredAction.instructionalString}
+                    </RadixTooltip.Content>
+                </RadixTooltip.Portal>
             </RadixTooltip.Root>
         );
     else

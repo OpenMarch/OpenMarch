@@ -28,7 +28,7 @@ export default function TroubleshootingTips() {
                     <li>
                         macOS:
                         <code className="bg-fg-2 rounded-6 ml-6 p-2 px-6 font-mono">
-                            ~/Library/Application/Support/OpenMarch
+                            ~/Library/Application Support/OpenMarch
                         </code>
                     </li>
                     <li>
