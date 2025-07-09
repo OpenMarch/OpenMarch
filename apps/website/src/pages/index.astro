@@ -19,7 +19,7 @@ type Blog = CollectionEntry<"blog">;
     </script>
     <section
         id="landing"
-        class="relative flex h-[80vh] flex-col items-center justify-center gap-16 border border-stroke py-32 px-8 rounded-6"
+        class="relative flex h-fit flex-col items-center justify-center gap-16 border border-stroke pt-32 pb-8 px-8 rounded-6"
     >
         <code
             class="font-mono text-[1.25rem] text-accent intersect:motion-preset-fade-lg motion-delay-100"
@@ -44,8 +44,46 @@ type Blog = CollectionEntry<"blog">;
                 <Button variant="secondary">Learn More</Button>
             </a>
         </div>
+
+        <Image
+            src={"/home/fullscreen-dark.png"}
+            alt="Fullscreen Screenshot"
+            width={1920}
+            height={1080}
+            format="webp"
+            quality={80}
+            class="hidden dark:block border border-stroke rounded-6 absolute aspect-video h-auto w-[80%] top-[24%] z-20 motion-preset-slide-up-sm motion-delay-300"
+        />
+        <Image
+            src={"/home/fullscreen-light.png"}
+            alt="Fullscreen Screenshot"
+            width={1920}
+            height={1080}
+            format="webp"
+            quality={80}
+            class="block dark:hidden border border-stroke rounded-6 absolute aspect-video h-auto w-[80%] top-[24%] z-20 motion-preset-slide-up-sm motion-delay-300"
+        />
+
+        <Image
+            src={"/home/editor-dark.png"}
+            alt="Editor Screenshot"
+            width={1920}
+            height={1080}
+            format="webp"
+            quality={80}
+            class="hidden dark:block border border-stroke rounded-6 z-30 mt-[350px] motion-preset-slide-up-sm motion-delay-[400ms]"
+        />
+        <Image
+            src={"/home/editor-light.png"}
+            alt="Editor Screenshot"
+            width={1920}
+            height={1080}
+            format="webp"
+            quality={80}
+            class="block dark:hidden border border-stroke rounded-6 z-30 mt-[350px] motion-preset-slide-up-sm motion-delay-[400ms]"
+        />
         <div
-            class="absolute bottom-0 left-1/2 -translate-x-1/2 -z-50 size-[29vw] rounded-full bg-accent opacity-40 blur-[20vmin] intersect:motion-preset-fade-lg"
+            class="absolute top-1/5 left-1/2 -translate-x-1/2 -z-50 size-[29vw] rounded-full bg-accent opacity-40 blur-[20vmin] intersect:motion-preset-fade-lg"
         >
         </div>
     </section>
