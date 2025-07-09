@@ -41,7 +41,13 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 />
                 <FilesContent />
                 <LearnContent />
-                <SettingsContent />
+                <Tabs.Content
+                    value="settings"
+                    className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6 select-text"
+                >
+                    <h3 className="text-h3 w-[512px] pb-16">Settings</h3>
+                    <SettingsContent />
+                </Tabs.Content>
             </Tabs.Root>
 
             <Toaster />

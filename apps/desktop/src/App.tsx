@@ -149,7 +149,7 @@ function App() {
                                         <StateInitializer />
                                         <RegisteredActionsHandler />
                                         <SvgPreviewHandler />
-                                        <TitleBar />
+                                        <TitleBar showControls />
                                         <div
                                             id="app"
                                             className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"

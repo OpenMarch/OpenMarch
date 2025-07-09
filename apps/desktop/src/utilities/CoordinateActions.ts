@@ -106,6 +106,7 @@ export function getRoundCoordinates2({
     coordinate,
     uiSettings,
     fieldProperties,
+    customOrigin,
 }: {
     coordinate: { xPixels: number; yPixels: number };
     uiSettings: Pick<UiSettings, "coordinateRounding">;
@@ -113,8 +114,10 @@ export function getRoundCoordinates2({
         FieldProperties,
         "centerFrontPoint" | "pixelsPerStep"
     >;
+    customOrigin?: { xPixels: number; yPixels: number };
 }) {
     const output = { ...coordinate };
+    const origin = customOrigin ?? fieldProperties.centerFrontPoint;
 
     if (uiSettings.coordinateRounding) {
         const stepsPerPixel = 1 / fieldProperties.pixelsPerStep;
@@ -125,10 +128,7 @@ export function getRoundCoordinates2({
                 uiSettings.coordinateRounding.referencePointX ?? 0;
 
             const xStepsFromOrigin =
-                stepsPerPixel *
-                    (output.xPixels -
-                        fieldProperties.centerFrontPoint.xPixels) -
-                referenceX;
+                stepsPerPixel * (output.xPixels - origin.xPixels) - referenceX;
             if (xStepsFromOrigin !== 0) {
                 const denominator = 1 / nearestXSteps;
                 const roundedXSteps =
@@ -136,7 +136,7 @@ export function getRoundCoordinates2({
                 output.xPixels =
                     (roundedXSteps + referenceX) *
                         fieldProperties.pixelsPerStep +
-                    fieldProperties.centerFrontPoint.xPixels;
+                    origin.xPixels;
                 output.xPixels = Math.round(output.xPixels * EPSILON) / EPSILON;
             }
         }
@@ -145,10 +145,7 @@ export function getRoundCoordinates2({
                 uiSettings.coordinateRounding.referencePointY ?? 0;
 
             const yStepsFromOrigin =
-                stepsPerPixel *
-                    (output.yPixels -
-                        fieldProperties.centerFrontPoint.yPixels) -
-                referenceY;
+                stepsPerPixel * (output.yPixels - origin.yPixels) - referenceY;
             if (yStepsFromOrigin !== 0) {
                 const denominator = 1 / nearestYSteps;
                 const roundedYSteps =
@@ -156,7 +153,7 @@ export function getRoundCoordinates2({
                 output.yPixels =
                     (roundedYSteps + referenceY) *
                         fieldProperties.pixelsPerStep +
-                    fieldProperties.centerFrontPoint.yPixels;
+                    origin.yPixels;
                 output.yPixels = Math.round(output.yPixels * EPSILON) / EPSILON;
             }
         }

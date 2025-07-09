@@ -47,7 +47,7 @@ export default function Canvas({
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
-    const { uiSettings } = useUiSettingsStore()!;
+    const { setUiSettings, uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,
         alignmentEventMarchers,
@@ -653,9 +653,11 @@ export default function Canvas({
         // When fullscreen mode is activated, center and fit the canvas
         if (isFullscreen) {
             // Small delay to ensure the fullscreen transition has completed
-            setTimeout(() => centerAndFitCanvas(), 100);
-            setTimeout(() => setSelectedMarchers([]), 100);
-            setTimeout(() => setSelectedMarcherShapes([]), 100);
+            setTimeout(() => {
+                centerAndFitCanvas();
+                setSelectedMarchers([]);
+                setSelectedMarcherShapes([]);
+            }, 100);
         }
 
         if (!isFullscreen) {
@@ -787,7 +789,6 @@ export default function Canvas({
         >
             {pages.length > 0 ? (
                 <div
-                    className="h-full w-full"
                     style={{
                         transform: `rotateX(${perspective}deg)`,
                         transformOrigin:
