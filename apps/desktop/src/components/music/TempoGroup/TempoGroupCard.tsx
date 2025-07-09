@@ -13,11 +13,11 @@ import {
     Button,
     AlertDialogAction,
     AlertDialogCancel,
-    TooltipContents,
+    TooltipClassName,
 } from "@openmarch/ui";
 import { AlertDialog } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import * as RadixTooltip from "@radix-ui/react-tooltip";
+import * as Tooltip from "@radix-ui/react-tooltip";
 
 export default function TempoGroupCard({
     tempoGroup,
@@ -190,24 +190,27 @@ function StaticTempoGroupCard({
                             </AlertDialogContent>
                         </AlertDialog>
 
-                        <RadixTooltip.Provider>
-                            <RadixTooltip.Root>
-                                <RadixTooltip.Trigger asChild>
-                                    <button
-                                        onClick={() => {
-                                            setNewGroupFormIndex(index);
-                                            setIsEditing(false);
-                                        }}
-                                        className="hover:text-accent text-text duration-150 ease-out"
-                                    >
-                                        <PlusIcon size={24} />
-                                    </button>
-                                </RadixTooltip.Trigger>
-                                <TooltipContents side="top">
+                        <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                                <button
+                                    onClick={() => {
+                                        setNewGroupFormIndex(index);
+                                        setIsEditing(false);
+                                    }}
+                                    className="hover:text-accent text-text duration-150 ease-out"
+                                >
+                                    <PlusIcon size={24} />
+                                </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                                <Tooltip.Content
+                                    className={TooltipClassName}
+                                    side="top"
+                                >
                                     Add a new tempo group after this one
-                                </TooltipContents>
-                            </RadixTooltip.Root>
-                        </RadixTooltip.Provider>
+                                </Tooltip.Content>
+                            </Tooltip.Portal>
+                        </Tooltip.Root>
                         <button
                             onClick={() => setIsEditing(true)}
                             className="hover:text-accent text-text duration-150 ease-out"

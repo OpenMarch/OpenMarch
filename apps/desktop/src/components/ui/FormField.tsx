@@ -1,6 +1,6 @@
 import * as Form from "@radix-ui/react-form";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipContents } from "@openmarch/ui";
+import { TooltipClassName } from "@openmarch/ui";
 import { InfoIcon } from "@phosphor-icons/react";
 import { twMerge } from "tailwind-merge";
 import { clsx } from "clsx";
@@ -39,9 +39,12 @@ const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
                                         className="text-text/60"
                                     />
                                 </Tooltip.Trigger>
-                                <TooltipContents side="right">
+                                <Tooltip.Content
+                                    className={TooltipClassName}
+                                    side="right"
+                                >
                                     {tooltip}
-                                </TooltipContents>
+                                </Tooltip.Content>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
                     )}
@@ -86,9 +89,14 @@ const StaticFormField = forwardRef<HTMLDivElement, FormFieldProps>(
                                         className="text-text/60"
                                     />
                                 </Tooltip.Trigger>
-                                <TooltipContents side="right">
-                                    {tooltip}
-                                </TooltipContents>
+                                <Tooltip.Portal>
+                                    <Tooltip.Content
+                                        className={TooltipClassName}
+                                        side="right"
+                                    >
+                                        {tooltip}
+                                    </Tooltip.Content>
+                                </Tooltip.Portal>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
                     )}

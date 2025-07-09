@@ -1,5 +1,4 @@
 import MouseSettings from "./MouseSettings";
-import * as Tabs from "@radix-ui/react-tabs";
 import AppearanceSettings from "./AppearanceSettings";
 import PluginsContents from "./plugins/Plugins";
 import PrivacySettings from "./PrivacySettings";

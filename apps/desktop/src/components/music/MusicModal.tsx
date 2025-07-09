@@ -79,9 +79,6 @@ function MusicModalContents() {
                 </button>
             </header>
 
-            {/* <div id="measure editing container">
-                <MeasureEditor />
-                </div> */}
             <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
                 <div className="flex flex-col gap-16">
                     <AudioSelector />

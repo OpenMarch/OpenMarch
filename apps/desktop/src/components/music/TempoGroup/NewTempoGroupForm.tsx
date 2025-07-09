@@ -5,7 +5,7 @@ import {
     createFromTempoGroup,
 } from "@/components/music/TempoGroup/TempoGroup";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { Input, TooltipContents, Button, UnitInput } from "@openmarch/ui";
+import { Input, Button, UnitInput, TooltipClassName } from "@openmarch/ui";
 import { InfoIcon } from "@phosphor-icons/react";
 import { Form, FormField, Label } from "@radix-ui/react-form";
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -185,23 +185,26 @@ const NewTempoGroupForm = React.forwardRef<
                     >
                         <Label className="text-sm">
                             End Tempo{" "}
-                            <Tooltip.TooltipProvider>
-                                <Tooltip.Root>
-                                    <Tooltip.Trigger type="button">
-                                        <InfoIcon
-                                            size={18}
-                                            className="text-text/60"
-                                        />
-                                    </Tooltip.Trigger>
-                                    <TooltipContents side="top">
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
+                                </Tooltip.Trigger>
+                                <Tooltip.Portal>
+                                    <Tooltip.Content
+                                        className={TooltipClassName}
+                                        side="top"
+                                    >
                                         The new group will gradually go towards
                                         the end tempo, but will not reach it.
                                         <br />
                                         This is to create a smooth transition to
                                         a new group.
-                                    </TooltipContents>
-                                </Tooltip.Root>
-                            </Tooltip.TooltipProvider>
+                                    </Tooltip.Content>
+                                </Tooltip.Portal>
+                            </Tooltip.Root>
                         </Label>
                         <UnitInput
                             id="end-tempo-input"
