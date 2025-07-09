@@ -101,7 +101,7 @@ function CoordinateRoundingPopover() {
         <ToolbarSection>
             <Popover.Root>
                 <Popover.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    Coordinate rounding... <CaretDownIcon size={18} />
+                    Coordinate rounding <CaretDownIcon size={18} />
                 </Popover.Trigger>
                 <Popover.Portal>
                     <Popover.Content className="bg-modal text-text rounded-6 shadow-modal backdrop-blur-32 border-stroke z-50 m-8 flex flex-col items-start gap-0 border p-8">
@@ -124,7 +124,7 @@ function SetMarcherPositionsDropdown() {
         <ToolbarSection aria-label="Set marcher positions">
             <Dropdown.Root>
                 <Dropdown.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    Place all marchers... <CaretDownIcon size={18} />
+                    Place all marchers <CaretDownIcon size={18} />
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
                     <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
@@ -152,7 +152,7 @@ function SetMarcherPositionsDropdown() {
 
             <Dropdown.Root>
                 <Dropdown.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    Place selected marchers... <CaretDownIcon size={18} />
+                    Place selected marchers <CaretDownIcon size={18} />
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
                     <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
