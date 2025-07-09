@@ -30,7 +30,9 @@ test("Launch page sub-menus", async ({ electronAppEmpty }) => {
     await expect(page.getByRole("button", { name: "Open File" })).toBeVisible();
 
     await page.getByRole("tab", { name: "Settings" }).click();
-    await expect(page.getByText("Something went wrong :(")).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Plugins" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
 });
 
 test("Canvas is visible", async ({ electronApp }) => {
