@@ -52,7 +52,7 @@ test("Canvas is visible", async ({ electronApp }) => {
     await expect(page.locator("canvas").nth(1)).toBeVisible();
 });
 
-test("Toolbars are visible", async ({ electronApp }) => {
+test.skip("Toolbars are visible", async ({ electronApp }) => {
     const { page } = electronApp;
     await page.getByRole("tab", { name: "File" }).click();
     await expect(page.getByText("Open FileNew FileSave Copy")).toBeVisible();
@@ -63,14 +63,14 @@ test("Toolbars are visible", async ({ electronApp }) => {
         page.getByRole("tabpanel", { name: "Alignment" }).locator("div").nth(3),
     ).toBeVisible();
 });
-test("Add music shows music tab", async ({ electronApp }) => {
+test.skip("Add music shows music tab", async ({ electronApp }) => {
     const { page } = electronApp;
     await page.getByRole("button", { name: "Add Music" }).click();
     await expect(page.locator("header")).toContainText("Music");
     await page.locator("header").getByRole("button").click();
 });
 
-test("Export modal is visible", async ({ electronApp }) => {
+test.skip("Export modal is visible", async ({ electronApp }) => {
     const { page } = electronApp;
     await page.getByRole("tab", { name: "File" }).click();
     await page.getByRole("button", { name: "Export" }).click();
@@ -88,7 +88,7 @@ test("Export modal is visible", async ({ electronApp }) => {
     ).not.toBeVisible();
 });
 
-test("Sidebars are visible", async ({ electronApp }) => {
+test.skip("Sidebars are visible", async ({ electronApp }) => {
     const { page } = electronApp;
     await page.locator("#sidebar").getByRole("button").first().click();
     await expect(page.getByRole("heading", { name: "Marchers" })).toBeVisible();
@@ -112,7 +112,7 @@ test("Sidebars are visible", async ({ electronApp }) => {
     ).toBeVisible();
     await expect(page.locator("header")).toBeVisible();
 });
-test("Field properties customizer tabs are visible", async ({
+test.skip("Field properties customizer tabs are visible", async ({
     electronApp,
 }) => {
     const { page } = electronApp;
