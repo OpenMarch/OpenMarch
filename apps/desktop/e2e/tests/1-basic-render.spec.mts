@@ -30,7 +30,9 @@ test("Launch page sub-menus", async ({ electronAppEmpty }) => {
     await expect(page.getByRole("button", { name: "Open File" })).toBeVisible();
 
     await page.getByRole("tab", { name: "Settings" }).click();
-    await expect(page.getByText("Something went wrong :(")).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Plugins" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
 });
 
 test("Canvas is visible", async ({ electronApp }) => {
@@ -52,10 +54,16 @@ test("Canvas is visible", async ({ electronApp }) => {
 
 test("Toolbars are visible", async ({ electronApp }) => {
     const { page } = electronApp;
+    await expect(page.getByText("FileAlignmentView")).toBeVisible();
+    await expect(page.locator("canvas").nth(1)).toBeVisible();
+    await expect(page.getByText("InspectorPage")).toBeVisible();
     await page.getByRole("tab", { name: "File" }).click();
     await expect(page.getByText("Open FileNew FileSave Copy")).toBeVisible();
+    console.log("clicking view tab");
     await page.getByRole("tab", { name: "View" }).click();
+    console.log("clicking prev paths");
     await expect(page.getByText("Prev pathsNext paths")).toBeVisible();
+    console.log("clicking alignment tab");
     await page.getByRole("tab", { name: "Alignment" }).click();
     await expect(
         page.getByRole("tabpanel", { name: "Alignment" }).locator("div").nth(3),

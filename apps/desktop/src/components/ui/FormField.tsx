@@ -39,12 +39,14 @@ const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
                                         className="text-text/60"
                                     />
                                 </Tooltip.Trigger>
-                                <Tooltip.Content
-                                    className={TooltipClassName}
-                                    side="right"
-                                >
-                                    {tooltip}
-                                </Tooltip.Content>
+                                <Tooltip.Portal>
+                                    <Tooltip.Content
+                                        className={TooltipClassName}
+                                        side="right"
+                                    >
+                                        {tooltip}
+                                    </Tooltip.Content>
+                                </Tooltip.Portal>
                             </Tooltip.Root>
                         </Tooltip.TooltipProvider>
                     )}
