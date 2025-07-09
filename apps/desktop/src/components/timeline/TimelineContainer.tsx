@@ -93,13 +93,14 @@ export default function TimelineContainer() {
 
                     {!isFullscreen && (
                         <div className={"flex items-center"}>
-                            <div className="flex flex-col gap-6">
-                                <p className="text-sub w-[4rem]">Audio</p>
+                            <div className="flex w-[4rem] gap-6">
+                                <p className="text-sub">Audio</p>
                                 {uiSettings.focussedComponent !== "timeline" ? (
                                     <RegisteredActionButton
                                         registeredAction={
                                             RegisteredActionsObjects.focusTimeline
                                         }
+                                        className="w-fit"
                                     >
                                         <PencilSimpleIcon />
                                     </RegisteredActionButton>
@@ -108,6 +109,7 @@ export default function TimelineContainer() {
                                         registeredAction={
                                             RegisteredActionsObjects.focusCanvas
                                         }
+                                        className="w-fit"
                                     >
                                         <XIcon />
                                     </RegisteredActionButton>

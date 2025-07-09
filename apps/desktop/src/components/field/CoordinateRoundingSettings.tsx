@@ -5,8 +5,12 @@ import * as Form from "@radix-ui/react-form";
 import clsx from "clsx";
 import { ToggleGroup, ToggleGroupItem, UnitInput } from "@openmarch/ui";
 import FormField from "../ui/FormField";
+import * as Popover from "@radix-ui/react-popover";
+import ToolbarSection from "../toolbar/ToolbarSection";
+import { CaretDownIcon } from "@phosphor-icons/react";
 
-const STEP_OPTIONS = [2, 1, 0.5, 0.25];
+const STEP_OPTIONS = [0.25, 0.5, 1, 2];
+const ALL_STEP_OPTIONS = [0, ...STEP_OPTIONS]; // Include "None" option (0) first
 
 interface AxisSettingsProps {
     axis: "X" | "Y";
@@ -90,6 +94,13 @@ function AxisSettings({
                         }
                     }}
                 >
+                    <ToggleGroupItem
+                        value="0"
+                        title="None"
+                        onClick={() => setCustomIsSelected(false)}
+                    >
+                        None
+                    </ToggleGroupItem>
                     {STEP_OPTIONS.map((step) => (
                         <ToggleGroupItem
                             key={step}
@@ -114,13 +125,6 @@ function AxisSettings({
                                     : step}
                         </ToggleGroupItem>
                     ))}
-                    <ToggleGroupItem
-                        value="0"
-                        title="None"
-                        onClick={() => setCustomIsSelected(false)}
-                    >
-                        None
-                    </ToggleGroupItem>
                     <ToggleGroupItem
                         value="custom"
                         title="Custom"
@@ -195,6 +199,34 @@ export default function CoordinateRoundingSettings() {
         });
     };
 
+    const cycleStepOption = (
+        axis: "X" | "Y",
+        direction: "forward" | "backward" = "forward",
+    ) => {
+        const currentValue =
+            uiSettings.coordinateRounding?.[`nearest${axis}Steps`] ?? 0;
+        const currentIndex = ALL_STEP_OPTIONS.indexOf(currentValue);
+
+        let nextIndex;
+        if (direction === "forward") {
+            nextIndex = (currentIndex + 1) % ALL_STEP_OPTIONS.length;
+        } else {
+            nextIndex =
+                (currentIndex - 1 + ALL_STEP_OPTIONS.length) %
+                ALL_STEP_OPTIONS.length;
+        }
+
+        const nextValue = ALL_STEP_OPTIONS[nextIndex];
+        handleStepChange(axis, nextValue);
+    };
+
+    const formatStepValue = (value: number | undefined) => {
+        if (!value || value === 0) return "None";
+        if (value === 0.25) return "¼";
+        if (value === 0.5) return "½";
+        return value.toString();
+    };
+
     const handleReferencePointChange = useCallback(
         (axis: "X" | "Y", value: number | undefined) => {
             const currentValue =
@@ -224,46 +256,103 @@ export default function CoordinateRoundingSettings() {
     }, [handleReferencePointChange, showReferencePoint]);
 
     return (
-        <div className="flex flex-col gap-16">
-            <div className="flex items-center gap-4">
-                <h4 className="text-h5 leading-none">Coordinate Rounding</h4>
-                <button
-                    onClick={() => setShowReferencePoint(!showReferencePoint)}
-                    className={clsx(
-                        "text-sub rounded-6 bg-fg-2 border px-2 py-1 transition-colors",
-                        showReferencePoint
-                            ? "border-accent"
-                            : "text-text border-stroke hover:bg-white/20",
-                    )}
-                >
-                    {showReferencePoint ? "Disable Offset" : "Enable Offset"}
-                </button>
-            </div>
-            <p className="text-sub text-text-subtitle">
-                Does not yet work with groups
-            </p>
+        <ToolbarSection>
+            <Popover.Root>
+                <Popover.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
+                    Coordinate Rounding <CaretDownIcon size={18} />
+                </Popover.Trigger>
+                <Popover.Portal>
+                    <Popover.Content className="bg-modal text-text rounded-6 shadow-modal backdrop-blur-32 border-stroke z-50 m-8 flex flex-col items-start gap-0 border p-8">
+                        <div className="flex flex-col gap-16">
+                            <div className="flex items-center gap-4">
+                                <h4 className="text-h5 leading-none">
+                                    Coordinate Rounding
+                                </h4>
+                                <button
+                                    onClick={() =>
+                                        setShowReferencePoint(
+                                            !showReferencePoint,
+                                        )
+                                    }
+                                    className={clsx(
+                                        "text-sub rounded-6 bg-fg-2 border px-2 py-1 transition-colors",
+                                        showReferencePoint
+                                            ? "border-accent"
+                                            : "text-text border-stroke hover:bg-white/20",
+                                    )}
+                                >
+                                    {showReferencePoint
+                                        ? "Disable Offset"
+                                        : "Enable Offset"}
+                                </button>
+                            </div>
+                            <p className="text-sub text-text-subtitle">
+                                Does not yet work with groups
+                            </p>
 
-            <AxisSettings
-                axis="X"
-                referencePoint={uiSettings.coordinateRounding?.referencePointX}
-                nearestSteps={uiSettings.coordinateRounding?.nearestXSteps}
-                onReferencePointChange={(value) =>
-                    handleReferencePointChange("X", value)
-                }
-                onStepsChange={(value) => handleStepChange("X", value)}
-                showReferencePoint={showReferencePoint}
-            />
+                            <AxisSettings
+                                axis="X"
+                                referencePoint={
+                                    uiSettings.coordinateRounding
+                                        ?.referencePointX
+                                }
+                                nearestSteps={
+                                    uiSettings.coordinateRounding?.nearestXSteps
+                                }
+                                onReferencePointChange={(value) =>
+                                    handleReferencePointChange("X", value)
+                                }
+                                onStepsChange={(value) =>
+                                    handleStepChange("X", value)
+                                }
+                                showReferencePoint={showReferencePoint}
+                            />
 
-            <AxisSettings
-                axis="Y"
-                referencePoint={uiSettings.coordinateRounding?.referencePointY}
-                nearestSteps={uiSettings.coordinateRounding?.nearestYSteps}
-                onReferencePointChange={(value) =>
-                    handleReferencePointChange("Y", value)
-                }
-                onStepsChange={(value) => handleStepChange("Y", value)}
-                showReferencePoint={showReferencePoint}
-            />
-        </div>
+                            <AxisSettings
+                                axis="Y"
+                                referencePoint={
+                                    uiSettings.coordinateRounding
+                                        ?.referencePointY
+                                }
+                                nearestSteps={
+                                    uiSettings.coordinateRounding?.nearestYSteps
+                                }
+                                onReferencePointChange={(value) =>
+                                    handleReferencePointChange("Y", value)
+                                }
+                                onStepsChange={(value) =>
+                                    handleStepChange("Y", value)
+                                }
+                                showReferencePoint={showReferencePoint}
+                            />
+                        </div>
+                    </Popover.Content>
+                </Popover.Portal>
+            </Popover.Root>
+            <button
+                className="text-text-subtitle hover:text-accent cursor-pointer transition-colors select-none"
+                onClick={() => cycleStepOption("X", "forward")}
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    cycleStepOption("X", "backward");
+                }}
+                title="Left-click to cycle forward, right-click to cycle backward through X-step options"
+            >
+                X:{" "}
+                {formatStepValue(uiSettings.coordinateRounding?.nearestXSteps)}
+            </button>
+            <button
+                className="text-text-subtitle hover:text-accent cursor-pointer transition-colors select-none"
+                onClick={() => cycleStepOption("Y", "forward")}
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    cycleStepOption("Y", "backward");
+                }}
+                title="Left-click to cycle forward, right-click to cycle backward through Y-step options"
+            >
+                Y:{" "}
+                {formatStepValue(uiSettings.coordinateRounding?.nearestYSteps)}
+            </button>
+        </ToolbarSection>
     );
 }
