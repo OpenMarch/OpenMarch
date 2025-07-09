@@ -1,7 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { Button } from "@openmarch/ui";
-import { Windows, MacOS, Linux } from "../components/OsLogos";
+import { LogoWindows, LogoMacOS, LogoLinux } from "@/components/Logos";
 import { CURRENT_VERSION } from "@/constants";
 ---
 
@@ -30,7 +30,7 @@ import { CURRENT_VERSION } from "@/constants";
                 <div
                     class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
                 >
-                    <Windows />
+                    <LogoWindows />
                     <h1 class="text-h1">Windows</h1>
                     <div class="flex flex-wrap gap-12">
                         <a
@@ -43,7 +43,7 @@ import { CURRENT_VERSION } from "@/constants";
                 <div
                     class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
                 >
-                    <MacOS />
+                    <LogoMacOS />
                     <h1 class="text-h1">macOS</h1>
                     <div
                         class="flex flex-col items-center justify-center gap-12"
@@ -67,7 +67,7 @@ import { CURRENT_VERSION } from "@/constants";
                 <div
                     class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
                 >
-                    <Linux />
+                    <LogoLinux />
                     <h1 class="text-h1">Linux</h1>
                     <div
                         class="flex flex-col items-center justify-center gap-12"

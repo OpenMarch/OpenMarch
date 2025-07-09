@@ -1,12 +1,20 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { Button } from "@openmarch/ui";
 ---
 
 <Layout title="404">
     <div
-        class="flex h-screen min-h-0 w-screen flex-col items-center justify-center gap-12"
+        class="flex h-[80vh] min-h-0 flex-col items-center justify-center gap-0"
     >
-        <code class="font-mono text-[2rem] text-red">404</code>
-        <a href="/" class="text-body underline">Go back home</a>
+        <code class="font-mono text-[6rem] text-red">404</code>
+        <a href="/">
+            <Button size="compact" variant="secondary">Go back home</Button>
+        </a>
+
+        <div
+            class="absolute bottom-1/5 left-1/2 -translate-x-1/2 -z-50 size-[400px] rounded-full bg-red opacity-40 blur-[15vmin] intersect:motion-preset-fade-lg"
+        >
+        </div>
     </div>
 </Layout>
