@@ -2,13 +2,11 @@ import { Button } from "@openmarch/ui";
 import {
     SealWarningIcon,
     BugBeetleIcon,
-    ChatCircleDotsIcon,
     EnvelopeSimpleIcon,
     DiscordLogoIcon,
     ClipboardIcon,
 } from "@phosphor-icons/react";
 import React from "react";
-import { InfoNote, BugNote, DangerNote } from "@openmarch/ui";
 
 export default class ErrorBoundary extends React.Component<
     { children: React.ReactNode },

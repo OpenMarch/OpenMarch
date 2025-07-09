@@ -2,7 +2,6 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { XIcon } from "@phosphor-icons/react";
 import FieldProperties from "./FieldPropertiesSettings";
-import CoordinateRoundingSettings from "./CoordinateRoundingSettings";
 
 export default function FieldModal() {
     return (
@@ -31,10 +30,7 @@ export function FieldPropertiesContents() {
                 </div>
             </header>
 
-            <div className="flex grow flex-col gap-16 overflow-y-auto">
-                <FieldProperties />
-                <CoordinateRoundingSettings />
-            </div>
+            <FieldProperties />
         </div>
     );
 }
