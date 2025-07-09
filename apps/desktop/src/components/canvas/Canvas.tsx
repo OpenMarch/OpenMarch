@@ -15,6 +15,7 @@ import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectabl
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
+import { Pathway } from "@/global/classes/canvasObjects/Pathway";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -317,18 +318,91 @@ export default function Canvas({
         }
     }, [setSelectedMarchers]);
 
+    /**
+     * Handler for moving CanvasMarchers to update paths.
+     */
+    const handleObjectMoving = useCallback(() => {
+        if (!canvas || !selectedPage || !marcherPages) return;
+
+        // Get selected CanvasMarchers and their IDs
+        const selectedCanvasMarchers = canvas.getCanvasMarchers({
+            active: true,
+        });
+        const selectedIds = selectedCanvasMarchers.map(
+            (cm: any) => cm.marcherObj.id,
+        );
+
+        // Find previous/next MarcherPages for selected marchers
+        const prevPages = marcherPages.filter(
+            (mp) =>
+                selectedIds.includes(mp.marcher_id) &&
+                mp.page_id === selectedPage.previousPageId,
+        );
+        const nextPages = marcherPages.filter(
+            (mp) =>
+                selectedIds.includes(mp.marcher_id) &&
+                mp.page_id === selectedPage.nextPageId,
+        );
+
+        // Remove old pathways
+        for (const pathway of pagePathways.current) {
+            canvas.remove(pathway);
+        }
+        pagePathways.current = [];
+
+        // Draw previous/next pathways
+        selectedCanvasMarchers.forEach((cm: any) => {
+            const marcherId = cm.marcherObj.id;
+            const current = { x: cm.left, y: cm.top };
+
+            // Previous pathway
+            const prev = prevPages.find(
+                (mp: any) => mp.marcher_id === marcherId,
+            );
+            if (prev && uiSettings.previousPaths) {
+                const pathway = new Pathway({
+                    start: { x: prev.x, y: prev.y },
+                    end: current,
+                    color: rgbaToString(fieldProperties!.theme.previousPath),
+                    marcherId,
+                });
+                canvas.add(pathway);
+                pagePathways.current.push(pathway);
+            }
+
+            // Next pathway
+            const next = nextPages.find(
+                (mp: any) => mp.marcher_id === marcherId,
+            );
+            if (next && uiSettings.nextPaths) {
+                const pathway = new Pathway({
+                    start: current,
+                    end: { x: next.x, y: next.y },
+                    color: rgbaToString(fieldProperties!.theme.nextPath),
+                    marcherId,
+                });
+                canvas.add(pathway);
+                pagePathways.current.push(pathway);
+            }
+        });
+
+        canvas.requestRenderAll();
+    }, [canvas, marcherPages, selectedPage, uiSettings, pagePathways]);
+
     useEffect(() => {
         if (!canvas) return;
         canvas.on("selection:created", handleSelect);
         canvas.on("selection:updated", handleSelect);
         canvas.on("selection:cleared", handleDeselect);
+        canvas.on("object:moving", handleObjectMoving);
 
         return () => {
             canvas.off("selection:created", handleSelect);
             canvas.off("selection:updated", handleSelect);
             canvas.off("selection:cleared", handleDeselect);
+            canvas.off("object:moving", handleObjectMoving);
         };
-    }, [canvas, handleDeselect, handleSelect]);
+    }, [canvas, handleDeselect, handleSelect, handleObjectMoving]);
 
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {
@@ -473,11 +547,12 @@ export default function Canvas({
 
             // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
             let selectedPageMarcherPages: MarcherPage[] = [];
-            if (uiSettings.previousPaths || uiSettings.nextPaths)
+            if (uiSettings.previousPaths || uiSettings.nextPaths) {
                 selectedPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.id,
                 );
+            }
 
             if (
                 uiSettings.previousPaths &&
