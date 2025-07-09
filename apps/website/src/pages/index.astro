@@ -87,18 +87,6 @@ type Blog = CollectionEntry<"blog">;
         >
         </div>
     </section>
-    <div class="flex justify-center w-full">
-        <div
-            class="flex flex-col items-center gap-16 rounded-6 border border-stroke bg-fg-1 p-32"
-        >
-            <h2 class="text-h2">Stay up to date with OpenMarch</h2>
-            <NewsletterForm
-                client:load
-                variant="primary"
-                buttonText="Join the Newsletter"
-            />
-        </div>
-    </div>
     <FeatureSelector client:load />
     <section class="flex flex-col gap-72 px-128 max-[1300px]:px-0">
         <div class="flex flex-col gap-24">

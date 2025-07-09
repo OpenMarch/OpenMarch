@@ -1,5 +1,4 @@
 import { Button } from "@openmarch/ui";
-import { LogoTextMark } from "./LogoTextMark.tsx";
 import React, { useState } from "react";
 import {
     ArrowLineDownIcon,
@@ -10,7 +9,7 @@ import {
     TShirtIcon,
     XIcon,
 } from "@phosphor-icons/react";
-import { DownloadIcon } from "@phosphor-icons/react/dist/ssr";
+import { LogoOpenMarchText } from "./Logos";
 
 export default function Nav() {
     const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -19,7 +18,7 @@ export default function Nav() {
         <nav className="sticky top-16 z-[99] flex h-[3.5rem] w-full flex-col gap-8">
             <nav className="border-stroke bg-modal relative flex w-full items-center justify-between rounded-full border px-32 py-12 backdrop-blur-md max-[750px]:px-24">
                 <a href="/">
-                    <LogoTextMark />
+                    <LogoOpenMarchText />
                 </a>
                 <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-16 max-[675px]:hidden">
                     <a
