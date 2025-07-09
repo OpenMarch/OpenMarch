@@ -19,7 +19,7 @@ type Blog = CollectionEntry<"blog">;
     </script>
     <section
         id="landing"
-        class="relative flex h-fit flex-col items-center justify-center gap-16 border border-stroke pt-32 pb-8 px-8 rounded-6"
+        class="relative flex h-fit flex-col items-center justify-center gap-16 border border-stroke pt-32 pb-8 px-8 rounded-[14px]"
     >
         <code
             class="font-mono text-[1.25rem] text-accent intersect:motion-preset-fade-lg motion-delay-100"
@@ -83,235 +83,263 @@ type Blog = CollectionEntry<"blog">;
             class="block dark:hidden border border-stroke rounded-6 z-30 mt-[350px] motion-preset-slide-up-sm motion-delay-[400ms]"
         />
         <div
-            class="absolute top-1/5 left-1/2 -translate-x-1/2 -z-50 size-[29vw] rounded-full bg-accent opacity-40 blur-[20vmin] intersect:motion-preset-fade-lg"
+            class="absolute top-1/5 left-1/2 -translate-x-1/2 -z-50 size-[900px] rounded-full bg-accent opacity-40 blur-[20vmin] intersect:motion-preset-fade-lg"
         >
         </div>
     </section>
-    <FeatureSelector client:load />
-    <section class="flex flex-col gap-72 px-128 max-[1300px]:px-0">
-        <div class="flex flex-col gap-24">
-            <div
-                id="warning"
-                class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
-            >
-                <div class="flex items-center gap-8">
-                    <i class="ph ph-warning text-[1.5rem] text-yellow"></i>
-                    <h3 class="text-h3">Alpha Software</h3>
-                </div>
-                <p class="text-body">
-                    OpenMarch is still in development. You probably will
-                    encounter bugs, issues, and missing features. Help support
-                    us grow by contributing or donating!
-                </p>
-            </div>
-            <div class="grid grid-cols-3 gap-24 max-[1000px]:grid-cols-1">
+    <section id="features" class="relative flex h-fit flex-col gap-32">
+        <div class="flex flex-col gap-16">
+            <h2 class="text-h2">Drill writing</h2>
+            <div class="grid grid-cols-4 grid-rows-2 gap-8">
                 <div
-                    id="download"
-                    class="flex flex-col gap-16 rounded-6 border border-accent p-32"
+                    class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2"
                 >
-                    <i class="ph ph-download-simple text-[2.5rem] text-accent"
-                    ></i>
-                    <h2 class="text-h2">Download</h2>
-                    <p class="text-body">
-                        Try out the modern drill writing app.
-                    </p>
-
-                    <a href="/download">
-                        <Button variant="primary">Download</Button>
-                    </a>
-                </div>
-                <div
-                    id="donate"
-                    class="flex flex-col gap-16 rounded-6 border border-accent p-32"
-                >
-                    <i class="ph ph-patreon-logo text-[2.5rem] text-accent"></i>
-                    <h2 class="text-h2">Become a Patron</h2>
-                    <p class="text-body">
-                        Help us grow, stay free, and support our team! Get
-                        access to exclusive content and benefits.
-                    </p>
-                    <a href="https://www.patreon.com/openmarch">
-                        <Button variant="primary">Patreon</Button>
-                    </a>
-                </div>
-                <div
-                    id="contribute"
-                    class="flex flex-col gap-16 rounded-6 border border-accent p-32"
-                >
-                    <i class="ph ph-git-fork text-[2.5rem] text-accent"></i>
-                    <h2 class="text-h2">Contribute</h2>
-                    <p class="text-body">
-                        Help us build the modern drill writing app.
-                    </p>
-                    <div class="flex flex-wrap gap-8">
-                        <a href="https://github.com/OpenMarch/OpenMarch">
-                            <Button variant="primary">GitHub</Button>
-                        </a>
-                        <a href="/developers/codebase">
-                            <Button variant="secondary">Dev Docs</Button>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-24 max-[920px]:grid-cols-1">
-                <div
-                    id="community"
-                    class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
-                >
-                    <h2 class="text-h2">Community</h2>
-                    <p class="text-body">
-                        Make sure to share feedback, get help, and get updates
-                        within our Discord & GitHub community.
-                    </p>
-                    <div class="flex gap-8">
-                        <a href="https://discord.gg/eTsQ98uZzq">
-                            <Button variant="secondary">Discord</Button>
-                        </a>
-                        <a href="https://github.com/OpenMarch/OpenMarch">
-                            <Button variant="secondary">GitHub</Button>
-                        </a>
-                    </div>
-                </div><div
-                    id="community"
-                    class="flex w-full flex-col gap-16 rounded-6 border border-stroke p-24"
-                >
-                    <h2 class="text-h2">Get Started</h2>
-                    <p class="text-body">
-                        Take a look at our beginner tutorial to get started.
-                    </p>
-                    <div class="flex gap-8">
-                        <a href="/guides/getting-started">
-                            <Button variant="secondary">Guides</Button>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div
-                id="partners"
-                class="flex w-full flex-col items-center justify-center gap-16 rounded-6 border border-stroke p-24"
-            >
-                <h2 class="text-h2">Partners</h2>
-                <div
-                    class="grid grid-cols-2 max-[640px]:grid-cols-1 gap-32 justify-center items-center mb-16"
-                >
-                    <a
-                        href="https://silentcommand.org"
-                        target="_blank"
-                        class="flex justify-center"
-                        ><div
-                            class="aspect-[328/125] h-auto w-[16rem] max-[640px]:w-[12rem] bg-[url('/partners/sicommandDark.png')] bg-cover dark:bg-[url('/partners/sicommandLight.png')]"
-                        >
-                        </div></a
+                    <div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
                     >
-                    <a
-                        href="https://corpsclash.com"
-                        target="_blank"
-                        class="flex items-center justify-center"
-                        ><div
-                            class="aspect-[328/125] h-[7rem] w-[7rem] max-[640px]:h-[5rem] max-[640px]:w-[5rem] bg-[url('/partners/CorpsClash-dark.svg')] bg-cover bg-center dark:bg-[url('/partners/CorpsClash-light.svg')]"
-                        >
-                        </div></a
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
                     >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div>
+                </div><Image
+                    src={"/home/editor-dark.png"}
+                    alt="Editor Screenshot"
+                    width={1920}
+                    height={1080}
+                    format="webp"
+                    quality={80}
+                    class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                />
+                <Image
+                    src={"/home/editor-light.png"}
+                    alt="Editor Screenshot"
+                    width={1920}
+                    height={1080}
+                    format="webp"
+                    quality={80}
+                    class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                />
+            </div>
+        </div><div class="flex flex-col gap-16">
+            <h2 class="text-h2">Music</h2>
+            <div class="grid grid-cols-4 grid-rows-2 gap-8">
+                <Image
+                    src={"/home/editor-dark.png"}
+                    alt="Editor Screenshot"
+                    width={1920}
+                    height={1080}
+                    format="webp"
+                    quality={80}
+                    class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                />
+                <Image
+                    src={"/home/editor-light.png"}
+                    alt="Editor Screenshot"
+                    width={1920}
+                    height={1080}
+                    format="webp"
+                    quality={80}
+                    class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                />
+                <div
+                    class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2"
+                >
+                    <div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div>
                 </div>
+            </div>
+        </div><div class="flex flex-col gap-16">
+            <h2 class="text-h2">Field</h2>
+            <div class="grid grid-cols-4 grid-rows-2 gap-8">
+                <div
+                    class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2"
+                >
+                    <div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div><div
+                        class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    >
+                        <h4 class="text-h4">Lorem ipsum</h4>
+                        <p class="text-body leading-[180%]">
+                            Lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                            lorem ipsum
+                        </p>
+                    </div>
+                </div><Image
+                    src={"/home/editor-dark.png"}
+                    alt="Editor Screenshot"
+                    width={1920}
+                    height={1080}
+                    format="webp"
+                    quality={80}
+                    class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                />
+                <Image
+                    src={"/home/editor-light.png"}
+                    alt="Editor Screenshot"
+                    width={1920}
+                    height={1080}
+                    format="webp"
+                    quality={80}
+                    class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                />
             </div>
         </div>
-
-        <section id="merch">
-            <a
-                class="grid grid-cols-4"
-                href="https://store.openmarch.com"
-                target="_blank"
-                rel="noreferrer"
+    </section>
+    <section id="blogs" class="flex flex-col gap-16">
+        <div class="flex justify-between">
+            <h1 class="text-h1">Blog</h1><a href="/blog"
+                ><Button>See all posts</Button></a
             >
-                <Image
-                    src={"/merch/MerchLaunch-02.png"}
-                    alt={"merch photo"}
-                    class="h-full w-full rotate-[-.1rad] rounded-6 border-2 border-accent object-cover"
-                    width={200}
-                    height={400}
-                />
-                <Image
-                    src={"/merch/MerchLaunch-01.png"}
-                    alt={"merch photo"}
-                    class="col-span-2 row-span-2 h-full w-full rounded-6 border-2 border-accent object-cover"
-                    width={200}
-                    height={400}
-                />
-                <Image
-                    src={"/merch/MerchLaunch-03.png"}
-                    alt={"merch photo"}
-                    class="h-full w-full rotate-[.13rad] rounded-6 border-2 border-accent object-cover"
-                    width={200}
-                    height={400}
-                />
-                <Image
-                    src={"/merch/MerchLaunch-04.png"}
-                    alt={"merch photo"}
-                    class="h-full w-full rotate-[.13rad] rounded-6 border-2 border-accent object-cover"
-                    width={200}
-                    height={400}
-                />
-                <Image
-                    src={"/merch/MerchLaunch-05.png"}
-                    alt={"merch photo"}
-                    class="h-full w-full rotate-[-.13rad] rounded-6 border-2 border-accent object-cover"
-                    width={200}
-                    height={400}
-                />
-            </a>
-        </section>
-        <section id="blogs" class="flex flex-col gap-16">
-            <div class="flex justify-between">
-                <h1 class="text-h1">Blog</h1><a href="/blog"
-                    ><Button>See all posts</Button></a
-                >
-            </div>
-            <div
-                class="grid grid-cols-3 gap-24 max-[1200px]:grid-cols-2 max-[850px]:grid-cols-1"
-            >
-                {
-                    blogs
-                        .sort(
-                            (a, b) =>
-                                new Date(b.data.date).getTime() -
-                                new Date(a.data.date).getTime(),
-                        )
-                        .slice(0, 3)
-                        .map((blog: Blog) => (
-                            <a
-                                href={`/blog/${blog.id}`}
-                                class="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
-                            >
-                                <Image
-                                    src={blog.data.image}
-                                    width={670}
-                                    height={420}
-                                    alt={blog.data.title}
-                                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
-                                />
-                                <div class="flex w-full flex-col gap-16">
-                                    <h2 class="w-full text-h2">
-                                        {blog.data.title}
-                                    </h2>
-                                    <p class="w-full text-body leading-[150%]">
-                                        by {blog.data.author}
-                                    </p>
-                                    <p class="w-full text-body leading-[150%]">
-                                        {blog.data.date.toLocaleDateString(
-                                            "en-US",
-                                            {
-                                                year: "numeric",
-                                                month: "long",
-                                                day: "numeric",
-                                                timeZone: "UTC",
-                                            },
-                                        )}
-                                    </p>
-                                </div>
-                            </a>
-                        ))
-                }
-            </div>
-        </section>
+        </div>
+        <div
+            class="grid grid-cols-3 gap-24 max-[1200px]:grid-cols-2 max-[850px]:grid-cols-1"
+        >
+            {
+                blogs
+                    .sort(
+                        (a, b) =>
+                            new Date(b.data.date).getTime() -
+                            new Date(a.data.date).getTime(),
+                    )
+                    .slice(0, 3)
+                    .map((blog: Blog) => (
+                        <a
+                            href={`/blog/${blog.id}`}
+                            class="flex flex-col gap-16 rounded-6 border border-stroke bg-fg-1 p-32 duration-150 ease-out hover:border-accent"
+                        >
+                            <Image
+                                src={blog.data.image}
+                                width={670}
+                                height={420}
+                                alt={blog.data.title}
+                                class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                            />
+                            <div class="flex w-full flex-col gap-16">
+                                <h2 class="w-full text-h2">
+                                    {blog.data.title}
+                                </h2>
+                                <p class="w-full text-body leading-[150%]">
+                                    by {blog.data.author}
+                                </p>
+                                <p class="w-full text-body leading-[150%]">
+                                    {blog.data.date.toLocaleDateString(
+                                        "en-US",
+                                        {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                            timeZone: "UTC",
+                                        },
+                                    )}
+                                </p>
+                            </div>
+                        </a>
+                    ))
+            }
+        </div>
     </section>
 </Layout>
