@@ -12,6 +12,7 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
+import SettingsModal from "../SettingsModal";
 
 export function FileTab() {
     const { isFullscreen } = useFullscreenStore();
@@ -75,6 +76,9 @@ export function FileTab() {
             )}
             <ToolbarSection>
                 <ExportCoordinatesModal />
+            </ToolbarSection>
+            <ToolbarSection>
+                <SettingsModal />
             </ToolbarSection>
         </div>
     );

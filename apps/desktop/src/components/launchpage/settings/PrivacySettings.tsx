@@ -15,9 +15,13 @@ export default function PrivacySettings() {
         setHasOptedOut(posthog.has_opted_out_capturing());
     }, [posthog]);
     return (
-        <div className="flex flex-col gap-16">
+        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-16 border p-12">
             <Collapsible
-                trigger={<p className="text-body">Share usage analytics</p>}
+                trigger={
+                    <p className="flex flex-col gap-16 px-8">
+                        Share usage analytics
+                    </p>
+                }
                 className="flex flex-col gap-16 pt-16"
             >
                 <p className="text-text-subtitle px-12 text-sm">
