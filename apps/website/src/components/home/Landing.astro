@@ -1,0 +1,76 @@
+---
+import { Image } from "astro:assets";
+import { Button } from "@openmarch/ui";
+import { CURRENT_VERSION } from "@/constants";
+---
+
+<section
+    id="landing"
+    class="relative flex h-fit flex-col items-center justify-center gap-16 border border-stroke pt-32 pb-8 px-8 rounded-[14px]"
+>
+    <code
+        class="font-mono text-[1.25rem] text-accent intersect:motion-preset-fade-lg motion-delay-100"
+        >{CURRENT_VERSION}</code
+    >
+    <h1
+        class="text-h1 leading-[130%] w-[512px] tracking-tighter text-center intersect:motion-preset-slide-up motion-delay-150 max-[1450px]:text-[64px] max-[750px]:text-[48px]"
+    >
+        Free & open-source drill writing software
+    </h1>
+    <p class="text-body intersect:motion-preset-fade-lg motion-delay-250">
+        OpenMarch is a free, open-source & intuitive drill writing app for the
+        marching arts.
+    </p>
+    <div
+        class="flex flex-wrap gap-8 intersect:motion-preset-fade-lg motion-delay-250"
+    >
+        <a href="/download">
+            <Button>Download</Button>
+        </a>
+        <a href="/#features">
+            <Button variant="secondary">Learn More</Button>
+        </a>
+    </div>
+
+    <Image
+        src={"/home/fullscreen-dark.png"}
+        alt="Fullscreen Screenshot"
+        width={1920}
+        height={1080}
+        format="webp"
+        quality={80}
+        class="hidden dark:block border border-stroke rounded-6 absolute aspect-video h-auto w-[80%] top-[24%] z-20 motion-preset-slide-up-sm motion-delay-300"
+    />
+    <Image
+        src={"/home/fullscreen-light.png"}
+        alt="Fullscreen Screenshot"
+        width={1920}
+        height={1080}
+        format="webp"
+        quality={80}
+        class="block dark:hidden border border-stroke rounded-6 absolute aspect-video h-auto w-[80%] top-[24%] z-20 motion-preset-slide-up-sm motion-delay-300"
+    />
+
+    <Image
+        src={"/home/editor-dark.png"}
+        alt="Editor Screenshot"
+        width={1920}
+        height={1080}
+        format="webp"
+        quality={80}
+        class="hidden dark:block border border-stroke rounded-6 z-30 mt-[350px] motion-preset-slide-up-sm motion-delay-[400ms]"
+    />
+    <Image
+        src={"/home/editor-light.png"}
+        alt="Editor Screenshot"
+        width={1920}
+        height={1080}
+        format="webp"
+        quality={80}
+        class="block dark:hidden border border-stroke rounded-6 z-30 mt-[350px] motion-preset-slide-up-sm motion-delay-[400ms]"
+    />
+    <div
+        class="absolute top-1/5 left-1/2 -translate-x-1/2 -z-50 size-[900px] rounded-full bg-accent opacity-40 blur-[20vmin] intersect:motion-preset-fade-lg"
+    >
+    </div>
+</section>

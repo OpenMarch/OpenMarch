@@ -16,7 +16,7 @@ export default function Nav() {
 
     return (
         <nav className="sticky top-16 z-[99] flex h-[3.5rem] w-full flex-col gap-8">
-            <nav className="border-stroke bg-modal relative flex w-full items-center justify-between rounded-full border px-32 py-12 backdrop-blur-md max-[750px]:px-24">
+            <nav className="border-stroke bg-modal shadow-modal relative flex w-full items-center justify-between rounded-full border px-32 py-12 backdrop-blur-md max-[750px]:px-24">
                 <a href="/">
                     <LogoOpenMarchText />
                 </a>
