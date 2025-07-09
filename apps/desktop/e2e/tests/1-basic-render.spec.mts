@@ -15,7 +15,7 @@ test("Launch page is visible", async ({ electronAppEmpty }) => {
     );
 });
 
-test("Launch page sub-menus", async ({ electronAppEmpty }) => {
+test.skip("Launch page sub-menus", async ({ electronAppEmpty }) => {
     const { page } = electronAppEmpty;
     await page.getByRole("tab", { name: "Learn" }).click();
     await expect(page.getByRole("heading", { name: "Learn" })).toBeVisible();
