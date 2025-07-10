@@ -273,52 +273,6 @@ export default function GithubReleases() {
                     ))}
                 </Tabs.Root>
             )}
-
-            {/*
-            {releases.map((release) => (
-                <div
-                    key={release.id}
-                    className="bg-fg-1 border-stroke rounded-6 text-text border p-16"
-                >
-                    <div className="mb-4 flex items-start justify-between">
-                        <h3 className="text-xl font-semibold">
-                            <a
-                                href={release.html_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-accent"
-                            >
-                                {release.tag_name}
-                            </a>
-                        </h3>
-                        <span className="text-text-subtitle">
-                            {new Date(
-                                release.published_at,
-                            ).toLocaleDateString()}
-                        </span>
-                    </div>
-                    {release.name &&
-                        release.name !== release.tag_name && (
-                            <h4 className="text-text mb-2 text-lg font-medium">
-                                {release.name}
-                            </h4>
-                        )}
-                    <div className="text-text">
-                        {release.body ? (
-                            <pre className="bg-fg-2 border-stroke rounded-6 overflow-x-auto border p-12 font-sans whitespace-pre-wrap">
-                                <article className={ProseClass}>
-                                    <Markdown>{release.body}</Markdown>
-                                </article>
-                            </pre>
-                        ) : (
-                            <p className="text-text">
-                                No description available.
-                            </p>
-                        )}
-                    </div>
-                </div>
-            ))}
-            */}
         </section>
     );
 }

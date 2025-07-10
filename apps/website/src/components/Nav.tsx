@@ -66,24 +66,32 @@ export default function Nav({ pathname }: { pathname: string }) {
                 <div className="flex items-center gap-16 max-[675px]:hidden">
                     <a
                         href="https://store.openmarch.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <TShirtIcon size={24} />
                     </a>
                     <a
                         href="https://www.patreon.com/openmarch"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <PatreonLogoIcon size={24} />
                     </a>
                     <a
                         href="https://discord.gg/eTsQ98uZzq"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <DiscordLogoIcon size={24} />
                     </a>
                     <a
                         href="https://github.com/OpenMarch/OpenMarch"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <GithubLogoIcon size={24} />
@@ -120,32 +128,40 @@ export default function Nav({ pathname }: { pathname: string }) {
                     <ArrowLineDownIcon size={24} />
                 </a>
                 <a
-                    href="https://github.com/OpenMarch/OpenMarch"
+                    href="https://store.openmarch.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-h4 text-text flex items-center gap-8"
                 >
-                    GitHub
-                    <GithubLogoIcon size={24} />
-                </a>
-                <a
-                    href="https://discord.gg/eTsQ98uZzq"
-                    className="text-h4 text-text flex items-center gap-8"
-                >
-                    Discord
-                    <DiscordLogoIcon size={24} />
+                    Merch
+                    <TShirtIcon size={24} />
                 </a>
                 <a
                     href="https://www.patreon.com/openmarch"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-h4 text-text flex items-center gap-8"
                 >
                     Patreon
                     <PatreonLogoIcon size={24} />
                 </a>
                 <a
-                    href="https://store.openmarch.com"
+                    href="https://discord.gg/eTsQ98uZzq"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-h4 text-text flex items-center gap-8"
                 >
-                    Merch
-                    <TShirtIcon size={24} />
+                    Discord
+                    <DiscordLogoIcon size={24} />
+                </a>
+                <a
+                    href="https://github.com/OpenMarch/OpenMarch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-h4 text-text flex items-center gap-8"
+                >
+                    GitHub
+                    <GithubLogoIcon size={24} />
                 </a>
             </div>
         </nav>
