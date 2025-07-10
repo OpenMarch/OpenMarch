@@ -16,6 +16,7 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import { Pathway } from "@/global/classes/canvasObjects/Pathway";
+import { Midpoint } from "@/global/classes/canvasObjects/Midpoint";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -62,7 +63,7 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
-    const pagePathways = useRef<fabric.Object[]>([]);
+    const pagePathwaysMidpoints = useRef<fabric.Object[]>([]);
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -344,20 +345,26 @@ export default function Canvas({
                 mp.page_id === selectedPage.nextPageId,
         );
 
-        // Remove pathways for selected marchers
-        for (const pathway of pagePathways.current) {
-            if (selectedIds.includes(pathway.marcherId)) {
-                canvas.remove(pathway);
+        // Remove pathways and midpoints for selected marchers
+        for (const pathwayMidpoint of pagePathwaysMidpoints.current as Pathway[]) {
+            if (selectedIds.includes(pathwayMidpoint.marcherId)) {
+                canvas.remove(pathwayMidpoint);
             }
         }
-        pagePathways.current = pagePathways.current.filter(
-            (pathway) => !selectedIds.includes(pathway.marcherId),
+        pagePathwaysMidpoints.current = pagePathwaysMidpoints.current.filter(
+            (pathwayMidpoint) =>
+                !selectedIds.includes((pathwayMidpoint as Pathway).marcherId),
         );
 
         // Draw previous/next pathways
         selectedCanvasMarchers.forEach((cm: any) => {
             const marcherId = cm.marcherObj.id;
-            const current = { x: cm.left, y: cm.top };
+
+            // Adjust to group if multi-selection
+            const current = {
+                x: (cm.group?.getCenterPoint().x ?? 0) + cm.left,
+                y: (cm.group?.getCenterPoint().y ?? 0) + cm.top,
+            };
 
             // Previous pathway
             const prev = prevPages.find(
@@ -368,10 +375,21 @@ export default function Canvas({
                     start: { x: prev.x, y: prev.y },
                     end: current,
                     color: rgbaToString(fieldProperties!.theme.previousPath),
-                    marcherId,
+                    marcherId: marcherId,
+                });
+                const midpoint = new Midpoint({
+                    start: { x: prev.x, y: prev.y },
+                    end: current,
+                    innerColor: "white",
+                    outerColor: rgbaToString(
+                        fieldProperties!.theme.previousPath,
+                    ),
+                    marcherId: marcherId,
                 });
                 canvas.add(pathway);
-                pagePathways.current.push(pathway);
+                canvas.add(midpoint);
+                pagePathwaysMidpoints.current.push(pathway);
+                pagePathwaysMidpoints.current.push(midpoint);
             }
 
             // Next pathway
@@ -383,15 +401,24 @@ export default function Canvas({
                     start: current,
                     end: { x: next.x, y: next.y },
                     color: rgbaToString(fieldProperties!.theme.nextPath),
-                    marcherId,
+                    marcherId: marcherId,
+                });
+                const midpoint = new Midpoint({
+                    start: { x: next.x, y: next.y },
+                    end: current,
+                    innerColor: "white",
+                    outerColor: rgbaToString(fieldProperties!.theme.nextPath),
+                    marcherId: marcherId,
                 });
                 canvas.add(pathway);
-                pagePathways.current.push(pathway);
+                canvas.add(midpoint);
+                pagePathwaysMidpoints.current.push(pathway);
+                pagePathwaysMidpoints.current.push(midpoint);
             }
         });
 
         canvas.requestRenderAll();
-    }, [canvas, marcherPages, selectedPage, uiSettings, pagePathways]);
+    }, [canvas, marcherPages, selectedPage, uiSettings, pagePathwaysMidpoints]);
 
     useEffect(() => {
         if (!canvas) return;
@@ -543,10 +570,10 @@ export default function Canvas({
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage && fieldProperties) {
-            for (const pathway of pagePathways.current) {
+            for (const pathway of pagePathwaysMidpoints.current) {
                 canvas.remove(pathway);
             }
-            pagePathways.current = [];
+            pagePathwaysMidpoints.current = [];
             canvas.removeStaticCanvasMarchers();
 
             // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
@@ -578,7 +605,7 @@ export default function Canvas({
                         endPageMarcherPages: selectedPageMarcherPages,
                         color: rgbaToString(fieldProperties.theme.previousPath),
                     });
-                pagePathways.current.push(
+                pagePathwaysMidpoints.current.push(
                     ...renderedPathways,
                     ...renderedMidpoints,
                 );
@@ -600,7 +627,7 @@ export default function Canvas({
                         endPageMarcherPages: nextPageMarcherPages,
                         color: rgbaToString(fieldProperties.theme.nextPath),
                     });
-                pagePathways.current.push(
+                pagePathwaysMidpoints.current.push(
                     ...renderedPathways,
                     ...renderedMidpoints,
                 );
