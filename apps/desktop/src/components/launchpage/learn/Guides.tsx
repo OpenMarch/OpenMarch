@@ -1,3 +1,5 @@
+import { T } from "@tolgee/react";
+
 export default function Guides() {
     const guides = [
         {
@@ -20,7 +22,9 @@ export default function Guides() {
 
     return (
         <div className="flex flex-col gap-8">
-            <h4 className="text-h4">Guides</h4>
+            <h4 className="text-h4">
+                <T keyName="launchpage.learn.guides.title" />
+            </h4>
             <div className="grid grid-cols-2 gap-8">
                 {guides.map((guide) => (
                     <a
