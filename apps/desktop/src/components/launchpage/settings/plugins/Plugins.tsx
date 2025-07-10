@@ -96,19 +96,6 @@ export default function PluginsContents() {
         fetchCommunityPlugins();
     }, []);
 
-    const refreshLink = (content: React.ReactNode) => {
-        return (
-            <strong
-                className="cursor-pointer"
-                onClick={() => {
-                    window.location.reload();
-                }}
-            >
-                {content}
-            </strong>
-        );
-    };
-
     return (
         <div className="text-text flex flex-col gap-16">
             {showRefreshNotice && (
@@ -118,7 +105,16 @@ export default function PluginsContents() {
                         <T
                             keyName="settings.plugins.refreshNotice"
                             params={{
-                                a: refreshLink,
+                                a: (content) => (
+                                    <strong
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                            window.location.reload();
+                                        }}
+                                    >
+                                        {content}
+                                    </strong>
+                                ),
                             }}
                         />
                     </p>
