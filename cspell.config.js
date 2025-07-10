@@ -103,6 +103,8 @@ module.exports = {
         "monokai",
         "openmarchdev",
         "ccpa",
+        "Schachner",
+        "pfps",
     ],
     ignorePaths: [
         "node_modules/**",
@@ -114,6 +116,7 @@ module.exports = {
         "**/package.json",
         "**/.astro/**",
         "**/.turbo/**",
+        "patreonMembers.json",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };

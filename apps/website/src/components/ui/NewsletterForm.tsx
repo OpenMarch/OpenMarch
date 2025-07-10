@@ -20,7 +20,6 @@ function NewsletterForm({
         "idle" | "loading" | "success" | "error"
     >("idle");
     const [error, setError] = useState("");
-    console.log("SUPABASE_KEY", SUPABASE_KEY);
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -53,7 +52,7 @@ function NewsletterForm({
     }
 
     return (
-        <form className="flex w-fit flex-col gap-8" onSubmit={handleSubmit}>
+        <form className="flex w-full flex-col gap-8" onSubmit={handleSubmit}>
             <div className="flex gap-6">
                 <Input
                     type="email"
