@@ -4,6 +4,7 @@ import { Image } from "astro:assets";
 import { Button, WarningNote } from "@openmarch/ui";
 import { LogoWindows, LogoMacOS, LogoLinux } from "@/components/Logos";
 import { CURRENT_VERSION } from "@/constants";
+import GithubReleases from "@/components/download/GithubReleases.tsx";
 ---
 
 <Layout title="Download">
@@ -103,10 +104,8 @@ import { CURRENT_VERSION } from "@/constants";
                 </div>
             </div>
         </div>
-        <a href="https://github.com/OpenMarch/OpenMarch/releases">
-            <Button variant="secondary"> See all GitHub releases </Button>
-        </a>
     </section>
+    <GithubReleases client:load />
 </Layout>
 <script>
     import { fetchFromGitHub } from "@/utils/gitHubApi.js";
