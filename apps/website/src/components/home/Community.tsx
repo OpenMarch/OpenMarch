@@ -30,6 +30,7 @@ export default function Community() {
                 `/repos/OpenMarch/OpenMarch/pulls?state=closed&per_page=100&page=${page}`,
                 600,
             );
+            // console.log("raw Pull request count:", prs);
 
             if (!prs.length) break;
 
@@ -45,42 +46,41 @@ export default function Community() {
         return mergedCount;
     }
 
-    async function loadGitHubData() {
-        try {
-            const contributors = await fetchFromGitHub(
-                "/repos/OpenMarch/OpenMarch/contributors?per_page=100",
-                600,
-            );
-            const commitCount = await fetchFromGitHub(
-                "/repos/OpenMarch/OpenMarch/stats/commit_activity",
-                600,
-            );
-            const totalCommits = commitCount.reduce(
-                (sum: number, week: { total: number }) => sum + week.total,
-                0,
-            );
-            const pullRequestCount = await getMergedPRCount();
-
-            console.log("Commit count:", totalCommits);
-            console.log("Pull request count:", pullRequestCount);
-
-            setStats({
-                contributors: contributors.map((contributor: any) => ({
-                    login: contributor.login,
-                    id: contributor.id,
-                })),
-                contributorsCount: contributors.length,
-                pullRequestsCount: pullRequestCount,
-                commitsCount: totalCommits,
-            });
-        } catch (error) {
-            console.error("Error fetching GitHub data:", error);
-        } finally {
-            setLoading(false);
-        }
-    }
-
     useEffect(() => {
+        async function loadGitHubData() {
+            try {
+                const contributors = await fetchFromGitHub(
+                    "/repos/OpenMarch/OpenMarch/contributors?per_page=100",
+                    600,
+                );
+                // console.log("Contributors:", contributors);
+                const commitCount = await fetchFromGitHub(
+                    "/repos/OpenMarch/OpenMarch/stats/commit_activity",
+                    600,
+                );
+                // console.log("Commit count:", commitCount);
+                const totalCommits = commitCount.reduce(
+                    (sum: number, week: { total: number }) => sum + week.total,
+                    0,
+                );
+                const pullRequestCount = await getMergedPRCount();
+                // console.log(" Pull request count:", pullRequestCount);
+
+                setStats({
+                    contributors: contributors.map((contributor: any) => ({
+                        login: contributor.login,
+                        id: contributor.id,
+                    })),
+                    contributorsCount: contributors.length,
+                    pullRequestsCount: pullRequestCount,
+                    commitsCount: totalCommits,
+                });
+            } catch (error) {
+                console.error("Error fetching GitHub data:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
         loadGitHubData();
     }, []);
 
@@ -111,18 +111,20 @@ export default function Community() {
             </div>
 
             <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-12 border p-12">
-                <div
-                    id="pfp-grid"
-                    className="flex h-full w-full flex-wrap items-center justify-center gap-12"
-                >
-                    {patreonMembers.map((member) => (
-                        <p
-                            key={member.name}
-                            className="text-body text-text w-fit whitespace-nowrap"
-                        >
-                            {member.name}
-                        </p>
-                    ))}
+                <div className="flex h-full w-full items-center justify-center">
+                    <div
+                        id="pfp-grid"
+                        className="flex h-fit w-full flex-wrap items-center justify-center gap-12 gap-y-16"
+                    >
+                        {patreonMembers.map((member) => (
+                            <p
+                                key={member.name}
+                                className="text-body text-text w-fit whitespace-nowrap"
+                            >
+                                {member.name}
+                            </p>
+                        ))}
+                    </div>
                 </div>
                 <div className="flex h-fit w-full items-end justify-center gap-16">
                     <p className="text-h5 font-mono">

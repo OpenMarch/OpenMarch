@@ -8,6 +8,7 @@ import Merch from "@/components/home/Merch.astro";
 import Blogs from "@/components/home/Blogs.astro";
 import Testimonials from "@/components/home/Testimonials.astro";
 import Community from "@/components/home/Community";
+import Partners from "@/components/home/Partners.astro";
 ---
 
 <Layout title="Home">
@@ -16,7 +17,9 @@ import Community from "@/components/home/Community";
 
         Observer.start();
     </script>
+
     <Landing />
+    <Partners />
     <Features />
     <Testimonials />
     <Community client:visible />
