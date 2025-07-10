@@ -25,15 +25,30 @@ const tolgee = Tolgee()
     .use(DevTools())
     .use(FormatSimple())
     .init({
-        language: "en",
+        language: "en", // Default language, will be overridden by saved language
 
-        // for development
-        apiUrl: import.meta.env.VITE_APP_TOLGEE_API_URL,
-        apiKey: import.meta.env.VITE_APP_TOLGEE_API_KEY,
+        // for development only
+        ...(import.meta.env.MODE === "development" && {
+            apiUrl: import.meta.env.VITE_APP_TOLGEE_API_URL,
+            apiKey: import.meta.env.VITE_APP_TOLGEE_API_KEY,
+        }),
 
-        // staticData: {
-        //     en: () => import('./i18n/en.json')
-        // }
+        staticData: {
+            en: () => import("../i18n/en.json"),
+            es: () => import("../i18n/es.json"),
+        },
+    });
+
+// Load saved language from electron store on app start
+window.electron
+    ?.getLanguage()
+    .then((savedLanguage) => {
+        if (savedLanguage && savedLanguage !== "en") {
+            tolgee.changeLanguage(savedLanguage);
+        }
+    })
+    .catch((error) => {
+        console.warn("Failed to load saved language:", error);
     });
 
 Sentry.init({
