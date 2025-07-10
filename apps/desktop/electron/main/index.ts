@@ -409,6 +409,16 @@ ipcMain.handle("set-theme", (event, theme) => {
     store.set("theme", theme);
 });
 
+// Language stores
+
+ipcMain.handle("get-language", () => {
+    return store.get("language", "en");
+});
+
+ipcMain.handle("set-language", (event, language) => {
+    store.set("language", language);
+});
+
 // file management
 
 ipcMain.handle("closeCurrentFile", () => {

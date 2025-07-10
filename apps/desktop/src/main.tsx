@@ -5,6 +5,7 @@ import "./styles/index.css";
 import "@fontsource/dm-mono";
 import "@fontsource/dm-sans";
 import { ThemeProvider } from "./context/ThemeContext";
+import { Tolgee, DevTools, TolgeeProvider, FormatSimple } from "@tolgee/react";
 import * as Sentry from "@sentry/electron/renderer";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
@@ -20,6 +21,21 @@ if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {
     posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
 }
 
+const tolgee = Tolgee()
+    .use(DevTools())
+    .use(FormatSimple())
+    .init({
+        language: "en",
+
+        // for development
+        apiUrl: import.meta.env.VITE_APP_TOLGEE_API_URL,
+        apiKey: import.meta.env.VITE_APP_TOLGEE_API_KEY,
+
+        // staticData: {
+        //     en: () => import('./i18n/en.json')
+        // }
+    });
+
 Sentry.init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
     enabled: false,
@@ -28,9 +44,14 @@ Sentry.init({
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
         <PostHogProvider client={posthog}>
-            <ThemeProvider>
-                <App />
-            </ThemeProvider>
+            <TolgeeProvider
+                tolgee={tolgee}
+                fallback="Loading..." // loading fallback
+            >
+                <ThemeProvider>
+                    <App />
+                </ThemeProvider>
+            </TolgeeProvider>
         </PostHogProvider>
     </React.StrictMode>,
 );

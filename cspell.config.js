@@ -101,6 +101,9 @@ module.exports = {
         "spinbutton",
         "monokai",
         "openmarchdev",
+        "tolgee",
+        "Español", // Spanish
+        "日本語", // Japanese
     ],
     ignorePaths: [
         "node_modules/**",
