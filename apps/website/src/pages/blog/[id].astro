@@ -20,30 +20,34 @@ const { Content } = await render(post);
 ---
 
 <Layout title={post.data.title}>
-    <section class="m-16 flex flex-col items-center py-128">
-        <article class="flex w-full max-w-[48rem] flex-col items-center gap-16">
-            <Image
-                src={post.data.image}
-                width={1280}
-                height={720}
-                alt={post.data.title}
-                class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
-            />
-            <h1 class="text-h1 text-center">{post.data.title}</h1>
-            <div class="flex gap-16">
-                <p class="text-body">{post.data.author}</p>
-                <p class="text-body">
-                    {
-                        post.data.date.toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            timeZone: "UTC",
-                        })
-                    }
-                </p>
-            </div>
-            <Prose><Content /></Prose>
-        </article>
-    </section>
+    <article
+        class="flex relative max-w-[50rem] w-full flex-col items-center gap-16"
+    >
+        <Image
+            src={post.data.image}
+            width={1280}
+            height={720}
+            alt={post.data.title}
+            class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+        />
+        <div
+            class="bg-accent intersect:motion-preset-fade-lg absolute top-[10vh] left-1/2 -z-50 w-full aspect-video h-auto -translate-x-1/2 rounded-full opacity-30 blur-[15vmin]"
+        >
+        </div>
+        <h1 class="text-h3 text-center">{post.data.title}</h1>
+        <div class="flex gap-16">
+            <p class="text-body">{post.data.author}</p>
+            <p class="text-body">
+                {
+                    post.data.date.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        timeZone: "UTC",
+                    })
+                }
+            </p>
+        </div>
+        <div class=""><Prose><Content /></Prose></div>
+    </article>
 </Layout>

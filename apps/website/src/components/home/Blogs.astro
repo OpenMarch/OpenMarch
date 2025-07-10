@@ -25,7 +25,7 @@ type Blog = CollectionEntry<"blog">;
                     .map((blog: Blog) => (
                         <a
                             href={`/blog/${blog.id}`}
-                            class="flex flex-col gap-16 rounded-6 border overflow-clip border-stroke bg-fg-1 duration-150 ease-out hover:border-accent"
+                            class="flex flex-col rounded-6 border overflow-clip border-stroke bg-fg-1 duration-150 ease-out hover:border-accent"
                         >
                             <Image
                                 src={blog.data.image}
