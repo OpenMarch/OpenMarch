@@ -21,16 +21,21 @@ export default function AnalyticsMessage({
         <div className="bg-red/20 text-red-foreground mx-12 flex items-center gap-8 rounded-md border border-red-500/50 p-12 text-sm">
             <XCircleIcon size={64} className="text-red-500" />
             <p>
-                <T keyName="settings.privacy.analytics.disabled.prefix" />{" "}
-                <a
-                    href="https://openmarch.com/about/submitting-feedback"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-accent underline"
-                >
-                    <T keyName="settings.privacy.analytics.feedback.link" />
-                </a>{" "}
-                <T keyName="settings.privacy.analytics.disabled.suffix" />
+                <T
+                    keyName="settings.privacy.analytics.disabled"
+                    params={{
+                        a: (content) => (
+                            <a
+                                href="https://openmarch.com/about/submitting-feedback"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-accent underline"
+                            >
+                                {content}
+                            </a>
+                        ),
+                    }}
+                />
             </p>
         </div>
     );

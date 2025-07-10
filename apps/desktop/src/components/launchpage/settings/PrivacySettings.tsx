@@ -26,16 +26,21 @@ export default function PrivacySettings() {
                 className="flex flex-col gap-16 pt-16"
             >
                 <p className="text-text-subtitle px-12 text-sm">
-                    <T keyName="settings.privacy.analytics.description.prefix" />{" "}
-                    <a
-                        href="https://openmarch.com/privacy"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-accent underline"
-                    >
-                        <T keyName="settings.privacy.analytics.description.link" />
-                    </a>{" "}
-                    <T keyName="settings.privacy.analytics.description.suffix" />
+                    <T
+                        keyName="settings.privacy.analytics.description"
+                        params={{
+                            a: (content) => (
+                                <a
+                                    href="https://openmarch.com/privacy"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-accent underline"
+                                >
+                                    {content}
+                                </a>
+                            ),
+                        }}
+                    />
                 </p>
                 <p className="text-text-subtitle px-12 text-sm">
                     <T

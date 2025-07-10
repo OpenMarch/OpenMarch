@@ -78,16 +78,21 @@ export default function AnalyticsOptInModal({
                 </DialogTitle>
                 <div className="flex flex-col gap-16">
                     <p className="text-text-subtitle text-sm">
-                        <T keyName="analyticsOptIn.description.prefix" />{" "}
-                        <a
-                            href="https://openmarch.com/privacy"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-accent underline"
-                        >
-                            <T keyName="analyticsOptIn.description.link" />
-                        </a>{" "}
-                        <T keyName="analyticsOptIn.description.suffix" />
+                        <T
+                            keyName="analyticsOptIn.description"
+                            params={{
+                                a: (content) => (
+                                    <a
+                                        href="https://openmarch.com/privacy"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-accent underline"
+                                    >
+                                        {content}
+                                    </a>
+                                ),
+                            }}
+                        />
                     </p>
                     <p className="text-text-subtitle text-sm">
                         <T keyName="analyticsOptIn.settings" />

@@ -1,10 +1,6 @@
 {
     "analyticsOptIn": {
-        "description": {
-            "link": "privacy policy",
-            "prefix": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our",
-            "suffix": "to learn more."
-        },
+        "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
         "optIn": "Opt in",
         "optOut": "Opt Out",
         "settings": "You can change this setting at any time in the app settings.",
@@ -107,9 +103,7 @@
         "plugins.noOfficialPlugins": "No official plugins available.",
         "plugins.noPlugins": "No plugins installed.",
         "plugins.official": "Official",
-        "plugins.refresh.link": "reload the app",
-        "plugins.refresh.prefix": "Please",
-        "plugins.refresh.suffix": "to update plugins.",
+        "plugins.refreshNotice": "Please <a>reload the app</a> to update plugins.",
         "plugins.toast.installFailed": "Failed to install plugin {pluginName}",
         "plugins.toast.installSuccess": "Plugin {pluginName} installed successfully!",
         "plugins.toast.uninstallFailed": "Failed to remove {pluginName}",
@@ -120,14 +114,10 @@
         "plugins.uninstalling": "Removing...",
         "privacy": "Privacy",
         "privacy.analytics": "Share usage analytics",
-        "privacy.analytics.description.link": "privacy policy",
+        "privacy.analytics.description": "To help us improve OpenMarch, we collect analytics data, error logs, and session recordings. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
         "privacy.analytics.description.opt_out": "You can opt out of this if you'd prefer. Just know that OpenMarch is a free tool built by volunteers, and this data really helps us understand how designers are using the app and find bugs—especially when we don't hear about them right away on Discord or Facebook :)",
-        "privacy.analytics.description.prefix": "To help us improve OpenMarch, we collect analytics data, error logs, and session recordings. This helps us understand how you use the app and identify bugs. Read our",
-        "privacy.analytics.description.suffix": "to learn more.",
-        "privacy.analytics.disabled.prefix": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please",
-        "privacy.analytics.disabled.suffix": "so that we can address it.",
+        "privacy.analytics.disabled": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please <a>submit feedback</a> so that we can address it.",
         "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
-        "privacy.analytics.feedback.link": "submit feedback",
         "privacy.analytics.toggle": "Enable analytics",
         "title": "Settings"
     },
