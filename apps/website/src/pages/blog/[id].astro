@@ -2,7 +2,7 @@
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
-import Prose from "@/components/Prose.astro";
+import { ProseClass } from "@/components/ProseClass";
 
 export async function getStaticPaths() {
     const blogEntries = await getCollection("blog");
@@ -48,6 +48,6 @@ const { Content } = await render(post);
                 }
             </p>
         </div>
-        <div class=""><Prose><Content /></Prose></div>
+        <div class={ProseClass}><Content /></div>
     </article>
 </Layout>

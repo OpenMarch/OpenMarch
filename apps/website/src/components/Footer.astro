@@ -11,7 +11,7 @@ interface Props {
 const { hideDownloadCta } = Astro.props;
 ---
 
-<footer class="flex flex-col gap-8">
+<footer class="flex flex-col gap-8 z-50">
     {
         !hideDownloadCta && (
             <div class="flex flex-col gap-12 items-center rounded-6 px-16 py-32 download-cta-gradient">

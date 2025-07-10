@@ -5,6 +5,10 @@
 @plugin "tailwindcss-motion";
 @plugin "tailwindcss-intersect";
 
+@theme {
+    --text-body: 1rem;
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -17,4 +21,8 @@ html {
         var(--color-bg-1) 80%,
         --alpha(var(--color-accent) / 20%) 100%
     );
+}
+
+.astro-code span {
+    @apply border-stroke text-text rounded-8 border bg-[#15141A] p-4 font-mono text-[0.85rem];
 }

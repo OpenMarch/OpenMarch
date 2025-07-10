@@ -36,6 +36,7 @@
         "ky": "^1.8.1",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
+        "react-markdown": "^10.1.0",
         "starlight-image-zoom": "^0.10.1",
         "tailwind-merge": "^2.6.0",
         "tailwindcss": "^4.1.11",
