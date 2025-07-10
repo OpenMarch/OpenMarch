@@ -8,21 +8,21 @@ type Blog = CollectionEntry<"blog">;
 ---
 
 <Layout title="Blog">
-    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
+    <div class="flex flex-col gap-64 max-[750px]:p-24">
         <section
             id="landing"
-            class="relative flex h-[40vh] min-h-0 flex-col justify-center gap-32 px-256 max-[1400px]:px-24"
+            class="relative items-center flex h-[40vh] min-h-0 flex-col justify-center gap-12"
         >
-            <h1 class="text-[128px] max-[750px]:text-h1">Blog</h1>
+            <h1 class="text-h1">The latest updates from us</h1>
+            <p class="text-body leading-[160%]">
+                Keep up on our development, journeys, events, and more.
+            </p>
             <div
-                class="absolute left-0 top-[-20%] -z-50 h-[18vw] w-[22vw] rounded-full bg-accent opacity-40 blur-[512px]"
+                class="bg-accent intersect:motion-preset-fade-lg absolute -top-1/5 right-1/2 -z-50 size-[600px] -translate-x-1/2 rounded-full opacity-20 blur-[17vmin]"
             >
             </div>
         </section>
-        <section
-            id="blogs"
-            class="flex flex-col gap-32 px-256 py-12 max-[1400px]:px-24"
-        >
+        <section id="blogs" class="flex flex-col gap-8 py-12">
             {
                 blogs
                     .sort(
@@ -33,33 +33,35 @@ type Blog = CollectionEntry<"blog">;
                     .map((blog: Blog) => (
                         <a
                             href={`/blog/${blog.id}`}
-                            class="block rounded-6 border border-stroke bg-fg-1 duration-150 ease-out hover:border-accent md:grid md:grid-cols-2"
+                            class=" rounded-6 border border-stroke h-fit bg-fg-1 duration-150 ease-out hover:border-accent flex"
                         >
                             <Image
                                 src={blog.data.image}
                                 width={670}
                                 height={420}
                                 alt={blog.data.title}
-                                class="aspect-video h-auto w-full rounded-t-6 object-cover md:rounded-l-6 md:rounded-t-none"
+                                class="aspect-video h-auto w-[30%] rounded-t-6 object-cover md:rounded-l-6 md:rounded-t-none"
                             />
-                            <div class="flex flex-col gap-16 p-32 max-[500px]:p-16">
-                                <h2 class="w-full text-h2">
+                            <div class="flex flex-col gap-16 p-16 justify-center max-[500px]:p-16">
+                                <h2 class="w-full text-h3">
                                     {blog.data.title}
                                 </h2>
-                                <p class="w-full text-body leading-[150%]">
-                                    by {blog.data.author}
-                                </p>
-                                <p class="w-full text-body leading-[150%]">
-                                    {blog.data.date.toLocaleDateString(
-                                        "en-US",
-                                        {
-                                            year: "numeric",
-                                            month: "long",
-                                            day: "numeric",
-                                            timeZone: "UTC",
-                                        },
-                                    )}
-                                </p>
+                                <div class="flex gap-16 flex-wrap">
+                                    <p class="w-full text-body leading-[150%]">
+                                        by {blog.data.author}
+                                    </p>
+                                    <p class="w-full text-body leading-[150%]">
+                                        {blog.data.date.toLocaleDateString(
+                                            "en-US",
+                                            {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                                timeZone: "UTC",
+                                            },
+                                        )}
+                                    </p>
+                                </div>
                             </div>
                         </a>
                     ))

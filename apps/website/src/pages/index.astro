@@ -1,11 +1,13 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { getCollection } from "astro:content";
 
 import Landing from "@/components/home/Landing.astro";
 import Features from "@/components/home/Features.astro";
+import Merch from "@/components/home/Merch.astro";
 import Blogs from "@/components/home/Blogs.astro";
 import Testimonials from "@/components/home/Testimonials.astro";
-import Community from "@/components/home/Community.astro";
+import Community from "@/components/home/Community";
 ---
 
 <Layout title="Home">
@@ -17,6 +19,7 @@ import Community from "@/components/home/Community.astro";
     <Landing />
     <Features />
     <Testimonials />
-    <Community />
+    <Community client:visible />
+    <Merch />
     <Blogs />
 </Layout>
