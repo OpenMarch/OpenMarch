@@ -115,6 +115,11 @@ module.exports = {
         "**/package.json",
         "**/.astro/**",
         "**/.turbo/**",
+        "**/i18n/**",
+        "i18n/**",
+        "**/*.i18n.json",
+        "**/locales/**",
+        "locales/**",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };

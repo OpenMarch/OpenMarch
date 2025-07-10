@@ -1,0 +1,13 @@
+{
+    "settings": {
+        "general": {
+            "appearance": "Apariencia",
+            "appearance.dark": "Oscuro",
+            "appearance.light": "Ligero",
+            "language": "Idioma"
+        }
+    },
+    "welcome": {
+        "title": "Bienvenido a OpenMarch"
+    }
+}

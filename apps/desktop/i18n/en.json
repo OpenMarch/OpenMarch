@@ -1,5 +1,53 @@
 {
+    "settings": {
+        "general": "General",
+        "general.appearance": "Appearance",
+        "general.appearance.dark": "Dark",
+        "general.appearance.light": "Light",
+        "general.language": "Language",
+        "mouse": "Mouse & Trackpad",
+        "mouse.panSensitivity": "Pan sensitivity",
+        "mouse.trackpadMode": "Trackpad mode (recommended for macOS)",
+        "mouse.trackpadPanSensitivity": "Trackpad pan sensitivity",
+        "mouse.zoomSensitivity": "Zoom sensitivity",
+        "plugins": "Plugins",
+        "plugins.community": "Community",
+        "plugins.install": "Install",
+        "plugins.installFailed": "Install Failed",
+        "plugins.installed": "Installed",
+        "plugins.installing": "Installing...",
+        "plugins.noCommunityPlugins": "No community plugins available.",
+        "plugins.noOfficialPlugins": "No official plugins available.",
+        "plugins.official": "Official",
+        "plugins.refresh.link": "reload the app",
+        "plugins.refresh.prefix": "Please",
+        "plugins.refresh.suffix": "to update plugins.",
+        "plugins.toast.installFailed": "Failed to install plugin {pluginName}",
+        "plugins.toast.installSuccess": "Plugin {pluginName} installed successfully!",
+        "plugins.toast.uninstallFailed": "Failed to remove {pluginName}",
+        "plugins.toast.uninstallSuccess": "Plugin {pluginName} removed successfully!",
+        "plugins.uninstall": "Uninstall",
+        "plugins.uninstallFailed": "Removal Failed",
+        "plugins.uninstalled": "Removed",
+        "plugins.uninstalling": "Removing...",
+        "privacy": "Privacy",
+        "privacy.analytics": "Share usage analytics",
+        "privacy.analytics.description.link": "privacy policy",
+        "privacy.analytics.description.opt_out": "You can opt out of this if you'd prefer. Just know that OpenMarch is a free tool built by volunteers, and this data really helps us understand how designers are using the app and find bugs—especially when we don't hear about them right away on Discord or Facebook :)",
+        "privacy.analytics.description.prefix": "To help us improve OpenMarch, we collect analytics data, error logs, and session recordings. This helps us understand how you use the app and identify bugs. Read our",
+        "privacy.analytics.description.suffix": "to learn more.",
+        "privacy.analytics.disabled.prefix": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please",
+        "privacy.analytics.disabled.suffix": "so that we can address it.",
+        "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping make OpenMarch better for everyone.",
+        "privacy.analytics.feedback.link": "submit feedback",
+        "privacy.analytics.toggle": "Enable analytics",
+        "title": "Settings"
+    },
+    "toolbar": {
+        "settings": "App Settings"
+    },
     "welcome": {
+        "description": "No files found. Create one, and make sure to checkout the guides. Customize your theme and navigation in Settings.",
         "title": "Welcome to OpenMarch"
     }
 }
