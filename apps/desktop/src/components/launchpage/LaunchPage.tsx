@@ -14,6 +14,7 @@ import {
 import * as Tabs from "@radix-ui/react-tabs";
 import { useState } from "react";
 import SettingsContent from "./settings/SettingsContent";
+import { T } from "@tolgee/react";
 import FilesContent from "./files/FilesContent";
 import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
@@ -45,7 +46,9 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                     value="settings"
                     className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6 select-text"
                 >
-                    <h3 className="text-h3 w-[512px] pb-16">Settings</h3>
+                    <h3 className="text-h3 w-[512px] pb-16">
+                        <T keyName="settings.title" />
+                    </h3>
                     <SettingsContent />
                 </Tabs.Content>
             </Tabs.Root>

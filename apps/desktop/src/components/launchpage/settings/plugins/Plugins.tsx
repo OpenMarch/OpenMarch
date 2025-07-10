@@ -9,9 +9,12 @@ import {
     TabContent,
     TabItem,
 } from "@openmarch/ui";
+import { T, useTranslate } from "@tolgee/react";
 import { PuzzlePieceIcon } from "@phosphor-icons/react";
 
 export default function PluginsContents() {
+    const { t } = useTranslate();
+
     const [plugins, setPlugins] = useState<Plugin[]>([]);
     const [officialPlugins, setOfficialPlugins] = useState<PluginMetadata[]>(
         [],
@@ -99,24 +102,30 @@ export default function PluginsContents() {
                 <div className="bg-fg-1 rounded-6 text-body border-yellow flex w-full items-center gap-8 border px-12 py-8">
                     <PuzzlePieceIcon size={20} />
                     <p>
-                        Please{" "}
+                        {t("settings.plugins.refresh.prefix")}{" "}
                         <strong
                             className="cursor-pointer"
                             onClick={() => {
                                 window.location.reload();
                             }}
                         >
-                            reload the app
+                            {t("settings.plugins.refresh.link")}
                         </strong>{" "}
-                        to update plugins.
+                        {t("settings.plugins.refresh.suffix")}
                     </p>
                 </div>
             )}
             <Tabs defaultValue="installed">
                 <TabsList className="flex flex-row gap-4">
-                    <TabItem value="installed">Installed</TabItem>
-                    <TabItem value="official">Official</TabItem>
-                    <TabItem value="community">Community</TabItem>
+                    <TabItem value="installed">
+                        <T keyName="settings.plugins.installed" />
+                    </TabItem>
+                    <TabItem value="official">
+                        <T keyName="settings.plugins.official" />
+                    </TabItem>
+                    <TabItem value="community">
+                        <T keyName="settings.plugins.community" />
+                    </TabItem>
                 </TabsList>
                 <TabContent
                     value="installed"
@@ -148,8 +157,9 @@ export default function PluginsContents() {
                                                         `button[data-plugin="${plugin.name}"]`,
                                                     );
                                                 if (button) {
-                                                    button.textContent =
-                                                        "Removing...";
+                                                    button.textContent = t(
+                                                        "settings.plugins.uninstalling",
+                                                    );
                                                 }
 
                                                 let status =
@@ -158,12 +168,22 @@ export default function PluginsContents() {
                                                     );
                                                 if (button) {
                                                     button.textContent = status
-                                                        ? "Removed"
-                                                        : "Removal Failed";
+                                                        ? t(
+                                                              "settings.plugins.uninstalled",
+                                                          )
+                                                        : t(
+                                                              "settings.plugins.uninstallFailed",
+                                                          );
                                                 }
                                                 if (status) {
                                                     toast.success(
-                                                        `Plugin ${plugin.name} removed successfully!`,
+                                                        t(
+                                                            "settings.plugins.toast.uninstallSuccess",
+                                                            {
+                                                                pluginName:
+                                                                    plugin.name,
+                                                            },
+                                                        ),
                                                     );
                                                     Plugin.remove(plugin);
                                                     setPlugins([
@@ -172,12 +192,18 @@ export default function PluginsContents() {
                                                     setShowRefreshNotice(true);
                                                 } else {
                                                     toast.error(
-                                                        `Failed to remove plugin ${plugin.name}.`,
+                                                        t(
+                                                            "settings.plugins.toast.uninstallFailed",
+                                                            {
+                                                                pluginName:
+                                                                    plugin.name,
+                                                            },
+                                                        ),
                                                     );
                                                 }
                                             }}
                                         >
-                                            Uninstall
+                                            <T keyName="settings.plugins.uninstall" />
                                         </Button>
                                     </div>
                                 </div>
@@ -216,7 +242,7 @@ export default function PluginsContents() {
                                         {plugins.some((p) =>
                                             p.equals(plugin),
                                         ) ? (
-                                            "Installed"
+                                            t("settings.plugins.installed")
                                         ) : (
                                             <Button
                                                 data-plugin={plugin.name}
@@ -228,8 +254,9 @@ export default function PluginsContents() {
                                                             `button[data-plugin="${plugin.name}"]`,
                                                         );
                                                     if (button) {
-                                                        button.textContent =
-                                                            "Installing...";
+                                                        button.textContent = t(
+                                                            "settings.plugins.installing",
+                                                        );
                                                     }
 
                                                     let status =
@@ -240,12 +267,22 @@ export default function PluginsContents() {
                                                     if (button) {
                                                         button.textContent =
                                                             status
-                                                                ? "Installed"
-                                                                : "Install Failed";
+                                                                ? t(
+                                                                      "settings.plugins.installed",
+                                                                  )
+                                                                : t(
+                                                                      "settings.plugins.installFailed",
+                                                                  );
                                                     }
                                                     if (status) {
                                                         toast.success(
-                                                            `Plugin ${plugin.name} installed successfully!`,
+                                                            t(
+                                                                "settings.plugins.toast.installSuccess",
+                                                                {
+                                                                    pluginName:
+                                                                        plugin.name,
+                                                                },
+                                                            ),
                                                         );
                                                         let path =
                                                             plugin.download_url
@@ -266,12 +303,18 @@ export default function PluginsContents() {
                                                         );
                                                     } else {
                                                         toast.error(
-                                                            `Failed to install plugin ${plugin.name}.`,
+                                                            t(
+                                                                "settings.plugins.toast.installFailed",
+                                                                {
+                                                                    pluginName:
+                                                                        plugin.name,
+                                                                },
+                                                            ),
                                                         );
                                                     }
                                                 }}
                                             >
-                                                Install
+                                                <T keyName="settings.plugins.install" />
                                             </Button>
                                         )}
                                     </div>
@@ -286,7 +329,7 @@ export default function PluginsContents() {
                         ))
                     ) : (
                         <p className="text-body p-8">
-                            No official plugins available.
+                            <T keyName="settings.plugins.noOfficialPlugins" />
                         </p>
                     )}
                 </TabContent>
@@ -313,7 +356,7 @@ export default function PluginsContents() {
                                         {plugins.some((p) =>
                                             p.equals(plugin),
                                         ) ? (
-                                            "Installed"
+                                            t("settings.plugins.installed")
                                         ) : (
                                             <Button
                                                 data-plugin={plugin.name}
@@ -325,8 +368,9 @@ export default function PluginsContents() {
                                                             `button[data-plugin="${plugin.name}"]`,
                                                         );
                                                     if (button) {
-                                                        button.textContent =
-                                                            "Installing...";
+                                                        button.textContent = t(
+                                                            "settings.plugins.installing",
+                                                        );
                                                     }
 
                                                     let status =
@@ -337,12 +381,22 @@ export default function PluginsContents() {
                                                     if (button) {
                                                         button.textContent =
                                                             status
-                                                                ? "Installed"
-                                                                : "Install Failed";
+                                                                ? t(
+                                                                      "settings.plugins.installed",
+                                                                  )
+                                                                : t(
+                                                                      "settings.plugins.installFailed",
+                                                                  );
                                                     }
                                                     if (status) {
                                                         toast.success(
-                                                            `Plugin ${plugin.name} installed successfully!`,
+                                                            t(
+                                                                "settings.plugins.toast.installSuccess",
+                                                                {
+                                                                    pluginName:
+                                                                        plugin.name,
+                                                                },
+                                                            ),
                                                         );
                                                         let path =
                                                             plugin.download_url
@@ -363,12 +417,18 @@ export default function PluginsContents() {
                                                         );
                                                     } else {
                                                         toast.error(
-                                                            `Failed to install plugin ${plugin.name}.`,
+                                                            t(
+                                                                "settings.plugins.toast.installFailed",
+                                                                {
+                                                                    pluginName:
+                                                                        plugin.name,
+                                                                },
+                                                            ),
                                                         );
                                                     }
                                                 }}
                                             >
-                                                Install
+                                                <T keyName="settings.plugins.install" />
                                             </Button>
                                         )}
                                     </div>
@@ -383,7 +443,7 @@ export default function PluginsContents() {
                         ))
                     ) : (
                         <p className="text-body p-8">
-                            No community plugins available.
+                            <T keyName="settings.plugins.noCommunityPlugins" />
                         </p>
                     )}
                 </TabContent>

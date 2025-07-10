@@ -1,4 +1,5 @@
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react";
+import { T } from "@tolgee/react";
 
 interface AnalyticsMessageProps {
     hasOptedOut: boolean;
@@ -11,8 +12,7 @@ export default function AnalyticsMessage({
         return (
             <div className="bg-green/20 text-green-foreground border-green mx-12 flex items-center gap-8 rounded-md border p-12 text-sm">
                 <CheckCircleIcon size={32} className="text-green" />
-                You&apos;re sharing usage analytics. Thank you for helping make
-                OpenMarch better for everyone.
+                <T keyName="settings.privacy.analytics.enabled" />
             </div>
         );
     }
@@ -21,17 +21,16 @@ export default function AnalyticsMessage({
         <div className="bg-red/20 text-red-foreground mx-12 flex items-center gap-8 rounded-md border border-red-500/50 p-12 text-sm">
             <XCircleIcon size={64} className="text-red-500" />
             <p>
-                You are not sharing analytics. If you experience issues or bugs,
-                we will not know about them. If you have an issue, please{" "}
+                <T keyName="settings.privacy.analytics.disabled.prefix" />{" "}
                 <a
                     href="https://openmarch.com/about/submitting-feedback"
                     target="_blank"
                     rel="noreferrer"
                     className="text-accent underline"
                 >
-                    submit feedback
+                    <T keyName="settings.privacy.analytics.feedback.link" />
                 </a>{" "}
-                so we can address it.
+                <T keyName="settings.privacy.analytics.disabled.suffix" />
             </p>
         </div>
     );
