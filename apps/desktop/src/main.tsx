@@ -6,6 +6,7 @@ import "@fontsource/dm-mono";
 import "@fontsource/dm-sans";
 import { ThemeProvider } from "./context/ThemeContext";
 import { Tolgee, DevTools, TolgeeProvider, FormatSimple } from "@tolgee/react";
+import { FormatIcu } from "@tolgee/format-icu";
 import * as Sentry from "@sentry/electron/renderer";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
@@ -24,6 +25,7 @@ if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {
 const tolgee = Tolgee()
     .use(DevTools())
     .use(FormatSimple())
+    .use(FormatIcu())
     .init({
         language: "en", // Default language, will be overridden by saved language
 

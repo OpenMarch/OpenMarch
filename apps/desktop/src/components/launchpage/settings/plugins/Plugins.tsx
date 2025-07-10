@@ -1,5 +1,5 @@
 import Plugin, { PluginMetadata } from "@/global/classes/Plugin";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
     Badge,
@@ -96,22 +96,31 @@ export default function PluginsContents() {
         fetchCommunityPlugins();
     }, []);
 
+    const refreshLink = (content: React.ReactNode) => {
+        return (
+            <strong
+                className="cursor-pointer"
+                onClick={() => {
+                    window.location.reload();
+                }}
+            >
+                {content}
+            </strong>
+        );
+    };
+
     return (
         <div className="text-text flex flex-col gap-16">
             {showRefreshNotice && (
                 <div className="bg-fg-1 rounded-6 text-body border-yellow flex w-full items-center gap-8 border px-12 py-8">
                     <PuzzlePieceIcon size={20} />
                     <p>
-                        {t("settings.plugins.refresh.prefix")}{" "}
-                        <strong
-                            className="cursor-pointer"
-                            onClick={() => {
-                                window.location.reload();
+                        <T
+                            keyName="settings.plugins.refreshNotice"
+                            params={{
+                                a: refreshLink,
                             }}
-                        >
-                            {t("settings.plugins.refresh.link")}
-                        </strong>{" "}
-                        {t("settings.plugins.refresh.suffix")}
+                        />
                     </p>
                 </div>
             )}
