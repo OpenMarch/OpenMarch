@@ -1,4 +1,91 @@
 {
+    "analyticsOptIn": {
+        "description": {
+            "link": "privacy policy",
+            "prefix": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our",
+            "suffix": "to learn more."
+        },
+        "optIn": "Opt in",
+        "optOut": "Opt Out",
+        "settings": "You can change this setting at any time in the app settings.",
+        "title": "Help Us Improve OpenMarch",
+        "whenYouOptIn": "When you opt-in",
+        "whenYouOptOut": "When you opt-out"
+    },
+    "audio": {
+        "beats": {
+            "create": {
+                "error": "Error creating beats"
+            },
+            "save": {
+                "error": "Error creating new beats",
+                "success": "Beats saved successfully"
+            }
+        },
+        "editableBeatPlayer": {
+            "description": "Drag the right edge of any beat to adjust its duration"
+        },
+        "play": {
+            "error": "Failed to play audio"
+        },
+        "saveNewBeats": {
+            "label": "Save New Beats"
+        },
+        "seeDocs": {
+            "label": "See docs"
+        },
+        "tapNewTempo": {
+            "exit": "Exit",
+            "label": "Tap New Tempo",
+            "restart": "Restart"
+        },
+        "tapTempo": {
+            "label": "Tap Tempo"
+        }
+    },
+    "colorPicker": {
+        "discard": "Discard",
+        "save": "Save"
+    },
+    "formButtons": {
+        "cancel": "Cancel",
+        "editButton": "Edit",
+        "saveChanges": "Save Changes"
+    },
+    "formField": {
+        "valueMissing": "Please enter a value."
+    },
+    "launchpage": {
+        "files": {
+            "createNew": "New File",
+            "failedToLoadRecent": "Failed to load recent files",
+            "failedToOpen": "Failed to open file",
+            "failedToRemoveRecent": "Failed to remove file from recent list",
+            "fieldPreview": "Field Preview",
+            "openFile": "Open File",
+            "removeFile": "Remove from recent files",
+            "title": "Recent Files"
+        },
+        "learn": {
+            "guides": {
+                "title": "Guides"
+            },
+            "title": "Learn",
+            "troubleshooting": {
+                "clearCache": "Clear the cache",
+                "clearCache.description": "Deleting the cache and metadata folder can often fix performance issues. (This will also delete your recent files list and theme!)",
+                "description": "OpenMarch is still under development, so here are some tips when something goes wrong.",
+                "refresh": "Refresh the page",
+                "refresh.description": "When in doubt, refresh the page (Ctrl/Cmd + R). If OpenMarch ever seems broken, refreshing will often fix it.",
+                "title": "Troubleshooting Tips"
+            }
+        },
+        "merch": "Get OpenMarch Merch!",
+        "settings": {
+            "title": "Settings"
+        },
+        "title": "Launch Page"
+    },
     "settings": {
         "general": "General",
         "general.appearance": "Appearance",
@@ -18,6 +105,7 @@
         "plugins.installing": "Installing...",
         "plugins.noCommunityPlugins": "No community plugins available.",
         "plugins.noOfficialPlugins": "No official plugins available.",
+        "plugins.noPlugins": "No plugins installed.",
         "plugins.official": "Official",
         "plugins.refresh.link": "reload the app",
         "plugins.refresh.prefix": "Please",
@@ -38,16 +126,62 @@
         "privacy.analytics.description.suffix": "to learn more.",
         "privacy.analytics.disabled.prefix": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please",
         "privacy.analytics.disabled.suffix": "so that we can address it.",
-        "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping make OpenMarch better for everyone.",
+        "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
         "privacy.analytics.feedback.link": "submit feedback",
         "privacy.analytics.toggle": "Enable analytics",
         "title": "Settings"
     },
+    "timeline": {
+        "audio": "Audio",
+        "controls": {
+            "label": "Playback Controls"
+        },
+        "label": "Timeline",
+        "music": {
+            "add": "Add Music"
+        },
+        "page": {
+            "contextMenu": {
+                "deletePage": "Delete",
+                "subsetToggle": "Subset",
+                "title": "Page {pageName}"
+            },
+            "deleteFailed": "Failed to delete page",
+            "deleted": "Page {pageName} deleted",
+            "firstPage": "First page",
+            "label": "Page {pageName}",
+            "subset": "Subset"
+        },
+        "pages": "Pages",
+        "perspective": {
+            "label": "Perspective"
+        }
+    },
+    "titlebar": {
+        "bugReport": "Submit bug or feedback",
+        "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
+        "databasePathError": "Database Path Error",
+        "databasePathError.description": "Failed to fetch .dots file path!\n\nPlease fully quit the app and try again.\n\nIf the issue persists, please reach out to support.",
+        "databasePathError.dismiss": "Dismiss"
+    },
     "toolbar": {
         "settings": "App Settings"
     },
+    "versionCheck": {
+        "error": {
+            "fetchFailed": "An error occurred while fetching the version.",
+            "noVersion": "Unable to fetch latest version."
+        },
+        "installLinux": "Install for Linux",
+        "installMacArm": "Install for Apple Silicon",
+        "installMacIntel": "Install for Intel Mac",
+        "installWindows": "Install for Windows",
+        "skipVersion": "Skip this version",
+        "title": "New Version Available",
+        "trigger": "New Version Available!"
+    },
     "welcome": {
-        "description": "No files found. Create one, and make sure to checkout the guides. Customize your theme and navigation in Settings.",
+        "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",
         "title": "Welcome to OpenMarch"
     }
 }
