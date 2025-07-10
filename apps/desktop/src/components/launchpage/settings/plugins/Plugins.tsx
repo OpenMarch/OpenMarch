@@ -216,7 +216,9 @@ export default function PluginsContents() {
                             </div>
                         ))
                     ) : (
-                        <p className="text-body p-8">No plugins installed.</p>
+                        <p className="text-body p-8">
+                            <T keyName="settings.plugins.noPlugins" />
+                        </p>
                     )}
                 </TabContent>
                 <TabContent

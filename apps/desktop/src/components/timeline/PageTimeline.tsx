@@ -18,6 +18,7 @@ import * as ContextMenu from "@radix-ui/react-context-menu";
 import { Button, Switch } from "@openmarch/ui";
 import { toast } from "sonner";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
+import { T, useTolgee } from "@tolgee/react";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -81,6 +82,8 @@ export default function PageTimeline() {
     const startX = useRef(0);
     const startWidth = useRef(0);
     const availableOffsets = useRef<number[]>([]);
+
+    const { t } = useTolgee();
 
     // Calculate the width of a page based on its duration
     // Add a small buffer to ensure the page visually includes all its beats
@@ -251,9 +254,13 @@ export default function PageTimeline() {
             fetchTimingObjects,
         );
         if (response.success) {
-            toast.success(`Page ${pageName} deleted`);
+            toast.success(
+                t("timeline.page.deleted", {
+                    pageName: pageName,
+                }),
+            );
         } else {
-            toast.error("Failed to delete page");
+            toast.error(t("timeline.page.deleteFailed"));
         }
     }
 
@@ -281,8 +288,8 @@ export default function PageTimeline() {
                         setSelectedPage(pages[0]);
                         setSelectedMarcherShapes([]);
                     }}
-                    title="First page"
-                    aria-label="First page"
+                    title={t("timeline.page.firstPage")}
+                    aria-label={t("timeline.page.firstPage")}
                     timeline-page-id={pages[0].id}
                 >
                     <div>{pages[0].name}</div>
@@ -298,7 +305,9 @@ export default function PageTimeline() {
                 return (
                     <ContextMenu.Root
                         key={index}
-                        aria-label={`Page ${page.name}`}
+                        aria-label={t("timeline.page.label", {
+                            pageName: page.name,
+                        })}
                     >
                         <ContextMenu.Trigger
                             disabled={isPlaying || isFullscreen}
@@ -375,11 +384,15 @@ export default function PageTimeline() {
                         {/* ------ context menu ------ */}
                         <ContextMenu.Portal>
                             <ContextMenu.Content className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex flex-col gap-8 border p-16 py-12 backdrop-blur-md">
-                                <h5 className="text-h5">Page {page.name}</h5>
+                                <h5 className="text-h5">
+                                    {t("timeline.page.contextMenu.title", {
+                                        pageName: page.name,
+                                    })}
+                                </h5>
 
                                 <div className="flex w-full items-center justify-between gap-8">
                                     <label className="text-body text-text-subtitle">
-                                        Subset
+                                        <T keyName="timeline.page.contextMenu.subsetToggle" />
                                     </label>
                                     <Switch
                                         onClick={(e) => {
@@ -399,7 +412,7 @@ export default function PageTimeline() {
                                 </div>
                                 <div className="flex w-full items-center justify-between gap-8">
                                     <label className="text-body text-text-subtitle">
-                                        Delete
+                                        <T keyName="timeline.page.contextMenu.deletePage" />
                                     </label>
                                     <Button
                                         onClick={() =>

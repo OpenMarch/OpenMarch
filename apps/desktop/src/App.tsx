@@ -25,7 +25,6 @@ import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 import ErrorBoundary from "./ErrorBoundary";
-import { T } from "@tolgee/react";
 
 // The app
 

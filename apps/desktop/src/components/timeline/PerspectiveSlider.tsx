@@ -1,6 +1,7 @@
 import { Slider } from "@openmarch/ui";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { useEffect, useState } from "react";
+import { T } from "@tolgee/react";
 
 export default function PerspectiveSlider() {
     const { perspective, setPerspective } = useFullscreenStore();
@@ -20,7 +21,9 @@ export default function PerspectiveSlider() {
     return (
         <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-4 border px-16 py-12">
             <div className="text-text-subtitle text-sub flex justify-between">
-                <span>Perspective</span>
+                <span>
+                    <T keyName="timeline.perspective.label" />
+                </span>
                 <span>{value}°</span>
             </div>
             <Slider

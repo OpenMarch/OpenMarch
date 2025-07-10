@@ -17,6 +17,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
@@ -30,7 +31,9 @@ export default function TimelineControls() {
             )}
         >
             {!isFullscreen && (
-                <p className="text-body text-text/60">Timeline</p>
+                <p className="text-body text-text/60">
+                    <T keyName="timeline.label" />
+                </p>
             )}
             <div
                 className={clsx("flex gap-12", {
@@ -92,9 +95,13 @@ function PlaybackControls() {
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
     const { uiSettings } = useUiSettingsStore();
+    const { t } = useTolgee();
 
     return (
-        <div className={clsx("flex gap-12")} aria-label="Playback Controls">
+        <div
+            className={clsx("flex gap-12")}
+            aria-label={t("timeline.controls.label")}
+        >
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
                 disabled={
