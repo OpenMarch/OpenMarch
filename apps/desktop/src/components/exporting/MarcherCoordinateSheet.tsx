@@ -351,18 +351,20 @@ export function StaticMarcherCoordinateSheet({
                                 {marcherState.drill_number}
                             </h4>
                         </div>
-                        <div
-                            title="marcher name header"
-                            style={{
-                                flexGrow: 1,
-                                ...leftBorderStyle,
-                                ...headingContainerStyle,
-                            }}
-                        >
-                            <h4 aria-label="marcher name" style={h4Style}>
-                                {marcherState.name}
-                            </h4>
-                        </div>
+                        {marcherState.name && marcherState.name.trim() && (
+                            <div
+                                title="marcher name header"
+                                style={{
+                                    flexGrow: 1,
+                                    ...leftBorderStyle,
+                                    ...headingContainerStyle,
+                                }}
+                            >
+                                <h4 aria-label="marcher name" style={h4Style}>
+                                    {marcherState.name}
+                                </h4>
+                            </div>
+                        )}
                         <div
                             title="section header"
                             style={{
@@ -615,29 +617,31 @@ export function StaticCompactMarcherSheet({
                         {marcherState.drill_number}
                     </h4>
                 </div>
-                <div
-                    title="marcher name header"
-                    style={{
-                        flexGrow: 1,
-                        borderLeft: "1px dotted #888",
-                        backgroundColor: "#ddd",
-                        paddingLeft: "1rem",
-                        padding: "1rem",
-                        width: "max-content",
-                        justifySelf: "baseline",
-                    }}
-                >
-                    <h4
-                        aria-label="marcher name"
+                {marcherState.name && marcherState.name.trim() && (
+                    <div
+                        title="marcher name header"
                         style={{
-                            margin: 0,
-                            padding: 0,
-                            fontSize: "1.2rem",
+                            flexGrow: 1,
+                            borderLeft: "1px dotted #888",
+                            backgroundColor: "#ddd",
+                            paddingLeft: "1rem",
+                            padding: "1rem",
+                            width: "max-content",
+                            justifySelf: "baseline",
                         }}
                     >
-                        {marcherState.name}
-                    </h4>
-                </div>
+                        <h4
+                            aria-label="marcher name"
+                            style={{
+                                margin: 0,
+                                padding: 0,
+                                fontSize: "1.2rem",
+                            }}
+                        >
+                            {marcherState.name}
+                        </h4>
+                    </div>
+                )}
                 <div
                     title="quarter-page number header"
                     style={{
@@ -669,10 +673,12 @@ export function StaticCompactMarcherSheet({
                             aria-label="page header"
                             style={{
                                 border: "1px solid #888",
-                                padding: "0.25rem 0.5rem",
+                                padding: "2px 4px",
                                 textAlign: "center",
                                 width: "4ch",
                                 fontWeight: "bold",
+                                fontSize: 10,
+                                lineHeight: 1.1,
                             }}
                         >
                             Pg.
@@ -681,9 +687,11 @@ export function StaticCompactMarcherSheet({
                             aria-label="side to side header"
                             style={{
                                 border: "1px solid #888",
-                                padding: "0.25rem 0.5rem",
+                                padding: "2px 4px",
                                 width: "auto",
                                 fontWeight: "bold",
+                                fontSize: 10,
+                                lineHeight: 1.1,
                             }}
                         >
                             S. to S.
@@ -692,9 +700,11 @@ export function StaticCompactMarcherSheet({
                             aria-label="front to back header"
                             style={{
                                 border: "1px solid #888",
-                                padding: "0.25rem 0.5rem",
+                                padding: "2px 4px",
                                 width: "auto",
                                 fontWeight: "bold",
+                                fontSize: 10,
+                                lineHeight: 1.1,
                             }}
                         >
                             F. to B.
@@ -703,10 +713,12 @@ export function StaticCompactMarcherSheet({
                             aria-label="counts header"
                             style={{
                                 border: "1px solid #888",
-                                padding: "0.25rem 0.5rem",
+                                padding: "2px 4px",
                                 textAlign: "center",
                                 width: "3ch",
                                 fontWeight: "bold",
+                                fontSize: 10,
+                                lineHeight: 1.1,
                             }}
                         >
                             Ct.
@@ -715,10 +727,12 @@ export function StaticCompactMarcherSheet({
                             aria-label="measure header"
                             style={{
                                 border: "1px solid #888",
-                                padding: "0.25rem 0.5rem",
+                                padding: "2px 4px",
                                 textAlign: "center",
                                 width: "11ch",
                                 fontWeight: "bold",
+                                fontSize: 10,
+                                lineHeight: 1.1,
                             }}
                         >
                             Ms.
@@ -761,12 +775,13 @@ export function StaticCompactMarcherSheet({
                                     <td
                                         style={{
                                             border: "1px solid #888",
-                                            padding: "0.25rem 0.5rem",
+                                            padding: "1px 3px",
                                             textAlign: "center",
                                             width: "4ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
-                                            fontSize: 11,
+                                            fontSize: 10,
+                                            lineHeight: 1.1,
                                         }}
                                     >
                                         {page.name}
@@ -774,12 +789,13 @@ export function StaticCompactMarcherSheet({
                                     <td
                                         style={{
                                             border: "1px solid #888",
-                                            padding: "0.25rem 0.5rem",
+                                            padding: "1px 3px",
                                             width: "18ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
                                             textAlign: "left",
-                                            fontSize: 11,
+                                            fontSize: 10,
+                                            lineHeight: 1.1,
                                         }}
                                     >
                                         {sToS}
@@ -787,12 +803,13 @@ export function StaticCompactMarcherSheet({
                                     <td
                                         style={{
                                             border: "1px solid #888",
-                                            padding: "0.25rem 0.5rem",
+                                            padding: "1px 3px",
                                             width: "15ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
                                             textAlign: "left",
-                                            fontSize: 11,
+                                            fontSize: 10,
+                                            lineHeight: 1.1,
                                         }}
                                     >
                                         {fToB}
@@ -800,12 +817,13 @@ export function StaticCompactMarcherSheet({
                                     <td
                                         style={{
                                             border: "1px solid #888",
-                                            padding: "0.25rem 0.5rem",
+                                            padding: "1px 3px",
                                             textAlign: "center",
                                             width: "3ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
-                                            fontSize: 11,
+                                            fontSize: 10,
+                                            lineHeight: 1.1,
                                         }}
                                     >
                                         {counts}
@@ -813,12 +831,13 @@ export function StaticCompactMarcherSheet({
                                     <td
                                         style={{
                                             border: "1px solid #888",
-                                            padding: "0.25rem 0.5rem",
+                                            padding: "1px 3px",
                                             textAlign: "center",
                                             width: "7ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
-                                            fontSize: 11,
+                                            fontSize: 10,
+                                            lineHeight: 1.1,
                                         }}
                                     >
                                         {msValue}

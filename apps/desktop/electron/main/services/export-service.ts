@@ -47,6 +47,12 @@ export class PDFExportService {
         quarterPages: boolean,
     ) {
         return new Promise<Buffer>((resolve, reject) => {
+            console.log("generateSinglePDF called with:", {
+                pageCount: pages.length,
+                quarterPages,
+                firstPageLength: pages[0]?.length || 0,
+            });
+
             const win = new BrowserWindow({
                 width: 1200,
                 height: 800,
@@ -57,12 +63,65 @@ export class PDFExportService {
                 },
             });
 
+            // Add timeout to prevent hanging
+            const timeout = setTimeout(() => {
+                console.error("PDF generation timed out after 30 seconds");
+                win.close();
+                reject(new Error("PDF generation timed out after 30 seconds"));
+            }, 30000);
+
+            // Handle window errors
+            win.webContents.on(
+                "did-fail-load",
+                (event, errorCode, errorDescription) => {
+                    console.error("Failed to load content:", {
+                        errorCode,
+                        errorDescription,
+                    });
+                    clearTimeout(timeout);
+                    win.close();
+                    reject(
+                        new Error(
+                            `Failed to load content: ${errorDescription} (${errorCode})`,
+                        ),
+                    );
+                },
+            );
+
+            win.on("closed", () => {
+                clearTimeout(timeout);
+            });
+
             // Create HTML for each marcher's coordinate sheet with proper page breaks
-            const combinedHtml = pages
+            // Extract the header from the first page to repeat it on all pages
+            let extractedHeaderHtml = "";
+            let modifiedPages = pages;
+
+            if (pages.length > 0) {
+                const firstPageContent = pages[0];
+                const headerMatch = firstPageContent.match(
+                    /<div[^>]*class="sheetHeader"[^>]*>.*?<\/div>/s,
+                );
+                if (headerMatch) {
+                    extractedHeaderHtml = headerMatch[0];
+                    // Remove header from all pages since we'll add it separately
+                    modifiedPages = pages.map((page) =>
+                        page.replace(
+                            /<div[^>]*class="sheetHeader"[^>]*>.*?<\/div>/s,
+                            "",
+                        ),
+                    );
+                }
+            }
+
+            const combinedHtml = modifiedPages
                 .map(
                     (pageContent, index) =>
                         `
-                            <div class="marcher-sheet${index === 0 ? " first-sheet" : ""}">${pageContent}</div>
+                            <div class="marcher-sheet${index === 0 ? " first-sheet" : ""}">
+                                ${extractedHeaderHtml}
+                                ${pageContent}
+                            </div>
                         `,
                 )
                 .join("");
@@ -86,9 +145,21 @@ export class PDFExportService {
                               page-break-before: auto;
                             }
                             
-                            /* Ensure tables don't break across pages */
+                            /* Allow tables to break across pages but keep headers */
                             table {
+                              page-break-inside: auto;
+                            }
+                            
+                            /* Ensure table headers repeat on each page */
+                            thead {
+                              display: table-header-group;
+                            }
+                            
+                            /* Ensure performer header repeats on each page */
+                            .sheetHeader {
+                              display: table-header-group;
                               page-break-inside: avoid;
+                              page-break-after: avoid;
                             }
                             
                             /* Add some spacing between coordinate rows */
@@ -126,9 +197,59 @@ export class PDFExportService {
                     </html>
                 `;
 
-            win.loadURL(
-                `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`,
+            console.log("HTML content length:", htmlContent.length);
+            console.log("Combined HTML length:", combinedHtml.length);
+            console.log(
+                "First 500 chars of HTML:",
+                htmlContent.substring(0, 500),
             );
+
+            // Instead of using data URL, write to a temporary file
+            const tempDir = path.join(app.getPath("temp"), "openmarch-export");
+            const tempFilePath = path.join(
+                tempDir,
+                `export-${Date.now()}.html`,
+            );
+
+            // Use async IIFE to handle the file operations
+            (async () => {
+                try {
+                    // Ensure temp directory exists
+                    await fs.promises.mkdir(tempDir, { recursive: true });
+
+                    // Write HTML to temporary file
+                    await fs.promises.writeFile(
+                        tempFilePath,
+                        htmlContent,
+                        "utf8",
+                    );
+                    console.log("Wrote HTML to temp file:", tempFilePath);
+
+                    // Load from file URL instead of data URL
+                    win.loadFile(tempFilePath);
+
+                    // Clean up temp file after window closes
+                    win.on("closed", async () => {
+                        try {
+                            await fs.promises.unlink(tempFilePath);
+                            console.log("Cleaned up temp file:", tempFilePath);
+                        } catch (cleanupError) {
+                            console.warn(
+                                "Failed to clean up temp file:",
+                                cleanupError,
+                            );
+                        }
+                    });
+                } catch (fileError) {
+                    console.error("Error creating temp file:", fileError);
+                    reject(
+                        new Error(
+                            `Failed to create temp file: ${fileError instanceof Error ? fileError.message : fileError}`,
+                        ),
+                    );
+                    return;
+                }
+            })();
 
             win.webContents.on("did-finish-load", () => {
                 win.webContents
@@ -151,16 +272,18 @@ export class PDFExportService {
                         pageSize: "Letter",
                         printBackground: true,
                         headerTemplate: headerHtml({
-                            showName: this.getCurrentFileName(),
+                            showName: PDFExportService.getCurrentFileName(),
                         }),
                         footerTemplate: footerHtml,
                         displayHeaderFooter: true,
                     })
                     .then((data) => {
+                        clearTimeout(timeout);
                         win.close();
                         resolve(data);
                     })
                     .catch((error) => {
+                        clearTimeout(timeout);
                         win.close();
                         reject(error);
                     });
@@ -187,7 +310,7 @@ export class PDFExportService {
             await fs.promises.mkdir(sectionDir, { recursive: true });
 
             for (const sheet of sectionSheets) {
-                await new Promise<void>((resolve) => {
+                await new Promise<void>((resolve, reject) => {
                     const win = new BrowserWindow({
                         width: 1200,
                         height: 800,
@@ -198,14 +321,45 @@ export class PDFExportService {
                         },
                     });
 
+                    // Add timeout for individual sheet generation
+                    const timeout = setTimeout(() => {
+                        win.close();
+                        reject(
+                            new Error("Individual PDF generation timed out"),
+                        );
+                    }, 15000);
+
+                    win.webContents.on(
+                        "did-fail-load",
+                        (event, errorCode, errorDescription) => {
+                            clearTimeout(timeout);
+                            win.close();
+                            reject(
+                                new Error(
+                                    `Failed to load sheet content: ${errorDescription} (${errorCode})`,
+                                ),
+                            );
+                        },
+                    );
+
+                    win.on("closed", () => {
+                        clearTimeout(timeout);
+                    });
+
                     win.loadURL(
                         `data:text/html;charset=utf-8,${encodeURIComponent(sheet.renderedPage)}`,
                     );
 
                     win.webContents.on("did-finish-load", () => {
+                        // Get current filename and date for better file naming
+                        const currentFileName =
+                            PDFExportService.getCurrentFileName();
+                        const date = new Date().toISOString().split("T")[0];
+                        const fileName = `${currentFileName}-${date}-${sheet.drillNumber}${sheet.name ? " - " + sheet.name : ""}`;
+
                         const filePath = path.join(
                             sectionDir,
-                            `${sanitize(sheet.drillNumber + " - " + sheet.name)}.pdf`,
+                            `${sanitize(fileName)}.pdf`,
                         );
 
                         win.webContents
@@ -216,7 +370,8 @@ export class PDFExportService {
                                 pageSize: "Letter",
                                 printBackground: true,
                                 headerTemplate: headerHtml({
-                                    showName: this.getCurrentFileName(),
+                                    showName:
+                                        PDFExportService.getCurrentFileName(),
                                 }),
                                 footerTemplate: footerHtml,
                                 displayHeaderFooter: true,
@@ -230,8 +385,14 @@ export class PDFExportService {
                                     filePath,
                                     new Uint8Array(arrayBuffer),
                                 );
+                                clearTimeout(timeout);
                                 win.close();
                                 resolve();
+                            })
+                            .catch((error) => {
+                                clearTimeout(timeout);
+                                win.close();
+                                reject(error);
                             });
                     });
                 });
@@ -249,7 +410,7 @@ export class PDFExportService {
             if (organizeBySection) {
                 result = await dialog.showSaveDialog({
                     title: "Select Export Location",
-                    defaultPath: this.getDefaultPath(),
+                    defaultPath: PDFExportService.getDefaultPath(),
                     properties: [
                         "createDirectory",
                         "showOverwriteConfirmation",
@@ -260,16 +421,19 @@ export class PDFExportService {
                 if (result.canceled || !result.filePath) {
                     return { success: false, path: "", cancelled: true };
                 }
-                await this.generateSeparatePDFs(sheets, result.filePath);
+                await PDFExportService.generateSeparatePDFs(
+                    sheets,
+                    result.filePath,
+                );
             } else {
-                const pdfBuffer = await this.generateSinglePDF(
+                const pdfBuffer = await PDFExportService.generateSinglePDF(
                     sheets.map((s) => s.renderedPage),
                     quarterPages,
                 );
 
                 result = await dialog.showSaveDialog({
                     title: "Save PDF",
-                    defaultPath: `${this.getDefaultPath()}.pdf`,
+                    defaultPath: `${PDFExportService.getDefaultPath()}.pdf`,
                     filters: [{ name: "PDF", extensions: ["pdf"] }],
                     properties: ["showOverwriteConfirmation"],
                 });

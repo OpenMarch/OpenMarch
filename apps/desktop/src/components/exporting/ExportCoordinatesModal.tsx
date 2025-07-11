@@ -49,7 +49,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
     }
     return result;
 }
-const QUARTER_ROWS = 18;
+const QUARTER_ROWS = 22; // Increased from 18 to fit more rows
 
 function CoordinateSheetExport() {
     const [isTerse, setIsTerse] = useState(false);
@@ -150,6 +150,7 @@ function CoordinateSheetExport() {
 
             // split to quarter sheets
             if (quarterPages) {
+                // Create quarter sheets for each marcher, organized by performer number
                 const marcherQuarterSheets = processedMarchers.flatMap(
                     (marcher, mIdx) => {
                         const marcherPagesForMarcher = marcherPages
@@ -171,76 +172,66 @@ function CoordinateSheetExport() {
                             QUARTER_ROWS,
                         );
                         return rowChunks.map((rowChunk, chunkIdx) => {
-                            return {
-                                name: marcher.name,
-                                drillNumber: marcher.drill_number,
-                                section: marcher.section || "Unsorted",
-                                renderedPage: ReactDOMServer.renderToString(
-                                    <StaticCompactMarcherSheet
-                                        marcher={marcher}
-                                        pages={pages}
-                                        marcherPages={rowChunk}
-                                        fieldProperties={fieldProperties}
-                                        roundingDenominator={
-                                            roundingDenominator
-                                        }
-                                        terse={isTerse}
-                                        quarterPageNumber={chunkIdx + 1}
-                                    />,
-                                ),
-                            };
+                            try {
+                                const renderedHtml =
+                                    ReactDOMServer.renderToString(
+                                        <StaticCompactMarcherSheet
+                                            marcher={marcher}
+                                            pages={pages}
+                                            marcherPages={rowChunk}
+                                            fieldProperties={fieldProperties}
+                                            roundingDenominator={
+                                                roundingDenominator
+                                            }
+                                            terse={isTerse}
+                                            quarterPageNumber={chunkIdx + 1}
+                                        />,
+                                    );
+
+                                // Clean up the HTML to prevent URL encoding issues
+                                const cleanedHtml = renderedHtml
+                                    .replace(
+                                        /[\u0000-\u001F\u007F-\u009F]/g,
+                                        "",
+                                    ) // Remove control characters
+                                    .replace(/\s+/g, " ") // Normalize whitespace
+                                    .trim();
+
+                                return {
+                                    name: marcher.name,
+                                    drillNumber: marcher.drill_number,
+                                    section: marcher.section || "Unsorted",
+                                    renderedPage: cleanedHtml,
+                                };
+                            } catch (error) {
+                                console.error(
+                                    `Error rendering quarter page for ${marcher.drill_number}:`,
+                                    error,
+                                );
+                                return {
+                                    name: marcher.name,
+                                    drillNumber: marcher.drill_number,
+                                    section: marcher.section || "Unsorted",
+                                    renderedPage: `<div><h3>Error rendering ${marcher.drill_number}</h3><p>${error instanceof Error ? error.message : "Unknown error"}</p></div>`,
+                                };
+                            }
                         });
                     },
                 );
-                groupedSheets = chunkArray(marcherQuarterSheets, 4).map(
-                    (group: any, groupIdx: any) => {
-                        const gridItems = Array(4)
-                            .fill(null)
-                            .map((_, idx) =>
-                                group[idx]
-                                    ? `<div class="marcher-table">${group[idx].renderedPage}</div>`
-                                    : `<div class="marcher-table"></div>`,
-                            )
-                            .join("");
 
-                        const pageHtml = `
-                            <div style="
-                                display: grid;
-                                grid-template-columns: 1fr 1fr;
-                                grid-template-rows: 1fr 1fr;
-                                gap: 0.5rem;
-                                width: 100%;
-                                height: 100%;
-                                box-sizing: border-box;
-                                padding: 1rem;
-                            ">
-                                ${gridItems}
-                            </div>
-                            <style>
-                                .marcher-table tr:nth-child(even) { background: #d0d0d0; }
-                                .marcher-table {
-                                    box-sizing: border-box;
-                                    width: 100%;
-                                    height: 100%;
-                                    overflow: hidden;
-                                    border: 1px solid #e5e7eb;
-                                    padding: 0.5rem;
-                                    font-size: 80%;
-                                }
-                                .marcher-table table {
-                                    width: 100% !important;
-                                    font-size: 90% !important;
-                                }
-                            </style>
-                            `;
-                        return {
-                            name: `Page ${groupIdx + 1}`,
-                            drillNumber: "",
-                            section: group[0]?.section,
-                            renderedPage: pageHtml,
-                        };
-                    },
-                );
+                // Sort by drill number to organize by performer number
+                marcherQuarterSheets.sort((a, b) => {
+                    // First sort by drill number
+                    const drillCompare = a.drillNumber.localeCompare(
+                        b.drillNumber,
+                    );
+                    if (drillCompare !== 0) return drillCompare;
+
+                    // Then by name if drill numbers are the same
+                    return a.name.localeCompare(b.name);
+                });
+
+                groupedSheets = marcherQuarterSheets;
             } else {
                 // regular format
                 groupedSheets = processedMarchers.map((marcher) => ({
@@ -264,6 +255,24 @@ function CoordinateSheetExport() {
 
             // Continue with fun phrases during PDF generation
             setProgress(85);
+
+            // Debug logging
+            console.log("Sending to export service:", {
+                sheetCount: groupedSheets.length,
+                organizeBySection,
+                quarterPages,
+                firstSheetSample: groupedSheets[0]
+                    ? {
+                          name: groupedSheets[0].name,
+                          drillNumber: groupedSheets[0].drillNumber,
+                          section: groupedSheets[0].section,
+                          renderedPageLength:
+                              groupedSheets[0].renderedPage.length,
+                          renderedPagePreview:
+                              groupedSheets[0].renderedPage.substring(0, 200),
+                      }
+                    : null,
+            });
 
             // Add some intermediate progress updates during PDF generation
             const pdfGenerationPromise = window.electron.export.pdf({
