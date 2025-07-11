@@ -1,0 +1,225 @@
+{
+    "analyticsOptIn": {
+        "description": "OpenMarch の 改善 に 役立てるため に 、 私たちは 分析 データ 、 エラーログ 、 セッション キャプチャ を 収集 します 。 これにより アプリ の 使用 方法 を 理解 し 、 バグ を 発見 する こと が できます 。 詳しく は 、 <a> プライバシー ポリシー </a> を お読み ください 。",
+        "optIn": "オプトイン",
+        "optOut": "オプト アウト",
+        "settings": "アプリの設定で この設定を いつでも 変更できます。",
+        "title": "オープンマーチ の 改善 を 支援",
+        "whenYouOptIn": "オプトイン時",
+        "whenYouOptOut": "オプトアウト時"
+    },
+    "audio": {
+        "beats": {
+            "create": {
+                "error": "ビート作成エラー"
+            },
+            "save": {
+                "error": "新しいビートの作成エラー",
+                "success": "ビート 保存 に 成功"
+            }
+        },
+        "editableBeatPlayer": {
+            "description": "任意のビートの右端をドラッグしてその長さを調整します"
+        },
+        "play": {
+            "error": "オーディオ の再生 に失敗しました"
+        },
+        "saveNewBeats": {
+            "label": "新しいビートを保存"
+        },
+        "seeDocs": {
+            "label": "ドキュメント を 見る"
+        },
+        "tapNewTempo": {
+            "exit": "退出",
+            "label": "タップ 新しい テンポ",
+            "restart": "再開"
+        },
+        "tapTempo": {
+            "label": "タップ テンポ"
+        }
+    },
+    "colorPicker": {
+        "discard": "破棄",
+        "save": "保存"
+    },
+    "formButtons": {
+        "cancel": "キャンセル",
+        "editButton": "編集",
+        "saveChanges": "変更 を 保存"
+    },
+    "formField": {
+        "valueMissing": "値を入力してください。"
+    },
+    "inspector": {
+        "alignment": {
+            "applyCoordinates": "座標 を 適用",
+            "cancelUpdates": "キャンセル",
+            "createShape": "形状の作成",
+            "drawLine": "線を引きます。"
+        },
+        "marcher": {
+            "createLine": "ラインの作成\n",
+            "drillNumber": "ドリルナンバー",
+            "errorLoadingCoords": "座標 のローディングエラー",
+            "maxStepSize": "最大ステップ サイズ",
+            "minStepSize": "最小ステップ サイズ",
+            "name": "名前",
+            "section": "セクション",
+            "stepSize": "ステップ サイズ",
+            "swapMarchers": "交代 マーチャーズ"
+        },
+        "page": {
+            "counts": "カウント",
+            "measures": "計測",
+            "splitPage": "分割ページ",
+            "split": {
+                "success": "ページ分割が成功しました"
+            },
+            "subset": "サブセット",
+            "title": "ページ {pageNumber}\n"
+        },
+        "shape": {
+            "addSegmentButton": "追加",
+            "addSegmentTooltip": "シェイプ に セグメント を追加",
+            "copyToNextPage": "この形を次のページにコピー",
+            "copyToNextPageButton": "次のページにコピー",
+            "copyToPreviousPage": "この形を前のページにコピー",
+            "copyToPreviousPageButton": "前のページにコピー",
+            "deleteLastSegmentTooltip": "最後のセグメントを削除\n",
+            "errorCopyingPage": "ページ {pageName} へのコピー エラー。形状に既に割り当てられているマーチャーズはありますか？",
+            "errorNoNextPage": "コピーできません。次のページはありません",
+            "errorNoPreviousPage": "コピーできません。前のページがありません。",
+            "errorPageNotFound": "ID {pageId} のページが見つかりません\n",
+            "marchersOnShape": "{marchersCount} マーチャー",
+            "segment": "セグメント {index}",
+            "successfullyCopied": "図形がページ {pageName} に正常にコピーされました\n",
+            "ungroupShapeButton": "グループ 解除",
+            "ungroupShapeTooltip": "このページのこの形状を削除します。マーチを現在の位置から移動しません。"
+        },
+        "title": "検査官"
+    },
+    "launchpage": {
+        "files": {
+            "createNew": "新しいファイル",
+            "failedToLoadRecent": "最近のファイル を読み込 めませんでした",
+            "failedToOpen": "ファイルを開けませんでした",
+            "failedToRemoveRecent": "最近のファイル からファイル を削除 できませんでした",
+            "fieldPreview": "フィールド プレビュー",
+            "openFile": "ファイルを開ける",
+            "removeFile": "最近のファイル から削除",
+            "title": "最近のファイル"
+        },
+        "learn": {
+            "guides": {
+                "title": "ガイド"
+            },
+            "title": "学ぶ",
+            "troubleshooting": {
+                "clearCache": "キャッシュをクリア",
+                "clearCache.description": "キャッシュとメタデータフォルダーを削除することで、パフォーマンスの問題を改善できることが多いです。（これにより最近のファイル一覧とテーマも削除されます！）",
+                "description": "OpenMarch は まだ 開発中 なので 、 問題 が 発生した 場合 の対処 法 を ご 紹介 します 。",
+                "refresh": "ページをリフレッシュ",
+                "refresh.description": "疑問 が ある 時 は 、 ページ を 更新 ( Ctrl/Cmd + R ). OpenMarch が 壊れ ている ように 見える 時 は 、 更新 が 解決 する 場合 が 多い です 。",
+                "title": "トラブルシューティングのヒント"
+            }
+        },
+        "merch": "OpenMarch の マーチ をゲット！",
+        "settings": {
+            "title": "設定"
+        },
+        "title": "ランチ ページ"
+    },
+    "settings": {
+        "general": "一般",
+        "general.appearance": "外観",
+        "general.appearance.dark": "ダーク",
+        "general.appearance.light": "ライト",
+        "general.language": "言語",
+        "mouse": "マウス & トラックパッド",
+        "mouse.panSensitivity": "パン感度",
+        "mouse.trackpadMode": "トラックパッドモード（macOS に推奨）",
+        "mouse.trackpadPanSensitivity": "トラックパッド パン感度",
+        "mouse.zoomSensitivity": "ズーム感度",
+        "plugins": "プラグイン",
+        "plugins.community": "コミュニティ",
+        "plugins.install": "インストール",
+        "plugins.installed": "インストール済み",
+        "plugins.installFailed": "インストール失敗",
+        "plugins.installing": "インストール 中...",
+        "plugins.noCommunityPlugins": "コミュニティプラグインは利用できません。",
+        "plugins.noOfficialPlugins": "公式プラグインは利用できません。",
+        "plugins.noPlugins": "プラグイン は インストール されていません",
+        "plugins.official": "公式",
+        "plugins.refreshNotice": "プラグインを更新するには <a>アプリを再読み込みしてください</a>。",
+        "plugins.toast.installFailed": "プラグイン {pluginName} のインストールに失敗しました",
+        "plugins.toast.installSuccess": "プラグイン {pluginName} のインストールに成功しました！",
+        "plugins.toast.uninstallFailed": "{pluginName} の削除に失敗しました",
+        "plugins.toast.uninstallSuccess": "プラグイン {pluginName} の削除に成功しました！",
+        "plugins.uninstall": "アンインストール",
+        "plugins.uninstalled": "削除済み",
+        "plugins.uninstallFailed": "削除に失敗しました",
+        "plugins.uninstalling": "削除中...",
+        "privacy": "プライバシー",
+        "privacy.analytics": "利用 分析 の 共有",
+        "privacy.analytics.description": "OpenMarch の 改善 に 役立てるため に 、 分析 データ 、 エラーログ 、 セッション 録画 を 収集 します 。 これによって アプリ の 使用 方法 を 理解 し 、 バグ を 発見 する こと が できます 。 詳しく は 、 <a> プライバシー ポリシー </a> を ご覧 ください 。",
+        "privacy.analytics.description.opt_out": "ご希望の場合はこれをオプトアウトできます。Open March はボランティアによって開発された無料のツールであり、このデータはデザイナーがアプリをどのように使用しているかを理解し、バグを発見するのに非常に役立ちます—特に、私たちが Discord または Facebook でそれについてすぐに聞かない時に :)\n",
+        "privacy.analytics.disabled": "解析 情報 を 共有 して いません 。 問題 や バグ が 発生 した 場合 、 私たち は それ ら を 把握 する こと が できません 。 問題 が 発生 した 際 は 、 <a> フィードバック を 提出 してください </a> 。",
+        "privacy.analytics.enabled": "ご使用状況の分析を共有しています。 OpenMarch の改善にご協力いただき、ありがとうございます。",
+        "privacy.analytics.toggle": "分析 を有効にする",
+        "title": "設定"
+    },
+    "timeline": {
+        "audio": "オーディオ",
+        "controls": {
+            "label": "再生 コントロール"
+        },
+        "label": "タイムライン",
+        "music": {
+            "add": "音楽 を追加"
+        },
+        "page": {
+            "contextMenu": {
+                "deletePage": "削除",
+                "subsetToggle": "サブセット",
+                "title": "ページ {pageName}"
+            },
+            "deleted": "ページ {pageName} 削除済み",
+            "deleteFailed": "ページ の削除 に失敗しました",
+            "firstPage": "最初 ページ",
+            "label": "ページ {pageName}",
+            "subset": "サブセット"
+        },
+        "pages": "ページ",
+        "perspective": {
+            "label": "視点"
+        }
+    },
+    "titlebar": {
+        "bugReport": "バグ や フィードバック を 提出",
+        "bugReport.placeholder": "何が起こったのですか？\n何を期待していましたか？\n問題をどのように再現できますか？",
+        "databasePathError": "データベース パス エラー",
+        "databasePathError.description": "\".dots ファイル パスの取得に失敗しました！\n\nアプリを完全に終了して、もう一度お試しください。\n\n問題が解決しない場合は、サポートにお問い合わせください。\"",
+        "databasePathError.dismiss": "閉じる"
+    },
+    "toolbar": {
+        "settings": "アプリ 設定"
+    },
+    "versionCheck": {
+        "error": {
+            "fetchFailed": "バージョンを取得中にエラーが発生しました。",
+            "noVersion": "最新 バージョン を 取得 できません。"
+        },
+        "installLinux": "Linux 用にインストール",
+        "installMacArm": "Apple Silicon 用にインストール",
+        "installMacIntel": "Intel Mac にインストール",
+        "installWindows": "Windows 用にインストール",
+        "skipVersion": "この バージョン を スキップ",
+        "title": "新しいバージョン 利用可能",
+        "trigger": "新しい バージョン が 利用可能 ！"
+    },
+    "welcome": {
+        "description": "ファイルが見つかりません。1 つ作成し、 ガイドを確認してください。設定 でテーマと ナビゲーション をカスタマイズ してください。",
+        "title": "OpenMarch にようこそ"
+    }
+}

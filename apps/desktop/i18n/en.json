@@ -1,7 +1,7 @@
 {
     "analyticsOptIn": {
         "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
-        "optIn": "Opt in",
+        "optIn": "Opt In",
         "optOut": "Opt Out",
         "settings": "You can change this setting at any time in the app settings.",
         "title": "Help Us Improve OpenMarch",
@@ -51,6 +51,54 @@
     "formField": {
         "valueMissing": "Please enter a value."
     },
+    "inspector": {
+        "alignment": {
+            "applyCoordinates": "Apply coordinates",
+            "cancelUpdates": "Cancel",
+            "createShape": "Create Shape",
+            "drawLine": "Draw a line."
+        },
+        "marcher": {
+            "createLine": "Create Line",
+            "drillNumber": "Drill Number",
+            "errorLoadingCoords": "Error loading coordinates",
+            "maxStepSize": "Largest step size",
+            "minStepSize": "Smallest step size",
+            "name": "Name",
+            "section": "Section",
+            "stepSize": "Step Size",
+            "swapMarchers": "Swap marchers"
+        },
+        "page": {
+            "counts": "Counts",
+            "measures": "Measures",
+            "splitPage": "Split page",
+            "split": {
+                "success": "Page split successfully"
+            },
+            "subset": "Subset",
+            "title": "Page {pageNumber}"
+        },
+        "shape": {
+            "addSegmentButton": "Add",
+            "addSegmentTooltip": "Add segment to shape",
+            "copyToNextPage": "Copy this shape to the next page",
+            "copyToNextPageButton": "Copy to next page",
+            "copyToPreviousPage": "Copy this shape to the previous page",
+            "copyToPreviousPageButton": "Copy to prev page",
+            "deleteLastSegmentTooltip": "Delete last segment",
+            "errorCopyingPage": "Error copying to page {pageName}. Are there marchers already assigned to shapes?",
+            "errorNoNextPage": "Cannot copy. There is no next page",
+            "errorNoPreviousPage": "Cannot copy. There is no previous page.",
+            "errorPageNotFound": "Page not found with id {pageId}",
+            "marchersOnShape": "{marchersCount} Marchers",
+            "segment": "Segment {index}",
+            "successfullyCopied": "Shape successfully copied to page {pageName}",
+            "ungroupShapeButton": "Un-group",
+            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position"
+        },
+        "title": "Inspector"
+    },
     "launchpage": {
         "files": {
             "createNew": "New File",
@@ -96,8 +144,8 @@
         "plugins": "Plugins",
         "plugins.community": "Community",
         "plugins.install": "Install",
-        "plugins.installFailed": "Install Failed",
         "plugins.installed": "Installed",
+        "plugins.installFailed": "Install Failed",
         "plugins.installing": "Installing...",
         "plugins.noCommunityPlugins": "No community plugins available.",
         "plugins.noOfficialPlugins": "No official plugins available.",
@@ -109,8 +157,8 @@
         "plugins.toast.uninstallFailed": "Failed to remove {pluginName}",
         "plugins.toast.uninstallSuccess": "Plugin {pluginName} removed successfully!",
         "plugins.uninstall": "Uninstall",
-        "plugins.uninstallFailed": "Removal Failed",
         "plugins.uninstalled": "Removed",
+        "plugins.uninstallFailed": "Removal Failed",
         "plugins.uninstalling": "Removing...",
         "privacy": "Privacy",
         "privacy.analytics": "Share usage analytics",
@@ -136,8 +184,8 @@
                 "subsetToggle": "Subset",
                 "title": "Page {pageName}"
             },
-            "deleteFailed": "Failed to delete page",
             "deleted": "Page {pageName} deleted",
+            "deleteFailed": "Failed to delete page",
             "firstPage": "First page",
             "label": "Page {pageName}",
             "subset": "Subset"
