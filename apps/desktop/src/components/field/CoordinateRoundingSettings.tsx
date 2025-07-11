@@ -3,7 +3,6 @@ import { Input } from "@openmarch/ui";
 import { useEffect, useState, useCallback } from "react";
 import clsx from "clsx";
 import { ToggleGroup, ToggleGroupItem, UnitInput } from "@openmarch/ui";
-import FormField from "../ui/FormField";
 import * as Popover from "@radix-ui/react-popover";
 import ToolbarSection from "../toolbar/ToolbarSection";
 import { CaretDownIcon } from "@phosphor-icons/react";

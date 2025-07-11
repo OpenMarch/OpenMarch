@@ -19,12 +19,15 @@ import {
     SvgCommands,
     secondSegmentSvgCommands,
 } from "@/global/classes/canvasObjects/SvgCommand";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function ShapeEditor() {
     const { selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
     const { pages } = useTimingObjectsStore()!;
     const { selectedPage } = useSelectedPage()!;
+
+    const { t } = useTolgee();
 
     // const [shapeIsOnNextPage, setShapeIsOnNextPage] = useState<
     //     Map<number, boolean>
@@ -100,7 +103,9 @@ export default function ShapeEditor() {
             const page = pages.find((page) => page.id === targetPageId);
 
             if (!page) {
-                const message = `Page not found with id ${targetPageId}`;
+                const message = t("inspector.shape.errorPageNotFound", {
+                    pageId: targetPageId,
+                });
                 console.error(message);
                 toast.error(message);
                 return;
@@ -112,18 +117,24 @@ export default function ShapeEditor() {
             );
 
             if (response.success && response.data) {
-                toast.success(`Shape successfully copied to page ${page.name}`);
+                toast.success(
+                    t("inspector.shape.successfullyCopied", {
+                        pageName: page.name,
+                    }),
+                );
             } else {
                 console.error(
                     `Error creating pages:`,
                     response.error?.message || "",
                 );
                 toast.error(
-                    `Error copying to page ${page.name}. Are there marchers already assigned to shapes?`,
+                    t("inspector.shape.errorCopyingPage", {
+                        pageName: page.name,
+                    }),
                 );
             }
         },
-        [pages],
+        [pages, t],
     );
     const handleDeleteShape = useCallback(
         (marcherShape: MarcherShape) => {
@@ -167,15 +178,19 @@ export default function ShapeEditor() {
                                 tooltipSide="top"
                                 tooltipText={
                                     selectedPage.previousPageId === null
-                                        ? "Cannot copy. There is no previous page"
+                                        ? t(
+                                              "inspector.shape.errorNoPreviousPage",
+                                          )
                                         : // : !shapeIsOnPreviousPage.get(
                                           //         marcherShape.shapePage.id,
                                           //     )
-                                          "Copy this shape to the previous page"
+                                          t(
+                                              "inspector.shape.copyToPreviousPage",
+                                          )
                                     //   ?"Cannot copy. The previous page already has this shape"
                                 }
                             >
-                                Copy to prev pg
+                                <T keyName="inspector.shape.copyToPreviousPageButton" />
                             </Button>
                             <Button
                                 disabled={
@@ -197,15 +212,15 @@ export default function ShapeEditor() {
                                 variant="secondary"
                                 tooltipText={
                                     selectedPage.nextPageId === null
-                                        ? "Cannot copy. There is no next page"
+                                        ? t("inspector.shape.errorNoNextPage")
                                         : // : !shapeIsOnNextPage.get(
                                           //         marcherShape.shapePage.id,
                                           //     )
-                                          "Copy this shape to the next page"
+                                          t("inspector.shape.copyToNextPage")
                                     //   ?"Cannot copy. The next page already has this shape"
                                 }
                             >
-                                Copy to next pg
+                                <T keyName="inspector.shape.copyToNextPageButton" />
                             </Button>
                         </>
                     )}
@@ -217,9 +232,9 @@ export default function ShapeEditor() {
                         type="button"
                         size="compact"
                         variant="red"
-                        tooltipText="Delete this shape for this page. Will not move marchers from their current position"
+                        tooltipText={t("inspector.shape.ungroupShapeTooltip")}
                     >
-                        Un-group
+                        <T keyName="inspector.shape.ungroupShapeButton" />
                     </Button>
                 </div>
                 <div className="flex flex-col gap-16">
@@ -232,7 +247,9 @@ export default function ShapeEditor() {
                                     className="flex items-center justify-between"
                                 >
                                     <p className="text-body text-text/80">
-                                        Segment {index}
+                                        {t("inspector.shape.segment", {
+                                            index: index,
+                                        })}
                                     </p>
                                     <Select
                                         required
@@ -280,9 +297,10 @@ export default function ShapeEditor() {
                             type="button"
                             size="compact"
                             variant="primary"
-                            tooltipText="Add segment to shape"
+                            tooltipText={t("inspector.shape.addSegmentTooltip")}
                         >
-                            <PlusIcon size={20} /> Add
+                            <PlusIcon size={20} />{" "}
+                            <T keyName="inspector.shape.addSegmentButton" />
                         </Button>
 
                         <Button
@@ -299,7 +317,9 @@ export default function ShapeEditor() {
                             disabled={
                                 marcherShape.shapePath.points.length === 2
                             }
-                            tooltipText="Delete last segment"
+                            tooltipText={t(
+                                "inspector.shape.deleteLastSegmentTooltip",
+                            )}
                         >
                             <TrashIcon size={20} />
                         </Button>
@@ -307,7 +327,9 @@ export default function ShapeEditor() {
                 </div>
                 <div className="flex flex-col gap-8">
                     <h5 className="text-h5">
-                        {marcherShape.canvasMarchers.length} Marchers
+                        {t("inspector.shape.marchersOnShape", {
+                            marchersCount: marcherShape.canvasMarchers.length,
+                        })}
                     </h5>
                     {marcherShape.canvasMarchers.length > 0 && (
                         <p className="text-sub text-text/80 max-h-64 overflow-y-auto font-mono">
