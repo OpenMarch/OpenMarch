@@ -17,6 +17,8 @@ export interface UiSettings {
     timelinePixelsPerSecond: number;
     /** The component that is currently focussed */
     focussedComponent: FocusableComponents;
+    /** Whether to enable Shift+click lasso selection */
+    enableLassoSelection: boolean;
     /** Mouse settings */
     mouseSettings: {
         /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
@@ -51,6 +53,7 @@ const defaultSettings: UiSettings = {
     halfLines: true,
     timelinePixelsPerSecond: 40,
     focussedComponent: "canvas",
+    enableLassoSelection: true,
     mouseSettings: {
         trackpadMode: true,
         trackpadPanSensitivity: 0.5,

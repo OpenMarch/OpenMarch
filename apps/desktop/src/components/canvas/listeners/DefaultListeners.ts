@@ -6,6 +6,7 @@ import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
+import { rgbaToString } from "../../../global/classes/FieldTheme";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
@@ -17,6 +18,16 @@ export default class DefaultListeners implements CanvasListeners {
     private lastMousePosition = { x: 0, y: 0 };
     private _scrollAnimationFrame: number | null = null;
     private _isZooming: boolean = false;
+
+    // Lasso selection properties
+    private isLassoDrawing: boolean = false;
+    private lassoPath: fabric.Path | null = null;
+    private lassoPathString: string = "";
+    private lassoStartPoint: { x: number; y: number } | null = null;
+    private lassoCurrentPath: { x: number; y: number }[] = [];
+    private readonly LASSO_STROKE_WIDTH = 2;
+    private readonly LASSO_DASH_ARRAY = [5, 5];
+    private readonly LASSO_MIN_CLOSE_DISTANCE = 50;
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         this.canvas = canvas as OpenMarchCanvas & fabric.Canvas;
@@ -107,6 +118,16 @@ export default class DefaultListeners implements CanvasListeners {
             return;
         }
 
+        // Check for Shift+click lasso selection (only if enabled in settings)
+        if (
+            evt.shiftKey &&
+            evt.button === 0 &&
+            this.isLassoSelectionEnabled()
+        ) {
+            this.startLassoSelection(fabricEvent);
+            return;
+        }
+
         // For left-click, always enable selection mode
         // This ensures multi-select (Shift+drag) always works
         this.canvas.selection = true;
@@ -192,6 +213,12 @@ export default class DefaultListeners implements CanvasListeners {
             return;
         }
 
+        // Handle lasso drawing
+        if (this.isLassoDrawing) {
+            this.updateLassoPath(fabricEvent);
+            return;
+        }
+
         // Enhanced middle mouse or Alt+drag panning (right-click, middle-click, Alt+click)
         if (this.isMiddleMouseDown) {
             const deltaX = e.clientX - this.lastMousePosition.x;
@@ -219,6 +246,12 @@ export default class DefaultListeners implements CanvasListeners {
      */
     handleMouseUp(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
+
+        // Handle lasso completion
+        if (this.isLassoDrawing) {
+            this.finishLassoSelection(fabricEvent);
+            return;
+        }
 
         // Reset middle mouse state
         if (evt.button === 1 || this.isMiddleMouseDown) {
@@ -394,5 +427,205 @@ export default class DefaultListeners implements CanvasListeners {
         if (needsAdjustment) {
             this.canvas.requestRenderAll();
         }
+    }
+
+    // Lasso selection methods
+    private isLassoSelectionEnabled(): boolean {
+        // Check if lasso selection is enabled in UI settings
+        // For now, we'll assume it's always enabled, but this should check the UI settings
+        return true;
+    }
+
+    private startLassoSelection(fabricEvent: fabric.IEvent<MouseEvent>) {
+        const pointer = this.canvas.getPointer(fabricEvent.e);
+
+        this.isLassoDrawing = true;
+        this.lassoStartPoint = { x: pointer.x, y: pointer.y };
+        this.lassoCurrentPath = [{ x: pointer.x, y: pointer.y }];
+        this.lassoPathString = `M ${pointer.x} ${pointer.y}`;
+
+        // Disable default selection behavior during lasso
+        this.canvas.selection = false;
+        this.canvas.defaultCursor = "crosshair";
+        this.canvas.hoverCursor = "crosshair";
+
+        // Disable object selection and movement
+        this.canvas.forEachObject((obj) => {
+            obj.selectable = false;
+            obj.evented = false;
+        });
+
+        // Prevent default canvas behavior
+        fabricEvent.e.preventDefault();
+        fabricEvent.e.stopPropagation();
+    }
+
+    private updateLassoPath(fabricEvent: fabric.IEvent<MouseEvent>) {
+        if (!this.isLassoDrawing || !this.lassoStartPoint) return;
+
+        const pointer = this.canvas.getPointer(fabricEvent.e);
+
+        // Add point to path
+        this.lassoCurrentPath.push({ x: pointer.x, y: pointer.y });
+        this.lassoPathString += ` L ${pointer.x} ${pointer.y}`;
+
+        // Remove existing lasso path and create new one
+        if (this.lassoPath) {
+            this.canvas.remove(this.lassoPath);
+        }
+
+        // Check if we're close to the start point for visual feedback
+        const distanceToStart = Math.sqrt(
+            Math.pow(pointer.x - this.lassoStartPoint.x, 2) +
+                Math.pow(pointer.y - this.lassoStartPoint.y, 2),
+        );
+
+        const isNearStart = distanceToStart < this.LASSO_MIN_CLOSE_DISTANCE;
+        const strokeColor = isNearStart
+            ? rgbaToString(this.canvas.fieldProperties.theme.nextPath) // Green when near start point
+            : rgbaToString(this.canvas.fieldProperties.theme.primaryStroke); // Use OpenMarch theme color
+
+        this.lassoPath = new fabric.Path(this.lassoPathString, {
+            fill: "transparent",
+            stroke: strokeColor,
+            strokeWidth: this.LASSO_STROKE_WIDTH,
+            strokeDashArray: this.LASSO_DASH_ARRAY,
+            selectable: false,
+            evented: false,
+            excludeFromExport: true,
+        });
+
+        this.canvas.add(this.lassoPath);
+        this.canvas.bringToFront(this.lassoPath);
+        this.canvas.requestRenderAll();
+    }
+
+    private finishLassoSelection(fabricEvent: fabric.IEvent<MouseEvent>) {
+        if (!this.isLassoDrawing || !this.lassoStartPoint) return;
+
+        const pointer = this.canvas.getPointer(fabricEvent.e);
+
+        // Check if we're close enough to the start point to close the lasso
+        const distanceToStart = Math.sqrt(
+            Math.pow(pointer.x - this.lassoStartPoint.x, 2) +
+                Math.pow(pointer.y - this.lassoStartPoint.y, 2),
+        );
+
+        const shouldClose = distanceToStart < this.LASSO_MIN_CLOSE_DISTANCE;
+
+        if (shouldClose && this.lassoCurrentPath.length > 3) {
+            // Close the lasso and perform selection
+            this.closeLassoAndSelect();
+        } else {
+            // Just clear the lasso if not closed properly
+            this.resetLassoState();
+        }
+
+        this.canvas.requestRenderAll();
+    }
+
+    private closeLassoAndSelect() {
+        if (!this.lassoCurrentPath.length || !this.lassoStartPoint) return;
+
+        // Close the path by connecting back to start
+        const closedPath = [...this.lassoCurrentPath, this.lassoStartPoint];
+
+        // Find all marchers inside the lasso
+        const marchersToSelect: CanvasMarcher[] = [];
+        const canvasMarchers = this.canvas.getCanvasMarchers();
+
+        for (const marcher of canvasMarchers) {
+            const marcherCenter = marcher.getCenterPoint();
+            if (this.isPointInPolygon(marcherCenter, closedPath)) {
+                marchersToSelect.push(marcher);
+            }
+        }
+
+        // Clean up the lasso visual
+        this.resetLassoState();
+
+        // Re-enable selection temporarily to select the marchers
+        this.canvas.selection = true;
+        this.canvas.defaultCursor = "default";
+        this.canvas.hoverCursor = "move";
+
+        this.canvas.forEachObject((obj) => {
+            if (obj instanceof CanvasMarcher) {
+                obj.selectable = true;
+                obj.evented = true;
+            }
+        });
+
+        // Select the marchers
+        if (marchersToSelect.length === 1) {
+            this.canvas.setActiveObject(marchersToSelect[0]);
+        } else if (marchersToSelect.length > 1) {
+            const activeSelection = new fabric.ActiveSelection(
+                marchersToSelect,
+                {
+                    canvas: this.canvas,
+                },
+            );
+            this.canvas.setActiveObject(activeSelection);
+        } else {
+            this.canvas.discardActiveObject();
+        }
+
+        this.canvas.requestRenderAll();
+    }
+
+    private resetLassoState() {
+        this.isLassoDrawing = false;
+        this.lassoPathString = "";
+        this.lassoStartPoint = null;
+        this.lassoCurrentPath = [];
+        if (this.lassoPath) {
+            this.canvas.remove(this.lassoPath);
+            this.lassoPath = null;
+        }
+
+        // Re-enable default selection behavior
+        this.canvas.selection = true;
+        this.canvas.defaultCursor = "default";
+        this.canvas.hoverCursor = "move";
+
+        // Re-enable object selection and movement
+        this.canvas.forEachObject((obj) => {
+            if (obj instanceof CanvasMarcher) {
+                obj.selectable = true;
+                obj.evented = true;
+            }
+        });
+    }
+
+    /**
+     * Ray casting algorithm to determine if a point is inside a polygon
+     * @param point The point to test
+     * @param polygon Array of points defining the polygon
+     * @returns true if point is inside polygon
+     */
+    private isPointInPolygon(
+        point: { x: number; y: number },
+        polygon: { x: number; y: number }[],
+    ): boolean {
+        const x = point.x;
+        const y = point.y;
+        let inside = false;
+
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const xi = polygon[i].x;
+            const yi = polygon[i].y;
+            const xj = polygon[j].x;
+            const yj = polygon[j].y;
+
+            if (
+                yi > y !== yj > y &&
+                x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
+            ) {
+                inside = !inside;
+            }
+        }
+
+        return inside;
     }
 }

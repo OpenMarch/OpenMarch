@@ -18,6 +18,7 @@ import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSet
 
 export default function AlignmentTab() {
     const { uiSettings } = useUiSettingsStore();
+
     return (
         <div className="flex w-full flex-wrap gap-8">
             <CoordinateRoundingSettings />
@@ -98,7 +99,7 @@ function SetMarcherPositionsDropdown() {
     return (
         <ToolbarSection aria-label="Set marcher positions">
             <Dropdown.Root>
-                <Dropdown.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
+                <Dropdown.Trigger className="hover:text-accent outline-hidden flex items-center gap-6 duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
                     Place all marchers <CaretDownIcon size={18} />
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
@@ -126,7 +127,7 @@ function SetMarcherPositionsDropdown() {
             </Dropdown.Root>
 
             <Dropdown.Root>
-                <Dropdown.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
+                <Dropdown.Trigger className="hover:text-accent outline-hidden flex items-center gap-6 duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
                     Place selected marchers <CaretDownIcon size={18} />
                 </Dropdown.Trigger>
                 <Dropdown.Portal>

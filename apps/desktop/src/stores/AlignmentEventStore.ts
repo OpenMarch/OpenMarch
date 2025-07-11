@@ -2,7 +2,7 @@ import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { create } from "zustand";
 
-export const AlignmentEvents = ["default", "line"] as const;
+export const AlignmentEvents = ["default", "line", "lasso"] as const;
 export type AlignmentEvent = (typeof AlignmentEvents)[number];
 
 export interface AlignmentEventState {
