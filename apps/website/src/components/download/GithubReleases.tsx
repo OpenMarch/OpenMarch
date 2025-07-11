@@ -174,91 +174,84 @@ export default function GithubReleases() {
                                         })}
                                     </h3>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-8 max-[768px]:gap-4">
+                                <div className="flex flex-wrap items-center gap-8">
                                     {release.assets.filter(
                                         (asset) =>
                                             asset.name.endsWith(".exe") ||
                                             asset.name.endsWith("arm64.dmg") ||
                                             asset.name.endsWith("x64.dmg") ||
                                             asset.name.endsWith(".AppImage"),
-                                    ).length === 0 ? (
-                                        <>
-                                            <p className="text-sub text-text-subtitle">
-                                                Couldn&apos;t filter assets
-                                            </p>
-                                            {release.assets.map((asset) => (
-                                                <a
-                                                    key={asset.id}
-                                                    href={
-                                                        asset.browser_download_url
-                                                    }
-                                                >
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="compact"
-                                                        className="whitespace-nowrap"
-                                                    >
-                                                        <DownloadSimpleIcon
-                                                            size={18}
-                                                        />
-                                                        {asset.name}
-                                                    </Button>
-                                                </a>
-                                            ))}
-                                        </>
-                                    ) : (
-                                        release.assets
-                                            .filter(
-                                                (asset) =>
-                                                    asset.name.endsWith(
-                                                        ".exe",
-                                                    ) ||
-                                                    asset.name.endsWith(
-                                                        "arm64.dmg",
-                                                    ) ||
-                                                    asset.name.endsWith(
-                                                        "x64.dmg",
-                                                    ) ||
-                                                    asset.name.endsWith(
-                                                        ".AppImage",
-                                                    ),
-                                            )
-                                            .map((asset) => (
-                                                <a
-                                                    key={asset.id}
-                                                    href={
-                                                        asset.browser_download_url
-                                                    }
-                                                >
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="compact"
-                                                        className="whitespace-nowrap"
-                                                    >
-                                                        <DownloadSimpleIcon
-                                                            size={18}
-                                                        />
-                                                        {asset.name.includes(
-                                                            "darwin_arm64",
-                                                        )
-                                                            ? "Apple Silicon"
-                                                            : asset.name.includes(
-                                                                    "darwin_x64",
-                                                                )
-                                                              ? "Intel Mac"
+                                    ).length === 0
+                                        ? release.assets.map((asset) => (
+                                              <a
+                                                  key={asset.id}
+                                                  href={
+                                                      asset.browser_download_url
+                                                  }
+                                              >
+                                                  <Button
+                                                      variant="secondary"
+                                                      size="compact"
+                                                      className="whitespace-nowrap"
+                                                  >
+                                                      <DownloadSimpleIcon
+                                                          size={18}
+                                                      />
+                                                      {asset.name}
+                                                  </Button>
+                                              </a>
+                                          ))
+                                        : release.assets
+                                              .filter(
+                                                  (asset) =>
+                                                      asset.name.endsWith(
+                                                          ".exe",
+                                                      ) ||
+                                                      asset.name.endsWith(
+                                                          "arm64.dmg",
+                                                      ) ||
+                                                      asset.name.endsWith(
+                                                          "x64.dmg",
+                                                      ) ||
+                                                      asset.name.endsWith(
+                                                          ".AppImage",
+                                                      ),
+                                              )
+                                              .map((asset) => (
+                                                  <a
+                                                      key={asset.id}
+                                                      href={
+                                                          asset.browser_download_url
+                                                      }
+                                                  >
+                                                      <Button
+                                                          variant="secondary"
+                                                          size="compact"
+                                                          className="whitespace-nowrap"
+                                                      >
+                                                          <DownloadSimpleIcon
+                                                              size={18}
+                                                          />
+                                                          {asset.name.includes(
+                                                              "darwin_arm64",
+                                                          )
+                                                              ? "Apple Silicon"
                                                               : asset.name.includes(
-                                                                      "linux",
+                                                                      "darwin_x64",
                                                                   )
-                                                                ? "Linux .AppImage"
+                                                                ? "Intel Mac"
                                                                 : asset.name.includes(
-                                                                        ".exe",
+                                                                        "linux",
                                                                     )
-                                                                  ? "Windows .exe"
-                                                                  : asset.name}
-                                                    </Button>
-                                                </a>
-                                            ))
-                                    )}
+                                                                  ? "Linux .AppImage"
+                                                                  : asset.name.includes(
+                                                                          ".exe",
+                                                                      )
+                                                                    ? "Windows .exe"
+                                                                    : asset.name}
+                                                      </Button>
+                                                  </a>
+                                              ))}
                                 </div>
                             </header>
                             <div className="text-text bg-fg-2 border-stroke rounded-6 flex h-full flex-col items-center overflow-y-auto border p-12 max-[768px]:p-8">
