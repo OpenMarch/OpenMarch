@@ -18,6 +18,9 @@ module.exports = {
         "bostick",
         "dukc",
         "tabler",
+        "vilag",
+        "Sunbright",
+        "Cinnaminson",
         "ehlert",
         "aleksi",
         "saario",
@@ -74,6 +77,7 @@ module.exports = {
         "undoable",
         "shouldn",
         "aren", // for aren&apos;t
+        "couldn", // for couldn&apos;t
         "apos",
         "launchpage",
         "GLHF",
