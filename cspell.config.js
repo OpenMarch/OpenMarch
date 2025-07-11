@@ -110,6 +110,8 @@ module.exports = {
         "Schachner",
         "pfps",
         "seti",
+        "xcworkspace",
+        "xcassets",
     ],
     ignorePaths: [
         "node_modules/**",
