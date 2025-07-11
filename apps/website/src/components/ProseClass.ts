@@ -16,6 +16,8 @@ export const ProseClass = clsx(
     "prose-p:leading-loose",
     "prose-a:text-accent",
     "prose-a:underline",
+    "prose-hr:border",
+    "prose-hr:border-stroke",
     "prose-blockquote:text-text",
     "prose-blockqoute:border-black",
     "prose-strong:text-text",
