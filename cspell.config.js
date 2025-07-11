@@ -120,6 +120,8 @@ module.exports = {
         "ADDME",
         "midset",
         "midsets",
+        "xcworkspace",
+        "xcassets",
     ],
     ignorePaths: [
         "node_modules/**",
