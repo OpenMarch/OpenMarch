@@ -3,7 +3,6 @@ import { fetchFromGitHub } from "@/utils/gitHubApi";
 import {
     CircleNotchIcon,
     DownloadSimpleIcon,
-    GithubLogoIcon,
     SealWarningIcon,
 } from "@phosphor-icons/react";
 import { Badge, Button, ListItem } from "@openmarch/ui";
@@ -175,7 +174,7 @@ export default function GithubReleases() {
                                         })}
                                     </h3>
                                 </div>
-                                <div className="flex flex-wrap gap-8">
+                                <div className="flex flex-wrap items-center gap-8">
                                     {release.assets.filter(
                                         (asset) =>
                                             asset.name.endsWith(".exe") ||
@@ -184,23 +183,28 @@ export default function GithubReleases() {
                                             asset.name.endsWith(".AppImage"),
                                     ).length === 0 ? (
                                         <>
-                                            <p className="text-text-subtitle">
-                                                No assets found. Please check
-                                                GitHub manually:
+                                            <p className="text-sub text-text-subtitle">
+                                                Couldn&apos;t filter assets
                                             </p>
-                                            <a
-                                                href={release.html_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                <Button
-                                                    size="compact"
-                                                    variant="secondary"
+                                            {release.assets.map((asset) => (
+                                                <a
+                                                    key={asset.id}
+                                                    href={
+                                                        asset.browser_download_url
+                                                    }
                                                 >
-                                                    <GithubLogoIcon size={18} />
-                                                    {release.tag_name}
-                                                </Button>
-                                            </a>
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="compact"
+                                                        className="whitespace-nowrap"
+                                                    >
+                                                        <DownloadSimpleIcon
+                                                            size={18}
+                                                        />
+                                                        {asset.name}
+                                                    </Button>
+                                                </a>
+                                            ))}
                                         </>
                                     ) : (
                                         release.assets

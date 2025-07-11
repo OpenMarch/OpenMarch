@@ -1,194 +1,208 @@
 ---
 import { Image } from "astro:assets";
+import {
+    DotsNineIcon,
+    ArrowSquareOutIcon,
+    GridNineIcon,
+    PaintBrushHouseholdIcon,
+    MetronomeIcon,
+    MusicNotesIcon,
+    AlignCenterVerticalIcon,
+    ShapesIcon,
+} from "@phosphor-icons/react";
 ---
 
 <section id="features" class="relative flex h-fit flex-col gap-32">
     <div class="flex flex-col gap-16">
         <h2 class="text-h2">Drill writing</h2>
-        <div class="grid grid-cols-4 grid-rows-2 gap-8">
+        <div class="grid grid-cols-4 grid-rows-1 gap-8">
             <div
-                class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2"
+                class="grid grid-cols-2 grid-rows-1 gap-8 col-span-2 row-span-2"
             >
                 <div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
                 >
-                    <h4 class="text-h4">Lorem ipsum</h4>
+                    <AlignCenterVerticalIcon size={28} />
+                    <h4 class="text-h4">Alignment</h4>
                     <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                        Align each marcher to perfection, with coordinate
+                        rounding, and alignment tools.
                     </p>
                 </div>
-            </div><Image
-                src={"/home/editor-dark.png"}
-                alt="Editor Screenshot"
+                <div
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
+                >
+                    <ShapesIcon size={28} />
+                    <h4 class="text-h4">Shapes</h4>
+                    <p class="text-body leading-[180%]">
+                        Build shapes with groups of marchers by selecting them,
+                        drawing lines, and adding segments. Use curves, straight
+                        lines, and move starting points to create more complex
+                        shapes.
+                    </p>
+                </div>
+            </div>
+            <Image
+                src={"/home/shapes-dark.png"}
+                alt="Shapes Screenshot"
                 width={1920}
                 height={1080}
                 format="webp"
                 quality={80}
-                class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
             <Image
-                src={"/home/editor-light.png"}
-                alt="Editor Screenshot"
+                src={"/home/shapes-light.png"}
+                alt="Shapes Screenshot"
                 width={1920}
                 height={1080}
                 format="webp"
                 quality={80}
-                class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
         </div>
-    </div><div class="flex flex-col gap-16">
+    </div>
+
+    <div class="flex flex-col gap-16">
         <h2 class="text-h2">Music</h2>
-        <div class="grid grid-cols-4 grid-rows-2 gap-8">
+        <div class="grid grid-cols-4 grid-rows-1 gap-8">
             <Image
-                src={"/home/editor-dark.png"}
-                alt="Editor Screenshot"
+                src={"/home/music-dark.png"}
+                alt="Music Screenshot"
                 width={1920}
                 height={1080}
                 format="webp"
                 quality={80}
-                class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
             <Image
-                src={"/home/editor-light.png"}
-                alt="Editor Screenshot"
+                src={"/home/music-light.png"}
+                alt="Music Screenshot"
                 width={1920}
                 height={1080}
                 format="webp"
                 quality={80}
-                class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
             <div
-                class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2"
+                class="grid grid-cols-2 grid-rows-1 gap-8 col-span-2 row-span-2"
             >
                 <div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
                 >
-                    <h4 class="text-h4">Lorem ipsum</h4>
+                    <MetronomeIcon size={28} />
+                    <h4 class="text-h4">Tempo groups</h4>
                     <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                        Add your music’s measures as tempo groups, sets of
+                        measures with a specific tempo and time signature. Add
+                        rehearsal markers to each group.
                     </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                </div>
+                <div
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
                 >
-                    <h4 class="text-h4">Lorem ipsum</h4>
+                    <MusicNotesIcon size={28} />
+                    <h4 class="text-h4">
+                        Transfer music from your notation software
+                    </h4>
                     <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                        Import an audio file from your notation software, and
+                        bring in a MusicXML file, it’ll be converted into tempo
+                        groups automatically.
                     </p>
                 </div>
             </div>
         </div>
-    </div><div class="flex flex-col gap-16">
+    </div>
+
+    <div class="flex flex-col gap-16">
         <h2 class="text-h2">Field</h2>
-        <div class="grid grid-cols-4 grid-rows-2 gap-8">
+        <div class="grid grid-cols-4 grid-rows-1 gap-8">
             <div
-                class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2"
+                class="grid grid-cols-2 grid-rows-1 gap-8 col-span-2 row-span-2"
             >
                 <div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
                 >
-                    <h4 class="text-h4">Lorem ipsum</h4>
+                    <GridNineIcon size={28} />
+                    <h4 class="text-h4">Your Dimensions</h4>
                     <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                    </p>
-                </div><div
-                    class="bg-fg-1 border border-stroke rounded-6 p-12 flex flex-col gap-8"
-                >
-                    <h4 class="text-h4">Lorem ipsum</h4>
-                    <p class="text-body leading-[180%]">
-                        Lorem ipsum lorem ipsum lorem ipsum lorem ipsum lorem
-                        ipsum lorem ipsum lorem ipsum lorem ipsum lorem ipsum
-                        lorem ipsum lorem ipsum lorem ipsum lorem ipsum
+                        Design shows for any ensemble, anywhere. Customize
+                        dimensions, units, checkpoints, and descriptions, to
+                        match wherever you’re performing.
                     </p>
                 </div>
-            </div><Image
-                src={"/home/editor-dark.png"}
-                alt="Editor Screenshot"
+                <div
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
+                >
+                    <PaintBrushHouseholdIcon size={28} />
+                    <h4 class="text-h4">Your Theme</h4>
+                    <p class="text-body leading-[180%]">
+                        Add in your tarp as a background image. Change the
+                        colors of the grid lines and customize dot colors for
+                        each section on the field.
+                    </p>
+                </div>
+            </div>
+            <Image
+                src={"/home/custom-field-dark.png"}
+                alt="Custom Field Screenshot"
                 width={1920}
                 height={1080}
                 format="webp"
                 quality={80}
-                class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
             <Image
-                src={"/home/editor-light.png"}
+                src={"/home/custom-field-light.png"}
+                alt="Custom Field Screenshot"
+                width={1920}
+                height={1080}
+                format="webp"
+                quality={80}
+                class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
+            />
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-16">
+        <h2 class="text-h2">To your rehearsal</h2>
+        <div class="grid grid-cols-4 grid-rows-1 gap-8">
+            <Image
+                src={"/home/drill-chart.png"}
                 alt="Editor Screenshot"
                 width={1920}
                 height={1080}
                 format="webp"
                 quality={80}
-                class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover aspect-square"
+                class="border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
+            <div
+                class="grid grid-cols-2 grid-rows-1 gap-8 col-span-2 row-span-2"
+            >
+                <div
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
+                >
+                    <DotsNineIcon size={28} />
+                    <h4 class="text-h4">Export drill charts</h4>
+                    <p class="text-body leading-[180%]">
+                        Export a preview of the field as a PDF and individualize
+                        it, showing next and previous paths, notes, and
+                        coordinates for an individual performer.
+                    </p>
+                </div>
+                <div
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
+                >
+                    <ArrowSquareOutIcon size={28} />
+                    <h4 class="text-h4">Export coordinate sheets</h4>
+                    <p class="text-body leading-[180%]">
+                        You can export individual coordinate sheets as a PDF for
+                        each performer, showing their X/Y coordinates, and
+                        corresponding measures for that page.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
