@@ -40,6 +40,7 @@ import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
+import "../../styles/shimmer.css";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -64,11 +65,46 @@ function CoordinateSheetExport() {
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
+    const isCancelled = useRef(false);
 
     const handleExport = useCallback(async () => {
         setIsLoading(true);
         setProgress(0);
-        setCurrentStep("Initializing coordinate sheet export...");
+
+        // Fun marching band phrases that rotate during export
+        const funPhrases = [
+            "Get ready to march a perfect 8 to 5! 🎺",
+            "Creating the best drill ever! ✨",
+            "Getting the files to cover down 📋",
+            "Cleaning drill from the box 🧹",
+            "Tuning up those coordinates 🎵",
+            "Making sure everyone's in step 👟",
+            "Polishing those yard line markers ✨",
+            "Counting off the perfect tempo 🥁",
+            "Aligning the formation like a pro 📐",
+            "Marching toward perfection! 🎯",
+            "Setting the tempo for success 🎼",
+            "Fine-tuning every step count 🔧",
+        ];
+
+        let currentPhraseIndex = 0;
+        let phraseInterval: NodeJS.Timeout;
+
+        // Start rotating phrases every 2 seconds
+        const startPhraseRotation = () => {
+            setCurrentStep(funPhrases[currentPhraseIndex]);
+            phraseInterval = setInterval(() => {
+                currentPhraseIndex =
+                    (currentPhraseIndex + 1) % funPhrases.length;
+                setCurrentStep(funPhrases[currentPhraseIndex]);
+            }, 2000);
+        };
+
+        const stopPhraseRotation = () => {
+            if (phraseInterval) {
+                clearInterval(phraseInterval);
+            }
+        };
 
         if (!fieldProperties) {
             toast.error("Field properties are required for export");
@@ -77,18 +113,40 @@ function CoordinateSheetExport() {
         }
 
         try {
-            setCurrentStep("Processing marcher data...");
-            setProgress(10);
+            isCancelled.current = false;
+            startPhraseRotation();
+            setProgress(5);
+
+            // Simulate more granular progress updates
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            if (isCancelled.current)
+                throw new Error("Export cancelled by user");
+            setProgress(15);
 
             const processedMarchers = marchers.map((marcher, index) => ({
                 ...marcher,
                 name: marcher.name || `${marcher.section} ${index + 1}`,
             }));
 
-            setCurrentStep("Generating coordinate sheets...");
-            setProgress(30);
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            if (isCancelled.current)
+                throw new Error("Export cancelled by user");
+            setProgress(25);
 
+            // More detailed progress for sheet generation
+            const totalMarchers = processedMarchers.length;
             let groupedSheets: any[];
+
+            // Check for cancellation
+            if (isCancelled.current) {
+                throw new Error("Export cancelled by user");
+            }
+
+            // Generate coordinate sheets with progress tracking
+            setProgress(35);
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            if (isCancelled.current)
+                throw new Error("Export cancelled by user");
 
             // split to quarter sheets
             if (quarterPages) {
@@ -204,16 +262,34 @@ function CoordinateSheetExport() {
                 }));
             }
 
-            setCurrentStep("Generating PDF...");
+            // Continue with fun phrases during PDF generation
             setProgress(85);
 
-            const result = await window.electron.export.pdf({
+            // Add some intermediate progress updates during PDF generation
+            const pdfGenerationPromise = window.electron.export.pdf({
                 sheets: groupedSheets,
                 organizeBySection: organizeBySection,
                 quarterPages: quarterPages,
             });
 
+            // Simulate smooth progress during PDF generation
+            const progressInterval = setInterval(() => {
+                setProgress((prev) => {
+                    if (prev < 95) {
+                        return prev + 1;
+                    }
+                    return prev;
+                });
+            }, 100);
+
+            const result = await pdfGenerationPromise;
+            clearInterval(progressInterval);
+
             if (!result.success) {
+                if (result.cancelled) {
+                    // User cancelled the export dialog - don't show error
+                    return;
+                }
                 throw new Error(result.error);
             }
 
@@ -260,6 +336,7 @@ function CoordinateSheetExport() {
                 `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
         } finally {
+            stopPhraseRotation();
             // Keep the completed state visible for a moment before hiding
             setTimeout(() => {
                 setIsLoading(false);
@@ -461,7 +538,11 @@ function CoordinateSheetExport() {
                     {isLoading ? "Exporting... Please wait" : "Export"}
                 </Button>
                 <DialogClose>
-                    <Button size="compact" variant="secondary">
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        onClick={() => (isCancelled.current = true)}
+                    >
                         {" "}
                         Cancel{" "}
                     </Button>
@@ -472,20 +553,37 @@ function CoordinateSheetExport() {
             {isLoading && (
                 <div className="flex flex-col gap-8">
                     {/* Status Text */}
-                    <div className="flex items-center justify-between">
-                        <span className="text-body text-text/75">
-                            {currentStep}
-                        </span>
-                        <span className="text-sub text-text/60">
-                            {Math.round(progress)}%
-                        </span>
+                    <div className="flex flex-col gap-4">
+                        {/* Page processing info (only for drill charts) */}
+                        {currentStep.includes("Processing page") && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-body text-text/75">
+                                    {currentStep}
+                                </span>
+                                <span className="text-sub text-text/60">
+                                    {Math.round(progress)}%
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Fun phrase */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-body text-text/75">
+                                {currentStep}
+                            </span>
+                            {!currentStep.includes("Processing page") && (
+                                <span className="text-sub text-text/60">
+                                    {Math.round(progress)}%
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Progress Bar Container */}
                     <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                         {/* Background Progress Bar */}
                         <div
-                            className="bg-accent absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
+                            className="bg-accent absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out"
                             style={{
                                 width: `${progress}%`,
                                 transform: `translateX(${progress < 100 ? "0" : "0"})`,
@@ -494,7 +592,7 @@ function CoordinateSheetExport() {
 
                         {/* Animated Shimmer Effect */}
                         <div
-                            className="absolute top-0 left-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            className="absolute left-0 top-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             style={{
                                 animation:
                                     progress > 0 && progress < 100
@@ -521,6 +619,7 @@ function DrillChartExport() {
     const isCancelled = useRef(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
+    const [funPhrase, setFunPhrase] = useState("");
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
@@ -799,7 +898,43 @@ function DrillChartExport() {
         isCancelled.current = false;
         setIsLoading(true);
         setProgress(0);
-        setCurrentStep("Initializing export...");
+
+        // Fun marching band phrases that rotate during export
+        const funPhrases = [
+            "Get ready to march a perfect 8 to 5! 🎺",
+            "Creating the best drill ever! ✨",
+            "Getting the files to cover down 📋",
+            "Cleaning drill from the box 🧹",
+            "Tuning up those coordinates 🎵",
+            "Making sure everyone's in step 👟",
+            "Polishing those yard line markers ✨",
+            "Counting off the perfect tempo 🥁",
+            "Aligning the formation like a pro 📐",
+            "Marching toward perfection! 🎯",
+            "Setting the tempo for success 🎼",
+            "Fine-tuning every step count 🔧",
+        ];
+
+        let currentPhraseIndex = 0;
+        let phraseInterval: NodeJS.Timeout;
+
+        // Start rotating phrases every 2 seconds
+        const startPhraseRotation = () => {
+            setCurrentStep(funPhrases[currentPhraseIndex]);
+            phraseInterval = setInterval(() => {
+                currentPhraseIndex =
+                    (currentPhraseIndex + 1) % funPhrases.length;
+                setCurrentStep(funPhrases[currentPhraseIndex]);
+            }, 2000);
+        };
+
+        const stopPhraseRotation = () => {
+            if (phraseInterval) {
+                clearInterval(phraseInterval);
+            }
+        };
+
+        startPhraseRotation();
 
         // Store original state of canvas for restoration
         const exportCanvas: OpenMarchCanvas = window.canvas;
@@ -831,16 +966,34 @@ function DrillChartExport() {
         // Error occurred during SVG generation
         if (isCancelled.current) return;
 
-        // SVG creation done, start exporting
-        setCurrentStep("Generating PDF files...");
+        // SVG creation done, start exporting - continue with fun phrases
         try {
             // Create export directory
             const { exportName, exportDir } =
                 await window.electron.export.createExportDirectory(
                     await window.electron.getCurrentFilename(),
                 );
-            // Create documents for each marcher
-            await exportMarcherSVGs(SVGs, coords, exportName, exportDir);
+
+            // Create documents for each marcher with smooth progress
+            const exportPromise = exportMarcherSVGs(
+                SVGs,
+                coords,
+                exportName,
+                exportDir,
+            );
+
+            // Simulate smooth progress during final export phase
+            const finalProgressInterval = setInterval(() => {
+                setProgress((prev) => {
+                    if (prev < 95) {
+                        return prev + 0.5;
+                    }
+                    return prev;
+                });
+            }, 150);
+
+            await exportPromise;
+            clearInterval(finalProgressInterval);
 
             setProgress(100);
             setCurrentStep("Export completed!");
@@ -874,10 +1027,16 @@ function DrillChartExport() {
                     (error instanceof Error ? error.message : "Unknown error"),
             );
             setCurrentStep("Export failed");
+        } finally {
+            stopPhraseRotation();
+            // Keep the completed state visible for a moment before hiding
+            setTimeout(() => {
+                isCancelled.current = false;
+                setIsLoading(false);
+                setProgress(0);
+                setCurrentStep("");
+            }, 1500);
         }
-
-        isCancelled.current = false;
-        setIsLoading(false);
     }, [generateExportSVGs, exportMarcherSVGs]);
 
     return (
@@ -1005,7 +1164,7 @@ function DrillChartExport() {
                     <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                         {/* Background Progress Bar */}
                         <div
-                            className="bg-accent absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
+                            className="bg-accent absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out"
                             style={{
                                 width: `${progress}%`,
                                 transform: `translateX(${progress < 100 ? "0" : "0"})`,
@@ -1014,7 +1173,7 @@ function DrillChartExport() {
 
                         {/* Animated Shimmer Effect */}
                         <div
-                            className="absolute top-0 left-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            className="absolute left-0 top-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             style={{
                                 animation:
                                     progress > 0 && progress < 100
@@ -1054,7 +1213,7 @@ export default function ExportCoordinatesModal() {
         <Dialog>
             <DialogTrigger
                 asChild
-                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                className="hover:text-accent outline-hidden flex items-center gap-8 duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
                 <button type="button" className="flex items-center gap-8">
                     <ArrowSquareOutIcon size={24} />

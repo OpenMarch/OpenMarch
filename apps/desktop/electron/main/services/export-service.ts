@@ -6,6 +6,9 @@ import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
 import Page from "@/global/classes/Page";
+import Store from "electron-store";
+
+const store = new Store();
 
 interface ExportSheet {
     name: string;
@@ -54,18 +57,71 @@ export class PDFExportService {
                 },
             });
 
-            // Create HTML for each group of four pages
+            // Create HTML for each marcher's coordinate sheet with proper page breaks
             const combinedHtml = pages
                 .map(
-                    (pageContent) =>
+                    (pageContent, index) =>
                         `
-                            <div class="page-content">${pageContent}</div>
+                            <div class="marcher-sheet${index === 0 ? " first-sheet" : ""}">${pageContent}</div>
                         `,
                 )
                 .join("");
 
             const htmlContent = `
                     <html>
+                      <head>
+                        <style>
+                          @media print {
+                            .marcher-sheet {
+                              page-break-before: always;
+                              page-break-after: always;
+                              page-break-inside: avoid;
+                              min-height: 100vh;
+                              box-sizing: border-box;
+                              padding: 1rem;
+                              margin: 0;
+                            }
+                            
+                            .marcher-sheet.first-sheet {
+                              page-break-before: auto;
+                            }
+                            
+                            /* Ensure tables don't break across pages */
+                            table {
+                              page-break-inside: avoid;
+                            }
+                            
+                            /* Add some spacing between coordinate rows */
+                            tbody tr {
+                              page-break-inside: avoid;
+                            }
+                            
+                            /* For quarter pages, use different layout */
+                            ${
+                                quarterPages
+                                    ? `
+                              .marcher-sheet {
+                                page-break-before: auto;
+                                page-break-after: auto;
+                                min-height: auto;
+                                padding: 0.5rem;
+                              }
+                            `
+                                    : ""
+                            }
+                          }
+                          
+                          @page {
+                            margin: ${quarterPages ? "0.5in" : "1in"};
+                          }
+                          
+                          body {
+                            margin: 0;
+                            padding: 0;
+                            font-family: Arial, sans-serif;
+                          }
+                        </style>
+                      </head>
                       <body>${combinedHtml}</body>
                     </html>
                 `;
@@ -80,13 +136,17 @@ export class PDFExportService {
                         margins: quarterPages
                             ? {
                                   marginType: "custom",
-                                  top: 0,
-                                  bottom: 0,
-                                  left: 0,
-                                  right: 0,
+                                  top: 0.5,
+                                  bottom: 0.5,
+                                  left: 0.5,
+                                  right: 0.5,
                               }
                             : {
-                                  marginType: "default",
+                                  marginType: "custom",
+                                  top: 1,
+                                  bottom: 1,
+                                  left: 1,
+                                  right: 1,
                               },
                         pageSize: "Letter",
                         printBackground: true,
@@ -198,7 +258,7 @@ export class PDFExportService {
                 });
 
                 if (result.canceled || !result.filePath) {
-                    throw new Error("Export cancelled");
+                    return { success: false, path: "", cancelled: true };
                 }
                 await this.generateSeparatePDFs(sheets, result.filePath);
             } else {
@@ -214,12 +274,14 @@ export class PDFExportService {
                     properties: ["showOverwriteConfirmation"],
                 });
 
-                if (!result.canceled && result.filePath) {
-                    await fs.promises.writeFile(
-                        result.filePath,
-                        new Uint8Array(pdfBuffer),
-                    );
+                if (result.canceled || !result.filePath) {
+                    return { success: false, path: "", cancelled: true };
                 }
+
+                await fs.promises.writeFile(
+                    result.filePath,
+                    new Uint8Array(pdfBuffer),
+                );
             }
             return { success: true, path: result.filePath };
         } catch (error) {
@@ -243,8 +305,15 @@ export class PDFExportService {
         const currentFileName = win
             ? win.getTitle().replace(/\.[^/.]+$/, "")
             : "untitled";
+
+        // Get the directory where the current .dots file is saved
+        const currentFilePath = store.get("databasePath") as string;
+        const baseDir = currentFilePath
+            ? path.dirname(currentFilePath)
+            : app.getPath("documents");
+
         return path.join(
-            app.getPath("documents"),
+            baseDir,
             `${currentFileName}-${date}-coordinate-sheets`,
         );
     }
@@ -267,13 +336,25 @@ export class PDFExportService {
     public static async createExportDirectory(
         defaultName: string,
     ): Promise<{ exportName: string; exportDir: string }> {
+        // Generate default path similar to coordinate sheets but with "charts"
+        const date = new Date().toISOString().split("T")[0];
+        const currentFileName = defaultName || "untitled";
+
+        // Get the directory where the current .dots file is saved
+        const currentFilePath = store.get("databasePath") as string;
+        const baseDir = currentFilePath
+            ? path.dirname(currentFilePath)
+            : app.getPath("documents");
+
+        const defaultPath = path.join(
+            baseDir,
+            `${currentFileName}-${date}-charts`,
+        );
+
         // Prompt user for export location
         const result = await dialog.showSaveDialog({
             title: "Select Export Location",
-            defaultPath: path.join(
-                app.getPath("downloads"),
-                defaultName || "Untitled",
-            ),
+            defaultPath: defaultPath,
             properties: ["createDirectory", "showOverwriteConfirmation"],
             buttonLabel: "Export Here",
         });

@@ -9,32 +9,13 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import Beat from "@/global/classes/Beat";
-// import "./MarcherCoordinateSheet.css";
 
-// TODO, this is broken right now, fix this
 interface MarcherCoordinateSheetProps {
     marcher?: Marcher;
     includeMeasures?: boolean;
-    /**
-     * The denominator to round to. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
-     */
     roundingDenominator?: number;
-    /**
-     * Whether this is a printing preview or an example for the user to see.
-     */
     example?: boolean;
-    /**
-     * True if the coordinate strings should be terse. False if they should be verbose.
-     * Default is false.
-     *
-     * X: "S1: 2 out 45" vs "S1: 2 steps outside 45 yard line."
-     *
-     * Y: "5 BFSL" vs "5 steps behind front sideline.
-     */
     terse?: boolean;
-    /**
-     * Whether to use X/Y as header rather than "Side to Side" and "Front to Back".
-     */
     useXY?: boolean;
 }
 
