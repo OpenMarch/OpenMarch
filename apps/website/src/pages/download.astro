@@ -17,8 +17,10 @@ import GithubReleases from "@/components/download/GithubReleases.tsx";
         >
         </div>
 
-        <div class="flex h-full w-full gap-16 items-center justify-center">
-            <div class="w-[512px] flex flex-col gap-16">
+        <div
+            class="flex h-full w-full gap-16 items-center justify-center max-[1024px]:flex-col max-[1024px]:gap-32"
+        >
+            <div class="w-[512px] flex flex-col gap-16 max-[600px]:w-full">
                 <p class="font-mono text-accent text-lg">
                     <span class="font-bold" id="download-count">5,000+</span>
                     downloads & counting!
@@ -36,7 +38,7 @@ import GithubReleases from "@/components/download/GithubReleases.tsx";
                 height={1080}
                 quality={80}
                 format="webp"
-                class="hidden dark:block aspect-video w-[650px] h-auto border border-stroke rounded-6"
+                class="hidden dark:block aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
             />
             <Image
                 src="/home/editor-light.png"
@@ -45,12 +47,12 @@ import GithubReleases from "@/components/download/GithubReleases.tsx";
                 height={1080}
                 quality={80}
                 format="webp"
-                class="block dark:hidden aspect-video w-[650px] h-auto border border-stroke rounded-6"
+                class="block dark:hidden aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
             />
         </div>
 
         <div
-            class="grid h-fit w-full min-w-0 grid-cols-3 gap-8 max-[1200px]:grid-cols-1"
+            class="grid h-fit w-full min-w-0 grid-cols-3 gap-8 max-[1024px]:grid-cols-2 max-[768px]:grid-cols-1"
         >
             <div
                 class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"

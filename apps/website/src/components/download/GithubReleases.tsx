@@ -83,7 +83,7 @@ export default function GithubReleases() {
     return (
         <section
             id="all-releases"
-            className="flex h-[64rem] w-full flex-col gap-12"
+            className="flex h-[64rem] w-full flex-col gap-12 max-[768px]:h-auto"
         >
             <h1 className="text-h2">All Releases & Changelogs</h1>
             {loading ? (
@@ -113,14 +113,14 @@ export default function GithubReleases() {
                 <Tabs.Root
                     value={selectedRelease}
                     onValueChange={setSelectedRelease}
-                    className="flex h-full w-full gap-8"
+                    className="flex h-full w-full gap-8 max-[768px]:flex-col"
                 >
                     <div
                         id="sidebar"
-                        className="bg-fg-1 border-stroke rounded-6 flex h-full w-[256px] flex-col gap-12 border p-12"
+                        className="bg-fg-1 border-stroke rounded-6 flex h-full w-[256px] flex-col gap-12 border p-12 max-[768px]:h-auto max-[768px]:w-full"
                     >
                         <h2 className="text-h4">Versions</h2>
-                        <Tabs.List className="flex flex-col gap-0">
+                        <Tabs.List className="flex flex-col gap-0 max-[768px]:flex-row max-[768px]:gap-2 max-[768px]:overflow-x-auto">
                             {releases.map((release) => (
                                 <Tabs.Trigger
                                     value={release.tag_name}
@@ -156,9 +156,9 @@ export default function GithubReleases() {
                         <Tabs.Content
                             value={release.tag_name}
                             key={release.id}
-                            className="flex h-full w-full flex-col gap-8"
+                            className="flex h-full w-full flex-col gap-8 max-[768px]:min-h-[400px]"
                         >
-                            <header className="border-stroke rounded-6 flex h-fit w-full flex-col gap-12 border p-12">
+                            <header className="border-stroke rounded-6 flex h-fit w-full flex-col gap-12 border p-12 max-[768px]:p-8">
                                 <div className="flex items-end gap-12">
                                     <h1 className="text-h3 text-accent font-mono leading-none">
                                         {release.tag_name}
@@ -174,7 +174,7 @@ export default function GithubReleases() {
                                         })}
                                     </h3>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-8">
+                                <div className="flex flex-wrap items-center gap-8 max-[768px]:gap-4">
                                     {release.assets.filter(
                                         (asset) =>
                                             asset.name.endsWith(".exe") ||
@@ -261,7 +261,7 @@ export default function GithubReleases() {
                                     )}
                                 </div>
                             </header>
-                            <div className="text-text bg-fg-2 border-stroke rounded-6 flex h-full flex-col items-center overflow-y-auto border p-12">
+                            <div className="text-text bg-fg-2 border-stroke rounded-6 flex h-full flex-col items-center overflow-y-auto border p-12 max-[768px]:p-8">
                                 {release.body ? (
                                     <article className={ProseClass}>
                                         <h3>{release.name}</h3>

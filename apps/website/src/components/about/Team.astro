@@ -11,8 +11,8 @@ import { Image } from "astro:assets";
 ---
 
 <div class="flex flex-col items-center gap-24">
-    <div class="w-[512px] flex flex-col items-center gap-16">
-        <h1 class="text-h2">The team behind OpenMarch</h1>
+    <div class="w-[512px] max-[600px]:w-full flex flex-col items-center gap-16">
+        <h1 class="text-h2 text-center">The team behind OpenMarch</h1>
         <p class="text-center text-body text-text">
             We're a team of passionate drum corps alumni and lovers of music and
             the marching arts, working to make drill design easier and more
@@ -20,7 +20,9 @@ import { Image } from "astro:assets";
         </p>
     </div>
 
-    <div class="grid grid-cols-3 gap-8 max-[920px]:grid-cols-1">
+    <div
+        class="grid grid-cols-3 gap-8 max-[920px]:grid-cols-2 max-[600px]:grid-cols-1"
+    >
         <div
             class="flex flex-col gap-8 rounded-6 bg-fg-1 border border-stroke p-16"
         >
