@@ -18,7 +18,6 @@ import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSet
 
 export default function AlignmentTab() {
     const { uiSettings } = useUiSettingsStore();
-
     return (
         <div className="flex w-full flex-wrap gap-8">
             <CoordinateRoundingSettings />
