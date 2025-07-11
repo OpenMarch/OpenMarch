@@ -359,12 +359,7 @@ export default function Canvas({
         // Draw previous/next pathways
         selectedCanvasMarchers.forEach((cm: any) => {
             const marcherId = cm.marcherObj.id;
-
-            // Adjust to group if multi-selection
-            const current = {
-                x: (cm.group?.getCenterPoint().x ?? 0) + cm.left,
-                y: (cm.group?.getCenterPoint().y ?? 0) + cm.top,
-            };
+            const current = cm.getMarcherCoords();
 
             // Previous pathway
             const prev = prevPages.find(
@@ -425,13 +420,19 @@ export default function Canvas({
         canvas.on("selection:created", handleSelect);
         canvas.on("selection:updated", handleSelect);
         canvas.on("selection:cleared", handleDeselect);
+
         canvas.on("object:moving", handleObjectMoving);
+        canvas.on("object:scaling", handleObjectMoving);
+        canvas.on("object:rotating", handleObjectMoving);
 
         return () => {
             canvas.off("selection:created", handleSelect);
             canvas.off("selection:updated", handleSelect);
             canvas.off("selection:cleared", handleDeselect);
+
             canvas.off("object:moving", handleObjectMoving);
+            canvas.off("object:scaling", handleObjectMoving);
+            canvas.on("object:rotating", handleObjectMoving);
         };
     }, [canvas, handleDeselect, handleSelect, handleObjectMoving]);
 
