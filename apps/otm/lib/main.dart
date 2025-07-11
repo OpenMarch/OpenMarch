@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'db.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:otm/models/from_desktop/readable_coords.dart';
 
 void main() {
   runApp(ProviderScope(child: MyApp()));
@@ -32,7 +32,7 @@ class DataViewer extends StatefulWidget {
 }
 
 class _DataViewerState extends State<DataViewer> {
-  Future<List<Map<String, dynamic>>>? _data;
+  Future<List<ReadableCoords>>? _data;
 
   @override
   void initState() {
@@ -44,7 +44,7 @@ class _DataViewerState extends State<DataViewer> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("SQLite Data")),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
+      body: FutureBuilder<List<ReadableCoords>>(
         future: _data,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

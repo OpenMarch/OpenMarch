@@ -4,6 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter/services.dart';
+import 'package:otm/models/from_desktop/field_properties.dart';
+import 'package:otm/models/from_desktop/marcher_page.dart';
+import 'package:otm/models/from_desktop/readable_coords.dart';
 
 Future<void> copyDatabaseFromAssets() async {
   // Get the path to the database directory
@@ -47,9 +50,27 @@ class DatabaseHelper {
   }
 }
 
-Future<List<Map<String, dynamic>>> fetchData() async {
+Future<List<ReadableCoords>> fetchData() async {
   final db = await DatabaseHelper.openDatabaseFromAsset();
-  return await db.query('marchers');
+  final marcherPagesData = await db.query('marcher_pages');
+  final marcherPages = marcherPagesData
+      .map(
+        (data) => MarcherPage(
+          id: data['id'] as int,
+          marcherId: data['marcher_id'] as int,
+          pageId: data['page_id'] as int,
+          x: data['x'] as double,
+          y: data['y'] as double,
+        ),
+      )
+      .toList();
+  final fieldPropertiesData = await db.query('field_properties');
+  final fieldProperties = FieldProperties.fromJson(
+    fieldPropertiesData[0]['json_data'] as String,
+  );
+  ReadableCoords.setFieldProperties(fieldProperties);
+
+  return marcherPages.map((mp) => ReadableCoords.fromMarcherPage(mp)).toList();
 }
 
 void initDb() async {
