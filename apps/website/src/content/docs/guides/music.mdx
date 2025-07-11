@@ -1,0 +1,54 @@
+---
+title: "Music and Tempo"
+description: "How to import music and set the tempo in OpenMarch"
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import { YouTube } from "astro-embed";
+import { Card, CardGrid, Aside } from "@astrojs/starlight/components";
+
+Music in OpenMarch is separated into two parts:
+
+<CardGrid>
+  {/* cspell:disable-next-line */}
+  <Card title="Audio" icon="seti:audio">
+    The actual sound that you want to play. E.g. a `.mp3` or `.wav` file
+  </Card>
+  {/* cspell:disable-next-line */}
+  <Card title="Tempo" icon="seti:happenings">
+    The tempos, measures, and other timing information that you want to line the
+    show up with the audio.
+  </Card>
+</CardGrid>
+
+## Importing Music
+
+OpenMarch supports importing `.mp3`, `.wav`, or `.ogg` audio files.
+
+To add an audio file to your show, follow these steps:
+
+<Steps>
+
+1. Open the `Music` tab
+1. Click the empty dropdown
+1. Select `Import Audio`
+1. From the file popup, select the audio file you want to import
+1. The page will automatically refresh and you should see the audio file in the `Music` tab and a waveform in the timeline!
+
+</Steps>
+
+![Importing audio example](/docs/guides/music/import-audio.gif)
+
+## Setting the Tempo
+
+<Aside type="caution" title="Tempo drift">
+
+The tempo alignment currently tends to drift when playing long show chunks.
+Quickly pausing and playing typically fixes this.
+We are working to fix this
+
+</Aside>
+
+> If OpenMarch ever seems broken, refreshing the page `Ctrl + R` will often fix it.
+
+TODO - FINISH
