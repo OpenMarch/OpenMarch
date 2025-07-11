@@ -11,7 +11,7 @@ interface Props {
 const { hideDownloadCta } = Astro.props;
 ---
 
-<footer class="flex flex-col gap-8 z-50">
+<footer class="flex flex-col gap-8 z-50 w-full">
     {
         !hideDownloadCta && (
             <div class="flex flex-col gap-12 items-center rounded-6 px-16 py-32 download-cta-gradient">
@@ -20,7 +20,9 @@ const { hideDownloadCta } = Astro.props;
                     height="64"
                     className="text-accent"
                 />
-                <h2 class="text-h2">Download the modern drill writing app</h2>
+                <h2 class="text-h2 text-center">
+                    Download the modern drill writing app
+                </h2>
                 <a
                     href="/download"
                     class="text-body duration-150 ease-out hover:text-accent w-fit"
@@ -31,9 +33,11 @@ const { hideDownloadCta } = Astro.props;
         )
     }
     <footer
-        class="grid grid-cols-4 gap-0 rounded-6 bg-fg-1 border border-stroke px-16 py-32 divide-x divide-stroke"
+        class="grid grid-cols-4 gap-0 rounded-6 bg-fg-1 border border-stroke px-16 py-32 divide-x divide-stroke max-[1024px]:grid-cols-2 max-[768px]:grid-cols-1 max-[1024px]:divide-x-0 max-[1024px]:gap-32"
     >
-        <div class="flex flex-col justify-between px-16">
+        <div
+            class="flex flex-col justify-between px-16 max-[1024px]:col-span-2 max-[768px]:col-span-1"
+        >
             <div class="flex flex-col gap-24">
                 <div class="flex justify-between w-full pr-4 gap-16">
                     <a href="/">
@@ -54,7 +58,7 @@ const { hideDownloadCta } = Astro.props;
                 <NewsletterForm client:visible />
             </div>
         </div>
-        <div class="flex flex-col gap-16 px-16">
+        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
             <h4 class="text-h4">Support & follow us</h4>
             <a
                 href="https://store.openmarch.com"
@@ -99,7 +103,7 @@ const { hideDownloadCta } = Astro.props;
                 YouTube
             </a>
         </div>
-        <div class="flex flex-col gap-16 px-16">
+        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
             <h4 class="text-h4">App</h4>
             <a
                 href="/download"
@@ -139,7 +143,7 @@ const { hideDownloadCta } = Astro.props;
                 GitHub
             </a>
         </div>
-        <div class="flex flex-col gap-16 px-16">
+        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
             <h4 class="text-h4">Organization</h4>
             <a
                 href="/about"
