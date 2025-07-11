@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react";
+import { fabric } from "fabric";
 import { useUiSettingsStore } from "../../stores/UiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
@@ -22,7 +23,6 @@ import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
-import { fabric } from "fabric";
 
 /**
  * The field/stage UI of OpenMarch
@@ -332,7 +332,7 @@ export default function Canvas({
                 active: true,
             });
             const selectedIds = selectedCanvasMarchers.map(
-                (cm: any) => cm.marcherObj.id,
+                (cm) => cm.marcherObj.id,
             );
 
             // Find previous/next MarcherPages for selected marchers
@@ -444,7 +444,6 @@ export default function Canvas({
 
         canvas.on("object:moving", handleObjectMoving);
         canvas.on("object:scaling", handleObjectMoving);
-        canvas.on("object:rotating", handleObjectMoving);
 
         return () => {
             canvas.off("selection:created", handleSelect);
@@ -453,7 +452,6 @@ export default function Canvas({
 
             canvas.off("object:moving", handleObjectMoving);
             canvas.off("object:scaling", handleObjectMoving);
-            canvas.off("object:rotating", handleObjectMoving);
         };
     }, [canvas, handleDeselect, handleSelect, handleObjectMoving]);
 
