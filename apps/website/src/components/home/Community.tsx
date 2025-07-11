@@ -85,8 +85,11 @@ export default function Community() {
     }, []);
 
     return (
-        <section id="community" className="grid grid-cols-3 gap-8">
-            <div className="border-stroke rounded-6 relative flex flex-col items-center justify-center gap-8 overflow-clip border p-12 py-32">
+        <section
+            id="community"
+            className="grid grid-cols-3 gap-8 max-[1000px]:grid-cols-2 max-[1000px]:grid-rows-2 max-[645px]:grid-cols-1 max-[645px]:grid-rows-3"
+        >
+            <div className="border-stroke rounded-6 relative flex flex-col items-center justify-center gap-8 overflow-clip border p-12 py-32 max-[1000px]:col-span-2 max-[645px]:col-span-1">
                 <h1 className="text-h3">Join our community</h1>
                 <p className="text-body text-text-subtitle text-center">
                     Support OpenMarch via Patreon, buying merch, or contributing
@@ -139,7 +142,7 @@ export default function Community() {
             <div className="bg-fg-1 border-stroke rounded-6 flex flex-col justify-between gap-12 border p-12">
                 <div
                     id="pfp-grid"
-                    className="grid h-fit grid-cols-5 justify-between gap-y-16"
+                    className="grid h-fit grid-cols-5 justify-between gap-y-16 max-[375px]:grid-cols-4"
                 >
                     {stats.contributors.length > 0 ? (
                         stats.contributors.map((contributor) => (
@@ -163,19 +166,19 @@ export default function Community() {
                     )}
                 </div>
                 <div className="flex h-fit w-full justify-center gap-16">
-                    <p className="text-sub font-mono">
+                    <p className="text-sub text-center font-mono">
                         <span className="text-accent">
                             {loading ? "0" : stats.contributorsCount}
                         </span>{" "}
                         contributors
                     </p>
-                    <p className="text-sub font-mono">
+                    <p className="text-sub text-center font-mono">
                         <span className="text-accent">
                             {loading ? "0" : stats.pullRequestsCount}
                         </span>{" "}
                         PRs merged
                     </p>
-                    <p className="text-sub font-mono">
+                    <p className="text-sub text-center font-mono">
                         <span className="text-accent">
                             {loading ? "0" : stats.commitsCount}
                         </span>{" "}
