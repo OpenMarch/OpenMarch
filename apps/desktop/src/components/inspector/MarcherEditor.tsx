@@ -174,7 +174,12 @@ function MarcherEditor() {
         resetForm();
     }, [selectedMarchers, rCoords, resetForm]);
 
-    if (!selectedPage) return <>No page selected</>;
+    if (!selectedPage)
+        return (
+            <>
+                <T keyName="inspector.marcher.noPageSelected" />
+            </>
+        );
 
     return (
         <>
@@ -184,7 +189,9 @@ function MarcherEditor() {
                         // Multiple marchers selected
                         <InspectorCollapsible
                             defaultOpen
-                            title={`${selectedMarchers.length} Marchers`}
+                            title={t("inspector.marcher.title", {
+                                count: selectedMarchers.length,
+                            })}
                             className="mt-12 flex flex-col gap-16"
                         >
                             <p className="text-sub text-text/80 w-full px-6 font-mono">
@@ -274,7 +281,9 @@ function MarcherEditor() {
                         // One marcher selected
                         <InspectorCollapsible
                             defaultOpen
-                            title={`Marcher ${selectedMarchers[0].drill_number}`}
+                            title={t("inspector.marcher.titleSingle", {
+                                drillNumber: selectedMarchers[0].drill_number,
+                            })}
                             className="mt-12 flex flex-col gap-24"
                         >
                             {!rCoords ? (

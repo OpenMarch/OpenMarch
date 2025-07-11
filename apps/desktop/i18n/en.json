@@ -65,9 +65,12 @@
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
             "name": "Name",
+            "noPageSelected": "No page selected",
             "section": "Section",
             "stepSize": "Step Size",
-            "swapMarchers": "Swap marchers"
+            "swapMarchers": "Swap marchers",
+            "title": "{count} Marchers",
+            "titleSingle": "Marcher {drillNumber}"
         },
         "page": {
             "counts": "Counts",

@@ -65,9 +65,12 @@
             "maxStepSize": "Tamaño de paso más grande",
             "minStepSize": "Tamaño de paso más pequeño",
             "name": "Nombre",
+            "noPageSelected": "Ninguna página seleccionada\n",
             "section": "Sección",
             "stepSize": "Tamaño del paso",
-            "swapMarchers": "Intercambiar marchadores"
+            "swapMarchers": "Intercambiar marchadores",
+            "title": "{count} Marchantes",
+            "titleSingle": "Marchador {drillNumber}"
         },
         "page": {
             "counts": "Cuenta",

@@ -65,9 +65,12 @@
             "maxStepSize": "最大ステップ サイズ",
             "minStepSize": "最小ステップ サイズ",
             "name": "名前",
+            "noPageSelected": "ページが選択されていません\n",
             "section": "セクション",
             "stepSize": "ステップ サイズ",
-            "swapMarchers": "交代 マーチャーズ"
+            "swapMarchers": "交代 マーチャーズ",
+            "title": "{count}人の行進者\n",
+            "titleSingle": "マーチャー {drillNumber}\n"
         },
         "page": {
             "counts": "カウント",
