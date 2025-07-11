@@ -1,4 +1,5 @@
 {
+    "dart.flutterSdkPath": "~/flutter",
     "typescript.tsdk": "node_modules/typescript/lib",
     "typescript.tsc.autoDetect": "off",
     "json.schemas": [
