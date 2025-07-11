@@ -820,7 +820,10 @@ export async function insertAudioFile(): Promise<
     databaseResponse = await dialog
         .showOpenDialog(win, {
             filters: [
-                { name: "Audio File", extensions: ["mp3", "wav", "ogg"] },
+                {
+                    name: "Audio File (.mp3, .wav, .ogg)",
+                    extensions: ["mp3", "wav", "ogg"],
+                },
                 { name: "All Files", extensions: ["*"] },
             ],
         })
@@ -857,7 +860,7 @@ export async function insertAudioFile(): Promise<
                             "insertAudioFile: Operation was cancelled or no audio file was provided",
                     },
                 };
-
+            win?.webContents.reload();
             // await setActiveDb(path.filePaths[0]);
             return databaseResponse;
         })
