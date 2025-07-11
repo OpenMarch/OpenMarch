@@ -10,38 +10,50 @@ import {
     XIcon,
 } from "@phosphor-icons/react";
 import { LogoOpenMarchText } from "./Logos";
+import clsx from "clsx";
 
-export default function Nav() {
+export default function Nav({ pathname }: { pathname: string }) {
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
     return (
         <nav className="sticky top-16 z-[99] flex h-[3.5rem] w-full flex-col gap-8">
-            <nav className="border-stroke bg-modal relative flex w-full items-center justify-between rounded-full border px-32 py-12 backdrop-blur-md max-[750px]:px-24">
+            <nav className="border-stroke bg-modal shadow-modal relative flex w-full items-center justify-between rounded-full border px-32 py-12 backdrop-blur-md max-[750px]:px-24">
                 <a href="/">
                     <LogoOpenMarchText />
                 </a>
                 <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-16 max-[675px]:hidden">
                     <a
                         href="/"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                            { "!text-accent": pathname === "/" },
+                        )}
                     >
                         Home
                     </a>
                     <a
                         href="/guides"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                        )}
                     >
                         Guides
                     </a>
                     <a
                         href="/blog"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                            { "!text-accent": pathname.includes("blog") },
+                        )}
                     >
                         Blog
                     </a>
                     <a
                         href="/about"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                            { "!text-accent": pathname.includes("about") },
+                        )}
                     >
                         About
                     </a>
@@ -54,24 +66,32 @@ export default function Nav() {
                 <div className="flex items-center gap-16 max-[675px]:hidden">
                     <a
                         href="https://store.openmarch.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <TShirtIcon size={24} />
                     </a>
                     <a
                         href="https://www.patreon.com/openmarch"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <PatreonLogoIcon size={24} />
                     </a>
                     <a
                         href="https://discord.gg/eTsQ98uZzq"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <DiscordLogoIcon size={24} />
                     </a>
                     <a
                         href="https://github.com/OpenMarch/OpenMarch"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="text-text hover:text-accent duration-150"
                     >
                         <GithubLogoIcon size={24} />
@@ -108,32 +128,40 @@ export default function Nav() {
                     <ArrowLineDownIcon size={24} />
                 </a>
                 <a
-                    href="https://github.com/OpenMarch/OpenMarch"
+                    href="https://store.openmarch.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-h4 text-text flex items-center gap-8"
                 >
-                    GitHub
-                    <GithubLogoIcon size={24} />
-                </a>
-                <a
-                    href="https://discord.gg/eTsQ98uZzq"
-                    className="text-h4 text-text flex items-center gap-8"
-                >
-                    Discord
-                    <DiscordLogoIcon size={24} />
+                    Merch
+                    <TShirtIcon size={24} />
                 </a>
                 <a
                     href="https://www.patreon.com/openmarch"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-h4 text-text flex items-center gap-8"
                 >
                     Patreon
                     <PatreonLogoIcon size={24} />
                 </a>
                 <a
-                    href="https://store.openmarch.com"
+                    href="https://discord.gg/eTsQ98uZzq"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-h4 text-text flex items-center gap-8"
                 >
-                    Merch
-                    <TShirtIcon size={24} />
+                    Discord
+                    <DiscordLogoIcon size={24} />
+                </a>
+                <a
+                    href="https://github.com/OpenMarch/OpenMarch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-h4 text-text flex items-center gap-8"
+                >
+                    GitHub
+                    <GithubLogoIcon size={24} />
                 </a>
             </div>
         </nav>

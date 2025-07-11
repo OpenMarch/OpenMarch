@@ -1,0 +1,306 @@
+---
+import { Button } from "@openmarch/ui";
+import {
+    GithubLogoIcon,
+    LinkedinLogoIcon,
+    BehanceLogoIcon,
+    YoutubeLogoIcon,
+    InstagramLogoIcon,
+} from "@phosphor-icons/react";
+import { Image } from "astro:assets";
+---
+
+<div class="flex flex-col items-center gap-24">
+    <div class="w-[512px] flex flex-col items-center gap-16">
+        <h1 class="text-h2">The team behind OpenMarch</h1>
+        <p class="text-center text-body text-text">
+            We're a team of passionate drum corps alumni and lovers of music and
+            the marching arts, working to make drill design easier and more
+            accessible.
+        </p>
+    </div>
+
+    <div class="grid grid-cols-3 gap-8 max-[920px]:grid-cols-1">
+        <div
+            class="flex flex-col gap-8 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <Image
+                src="/pfps/alex.png"
+                alt="Alex Dumouchelle"
+                width={128}
+                height={128}
+                quality={80}
+                format="webp"
+                class="rounded-full size-96 border border-stroke"
+            />
+            <h3 class="text-h3">Alex Dumouchelle</h3>
+            <h4 class="text-h5">Founder & lead developer</h4>
+            <p class="text-body">
+                Alex, an alumni of The Cadets, oversees all of the project's
+                operations and leads the development effort.
+            </p>
+
+            <div class="flex flex-wrap items-center gap-12">
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="/about/alexdumo"
+                >
+                    <Button variant="secondary" size="compact">
+                        More about Alex
+                    </Button>
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://github.com/AlexDumo"
+                >
+                    <GithubLogoIcon size={24} />
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.linkedin.com/in/AlexDumo/"
+                >
+                    <LinkedinLogoIcon size={24} />
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.youtube.com/@alexdumouchelle3744"
+                >
+                    <YoutubeLogoIcon size={24} />
+                </a>
+            </div>
+        </div>
+        <div
+            class="flex flex-col gap-8 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <Image
+                src="/pfps/aleksi.png"
+                alt="Aleksi Saario"
+                width={128}
+                height={128}
+                quality={80}
+                format="webp"
+                class="rounded-full size-96 border border-stroke"
+            />
+            <h3 class="text-h3">Aleksi Saario</h3>
+            <h4 class="text-h4">Marketing manager</h4>
+            <p class="text-body">
+                Aleksi manages marketing, social media accounts, and our merch.
+            </p>
+            <a
+                target="_blank"
+                class="hover:text-accent duration-150 w-fit"
+                href="https://www.instagram.com/aleksifilms/"
+            >
+                <InstagramLogoIcon size={24} />
+            </a>
+        </div>
+        <div
+            class="flex flex-col gap-8 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <Image
+                src="/pfps/ben.png"
+                alt="Ben Moulse"
+                width={128}
+                height={128}
+                quality={80}
+                format="webp"
+                class="rounded-full size-96 border border-stroke"
+            />
+            <h3 class="text-h3">Ben Moulse</h3>
+            <h4 class="text-h4">Graphic designer</h4>
+            <p class="text-body">
+                Ben creates the brand identity and assists with the marketing of
+                the project.
+            </p>
+            <div class="flex flex-wrap items-center gap-12">
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.linkedin.com/in/ben-moulse/"
+                >
+                    <LinkedinLogoIcon size={24} />
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.behance.net/Moulse"
+                >
+                    <BehanceLogoIcon size={24} />
+                </a>
+            </div>
+        </div>
+        <div
+            class="flex flex-col gap-8 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <Image
+                src="/pfps/jacob.png"
+                alt="Jacob Ehlert"
+                width={128}
+                height={128}
+                quality={80}
+                format="webp"
+                class="rounded-full size-96 border border-stroke"
+            />
+            <h3 class="text-h3">Jacob Ehlert</h3>
+            <h4 class="text-h4">UI designer & front-end dev</h4>
+            <p class="text-body">
+                Jacob designs the UI and visual identity for the app and website
+                and contributes to front-end development.
+            </p>
+            <div class="flex flex-wrap items-center gap-12">
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://dukc.dev"
+                >
+                    <Button variant="secondary" size="compact">
+                        Website
+                    </Button>
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://github.com/dukcc"
+                >
+                    <GithubLogoIcon size={24} />
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.instagram.com/dukkcc0"
+                >
+                    <InstagramLogoIcon size={24} />
+                </a>
+            </div>
+        </div>
+        <div
+            class="flex flex-col gap-8 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <Image
+                src="/pfps/trevor.png"
+                alt="Trevor Schachner"
+                width={128}
+                height={128}
+                quality={80}
+                format="webp"
+                class="rounded-full size-96 border border-stroke"
+            />
+            <h3 class="text-h3">Trevor Schachner</h3>
+            <h4 class="text-h4">Product manager</h4>
+            <p class="text-body">
+                Trevor is a product manager, designer, teacher, and co-founder
+                of Bright Designs, working with dozens of bands and drum corps
+                across the country.
+            </p>
+            <div class="flex flex-wrap items-center gap-12">
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.brightdesigns.band"
+                >
+                    <Button variant="secondary" size="compact">
+                        Bright Designs
+                    </Button>
+                </a>
+            </div>
+        </div>
+        <div
+            class="flex flex-col gap-12 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <Image
+                src="/pfps/mark.png"
+                alt="Mark Shelton"
+                width={128}
+                height={128}
+                quality={80}
+                format="webp"
+                class="rounded-full size-96 border border-stroke"
+            />
+            <h3 class="text-h3">Mark Shelton</h3>
+            <h4 class="text-h4">Product research</h4>
+        </div>
+        <div
+            class="flex flex-col gap-12 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <Image
+                src="/pfps/john.png"
+                alt="John Bostick"
+                width={128}
+                height={128}
+                quality={80}
+                format="webp"
+                class="rounded-full size-96 border border-stroke"
+            />
+            <h3 class="text-h3">John Bostick</h3>
+            <h4 class="text-h4">Front-end & back-end dev</h4>
+            <p class="text-body">
+                John does both front-end and back-end development for
+                OpenMarch's app and website.
+            </p>
+            <div class="flex flex-wrap items-center gap-12">
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://johnbostick.com"
+                >
+                    <Button variant="secondary" size="compact">
+                        Website
+                    </Button>
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://github.com/JohnBostick"
+                >
+                    <GithubLogoIcon size={24} />
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.linkedin.com/in/john-bostick/"
+                >
+                    <LinkedinLogoIcon size={24} />
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://www.youtube.com/@johnodondev"
+                >
+                    <YoutubeLogoIcon size={24} />
+                </a>
+            </div>
+        </div>
+        <!-- div
+            class="flex flex-col gap-12 rounded-6 bg-fg-1 border border-stroke p-16"
+        >
+            <div class="rounded-full size-96 border border-stroke"></div>
+            <h3 class="text-h3">Your Name</h3>
+            <p class="text-body">
+                Contribute to our codebase and work your way up to becoming a
+                maintainer, or shoot us an email about other positions.
+            </p>
+            <div class="flex flex-wrap items-center gap-12">
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="https://github.com/OpenMarch/OpenMarch"
+                >
+                    <Button variant="secondary" size="compact">
+                        Contribute
+                    </Button>
+                </a>
+                <a
+                    target="_blank"
+                    class="hover:text-accent duration-150"
+                    href="mailto:contact@openmarch.com"
+                >
+                    <Button variant="secondary" size="compact"> Email </Button>
+                </a>
+            </div>
+        </div -->
+    </div>
+</div>

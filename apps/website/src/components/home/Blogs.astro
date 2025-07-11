@@ -1,0 +1,97 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import { Image } from "astro:assets";
+import NewsletterForm from "@/components/ui/NewsletterForm";
+import { ArrowUpRightIcon } from "@phosphor-icons/react";
+
+const blogs = await getCollection("blog");
+type Blog = CollectionEntry<"blog">;
+---
+
+<section id="blogs" class="flex flex-col gap-16">
+    <h1 class="text-h2">The latest updates from us</h1>
+    <div
+        class="grid grid-cols-3 grid-rows-2 gap-8 max-[1200px]:grid-cols-2 max-[850px]:grid-cols-1"
+    >
+        <div class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2">
+            {
+                blogs
+                    .sort(
+                        (a, b) =>
+                            new Date(b.data.date).getTime() -
+                            new Date(a.data.date).getTime(),
+                    )
+                    .slice(0, 4)
+                    .map((blog: Blog) => (
+                        <a
+                            href={`/blog/${blog.id}`}
+                            class="flex flex-col rounded-6 border overflow-clip border-stroke bg-fg-1 duration-150 ease-out hover:border-accent"
+                        >
+                            <Image
+                                src={blog.data.image}
+                                width={670}
+                                height={420}
+                                alt={blog.data.title}
+                                class="aspect-video h-auto w-full object-cover"
+                            />
+                            <div class="flex w-full flex-col gap-8 p-16 h-fit">
+                                <h2 class="w-full text-h4">
+                                    {blog.data.title}
+                                </h2>
+                                <div class="flex gap-16 flex-wrap">
+                                    <p class="w-fit text-body text-text-subtitle leading-[150%]">
+                                        by {blog.data.author}
+                                    </p>
+                                    <p class="w-fit text-body text-text-subtitle leading-[150%]">
+                                        {blog.data.date.toLocaleDateString(
+                                            "en-US",
+                                            {
+                                                year: "numeric",
+                                                month: "long",
+                                                day: "numeric",
+                                                timeZone: "UTC",
+                                            },
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    ))
+            }
+        </div>
+        <div class="col-span-1 row-span-2 grid grid-cols-1 grid-rows-2 gap-8">
+            <div
+                class="bg-fg-1 border relative overflow-clip border-stroke rounded-6 p-16 flex justify-end flex-col gap-8"
+            >
+                <h2 class="text-h4">Subscribe to our newsletter</h2>
+                <p class="text-body text-text-subtitle leading-[150%]">
+                    Stay up to date with the latest news and updates.
+                </p>
+                <NewsletterForm client:visible />
+                <div
+                    class="bg-accent intersect:motion-preset-fade-lg absolute -top-1/5 left-1/2 -z-50 size-[250px] -translate-x-1/2 rounded-full opacity-40 blur-[9vmin]"
+                >
+                </div>
+            </div>
+            <a
+                href="/blog"
+                class="bg-fg-1 relative border overflow-clip border-stroke hover:border-accent duration-150 group rounded-6 p-16 flex justify-end flex-col gap-8"
+            >
+                <div class="flex gap-8 items-center">
+                    <h2 class="text-h4">See more posts</h2>
+                    <ArrowUpRightIcon
+                        className="group-hover:rotate-45 transition-transform duration-150"
+                        size={20}
+                    />
+                </div>
+                <p class="text-body text-text-subtitle leading-[150%]">
+                    Learn about development, our journeys, and updates.
+                </p>
+                <div
+                    class="bg-accent intersect:motion-preset-fade-lg absolute -bottom-1/5 left-1/2 -z-50 size-[250px] -translate-x-1/2 rounded-full opacity-40 blur-[9vmin]"
+                >
+                </div>
+            </a>
+        </div>
+    </div>
+</section>

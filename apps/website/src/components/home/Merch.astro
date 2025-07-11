@@ -1,0 +1,35 @@
+---
+import { Button } from "@openmarch/ui";
+import { Image } from "astro:assets";
+---
+
+<div
+    class="bg-fg-1 border border-stroke rounded-16 overflow-clip p-12 grid grid-cols-3 items-center"
+>
+    <div class="flex flex-col px-16 gap-8 relative">
+        <h3 class="text-[1.25rem] font-mono text-accent">
+            Opening Set Collection
+        </h3>
+        <h1 class="text-h3">Shop OpenMarch Merch</h1>
+        <p class="text-body text-text-subtitle leading-[160%]">
+            Every purchase supports us and keeps drill design free, plus you get
+            some awesome made-in-house merch!
+        </p>
+        <a href="https://store.openmarch.com" class="w-fit">
+            <Button>Shop now</Button>
+        </a>
+        <div
+            class="bg-accent intersect:motion-preset-fade-lg absolute -bottom-[140%] left-1/2 -z-50 size-[250px] -translate-x-1/2 rounded-full opacity-40 blur-[9vmin]"
+        >
+        </div>
+    </div>
+    <Image
+        src="/home/merch.png"
+        alt="OpenMarch Merch"
+        width={1920}
+        height={1111}
+        format="webp"
+        quality={80}
+        class="rounded-6 border border-stroke col-span-2 aspect-video object-cover object-center w-full h-auto intersect:motion-preset-fade-lg"
+    />
+</div>
