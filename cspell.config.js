@@ -101,6 +101,8 @@ module.exports = {
         "spinbutton",
         "monokai",
         "openmarchdev",
+        "xcworkspace",
+        "xcassets",
     ],
     ignorePaths: [
         "node_modules/**",
