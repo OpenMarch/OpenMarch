@@ -1,8 +1,14 @@
 import Plugin, { PluginMetadata } from "@/global/classes/Plugin";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import * as Tabs from "@radix-ui/react-tabs";
-import { Badge, Button, TabItem } from "@openmarch/ui";
+import {
+    Badge,
+    Button,
+    Tabs,
+    TabsList,
+    TabContent,
+    TabItem,
+} from "@openmarch/ui";
 import { PuzzlePieceIcon } from "@phosphor-icons/react";
 
 export default function PluginsContents() {
@@ -106,13 +112,13 @@ export default function PluginsContents() {
                     </p>
                 </div>
             )}
-            <Tabs.Root defaultValue="installed">
-                <Tabs.List className="flex flex-row gap-4">
+            <Tabs defaultValue="installed">
+                <TabsList className="flex flex-row gap-4">
                     <TabItem value="installed">Installed</TabItem>
                     <TabItem value="official">Official</TabItem>
                     <TabItem value="community">Community</TabItem>
-                </Tabs.List>
-                <Tabs.Content
+                </TabsList>
+                <TabContent
                     value="installed"
                     className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
                 >
@@ -186,8 +192,8 @@ export default function PluginsContents() {
                     ) : (
                         <p className="text-body p-8">No plugins installed.</p>
                     )}
-                </Tabs.Content>
-                <Tabs.Content
+                </TabContent>
+                <TabContent
                     value="official"
                     className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
                 >
@@ -283,8 +289,8 @@ export default function PluginsContents() {
                             No official plugins available.
                         </p>
                     )}
-                </Tabs.Content>
-                <Tabs.Content
+                </TabContent>
+                <TabContent
                     value="community"
                     className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
                 >
@@ -380,8 +386,8 @@ export default function PluginsContents() {
                             No community plugins available.
                         </p>
                     )}
-                </Tabs.Content>
-            </Tabs.Root>
+                </TabContent>
+            </Tabs>
         </div>
     );
 }

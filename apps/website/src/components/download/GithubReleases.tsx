@@ -174,7 +174,7 @@ export default function GithubReleases() {
                                         })}
                                     </h3>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-8">
+                                <div className="flex flex-wrap items-center gap-8 max-[768px]:gap-4">
                                     {release.assets.filter(
                                         (asset) =>
                                             asset.name.endsWith(".exe") ||
