@@ -125,7 +125,7 @@ export default function MarcherList({
                     event.preventDefault();
                     handleSubmit();
                 }}
-                className="text-body text-text flex flex-col gap-16"
+                className="text-body text-text flex flex-col gap-16 select-text"
             >
                 <div className="flex w-full items-center justify-between">
                     <p className="text-body text-text">List</p>
