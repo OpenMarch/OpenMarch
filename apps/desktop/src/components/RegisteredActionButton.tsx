@@ -8,6 +8,7 @@ import * as RadixTooltip from "@radix-ui/react-tooltip";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { TooltipClassName } from "@openmarch/ui";
+import { useTranslate } from "@tolgee/react";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -37,6 +38,7 @@ export default function RegisteredActionButton({
     tooltipPosition = "top",
     ...rest
 }: registeredActionButtonProps) {
+    const { t } = useTranslate();
     const { linkRegisteredAction, removeRegisteredAction } =
         useRegisteredActionsStore();
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -49,7 +51,7 @@ export default function RegisteredActionButton({
             )
         )
             console.error(
-                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`,
+                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.descKey}`,
             );
         const registeredActionEnum =
             RegisteredActionsEnum[
@@ -63,7 +65,7 @@ export default function RegisteredActionButton({
     }, [
         linkRegisteredAction,
         registeredAction.enumString,
-        registeredAction.instructionalString,
+        registeredAction.descKey,
         removeRegisteredAction,
     ]);
 
@@ -89,7 +91,7 @@ export default function RegisteredActionButton({
                     >
                         {instructionalString
                             ? instructionalString
-                            : registeredAction.instructionalString}
+                            : registeredAction.getInstructionalString(t)}
                     </RadixTooltip.Content>
                 </RadixTooltip.Portal>
             </RadixTooltip.Root>

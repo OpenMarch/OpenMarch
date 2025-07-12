@@ -8,6 +8,90 @@
         "whenYouOptIn": "When you opt-in",
         "whenYouOptOut": "When you opt-out"
     },
+    "actions": {
+        "alignment": {
+            "alignHorizontally": "Align horizontally",
+            "alignVertically": "Align vertically",
+            "cancelUpdates": "Cancel updates to marchers",
+            "distributeHorizontally": "Evenly distribute marchers horizontally",
+            "distributeVertically": "Evenly distribute marchers vertically",
+            "lockX": "Lock X axis",
+            "lockXOff": "Enable X movement",
+            "lockXOn": "Lock X movement",
+            "lockY": "Lock Y axis",
+            "lockYOff": "Enable Y movement",
+            "lockYOn": "Lock Y movement",
+            "snapToWhole": "Snap to nearest whole"
+        },
+        "batchEdit": {
+            "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
+            "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
+            "setAllToNext": "Set all marcher coordinates to next page",
+            "setAllToPrevious": "Set all marcher coordinates to previous page",
+            "setAllToNextSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the next page {{nextPage}}",
+            "setAllToPreviousSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the previous page {{previousPage}}",
+            "setSelectedToNext": "Set selected marcher(s) coordinates to next page",
+            "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
+            "setSelectedToNextSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the next page {{nextPage}}",
+            "setSelectedToPreviousSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the previous page {{previousPage}}"
+        },
+        "cursor": {
+            "defaultMode": "Set cursor mode to default",
+            "lineMode": "Create a line out of the selected marchers"
+        },
+        "edit": {
+            "redo": "Perform redo",
+            "undo": "Perform undo"
+        },
+        "file": {
+            "importMusicXml": "Import MusicXML file to get measures",
+            "insertAudio": "Load new audio file into the show",
+            "loadDialogue": "Launch load file dialogue",
+            "newDialogue": "Launch new file dialogue",
+            "saveDialogue": "Launch save file dialogue"
+        },
+        "movement": {
+            "moveDown": "Move selected marcher(s) down",
+            "moveLeft": "Move selected marcher(s) left",
+            "moveRight": "Move selected marcher(s) right",
+            "moveUp": "Move selected marcher(s) up"
+        },
+        "navigation": {
+            "firstPage": "First page",
+            "lastPage": "Last page",
+            "nextPage": "Next page",
+            "previousPage": "Previous page"
+        },
+        "playback": {
+            "pause": "Pause",
+            "play": "Play",
+            "playPause": "Play or pause"
+        },
+        "select": {
+            "selectAll": "Select all marchers"
+        },
+        "shape": {
+            "applyQuick": "Snaps marchers to shape without creating an editable object",
+            "create": "Creates a new shape with lines or curves that can be edited across pages",
+            "delete": "Deletes the current selected shapes"
+        },
+        "swap": {
+            "error": "Could not swap marchers {{marcher1}} and {{marcher2}}",
+            "mustSelectTwo": "Can only swap when 2 marchers are selected.",
+            "success": "Swapped marchers {{marcher1}} and {{marcher2}}",
+            "swap": "Swap marchers"
+        },
+        "ui": {
+            "focusCanvas": "Focus the canvas",
+            "focusTimeline": "Focus the timeline",
+            "hideNextPaths": "Hide next page dots/paths",
+            "hidePreviousPaths": "Hide previous page dots/paths",
+            "showNextPaths": "Show next page dots/paths",
+            "showPreviousPaths": "Show previous page dots/paths",
+            "toggleNextPaths": "Toggle viewing next page paths",
+            "togglePreviousPaths": "Toggle viewing previous page paths"
+        }
+    },
     "audio": {
         "beats": {
             "create": {
