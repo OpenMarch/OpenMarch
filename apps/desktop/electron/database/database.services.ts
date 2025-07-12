@@ -690,11 +690,16 @@ export async function getSelectedAudioFile(
     db?: Database.Database,
 ): Promise<AudioFile | null> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`,
-    );
-    const result = await stmt.get();
-    if (!result) {
+    try {
+        const stmt = dbToUse.prepare(
+            `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`,
+        );
+        const result = await stmt.get();
+        if (result) {
+            return result as AudioFile;
+        }
+
+        // If no audio file is selected, select the first one
         const firstAudioFileStmt = dbToUse.prepare(
             `SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`,
         );
@@ -705,9 +710,11 @@ export async function getSelectedAudioFile(
         }
         await setSelectAudioFile(firstAudioFile.id);
         return firstAudioFile as AudioFile;
+    } finally {
+        if (!db) {
+            dbToUse.close();
+        }
     }
-    dbToUse.close();
-    return result as AudioFile;
 }
 
 /**

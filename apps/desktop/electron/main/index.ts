@@ -815,10 +815,9 @@ export async function insertAudioFile(): Promise<
             error: { message: "insertAudioFile: window not loaded" },
         };
 
-    let databaseResponse: DatabaseServices.LegacyDatabaseResponse<AudioFile[]>;
-    // If there is no previous path, open a dialog
-    databaseResponse = await dialog
-        .showOpenDialog(win, {
+    try {
+        // Open file dialog
+        const path = await dialog.showOpenDialog(win, {
             filters: [
                 {
                     name: "Audio File (.mp3, .wav, .ogg)",
@@ -826,55 +825,60 @@ export async function insertAudioFile(): Promise<
                 },
                 { name: "All Files", extensions: ["*"] },
             ],
-        })
-        .then((path) => {
-            console.log("loading audio file into buffer:", path.filePaths[0]);
+        });
+
+        if (path.canceled || !path.filePaths[0]) {
+            return {
+                success: false,
+                error: {
+                    message:
+                        "insertAudioFile: Operation was cancelled or no audio file was provided",
+                },
+            };
+        }
+
+        console.log("loading audio file into buffer:", path.filePaths[0]);
+
+        // Read file asynchronously and wait for completion
+        const data = await new Promise<Buffer>((resolve, reject) => {
             fs.readFile(path.filePaths[0], (err, data) => {
                 if (err) {
-                    console.error("Error reading audio file:", err);
-                    return -1;
+                    reject(err);
+                } else {
+                    resolve(data);
                 }
-
-                // 'data' is a buffer containing the file contents
-                // Id is -1 to conform with interface
-                DatabaseServices.insertAudioFile({
-                    id: -1,
-                    data: Buffer.from(
-                        data.buffer.slice(
-                            data.byteOffset,
-                            data.byteOffset + data.byteLength,
-                        ),
-                    ) as any as ArrayBuffer,
-                    path: path.filePaths[0],
-                    nickname: path.filePaths[0],
-                    selected: true,
-                }).then((response) => {
-                    databaseResponse = response;
-                });
             });
-            if (path.canceled || !path.filePaths[0])
-                return {
-                    success: false,
-                    error: {
-                        message:
-                            "insertAudioFile: Operation was cancelled or no audio file was provided",
-                    },
-                };
-            win?.webContents.reload();
-            // await setActiveDb(path.filePaths[0]);
-            return databaseResponse;
-        })
-        .catch((err) => {
-            // TODO how to print/return stack here?
-            console.log(err);
-            return { success: false, error: { message: err } };
         });
-    return (
-        databaseResponse || {
-            success: false,
-            error: { message: "Error inserting audio file" },
+
+        // Insert audio file into database
+        const databaseResponse = await DatabaseServices.insertAudioFile({
+            id: -1,
+            data: Buffer.from(
+                data.buffer.slice(
+                    data.byteOffset,
+                    data.byteOffset + data.byteLength,
+                ),
+            ) as any as ArrayBuffer,
+            path: path.filePaths[0],
+            nickname: path.filePaths[0],
+            selected: true,
+        });
+
+        // Only reload after successful insertion
+        if (databaseResponse.success) {
+            win?.webContents.reload();
         }
-    );
+
+        return databaseResponse;
+    } catch (err) {
+        console.error("Error inserting audio file:", err);
+        return {
+            success: false,
+            error: {
+                message: err instanceof Error ? err.message : String(err),
+            },
+        };
+    }
 }
 
 /**
