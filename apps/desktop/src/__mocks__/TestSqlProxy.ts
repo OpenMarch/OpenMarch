@@ -31,3 +31,12 @@ export class TestSqlProxy {
         return _handleSqlProxyWithDb(this.db, sql, params, method);
     }
 }
+
+export async function setupTestSqlProxy() {
+    const testSqlProxy = new TestSqlProxy();
+    await testSqlProxy.initializeSchema();
+    window.electron = {
+        ...window.electron,
+        sqlProxy: testSqlProxy.handleSqlProxy.bind(testSqlProxy),
+    };
+}

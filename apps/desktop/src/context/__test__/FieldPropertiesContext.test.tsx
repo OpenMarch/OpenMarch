@@ -3,23 +3,15 @@ import {
     FieldPropertiesProvider,
     useFieldProperties,
 } from "../fieldPropertiesContext";
-import { mockNCAAFieldProperties } from "@/__mocks__/globalMocks";
-import { ElectronApi } from "electron/preload";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { setupTestSqlProxy } from "@/__mocks__/TestSqlProxy";
 
-window.electron = {
-    getFieldProperties: vi
-        .fn()
-        .mockResolvedValue({ data: mockNCAAFieldProperties, success: true }),
-} as Partial<ElectronApi> as ElectronApi;
 describe("SelectedPageContext", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-
-        vi.mock("@/api/api");
+    beforeEach(async () => {
+        await setupTestSqlProxy();
     });
 
-    it("initial field properties should be the passed mock", async () => {
+    it("initial field properties should be defined", async () => {
         let result: any = undefined;
         await act(async () => {
             ({ result } = renderHook(() => useFieldProperties(), {
@@ -28,6 +20,8 @@ describe("SelectedPageContext", () => {
         });
         expect(result).toBeDefined();
         expect(result.current.fieldProperties).toBeDefined();
-        expect(result.current.fieldProperties).toEqual(mockNCAAFieldProperties);
+        expect(result.current.fieldProperties.name).toEqual(
+            "High school football field (no end zones)",
+        );
     });
 });

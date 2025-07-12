@@ -293,17 +293,7 @@ const APP_API = {
     getRedoStackLength: () => ipcRenderer.invoke("history:getRedoStackLength"),
 
     // FieldProperties
-    /** Get the FieldProperties associated with this file */
-    getFieldProperties: () =>
-        ipcRenderer.invoke("field_properties:get") as Promise<
-            DatabaseResponse<FieldProperties>
-        >,
     /** Update the FieldProperties associated with this file */
-    updateFieldProperties: (newFieldProperties: FieldProperties) =>
-        ipcRenderer.invoke(
-            "field_properties:update",
-            newFieldProperties,
-        ) as Promise<DatabaseResponse<FieldProperties | null>>,
     exportFieldPropertiesFile: () =>
         ipcRenderer.invoke("field_properties:export"),
     importFieldPropertiesFile: () =>
