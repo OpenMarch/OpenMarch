@@ -883,24 +883,34 @@ async function updateAudioFiles(
  * @param audioFileId
  * @returns {success: boolean, error?: string}
  */
-async function deleteAudioFile(
-    audioFileId: number,
-): Promise<LegacyDatabaseResponse<AudioFile>> {
+async function deleteAudioFile(audioFileId: number): Promise<AudioFile | null> {
     const db = connect();
-    let output: LegacyDatabaseResponse<AudioFile> = { success: true };
     try {
         History.incrementUndoGroup(db);
-        const pageStmt = db.prepare(`
-            DELETE FROM ${Constants.AudioFilesTableName}
-            WHERE id = @audioFileId
-        `);
-        pageStmt.run({ audioFileId });
+
+        const wasSelectedStmt = db.prepare(
+            `SELECT selected FROM ${Constants.AudioFilesTableName} WHERE id = ?`,
+        );
+        const wasSelected = (wasSelectedStmt.get(audioFileId) as any)?.selected;
+
+        const deleteStmt = db.prepare(
+            `DELETE FROM ${Constants.AudioFilesTableName} WHERE id = ?`,
+        );
+        deleteStmt.run(audioFileId);
+
+        if (wasSelected) {
+            const newSelectedFile = await getSelectedAudioFile(db);
+            if (newSelectedFile) {
+                await setSelectAudioFile(newSelectedFile.id);
+            }
+        }
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: error };
+        throw error;
     } finally {
         History.incrementUndoGroup(db);
         db.close();
     }
-    return output;
+
+    return getSelectedAudioFile();
 }

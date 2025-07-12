@@ -1,9 +1,11 @@
-import { test as base, _electron as electron, expect } from "@playwright/test";
+/* eslint-disable no-empty-pattern */
+import { test as base, _electron as electron } from "@playwright/test";
 import type { ElectronApplication, Page } from "playwright";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs-extra";
-import crypto from "crypto";
+import initSqlJs from "sql.js";
+import { expectedAudioFiles } from "./mock-databases/audio-files.mjs";
 
 // Resolve __filename and __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -16,7 +18,6 @@ const blankDatabaseFile = path.resolve(
     __dirname,
     "./mock-databases/blank.dots",
 );
-const tempDir = path.resolve(__dirname, "_temp");
 
 // Ensure necessary directories and files exist (similar to _codegen.mjs checks)
 if (!fs.existsSync(distAssetsDir)) {
@@ -35,11 +36,6 @@ if (!fs.existsSync(blankDatabaseFile)) {
     );
 }
 
-type MyFixtures = {
-    electronApp: { app: ElectronApplication; databasePath: string; page: Page };
-    electronAppEmpty: { app: ElectronApplication; page: Page };
-};
-
 const PLAYWRIGHT_ENV = {
     ...process.env,
     NODE_ENV: "development",
@@ -50,6 +46,51 @@ const PLAYWRIGHT_ENV = {
     DEBUG: "pw:browser",
 };
 
+const getTempDotsPath = (testInfo: { outputDir: string }) => {
+    return path.resolve(testInfo.outputDir, "temp.dots");
+};
+
+/**
+ * Utility function to load and apply SQL to a database file
+ * @param testInfo - Test info object containing outputDir
+ * @param sqlFilename - Name of the SQL file (relative to mock-databases folder)
+ */
+const loadSqlIntoDatabase = async (
+    testInfo: { outputDir: string },
+    sqlFilename: string,
+): Promise<void> => {
+    // Get the path to the temporary database file
+    const dbPath = getTempDotsPath(testInfo);
+
+    // Resolve SQL file path relative to mock-databases folder
+    const sqlPath = path.resolve(__dirname, "mock-databases", sqlFilename);
+
+    // ✅ Assert database file exists
+    if (!fs.existsSync(dbPath)) {
+        throw new Error(`Expected DB file at ${dbPath} to exist`);
+    }
+
+    // ✅ Assert SQL file exists
+    if (!fs.existsSync(sqlPath)) {
+        throw new Error(`SQL file not found at ${sqlPath}`);
+    }
+
+    // ✅ Load and apply SQL using sql.js
+    const sql = fs.readFileSync(sqlPath, "utf-8");
+    const dbBuffer = fs.readFileSync(dbPath);
+
+    // Initialize sql.js
+    const SQL = await initSqlJs({
+        locateFile: (file: string) => `./node_modules/sql.js/dist/${file}`,
+    });
+
+    const db = new SQL.Database(dbBuffer);
+    db.exec(sql);
+    const updatedDbBuffer = db.export();
+    fs.writeFileSync(dbPath, updatedDbBuffer);
+    db.close();
+};
+
 /**ENV ELECTRON_NO_SANDBOX=1
 ENV ELECTRON_DISABLE_SECURITY_WARNINGS=1
 ENV ELECTRON_ENABLE_LOGGING=1
@@ -57,20 +98,42 @@ ENV ELECTRON_ENABLE_STACK_DUMPING=1
 ENV ELECTRON_DISABLE_AUDIO=1
 ENV ELECTRON_IPC_BUFFER_SIZE=65536 */
 
+type MyFixtures = {
+    setupDb: { databasePath: string };
+    electronApp: { app: ElectronApplication; databasePath: string; page: Page };
+    electronAppEmpty: { app: ElectronApplication; page: Page };
+    audioFiles: { expectedAudioFiles: string[] };
+};
 export const test = base.extend<MyFixtures>({
-    electronApp: async ({}, use) => {
-        // Ensure the temporary directory exists
-        await fs.ensureDir(tempDir);
+    setupDb: [
+        async ({}, use, testInfo) => {
+            // Ensure the temporary directory exists
+            await fs.ensureDir(testInfo.outputDir);
 
-        // Create a unique temporary database file
-        const tempDatabaseFile = path.resolve(
-            tempDir,
-            `test-db-${crypto.randomUUID()}.dots`,
-        );
-
-        // Copy the blank database to the temporary file
-        await fs.copyFile(blankDatabaseFile, tempDatabaseFile);
-
+            // Create a unique temporary database file
+            const tempDatabaseFile = getTempDotsPath(testInfo);
+            try {
+                await fs.copyFile(blankDatabaseFile, tempDatabaseFile);
+                await use({ databasePath: tempDatabaseFile });
+            } catch (error) {
+                console.error("Error setting up database:", error);
+                throw error;
+            } finally {
+                await fs.remove(tempDatabaseFile);
+                console.log(
+                    "Cleaned up temporary database file:",
+                    tempDatabaseFile,
+                );
+            }
+        },
+        { auto: true },
+    ],
+    electronApp: async ({}, use, testInfo) => {
+        const tempDatabaseFile = getTempDotsPath(testInfo);
+        // assert that the file exists
+        if (!fs.existsSync(tempDatabaseFile)) {
+            throw new Error(`Expected DB file at ${tempDatabaseFile} to exist`);
+        }
         console.log("Launching app with args:", [mainFile, tempDatabaseFile]);
 
         let browser: ElectronApplication | undefined;
@@ -102,11 +165,6 @@ export const test = base.extend<MyFixtures>({
             if (browser) {
                 await browser.close();
             }
-            await fs.remove(tempDatabaseFile);
-            console.log(
-                "Cleaned up temporary database file:",
-                tempDatabaseFile,
-            );
         }
     },
     electronAppEmpty: async ({}, use) => {
@@ -141,5 +199,10 @@ export const test = base.extend<MyFixtures>({
                 await browser.close();
             }
         }
+    },
+    audioFiles: async ({}, use, testInfo) => {
+        // Load and apply SQL using the utility function
+        await loadSqlIntoDatabase(testInfo, "audio-files.sql");
+        await use({ expectedAudioFiles });
     },
 });
