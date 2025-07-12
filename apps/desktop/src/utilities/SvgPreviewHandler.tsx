@@ -7,7 +7,7 @@ import { UiSettings } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 /**
- * Handler for generating canvas preview SVGs on app close for launchpage
+ * Handler for generating canvas preview SVGs on app close for launch page
  */
 const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);

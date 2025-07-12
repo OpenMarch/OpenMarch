@@ -1,79 +1,139 @@
 ---
-import { LogoTextMark } from "./LogoTextMark";
 import { ThemeSwitcher } from "@openmarch/ui/astro";
+import NewsletterForm from "./ui/NewsletterForm";
+import { LogoOpenMarchText, LogoOpenMarchMarcher } from "./Logos";
+import { Button } from "@openmarch/ui";
+
+interface Props {
+    hideDownloadCta?: boolean;
+}
+
+const { hideDownloadCta } = Astro.props;
 ---
 
-<footer
-    class="m-64 mt-0 flex justify-between gap-48 border-t border-t-stroke p-64 max-[920px]:flex-col max-[920px]:justify-start max-[750px]:p-0 max-[750px]:pt-32"
->
-    <div class="flex w-[33%] flex-col gap-24 max-[920px]:w-full">
-        <div class="flex items-end gap-16">
-            <LogoTextMark />
-            <p class="text-body leading-none">AGPL-3.0</p>
-            <p class="text-body leading-none">2025</p>
-        </div>
-        <p class="text-body leading-[150%]">
-            OpenMarch is a free, open-source, fast and intuitive drill writing
-            experience for all marching arts.
-        </p>
-        <a
-            class="text-body leading-[150%] hover:underline"
-            href="mailto:contact@openmarch.com"
+<footer class="flex flex-col gap-8 z-50 w-full">
+    {
+        !hideDownloadCta && (
+            <div class="flex flex-col gap-12 items-center rounded-6 px-16 py-32 download-cta-gradient">
+                <LogoOpenMarchMarcher
+                    width="24"
+                    height="64"
+                    className="text-accent"
+                />
+                <h2 class="text-h2 text-center max-[768px]:text-h3">
+                    Download the modern drill writing app
+                </h2>
+                <a
+                    href="/download"
+                    class="text-body duration-150 ease-out hover:text-accent w-fit"
+                >
+                    <Button variant="primary">Download</Button>
+                </a>
+            </div>
+        )
+    }
+    <footer
+        class="grid grid-cols-4 gap-0 rounded-6 bg-fg-1 border border-stroke px-16 py-32 divide-x divide-stroke max-[1024px]:grid-cols-2 max-[768px]:grid-cols-1 max-[1024px]:divide-x-0 max-[1024px]:gap-32"
+    >
+        <div
+            class="flex flex-col justify-between px-16 max-[1024px]:col-span-2 max-[768px]:col-span-1"
         >
-            contact@openmarch.com
-        </a>
-        <ThemeSwitcher />
-    </div>
-    <div class="flex flex-wrap gap-48">
-        <div class="flex flex-col gap-24">
+            <div class="flex flex-col gap-24">
+                <div class="flex justify-between w-full pr-4 gap-16">
+                    <a href="/">
+                        <LogoOpenMarchText height="64" width="115" />
+                    </a>
+                    <ThemeSwitcher />
+                </div>
+                <a
+                    class="text-body leading-[150%] hover:text-accent duration-150 ease-out"
+                    href="mailto:contact@openmarch.com"
+                >
+                    contact@openmarch.com
+                </a>
+            </div><div class="flex flex-col gap-8">
+                <p class="text-body leading-[150%]">
+                    Stay up to date with our newsletter!
+                </p>
+                <NewsletterForm client:visible />
+            </div>
+        </div>
+        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
+            <h4 class="text-h4">Support & follow us</h4>
+            <a
+                href="https://store.openmarch.com"
+                target="_blank"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                Merch
+            </a>
+            <a
+                href="https://www.patreon.com/openmarch"
+                target="_blank"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                Patreon
+            </a>
+            <a
+                href="https://discord.gg/eTsQ98uZzq"
+                target="_blank"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                Discord
+            </a>
+            <a
+                href="https://www.instagram.com/openmarchapp/"
+                target="_blank"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                Instagram
+            </a>
+            <a
+                href="https://facebook-group.openmarch.com"
+                target="_blank"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                Facebook Group
+            </a>
+            <a
+                href="https://www.youtube.com/@OpenMarchApp"
+                target="_blank"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                YouTube
+            </a>
+        </div>
+        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
             <h4 class="text-h4">App</h4>
             <a
                 href="/download"
-                class="text-body duration-150 ease-out hover:text-accent"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
             >
                 Download
             </a>
             <a
                 href="/#features"
-                class="text-body duration-150 ease-out hover:text-accent"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
             >
                 Features
             </a>
             <a
-                href="/guides/getting-started"
-                class="text-body duration-150 ease-out hover:text-accent"
+                href="/download#releases"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                Releases
+            </a>
+            <a
+                href="/guides"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
             >
                 Guides
             </a>
             <a
-                href="/developers/codebase"
-                class="text-body duration-150 ease-out hover:text-accent"
+                href="/about/submitting-feedback/"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
             >
-                Developers
-            </a>
-        </div>
-        <div class="flex flex-col gap-24">
-            <h4 class="text-h4">Community</h4>
-            <a
-                href="https://discord.gg/eTsQ98uZzq"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                Discord
-            </a>
-            <a
-                href="https://facebook-group.openmarch.com"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                Facebook User Group
-            </a>
-            <a
-                href="https://www.youtube.com/@OpenMarchApp"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                YouTube
+                Feedback
             </a>
             <a
                 href="https://github.com/OpenMarch"
@@ -82,41 +142,27 @@ import { ThemeSwitcher } from "@openmarch/ui/astro";
             >
                 GitHub
             </a>
-            <a
-                href="https://www.instagram.com/openmarchapp/"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                Instagram
-            </a>
-            <a
-                href="https://www.patreon.com/openmarch"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                Patreon
-            </a>
         </div>
-        <div class="flex flex-col gap-24">
+        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
             <h4 class="text-h4">Organization</h4>
             <a
                 href="/about"
-                class="text-body duration-150 ease-out hover:text-accent"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
             >
                 About
             </a>
             <a
-                href="https://store.openmarch.com"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                Merch
-            </a>
-            <a
                 href="/blog"
-                class="text-body duration-150 ease-out hover:text-accent"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
             >
                 Blog
             </a>
+            <a
+                href="/privacy"
+                class="text-body duration-150 ease-out hover:text-accent w-fit"
+            >
+                Privacy
+            </a>
         </div>
-    </div>
+    </footer>
 </footer>

@@ -13,5 +13,8 @@ export const collections = {
             image: z.string(),
         }),
     }),
-    docs: defineCollection({ loader: docsLoader(), schema: docsSchema() }),
+    docs: defineCollection({
+        loader: docsLoader(),
+        schema: docsSchema(),
+    }),
 };

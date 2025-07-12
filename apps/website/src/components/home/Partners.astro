@@ -1,0 +1,43 @@
+---
+import { Image } from "astro:assets";
+---
+
+<div class="flex flex-col w-full items-center gap-12">
+    <h2 class="text-h4 text-accent">Our Partners</h2>
+    <div
+        class="w-full h-fit flex flex-wrap justify-center items-center border rounded-6 border-stroke p-16 gap-64"
+    >
+        <a href="https://silentcommand.org" target="_blank">
+            <Image
+                src="/partners/SilentCommandDark.png"
+                alt="Silent Command"
+                width={175}
+                height={128}
+                class="block dark:hidden"
+            />
+            <Image
+                src="/partners/SilentCommandLight.png"
+                alt="Silent Command"
+                width={175}
+                height={128}
+                class="hidden dark:block"
+            />
+        </a>
+        <a href="https://corpsclash.com" target="_blank">
+            <Image
+                src="/partners/CorpsClash-dark.svg"
+                alt="Corps Clash"
+                width={96}
+                height={96}
+                class="block dark:hidden"
+            />
+            <Image
+                src="/partners/CorpsClash-light.svg"
+                alt="Corps Clash"
+                width={96}
+                height={96}
+                class="hidden dark:block"
+            />
+        </a>
+    </div>
+</div>

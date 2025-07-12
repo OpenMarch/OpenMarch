@@ -14,9 +14,13 @@ module.exports = {
         "turborepo",
         "colours",
         "sicommand",
+        "vmin",
         "bostick",
         "dukc",
         "tabler",
+        "vilag",
+        "Sunbright",
+        "Cinnaminson",
         "ehlert",
         "aleksi",
         "saario",
@@ -73,6 +77,7 @@ module.exports = {
         "undoable",
         "shouldn",
         "aren", // for aren&apos;t
+        "couldn", // for couldn&apos;t
         "apos",
         "launchpage",
         "GLHF",
@@ -101,6 +106,9 @@ module.exports = {
         "spinbutton",
         "monokai",
         "openmarchdev",
+        "ccpa",
+        "Schachner",
+        "pfps",
     ],
     ignorePaths: [
         "node_modules/**",
@@ -112,6 +120,7 @@ module.exports = {
         "**/package.json",
         "**/.astro/**",
         "**/.turbo/**",
+        "patreonMembers.json",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };

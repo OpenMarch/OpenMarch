@@ -1,0 +1,13 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { ProseClass } from "@/components/ProseClass";
+
+const posts = await Astro.glob("../../content/privacy/index.md");
+const post = posts[0];
+---
+
+<Layout title="Privacy Policy">
+    <article class="flex w-full max-w-[48rem] flex-col items-center gap-16">
+        <article class={ProseClass}>{post && <post.Content />}</article>
+    </article>
+</Layout>

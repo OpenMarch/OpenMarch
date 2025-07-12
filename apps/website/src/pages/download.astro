@@ -1,130 +1,136 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { Button } from "@openmarch/ui";
-import { Windows, MacOS, Linux } from "../components/OsLogos";
+import { Image } from "astro:assets";
+import { Button, WarningNote } from "@openmarch/ui";
+import { LogoWindows, LogoMacOS, LogoLinux } from "@/components/Logos";
 import { CURRENT_VERSION } from "@/constants";
+import GithubReleases from "@/components/download/GithubReleases.tsx";
 ---
 
 <Layout title="Download">
-    <div class="flex flex-col gap-64 p-64 max-[750px]:p-24">
-        <section
-            id="download"
-            class="relative flex h-[95vh] w-full min-w-0 flex-col items-center gap-32 max-[1200px]:h-fit"
+    <section
+        id="download"
+        class="relative flex h-[95vh] w-full min-w-0 flex-col items-center gap-32 max-[1200px]:h-fit"
+    >
+        <div
+            class="bg-accent intersect:motion-preset-fade-lg absolute -top-1/5 left-1/2 -z-50 size-[700px] -translate-x-1/2 rounded-full opacity-25 blur-[20vmin]"
+        >
+        </div>
+
+        <div
+            class="flex h-full w-full gap-16 items-center justify-center max-[1024px]:flex-col max-[1024px]:gap-32"
+        >
+            <div class="w-[512px] flex flex-col gap-16 max-[600px]:w-full">
+                <p class="font-mono text-accent text-lg">
+                    <span class="font-bold" id="download-count">5,000+</span>
+                    downloads & counting!
+                </p>
+                <h1 class="text-h2">Download the Modern Drill Writing App</h1>
+                <WarningNote>
+                    Keep in mind, OpenMarch is still in development, and you may
+                    encounter bugs and missing features.
+                </WarningNote>
+            </div>
+            <Image
+                src="/home/editor-dark.png"
+                alt="Editor image"
+                width={1920}
+                height={1080}
+                quality={80}
+                format="webp"
+                class="hidden dark:block aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
+            />
+            <Image
+                src="/home/editor-light.png"
+                alt="Editor image"
+                width={1920}
+                height={1080}
+                quality={80}
+                format="webp"
+                class="block dark:hidden aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
+            />
+        </div>
+
+        <div
+            class="grid h-fit w-full min-w-0 grid-cols-3 gap-8 max-[1024px]:grid-cols-2 max-[768px]:grid-cols-1"
         >
             <div
-                class="flex h-full w-full flex-col items-center justify-center"
+                class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
             >
-                <h1
-                    class="text-center text-[72px] max-[900px]:text-h1 max-[450px]:text-h2"
-                >
-                    Download the Modern <br /> Drill Writing App
-                </h1>
-                <p class="text-center text-lg max-[600px]:text-base">
-                    <span class="font-bold" id="download-count">5,000+</span>
-                    downloads and counting!
-                </p>
+                <LogoWindows />
+                <h1 class="text-h1">Windows</h1>
+                <div class="flex flex-wrap gap-12">
+                    <a
+                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}.exe`}
+                    >
+                        <Button variant="secondary"> Download .exe </Button>
+                    </a>
+                </div>
             </div>
             <div
-                class="grid h-fit w-full min-w-0 grid-cols-3 gap-12 max-[1200px]:grid-cols-1"
+                class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
             >
-                <div
-                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
-                >
-                    <Windows />
-                    <h1 class="text-h1">Windows</h1>
-                    <div class="flex flex-wrap gap-12">
-                        <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}.exe`}
-                        >
-                            <Button variant="secondary"> Download .exe </Button>
-                        </a>
-                    </div>
-                </div>
-                <div
-                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
-                >
-                    <MacOS />
-                    <h1 class="text-h1">macOS</h1>
-                    <div
-                        class="flex flex-col items-center justify-center gap-12"
+                <LogoMacOS />
+                <h1 class="text-h1">macOS</h1>
+                <div class="flex flex-col items-center justify-center gap-12">
+                    <a
+                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_arm64.dmg`}
                     >
-                        <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_arm64.dmg`}
-                        >
-                            <Button variant="secondary">
-                                Download for Apple Silicon
-                            </Button>
-                        </a>
-                        <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_x64.dmg`}
-                        >
-                            <Button variant="secondary">
-                                Download for Intel
-                            </Button>
-                        </a>
-                    </div>
-                </div>
-                <div
-                    class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
-                >
-                    <Linux />
-                    <h1 class="text-h1">Linux</h1>
-                    <div
-                        class="flex flex-col items-center justify-center gap-12"
+                        <Button variant="secondary">
+                            Download for Apple Silicon
+                        </Button>
+                    </a>
+                    <a
+                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_x64.dmg`}
                     >
-                        <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_x86_64.AppImage`}
-                        >
-                            <Button variant="secondary">
-                                Download AppImage
-                            </Button>
-                        </a>
-                        <a href={`https://snapcraft.io/openmarch`}>
-                            <Button variant="secondary">
-                                Go to Snapcraft
-                            </Button>
-                        </a>
-                    </div>
+                        <Button variant="secondary">
+                            Download for Intel
+                        </Button>
+                    </a>
                 </div>
             </div>
-            <a href="https://github.com/OpenMarch/OpenMarch/releases">
-                <Button variant="secondary"> See all GitHub releases </Button>
-            </a>
-
             <div
-                class="absolute left-1/2 top-0 -z-50 h-[18vw] w-[22vw] -translate-x-1/2 rounded-full bg-accent opacity-40 blur-[512px]"
+                class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
             >
+                <LogoLinux />
+                <h1 class="text-h1">Linux</h1>
+                <div class="flex flex-col items-center justify-center gap-12">
+                    <a
+                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_x86_64.AppImage`}
+                    >
+                        <Button variant="secondary"> Download AppImage </Button>
+                    </a>
+                    <a href={`https://snapcraft.io/openmarch`}>
+                        <Button variant="secondary"> Go to Snapcraft </Button>
+                    </a>
+                </div>
             </div>
-        </section>
-    </div>
-    <script type="module">
-        async function getTotalDownloadCount() {
-            try {
-                const response = await fetch(
-                    "https://api.github.com/repos/OpenMarch/OpenMarch/releases",
-                    {
-                        headers: {
-                            Accept: "application/vnd.github.v3+json",
-                            "User-Agent": "OpenMarch-Website",
-                        },
-                        cache: "no-cache",
-                    },
-                );
-                if (!response.ok) return "5,000+";
-                const releases = await response.json();
-                let totalDownloads = 0;
-                for (const release of releases) {
-                    for (const asset of release.assets) {
-                        totalDownloads += asset.download_count;
-                    }
-                }
-                return totalDownloads.toLocaleString();
-            } catch {
-                return "5,000+";
-            }
-        }
-        getTotalDownloadCount().then((count) => {
-            document.getElementById("download-count").textContent = count;
-        });
-    </script>
+        </div>
+    </section>
+    <GithubReleases client:load />
 </Layout>
+<script>
+    import { fetchFromGitHub } from "@/utils/gitHubApi.js";
+
+    async function getTotalDownloadCount() {
+        try {
+            const releases = await fetchFromGitHub(
+                "/repos/OpenMarch/OpenMarch/releases",
+                600,
+            );
+            let totalDownloads = 0;
+            for (const release of releases) {
+                for (const asset of release.assets) {
+                    totalDownloads += asset.download_count;
+                }
+            }
+            return totalDownloads.toLocaleString();
+        } catch (error) {
+            console.error("Failed to fetch download count", error);
+            return "5,000+";
+        }
+    }
+    getTotalDownloadCount().then((count) => {
+        document.getElementById("download-count").textContent = count;
+    });
+</script>

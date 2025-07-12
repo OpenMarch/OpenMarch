@@ -1,76 +1,61 @@
 import { Button } from "@openmarch/ui";
-import { LogoTextMark } from "./LogoTextMark.tsx";
 import React, { useState } from "react";
-import { LogoGitHub, LogoDiscord, LogoPatreon } from "./Logos.tsx";
+import {
+    ArrowLineDownIcon,
+    DiscordLogoIcon,
+    GithubLogoIcon,
+    ListIcon,
+    PatreonLogoIcon,
+    TShirtIcon,
+    XIcon,
+} from "@phosphor-icons/react";
+import { LogoOpenMarchText } from "./Logos";
+import clsx from "clsx";
 
-export default function Nav() {
+export default function Nav({ pathname }: { pathname: string }) {
     const [isOpen, setIsOpen] = useState<boolean>(false);
 
     return (
-        <nav className="sticky top-0 z-[99] flex h-[4rem] w-full flex-col">
-            <nav className="border-stroke bg-modal flex w-full items-center justify-between border-b px-64 py-16 backdrop-blur-md max-[750px]:px-24">
+        <nav className="sticky top-8 z-[99] flex h-[3.5rem] w-full flex-col gap-8">
+            <nav className="border-stroke bg-modal shadow-modal relative flex w-full items-center justify-between rounded-full border px-32 py-12 backdrop-blur-md max-[750px]:px-24">
                 <a href="/">
-                    <LogoTextMark />
+                    <LogoOpenMarchText />
                 </a>
-                <div className="flex items-center gap-16 max-[675px]:hidden">
+                <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-16 max-[675px]:hidden">
                     <a
                         href="/"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                            { "!text-accent": pathname === "/" },
+                        )}
                     >
                         Home
                     </a>
                     <a
                         href="/guides"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                        )}
                     >
                         Guides
                     </a>
                     <a
                         href="/blog"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                            { "!text-accent": pathname.includes("blog") },
+                        )}
                     >
                         Blog
                     </a>
                     <a
                         href="/about"
-                        className="text-body text-text hover:text-accent duration-150 ease-out"
+                        className={clsx(
+                            "text-body text-text hover:text-accent duration-150 ease-out",
+                            { "!text-accent": pathname.includes("about") },
+                        )}
                     >
                         About
-                    </a>
-                    <a href="https://github.com/OpenMarch/OpenMarch">
-                        <Button
-                            variant="secondary"
-                            size="compact"
-                            className="items-center gap-6"
-                        >
-                            <LogoGitHub />
-                            Star
-                        </Button>
-                    </a>
-                    <a href="https://discord.gg/eTsQ98uZzq">
-                        <Button
-                            variant="secondary"
-                            size="compact"
-                            className="items-center gap-6"
-                        >
-                            <LogoDiscord />
-                            Discord
-                        </Button>
-                    </a>
-                    <a href="https://www.patreon.com/openmarch">
-                        <Button
-                            variant="secondary"
-                            size="compact"
-                            className="items-center gap-6"
-                        >
-                            <LogoPatreon />
-                            Donate
-                        </Button>
-                    </a>
-                    <a href="https://store.openmarch.com">
-                        <Button variant="secondary" size="compact">
-                            Merch
-                        </Button>
                     </a>
                     <a href="/download">
                         <Button variant="primary" size="compact">
@@ -78,20 +63,50 @@ export default function Nav() {
                         </Button>
                     </a>
                 </div>
+                <div className="flex items-center gap-16 max-[675px]:hidden">
+                    <a
+                        href="https://store.openmarch.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-text hover:text-accent duration-150"
+                    >
+                        <TShirtIcon size={24} />
+                    </a>
+                    <a
+                        href="https://www.patreon.com/openmarch"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-text hover:text-accent duration-150"
+                    >
+                        <PatreonLogoIcon size={24} />
+                    </a>
+                    <a
+                        href="https://discord.gg/eTsQ98uZzq"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-text hover:text-accent duration-150"
+                    >
+                        <DiscordLogoIcon size={24} />
+                    </a>
+                    <a
+                        href="https://github.com/OpenMarch/OpenMarch"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-text hover:text-accent duration-150"
+                    >
+                        <GithubLogoIcon size={24} />
+                    </a>
+                </div>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
                     className="h-fit min-[675px]:hidden"
                 >
-                    {isOpen ? (
-                        <i className="ph ph-x text-[1.5rem]"></i>
-                    ) : (
-                        <i className="ph ph-list text-[1.5rem]"></i>
-                    )}
+                    {isOpen ? <XIcon size={24} /> : <ListIcon size={24} />}
                 </button>
             </nav>
             <div
                 id="mobile"
-                className={`${isOpen ? "flex" : "hidden"} animate-scale-in rounded-6 border-stroke bg-modal backdrop-blur-32 z-[99] m-12 flex-col items-center gap-32 border p-32`}
+                className={`${isOpen ? "flex" : "hidden"} animate-scale-in border-stroke bg-modal backdrop-blur-32 z-[99] flex-col items-center gap-32 rounded-[28px] border p-32`}
             >
                 <a href="/" className="text-h4 text-text">
                     Home
@@ -106,34 +121,47 @@ export default function Nav() {
                     About
                 </a>
                 <a
-                    href="https://github.com/OpenMarch/OpenMarch"
+                    href="/download"
                     className="text-h4 text-text flex items-center gap-8"
                 >
-                    <LogoGitHub />
-                    Star
-                </a>
-                <a
-                    href="https://discord.gg/eTsQ98uZzq"
-                    className="text-h4 text-text flex items-center gap-8"
-                >
-                    <LogoDiscord />
-                    Discord
-                </a>
-                <a
-                    href="https://www.patreon.com/openmarch"
-                    className="text-h4 text-text flex items-center gap-8"
-                >
-                    <LogoPatreon />
-                    Donate
+                    Download
+                    <ArrowLineDownIcon size={24} />
                 </a>
                 <a
                     href="https://store.openmarch.com"
-                    className="text-h4 text-text"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-h4 text-text flex items-center gap-8"
                 >
                     Merch
+                    <TShirtIcon size={24} />
                 </a>
-                <a href="/download" className="text-h4 text-text">
-                    Download
+                <a
+                    href="https://www.patreon.com/openmarch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-h4 text-text flex items-center gap-8"
+                >
+                    Patreon
+                    <PatreonLogoIcon size={24} />
+                </a>
+                <a
+                    href="https://discord.gg/eTsQ98uZzq"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-h4 text-text flex items-center gap-8"
+                >
+                    Discord
+                    <DiscordLogoIcon size={24} />
+                </a>
+                <a
+                    href="https://github.com/OpenMarch/OpenMarch"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-h4 text-text flex items-center gap-8"
+                >
+                    GitHub
+                    <GithubLogoIcon size={24} />
                 </a>
             </div>
         </nav>

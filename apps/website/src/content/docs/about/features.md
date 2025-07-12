@@ -3,6 +3,13 @@ title: "Master Feature List"
 description: "Everything OpenMarch can do"
 ---
 
+:::note
+This feature list is very outdated, soon we will publish a roadmap on the website with features instead.
+:::
+:::note
+See the [homepage](/#features) instead for now.
+:::
+
 These are all the current features that OpenMarch supports.
 Documentation is coming for the more complicated features.
 
