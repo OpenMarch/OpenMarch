@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::note
-More content to come soon.
+More content coming soon.
 :::
 
 Export drill charts and coordinate sheets by going into the `File` tab and clicking on the `Export` modal button.
