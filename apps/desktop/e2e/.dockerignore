@@ -1,0 +1,11 @@
+Dockerfile
+node_modules
+dist
+dist-electron
+release
+.turbo
+test-results
+playwright-report
+.DS_Store
+*.log
+

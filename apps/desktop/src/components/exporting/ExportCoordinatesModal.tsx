@@ -16,11 +16,11 @@ import {
     DialogContent,
     DialogTitle,
     DialogTrigger,
+    TooltipClassName,
 } from "@openmarch/ui";
 import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import {
-    TooltipContents,
     Button,
     Checkbox,
     Select,
@@ -39,6 +39,7 @@ import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
+import clsx from "clsx";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -378,17 +379,21 @@ function CoordinateSheetExport() {
                             <Tooltip.Trigger type="button">
                                 <InfoIcon size={18} className="text-text/60" />
                             </Tooltip.Trigger>
-                            <TooltipContents className="p-16">
-                                <div>
-                                    Create PDF files for each individual marcher
-                                    organized in folders by section.
-                                </div>
-                                <div>
-                                    If this is not checked, one large PDF file
-                                    will be created with every coordinate sheet
-                                    in score order.
-                                </div>
-                            </TooltipContents>
+                            <Tooltip.Portal>
+                                <Tooltip.Content
+                                    className={clsx(TooltipClassName, "p-16")}
+                                >
+                                    <div>
+                                        Create PDF files for each individual
+                                        marcher organized in folders by section.
+                                    </div>
+                                    <div>
+                                        If this is not checked, one large PDF
+                                        file will be created with every
+                                        coordinate sheet in score order.
+                                    </div>
+                                </Tooltip.Content>
+                            </Tooltip.Portal>
                         </Tooltip.Root>
                     </Tooltip.TooltipProvider>
                 </Form.Field>
@@ -899,16 +904,20 @@ function DrillChartExport() {
                             <Tooltip.Trigger type="button">
                                 <InfoIcon size={18} className="text-text/60" />
                             </Tooltip.Trigger>
-                            <TooltipContents className="p-16">
-                                <div>
-                                    Create customized drill chart PDFs for each
-                                    individual marcher.
-                                </div>
-                                <div>
-                                    If this is not checked, one overview drill
-                                    chart PDF will be created.
-                                </div>
-                            </TooltipContents>
+                            <Tooltip.Portal>
+                                <Tooltip.Content
+                                    className={clsx(TooltipClassName, "p-16")}
+                                >
+                                    <div>
+                                        Create customized drill chart PDFs for
+                                        each individual marcher.
+                                    </div>
+                                    <div>
+                                        If this is not checked, one overview
+                                        drill chart PDF will be created.
+                                    </div>
+                                </Tooltip.Content>
+                            </Tooltip.Portal>
                         </Tooltip.Root>
                     </Tooltip.TooltipProvider>
                 </Form.Field>

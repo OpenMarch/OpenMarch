@@ -10,15 +10,15 @@ import {
     SelectContent,
     SelectTriggerCompact,
 } from "@openmarch/ui";
-import {
-    secondSegmentSvgCommands,
-    SvgCommandEnum,
-    SvgCommands,
-} from "@/global/classes/canvasObjects/StaticMarcherShape";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import {
+    SvgCommandEnum,
+    SvgCommands,
+    secondSegmentSvgCommands,
+} from "@/global/classes/canvasObjects/SvgCommand";
 
 export default function ShapeEditor() {
     const { selectedMarcherShapes, setSelectedMarcherShapes } =

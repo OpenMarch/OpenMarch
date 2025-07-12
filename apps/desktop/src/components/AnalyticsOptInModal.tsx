@@ -1,6 +1,7 @@
 import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
 import { usePostHog } from "posthog-js/react";
 import * as Sentry from "@sentry/electron/renderer";
+import { useState, useEffect } from "react";
 import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
 
 interface AnalyticsOptInModalProps {
@@ -11,6 +12,37 @@ export default function AnalyticsOptInModal({
     onChoice,
 }: AnalyticsOptInModalProps) {
     const posthog = usePostHog();
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        let timer: NodeJS.Timeout | null = null;
+
+        const checkEnv = async () => {
+            const env = await window.electron.getEnv();
+            if (env.isPlaywright || env.isCI) {
+                posthog.opt_out_capturing();
+                Sentry.init({
+                    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
+                    enabled: false,
+                });
+                window.electron.send("settings:set", {
+                    optOutAnalytics: true,
+                });
+                onChoice(false);
+                setIsOpen(false);
+            } else {
+                timer = setTimeout(() => {
+                    setIsOpen(true);
+                }, 300);
+            }
+        };
+
+        checkEnv();
+
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
+    }, [onChoice, posthog]);
 
     const handleOptIn = () => {
         posthog.opt_in_capturing();
@@ -35,7 +67,7 @@ export default function AnalyticsOptInModal({
     };
 
     return (
-        <Dialog open={true}>
+        <Dialog open={isOpen}>
             <DialogContent
                 className="w-[40rem]"
                 aria-describedby="Analytics Opt-In"

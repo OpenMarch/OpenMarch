@@ -126,14 +126,14 @@ export default function VersionChecker() {
 
     function SettingsModalContents() {
         return (
-            <div className="bg flex flex-col gap-48 p-16">
-                <div className="flex flex-col gap-16">
+            <div className="bg flex flex-col gap-48">
+                <div className="flex flex-col">
                     <div className="flex w-full items-center justify-between gap-16">
                         {error ? (
-                            <p className="text-body">{`Error: ${error}`}</p>
+                            <p className="text-body text-red">{`Error: ${error}`}</p>
                         ) : latestVersion ? (
-                            <h1 className="text-h1">
-                                OpenMarch - {latestVersion}
+                            <h1 className="text-h2 text-accent font-mono">
+                                {latestVersion}
                             </h1>
                         ) : (
                             <Skeleton className="h-64 w-[40%]" />
@@ -142,7 +142,7 @@ export default function VersionChecker() {
 
                     {/* Displays the changelog if available */}
                     {changelog ? (
-                        <div className="mt-4 max-h-[400px] overflow-auto text-sm">
+                        <div className="bg-fg-1 border-stroke rounded-6 mt-4 max-h-[400px] overflow-auto border p-12 text-sm">
                             <StyledMarkdown>{changelog}</StyledMarkdown>
                         </div>
                     ) : (
@@ -153,7 +153,7 @@ export default function VersionChecker() {
                         </div>
                     )}
 
-                    <div className="mx-2 my-4 flex w-full justify-between">
+                    <div className="flex w-full justify-between pt-16">
                         {/* Show the install button only if an update is available and matches user's OS */}
                         {downloadUrls.windows &&
                             navigator.userAgent.indexOf("Win") !== -1 && (
@@ -165,7 +165,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install Latest Version for Windows
+                                    Install for Windows
                                 </Button>
                             )}
                         {downloadUrls.macArm &&
@@ -178,7 +178,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install Latest Version for Apple Silicon
+                                    Install for Apple Silicon
                                 </Button>
                             )}
                         {downloadUrls.macIntel &&
@@ -191,7 +191,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install Latest Version for Intel Mac
+                                    Install for Intel Mac
                                 </Button>
                             )}
                         {downloadUrls.linux &&
@@ -204,7 +204,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install Latest Version for Linux
+                                    Install for Linux
                                 </Button>
                             )}{" "}
                         <Button
@@ -235,7 +235,7 @@ export default function VersionChecker() {
                 >
                     New Version Available!
                 </DialogTrigger>
-                <DialogContent className="w-[60rem] max-w-full">
+                <DialogContent className="w-[60rem] max-w-full select-text">
                     <DialogTitle>New Version Available</DialogTitle>
                     <SettingsModalContents />
                 </DialogContent>
