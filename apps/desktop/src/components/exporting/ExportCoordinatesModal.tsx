@@ -49,7 +49,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
     }
     return result;
 }
-const QUARTER_ROWS = 22; // Increased from 18 to fit more rows
+const QUARTER_ROWS = 28; // Increased from 25 to fit more rows
 
 function CoordinateSheetExport() {
     const [isTerse, setIsTerse] = useState(false);
@@ -74,17 +74,11 @@ function CoordinateSheetExport() {
         // Fun marching band phrases that rotate during export
         const funPhrases = [
             "Get ready to march a perfect 8 to 5! 🎺",
-            "Creating the best drill ever! ✨",
             "Getting the files to cover down 📋",
             "Cleaning drill from the box 🧹",
-            "Tuning up those coordinates 🎵",
             "Making sure everyone's in step 👟",
-            "Polishing those yard line markers ✨",
-            "Counting off the perfect tempo 🥁",
-            "Aligning the formation like a pro 📐",
+            "Painting a perfect field",
             "Marching toward perfection! 🎯",
-            "Setting the tempo for success 🎼",
-            "Fine-tuning every step count 🔧",
         ];
 
         let currentPhraseIndex = 0;
@@ -123,10 +117,18 @@ function CoordinateSheetExport() {
                 throw new Error("Export cancelled by user");
             setProgress(15);
 
-            const processedMarchers = marchers.map((marcher, index) => ({
-                ...marcher,
-                name: marcher.name || `${marcher.section} ${index + 1}`,
-            }));
+            const processedMarchers = marchers
+                .map((marcher, index) => ({
+                    ...marcher,
+                    name: marcher.name || `${marcher.section} ${index + 1}`,
+                }))
+                .sort((a, b) => {
+                    const sectionCompare = (a.section || "").localeCompare(
+                        b.section || "",
+                    );
+                    if (sectionCompare !== 0) return sectionCompare;
+                    return a.drill_number.localeCompare(b.drill_number);
+                });
 
             await new Promise((resolve) => setTimeout(resolve, 300));
             if (isCancelled.current)
@@ -221,7 +223,11 @@ function CoordinateSheetExport() {
 
                 // Sort by drill number to organize by performer number
                 marcherQuarterSheets.sort((a, b) => {
-                    // First sort by drill number
+                    // First, sort by section
+                    const sectionCompare = a.section.localeCompare(b.section);
+                    if (sectionCompare !== 0) return sectionCompare;
+
+                    // Then sort by drill number
                     const drillCompare = a.drillNumber.localeCompare(
                         b.drillNumber,
                     );

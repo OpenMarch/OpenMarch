@@ -96,7 +96,7 @@ export function FullPageCoordinateSheet({
                 <thead>
                     <tr>
                         <th style={{ ...thTdStyle, width: "10%" }}>Set</th>
-                        <th style={{ ...thTdStyle, width: "10%" }}>Counts</th>
+                        <th style={{ ...thTdStyle, width: "8%" }}>Ct</th>
                         {includeMeasures && (
                             <th style={{ ...thTdStyle, width: "15%" }}>
                                 Measures
@@ -252,14 +252,14 @@ export function QuarterPageCoordinateSheet({
                 <thead>
                     <tr>
                         <th style={{ ...thTdStyle, width: "4ch" }}>Pg.</th>
+                        <th style={{ ...thTdStyle, width: "2ch" }}>Ct.</th>
+                        <th style={{ ...thTdStyle, width: "11ch" }}>Ms.</th>
                         <th style={{ ...thTdStyle, width: "auto" }}>
                             S. to S.
                         </th>
                         <th style={{ ...thTdStyle, width: "auto" }}>
                             F. to B.
                         </th>
-                        <th style={{ ...thTdStyle, width: "3ch" }}>Ct.</th>
-                        <th style={{ ...thTdStyle, width: "11ch" }}>Ms.</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -289,14 +289,14 @@ export function QuarterPageCoordinateSheet({
                         return (
                             <tr key={marcherPage.id_for_html}>
                                 <td style={thTdStyle}>{page.name}</td>
+                                <td style={thTdStyle}>{counts}</td>
+                                <td style={thTdStyle}>{msValue}</td>
                                 <td style={{ ...thTdStyle, textAlign: "left" }}>
                                     {sToS}
                                 </td>
                                 <td style={{ ...thTdStyle, textAlign: "left" }}>
                                     {fToB}
                                 </td>
-                                <td style={thTdStyle}>{counts}</td>
-                                <td style={thTdStyle}>{msValue}</td>
                             </tr>
                         );
                     })}

@@ -10,6 +10,22 @@ import Measure from "@/global/classes/Measure";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import Beat from "@/global/classes/Beat";
 
+const FullPageSheetColumnWidths = {
+    pageNumber: "10%",
+    counts: "12%",
+    measures: "15%",
+    x: "31.5%",
+    y: "31.5%",
+};
+
+const QuarterSheetColumnWidths = {
+    pageNumber: "15%",
+    counts: "10%",
+    measures: "20%",
+    x: "27.5%",
+    y: "27.5%",
+};
+
 interface MarcherCoordinateSheetProps {
     marcher?: Marcher;
     includeMeasures?: boolean;
@@ -383,38 +399,83 @@ export function StaticMarcherCoordinateSheet({
                             tableLayout: "fixed",
                             width: "100%",
                             borderCollapse: "collapse",
-                            display: "block",
                         }}
                     >
-                        <thead style={{ width: "100%" }}>
+                        <colgroup>
+                            <col
+                                style={{
+                                    width: FullPageSheetColumnWidths.pageNumber,
+                                }}
+                            />
+                            <col
+                                style={{
+                                    width: FullPageSheetColumnWidths.counts,
+                                }}
+                            />
+                            {includeMeasuresState && (
+                                <col
+                                    style={{
+                                        width: FullPageSheetColumnWidths.measures,
+                                    }}
+                                />
+                            )}
+                            <col
+                                style={{ width: FullPageSheetColumnWidths.x }}
+                            />
+                            <col
+                                style={{ width: FullPageSheetColumnWidths.y }}
+                            />
+                        </colgroup>
+                        <thead /* style={{ width: "100%" }} */>
                             <tr aria-label="coordinates header row">
                                 <th
                                     className="text-center"
                                     aria-label="page header"
-                                    style={{ ...thTdStyle, fontWeight: "bold" }}
+                                    style={{
+                                        ...thTdStyle,
+                                        fontWeight: "bold",
+                                    }}
                                 >
                                     Pg
                                 </th>
                                 <th
                                     className="text-center"
                                     aria-label="counts header"
-                                    style={thTdStyle}
+                                    style={{
+                                        ...thTdStyle,
+                                        fontWeight: "bold",
+                                    }}
                                 >
-                                    Counts
+                                    Ct
                                 </th>
                                 {includeMeasuresState && (
                                     <th
                                         className="text-center"
                                         aria-label="measure header"
-                                        style={thTdStyle}
+                                        style={{
+                                            ...thTdStyle,
+                                            fontWeight: "bold",
+                                        }}
                                     >
                                         Measure
                                     </th>
                                 )}
-                                <th aria-label="x header" style={thTdStyle}>
+                                <th
+                                    aria-label="x header"
+                                    style={{
+                                        ...thTdStyle,
+                                        fontWeight: "bold",
+                                    }}
+                                >
                                     {useXYState ? "X" : "Side to Side"}
                                 </th>
-                                <th aria-label="y header" style={thTdStyle}>
+                                <th
+                                    aria-label="y header"
+                                    style={{
+                                        ...thTdStyle,
+                                        fontWeight: "bold",
+                                    }}
+                                >
                                     {useXYState ? "Y" : "Front to Back"}
                                 </th>
                             </tr>
@@ -450,7 +511,6 @@ export function StaticMarcherCoordinateSheet({
                                                 aria-label="page name"
                                                 style={{
                                                     ...thTdStyle,
-                                                    width: "10%",
                                                 }}
                                             >
                                                 {page.name}
@@ -460,7 +520,6 @@ export function StaticMarcherCoordinateSheet({
                                                 aria-label="page counts"
                                                 style={{
                                                     ...thTdStyle,
-                                                    width: "10%",
                                                 }}
                                             >
                                                 {page.counts}
@@ -471,7 +530,6 @@ export function StaticMarcherCoordinateSheet({
                                                     aria-label="page measures"
                                                     style={{
                                                         ...thTdStyle,
-                                                        width: "10%",
                                                     }}
                                                 >
                                                     {measureRangeString(page)}
@@ -482,7 +540,6 @@ export function StaticMarcherCoordinateSheet({
                                                 style={{
                                                     ...thTdStyle,
                                                     textAlign: "left",
-                                                    width: "35%",
                                                 }}
                                             >
                                                 {terseState
@@ -494,7 +551,6 @@ export function StaticMarcherCoordinateSheet({
                                                 style={{
                                                     ...thTdStyle,
                                                     textAlign: "left",
-                                                    width: "100%",
                                                 }}
                                             >
                                                 {terseState
@@ -600,8 +656,7 @@ export function StaticCompactMarcherSheet({
                     title="drill number header"
                     style={{
                         backgroundColor: "#ddd",
-                        paddingLeft: "1rem",
-                        padding: "1rem",
+                        padding: "0.5rem",
                         width: "max-content",
                         justifySelf: "baseline",
                     }}
@@ -611,7 +666,7 @@ export function StaticCompactMarcherSheet({
                         style={{
                             margin: 0,
                             padding: 0,
-                            fontSize: "1.2rem",
+                            fontSize: "1rem",
                         }}
                     >
                         {marcherState.drill_number}
@@ -624,8 +679,7 @@ export function StaticCompactMarcherSheet({
                             flexGrow: 1,
                             borderLeft: "1px dotted #888",
                             backgroundColor: "#ddd",
-                            paddingLeft: "1rem",
-                            padding: "1rem",
+                            padding: "0.5rem",
                             width: "max-content",
                             justifySelf: "baseline",
                         }}
@@ -635,7 +689,7 @@ export function StaticCompactMarcherSheet({
                             style={{
                                 margin: 0,
                                 padding: 0,
-                                fontSize: "1.2rem",
+                                fontSize: "1rem",
                             }}
                         >
                             {marcherState.name}
@@ -647,13 +701,19 @@ export function StaticCompactMarcherSheet({
                     style={{
                         borderLeft: "1px dotted #888",
                         backgroundColor: "#ddd",
-                        paddingLeft: "1rem",
-                        padding: "1rem",
+                        padding: "0.5rem",
                         width: "max-content",
                         justifySelf: "baseline",
                     }}
                 >
-                    <h4 aria-label="quarter page number" style={h4Style}>
+                    <h4
+                        aria-label="quarter page number"
+                        style={{
+                            margin: 0,
+                            padding: 0,
+                            fontSize: "1rem",
+                        }}
+                    >
                         Page {quarterPageNumber}
                     </h4>
                 </div>
@@ -664,10 +724,18 @@ export function StaticCompactMarcherSheet({
                     tableLayout: "fixed",
                     width: "100%",
                     borderCollapse: "collapse",
-                    display: "block",
                 }}
             >
-                <thead style={{ width: "100%" }}>
+                <colgroup>
+                    <col
+                        style={{ width: QuarterSheetColumnWidths.pageNumber }}
+                    />
+                    <col style={{ width: QuarterSheetColumnWidths.counts }} />
+                    <col style={{ width: QuarterSheetColumnWidths.measures }} />
+                    <col style={{ width: QuarterSheetColumnWidths.x }} />
+                    <col style={{ width: QuarterSheetColumnWidths.y }} />
+                </colgroup>
+                <thead /* style={{ width: "100%" }} */>
                     <tr aria-label="coordinates header row">
                         <th
                             aria-label="page header"
@@ -675,7 +743,7 @@ export function StaticCompactMarcherSheet({
                                 border: "1px solid #888",
                                 padding: "2px 4px",
                                 textAlign: "center",
-                                width: "4ch",
+                                width: "10%",
                                 fontWeight: "bold",
                                 fontSize: 10,
                                 lineHeight: 1.1,
@@ -684,44 +752,18 @@ export function StaticCompactMarcherSheet({
                             Pg.
                         </th>
                         <th
-                            aria-label="side to side header"
-                            style={{
-                                border: "1px solid #888",
-                                padding: "2px 4px",
-                                width: "auto",
-                                fontWeight: "bold",
-                                fontSize: 10,
-                                lineHeight: 1.1,
-                            }}
-                        >
-                            S. to S.
-                        </th>
-                        <th
-                            aria-label="front to back header"
-                            style={{
-                                border: "1px solid #888",
-                                padding: "2px 4px",
-                                width: "auto",
-                                fontWeight: "bold",
-                                fontSize: 10,
-                                lineHeight: 1.1,
-                            }}
-                        >
-                            F. to B.
-                        </th>
-                        <th
                             aria-label="counts header"
                             style={{
                                 border: "1px solid #888",
                                 padding: "2px 4px",
                                 textAlign: "center",
-                                width: "3ch",
+                                width: "10%",
                                 fontWeight: "bold",
                                 fontSize: 10,
                                 lineHeight: 1.1,
                             }}
                         >
-                            Ct.
+                            Ct
                         </th>
                         <th
                             aria-label="measure header"
@@ -729,31 +771,104 @@ export function StaticCompactMarcherSheet({
                                 border: "1px solid #888",
                                 padding: "2px 4px",
                                 textAlign: "center",
-                                width: "11ch",
+                                width: "15%",
                                 fontWeight: "bold",
                                 fontSize: 10,
                                 lineHeight: 1.1,
                             }}
                         >
-                            Ms.
+                            Measures
+                        </th>
+                        <th
+                            aria-label="side to side header"
+                            style={{
+                                border: "1px solid #888",
+                                padding: "2px 4px",
+                                width: "32.5%",
+                                fontWeight: "bold",
+                                fontSize: 10,
+                                lineHeight: 1.1,
+                            }}
+                        >
+                            Side to Side
+                        </th>
+                        <th
+                            aria-label="front to back header"
+                            style={{
+                                border: "1px solid #888",
+                                padding: "2px 4px",
+                                width: "32.5%",
+                                fontWeight: "bold",
+                                fontSize: 10,
+                                lineHeight: 1.1,
+                            }}
+                        >
+                            Front to Back
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     {marcherPagesState
-                        .filter((mp) => mp.marcher_id === marcherState.id)
                         .sort(sortMarcherPages)
-                        .map((marcherPage: MarcherPage) => {
+                        .map((marcherPage: MarcherPage, index) => {
                             if (!fieldPropertiesState) return null;
                             const page = pagesState.find(
                                 (p) => p.id === marcherPage.page_id,
                             );
+
+                            // If page is not found, render a placeholder row to avoid losing data
+                            if (!page) {
+                                return (
+                                    <tr key={`missing-${marcherPage.id}`}>
+                                        <td
+                                            colSpan={5}
+                                            style={{
+                                                border: "1px solid #888",
+                                                padding: "1px 3px",
+                                                textAlign: "center",
+                                                fontFamily:
+                                                    "ui-sans-serif, system-ui, sans-serif",
+                                                fontSize: 10,
+                                                lineHeight: 1.1,
+                                                color: "red",
+                                            }}
+                                        >
+                                            Error: Page not found for marcher
+                                            page {marcherPage.id}
+                                        </td>
+                                    </tr>
+                                );
+                            }
+
                             const rCoords = new ReadableCoords({
                                 x: marcherPage.x,
                                 y: marcherPage.y,
                                 roundingDenominator,
                             });
-                            if (!page || !rCoords) return null;
+
+                            if (!rCoords) {
+                                return (
+                                    <tr key={`error-${marcherPage.id}`}>
+                                        <td
+                                            colSpan={5}
+                                            style={{
+                                                border: "1px solid #888",
+                                                padding: "1px 3px",
+                                                textAlign: "center",
+                                                fontFamily:
+                                                    "ui-sans-serif, system-ui, sans-serif",
+                                                fontSize: 10,
+                                                lineHeight: 1.1,
+                                                color: "red",
+                                            }}
+                                        >
+                                            Error: Could not calculate
+                                            coordinates for marcher page{" "}
+                                            {marcherPage.id}
+                                        </td>
+                                    </tr>
+                                );
+                            }
 
                             // S to S and F to B
                             const sToS = terse
@@ -770,14 +885,22 @@ export function StaticCompactMarcherSheet({
                             const origMeasure = measureRangeString(page);
                             const msValue = compactMeasureFormat(origMeasure);
 
+                            const isEven = index % 2 === 0;
+
                             return (
-                                <tr key={marcherPage.id_for_html}>
+                                <tr
+                                    key={marcherPage.id_for_html}
+                                    style={{
+                                        backgroundColor: isEven
+                                            ? "#f0f0f0"
+                                            : "#ffffff",
+                                    }}
+                                >
                                     <td
                                         style={{
                                             border: "1px solid #888",
                                             padding: "1px 3px",
                                             textAlign: "center",
-                                            width: "4ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
                                             fontSize: 10,
@@ -790,36 +913,7 @@ export function StaticCompactMarcherSheet({
                                         style={{
                                             border: "1px solid #888",
                                             padding: "1px 3px",
-                                            width: "18ch",
-                                            fontFamily:
-                                                "ui-sans-serif, system-ui, sans-serif",
-                                            textAlign: "left",
-                                            fontSize: 10,
-                                            lineHeight: 1.1,
-                                        }}
-                                    >
-                                        {sToS}
-                                    </td>
-                                    <td
-                                        style={{
-                                            border: "1px solid #888",
-                                            padding: "1px 3px",
-                                            width: "15ch",
-                                            fontFamily:
-                                                "ui-sans-serif, system-ui, sans-serif",
-                                            textAlign: "left",
-                                            fontSize: 10,
-                                            lineHeight: 1.1,
-                                        }}
-                                    >
-                                        {fToB}
-                                    </td>
-                                    <td
-                                        style={{
-                                            border: "1px solid #888",
-                                            padding: "1px 3px",
                                             textAlign: "center",
-                                            width: "3ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
                                             fontSize: 10,
@@ -833,7 +927,6 @@ export function StaticCompactMarcherSheet({
                                             border: "1px solid #888",
                                             padding: "1px 3px",
                                             textAlign: "center",
-                                            width: "7ch",
                                             fontFamily:
                                                 "ui-sans-serif, system-ui, sans-serif",
                                             fontSize: 10,
@@ -841,6 +934,32 @@ export function StaticCompactMarcherSheet({
                                         }}
                                     >
                                         {msValue}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #888",
+                                            padding: "1px 3px",
+                                            fontFamily:
+                                                "ui-sans-serif, system-ui, sans-serif",
+                                            textAlign: "left",
+                                            fontSize: 10,
+                                            lineHeight: 1.1,
+                                        }}
+                                    >
+                                        {sToS}
+                                    </td>
+                                    <td
+                                        style={{
+                                            border: "1px solid #888",
+                                            padding: "1px 3px",
+                                            fontFamily:
+                                                "ui-sans-serif, system-ui, sans-serif",
+                                            textAlign: "left",
+                                            fontSize: 10,
+                                            lineHeight: 1.1,
+                                        }}
+                                    >
+                                        {fToB}
                                     </td>
                                 </tr>
                             );
