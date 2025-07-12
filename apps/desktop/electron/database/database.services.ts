@@ -245,18 +245,6 @@ export function initHandlers() {
     ipcMain.handle("sql:proxy", handleSqlProxy);
 
     // Field properties
-    ipcMain.handle("field_properties:get", async () =>
-        connectWrapper<FieldProperties>(
-            FieldPropertiesTable.getFieldProperties,
-            {},
-        ),
-    );
-    ipcMain.handle("field_properties:update", async (_, fieldProperties) =>
-        connectWrapper<FieldProperties | null>(
-            FieldPropertiesTable.updateFieldProperties,
-            { fieldProperties },
-        ),
-    );
     ipcMain.handle("field_properties:get_image", async () =>
         connectWrapper<Buffer | null>(
             FieldPropertiesTable.getFieldPropertiesImage,
