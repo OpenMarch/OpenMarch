@@ -22,6 +22,7 @@ import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
+import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
 
 /**
@@ -327,6 +328,12 @@ export default function Canvas({
         (fabricEvent: fabric.IEvent<Event>) => {
             if (!canvas || !selectedPage || !marcherPages) return;
 
+            // Snap rotate boxes to 15 degree increments
+            handleGroupRotating(
+                fabricEvent,
+                fabricEvent.target as fabric.Group,
+            );
+
             // Get selected CanvasMarchers and their IDs
             const selectedCanvasMarchers = canvas.getCanvasMarchers({
                 active: true,
@@ -347,7 +354,7 @@ export default function Canvas({
                     mp.page_id === selectedPage.nextPageId,
             );
 
-            // Remove pathways and midpoints for selected marchers
+            // Remove pathways and midpoints only for selected marchers
             for (const pathwayMidpoint of pagePathwaysMidpoints.current as Pathway[]) {
                 if (selectedIds.includes(pathwayMidpoint.marcherId)) {
                     canvas.remove(pathwayMidpoint);
@@ -361,20 +368,16 @@ export default function Canvas({
                         ),
                 );
 
-            // Draw previous/next pathways
+            // Draw previous/next pathways for selected marchers
             selectedCanvasMarchers.forEach((cm: any) => {
                 const marcherId = cm.marcherObj.id;
 
-                // Adjust coords to rounding/rotation snapping
-                let current: { x: number; y: number };
-                if (
+                // Adjust coords for snapping
+                const movingCoords =
                     selectedCanvasMarchers.length === 1 &&
                     !(fabricEvent.e as MouseEvent).shiftKey
-                ) {
-                    current = cm.getMarcherCoords(uiSettings);
-                } else {
-                    current = cm.getAbsoluteCoords();
-                }
+                        ? cm.getMarcherCoords(uiSettings)
+                        : cm.getAbsoluteCoords();
 
                 // Previous pathway
                 const prev = prevPages.find(
@@ -383,7 +386,7 @@ export default function Canvas({
                 if (prev && uiSettings.previousPaths) {
                     const pathway = new Pathway({
                         start: { x: prev.x, y: prev.y },
-                        end: current,
+                        end: movingCoords,
                         color: rgbaToString(
                             fieldProperties!.theme.previousPath,
                         ),
@@ -391,7 +394,7 @@ export default function Canvas({
                     });
                     const midpoint = new Midpoint({
                         start: { x: prev.x, y: prev.y },
-                        end: current,
+                        end: movingCoords,
                         innerColor: "white",
                         outerColor: rgbaToString(
                             fieldProperties!.theme.previousPath,
@@ -410,14 +413,14 @@ export default function Canvas({
                 );
                 if (next && uiSettings.nextPaths) {
                     const pathway = new Pathway({
-                        start: current,
+                        start: movingCoords,
                         end: { x: next.x, y: next.y },
                         color: rgbaToString(fieldProperties!.theme.nextPath),
                         marcherId: marcherId,
                     });
                     const midpoint = new Midpoint({
                         start: { x: next.x, y: next.y },
-                        end: current,
+                        end: movingCoords,
                         innerColor: "white",
                         outerColor: rgbaToString(
                             fieldProperties!.theme.nextPath,
@@ -444,6 +447,7 @@ export default function Canvas({
 
         canvas.on("object:moving", handleObjectMoving);
         canvas.on("object:scaling", handleObjectMoving);
+        canvas.on("object:rotating", handleObjectMoving);
 
         return () => {
             canvas.off("selection:created", handleSelect);
@@ -452,6 +456,7 @@ export default function Canvas({
 
             canvas.off("object:moving", handleObjectMoving);
             canvas.off("object:scaling", handleObjectMoving);
+            canvas.off("object:rotating", handleObjectMoving);
         };
     }, [canvas, handleDeselect, handleSelect, handleObjectMoving]);
 
