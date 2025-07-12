@@ -1029,7 +1029,8 @@ function RegisteredActionsHandler() {
                 !document.activeElement?.matches(
                     "input, textarea, select, [contenteditable]",
                 ) &&
-                document.activeElement?.id !== "sentry-feedback"
+                document.activeElement?.id !== "sentry-feedback" &&
+                document.activeElement?.id !== "__tolgee_dev_tools"
             ) {
                 // Check the key code and convert it to a key string
                 // This must happen rather than using e.key because e.key changes on MacOS with the option key

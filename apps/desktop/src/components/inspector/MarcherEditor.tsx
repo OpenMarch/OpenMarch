@@ -189,9 +189,10 @@ function MarcherEditor() {
                         // Multiple marchers selected
                         <InspectorCollapsible
                             defaultOpen
-                            title={t("inspector.marcher.title", {
-                                count: selectedMarchers.length,
-                            })}
+                            translatableTitle={{
+                                keyName: "inspector.marcher.title",
+                                parameters: { count: selectedMarchers.length },
+                            }}
                             className="mt-12 flex flex-col gap-16"
                         >
                             <p className="text-sub text-text/80 w-full px-6 font-mono">
@@ -281,9 +282,13 @@ function MarcherEditor() {
                         // One marcher selected
                         <InspectorCollapsible
                             defaultOpen
-                            title={t("inspector.marcher.titleSingle", {
-                                drillNumber: selectedMarchers[0].drill_number,
-                            })}
+                            translatableTitle={{
+                                keyName: "inspector.marcher.titleSingle",
+                                parameters: {
+                                    drillNumber:
+                                        selectedMarchers[0].drill_number,
+                                },
+                            }}
                             className="mt-12 flex flex-col gap-24"
                         >
                             {!rCoords ? (

@@ -11,11 +11,11 @@ import {
 } from "@/global/classes/Page";
 import { toast } from "sonner";
 import { GroupFunction } from "@/utilities/ApiFunctions";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 // TODO: figure out how to make this work with the new music system
 function PageEditor() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { selectedPage } = useSelectedPage()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore()!;
     const [isFirstPage, setIsFirstPage] = useState(false);
@@ -94,9 +94,10 @@ function PageEditor() {
         return (
             <InspectorCollapsible
                 defaultOpen
-                title={t("inspector.page.title", {
-                    pageNumber: selectedPage.name,
-                })}
+                translatableTitle={{
+                    keyName: "inspector.page.title",
+                    parameters: { pageNumber: selectedPage.name },
+                }}
                 className="mt-12"
             >
                 <form
