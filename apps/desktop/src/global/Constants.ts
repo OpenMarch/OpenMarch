@@ -14,6 +14,7 @@ export const Constants = {
     BeatsTableName: "beats",
     UtilityTableName: "utility",
     SectionAppearancesTableName: "section_appearances",
+    ProductionNotesTableName: "production_notes",
 
     PagePrefix: "page",
     NewPageId: "NEW_PAGE", // deprecated?
@@ -36,6 +37,7 @@ export const TablesWithHistory = [
     Constants.MeasureTableName,
     Constants.SectionAppearancesTableName,
     Constants.BeatsTableName,
+    Constants.ProductionNotesTableName,
 ] as const;
 
 export default Constants;

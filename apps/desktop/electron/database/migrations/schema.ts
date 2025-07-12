@@ -33,9 +33,11 @@ export const beats = sqliteTable("beats", {
     position: integer().notNull(),
     include_in_measure: integer().default(1).notNull(),
     notes: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
@@ -47,9 +49,11 @@ export const measures = sqliteTable("measures", {
         .references(() => beats.id),
     rehearsal_mark: text(),
     notes: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
@@ -58,9 +62,11 @@ export const pages = sqliteTable("pages", {
     id: integer().primaryKey(),
     is_subset: integer().default(0).notNull(),
     notes: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     start_beat: integer()
@@ -128,9 +134,11 @@ export const audio_files = sqliteTable("audio_files", {
 export const shapes = sqliteTable("shapes", {
     id: integer().primaryKey(),
     name: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     notes: text(),
@@ -145,9 +153,11 @@ export const shape_pages = sqliteTable("shape_pages", {
         .notNull()
         .references(() => pages.id, { onDelete: "cascade" }),
     svg_path: text().notNull(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     notes: text(),
@@ -164,9 +174,11 @@ export const shape_page_marchers = sqliteTable(
             .notNull()
             .references(() => marchers.id),
         position_order: integer(),
-        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        created_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull(),
         updated_at: text()
-            .default("sql`(CURRENT_TIMESTAMP)`")
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         notes: text(),
@@ -183,9 +195,11 @@ export const section_appearances = sqliteTable("section_appearances", {
     fill_color: text().default("rgba(0, 0, 0, 1)").notNull(),
     outline_color: text().default("rgba(0, 0, 0, 1)").notNull(),
     shape_type: text().default("circle").notNull(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
@@ -193,4 +207,21 @@ export const section_appearances = sqliteTable("section_appearances", {
 export const utility = sqliteTable("utility", {
     id: integer().primaryKey(),
     last_page_counts: integer(),
+});
+
+export const production_notes = sqliteTable("production_notes", {
+    id: integer().primaryKey(),
+    page_id: integer()
+        .notNull()
+        .references(() => pages.id, { onDelete: "cascade" }),
+    content: text().notNull(),
+    is_published: integer().default(1).notNull(),
+    order_index: integer().default(0).notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
+    updated_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull()
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });

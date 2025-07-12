@@ -64,11 +64,16 @@ function PageEditor() {
         if (selectedPage) {
             const newPageArgs = splitPage(selectedPage);
             if (newPageArgs) {
+                // Create the new page with the same notes as the original page
+                const newPageArgsWithNotes = {
+                    ...newPageArgs.newPageArgs,
+                    notes: selectedPage.notes, // Copy notes from original page
+                };
+
                 const functionsToExecute: (() => Promise<{
                     success: boolean;
                 }>)[] = [
-                    () =>
-                        createPages([newPageArgs.newPageArgs], async () => {}),
+                    () => createPages([newPageArgsWithNotes], async () => {}),
                 ];
                 if (newPageArgs.modifyPageRequest) {
                     functionsToExecute.push(() =>
@@ -83,7 +88,9 @@ function PageEditor() {
                     refreshFunction: fetchTimingObjects,
                     useNextUndoGroup: true,
                 });
-                toast.success("Page split successfully");
+                toast.success(
+                    "Page split successfully - notes duplicated to both pages",
+                );
             }
         }
     };

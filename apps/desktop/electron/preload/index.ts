@@ -543,6 +543,36 @@ const APP_API = {
         ipcRenderer.invoke("utilities:swap_marchers", args) as Promise<
             DatabaseResponse<MarcherPage[]>
         >,
+
+    // Production Notes
+    getProductionNotesByPage: (pageId: number) =>
+        ipcRenderer.invoke("production_note:getByPage", pageId) as Promise<
+            DatabaseResponse<
+                import("electron/database/tables/ProductionNoteTable").DatabaseProductionNote[]
+            >
+        >,
+    createProductionNotes: (
+        newNotes: import("electron/database/tables/ProductionNoteTable").NewProductionNoteArgs[],
+    ) =>
+        ipcRenderer.invoke("production_note:insert", newNotes) as Promise<
+            DatabaseResponse<
+                import("electron/database/tables/ProductionNoteTable").DatabaseProductionNote[]
+            >
+        >,
+    updateProductionNotes: (
+        modifiedNotes: import("electron/database/tables/ProductionNoteTable").ModifiedProductionNoteArgs[],
+    ) =>
+        ipcRenderer.invoke("production_note:update", modifiedNotes) as Promise<
+            DatabaseResponse<
+                import("electron/database/tables/ProductionNoteTable").DatabaseProductionNote[]
+            >
+        >,
+    deleteProductionNotes: (noteIds: Set<number>) =>
+        ipcRenderer.invoke("production_note:delete", noteIds) as Promise<
+            DatabaseResponse<
+                import("electron/database/tables/ProductionNoteTable").DatabaseProductionNote[]
+            >
+        >,
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

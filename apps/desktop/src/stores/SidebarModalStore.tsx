@@ -5,9 +5,15 @@ type SidebarModalStore = {
     isOpen: boolean;
     content: ReactNode;
     contentId: string;
+    width: "default" | "wide" | "fit";
     toggleOpen: () => void;
     setOpen: (open: boolean) => void;
-    setContent: (content: ReactNode, id: string) => void;
+    setWidth: (width: "default" | "wide" | "fit") => void;
+    setContent: (
+        content: ReactNode,
+        id: string,
+        width?: "default" | "wide" | "fit",
+    ) => void;
 };
 
 // stores its open state and the content inside
@@ -20,6 +26,7 @@ export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
         </h4>
     ), // default
     contentId: "",
+    width: "default",
     toggleOpen: () =>
         set((state) => ({
             isOpen: !state.isOpen,
@@ -28,9 +35,11 @@ export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
         set(() => ({
             isOpen: open,
         })),
-    setContent: (newContent, id) =>
-        set(() => ({
+    setWidth: (newWidth) => set(() => ({ width: newWidth })),
+    setContent: (newContent, id, width) =>
+        set((state) => ({
             content: newContent,
             contentId: id,
+            width: width ?? state.width,
         })),
 }));

@@ -9,6 +9,7 @@ export default function FieldModal() {
             contents={<FieldPropertiesContents />}
             newContentId="field"
             buttonLabel={<FieldIcon />}
+            width="fit"
         />
     );
 }

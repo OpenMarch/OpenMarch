@@ -20,6 +20,7 @@ import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
+import * as ProductionNoteTable from "./tables/ProductionNoteTable";
 import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
@@ -517,6 +518,39 @@ export function initHandlers() {
                 UtilityTable.updateUtilityRecord,
                 { utilityRecord, useNextUndoGroup },
             ),
+    );
+
+    // Production Notes
+    ipcMain.handle("production_note:getByPage", async (_, pageId: number) =>
+        connectWrapper<ProductionNoteTable.DatabaseProductionNote[]>(
+            ProductionNoteTable.getProductionNotesByPage,
+            { pageId },
+        ),
+    );
+    ipcMain.handle(
+        "production_note:insert",
+        async (_, newNotes: ProductionNoteTable.NewProductionNoteArgs[]) =>
+            connectWrapper<ProductionNoteTable.DatabaseProductionNote[]>(
+                ProductionNoteTable.createProductionNotes,
+                { newNotes },
+            ),
+    );
+    ipcMain.handle(
+        "production_note:update",
+        async (
+            _,
+            modifiedNotes: ProductionNoteTable.ModifiedProductionNoteArgs[],
+        ) =>
+            connectWrapper<ProductionNoteTable.DatabaseProductionNote[]>(
+                ProductionNoteTable.updateProductionNotes,
+                { modifiedNotes },
+            ),
+    );
+    ipcMain.handle("production_note:delete", async (_, noteIds: Set<number>) =>
+        connectWrapper<ProductionNoteTable.DatabaseProductionNote[]>(
+            ProductionNoteTable.deleteProductionNotes,
+            { noteIds },
+        ),
     );
 
     // History utilities

@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
 
 export default function SidebarModal() {
-    const { isOpen, content, setOpen } = useSidebarModalStore();
+    const { isOpen, content, setOpen, width } = useSidebarModalStore();
     const [isFocused, setIsFocused] = useState(false);
 
     const handleFocus = () => {
@@ -29,12 +29,23 @@ export default function SidebarModal() {
         };
     }, [setOpen, isFocused]);
 
+    const getWidthClass = () => {
+        switch (width) {
+            case "wide":
+                return "max-w-[120rem]";
+            case "fit":
+                return "w-fit";
+            default:
+                return "max-w-[36rem]";
+        }
+    };
+
     return (
         <div
             tabIndex={0}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className={`rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 absolute top-0 left-[50px] z-40 h-full min-h-0 max-w-[36rem] overflow-hidden border p-12 outline-hidden ${
+            className={`rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 outline-hidden absolute left-[50px] top-0 z-40 h-full min-h-0 overflow-hidden border p-12 ${getWidthClass()} ${
                 isOpen ? "animate-scale-in flex" : "hidden"
             }`}
         >
@@ -48,22 +59,33 @@ export function SidebarModalLauncher({
     contents,
     newContentId,
     className,
+    width = "default",
 }: {
     buttonLabel: string | ReactNode;
     contents: ReactNode;
     newContentId: string;
     className?: string;
+    width?: "default" | "wide" | "fit";
 }) {
-    const { toggleOpen, setContent, isOpen, contentId } =
+    const { toggleOpen, setContent, isOpen, contentId, setWidth } =
         useSidebarModalStore();
+
+    useEffect(() => {
+        if (isOpen && contentId === newContentId) {
+            setWidth(width);
+        }
+    }, [width, isOpen, contentId, newContentId, setWidth]);
+
     return (
         <button
             onClick={() => {
                 if (isOpen && contentId === newContentId) {
-                    toggleOpen(); // close if already open with same content
+                    toggleOpen();
                 } else {
-                    setContent(contents, newContentId);
-                    if (!isOpen) toggleOpen(); // open if not already open
+                    setContent(contents, newContentId, width);
+                    if (!isOpen) {
+                        toggleOpen();
+                    }
                 }
             }}
             className={twMerge(
