@@ -7,9 +7,19 @@ import {
     SelectContent,
     SelectSeparator,
     SelectTriggerButton,
+    Button,
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogCancel,
+    AlertDialogAction,
 } from "@openmarch/ui";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
+import { TrashIcon } from "@phosphor-icons/react";
+import { toast } from "sonner";
 
 export default function AudioSelector() {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
@@ -31,6 +41,21 @@ export default function AudioSelector() {
             );
         },
         [setSelectedAudioFile],
+    );
+
+    const handleDelete = useCallback(
+        (audioFileId: number) => {
+            AudioFile.deleteAudioFile(audioFileId).then((newSelectedFile) => {
+                if (newSelectedFile) {
+                    setSelectedAudioFile(newSelectedFile);
+                }
+                refreshAudioFiles();
+            });
+            toast.success(
+                `Successfully deleted "${selectedAudioFile?.nickname}"`,
+            );
+        },
+        [refreshAudioFiles, selectedAudioFile?.nickname, setSelectedAudioFile],
     );
 
     useEffect(() => {
@@ -68,19 +93,61 @@ export default function AudioSelector() {
                             </RegisteredActionButton>
                             {audioFiles.length > 0 && <SelectSeparator />}
                             {audioFiles.map((audioFile) => (
-                                <SelectItem
+                                <div
                                     key={audioFile.id}
-                                    value={`${audioFile.id}`}
+                                    className="grid grid-cols-2 text-xs text-wrap"
                                 >
-                                    {audioFile.nickname}
-                                </SelectItem>
+                                    <SelectItem value={`${audioFile.id}`}>
+                                        {audioFile.nickname}
+                                    </SelectItem>
+                                </div>
                             ))}
                         </SelectContent>
-                        <div className="text-text-subtitle text-sub mx-2 mt-4">
-                            Refresh after importing [Ctrl + R]
-                        </div>
                     </Select>
                 </div>
+            </div>
+            <div className="flex justify-end py-8">
+                <AlertDialog>
+                    <AlertDialogTrigger>
+                        <Button
+                            variant="secondary"
+                            disabled={
+                                audioFiles.length === 0 || !selectedAudioFile
+                            }
+                        >
+                            <TrashIcon /> Delete audio file
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogTitle>Delete Audio File</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this audio file?
+                            This action cannot be undone.
+                            <div className="border-border bg-bg-1 border-stroke text-text overflow-auto rounded-md border p-16 font-mono text-wrap">
+                                {selectedAudioFile?.nickname}
+                            </div>
+                        </AlertDialogDescription>
+                        <div className="flex justify-end gap-8">
+                            <AlertDialogCancel>
+                                <Button variant="secondary" size="compact">
+                                    Cancel
+                                </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction>
+                                <Button
+                                    variant="red"
+                                    size="compact"
+                                    onClick={() => {
+                                        if (selectedAudioFile)
+                                            handleDelete(selectedAudioFile.id);
+                                    }}
+                                >
+                                    Delete
+                                </Button>
+                            </AlertDialogAction>
+                        </div>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );

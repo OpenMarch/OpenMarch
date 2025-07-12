@@ -4,6 +4,7 @@ import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas
 import { rotateGroup } from "@/global/classes/canvasObjects/GroupUtils";
 import { fabric } from "fabric";
 import DefaultListeners from "@/components/canvas/listeners/DefaultListeners";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 
 function MarcherRotationInput() {
     const [rotationAngle, setRotationAngle] = useState<number>(0);
@@ -85,6 +86,7 @@ function MarcherRotationInput() {
                 onChange={(value) => {
                     handleRotationChange(value);
                 }}
+                icon={ArrowClockwiseIcon}
                 onBlur={handleRotationDragEnd}
                 onDragEnd={handleRotationDragEnd}
                 disabled={!activeGroup}
