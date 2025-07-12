@@ -238,7 +238,9 @@ export default function ShapeEditor() {
                     </Button>
                 </div>
                 <div className="flex flex-col gap-16">
-                    <h5 className="text-h5">Segments</h5>
+                    <h5 className="text-h5">
+                        <T keyName="inspector.shape.segments.title" />
+                    </h5>
                     {marcherShape.shapePath.points.map(
                         (point, index) =>
                             index > 0 && ( // do not render the first shape (move)

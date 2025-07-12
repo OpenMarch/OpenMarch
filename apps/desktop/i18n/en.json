@@ -1,7 +1,7 @@
 {
     "analyticsOptIn": {
         "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
-        "optIn": "Opt In",
+        "optIn": "Opt in",
         "optOut": "Opt Out",
         "settings": "You can change this setting at any time in the app settings.",
         "title": "Help Us Improve OpenMarch",
@@ -65,7 +65,7 @@
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
             "name": "Name",
-            "noPageSelected": "No page selected",
+            "noPageSelected": "No page selected.",
             "section": "Section",
             "stepSize": "Step Size",
             "swapMarchers": "Swap marchers",
@@ -92,10 +92,13 @@
             "deleteLastSegmentTooltip": "Delete last segment",
             "errorCopyingPage": "Error copying to page {pageName}. Are there marchers already assigned to shapes?",
             "errorNoNextPage": "Cannot copy. There is no next page",
-            "errorNoPreviousPage": "Cannot copy. There is no previous page.",
+            "errorNoPreviousPage": "Cannot copy. There is no previous page",
             "errorPageNotFound": "Page not found with id {pageId}",
             "marchersOnShape": "{marchersCount} Marchers",
             "segment": "Segment {index}",
+            "segments": {
+                "title": "Segments"
+            },
             "successfullyCopied": "Shape successfully copied to page {pageName}",
             "ungroupShapeButton": "Un-group",
             "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position"
@@ -169,6 +172,7 @@
         "privacy.analytics.description.opt_out": "You can opt out of this if you'd prefer. Just know that OpenMarch is a free tool built by volunteers, and this data really helps us understand how designers are using the app and find bugs—especially when we don't hear about them right away on Discord or Facebook :)",
         "privacy.analytics.disabled": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please <a>submit feedback</a> so that we can address it.",
         "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
+        "privacy.analytics.feedback.link": "submit feedback",
         "privacy.analytics.toggle": "Enable analytics",
         "title": "Settings"
     },
