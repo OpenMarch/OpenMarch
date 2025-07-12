@@ -42,7 +42,6 @@ export default defineConfig({
                 "@fontsource/dm-sans/600.css",
                 "@fontsource/dm-mono/400.css",
                 "./src/styles/starlight.css",
-                "./src/styles/base.css",
             ],
             sidebar: [
                 {
