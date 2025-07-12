@@ -19,7 +19,7 @@ import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
 import MarcherRotationInput from "./MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -43,8 +43,6 @@ function MarcherEditor() {
     const yDescriptionRef = useRef<HTMLSelectElement>(null);
     const yCheckpointRef = useRef<HTMLSelectElement>(null);
     const detailsFormRef = useRef<HTMLFormElement>(null);
-
-    const { t } = useTolgee();
 
     const handleCoordsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
