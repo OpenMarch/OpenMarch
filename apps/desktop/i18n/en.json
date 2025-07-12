@@ -1,13 +1,4 @@
 {
-    "analyticsOptIn": {
-        "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
-        "optIn": "Opt in",
-        "optOut": "Opt Out",
-        "settings": "You can change this setting at any time in the app settings.",
-        "title": "Help Us Improve OpenMarch",
-        "whenYouOptIn": "When you opt-in",
-        "whenYouOptOut": "When you opt-out"
-    },
     "actions": {
         "alignment": {
             "alignHorizontally": "Align horizontally",
@@ -27,12 +18,12 @@
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
             "setAllToNext": "Set all marcher coordinates to next page",
-            "setAllToPrevious": "Set all marcher coordinates to previous page",
             "setAllToNextSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the next page {{nextPage}}",
+            "setAllToPrevious": "Set all marcher coordinates to previous page",
             "setAllToPreviousSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the previous page {{previousPage}}",
             "setSelectedToNext": "Set selected marcher(s) coordinates to next page",
-            "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
             "setSelectedToNextSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the next page {{nextPage}}",
+            "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
             "setSelectedToPreviousSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the previous page {{previousPage}}"
         },
         "cursor": {
@@ -91,6 +82,15 @@
             "toggleNextPaths": "Toggle viewing next page paths",
             "togglePreviousPaths": "Toggle viewing previous page paths"
         }
+    },
+    "analyticsOptIn": {
+        "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
+        "optIn": "Opt In",
+        "optOut": "Opt Out",
+        "settings": "You can change this setting at any time in the app settings.",
+        "title": "Help Us Improve OpenMarch",
+        "whenYouOptIn": "When you opt-in",
+        "whenYouOptOut": "When you opt-out"
     },
     "audio": {
         "beats": {
@@ -169,6 +169,7 @@
         "shape": {
             "addSegmentButton": "Add",
             "addSegmentTooltip": "Add segment to shape",
+            "alignmentTab": "Alignment",
             "copyToNextPage": "Copy this shape to the next page",
             "copyToNextPageButton": "Copy to next page",
             "copyToPreviousPage": "Copy this shape to the previous page",
@@ -176,8 +177,9 @@
             "deleteLastSegmentTooltip": "Delete last segment",
             "errorCopyingPage": "Error copying to page {pageName}. Are there marchers already assigned to shapes?",
             "errorNoNextPage": "Cannot copy. There is no next page",
-            "errorNoPreviousPage": "Cannot copy. There is no previous page",
+            "errorNoPreviousPage": "Cannot copy. There is no previous page.",
             "errorPageNotFound": "Page not found with id {pageId}",
+            "fileTab": "File",
             "marchersOnShape": "{marchersCount} Marchers",
             "segment": "Segment {index}",
             "segments": {
@@ -185,7 +187,8 @@
             },
             "successfullyCopied": "Shape successfully copied to page {pageName}",
             "ungroupShapeButton": "Un-group",
-            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position"
+            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
+            "viewTab": "View"
         },
         "title": "Inspector"
     },

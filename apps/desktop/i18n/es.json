@@ -1,0 +1,319 @@
+{
+    "actions": {
+        "alignment": {
+            "alignHorizontally": "Alinear horizontalmente",
+            "alignVertically": "Alinear verticalmente",
+            "cancelUpdates": "Cancelar actualizaciones a los manifestantes",
+            "distributeHorizontally": "Distribuir marchadores uniformemente horizontalmente",
+            "distributeVertically": "Distribuir marchadores uniformemente verticalmente",
+            "lockX": "Bloqueo del eje X",
+            "lockXOff": "Habilitar movimiento en X",
+            "lockXOn": "Bloquear movimiento X",
+            "lockY": "Bloqueo del eje Y",
+            "lockYOff": "Habilitar movimiento en Y",
+            "lockYOn": "Bloquear movimiento Y",
+            "snapToWhole": "Ajustar al más cercano entero"
+        },
+        "batchEdit": {
+            "noNextPage": "No se pueden establecer las coordenadas del marchador en la página siguiente. No hay una página siguiente",
+            "noPreviousPage": "No se pueden establecer las coordenadas del marchador en la página anterior. No hay una página anterior",
+            "setAllToNext": "Fijar todas las coordenadas de marchadores a la página siguiente",
+            "setAllToNextSuccess": "Configurado con éxito todas las {{count}} coordenadas de marchadores en la página {{currentPage}} a las coordenadas de la siguiente página {{nextPage}}",
+            "setAllToPrevious": "Fijar todas las coordenadas de marchadores a la página anterior",
+            "setAllToPreviousSuccess": "Configurado con éxito todas las {{count}} coordenadas de marcha en la página {{currentPage}} a las coordenadas de la página anterior {{previousPage}}",
+            "setSelectedToNext": "Fijar las coordenadas de los marchadores seleccionados a la página siguiente",
+            "setSelectedToNextSuccess": "Configurado con éxito {{count}} coordenada{{count, plural, one {} other {s}}} de marcha en la página {{currentPage}} a las coordenadas de la siguiente página {{nextPage}}",
+            "setSelectedToPrevious": "Fijar las coordenadas de los marchadores seleccionados a la página anterior",
+            "setSelectedToPreviousSuccess": "Configurado con éxito {{count}} coordenada{{count, plural, one {} other {s}}} de marcha en la página {{currentPage}} a las coordenadas de la página anterior {{previousPage}}"
+        },
+        "cursor": {
+            "defaultMode": "Establecer modo de cursor a predeterminado",
+            "lineMode": "Crear una línea con los marchadores seleccionados"
+        },
+        "edit": {
+            "redo": "Rehacer",
+            "undo": "Deshacer"
+        },
+        "file": {
+            "importMusicXml": "Importar archivo MusicXML para obtener medidas",
+            "insertAudio": "Cargar nuevo archivo de audio en el programa",
+            "loadDialogue": "Iniciar diálogo de carga de archivo",
+            "newDialogue": "Iniciar cuadro de diálogo para nuevo archivo",
+            "saveDialogue": "Iniciar diálogo de guardar archivo"
+        },
+        "movement": {
+            "moveDown": "Mover el/los marchador(es) seleccionado(s) hacia abajo",
+            "moveLeft": "Mover el/los marchador(es) seleccionado(s) a la izquierda",
+            "moveRight": "Mover el/los marchador(es) seleccionado(s) a la derecha",
+            "moveUp": "Mover el/los marchador(es) seleccionado(s) hacia arriba"
+        },
+        "navigation": {
+            "firstPage": "Primera página",
+            "lastPage": "Última página",
+            "nextPage": "Página siguiente",
+            "previousPage": "Página anterior"
+        },
+        "playback": {
+            "pause": "Pausa",
+            "play": "Reproducir",
+            "playPause": "Reproducir o pausar"
+        },
+        "select": {
+            "selectAll": "Seleccionar todos los marchantes"
+        },
+        "shape": {
+            "applyQuick": "Ajusta marchadores a la forma sin crear un objeto editable",
+            "create": "Crea una nueva figura con líneas o curvas que se pueden editar en todas las páginas",
+            "delete": "Elimina las formas seleccionadas actualmente"
+        },
+        "swap": {
+            "error": "No se pudo intercambiar marchadores {{marcher1}} y {{marcher2}}",
+            "mustSelectTwo": "Solo se puede intercambiar cuando se seleccionan 2 marchadores.",
+            "success": "Intercambiado marchadores {{marcher1}} y {{marcher2}}",
+            "swap": "Intercambiar marchadores"
+        },
+        "ui": {
+            "focusCanvas": "Enfocar el lienzo",
+            "focusTimeline": "Enfocar la cronología",
+            "hideNextPaths": "Ocultar las siguientes páginas/pasos",
+            "hidePreviousPaths": "Ocultar puntos/rutas de página anterior",
+            "showNextPaths": "Mostrar las siguientes páginas/pasos",
+            "showPreviousPaths": "Mostrar puntos/rutas de página anterior",
+            "toggleNextPaths": "Alternar visualización de rutas de la próxima página",
+            "togglePreviousPaths": "Alternar visualización de rutas de la página anterior"
+        }
+    },
+    "analyticsOptIn": {
+        "description": "Para ayudarnos a mejorar OpenMarch, recopilamos datos analíticos, registros de errores y capturas de sesión. Esto nos ayuda a entender cómo usas la aplicación e identificar errores. Lee nuestra <a>política de privacidad</a> para saber más.",
+        "optIn": "Optar por",
+        "optOut": "Optar por no participar",
+        "settings": "Puedes cambiar esta configuración en cualquier momento en la configuración de la aplicación.",
+        "title": "Ayúdanos a Mejorar OpenMarch",
+        "whenYouOptIn": "Cuando te incluyes",
+        "whenYouOptOut": "Cuando te excluyes"
+    },
+    "audio": {
+        "beats": {
+            "create": {
+                "error": "Error al crear ritmos"
+            },
+            "save": {
+                "error": "Error al crear nuevos ritmos",
+                "success": "Beats guardados con éxito"
+            }
+        },
+        "editableBeatPlayer": {
+            "description": "Arrastra el borde derecho de cualquier beat para ajustar su duración"
+        },
+        "play": {
+            "error": "Error al reproducir audio"
+        },
+        "saveNewBeats": {
+            "label": "Guardar Nuevos Beats"
+        },
+        "seeDocs": {
+            "label": "Ver documentación"
+        },
+        "tapNewTempo": {
+            "exit": "Salir",
+            "label": "Tocar Nuevo Tempo",
+            "restart": "Reiniciar"
+        },
+        "tapTempo": {
+            "label": "Tocar Tempo"
+        }
+    },
+    "colorPicker": {
+        "discard": "Descartar",
+        "save": "Guardar"
+    },
+    "formButtons": {
+        "cancel": "Cancelar",
+        "editButton": "Editar",
+        "saveChanges": "Guardar cambios"
+    },
+    "formField": {
+        "valueMissing": "Por favor, ingrese un valor."
+    },
+    "inspector": {
+        "alignment": {
+            "applyCoordinates": "Aplicar coordenadas",
+            "cancelUpdates": "Cancelar",
+            "createShape": "Crear Forma",
+            "drawLine": "Dibujar una línea."
+        },
+        "marcher": {
+            "createLine": "Crear línea",
+            "drillNumber": "Número de perforación",
+            "errorLoadingCoords": "Error al cargar las coordenadas",
+            "maxStepSize": "Tamaño de paso más grande",
+            "minStepSize": "Tamaño de paso más pequeño",
+            "name": "Nombre",
+            "noPageSelected": "Ninguna página seleccionada.",
+            "section": "Sección",
+            "stepSize": "Tamaño del paso",
+            "swapMarchers": "Intercambiar marchadores",
+            "title": "{count} Marchadores",
+            "titleSingle": "Marchador {drillNumber}"
+        },
+        "page": {
+            "counts": "Conteos",
+            "measures": "Medidas",
+            "splitPage": "Dividir página",
+            "split": {
+                "success": "Página dividida con éxito"
+            },
+            "subset": "Subconjunto",
+            "title": "Página {pageNumber}"
+        },
+        "shape": {
+            "addSegmentButton": "Añadir",
+            "addSegmentTooltip": "Agregar segmento a la forma",
+            "alignmentTab": "Alineación",
+            "copyToNextPage": "Copiar esta forma a la página siguiente",
+            "copyToNextPageButton": "Copiar a página siguiente",
+            "copyToPreviousPage": "Copiar esta forma a la página anterior",
+            "copyToPreviousPageButton": "Copiar a página anterior",
+            "deleteLastSegmentTooltip": "Eliminar último segmento",
+            "errorCopyingPage": "Error al copiar a la página {pageName}. ¿Ya hay asignadas marchas a las formas?",
+            "errorNoNextPage": "No se puede copiar. No hay una página siguiente",
+            "errorNoPreviousPage": "No se puede copiar. No hay una página anterior",
+            "errorPageNotFound": "Página no encontrada con id {pageId}",
+            "fileTab": "Archivo",
+            "marchersOnShape": "{marchersCount} Marchadores",
+            "segment": "Segmento {index}",
+            "segments": {
+                "title": "Segmentos"
+            },
+            "successfullyCopied": "Forma copiada exitosamente a la página {pageName}",
+            "ungroupShapeButton": "Desagrupar",
+            "ungroupShapeTooltip": "Eliminar esta forma de esta página. No moverá marchadores de su posición actual",
+            "viewTab": "Vista"
+        },
+        "title": "Inspector"
+    },
+    "launchpage": {
+        "files": {
+            "createNew": "Nuevo Archivo",
+            "failedToLoadRecent": "No se pudo cargar archivos recientes",
+            "failedToOpen": "Error al abrir el archivo",
+            "failedToRemoveRecent": "No se pudo eliminar el archivo de la lista reciente",
+            "fieldPreview": "Vista previa de campo",
+            "openFile": "Abrir archivo",
+            "removeFile": "Eliminar de archivos recientes",
+            "title": "Archivos Recientes"
+        },
+        "learn": {
+            "guides": {
+                "title": "Guías"
+            },
+            "title": "Aprender",
+            "troubleshooting": {
+                "clearCache": "Limpiar la caché",
+                "clearCache.description": "Eliminar la carpeta de caché y metadatos puede solucionar problemas de rendimiento. (¡Esto también eliminará tu lista de archivos recientes y tu tema!)",
+                "description": "OpenMarch aún está en desarrollo, aquí tienes algunos consejos si algo sale mal.",
+                "refresh": "Actualizar la página",
+                "refresh.description": "Cuando tengas dudas, actualiza la página (Ctrl/Cmd + R). Si OpenMarch parece estar roto, actualizar a menudo lo arreglará.",
+                "title": "Consejos de solución de problemas"
+            }
+        },
+        "merch": "¡Consigue mercancía de OpenMarch!",
+        "settings": {
+            "title": "Configuración"
+        },
+        "title": "Página de Inicio"
+    },
+    "settings": {
+        "general": "General",
+        "general.appearance": "Apariencia",
+        "general.appearance.dark": "Oscuro",
+        "general.appearance.light": "Claro",
+        "general.language": "Idioma",
+        "mouse": "Ratón & Trackpad",
+        "mouse.panSensitivity": "Sensibilidad de panorámica",
+        "mouse.trackpadMode": "Modo de trackpad (recomendado para macOS)",
+        "mouse.trackpadPanSensitivity": "Sensibilidad de panorámica con trackpad",
+        "mouse.zoomSensitivity": "Sensibilidad de zoom",
+        "plugins": "Complementos",
+        "plugins.community": "Comunidad",
+        "plugins.install": "Instalar",
+        "plugins.installed": "Instalado",
+        "plugins.installFailed": "Instalación fallida",
+        "plugins.installing": "Instalando...",
+        "plugins.noCommunityPlugins": "No hay complementos de la comunidad disponibles.",
+        "plugins.noOfficialPlugins": "No hay complementos oficiales disponibles.",
+        "plugins.noPlugins": "No hay complementos instalados.",
+        "plugins.official": "Oficial",
+        "plugins.refreshNotice": "Por favor, <a>recargue la aplicación</a> para actualizar los complementos.",
+        "plugins.toast.installFailed": "No se pudo instalar el complemento {pluginName}",
+        "plugins.toast.installSuccess": "Complemento {pluginName} instalado correctamente!",
+        "plugins.toast.uninstallFailed": "No se pudo eliminar {pluginName}",
+        "plugins.toast.uninstallSuccess": "Complemento {pluginName} eliminado correctamente!",
+        "plugins.uninstall": "Desinstalar",
+        "plugins.uninstalled": "Eliminado",
+        "plugins.uninstallFailed": "Eliminación fallida",
+        "plugins.uninstalling": "Eliminando...",
+        "privacy": "Privacidad",
+        "privacy.analytics": "Compartir análisis de uso",
+        "privacy.analytics.description": "Para ayudarnos a mejorar OpenMarch, recopilamos datos analíticos, registros de errores y grabaciones de sesión. Esto nos ayuda a entender cómo usas la aplicación e identificar errores. Lee nuestra <a>política de privacidad</a> para saber más.",
+        "privacy.analytics.description.opt_out": "Puedes optar por no participar si lo prefieres. Solo ten en cuenta que OpenMarch es una herramienta gratuita creada por voluntarios, y estos datos realmente nos ayudan a entender cómo los diseñadores están usando la aplicación y a encontrar errores—especialmente cuando no los escuchamos de inmediato en Discord o Facebook :)",
+        "privacy.analytics.disabled": "No estás compartiendo análisis. Si experimentas problemas o errores, no estaremos al tanto de ellos. Si tienes un problema, por favor <a>envía comentarios</a> para que podamos abordarlo.",
+        "privacy.analytics.enabled": "Estás compartiendo análisis de uso. Gracias por ayudarnos a mejorar OpenMarch para todos.",
+        "privacy.analytics.feedback.link": "Enviar comentarios",
+        "privacy.analytics.toggle": "Habilitar análisis",
+        "title": "Configuración"
+    },
+    "timeline": {
+        "audio": "Audio",
+        "controls": {
+            "label": "Controles de reproducción"
+        },
+        "label": "Cronología",
+        "music": {
+            "add": "Añadir música"
+        },
+        "page": {
+            "contextMenu": {
+                "deletePage": "Eliminar",
+                "subsetToggle": "Subconjunto",
+                "title": "Página {pageName}"
+            },
+            "deleted": "Página {pageName} eliminada",
+            "deleteFailed": "Fallo al eliminar la página",
+            "firstPage": "Primera página",
+            "label": "Página {pageName}",
+            "subset": "Subconjunto"
+        },
+        "pages": "Páginas",
+        "perspective": {
+            "label": "Perspectiva"
+        }
+    },
+    "titlebar": {
+        "bugReport": "Enviar informe de errores o comentarios",
+        "bugReport.placeholder": "¿Qué salió mal?\n¿Qué esperabas?\n¿Cómo podemos reproducir el problema?",
+        "databasePathError": "Error de Ruta de Base de Datos",
+        "databasePathError.description": "¡No se pudo obtener la ruta del archivo .dots!\n\nPor favor, salga completamente de la aplicación e intente de nuevo.\n\nSi el problema persiste, comuníquese con el soporte.",
+        "databasePathError.dismiss": "Descartar"
+    },
+    "toolbar": {
+        "settings": "Configuración de la app"
+    },
+    "versionCheck": {
+        "error": {
+            "fetchFailed": "Ha ocurrido un error al obtener la versión.",
+            "noVersion": "No se puede obtener la última versión."
+        },
+        "installLinux": "Instalar para Linux",
+        "installMacArm": "Instalar para Apple Silicon",
+        "installMacIntel": "Instalar para Mac Intel",
+        "installWindows": "Instalar para Windows",
+        "skipVersion": "Omitir esta versión",
+        "title": "Nueva versión disponible",
+        "trigger": "¡Nueva versión disponible!"
+    },
+    "welcome": {
+        "description": "No se encontraron archivos. Crea uno, y asegúrate de revisar las guías. Personaliza tu tema y navegación en Configuración.",
+        "title": "Bienvenido a OpenMarch"
+    }
+}
