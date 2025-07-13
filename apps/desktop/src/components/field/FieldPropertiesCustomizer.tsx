@@ -30,7 +30,8 @@ import {
 import { RgbaColor } from "@uiw/react-color";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
 import ColorPicker from "../ui/ColorPicker";
-import FormField, { StaticFormField } from "../ui/FormField";
+import FormField from "../ui/FormField";
+import { T, useTolgee } from "@tolgee/react";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -276,6 +277,7 @@ function CheckpointEditor({
 }
 
 export default function FieldPropertiesCustomizer() {
+    const { t } = useTolgee();
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
     const [currentFieldProperties, setCurrentFieldProperties] =
         useState<FieldProperties>(fieldProperties ?? defaultFieldProperties);
@@ -501,22 +503,34 @@ export default function FieldPropertiesCustomizer() {
             onSubmit={(e) => e.preventDefault()}
             className="mb-16 flex w-[34rem] flex-col gap-16"
         >
-            <h4 className="text-h4">Custom Field</h4>
+            <h4 className="text-h4">
+                <T keyName="fieldProperties.title" />
+            </h4>
             <Tabs defaultValue="general">
                 <TabsList>
-                    <TabItem value="general">General</TabItem>
-                    <TabItem value="checkpoints">Checkpoints</TabItem>
-                    <TabItem value="image">Image</TabItem>
-                    <TabItem value="theme">Theme</TabItem>
+                    <TabItem value="general">
+                        <T keyName="fieldProperties.tabs.general" />
+                    </TabItem>
+                    <TabItem value="checkpoints">
+                        <T keyName="fieldProperties.tabs.checkpoints" />
+                    </TabItem>
+                    <TabItem value="image">
+                        <T keyName="fieldProperties.tabs.image" />
+                    </TabItem>
+                    <TabItem value="theme">
+                        <T keyName="fieldProperties.tabs.theme" />
+                    </TabItem>
                 </TabsList>
 
                 <TabContent value="general" className="flex flex-col gap-32">
                     {/* -------------------------------------------- GENERAL -------------------------------------------- */}
                     <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">General</h4>
+                        <h4 className="text-h4 mb-8">
+                            <T keyName="fieldProperties.sections.general" />
+                        </h4>
                         <FormField
-                            label="Field Name"
-                            tooltip=" The name of this field, stage, or grid"
+                            label={t("fieldProperties.labels.fieldName")}
+                            tooltip={t("fieldProperties.tooltips.fieldName")}
                         >
                             <Input
                                 type="text" // Changed from "number"
@@ -541,11 +555,8 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label=" Step Size"
-                            tooltip="The size of each step. The canvas will
-                            adjust to this number so that the size
-                            of it is always consistent with its
-                            real-world dimensions."
+                            label={t("fieldProperties.labels.stepSize")}
+                            tooltip={t("fieldProperties.tooltips.stepSize")}
                         >
                             <UnitInput
                                 type="text"
@@ -604,9 +615,12 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="Measurement System"
-                            tooltip="The unit of measurement to define the step
-                            size in. Can go back and forth"
+                            label={t(
+                                "fieldProperties.labels.measurementSystem",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.measurementSystem",
+                            )}
                         >
                             <Select
                                 onValueChange={(e) => {
@@ -631,10 +645,10 @@ export default function FieldPropertiesCustomizer() {
                                 <SelectContent>
                                     <SelectGroup>
                                         <SelectItem value="imperial">
-                                            Imperial
+                                            <T keyName="fieldProperties.options.imperial" />
                                         </SelectItem>
                                         <SelectItem value="metric">
-                                            Metric
+                                            <T keyName="fieldProperties.options.metric" />
                                         </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
@@ -642,16 +656,12 @@ export default function FieldPropertiesCustomizer() {
                         </FormField>
 
                         <FormField
-                            label="Half Line X-Interval"
-                            tooltip="
-                                The interval that half lines appear in
-                                the UI on the X axis from the center of
-                                the field.
-                                Leave empty to omit half lines on the
-                                X-axis.
-                                This is purely cosmetic and does not
-                                affect coordinates in any way
-                            "
+                            label={t(
+                                "fieldProperties.labels.halfLineXInterval",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.halfLineXInterval",
+                            )}
                         >
                             <Input
                                 type="text"
@@ -704,16 +714,12 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="Half Line Y-Interval"
-                            tooltip="
-                                The interval that half lines appear in
-                                the UI on the Y axis from the front of
-                                the field.
-                                Leave empty to omit half lines on the
-                                Y-axis.
-                                This is purely cosmetic and does not
-                                affect coordinates in any way
-                            "
+                            label={t(
+                                "fieldProperties.labels.halfLineYInterval",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.halfLineYInterval",
+                            )}
                         >
                             <Input
                                 type="text"
@@ -768,11 +774,14 @@ export default function FieldPropertiesCustomizer() {
                     </div>
 
                     <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">Side Descriptions</h4>
+                        <h4 className="text-h4 mb-8">
+                            <T keyName="fieldProperties.sections.sideDescriptions" />
+                        </h4>
                         <FormField
-                            label="Director's Left"
-                            tooltip=' E.g. "Side 1"," Audience
-                            Left" or "Stage Right"'
+                            label={t("fieldProperties.labels.directorsLeft")}
+                            tooltip={t(
+                                "fieldProperties.tooltips.directorsLeft",
+                            )}
                         >
                             <Input
                                 type="text" // Changed from "number"
@@ -804,11 +813,10 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="Left Abbreviation"
-                            tooltip='E.g. "S1", "AL" or
-                            "SR" (short for "Side
-                            1", "Audience Left" or
-                            "Stage Right")'
+                            label={t("fieldProperties.labels.leftAbbreviation")}
+                            tooltip={t(
+                                "fieldProperties.tooltips.leftAbbreviation",
+                            )}
                         >
                             <Input
                                 type="text" // Changed from "number"
@@ -841,9 +849,10 @@ export default function FieldPropertiesCustomizer() {
                         </FormField>
 
                         <FormField
-                            label="Director's Right"
-                            tooltip='E.g. "Side 2"," Audience
-                            Right" or "Stage Left"'
+                            label={t("fieldProperties.labels.directorsRight")}
+                            tooltip={t(
+                                "fieldProperties.tooltips.directorsRight",
+                            )}
                         >
                             <Input
                                 type="text" // Changed from "number"
@@ -876,11 +885,12 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="Right Abbreviation"
-                            tooltip='E.g. "S2", "AR" or
-                            "SL" (short for "Side
-                            2", "Audience Right" or
-                            "Stage Left")'
+                            label={t(
+                                "fieldProperties.labels.rightAbbreviation",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.rightAbbreviation",
+                            )}
                         >
                             <Input
                                 type="text" // Changed from "number"
@@ -913,12 +923,16 @@ export default function FieldPropertiesCustomizer() {
                         </FormField>
                     </div>
                     <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">Field Labels</h4>
+                        <h4 className="text-h4 mb-8">
+                            <T keyName="fieldProperties.sections.fieldLabels" />
+                        </h4>
                         <FormField
-                            label="Steps from front to home label bottom"
-                            tooltip="Number of steps from the front sideline to
-                            the outside of the home number (closer to
-                            the front sideline)"
+                            label={t(
+                                "fieldProperties.labels.stepsFromFrontToHomeLabel",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.stepsFromFrontToHomeLabel",
+                            )}
                         >
                             <Input
                                 type="text"
@@ -981,10 +995,12 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="Steps from front to home label top"
-                            tooltip="Number of steps from the front sideline to
-                            the inside of the home number (closer to the
-                            center of the field)"
+                            label={t(
+                                "fieldProperties.labels.stepsFromFrontToHomeLabelTop",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.stepsFromFrontToHomeLabelTop",
+                            )}
                         >
                             <Input
                                 type="text"
@@ -1047,12 +1063,12 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="
-                            Steps from front to away label top"
-                            tooltip="
-                            Number of steps from the front sideline to
-                            the inside of the away number (closer to the
-                            center of the field)"
+                            label={t(
+                                "fieldProperties.labels.stepsFromFrontToAwayLabelTop",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.stepsFromFrontToAwayLabelTop",
+                            )}
                         >
                             <Input
                                 type="text"
@@ -1115,12 +1131,12 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="
-                            Steps from front to away label bottom"
-                            tooltip="
-                            Number of steps from the front sideline to
-                            the outside of the away number (closer to
-                            the back sideline)"
+                            label={t(
+                                "fieldProperties.labels.stepsFromFrontToAwayLabelBottom",
+                            )}
+                            tooltip={t(
+                                "fieldProperties.tooltips.stepsFromFrontToAwayLabelBottom",
+                            )}
                         >
                             <Input
                                 type="text"
@@ -1185,9 +1201,11 @@ export default function FieldPropertiesCustomizer() {
                     </div>
                     <div className="flex flex-col gap-12">
                         {/* <div className="mb-16">Field </div> */}
-                        <h4 className="text-h4 mb-8">External Labels</h4>
+                        <h4 className="text-h4 mb-8">
+                            <T keyName="fieldProperties.sections.externalLabels" />
+                        </h4>
                         <div className="grid grid-cols-4">
-                            <FormField label="Left">
+                            <FormField label={t("fieldProperties.labels.left")}>
                                 <Switch
                                     className={clsx(
                                         inputClassname,
@@ -1208,7 +1226,9 @@ export default function FieldPropertiesCustomizer() {
                                     }}
                                 />
                             </FormField>
-                            <FormField label="Right">
+                            <FormField
+                                label={t("fieldProperties.labels.right")}
+                            >
                                 <Switch
                                     className={clsx(
                                         inputClassname,
@@ -1229,7 +1249,9 @@ export default function FieldPropertiesCustomizer() {
                                     }}
                                 />
                             </FormField>
-                            <FormField label="Bottom">
+                            <FormField
+                                label={t("fieldProperties.labels.bottom")}
+                            >
                                 <Switch
                                     className={inputClassname}
                                     checked={
@@ -1247,7 +1269,7 @@ export default function FieldPropertiesCustomizer() {
                                     }}
                                 />
                             </FormField>
-                            <FormField label="Top">
+                            <FormField label={t("fieldProperties.labels.top")}>
                                 <Switch
                                     className={inputClassname}
                                     checked={
@@ -1275,7 +1297,9 @@ export default function FieldPropertiesCustomizer() {
                     className="flex flex-col gap-32"
                 >
                     <div>
-                        <h4 className="text-h4 mb-16">X-Checkpoints</h4>
+                        <h4 className="text-h4 mb-16">
+                            <T keyName="fieldProperties.sections.xCheckpoints" />
+                        </h4>
                         <div
                             className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
                             hidden={
@@ -1295,9 +1319,7 @@ export default function FieldPropertiesCustomizer() {
                                 )
                             }
                         >
-                            WARNING - The left and rightmost X-checkpoints are
-                            not equidistant from the center. This may cause
-                            strange graphical artifacts and should be fixed.
+                            <T keyName="fieldProperties.warnings.xCheckpointsNotEquidistant" />
                         </div>
                         <div className="flex flex-col gap-12">
                             {currentFieldProperties.xCheckpoints
@@ -1319,12 +1341,14 @@ export default function FieldPropertiesCustomizer() {
                                 size="compact"
                                 type="button"
                             >
-                                New X-Checkpoint
+                                <T keyName="fieldProperties.buttons.newXCheckpoint" />
                             </Button>
                         </div>
                     </div>
                     <div>
-                        <h4 className="text-h4 mb-16">Y-Checkpoints</h4>
+                        <h4 className="text-h4 mb-16">
+                            <T keyName="fieldProperties.sections.yCheckpoints" />
+                        </h4>
                         <div
                             className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
                             hidden={
@@ -1335,19 +1359,14 @@ export default function FieldPropertiesCustomizer() {
                                 ) <= 0
                             }
                         >
-                            WARNING - It is highly recommended that all
-                            Y-checkpoints&apos; steps be less than zero (i.e.
-                            negative numbers). All of the Y-coordinates should
-                            be behind the front of the field. Failing to do so
-                            may cause graphical errors and unexpected
-                            coordinates.
+                            <T keyName="fieldProperties.warnings.yCheckpointsNegative" />
                         </div>
                         <div className="flex flex-col gap-12">
                             <FormField
-                                label="Use Hashes"
-                                tooltip="
-                                    Use hashes for the Y-checkpoints, like a
-                                    football field. If unchecked, lines will be used.    "
+                                label={t("fieldProperties.labels.useHashes")}
+                                tooltip={t(
+                                    "fieldProperties.tooltips.useHashes",
+                                )}
                             >
                                 <Switch
                                     className={inputClassname}
@@ -1383,7 +1402,7 @@ export default function FieldPropertiesCustomizer() {
                                 className="self-end"
                                 type="button"
                             >
-                                New Y-Checkpoint
+                                <T keyName="fieldProperties.buttons.newYCheckpoint" />
                             </Button>
                         </div>
                     </div>
@@ -1392,8 +1411,14 @@ export default function FieldPropertiesCustomizer() {
                 {/* -------------------------------------------- IMAGE -------------------------------------------- */}
                 <TabContent value="image" className="flex flex-col gap-32">
                     <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">Image Rendering</h4>
-                        <FormField label="Show Background Image">
+                        <h4 className="text-h4 mb-8">
+                            <T keyName="fieldProperties.sections.imageRendering" />
+                        </h4>
+                        <FormField
+                            label={t(
+                                "fieldProperties.labels.showBackgroundImage",
+                            )}
+                        >
                             <Switch
                                 className={clsx(inputClassname, "col-span-2")}
                                 checked={currentFieldProperties.showFieldImage}
@@ -1410,12 +1435,10 @@ export default function FieldPropertiesCustomizer() {
                             />
                         </FormField>
                         <FormField
-                            label="Conform Method"
-                            tooltip="
-                                Whether to fit the background image
-                                inside the field or fill it.
-                                The aspect ratio is always
-                                maintained"
+                            label={t("fieldProperties.labels.conformMethod")}
+                            tooltip={t(
+                                "fieldProperties.tooltips.conformMethod",
+                            )}
                         >
                             <Select
                                 onValueChange={(e) => {
@@ -1434,13 +1457,17 @@ export default function FieldPropertiesCustomizer() {
                             >
                                 <SelectTriggerButton
                                     className={inputClassname}
-                                    label={"Conforming Method"}
+                                    label={t(
+                                        "fieldProperties.labels.conformingMethod",
+                                    )}
                                 />
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="fit">Fit</SelectItem>
+                                        <SelectItem value="fit">
+                                            <T keyName="fieldProperties.options.fit" />
+                                        </SelectItem>
                                         <SelectItem value="fill">
-                                            Fill
+                                            <T keyName="fieldProperties.options.fill" />
                                         </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
@@ -1468,19 +1495,21 @@ export default function FieldPropertiesCustomizer() {
                                         );
                                 }}
                             >
-                                Import Image
+                                <T keyName="fieldProperties.buttons.importImage" />
                             </Button>
                             <div className="text-sub text-text-subtitle h-fit min-h-0 w-fit leading-none whitespace-nowrap">
-                                Refresh after importing [Ctrl + R]
+                                <T keyName="fieldProperties.messages.refreshAfterImporting" />
                             </div>
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">Measurements</h4>
+                        <h4 className="text-h4 mb-8">
+                            <T keyName="fieldProperties.sections.measurements" />
+                        </h4>
                         <div className="flex w-full flex-col gap-4">
                             <div className={clsx("col-span-2 align-middle")}>
-                                Width
+                                <T keyName="fieldProperties.labels.width" />
                             </div>
                             <div className="flex w-full gap-8">
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
