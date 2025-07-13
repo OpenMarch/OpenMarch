@@ -120,6 +120,7 @@ module.exports = {
         "**/*.i18n.json",
         "**/locales/**",
         "locales/**",
+        "**/mock-databases/**",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };

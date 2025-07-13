@@ -17,7 +17,7 @@ export default function FieldPropertiesSettings() {
         );
 
     return (
-        <div className="flex flex-col">
+        <div className="flex h-full flex-col overflow-y-auto pb-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
                 <h4 className="text-h5 leading-none">General</h4>
                 <div className="flex flex-col gap-16">

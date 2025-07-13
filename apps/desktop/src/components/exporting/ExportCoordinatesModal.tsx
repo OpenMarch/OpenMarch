@@ -40,6 +40,7 @@ import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
+import "../../styles/shimmer.css";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -48,7 +49,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
     }
     return result;
 }
-const QUARTER_ROWS = 18;
+const QUARTER_ROWS = 28; // Increased from 25 to fit more rows
 
 function CoordinateSheetExport() {
     const [isTerse, setIsTerse] = useState(false);
@@ -64,11 +65,40 @@ function CoordinateSheetExport() {
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
+    const isCancelled = useRef(false);
 
     const handleExport = useCallback(async () => {
         setIsLoading(true);
         setProgress(0);
-        setCurrentStep("Initializing coordinate sheet export...");
+
+        // Fun marching band phrases that rotate during export
+        const funPhrases = [
+            "Get ready to march a perfect 8 to 5! 🎺",
+            "Getting the files to cover down 📋",
+            "Cleaning drill from the box 🧹",
+            "Making sure everyone's in step 👟",
+            "Painting a perfect field",
+            "Marching toward perfection! 🎯",
+        ];
+
+        let currentPhraseIndex = 0;
+        let phraseInterval: NodeJS.Timeout;
+
+        // Start rotating phrases every 2 seconds
+        const startPhraseRotation = () => {
+            setCurrentStep(funPhrases[currentPhraseIndex]);
+            phraseInterval = setInterval(() => {
+                currentPhraseIndex =
+                    (currentPhraseIndex + 1) % funPhrases.length;
+                setCurrentStep(funPhrases[currentPhraseIndex]);
+            }, 2000);
+        };
+
+        const stopPhraseRotation = () => {
+            if (phraseInterval) {
+                clearInterval(phraseInterval);
+            }
+        };
 
         if (!fieldProperties) {
             toast.error("Field properties are required for export");
@@ -77,21 +107,52 @@ function CoordinateSheetExport() {
         }
 
         try {
-            setCurrentStep("Processing marcher data...");
-            setProgress(10);
+            isCancelled.current = false;
+            startPhraseRotation();
+            setProgress(5);
 
-            const processedMarchers = marchers.map((marcher, index) => ({
-                ...marcher,
-                name: marcher.name || `${marcher.section} ${index + 1}`,
-            }));
+            // Simulate more granular progress updates
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            if (isCancelled.current)
+                throw new Error("Export cancelled by user");
+            setProgress(15);
 
-            setCurrentStep("Generating coordinate sheets...");
-            setProgress(30);
+            const processedMarchers = marchers
+                .map((marcher, index) => ({
+                    ...marcher,
+                    name: marcher.name || `${marcher.section} ${index + 1}`,
+                }))
+                .sort((a, b) => {
+                    const sectionCompare = (a.section || "").localeCompare(
+                        b.section || "",
+                    );
+                    if (sectionCompare !== 0) return sectionCompare;
+                    return a.drill_number.localeCompare(b.drill_number);
+                });
 
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            if (isCancelled.current)
+                throw new Error("Export cancelled by user");
+            setProgress(25);
+
+            // More detailed progress for sheet generation
+            const totalMarchers = processedMarchers.length;
             let groupedSheets: any[];
+
+            // Check for cancellation
+            if (isCancelled.current) {
+                throw new Error("Export cancelled by user");
+            }
+
+            // Generate coordinate sheets with progress tracking
+            setProgress(35);
+            await new Promise((resolve) => setTimeout(resolve, 200));
+            if (isCancelled.current)
+                throw new Error("Export cancelled by user");
 
             // split to quarter sheets
             if (quarterPages) {
+                // Create quarter sheets for each marcher, organized by performer number
                 const marcherQuarterSheets = processedMarchers.flatMap(
                     (marcher, mIdx) => {
                         const marcherPagesForMarcher = marcherPages
@@ -113,76 +174,70 @@ function CoordinateSheetExport() {
                             QUARTER_ROWS,
                         );
                         return rowChunks.map((rowChunk, chunkIdx) => {
-                            return {
-                                name: marcher.name,
-                                drillNumber: marcher.drill_number,
-                                section: marcher.section || "Unsorted",
-                                renderedPage: ReactDOMServer.renderToString(
-                                    <StaticCompactMarcherSheet
-                                        marcher={marcher}
-                                        pages={pages}
-                                        marcherPages={rowChunk}
-                                        fieldProperties={fieldProperties}
-                                        roundingDenominator={
-                                            roundingDenominator
-                                        }
-                                        terse={isTerse}
-                                        quarterPageNumber={chunkIdx + 1}
-                                    />,
-                                ),
-                            };
+                            try {
+                                const renderedHtml =
+                                    ReactDOMServer.renderToString(
+                                        <StaticCompactMarcherSheet
+                                            marcher={marcher}
+                                            pages={pages}
+                                            marcherPages={rowChunk}
+                                            fieldProperties={fieldProperties}
+                                            roundingDenominator={
+                                                roundingDenominator
+                                            }
+                                            terse={isTerse}
+                                            quarterPageNumber={chunkIdx + 1}
+                                        />,
+                                    );
+
+                                // Clean up the HTML to prevent URL encoding issues
+                                const cleanedHtml = renderedHtml
+                                    .replace(
+                                        /[\u0000-\u001F\u007F-\u009F]/g,
+                                        "",
+                                    ) // Remove control characters
+                                    .replace(/\s+/g, " ") // Normalize whitespace
+                                    .trim();
+
+                                return {
+                                    name: marcher.name,
+                                    drillNumber: marcher.drill_number,
+                                    section: marcher.section || "Unsorted",
+                                    renderedPage: cleanedHtml,
+                                };
+                            } catch (error) {
+                                console.error(
+                                    `Error rendering quarter page for ${marcher.drill_number}:`,
+                                    error,
+                                );
+                                return {
+                                    name: marcher.name,
+                                    drillNumber: marcher.drill_number,
+                                    section: marcher.section || "Unsorted",
+                                    renderedPage: `<div><h3>Error rendering ${marcher.drill_number}</h3><p>${error instanceof Error ? error.message : "Unknown error"}</p></div>`,
+                                };
+                            }
                         });
                     },
                 );
-                groupedSheets = chunkArray(marcherQuarterSheets, 4).map(
-                    (group: any, groupIdx: any) => {
-                        const gridItems = Array(4)
-                            .fill(null)
-                            .map((_, idx) =>
-                                group[idx]
-                                    ? `<div class="marcher-table">${group[idx].renderedPage}</div>`
-                                    : `<div class="marcher-table"></div>`,
-                            )
-                            .join("");
 
-                        const pageHtml = `
-                            <div style="
-                                display: grid;
-                                grid-template-columns: 1fr 1fr;
-                                grid-template-rows: 1fr 1fr;
-                                gap: 0.5rem;
-                                width: 100%;
-                                height: 100%;
-                                box-sizing: border-box;
-                                padding: 1rem;
-                            ">
-                                ${gridItems}
-                            </div>
-                            <style>
-                                .marcher-table tr:nth-child(even) { background: #d0d0d0; }
-                                .marcher-table {
-                                    box-sizing: border-box;
-                                    width: 100%;
-                                    height: 100%;
-                                    overflow: hidden;
-                                    border: 1px solid #e5e7eb;
-                                    padding: 0.5rem;
-                                    font-size: 80%;
-                                }
-                                .marcher-table table {
-                                    width: 100% !important;
-                                    font-size: 90% !important;
-                                }
-                            </style>
-                            `;
-                        return {
-                            name: `Page ${groupIdx + 1}`,
-                            drillNumber: "",
-                            section: group[0]?.section,
-                            renderedPage: pageHtml,
-                        };
-                    },
-                );
+                // Sort by drill number to organize by performer number
+                marcherQuarterSheets.sort((a, b) => {
+                    // First, sort by section
+                    const sectionCompare = a.section.localeCompare(b.section);
+                    if (sectionCompare !== 0) return sectionCompare;
+
+                    // Then sort by drill number
+                    const drillCompare = a.drillNumber.localeCompare(
+                        b.drillNumber,
+                    );
+                    if (drillCompare !== 0) return drillCompare;
+
+                    // Then by name if drill numbers are the same
+                    return a.name.localeCompare(b.name);
+                });
+
+                groupedSheets = marcherQuarterSheets;
             } else {
                 // regular format
                 groupedSheets = processedMarchers.map((marcher) => ({
@@ -204,16 +259,52 @@ function CoordinateSheetExport() {
                 }));
             }
 
-            setCurrentStep("Generating PDF...");
+            // Continue with fun phrases during PDF generation
             setProgress(85);
 
-            const result = await window.electron.export.pdf({
+            // Debug logging
+            console.log("Sending to export service:", {
+                sheetCount: groupedSheets.length,
+                organizeBySection,
+                quarterPages,
+                firstSheetSample: groupedSheets[0]
+                    ? {
+                          name: groupedSheets[0].name,
+                          drillNumber: groupedSheets[0].drillNumber,
+                          section: groupedSheets[0].section,
+                          renderedPageLength:
+                              groupedSheets[0].renderedPage.length,
+                          renderedPagePreview:
+                              groupedSheets[0].renderedPage.substring(0, 200),
+                      }
+                    : null,
+            });
+
+            // Add some intermediate progress updates during PDF generation
+            const pdfGenerationPromise = window.electron.export.pdf({
                 sheets: groupedSheets,
                 organizeBySection: organizeBySection,
                 quarterPages: quarterPages,
             });
 
+            // Simulate smooth progress during PDF generation
+            const progressInterval = setInterval(() => {
+                setProgress((prev) => {
+                    if (prev < 95) {
+                        return prev + 1;
+                    }
+                    return prev;
+                });
+            }, 100);
+
+            const result = await pdfGenerationPromise;
+            clearInterval(progressInterval);
+
             if (!result.success) {
+                if (result.cancelled) {
+                    // User cancelled the export dialog - don't show error
+                    return;
+                }
                 throw new Error(result.error);
             }
 
@@ -260,6 +351,7 @@ function CoordinateSheetExport() {
                 `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
             );
         } finally {
+            stopPhraseRotation();
             // Keep the completed state visible for a moment before hiding
             setTimeout(() => {
                 setIsLoading(false);
@@ -461,7 +553,11 @@ function CoordinateSheetExport() {
                     {isLoading ? "Exporting... Please wait" : "Export"}
                 </Button>
                 <DialogClose>
-                    <Button size="compact" variant="secondary">
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        onClick={() => (isCancelled.current = true)}
+                    >
                         {" "}
                         Cancel{" "}
                     </Button>
@@ -472,13 +568,30 @@ function CoordinateSheetExport() {
             {isLoading && (
                 <div className="flex flex-col gap-8">
                     {/* Status Text */}
-                    <div className="flex items-center justify-between">
-                        <span className="text-body text-text/75">
-                            {currentStep}
-                        </span>
-                        <span className="text-sub text-text/60">
-                            {Math.round(progress)}%
-                        </span>
+                    <div className="flex flex-col gap-4">
+                        {/* Page processing info (only for drill charts) */}
+                        {currentStep.includes("Processing page") && (
+                            <div className="flex items-center justify-between">
+                                <span className="text-body text-text/75">
+                                    {currentStep}
+                                </span>
+                                <span className="text-sub text-text/60">
+                                    {Math.round(progress)}%
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Fun phrase */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-body text-text/75">
+                                {currentStep}
+                            </span>
+                            {!currentStep.includes("Processing page") && (
+                                <span className="text-sub text-text/60">
+                                    {Math.round(progress)}%
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Progress Bar Container */}
@@ -521,6 +634,7 @@ function DrillChartExport() {
     const isCancelled = useRef(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
+    const [funPhrase, setFunPhrase] = useState("");
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
@@ -799,7 +913,43 @@ function DrillChartExport() {
         isCancelled.current = false;
         setIsLoading(true);
         setProgress(0);
-        setCurrentStep("Initializing export...");
+
+        // Fun marching band phrases that rotate during export
+        const funPhrases = [
+            "Get ready to march a perfect 8 to 5! 🎺",
+            "Creating the best drill ever! ✨",
+            "Getting the files to cover down 📋",
+            "Cleaning drill from the box 🧹",
+            "Tuning up those coordinates 🎵",
+            "Making sure everyone's in step 👟",
+            "Polishing those yard line markers ✨",
+            "Counting off the perfect tempo 🥁",
+            "Aligning the formation like a pro 📐",
+            "Marching toward perfection! 🎯",
+            "Setting the tempo for success 🎼",
+            "Fine-tuning every step count 🔧",
+        ];
+
+        let currentPhraseIndex = 0;
+        let phraseInterval: NodeJS.Timeout;
+
+        // Start rotating phrases every 2 seconds
+        const startPhraseRotation = () => {
+            setCurrentStep(funPhrases[currentPhraseIndex]);
+            phraseInterval = setInterval(() => {
+                currentPhraseIndex =
+                    (currentPhraseIndex + 1) % funPhrases.length;
+                setCurrentStep(funPhrases[currentPhraseIndex]);
+            }, 2000);
+        };
+
+        const stopPhraseRotation = () => {
+            if (phraseInterval) {
+                clearInterval(phraseInterval);
+            }
+        };
+
+        startPhraseRotation();
 
         // Store original state of canvas for restoration
         const exportCanvas: OpenMarchCanvas = window.canvas;
@@ -831,16 +981,34 @@ function DrillChartExport() {
         // Error occurred during SVG generation
         if (isCancelled.current) return;
 
-        // SVG creation done, start exporting
-        setCurrentStep("Generating PDF files...");
+        // SVG creation done, start exporting - continue with fun phrases
         try {
             // Create export directory
             const { exportName, exportDir } =
                 await window.electron.export.createExportDirectory(
                     await window.electron.getCurrentFilename(),
                 );
-            // Create documents for each marcher
-            await exportMarcherSVGs(SVGs, coords, exportName, exportDir);
+
+            // Create documents for each marcher with smooth progress
+            const exportPromise = exportMarcherSVGs(
+                SVGs,
+                coords,
+                exportName,
+                exportDir,
+            );
+
+            // Simulate smooth progress during final export phase
+            const finalProgressInterval = setInterval(() => {
+                setProgress((prev) => {
+                    if (prev < 95) {
+                        return prev + 0.5;
+                    }
+                    return prev;
+                });
+            }, 150);
+
+            await exportPromise;
+            clearInterval(finalProgressInterval);
 
             setProgress(100);
             setCurrentStep("Export completed!");
@@ -874,10 +1042,16 @@ function DrillChartExport() {
                     (error instanceof Error ? error.message : "Unknown error"),
             );
             setCurrentStep("Export failed");
+        } finally {
+            stopPhraseRotation();
+            // Keep the completed state visible for a moment before hiding
+            setTimeout(() => {
+                isCancelled.current = false;
+                setIsLoading(false);
+                setProgress(0);
+                setCurrentStep("");
+            }, 1500);
         }
-
-        isCancelled.current = false;
-        setIsLoading(false);
     }, [generateExportSVGs, exportMarcherSVGs]);
 
     return (

@@ -19,6 +19,7 @@ import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
 import MarcherRotationInput from "./MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 
 function MarcherEditor() {
@@ -249,10 +250,13 @@ function MarcherEditor() {
                                     registeredAction={
                                         RegisteredActionsObjects.swapMarchers
                                     }
-                                    className={getButtonClassName({
-                                        variant: "primary",
-                                        size: "compact",
-                                    })}
+                                    className={clsx(
+                                        getButtonClassName({
+                                            variant: "primary",
+                                            size: "compact",
+                                        }),
+                                        "enabled:hover:text-text-invert",
+                                    )}
                                 >
                                     <T keyName="inspector.marcher.swapMarchers" />
                                 </RegisteredActionButton>
@@ -260,10 +264,13 @@ function MarcherEditor() {
                             {selectedMarchers.length >= 3 &&
                                 createLineIsVisible() && (
                                     <RegisteredActionButton
-                                        className={getButtonClassName({
-                                            variant: "primary",
-                                            size: "compact",
-                                        })}
+                                        className={clsx(
+                                            getButtonClassName({
+                                                variant: "primary",
+                                                size: "compact",
+                                            }),
+                                            "enabled:hover:text-text-invert",
+                                        )}
                                         registeredAction={
                                             RegisteredActionsObjects.alignmentEventLine
                                         }
@@ -272,7 +279,7 @@ function MarcherEditor() {
                                     </RegisteredActionButton>
                                 )}
                             {/* Add rotation controls */}
-                            <div className="w-full px-6">
+                            <div className="w-full">
                                 <MarcherRotationInput />
                             </div>
                         </InspectorCollapsible>

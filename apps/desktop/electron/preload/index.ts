@@ -437,7 +437,10 @@ const APP_API = {
             AudioFile[]
         >,
     deleteAudioFile: (audioFileId: number) =>
-        ipcRenderer.invoke("audio:delete", audioFileId) as Promise<AudioFile[]>,
+        ipcRenderer.invoke(
+            "audio:delete",
+            audioFileId,
+        ) as Promise<AudioFile | null>,
 
     /*********** SHAPES ***********/
     // Shape
