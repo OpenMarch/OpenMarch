@@ -5,6 +5,7 @@ import CanvasMarcher from "./CanvasMarcher";
  * Actions that must be taken when a group is rotated
  */
 const rotationSideEffects = (group: fabric.Group) => {
+    if (!group.getObjects) return;
     for (const object of group.getObjects()) {
         if (object instanceof CanvasMarcher) {
             object.updateTextLabelPosition();
@@ -43,6 +44,7 @@ export const handleGroupRotating = (
 };
 
 const handleGroupMoving = (e: fabric.IEvent<Event>, group: fabric.Group) => {
+    if (!group.getObjects) return;
     for (const object of group.getObjects()) {
         if (object instanceof CanvasMarcher) {
             object.updateTextLabelPosition();
