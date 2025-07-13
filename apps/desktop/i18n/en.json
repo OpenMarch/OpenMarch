@@ -231,9 +231,11 @@
             "temporaryPath": "Temporary Path",
             "top": "Top",
             "useHashes": "Use Hashes",
-            "width": "Width"
+            "width": "Width",
+            "widthHeight": "w/h"
         },
         "messages": {
+            "fieldRatio": "{ratio} or {decimal}",
             "measurementModificationNote": "These values can be modified by adjusting the X and Y coordinates, the step size and the background image",
             "refreshAfterImporting": "Refresh after importing [Ctrl + R]",
             "refreshNote": "Below values may not be applied until after a refresh"

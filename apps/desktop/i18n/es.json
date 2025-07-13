@@ -231,9 +231,11 @@
             "temporaryPath": "Ruta Temporal",
             "top": "Superior",
             "useHashes": "Usar Hashes",
-            "width": "Ancho"
+            "width": "Ancho",
+            "widthHeight": "ancho/alto"
         },
         "messages": {
+            "fieldRatio": "{ratio} o {decimal}",
             "measurementModificationNote": "Estos valores se pueden modificar ajustando las coordenadas X e Y, el tamaño del paso y la imagen de fondo",
             "refreshAfterImporting": "Actualizar después de importar [Ctrl + R]",
             "refreshNote": "Los valores enunciados podrían no aplicarse hasta después de una actualización"

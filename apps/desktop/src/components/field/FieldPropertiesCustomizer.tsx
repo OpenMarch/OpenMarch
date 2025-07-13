@@ -1581,12 +1581,18 @@ export default function FieldPropertiesCustomizer() {
                                         if (ratioStr.length > 12) {
                                             return divStr;
                                         } else {
-                                            return `${ratioStr}  or  ${divStr}`;
+                                            return t(
+                                                "fieldProperties.messages.fieldRatio",
+                                                {
+                                                    ratio: ratioStr,
+                                                    decimal: divStr,
+                                                },
+                                            );
                                         }
                                     })()}
                                 </div>
                                 <div className="bg-fg-2 border-stroke rounded-6 w-fit border px-8 py-2 text-center font-mono">
-                                    w/h
+                                    <T keyName="fieldProperties.labels.widthHeight" />
                                 </div>
                             </div>
                         </div>

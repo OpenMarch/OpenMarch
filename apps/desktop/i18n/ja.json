@@ -231,9 +231,11 @@
             "temporaryPath": "一時 パス",
             "top": "トップ",
             "useHashes": "ハッシュ を 使用",
-            "width": "幅"
+            "width": "幅",
+            "widthHeight": "幅 / 高さ"
         },
         "messages": {
+            "fieldRatio": "{ratio} または {decimal}",
             "measurementModificationNote": "X と Y 座標、ステップサイズ、背景画像の調整によってこれらの値を変更できます",
             "refreshAfterImporting": "インポート後に更新 [ Ctrl + R ]",
             "refreshNote": "「以下の値はリフレッシュ後に適用される可能性があります」"
