@@ -120,6 +120,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                 </Tooltip.Provider>
             ) : (
                 <button
+                    ref={ref}
                     className={getButtonClassName({
                         variant,
                         size,
