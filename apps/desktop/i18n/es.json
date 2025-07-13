@@ -140,6 +140,115 @@
         "xStepDescription": "Haga clic izquierdo para avanzar, clic derecho para retroceder entre las opciones de paso X",
         "yStepDescription": "Haga clic izquierdo para avanzar, haga clic derecho para retroceder entre las opciones de intervalo en Y"
     },
+    "field": {
+        "general": {
+            "exportField": "Exportar campo",
+            "exportField.tooltip": "Exportar este campo a un archivo para usar en otros proyectos",
+            "importField": "Importar campo",
+            "importField.tooltip": "Importar un campo personalizado"
+        },
+        "title": "Campo"
+    },
+    "fieldProperties": {
+        "buttons": {
+            "importImage": "Importar Imagen",
+            "newXCheckpoint": "Nuevo Punto de Control X",
+            "newYCheckpoint": "Nuevo Punto de Control Y",
+            "resetTheme": "Restablecer tema a predeterminado"
+        },
+        "labels": {
+            "background": "Fondo",
+            "backgroundImageRatio": "Relación de imagen de fondo",
+            "bottom": "Fondo",
+            "conformingMethod": "Método de conformidad",
+            "conformMethod": "Método Conformar",
+            "directorsLeft": "Izquierda del Director",
+            "directorsRight": "Derecha del Director",
+            "externalLabels": "Etiquetas Externas",
+            "fieldLabels": "Etiquetas de Campo",
+            "fieldName": "Nombre del campo",
+            "fieldRatio": "Proporción del Campo",
+            "gridLines": "Líneas de Cuadrícula",
+            "halfLineXInterval": "Intervalo de media línea en X",
+            "halfLineYInterval": "Intervalo de Y de media línea",
+            "height": "Altura",
+            "left": "Izquierda",
+            "leftAbbreviation": "Abreviatura izquierda",
+            "marcherFill": "Relleno de Marcha",
+            "marcherOutline": "Contorno de marchar",
+            "marcherText": "Texto para caminar",
+            "measurementSystem": "Sistema de medición",
+            "nextPath": "Siguiente ruta",
+            "previousPath": "Ruta anterior",
+            "primaryLines": "Líneas Primarias",
+            "right": "Derecha",
+            "rightAbbreviation": "Abreviatura Derecha",
+            "secondaryLines": "Líneas Secundarias",
+            "shapes": "Formas",
+            "showBackgroundImage": "Mostrar imagen de fondo",
+            "stepsFromFrontToAwayLabelBottom": "Pasos del frente a lejos etiqueta abajo",
+            "stepsFromFrontToAwayLabelTop": "Pasos desde el frente hasta la etiqueta superior",
+            "stepsFromFrontToHomeLabel": "Pasos desde delante hasta casa etiqueta inferior",
+            "stepsFromFrontToHomeLabelTop": "Pasos desde el frente hasta la etiqueta superior de inicio",
+            "stepSize": "Tamaño del paso",
+            "temporaryPath": "Ruta Temporal",
+            "top": "Superior",
+            "useHashes": "Usar Hashes",
+            "width": "Ancho"
+        },
+        "messages": {
+            "measurementModificationNote": "Estos valores se pueden modificar ajustando las coordenadas X e Y, el tamaño del paso y la imagen de fondo",
+            "refreshAfterImporting": "Actualizar después de importar [Ctrl + R]",
+            "refreshNote": "Los valores enunciados podrían no aplicarse hasta después de una actualización"
+        },
+        "options": {
+            "fill": "Rellenar",
+            "fit": "Ajustar",
+            "imperial": "Imperial",
+            "metric": "Métrico"
+        },
+        "sections": {
+            "externalLabels": "Etiquetas Externas",
+            "fieldLabels": "Etiquetas de Campo",
+            "general": "General",
+            "imageRendering": "Renderizado de Imagen",
+            "measurements": "Mediciones",
+            "sideDescriptions": "Descripciones laterales",
+            "theme": "Tema",
+            "xCheckpoints": "Puntos de Verificación",
+            "yCheckpoints": "Puntos de Control Y"
+        },
+        "tabs": {
+            "checkpoints": "Puntos de Control",
+            "general": "General",
+            "image": "Imagen",
+            "theme": "Diseño"
+        },
+        "title": "Propiedades del campo",
+        "tooltips": {
+            "conformMethod": "Si ajustar la imagen de fondo dentro del campo o llenarlo. La relación de aspecto siempre se mantiene",
+            "directorsLeft": "E.g. \"Lado 1\", \"Izquierda del público\" o \"Derecha del escenario\"",
+            "directorsRight": "P.ej., \"Lado 2\", \"Derecha del Público\" o \"Izquierda del Escenario\"",
+            "fieldName": "El nombre o título de la plantilla de campo",
+            "halfLineXInterval": "El intervalo en el que las líneas medias aparecen en la interfaz de usuario en el eje X desde el centro del campo. Deje vacío para omitir las líneas medias en el eje X. Esto es puramente estético y no afecta las coordenadas de ninguna manera",
+            "halfLineYInterval": "El intervalo al que aparecen las medias líneas en la interfaz de usuario en el eje Y desde el frente del campo. Deje vacío para omitir medias líneas en el eje Y. Esto es puramente cosmético y no afecta las coordenadas de ninguna manera",
+            "importImage": "Importar una imagen para mostrar en el campo",
+            "leftAbbreviation": "P. ej., \"S1\", \"AL\" o \"SR\" (abreviatura de \"Lado 1\", \"Audiencia izquierda\" o \"Escenario derecho\")",
+            "measurementSystem": "La unidad de medida para definir el tamaño del paso. Puede ir y venir",
+            "resetTheme": "Restablecer el tema a los valores predeterminados",
+            "rightAbbreviation": "Por ej. \"S2\", \"AD\" o \"EI\" (abreviatura de \"Lado 2\", \"Audiencia Derecha\" o \"Escenario Izquierdo\")",
+            "stepsFromFrontToAwayLabelBottom": "Número de pasos desde la línea lateral delantera hasta el exterior del número visitante (más cerca de la línea lateral trasera)",
+            "stepsFromFrontToAwayLabelTop": "Número de pasos desde la línea de adelante hasta el interior del número visitante (más cerca del centro del campo)",
+            "stepsFromFrontToHomeLabel": "Número de pasos desde la línea lateral frontal hasta el exterior del número de hogar (más cerca de la línea lateral frontal)",
+            "stepsFromFrontToHomeLabelTop": "Número de pasos desde la línea de fondo hasta el interior del número de casa (más cerca del centro del campo)",
+            "stepSize": "El tamaño de cada paso en el campo en pulgadas o centímetros",
+            "useHashes": "Utilizar hashes para los puntos de control en Y, como un campo de fútbol. Si no está marcado, se utilizarán líneas."
+        },
+        "warnings": {
+            "xCheckpointsNotEquidistant": "ADVERTENCIA - Los puntos de verificación X izquierdo y derecho no son equidistantes del centro. Esto puede causar artefactos gráficos extraños y debería corregirse.",
+            "yCheckpointsNegative": "ADVERTENCIA - Se recomienda encarecidamente que todos los pasos de los puntos de control Y sean menores que cero (es decir, números negativos). Todas las coordenadas Y deben estar detrás del frente del campo. No hacerlo puede causar errores gráficos y coordenadas inesperadas."
+        }
+    },
     "formButtons": {
         "cancel": "Cancelar",
         "editButton": "Editar",
