@@ -6,7 +6,13 @@ description: "How to set the tempo in OpenMarch"
 import { Steps } from "@astrojs/starlight/components";
 import { YouTube } from "astro-embed";
 import { LinkCard, CardGrid, Aside } from "@astrojs/starlight/components";
-import { MusicNotesIcon } from "@phosphor-icons/react";
+import {
+  MusicNotesIcon,
+  RewindIcon,
+  PencilSimpleIcon,
+  PlayIcon,
+  PauseIcon,
+} from "@phosphor-icons/react";
 
 <Aside type="tip" title="Define your tempos first">
 
@@ -51,9 +57,19 @@ Groups that have the same time signature and tempo are combined into a single gr
 
 ## Creating tempo groups
 
+<iframe
+  style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
+  src="https://www.youtube.com/embed/xWWkSjg_wn0?si=IdmGtlGkj9SmGp7s&amp;start=40"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+
 ### Manually creating a new tempo group
 
-Open the `Music` tab (same one from the [Importing Music](#importing-music) section) and you will see the following form -
+Open the <span style={{ display: "inline-flex", gap: "0.25rem" }}><MusicNotesIcon /> </span> `Music` tab and you will see the following form -
 
 ![Creating a new tempo group](/docs/guides/music/new-tempo-group.png)
 
@@ -105,7 +121,7 @@ To import a `MusicXML` file, follow these steps:
 
 <Steps>
 
-1. Open the `Music` tab
+1. Open the <span style={{ display: "inline-flex", gap: "0.25rem" }}><MusicNotesIcon /> </span> `Music` tab
 1. Select `Import MusicXML`
 1. From the file popup, select the `MusicXML` file you want to import
 1. You should see the tempo groups populate in the `Tempo` tab and beats in the timeline!
@@ -114,12 +130,70 @@ To import a `MusicXML` file, follow these steps:
 
 ![Importing a MusicXML file example](/docs/guides/music/import-musicxml.gif)
 
+### Tapping tempo
+
+<iframe
+  style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
+  src="https://www.youtube.com/embed/xWWkSjg_wn0?si=JgAKDFbR8CDGfJyi&amp;start=472"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+
+<Aside type="danger" title="Very experimental">
+
+`Tap tempo` is in it's extreme early stages.
+It works, but the user experience will likely be tedious and frustrating.
+
+Please let us know if you find the tap-tempo feature useful, as we aren't predicting that many people will use it.
+
+</Aside>
+
+Tempo tapping is not very polished and is currently _all-or-nothing._
+You must tap all in one shot and will need to start over if you make a mistake or need to edit.
+
+<Steps>
+
+1. Press the <span style={{ display: "inline-flex", gap: "0.25rem" }}><PencilSimpleIcon /> </span> `Edit` button in the timeline
+1. Click `Tap new tempo` to delete all existing beats and start fresh
+1. Start at the beginning of the audio by pressing <span style={{ display: "inline-flex", gap: "0.25rem" }}><RewindIcon /> </span> `Rewind`
+1. Play the audio by pressing <span style={{ display: "inline-flex", gap: "0.25rem" }}><PlayIcon /> </span> `Play` or <kbd>Space</kbd>
+1. Tap the tempo
+   - Use the number keys `[1-9]` to tap the tempo
+   - Press the number that corresponds to the beats in the measure, or the time signature's numerator
+   - For example in `4/4` time, press the <kbd>4</kbd> key
+   - Press the key at the downbeat of each measure
+1. Pause the audio by pressing <span style={{ display: "inline-flex", gap: "0.25rem" }}><PauseIcon /> </span> `Pause` or <kbd>Space</kbd>
+1. You have three options:
+   - Save the new beats by pressing `Save`
+   - Retry the tap tempo process by pressing `Restart`
+   - Cancel and go back to your old beats by pressing `Exit`
+
+</Steps>
+
+![Tap tempo example](/docs/guides/music/tap-tempo.gif)
+
+<Aside type="note" title="All keyboard shortcuts are disabled during tap tempo">
+
+Keyboard shortcuts like `Ctrl + R` are disabled during tap tempo.
+
+To exit the tap tempo session at any time and cancel the process, press <kbd>Esc</kbd>.
+
+</Aside>
+
 ## Editing a tempo group
 
-### Simple Groups
-
-**Simple groups** are tempo groups that maintain a consistent tempo.
-These can be mixed or simple meters.
+<iframe
+  style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
+  src="https://www.youtube.com/embed/xWWkSjg_wn0?si=g8Dyu3K5LxZgWgI2&amp;start=40"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
 
 <Aside type="caution" title="Editing limitation">
 
@@ -127,6 +201,11 @@ Currently, only the `Name` and `Start tempo` can be edited.
 We are working to expand this functionality! (Issue [#512](https://github.com/OpenMarch/OpenMarch/issues/512))
 
 </Aside>
+### Simple Groups
+
+**Simple groups** are tempo groups that maintain a consistent tempo.
+These can be mixed or simple meters.
+
 ![Editing a simple tempo group](/docs/guides/music/simple-group-edit.gif)
 
 ### Custom groups
