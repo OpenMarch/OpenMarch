@@ -122,6 +122,7 @@ module.exports = {
         "**/.astro/**",
         "**/.turbo/**",
         "patreonMembers.json",
+        "**/mock-databases/**",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };

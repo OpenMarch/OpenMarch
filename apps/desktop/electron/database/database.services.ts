@@ -690,11 +690,16 @@ export async function getSelectedAudioFile(
     db?: Database.Database,
 ): Promise<AudioFile | null> {
     const dbToUse = db || connect();
-    const stmt = dbToUse.prepare(
-        `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`,
-    );
-    const result = await stmt.get();
-    if (!result) {
+    try {
+        const stmt = dbToUse.prepare(
+            `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`,
+        );
+        const result = await stmt.get();
+        if (result) {
+            return result as AudioFile;
+        }
+
+        // If no audio file is selected, select the first one
         const firstAudioFileStmt = dbToUse.prepare(
             `SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`,
         );
@@ -705,9 +710,11 @@ export async function getSelectedAudioFile(
         }
         await setSelectAudioFile(firstAudioFile.id);
         return firstAudioFile as AudioFile;
+    } finally {
+        if (!db) {
+            dbToUse.close();
+        }
     }
-    dbToUse.close();
-    return result as AudioFile;
 }
 
 /**
@@ -876,24 +883,34 @@ async function updateAudioFiles(
  * @param audioFileId
  * @returns {success: boolean, error?: string}
  */
-async function deleteAudioFile(
-    audioFileId: number,
-): Promise<LegacyDatabaseResponse<AudioFile>> {
+async function deleteAudioFile(audioFileId: number): Promise<AudioFile | null> {
     const db = connect();
-    let output: LegacyDatabaseResponse<AudioFile> = { success: true };
     try {
         History.incrementUndoGroup(db);
-        const pageStmt = db.prepare(`
-            DELETE FROM ${Constants.AudioFilesTableName}
-            WHERE id = @audioFileId
-        `);
-        pageStmt.run({ audioFileId });
+
+        const wasSelectedStmt = db.prepare(
+            `SELECT selected FROM ${Constants.AudioFilesTableName} WHERE id = ?`,
+        );
+        const wasSelected = (wasSelectedStmt.get(audioFileId) as any)?.selected;
+
+        const deleteStmt = db.prepare(
+            `DELETE FROM ${Constants.AudioFilesTableName} WHERE id = ?`,
+        );
+        deleteStmt.run(audioFileId);
+
+        if (wasSelected) {
+            const newSelectedFile = await getSelectedAudioFile(db);
+            if (newSelectedFile) {
+                await setSelectAudioFile(newSelectedFile.id);
+            }
+        }
     } catch (error: any) {
         console.error(error);
-        output = { success: false, error: error };
+        throw error;
     } finally {
         History.incrementUndoGroup(db);
         db.close();
     }
-    return output;
+
+    return getSelectedAudioFile();
 }

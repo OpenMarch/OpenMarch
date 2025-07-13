@@ -68,6 +68,22 @@ export default class AudioFile {
         return new AudioFile(response);
         // return window.electron.getSelectedAudioFile();
     }
+
+    /**
+     * Deletes an audio file from the database.
+     *
+     * @param audioFileId The id of the audio file to delete
+     * @returns The newly selected audio file including the audio data
+     */
+    public static async deleteAudioFile(
+        audioFileId: number,
+    ): Promise<AudioFile | null> {
+        const result = await window.electron.deleteAudioFile(audioFileId);
+        if (result) {
+            return new AudioFile({ ...result });
+        }
+        return null;
+    }
 }
 
 /**

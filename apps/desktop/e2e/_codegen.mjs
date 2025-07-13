@@ -4,9 +4,65 @@ import { fileURLToPath } from "url";
 import { setTimeout } from "node:timers/promises";
 import fs from "fs-extra";
 import crypto from "crypto";
+import initSqlJs from "sql.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const flags = {
+    audio: args.includes("-a") || args.includes("--audio"),
+    help: args.includes("-h") || args.includes("--help"),
+};
+
+// Map of flag to SQL file for easy expansion
+const sqlOptions = [
+    {
+        flag: "audio",
+        cli: ["-a", "--audio"],
+        sqlFile: "audio-files.sql",
+        description: "Apply audio-files.sql to the temporary database",
+    },
+    // Add more options here as needed
+];
+
+// Collect all valid SQL flags in the order they appear, without duplicates
+const seenFlags = new Set();
+const selectedSqlOptions = [];
+for (const arg of args) {
+    for (const option of sqlOptions) {
+        if (option.cli.includes(arg)) {
+            if (seenFlags.has(option.flag)) {
+                console.error(
+                    `Error: Duplicate flag detected: ${option.cli.join(" or ")}`,
+                );
+                process.exit(1);
+            }
+            seenFlags.add(option.flag);
+            selectedSqlOptions.push(option);
+        }
+    }
+}
+
+// Show help if requested
+if (flags.help) {
+    console.log(`\nUsage: node _codegen.mjs [options]\n`);
+    for (const option of sqlOptions) {
+        console.log(
+            `  ${option.cli.join(", ").padEnd(15)}${option.description}`,
+        );
+    }
+    console.log(`  -h, --help     Show this help message\n`);
+    console.log(`Examples:`);
+    console.log(`  node _codegen.mjs                    # Use blank database`);
+    for (const option of sqlOptions) {
+        console.log(
+            `  node _codegen.mjs ${option.cli[1]}           # ${option.description}`,
+        );
+    }
+    process.exit(0);
+}
 
 const distAssetsDir = path.resolve(__dirname, "../dist-electron/main");
 if (!fs.existsSync(distAssetsDir)) {
@@ -34,6 +90,42 @@ const tempDatabaseFile = path.resolve(
     `codegen-db-${crypto.randomUUID()}.dots`,
 );
 await fs.copyFile(databaseFile, tempDatabaseFile);
+
+// Initialize sql.js
+const SQL = await initSqlJs({
+    locateFile: (file) => `./node_modules/sql.js/dist/${file}`,
+});
+
+// Apply all selected SQL files in order
+for (const selectedSqlOption of selectedSqlOptions) {
+    const sqlFilePath = path.resolve(
+        __dirname,
+        `./mock-databases/${selectedSqlOption.sqlFile}`,
+    );
+    if (!fs.existsSync(sqlFilePath)) {
+        throw new Error(
+            `mock-databases/${selectedSqlOption.sqlFile} file does not exist.`,
+        );
+    }
+    console.log(
+        `Applying ${selectedSqlOption.sqlFile} to temporary database...`,
+    );
+    try {
+        const sqlContent = await fs.readFile(sqlFilePath, "utf8");
+        const dbBuffer = await fs.readFile(tempDatabaseFile);
+        const db = new SQL.Database(dbBuffer);
+        db.exec(sqlContent);
+        const updatedDbBuffer = db.export();
+        await fs.writeFile(tempDatabaseFile, updatedDbBuffer);
+        db.close();
+        console.log(
+            `Successfully applied SQL (${sqlContent.length} characters) to database`,
+        );
+    } catch (error) {
+        console.error(`Error applying SQL to database:`, error);
+        throw error;
+    }
+}
 
 console.log("Launching app with args:", [mainFile, tempDatabaseFile]);
 

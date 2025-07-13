@@ -25,7 +25,13 @@ export const rotateGroup = ({
     rotationSideEffects(group);
 };
 
-const handleGroupRotating = (e: fabric.IEvent<Event>, group: fabric.Group) => {
+/**
+ * Handles the rotation of a group in the canvas. Is called in handleObjectMoving in Canvas.tsx
+ */
+export const handleGroupRotating = (
+    e: fabric.IEvent<Event>,
+    group: fabric.Group,
+) => {
     const shiftKey = (e.e as MouseEvent).shiftKey;
     const angle = group.angle ?? 0;
 
@@ -76,7 +82,7 @@ export const setGroupAttributes = (group: fabric.Group) => {
     group.hasBorders = true;
     group.hasRotatingPoint = true;
     group.lockRotation = false;
-    group.on("rotating", (e) => handleGroupRotating(e, group));
     group.on("scaling", (e) => handleGroupScaling(e, group));
     group.on("moving", (e) => handleGroupMoving(e, group));
+    // rotation is handled in handleObjectMoving in Canvas.tsx
 };

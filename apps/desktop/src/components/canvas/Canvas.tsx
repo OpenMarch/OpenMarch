@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react";
+import { fabric } from "fabric";
 import { useUiSettingsStore } from "../../stores/UiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
@@ -15,10 +16,13 @@ import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectabl
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
+import { Pathway } from "@/global/classes/canvasObjects/Pathway";
+import { Midpoint } from "@/global/classes/canvasObjects/Midpoint";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
+import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
 
 /**
@@ -61,7 +65,7 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
-    const pagePathways = useRef<fabric.Object[]>([]);
+    const pagePathwaysMidpoints = useRef<fabric.Object[]>([]);
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -317,18 +321,144 @@ export default function Canvas({
         }
     }, [setSelectedMarchers]);
 
+    /**
+     * Handler for moving CanvasMarchers to update paths.
+     */
+    const handleObjectMoving = useCallback(
+        (fabricEvent: fabric.IEvent<Event>) => {
+            if (!canvas || !selectedPage || !marcherPages) return;
+
+            // Snap rotate boxes to 15 degree increments
+            handleGroupRotating(
+                fabricEvent,
+                fabricEvent.target as fabric.Group,
+            );
+
+            // Get selected CanvasMarchers and their IDs
+            const selectedCanvasMarchers = canvas.getCanvasMarchers({
+                active: true,
+            });
+            const selectedIds = selectedCanvasMarchers.map(
+                (cm) => cm.marcherObj.id,
+            );
+
+            // Find previous/next MarcherPages for selected marchers
+            const prevPages = marcherPages.filter(
+                (mp) =>
+                    selectedIds.includes(mp.marcher_id) &&
+                    mp.page_id === selectedPage.previousPageId,
+            );
+            const nextPages = marcherPages.filter(
+                (mp) =>
+                    selectedIds.includes(mp.marcher_id) &&
+                    mp.page_id === selectedPage.nextPageId,
+            );
+
+            // Remove pathways and midpoints only for selected marchers
+            for (const pathwayMidpoint of pagePathwaysMidpoints.current as Pathway[]) {
+                if (selectedIds.includes(pathwayMidpoint.marcherId)) {
+                    canvas.remove(pathwayMidpoint);
+                }
+            }
+            pagePathwaysMidpoints.current =
+                pagePathwaysMidpoints.current.filter(
+                    (pathwayMidpoint) =>
+                        !selectedIds.includes(
+                            (pathwayMidpoint as Pathway).marcherId,
+                        ),
+                );
+
+            // Draw previous/next pathways for selected marchers
+            selectedCanvasMarchers.forEach((cm: any) => {
+                const marcherId = cm.marcherObj.id;
+
+                // Adjust coords for snapping
+                const movingCoords =
+                    selectedCanvasMarchers.length === 1 &&
+                    !(fabricEvent.e as MouseEvent).shiftKey
+                        ? cm.getMarcherCoords(uiSettings)
+                        : cm.getAbsoluteCoords();
+
+                // Previous pathway
+                const prev = prevPages.find(
+                    (mp: any) => mp.marcher_id === marcherId,
+                );
+                if (prev && uiSettings.previousPaths) {
+                    const pathway = new Pathway({
+                        start: { x: prev.x, y: prev.y },
+                        end: movingCoords,
+                        color: rgbaToString(
+                            fieldProperties!.theme.previousPath,
+                        ),
+                        marcherId: marcherId,
+                    });
+                    const midpoint = new Midpoint({
+                        start: { x: prev.x, y: prev.y },
+                        end: movingCoords,
+                        innerColor: "white",
+                        outerColor: rgbaToString(
+                            fieldProperties!.theme.previousPath,
+                        ),
+                        marcherId: marcherId,
+                    });
+                    canvas.add(pathway);
+                    canvas.add(midpoint);
+                    pagePathwaysMidpoints.current.push(pathway);
+                    pagePathwaysMidpoints.current.push(midpoint);
+                }
+
+                // Next pathway
+                const next = nextPages.find(
+                    (mp: any) => mp.marcher_id === marcherId,
+                );
+                if (next && uiSettings.nextPaths) {
+                    const pathway = new Pathway({
+                        start: movingCoords,
+                        end: { x: next.x, y: next.y },
+                        color: rgbaToString(fieldProperties!.theme.nextPath),
+                        marcherId: marcherId,
+                    });
+                    const midpoint = new Midpoint({
+                        start: { x: next.x, y: next.y },
+                        end: movingCoords,
+                        innerColor: "white",
+                        outerColor: rgbaToString(
+                            fieldProperties!.theme.nextPath,
+                        ),
+                        marcherId: marcherId,
+                    });
+                    canvas.add(pathway);
+                    canvas.add(midpoint);
+                    pagePathwaysMidpoints.current.push(pathway);
+                    pagePathwaysMidpoints.current.push(midpoint);
+                }
+            });
+
+            canvas.requestRenderAll();
+        },
+        [canvas, marcherPages, selectedPage, uiSettings, pagePathwaysMidpoints],
+    );
+
     useEffect(() => {
         if (!canvas) return;
         canvas.on("selection:created", handleSelect);
         canvas.on("selection:updated", handleSelect);
         canvas.on("selection:cleared", handleDeselect);
 
+        canvas.on("object:moving", handleObjectMoving);
+        canvas.on("object:scaling", handleObjectMoving);
+        canvas.on("object:rotating", handleObjectMoving);
+
         return () => {
             canvas.off("selection:created", handleSelect);
             canvas.off("selection:updated", handleSelect);
             canvas.off("selection:cleared", handleDeselect);
+
+            canvas.off("object:moving", handleObjectMoving);
+            canvas.off("object:scaling", handleObjectMoving);
+            canvas.off("object:rotating", handleObjectMoving);
         };
-    }, [canvas, handleDeselect, handleSelect]);
+    }, [canvas, handleDeselect, handleSelect, handleObjectMoving]);
 
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {
@@ -465,19 +595,20 @@ export default function Canvas({
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage && fieldProperties) {
-            for (const pathway of pagePathways.current) {
+            for (const pathway of pagePathwaysMidpoints.current) {
                 canvas.remove(pathway);
             }
-            pagePathways.current = [];
+            pagePathwaysMidpoints.current = [];
             canvas.removeStaticCanvasMarchers();
 
             // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
             let selectedPageMarcherPages: MarcherPage[] = [];
-            if (uiSettings.previousPaths || uiSettings.nextPaths)
+            if (uiSettings.previousPaths || uiSettings.nextPaths) {
                 selectedPageMarcherPages = MarcherPage.filterByPageId(
                     marcherPages,
                     selectedPage.id,
                 );
+            }
 
             if (
                 uiSettings.previousPaths &&
@@ -499,7 +630,7 @@ export default function Canvas({
                         endPageMarcherPages: selectedPageMarcherPages,
                         color: rgbaToString(fieldProperties.theme.previousPath),
                     });
-                pagePathways.current.push(
+                pagePathwaysMidpoints.current.push(
                     ...renderedPathways,
                     ...renderedMidpoints,
                 );
@@ -521,7 +652,7 @@ export default function Canvas({
                         endPageMarcherPages: nextPageMarcherPages,
                         color: rgbaToString(fieldProperties.theme.nextPath),
                     });
-                pagePathways.current.push(
+                pagePathwaysMidpoints.current.push(
                     ...renderedPathways,
                     ...renderedMidpoints,
                 );
