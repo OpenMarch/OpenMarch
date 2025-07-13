@@ -445,9 +445,9 @@ export default function Canvas({
         canvas.on("selection:updated", handleSelect);
         canvas.on("selection:cleared", handleDeselect);
 
-        canvas.on("object:moving", handleObjectMoving);
-        canvas.on("object:scaling", handleObjectMoving);
-        canvas.on("object:rotating", handleObjectMoving);
+        //canvas.on("object:moving", handleObjectMoving);
+        //canvas.on("object:scaling", handleObjectMoving);
+        //canvas.on("object:rotating", handleObjectMoving);
 
         return () => {
             canvas.off("selection:created", handleSelect);
@@ -841,16 +841,11 @@ export default function Canvas({
                 const nextPage = pages.find((page) => page.id === nextPageId);
                 if (!nextPage) return;
 
-                const nextPageMarcherPages = marcherPages.filter(
-                    (marcherPage) => marcherPage.page_id === nextPageId,
-                );
+                const nextPageMarcherPages =
+                    marcherPages.marcherPagesByPage[nextPageId];
                 canvas.getCanvasMarchers().forEach((canvasMarcher) => {
-                    const marcherPageToUse = nextPageMarcherPages.find(
-                        (marcherPage) =>
-                            marcherPage.marcher_id ===
-                                canvasMarcher.marcherObj.id &&
-                            marcherPage.page_id === nextPageId,
-                    );
+                    const marcherPageToUse =
+                        nextPageMarcherPages[canvasMarcher.marcherObj.id];
                     if (!marcherPageToUse) {
                         console.error(
                             "Marcher page not found - startAnimation: Canvas.tsx",
