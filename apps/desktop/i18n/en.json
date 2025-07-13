@@ -323,9 +323,11 @@
         "tabs": {
             "general": "General",
             "checkpoints": "Checkpoints",
-            "image": "Image"
+            "image": "Image",
+            "theme": "Theme"
         },
         "labels": {
+            "fieldName": "Field Name",
             "stepSize": "Step Size",
             "measurementSystem": "Measurement System",
             "halfLineXInterval": "Half Line X-Interval",
@@ -346,9 +348,26 @@
             "showBackgroundImage": "Show Background Image",
             "conformMethod": "Conform Method",
             "conformingMethod": "Conforming Method",
-            "width": "Width"
+            "width": "Width",
+            "height": "Height",
+            "fieldRatio": "Field Ratio",
+            "backgroundImageRatio": "Background Image Ratio",
+            "background": "Background",
+            "primaryLines": "Primary Lines",
+            "secondaryLines": "Secondary Lines",
+            "gridLines": "Grid Lines",
+            "fieldLabels": "Field Labels",
+            "externalLabels": "External Labels",
+            "previousPath": "Previous Path",
+            "nextPath": "Next Path",
+            "shapes": "Shapes",
+            "temporaryPath": "Temporary Path",
+            "marcherFill": "Marcher Fill",
+            "marcherOutline": "Marcher Outline",
+            "marcherText": "Marcher Text"
         },
         "tooltips": {
+            "fieldName": "The name or title of the field template",
             "stepSize": "The size of each step on the field in inches or centimeters",
             "measurementSystem": "The unit of measurement to define the step size in. Can go back and forth",
             "halfLineXInterval": "The interval that half lines appear in the UI on the X axis from the center of the field. Leave empty to omit half lines on the X-axis. This is purely cosmetic and does not affect coordinates in any way",
@@ -362,16 +381,20 @@
             "stepsFromFrontToAwayLabelTop": "Number of steps from the front sideline to the inside of the away number (closer to the center of the field)",
             "stepsFromFrontToAwayLabelBottom": "Number of steps from the front sideline to the outside of the away number (closer to the back sideline)",
             "useHashes": "Use hashes for the Y-checkpoints, like a football field. If unchecked, lines will be used.",
-            "conformMethod": "Whether to fit the background image inside the field or fill it. The aspect ratio is always maintained"
+            "conformMethod": "Whether to fit the background image inside the field or fill it. The aspect ratio is always maintained",
+            "importImage": "Import an image to display on the field",
+            "resetTheme": "Reset the theme to the default values"
         },
         "sections": {
+            "general": "General",
             "sideDescriptions": "Side Descriptions",
             "fieldLabels": "Field Labels",
             "externalLabels": "External Labels",
             "xCheckpoints": "X-Checkpoints",
             "yCheckpoints": "Y-Checkpoints",
             "imageRendering": "Image Rendering",
-            "measurements": "Measurements"
+            "measurements": "Measurements",
+            "theme": "Theme"
         },
         "warnings": {
             "xCheckpointsNotEquidistant": "WARNING - The left and rightmost X-checkpoints are not equidistant from the center. This may cause strange graphical artifacts and should be fixed.",
@@ -380,7 +403,8 @@
         "buttons": {
             "newXCheckpoint": "New X-Checkpoint",
             "newYCheckpoint": "New Y-Checkpoint",
-            "importImage": "Import Image"
+            "importImage": "Import Image",
+            "resetTheme": "Reset Theme to Default"
         },
         "options": {
             "imperial": "Imperial",
@@ -389,7 +413,9 @@
             "fill": "Fill"
         },
         "messages": {
-            "refreshAfterImporting": "Refresh after importing [Ctrl + R]"
+            "refreshAfterImporting": "Refresh after importing [Ctrl + R]",
+            "measurementModificationNote": "These values can be modified by adjusting the X and Y coordinates, the step size and the background image",
+            "refreshNote": "Below values may not be applied until after a refresh"
         }
     },
     "toolbar": {

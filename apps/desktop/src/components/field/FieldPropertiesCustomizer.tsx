@@ -1477,7 +1477,9 @@ export default function FieldPropertiesCustomizer() {
                         <div className="flex h-fit min-h-0 items-center gap-8">
                             <Button
                                 className="w-full"
-                                tooltipText="Import an image to display on the field"
+                                tooltipText={t(
+                                    "fieldProperties.tooltips.importImage",
+                                )}
                                 tooltipSide="right"
                                 variant="primary"
                                 type="button"
@@ -1524,7 +1526,7 @@ export default function FieldPropertiesCustomizer() {
                         </div>
                         <div className="flex w-full flex-col gap-4">
                             <div className={clsx("col-span-2 align-middle")}>
-                                Height
+                                <T keyName="fieldProperties.labels.height" />
                             </div>
                             <div className="flex w-full gap-8">
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
@@ -1538,7 +1540,9 @@ export default function FieldPropertiesCustomizer() {
                             </div>
                         </div>
                         <div className="flex w-full flex-col gap-4">
-                            <div>Field Ratio</div>
+                            <div>
+                                <T keyName="fieldProperties.labels.fieldRatio" />
+                            </div>
                             <div className="flex w-full gap-8">
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
                                     {(() => {
@@ -1565,7 +1569,7 @@ export default function FieldPropertiesCustomizer() {
                         </div>
                         <div className="flex w-full flex-col gap-4">
                             <div className={clsx("col-span-5 align-middle")}>
-                                Background Image Ratio
+                                <T keyName="fieldProperties.labels.backgroundImageRatio" />
                             </div>
                             <div className="flex w-full gap-8">
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
@@ -1599,9 +1603,7 @@ export default function FieldPropertiesCustomizer() {
                             </div>
                         </div>
                         <div className="text-sub text-text mx-16 rounded-full py-4 text-end text-pretty">
-                            These values can be modified by adjusting the X and
-                            Y coordinates, the step size and the background
-                            image
+                            <T keyName="fieldProperties.messages.measurementModificationNote" />
                         </div>
                     </div>
                 </TabContent>
@@ -1609,9 +1611,11 @@ export default function FieldPropertiesCustomizer() {
                 {/* -------------------------------------------- THEME -------------------------------------------- */}
                 <TabContent value="theme" className="flex flex-col gap-32">
                     <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">Theme</h4>
+                        <h4 className="text-h4 mb-8">
+                            <T keyName="fieldProperties.sections.theme" />
+                        </h4>
                         <ColorPicker
-                            label="Background"
+                            label={t("fieldProperties.labels.background")}
                             initialColor={
                                 currentFieldProperties.theme.background
                             }
@@ -1635,7 +1639,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Primary Lines"
+                            label={t("fieldProperties.labels.primaryLines")}
                             initialColor={
                                 currentFieldProperties.theme.primaryStroke
                             }
@@ -1659,7 +1663,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Secondary Lines"
+                            label={t("fieldProperties.labels.secondaryLines")}
                             initialColor={
                                 currentFieldProperties.theme.secondaryStroke
                             }
@@ -1683,7 +1687,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Grid Lines"
+                            label={t("fieldProperties.labels.gridLines")}
                             initialColor={
                                 currentFieldProperties.theme.tertiaryStroke
                             }
@@ -1707,7 +1711,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Field Labels"
+                            label={t("fieldProperties.labels.fieldLabels")}
                             initialColor={
                                 currentFieldProperties.theme.fieldLabel
                             }
@@ -1731,7 +1735,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="External Labels"
+                            label={t("fieldProperties.labels.externalLabels")}
                             initialColor={
                                 currentFieldProperties.theme.externalLabel
                             }
@@ -1755,7 +1759,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Previous Path"
+                            label={t("fieldProperties.labels.previousPath")}
                             initialColor={
                                 currentFieldProperties.theme.previousPath
                             }
@@ -1779,7 +1783,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Next Path"
+                            label={t("fieldProperties.labels.nextPath")}
                             initialColor={currentFieldProperties.theme.nextPath}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.nextPath as RgbaColor
@@ -1801,11 +1805,10 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <div className="bg-fg-2 text-text border-stroke rounded-full border py-4 text-center text-[14px]">
-                            Below values may not be applied until after a
-                            refresh
+                            <T keyName="fieldProperties.messages.refreshNote" />
                         </div>
                         <ColorPicker
-                            label="Shapes"
+                            label={t("fieldProperties.labels.shapes")}
                             initialColor={currentFieldProperties.theme.shape}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.shape as RgbaColor
@@ -1827,7 +1830,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Temporary Path"
+                            label={t("fieldProperties.labels.temporaryPath")}
                             initialColor={currentFieldProperties.theme.tempPath}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.tempPath as RgbaColor
@@ -1849,7 +1852,7 @@ export default function FieldPropertiesCustomizer() {
                             }}
                         />
                         <ColorPicker
-                            label="Marcher Fill"
+                            label={t("fieldProperties.labels.marcherFill")}
                             initialColor={
                                 currentFieldProperties.theme.defaultMarcher.fill
                             }
@@ -1873,7 +1876,7 @@ export default function FieldPropertiesCustomizer() {
                             }
                         />
                         <ColorPicker
-                            label="Marcher Outline"
+                            label={t("fieldProperties.labels.marcherOutline")}
                             initialColor={
                                 currentFieldProperties.theme.defaultMarcher
                                     .outline
@@ -1898,7 +1901,7 @@ export default function FieldPropertiesCustomizer() {
                             }
                         />
                         <ColorPicker
-                            label="Marcher Text"
+                            label={t("fieldProperties.labels.marcherText")}
                             initialColor={
                                 currentFieldProperties.theme.defaultMarcher
                                     .label
@@ -1935,9 +1938,11 @@ export default function FieldPropertiesCustomizer() {
                             size="compact"
                             className="w-full px-16"
                             tooltipSide="right"
-                            tooltipText="Reset the theme to the default values"
+                            tooltipText={t(
+                                "fieldProperties.tooltips.resetTheme",
+                            )}
                         >
-                            Reset Theme to Default
+                            <T keyName="fieldProperties.buttons.resetTheme" />
                         </Button>
                     </div>
                 </TabContent>
