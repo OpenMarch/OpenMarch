@@ -6,6 +6,7 @@ import { ToggleGroup, ToggleGroupItem, UnitInput } from "@openmarch/ui";
 import * as Popover from "@radix-ui/react-popover";
 import ToolbarSection from "../toolbar/ToolbarSection";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import { T, useTolgee } from "@tolgee/react";
 
 const STEP_OPTIONS = [0.25, 0.5, 1, 2];
 const ALL_STEP_OPTIONS = [0, ...STEP_OPTIONS]; // Include "None" option (0) first
@@ -30,6 +31,8 @@ function AxisSettings({
     const [customSteps, setCustomSteps] = useState<string>("");
     const [customIsSelected, setCustomIsSelected] = useState(false);
 
+    const { t } = useTolgee();
+
     const handleReferencePointChange = (value: string) => {
         const numValue = value === "" ? undefined : parseFloat(value);
         if (numValue === undefined || !isNaN(numValue)) {
@@ -51,7 +54,9 @@ function AxisSettings({
         <div className="border-stroke rounded-6 flex flex-col gap-8 border p-8">
             <div className="flex flex-col gap-4">
                 <span className="text-body text-text/80">
-                    Nearest {axis}-steps
+                    {t("coordinateRoundingSettings.nearestSteps", {
+                        axis: axis,
+                    })}
                 </span>
                 <ToggleGroup
                     type="single"
@@ -73,10 +78,10 @@ function AxisSettings({
                 >
                     <ToggleGroupItem
                         value="0"
-                        title="None"
+                        title={t("coordinateRoundingSettings.none")}
                         onClick={() => setCustomIsSelected(false)}
                     >
-                        None
+                        <T keyName="coordinateRoundingSettings.none" />
                     </ToggleGroupItem>
                     {STEP_OPTIONS.map((step) => (
                         <ToggleGroupItem
@@ -104,10 +109,10 @@ function AxisSettings({
                     ))}
                     <ToggleGroupItem
                         value="custom"
-                        title="Custom"
+                        title={t("coordinateRoundingSettings.custom")}
                         onClick={() => setCustomIsSelected(true)}
                     >
-                        Custom
+                        <T keyName="coordinateRoundingSettings.custom" />
                     </ToggleGroupItem>
                 </ToggleGroup>
                 <Input
@@ -136,9 +141,11 @@ function AxisSettings({
                             "flex h-fit w-full items-center justify-end gap-8 py-6"
                         }
                     >
-                        <p className="text-body text-text/80 w-full">Offset</p>
+                        <p className="text-body text-text/80 w-full">
+                            <T keyName="coordinateRoundingSettings.offset" />
+                        </p>
                         <UnitInput
-                            unit="steps"
+                            unit={t("coordinateRoundingSettings.unit")}
                             type="number"
                             size={8}
                             compact
@@ -165,6 +172,8 @@ export default function CoordinateRoundingSettings() {
             localStorage.getItem("coordinateRounding.offsetEnabled") ?? "true",
         ),
     );
+
+    const { t } = useTolgee();
 
     const handleStepChange = (axis: "X" | "Y", value: number) => {
         setUiSettings({
@@ -198,7 +207,7 @@ export default function CoordinateRoundingSettings() {
     };
 
     const formatStepValue = (value: number | undefined) => {
-        if (!value || value === 0) return "None";
+        if (!value || value === 0) return t("coordinateRoundingSettings.none");
         if (value === 0.25) return "¼";
         if (value === 0.5) return "½";
         return value.toString();
@@ -236,14 +245,15 @@ export default function CoordinateRoundingSettings() {
         <ToolbarSection>
             <Popover.Root>
                 <Popover.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    Coordinate Rounding <CaretDownIcon size={18} />
+                    <T keyName="coordinateRoundingSettings.title" />
+                    <CaretDownIcon size={18} />
                 </Popover.Trigger>
                 <Popover.Portal>
                     <Popover.Content className="bg-modal text-text rounded-6 shadow-modal backdrop-blur-32 border-stroke z-50 m-8 flex flex-col items-start gap-0 border p-8">
                         <div className="flex flex-col gap-16">
                             <div className="flex items-center gap-4">
                                 <h4 className="text-h5 leading-none">
-                                    Coordinate Rounding
+                                    <T keyName="coordinateRoundingSettings.title" />
                                 </h4>
                                 <button
                                     onClick={() =>
@@ -259,12 +269,16 @@ export default function CoordinateRoundingSettings() {
                                     )}
                                 >
                                     {showReferencePoint
-                                        ? "Disable Offset"
-                                        : "Enable Offset"}
+                                        ? t(
+                                              "coordinateRoundingSettings.disableOffset",
+                                          )
+                                        : t(
+                                              "coordinateRoundingSettings.enableOffset",
+                                          )}
                                 </button>
                             </div>
                             <p className="text-sub text-text-subtitle">
-                                Does not yet work with groups
+                                <T keyName="coordinateRoundingSettings.groupNotice" />
                             </p>
 
                             <AxisSettings
@@ -313,7 +327,7 @@ export default function CoordinateRoundingSettings() {
                     e.preventDefault();
                     cycleStepOption("X", "backward");
                 }}
-                title="Left-click to cycle forward, right-click to cycle backward through X-step options"
+                title={t("coordinateRoundingSettings.xStepDescription")}
             >
                 X:{" "}
                 {formatStepValue(uiSettings.coordinateRounding?.nearestXSteps)}
@@ -325,7 +339,7 @@ export default function CoordinateRoundingSettings() {
                     e.preventDefault();
                     cycleStepOption("Y", "backward");
                 }}
-                title="Left-click to cycle forward, right-click to cycle backward through Y-step options"
+                title={t("coordinateRoundingSettings.yStepDescription")}
             >
                 Y:{" "}
                 {formatStepValue(uiSettings.coordinateRounding?.nearestYSteps)}
