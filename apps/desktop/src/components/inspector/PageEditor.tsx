@@ -1,7 +1,7 @@
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
-import { Button, Switch } from "@openmarch/ui";
+import { Button, Switch, TextArea } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import {
     createPages,
@@ -17,29 +17,36 @@ function PageEditor() {
     const { selectedPage } = useSelectedPage()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore()!;
     const [isFirstPage, setIsFirstPage] = useState(false);
+    const [notes, setNotes] = useState(selectedPage?.notes || "");
 
     const countsInputId = "page-counts";
     const subsetInputId = "page-subset";
+    const notesInputId = "page-notes";
     const formId = "edit-page-form";
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const subset = form[subsetInputId].checked;
-
+    // Update notes when selected page changes
+    useEffect(() => {
         if (selectedPage) {
-            updatePages(
-                [{ id: selectedPage.id, is_subset: subset }],
-                fetchTimingObjects,
-            );
+            setNotes(selectedPage.notes || "");
         }
+    }, [selectedPage]);
 
-        // Remove focus from the input field
-        const inputField = document.getElementById(
-            countsInputId,
-        ) as HTMLInputElement;
-        if (inputField) {
-            inputField.blur();
+    const handleNotesBlur = () => {
+        // Normalize both values to "" for comparison
+        const currentNotes = notes || "";
+        const originalNotes = selectedPage?.notes || "";
+
+        if (selectedPage && currentNotes !== originalNotes) {
+            updatePages(
+                [{ id: selectedPage.id, notes: notes || null }],
+                fetchTimingObjects,
+            ).then((res) => {
+                if (res.success) {
+                    toast.success("Page notes updated");
+                } else {
+                    toast.error("Failed to update page notes");
+                }
+            });
         }
     };
 
@@ -98,7 +105,7 @@ function PageEditor() {
                 <form
                     className="edit-group flex w-full flex-col gap-16 px-6"
                     id={formId}
-                    onSubmit={handleSubmit}
+                    onSubmit={(e) => e.preventDefault()}
                 >
                     {/* <div className="input-group">
                     <label htmlFor="page-name">Name</label>
@@ -150,6 +157,24 @@ function PageEditor() {
                             {measureRangeString(selectedPage)}
                         </p>
                     </div>
+                    <div className="input-group">
+                        <label
+                            htmlFor={notesInputId}
+                            className="text-body text-text/80"
+                        >
+                            Notes
+                        </label>
+                        <TextArea
+                            id={notesInputId}
+                            value={notes}
+                            onChange={(
+                                e: React.ChangeEvent<HTMLTextAreaElement>,
+                            ) => setNotes(e.target.value)}
+                            onBlur={handleNotesBlur}
+                            placeholder="Add notes for this page..."
+                            disabled={isFirstPage}
+                        />
+                    </div>
                     <Button
                         variant="secondary"
                         size="compact"
@@ -158,15 +183,6 @@ function PageEditor() {
                     >
                         Split page
                     </Button>
-
-                    {/* <div>
-                    <label htmlFor="page-sets">Tempo</label>
-                    Not yet implemented
-                </div> */}
-                    {/* This is here so the form submits when enter is pressed */}
-                    <button type="submit" className="hidden">
-                        Submit
-                    </button>
                 </form>
             </InspectorCollapsible>
         );
