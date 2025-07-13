@@ -474,20 +474,12 @@ function RegisteredActionsHandler() {
             console.error("No selected page");
             return [];
         }
-        // Get the marcherPages for the selected Page to make searching faster
-        const selectedPageMarcherPages: MarcherPage[] = marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === selectedPage.id,
-        );
 
-        const selectedMarcherPages: MarcherPage[] = [];
-        selectedMarchers.forEach((marcher) => {
-            selectedMarcherPages.push(
-                selectedPageMarcherPages.find(
-                    (marcherPage) => marcherPage.marcher_id === marcher.id,
-                )!,
-            );
-        });
-        return selectedMarcherPages;
+        const selectedPageMarcherPages =
+            marcherPages.marcherPagesByPage[selectedPage.id] || {};
+        return selectedMarchers
+            .map((marcher) => selectedPageMarcherPages[marcher.id])
+            .filter(Boolean);
     }, [marcherPages, selectedMarchers, selectedPage]);
 
     // Arrow movement defaults
@@ -592,9 +584,10 @@ function RegisteredActionsHandler() {
                         );
                         return;
                     }
-                    const previousPageMarcherPages = marcherPages.filter(
-                        (marcherPage) =>
-                            marcherPage.page_id === previousPage?.id,
+
+                    const previousPageMarcherPages = MarcherPage.getByPageId(
+                        marcherPages,
+                        previousPage.id,
                     );
                     const changes = previousPageMarcherPages.map(
                         (marcherPage) => ({
@@ -603,6 +596,7 @@ function RegisteredActionsHandler() {
                         }),
                     );
                     MarcherPage.updateMarcherPages(changes);
+
                     toast.success(
                         `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
                     );
@@ -616,22 +610,31 @@ function RegisteredActionsHandler() {
                         );
                         return;
                     }
-                    const selectedMarcherIds = selectedMarchers.map(
-                        (marcher) => marcher.id,
-                    );
-                    const previousMarcherPages = marcherPages.filter(
-                        (marcherPage) =>
-                            marcherPage.page_id === previousPage?.id &&
-                            selectedMarcherIds.includes(marcherPage.marcher_id),
-                    );
-                    if (previousMarcherPages) {
+
+                    const previousMarcherPages = selectedMarchers
+                        .map((marcher) =>
+                            MarcherPage.getByMarcherAndPageId(
+                                marcherPages,
+                                marcher.id,
+                                previousPage.id,
+                            ),
+                        )
+                        .filter(
+                            (marcherPage): marcherPage is MarcherPage =>
+                                marcherPage !== undefined &&
+                                marcherPage.marcher_id !== undefined,
+                        );
+
+                    if (previousMarcherPages.length > 0) {
                         const changes = previousMarcherPages.map(
                             (marcherPage) => ({
                                 ...marcherPage,
                                 page_id: selectedPage.id,
+                                marcher_id: marcherPage.marcher_id,
                             }),
                         );
                         MarcherPage.updateMarcherPages(changes);
+
                         toast.success(
                             `Successfully set ${previousMarcherPages.length} marcher coordinate${previousMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
                         );
@@ -646,14 +649,17 @@ function RegisteredActionsHandler() {
                         );
                         return;
                     }
-                    const nextPageMarcherPages = marcherPages.filter(
-                        (marcherPage) => marcherPage.page_id === nextPage?.id,
+
+                    const nextPageMarcherPages = MarcherPage.getByPageId(
+                        marcherPages,
+                        nextPage.id,
                     );
                     const changes = nextPageMarcherPages.map((marcherPage) => ({
                         ...marcherPage,
                         page_id: selectedPage.id,
                     }));
                     MarcherPage.updateMarcherPages(changes);
+
                     toast.success(
                         `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
                     );
@@ -667,20 +673,28 @@ function RegisteredActionsHandler() {
                         );
                         return;
                     }
-                    const selectedMarcherIds = selectedMarchers.map(
-                        (marcher) => marcher.id,
-                    );
-                    const nextMarcherPages = marcherPages.filter(
-                        (marcherPage) =>
-                            marcherPage.page_id === nextPage?.id &&
-                            selectedMarcherIds.includes(marcherPage.marcher_id),
-                    );
-                    if (nextMarcherPages) {
+                    const nextMarcherPages = selectedMarchers
+                        .map((marcher) =>
+                            MarcherPage.getByMarcherAndPageId(
+                                marcherPages,
+                                marcher.id,
+                                nextPage.id,
+                            ),
+                        )
+                        .filter(
+                            (marcherPage): marcherPage is MarcherPage =>
+                                marcherPage !== undefined &&
+                                marcherPage.marcher_id !== undefined,
+                        );
+
+                    if (nextMarcherPages.length > 0) {
                         const changes = nextMarcherPages.map((marcherPage) => ({
                             ...marcherPage,
                             page_id: selectedPage.id,
+                            marcher_id: marcherPage.marcher_id,
                         }));
                         MarcherPage.updateMarcherPages(changes);
+
                         toast.success(
                             `Successfully set ${nextMarcherPages.length} marcher coordinate${nextMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
                         );
