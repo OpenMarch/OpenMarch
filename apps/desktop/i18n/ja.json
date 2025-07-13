@@ -150,12 +150,49 @@
         "title": "フィールド"
     },
     "fieldProperties": {
+        "applyFieldType": "フィールドタイプを適用",
+        "applyFieldTypeWarning": "Marchers は新しいフィールドタイプのサイズに移動しません、キャンバス上でそのままです。フィールドタイプをいつでも元に戻すことができます。",
         "buttons": {
             "importImage": "画像 インポート",
             "newXCheckpoint": "新 X チェックポイント",
             "newYCheckpoint": "新しい Y-チェックポイント",
             "resetTheme": "テーマ を デフォルト に リセット"
         },
+        "checkpoint": {
+            "created": "{axis} チェックポイントが {steps} ステップで作成されました",
+            "delete": "削除",
+            "deleted": "{axis} チェックポイント {steps} ステップ -\"{name}\" が削除されました",
+            "fieldLabel": "フィールド ラベル",
+            "fieldLabelTooltip": "フィールドに表示されるラベル（例: ヤード マーカー）",
+            "name": "名前",
+            "nameTooltip": "チェックポイント に 任意の 名前 を 付け て ください 。 これは あなた が 選択している チェックポイント を 知る ため だけ です 。",
+            "newXCheckpointName": "新しい X チェックポイント",
+            "newYCheckpointName": "新 Y チェックポイント",
+            "shortName": "短い名前",
+            "shortNameTooltip": "チェックポイントの名称。 (例：「45 ヤード ライン - サイド 1」)",
+            "stepsFromCenter": "中心からのステップ",
+            "stepsFromCenterTooltip": "このチェックポイントがフィールドの中心からどれだけ離れているかを示すステップ数です。負の数は後方を指します。",
+            "stepsFromFront": "前面 から ステップ",
+            "stepsFromFrontTooltip": "このチェックポイントがフィールドの前から何歩離れているか。負の値は後方を示す。",
+            "useAsReference": "参照 として 使用",
+            "useAsReferenceTooltip": "この チェックポイント を 座標 の 参照 として 使用する 場合。",
+            "visible": "表示",
+            "visibleTooltip": "この チェックポイントを フィールドに 表示させた い 場合"
+        },
+        "customFieldName": "カスタムフィールド名",
+        "customization": "カスタマイズ",
+        "errors": {
+            "invalidColor": "無効な色",
+            "noPropertiesToLoad": "フィールドプロパティをロードできません！ このようなことが起こるべきではありません、サポートに連絡してください",
+            "notDefined": "フィールドプロパティ が定義されていません。 このようなことが起こるべきではありません、サポートに連絡してください"
+        },
+        "fieldTemplate": {
+            "label": "フィールドテンプレート"
+        },
+        "fieldType": {
+            "label": "フィールド タイプ"
+        },
+        "general": "一般",
         "labels": {
             "background": "背景",
             "backgroundImageRatio": "背景 画像 比率",
@@ -243,6 +280,9 @@
             "stepsFromFrontToHomeLabelTop": "前サイドラインからホームナンバー内側までのステップ数 (フィールドの中央に近い位置)",
             "stepSize": "フィールド上の各ステップのサイズをインチまたはセンチメートルで。",
             "useHashes": "Y チェックポイントに フットボール フィールド の ように ハッシュ を 使用します。オフ の 場合、ライン を 使用します。"
+        },
+        "units": {
+            "steps": "ステップ"
         },
         "warnings": {
             "xCheckpointsNotEquidistant": "警告 - 左と右の X チェックポイントが中心から等距離ではありません。これにより、不自然なグラフィカルなアーティファクトが発生する可能性があり、修正が必要です。",

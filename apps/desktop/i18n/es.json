@@ -150,12 +150,49 @@
         "title": "Campo"
     },
     "fieldProperties": {
+        "applyFieldType": "Aplicar Tipo de Campo",
+        "applyFieldTypeWarning": "Los marcadores no se moverán al nuevo tamaño del tipo de campo, se quedarán donde están en el lienzo. Siempre puedes cambiar de nuevo el tipo de campo.",
         "buttons": {
             "importImage": "Importar Imagen",
             "newXCheckpoint": "Nuevo Punto de Control X",
             "newYCheckpoint": "Nuevo Punto de Control Y",
             "resetTheme": "Restablecer tema a predeterminado"
         },
+        "checkpoint": {
+            "created": "{axis}-punto de control creado en {steps} pasos",
+            "delete": "Eliminar",
+            "deleted": "\"{axis}-punto de control en {steps} pasos eliminado - \"{name}\"\"",
+            "fieldLabel": "Etiqueta de Campo",
+            "fieldLabelTooltip": "La etiqueta que aparece en el campo (es decir, los marcadores del patio)",
+            "name": "Nombre",
+            "nameTooltip": "Nombra tu punto de control como quieras. Esto es solo para que sepas qué punto de control estás seleccionando.",
+            "newXCheckpointName": "Nuevo Punto de Control X",
+            "newYCheckpointName": "Nuevo Punto de Control Y",
+            "shortName": "Nombre Corto",
+            "shortNameTooltip": "El nombre principal del punto de control. (Ej. \"Línea de 45 Yardas - Lado 1\")",
+            "stepsFromCenter": "Pasos desde el centro",
+            "stepsFromCenterTooltip": "La cantidad de pasos desde el centro del campo que está este punto de control. Negativo es hacia atrás.",
+            "stepsFromFront": "Pasos desde el frente",
+            "stepsFromFrontTooltip": "El número de pasos desde el frente del campo que es este punto de control. Negativo es hacia atrás.",
+            "useAsReference": "Usar como referencia",
+            "useAsReferenceTooltip": "Si este punto de control debe usarse como referencia para coordenadas.",
+            "visible": "Visible",
+            "visibleTooltip": "Si este punto de control debe ser visible en el campo"
+        },
+        "customFieldName": "Personalizado",
+        "customization": "Personalización",
+        "errors": {
+            "invalidColor": "Color inválido",
+            "noPropertiesToLoad": "¡No hay propiedades de campo para cargar! Esto nunca debería suceder, por favor contacte con soporte",
+            "notDefined": "FieldProperties no está definido. Esto nunca debería suceder, por favor contacte con soporte"
+        },
+        "fieldTemplate": {
+            "label": "Plantilla de Campo"
+        },
+        "fieldType": {
+            "label": "Tipo de campo"
+        },
+        "general": "General",
         "labels": {
             "background": "Fondo",
             "backgroundImageRatio": "Relación de imagen de fondo",
@@ -243,6 +280,9 @@
             "stepsFromFrontToHomeLabelTop": "Número de pasos desde la línea de fondo hasta el interior del número de casa (más cerca del centro del campo)",
             "stepSize": "El tamaño de cada paso en el campo en pulgadas o centímetros",
             "useHashes": "Utilizar hashes para los puntos de control en Y, como un campo de fútbol. Si no está marcado, se utilizarán líneas."
+        },
+        "units": {
+            "steps": "pasos"
         },
         "warnings": {
             "xCheckpointsNotEquidistant": "ADVERTENCIA - Los puntos de verificación X izquierdo y derecho no son equidistantes del centro. Esto puede causar artefactos gráficos extraños y debería corregirse.",

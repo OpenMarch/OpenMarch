@@ -59,6 +59,7 @@ function CheckpointEditor({
     }) => void;
     axis: "x" | "y";
 }) {
+    const { t } = useTolgee();
     const [open, setOpen] = useState(false);
 
     /**
@@ -78,7 +79,8 @@ function CheckpointEditor({
                 <div className="flex w-full justify-between">
                     <p className="text-text text-body">{checkpoint.name}</p>
                     <p className="text-text/80 text-body">
-                        {checkpoint.stepsFromCenterFront} steps
+                        {checkpoint.stepsFromCenterFront}{" "}
+                        <T keyName="fieldProperties.units.steps" />
                     </p>
                 </div>
                 {open ? <CaretUpIcon size={20} /> : <CaretDownIcon size={20} />}
@@ -86,10 +88,22 @@ function CheckpointEditor({
             <RadixCollapsible.Content className="bg-fg-2 border-stroke rounded-6 mt-6 border p-8 pt-16">
                 <div className="flex flex-col gap-12">
                     <FormField
-                        label={`Steps from ${axis === "x" ? " center" : " front"}`}
-                        tooltip="The number of steps away from the front
-                of the field that this checkpoint is.
-                Negative is towards the back."
+                        label={
+                            axis === "x"
+                                ? t(
+                                      "fieldProperties.checkpoint.stepsFromCenter",
+                                  )
+                                : t("fieldProperties.checkpoint.stepsFromFront")
+                        }
+                        tooltip={
+                            axis === "x"
+                                ? t(
+                                      "fieldProperties.checkpoint.stepsFromCenterTooltip",
+                                  )
+                                : t(
+                                      "fieldProperties.checkpoint.stepsFromFrontTooltip",
+                                  )
+                        }
                     >
                         <Input
                             type="text" // Changed from "number"
@@ -132,8 +146,8 @@ function CheckpointEditor({
                         />
                     </FormField>
                     <FormField
-                        label="Name"
-                        tooltip="Name your checkpoint whatever you want. This is just for you to know what checkpoint you're selecting."
+                        label={t("fieldProperties.checkpoint.name")}
+                        tooltip={t("fieldProperties.checkpoint.nameTooltip")}
                     >
                         <Input
                             type="text"
@@ -156,9 +170,10 @@ function CheckpointEditor({
                         />
                     </FormField>
                     <FormField
-                        label="Short Name"
-                        tooltip='The primary name of the checkpoint. (E.g.
-                        "45 Yard Line - Side 1")'
+                        label={t("fieldProperties.checkpoint.shortName")}
+                        tooltip={t(
+                            "fieldProperties.checkpoint.shortNameTooltip",
+                        )}
                     >
                         <Input
                             type="text" // Changed from "number"
@@ -183,10 +198,10 @@ function CheckpointEditor({
                     </FormField>
                     {axis === "x" && (
                         <FormField
-                            label="Field label"
-                            tooltip="
-                            The label to appear on the field. I.e.
-                            the yard markers"
+                            label={t("fieldProperties.checkpoint.fieldLabel")}
+                            tooltip={t(
+                                "fieldProperties.checkpoint.fieldLabelTooltip",
+                            )}
                         >
                             <Input
                                 type="text" // Changed from "number"
@@ -215,9 +230,8 @@ function CheckpointEditor({
                         </FormField>
                     )}
                     <FormField
-                        label="Visible"
-                        tooltip=" If this checkpoint should be visible on the
-                        field"
+                        label={t("fieldProperties.checkpoint.visible")}
+                        tooltip={t("fieldProperties.checkpoint.visibleTooltip")}
                     >
                         <Switch
                             className={inputClassname}
@@ -236,9 +250,10 @@ function CheckpointEditor({
                         />
                     </FormField>
                     <FormField
-                        label="Use as reference"
-                        tooltip=" If this checkpoint should be used as a
-                        reference for coordinates."
+                        label={t("fieldProperties.checkpoint.useAsReference")}
+                        tooltip={t(
+                            "fieldProperties.checkpoint.useAsReferenceTooltip",
+                        )}
                     >
                         <Switch
                             className={inputClassname}
@@ -268,7 +283,7 @@ function CheckpointEditor({
                             deleteCheckpoint(checkpoint);
                         }}
                     >
-                        Delete
+                        <T keyName="fieldProperties.checkpoint.delete" />
                     </Button>
                 </div>
             </RadixCollapsible.Content>
@@ -360,10 +375,15 @@ export default function FieldPropertiesCustomizer() {
                 );
             }
             toast.success(
-                `${checkpoint.axis.toUpperCase()}-checkpoint at ${checkpoint.stepsFromCenterFront} steps deleted - "${checkpoint.name}"`,
+                // `${checkpoint.axis.toUpperCase()}-checkpoint at ${checkpoint.stepsFromCenterFront} steps deleted - "${checkpoint.name}"`,
+                t("fieldProperties.checkpoint.deleted", {
+                    axis: checkpoint.axis.toUpperCase(),
+                    steps: checkpoint.stepsFromCenterFront,
+                    name: checkpoint.name,
+                }),
             );
         },
-        [currentFieldProperties, setFieldProperties],
+        [currentFieldProperties, setFieldProperties, t],
     );
 
     const addCheckpoint = useCallback(
@@ -389,7 +409,7 @@ export default function FieldPropertiesCustomizer() {
                     );
                 const newXCheckpoint: Checkpoint = {
                     id: maxXCheckpointId + 1,
-                    name: "New X Checkpoint",
+                    name: t("fieldProperties.checkpoint.newXCheckpointName"),
                     terseName: "TBD",
                     axis: "x",
                     stepsFromCenterFront: maxXCheckpointSteps,
@@ -425,7 +445,7 @@ export default function FieldPropertiesCustomizer() {
                 newSteps = maxYCheckpointSteps;
                 const newYCheckpoint: Checkpoint = {
                     id: maxYCheckpointId + 1,
-                    name: "New Y Checkpoint",
+                    name: t("fieldProperties.checkpoint.newYCheckpointName"),
                     terseName: "TBD",
                     axis: "y",
                     stepsFromCenterFront: maxYCheckpointSteps,
@@ -443,10 +463,13 @@ export default function FieldPropertiesCustomizer() {
                 );
             }
             toast.success(
-                `${axis.toUpperCase()}-checkpoint at ${newSteps} steps created`,
+                t("fieldProperties.checkpoint.created", {
+                    axis: axis.toUpperCase(),
+                    steps: newSteps,
+                }),
             );
         },
-        [currentFieldProperties, setFieldProperties],
+        [currentFieldProperties, setFieldProperties, t],
     );
 
     const sorter = (a: Checkpoint, b: Checkpoint) => {
@@ -492,7 +515,7 @@ export default function FieldPropertiesCustomizer() {
             color.b !== undefined &&
             color.a !== undefined;
         if (!isRgba) {
-            toast.error("Invalid color");
+            toast.error(t("fieldProperties.errors.invalidColor"));
             return false;
         }
         return true;
@@ -1517,7 +1540,7 @@ export default function FieldPropertiesCustomizer() {
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
                                     {currentFieldProperties.width /
                                         currentFieldProperties.pixelsPerStep}{" "}
-                                    steps
+                                    <T keyName="fieldProperties.units.steps" />
                                 </div>
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
                                     {currentFieldProperties.prettyWidth}
@@ -1532,7 +1555,7 @@ export default function FieldPropertiesCustomizer() {
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
                                     {currentFieldProperties.height /
                                         currentFieldProperties.pixelsPerStep}{" "}
-                                    steps
+                                    <T keyName="fieldProperties.units.steps" />
                                 </div>
                                 <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
                                     {currentFieldProperties.prettyHeight}

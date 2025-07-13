@@ -150,12 +150,49 @@
         "title": "Field"
     },
     "fieldProperties": {
+        "applyFieldType": "Apply Field Type",
+        "applyFieldTypeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
         "buttons": {
             "importImage": "Import Image",
             "newXCheckpoint": "New X-Checkpoint",
             "newYCheckpoint": "New Y-Checkpoint",
             "resetTheme": "Reset Theme to Default"
         },
+        "checkpoint": {
+            "created": "{axis}-checkpoint at {steps} steps created",
+            "delete": "Delete",
+            "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
+            "fieldLabel": "Field label",
+            "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
+            "name": "Name",
+            "nameTooltip": "Name your checkpoint whatever you want. This is just for you to know what checkpoint you're selecting.",
+            "newXCheckpointName": "New X Checkpoint",
+            "newYCheckpointName": "New Y Checkpoint",
+            "shortName": "Short Name",
+            "shortNameTooltip": "The primary name of the checkpoint. (E.g. \"45 Yard Line - Side 1\")",
+            "stepsFromCenter": "Steps from center",
+            "stepsFromCenterTooltip": "The number of steps away from the center of the field that this checkpoint is. Negative is towards the back.",
+            "stepsFromFront": "Steps from front",
+            "stepsFromFrontTooltip": "The number of steps away from the front of the field that this checkpoint is. Negative is towards the back.",
+            "useAsReference": "Use as reference",
+            "useAsReferenceTooltip": "If this checkpoint should be used as a reference for coordinates.",
+            "visible": "Visible",
+            "visibleTooltip": "If this checkpoint should be visible on the field"
+        },
+        "customFieldName": "Custom",
+        "customization": "Customization",
+        "errors": {
+            "invalidColor": "Invalid color",
+            "noPropertiesToLoad": "No field properties to load! This should never happen, please reach out to support",
+            "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support."
+        },
+        "fieldTemplate": {
+            "label": "Field Template"
+        },
+        "fieldType": {
+            "label": "Field type"
+        },
+        "general": "General",
         "labels": {
             "background": "Background",
             "backgroundImageRatio": "Background Image Ratio",
@@ -243,6 +280,9 @@
             "stepsFromFrontToHomeLabelTop": "Number of steps from the front sideline to the inside of the home number (closer to the center of the field)",
             "stepSize": "The size of each step on the field in inches or centimeters",
             "useHashes": "Use hashes for the Y-checkpoints, like a football field. If unchecked, lines will be used."
+        },
+        "units": {
+            "steps": "steps"
         },
         "warnings": {
             "xCheckpointsNotEquidistant": "WARNING - The left and rightmost X-checkpoints are not equidistant from the center. This may cause strange graphical artifacts and should be fixed.",
