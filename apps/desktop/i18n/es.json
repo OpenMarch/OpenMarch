@@ -127,6 +127,19 @@
         "discard": "Descartar",
         "save": "Guardar"
     },
+    "coordinateRoundingSettings": {
+        "custom": "Personalizado",
+        "disableOffset": "Desactivar compensación",
+        "enableOffset": "Habilitar Compensación",
+        "groupNotice": "No funciona todavía con grupos",
+        "nearestSteps": "Pasos más cercanos de {axis}",
+        "none": "Ninguno",
+        "offset": "Compensación",
+        "title": "Redondeo de coordenadas",
+        "unit": "pasos",
+        "xStepDescription": "Haga clic izquierdo para avanzar, clic derecho para retroceder entre las opciones de paso X",
+        "yStepDescription": "Haga clic izquierdo para avanzar, haga clic derecho para retroceder entre las opciones de intervalo en Y"
+    },
     "formButtons": {
         "cancel": "Cancelar",
         "editButton": "Editar",

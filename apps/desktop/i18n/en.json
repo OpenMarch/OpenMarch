@@ -127,6 +127,28 @@
         "discard": "Discard",
         "save": "Save"
     },
+    "coordinateRoundingSettings": {
+        "custom": "Custom",
+        "disableOffset": "Disable Offset",
+        "enableOffset": "Enable Offset",
+        "groupNotice": "Does not yet work with groups",
+        "nearestSteps": "Nearest {axis}-steps",
+        "none": "None",
+        "offset": "Offset",
+        "title": "Coordinate Rounding",
+        "unit": "steps",
+        "xStepDescription": "Left-click to cycle forward, right-click to cycle backward through X-step options",
+        "yStepDescription": "Left-click to cycle forward, right-click to cycle backward through Y-step options"
+    },
+    "field": {
+        "general": {
+            "exportField": "Export Field",
+            "exportField.tooltip": "Export this field to a file to use in other projects",
+            "importField": "Import Field",
+            "importField.tooltip": "Import a custom field"
+        },
+        "title": "Field"
+    },
     "formButtons": {
         "cancel": "Cancel",
         "editButton": "Edit",

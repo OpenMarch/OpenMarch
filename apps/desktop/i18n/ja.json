@@ -127,6 +127,19 @@
         "discard": "破棄",
         "save": "保存"
     },
+    "coordinateRoundingSettings": {
+        "custom": "カスタム",
+        "disableOffset": "オフセットを無効にする",
+        "enableOffset": "オフセット 有効化",
+        "groupNotice": "まだグループに対応していません",
+        "nearestSteps": "最近の {axis}-ステップ",
+        "none": "なし",
+        "offset": "オフセット",
+        "title": "座標 丸め設定",
+        "unit": "ステップ",
+        "xStepDescription": "左クリックして X ステップオプションを前向きに循環し、右クリックして後ろ向きに循環します",
+        "yStepDescription": "左クリックで前のステップに進み、右クリックで後のステップに戻って Y ステップオプションを循環する。"
+    },
     "formButtons": {
         "cancel": "キャンセル",
         "editButton": "編集",
