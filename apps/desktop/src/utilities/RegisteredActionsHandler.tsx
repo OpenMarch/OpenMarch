@@ -229,6 +229,9 @@ class KeyboardShortcut {
 /**
  * Details for all the registered actions.
  * This is useful for getting the details of a registered action at compile time.
+ *
+ * When adding a new action, use a translation key and translate it in the i18n files or on Tolgee.
+ * The translation key should be in the format "actions.{category}.{action}".
  */
 export const RegisteredActionsObjects: {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
