@@ -8,7 +8,7 @@ export default function Guides() {
         {
             title: "Music",
             description: "Implement your music manually or via tap tempo.",
-            link: "https://openmarch.com/guides/importing-music/",
+            link: "https://openmarch.com/guides/music/",
         },
         {
             title: "Customize the Field",

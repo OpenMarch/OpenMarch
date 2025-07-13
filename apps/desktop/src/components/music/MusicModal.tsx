@@ -86,7 +86,7 @@ function MusicModalContents() {
                 <div className="flex items-center gap-8">
                     <h4 className="text-h4 leading-none">Tempo Groups</h4>
                     <a
-                        href="https://github.com/OpenMarch/OpenMarch"
+                        href="https://openmarch.com/guides/music/"
                         target="_blank"
                         rel="noreferrer"
                     >
