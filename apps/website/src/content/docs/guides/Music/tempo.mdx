@@ -1,0 +1,196 @@
+---
+title: "Setting Tempo"
+description: "How to set the tempo in OpenMarch"
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import { YouTube } from "astro-embed";
+import { LinkCard, CardGrid, Aside } from "@astrojs/starlight/components";
+import { MusicNotesIcon } from "@phosphor-icons/react";
+
+<Aside type="tip" title="Define your tempos first">
+
+We **highly recommend** defining all of your tempos _before_ you start creating pages and writing drill.
+Our tempo group editing is currently very limited. Changing the tempo may force you to delete pages.
+
+We are working on it! (Issue [#512](https://github.com/OpenMarch/OpenMarch/issues/512))
+
+</Aside>
+
+<Aside type="caution" title="Tempo drift">
+
+The tempo alignment currently tends to drift when playing long show chunks.
+Quickly pausing and playing typically syncs the music back up.
+
+We are working to fix this! (Issue [#432](https://github.com/OpenMarch/OpenMarch/issues/432))
+
+</Aside>
+
+Defining tempos in OpenMarch is how we keep the drill aligned with the music.
+There are two ways to define tempos -
+
+<CardGrid>
+  <LinkCard
+    title="Manually inputting tempo groups"
+    icon="seti:happenings"
+    href="#manually-inputting-tempo-groups"
+  />
+  <LinkCard
+    title="Importing a MusicXML file"
+    icon="seti:happenings"
+    href="#importing-a-musicxml-file"
+    description="Experimental"
+  />
+</CardGrid>
+
+## What is a tempo group?
+
+Tempo groups are collections of measures that have the same time signature and tempo
+
+Groups that have the same time signature and tempo are combined into a single group, unless the second group has a name. (I.e. `A` or `Closer`)
+
+## Creating tempo groups
+
+### Manually creating a new tempo group
+
+Open the `Music` tab (same one from the [Importing Music](#importing-music) section) and you will see the following form -
+
+![Creating a new tempo group](/docs/guides/music/new-tempo-group.png)
+
+When creating a tempo group, you have the following options -
+
+- **Name**: An optional identifier used to differentiate the tempo in the timeline.
+  - This is useful for rehearsal marks like `A` or `Closer`
+- **Start tempo**: Beats per minute (BPM) that the tempo group starts at
+- **End tempo**: Beats per minute (BPM) that the tempo group ends at
+  - This is optional and will default to the start tempo if not provided
+- **Beats per measure**: The number of beats in each measure. Or, the time signature's numerator
+  - I.e. a time signature of `4/4` has 4 beats per measure
+  - See [Mixed meters](#mixed-meters) for information on how to handle mixed meters
+- **Number of measures**: The amount of times this tempo group should repeat
+  - Note, if an `End tempo` is provided, this will stretch the tempo change over the number of measures
+
+#### Mixed meters
+
+<Steps>
+
+1. Set the `Beats per measure` to a number greater than or equal to 5
+1. Click `Make mixed meter`
+1. Choose a `Beat Pattern`
+
+</Steps>
+
+![Making a mixed meter](/docs/guides/music/mixed-meter.gif)
+
+A few notes on mixed meters:
+
+- The tempo defined in the `Start tempo` represents the **quarter note's** BPM
+  - I.e. a tempo of `144` means the quarter note is 120 BPM and the dotted quarter note is 180 BPM
+- Tempo changes with mixed meters are not automatically calculated
+  - This is why you cannot set the `End tempo` for a mixed meter tempo group
+  - You can manually define the tempo change by editing the tempo group and adjusting each beat's tempo
+- The only supported mixed meters are meters that mix any pattern of `2` and `3` eighth note groupings
+  - You may go all the way up to `30/8`, if you every want a mixed meter of `3+2+3+3+3+3+3+2+3+2+3` or any other permutation
+
+### Importing a MusicXML file
+
+<Aside type="caution" title="Experimental">
+
+Importing a `MusicXML` file is in it's early stages and may not work for all files.
+This is especially problematic for files with mixed meters and complicated time signatures.
+
+</Aside>
+
+To import a `MusicXML` file, follow these steps:
+
+<Steps>
+
+1. Open the `Music` tab
+1. Select `Import MusicXML`
+1. From the file popup, select the `MusicXML` file you want to import
+1. You should see the tempo groups populate in the `Tempo` tab and beats in the timeline!
+
+</Steps>
+
+![Importing a MusicXML file example](/docs/guides/music/import-musicxml.gif)
+
+## Editing a tempo group
+
+### Simple Groups
+
+**Simple groups** are tempo groups that maintain a consistent tempo.
+These can be mixed or simple meters.
+
+<Aside type="caution" title="Editing limitation">
+
+Currently, only the `Name` and `Start tempo` can be edited.
+We are working to expand this functionality! (Issue [#512](https://github.com/OpenMarch/OpenMarch/issues/512))
+
+</Aside>
+![Editing a simple tempo group](/docs/guides/music/simple-group-edit.gif)
+
+### Custom groups
+
+**Custom groups** are groups where each beat's tempo is defined individually.
+These groups are always a single measure.
+
+![Editing a custom tempo group](/docs/guides/music/custom-group-edit.gif)
+
+## Deleting a tempo group
+
+To delete a tempo group, simply click the trash icon in the tempo group's menu.
+When you see the confirmation dialog, click `Delete` to delete the tempo group.
+
+<Aside type="caution" title="Deleting tempo groups">
+
+Deleting a tempo group will delete all of the pages that use that tempo group.
+This can be undone, but still proceed with caution.
+
+We are working on a better way! (Issue [#512](https://github.com/OpenMarch/OpenMarch/issues/512))
+
+</Aside>
+
+## FAQs
+
+<details>
+  <summary>What about time signatures like `2/2`, `3/2`, etc?</summary>
+  <p>
+    OpenMarch *doesn't actually care* what the time signature's denominator is.
+    It just cares about the `Beats per measure` (or time signature's numerator).
+
+    With this, you can define a `3/2` in the same way you would define a `3/4` time signature.
+    All you need to do in this case is set the `Start tempo` to whatever you the half note's BPM is
+
+<Aside type="tip" title="Fun fact">
+
+The only information that OpenMarch stores is the number of seconds that each beat is. I.e. `TEMPO BPM` divided by 60.
+
+For example, 120 BPM would be `0.5` seconds per beat, and 80 BPM would be `0.75` seconds per beat.
+This is why you can define a `3/2` time signature as a `3/4` time signature and expect the same result.
+
+</Aside>
+
+  </p>
+</details>
+
+<details>
+  <summary>I made a mistake! How do I change the number of measures in a tempo group?</summary>
+  <p>
+    Currently, you can't :(
+
+    What you can do in the meantime is delete the old tempo group and create a new one with the correct number of measures.
+
+    We are working on a better way! (Issue [#512](https://github.com/OpenMarch/OpenMarch/issues/512))
+
+  </p>
+</details>
+
+<details>
+  <summary>Can I add tempo groups in between existing tempo groups?</summary>
+  <p>
+  Yes! Just press the `+` button in the tempo group's menu.
+
+![Adding a tempo group in between existing tempo groups](/docs/guides/music/in-between-add.gif)
+
+  </p>
+</details>

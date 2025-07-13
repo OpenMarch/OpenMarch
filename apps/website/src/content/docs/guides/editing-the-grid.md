@@ -2,7 +2,7 @@
 title: "Editing the Field"
 description: "How to adjust the field or grid in OpenMarch to meet your ensemble's needs"
 sidebar:
-  order: 3
+  order: 2
 ---
 
 OpenMarch allows designers to make their own field with whatever measurements and specifications they want, as long as it's a rectangle.

@@ -1,0 +1,27 @@
+---
+title: "Importing Audio"
+description: "How to import audio files in OpenMarch"
+sidebar:
+  order: 3
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import { YouTube } from "astro-embed";
+import { LinkCard, CardGrid, Aside } from "@astrojs/starlight/components";
+import { MusicNotesIcon } from "@phosphor-icons/react";
+
+OpenMarch supports importing `.mp3`, `.wav`, or `.ogg` audio files.
+
+To add an audio file to your show, follow these steps -
+
+<Steps>
+
+1. Open the `Music` tab
+1. Click the empty dropdown
+1. Select `Import Audio`
+1. From the file popup, select the audio file you want to import
+1. The page will automatically refresh and you should see the audio file in the `Music` tab and a waveform in the timeline!
+
+</Steps>
+
+![Importing audio example](/docs/guides/music/import-audio.gif)

@@ -2,7 +2,7 @@
 title: "Exporting Charts"
 description: "How to export coordinate sheets and drill charts"
 sidebar:
-  order: 5
+  order: 100
 ---
 
 Export coordinate sheets and drill charts from the `File` menu by clicking `Export`.

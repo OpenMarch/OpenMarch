@@ -109,6 +109,7 @@ module.exports = {
         "ccpa",
         "Schachner",
         "pfps",
+        "seti",
     ],
     ignorePaths: [
         "node_modules/**",
