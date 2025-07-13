@@ -598,7 +598,7 @@ function CoordinateSheetExport() {
                     <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                         {/* Background Progress Bar */}
                         <div
-                            className="bg-accent absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out"
+                            className="bg-accent absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
                             style={{
                                 width: `${progress}%`,
                                 transform: `translateX(${progress < 100 ? "0" : "0"})`,
@@ -607,7 +607,7 @@ function CoordinateSheetExport() {
 
                         {/* Animated Shimmer Effect */}
                         <div
-                            className="absolute left-0 top-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            className="absolute top-0 left-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             style={{
                                 animation:
                                     progress > 0 && progress < 100
@@ -665,12 +665,12 @@ function DrillChartExport() {
             );
 
             // Get marcherPages for this, prev, and next page
-            let currentMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+            let currentMarcherPages: MarcherPage[] = MarcherPage.getByPageId(
                 marcherPages,
                 pages[0].id,
             );
             let prevMarcherPages: MarcherPage[] = [];
-            let nextMarcherPages: MarcherPage[] = MarcherPage.filterByPageId(
+            let nextMarcherPages: MarcherPage[] = MarcherPage.getByPageId(
                 marcherPages,
                 pages[1].id,
             );
@@ -698,15 +698,15 @@ function DrillChartExport() {
                 // Render pathways for individual marchers
                 if (individualCharts) {
                     for (let m = 0; m < marchers.length; m++) {
-                        const marcher = MarcherPage.filterByMarcherId(
+                        const marcher = MarcherPage.getByMarcherId(
                             currentMarcherPages,
                             marchers[m].id,
                         )[0];
-                        const prevMarcher = MarcherPage.filterByMarcherId(
+                        const prevMarcher = MarcherPage.getByMarcherId(
                             prevMarcherPages,
                             marchers[m].id,
                         )[0];
-                        const nextMarcher = MarcherPage.filterByMarcherId(
+                        const nextMarcher = MarcherPage.getByMarcherId(
                             nextMarcherPages,
                             marchers[m].id,
                         )[0];
@@ -820,7 +820,7 @@ function DrillChartExport() {
                     // Update current, prev, and next marcher pages
                     prevMarcherPages = currentMarcherPages;
                     currentMarcherPages = nextMarcherPages;
-                    nextMarcherPages = MarcherPage.filterByPageId(
+                    nextMarcherPages = MarcherPage.getByPageId(
                         marcherPages,
                         pages[i + 2]?.id ?? -1,
                     );
@@ -828,7 +828,7 @@ function DrillChartExport() {
                     // No pathway rendering, just generate SVG
                     exportCanvas.renderAll();
                     svgPages[0].push(exportCanvas.toSVG());
-                    currentMarcherPages = MarcherPage.filterByPageId(
+                    currentMarcherPages = MarcherPage.getByPageId(
                         marcherPages,
                         pages[i + 1]?.id,
                     );
@@ -1179,7 +1179,7 @@ function DrillChartExport() {
                     <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                         {/* Background Progress Bar */}
                         <div
-                            className="bg-accent absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out"
+                            className="bg-accent absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
                             style={{
                                 width: `${progress}%`,
                                 transform: `translateX(${progress < 100 ? "0" : "0"})`,
@@ -1188,7 +1188,7 @@ function DrillChartExport() {
 
                         {/* Animated Shimmer Effect */}
                         <div
-                            className="absolute left-0 top-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            className="absolute top-0 left-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             style={{
                                 animation:
                                     progress > 0 && progress < 100
@@ -1228,7 +1228,7 @@ export default function ExportCoordinatesModal() {
         <Dialog>
             <DialogTrigger
                 asChild
-                className="hover:text-accent outline-hidden flex items-center gap-8 duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
                 <button type="button" className="flex items-center gap-8">
                     <ArrowSquareOutIcon size={24} />

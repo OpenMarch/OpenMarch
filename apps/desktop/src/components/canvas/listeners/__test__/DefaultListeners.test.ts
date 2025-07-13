@@ -37,7 +37,7 @@ describe.skip("DefaultListeners", () => {
         const selectedPage = mockPages[0];
         canvas.renderMarchers({
             allMarchers: mockMarchers,
-            currentMarcherPages: MarcherPage.filterByPageId(
+            currentMarcherPages: MarcherPage.getByPageId(
                 mockMarcherPages,
                 selectedPage.id,
             ),

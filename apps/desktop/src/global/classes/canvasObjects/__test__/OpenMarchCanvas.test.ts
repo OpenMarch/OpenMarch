@@ -40,7 +40,7 @@ describe.skip("OpenMarchCanvas", () => {
             const selectedPage = mockPages[0];
             await canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.getByPageId(
                     mockMarcherPages,
                     selectedPage.id,
                 ),
@@ -93,7 +93,7 @@ describe.skip("OpenMarchCanvas", () => {
             });
             await canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.getByPageId(
                     mockMarcherPages,
                     selectedPage.id,
                 ),
@@ -124,7 +124,7 @@ describe.skip("OpenMarchCanvas", () => {
             });
             await canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.getByPageId(
                     mockMarcherPages,
                     selectedPage.id,
                 ),
@@ -170,7 +170,7 @@ describe.skip("OpenMarchCanvas", () => {
             });
             await canvas.renderMarchers({
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.getByPageId(
                     mockMarcherPages,
                     selectedPage.id,
                 ),

@@ -583,7 +583,7 @@ export default function Canvas({
         if (canvas && selectedPage && marchers && marcherPages) {
             canvas.currentPage = selectedPage;
             canvas.renderMarchers({
-                currentMarcherPages: MarcherPage.filterByPageId(
+                currentMarcherPages: MarcherPage.getByPageId(
                     marcherPages,
                     selectedPage.id,
                 ),
@@ -604,7 +604,7 @@ export default function Canvas({
             // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
             let selectedPageMarcherPages: MarcherPage[] = [];
             if (uiSettings.previousPaths || uiSettings.nextPaths) {
-                selectedPageMarcherPages = MarcherPage.filterByPageId(
+                selectedPageMarcherPages = MarcherPage.getByPageId(
                     marcherPages,
                     selectedPage.id,
                 );
@@ -614,7 +614,7 @@ export default function Canvas({
                 uiSettings.previousPaths &&
                 selectedPage.previousPageId !== null
             ) {
-                const prevPageMarcherPages = MarcherPage.filterByPageId(
+                const prevPageMarcherPages = MarcherPage.getByPageId(
                     marcherPages,
                     selectedPage.previousPageId,
                 );
@@ -636,7 +636,7 @@ export default function Canvas({
                 );
             }
             if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
-                const nextPageMarcherPages = MarcherPage.filterByPageId(
+                const nextPageMarcherPages = MarcherPage.getByPageId(
                     marcherPages,
                     selectedPage.nextPageId,
                 );
@@ -884,7 +884,7 @@ export default function Canvas({
                 }
 
                 canvas.renderMarchers({
-                    currentMarcherPages: MarcherPage.filterByPageId(
+                    currentMarcherPages: MarcherPage.getByPageId(
                         marcherPages,
                         selectedPage.id,
                     ),
