@@ -222,13 +222,14 @@ export default class LineListeners
         const offsetNewDots = newDots.map((dot) => {
             return { ...dot, x: dot.x - gridOffset, y: dot.y - gridOffset };
         });
-        const [createdPathways, createdMidpoints] = this.canvas.renderPathways({
-            startPageMarcherPages: oldDots,
-            endPageMarcherPages: offsetNewDots,
-            color: rgbaToString(this.canvas.fieldProperties.theme.tempPath),
-            strokeWidth: 2,
-            dashed: true,
-        });
+        const [createdPathways, createdMidpoints] =
+            this.canvas.renderPathwaysAndMidpoints({
+                startPageMarcherPages: oldDots,
+                endPageMarcherPages: offsetNewDots,
+                color: rgbaToString(this.canvas.fieldProperties.theme.tempPath),
+                strokeWidth: 2,
+                dashed: true,
+            });
         this._pathways = new Map<number, fabric.Object>(
             createdPathways.map((pathway) => [pathway.marcherId, pathway]),
         );

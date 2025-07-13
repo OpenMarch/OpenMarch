@@ -7,6 +7,7 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
 import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
@@ -915,19 +916,28 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /**
      * Render the given marcherPages on the canvas
      *
-     * @param currentMarcherPages All of the marcher pages (must be filtered by the intended page)
+     * @param marcherPages All of the marcher pages
+     * @param pageId The id of the page to render marchers for
      * @param allMarchers All marchers in the drill
      */
     renderMarchers = async ({
-        currentMarcherPages,
+        marcherPages,
+        pageId,
         allMarchers,
     }: {
-        currentMarcherPages: MarcherPage[];
+        marcherPages: MarcherPageMap;
+        pageId: number;
         allMarchers: Marcher[];
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
         const sectionAppearances =
             await SectionAppearance.getSectionAppearances();
+
+        // Get the marcher pages for the target pageId
+        const pageMarcherPageMap = MarcherPage.getByPageId(
+            marcherPages,
+            pageId,
+        );
 
         // Get the canvas marchers on the canvas
         const canvasMarchersMap = new Map<number, CanvasMarcher>(
@@ -936,7 +946,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const allMarchersMap = new Map<number, Marcher>(
             allMarchers.map((m) => [m.id, m]),
         );
-        for (const marcherPage of currentMarcherPages) {
+
+        // For each marcherPage in the page's marcher map
+        for (const marcherPage of Object.values(pageMarcherPageMap)) {
             const curCanvasMarcher = canvasMarchersMap.get(
                 marcherPage.marcher_id,
             );
@@ -966,8 +978,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 curCanvasMarcher.setMarcherCoords(marcherPage);
             }
         }
+
         const marcherPageMarcherIds: Set<number> = new Set(
-            currentMarcherPages.map((marcherPage) => marcherPage.marcher_id),
+            pageMarcherPageMap.map((marcherPage) => marcherPage.marcher_id),
         );
 
         // Check for any canvas marchers that are no longer in the current marcher pages
@@ -1049,24 +1062,28 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Render static marchers for the given page
      *
      * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
-     * @param allMarchers All marchers in the drill
+     * @param marcherPages All marcher pages in the drill
+     * @param pageId The page ID to render the static marchers for
      * @returns The StaticCanvasMarcher objects created
      */
     renderStaticMarchers = ({
         color,
-        intendedMarcherPages,
-        allMarchers,
+        marcherPages,
+        pageId,
     }: {
         color: string;
-        intendedMarcherPages: MarcherPage[];
-        allMarchers: Marcher[];
+        marcherPages: MarcherPageMap;
+        pageId: number;
     }) => {
+        const intendedMarcherPages = MarcherPage.getByPageId(
+            marcherPages,
+            pageId,
+        );
         const createdStaticMarchers: StaticCanvasMarcher[] = [];
+
         intendedMarcherPages.forEach((marcherPage) => {
-            const curMarcher = allMarchers.find(
-                (marcher) => marcher.id === marcherPage.marcher_id,
-            );
+            const curMarcher =
+                marcherPages.marcherPagesByMarcher[marcherPage.marcher_id];
             if (!curMarcher) {
                 console.error(
                     "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
@@ -1117,21 +1134,75 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
-     * Render the pathways from the selected page to the given one
+     * Render pathways from any object containing an XY coordinate
+     * to another object containing an XY coordinate, including MarcherPage(s).
      *
-     * @param startPageMarcherPages the marcher pages to render the pathway from
-     * @param endPageMarcherPages the marcher pages to render the pathway to
-     * @param color color of the pathway
+     * @param start The starting point of the pathway
+     * @param end The ending point of the pathway
+     * @param marcherId The ID of the marcher this pathway belongs to
+     * @param color The color of the pathways
+     * @param strokeWidth The width of the pathways
+     * @param dashed Whether the pathways should be dashed
      */
-    renderPathways = ({
-        startPageMarcherPages,
-        endPageMarcherPages,
+    renderIndividualPathwayAndMidpoint = ({
+        start,
+        end,
+        marcherId,
         color,
         strokeWidth,
         dashed = false,
     }: {
-        startPageMarcherPages: MarcherPage[];
-        endPageMarcherPages: MarcherPage[];
+        start: { x: number; y: number; [key: string]: any };
+        end: { x: number; y: number; [key: string]: any };
+        marcherId: number;
+        color: string;
+        strokeWidth?: number;
+        dashed?: boolean;
+    }) => {
+        const pathway = new Pathway({
+            start: start,
+            end: end,
+            color,
+            strokeWidth,
+            dashed,
+            marcherId,
+        });
+        const midpoint = new Midpoint({
+            start: start,
+            end: end,
+            innerColor: "white",
+            outerColor: color,
+            marcherId,
+        });
+
+        this.add(pathway);
+        this.add(midpoint);
+        this.requestRenderAll();
+
+        return [pathway, midpoint];
+    };
+
+    /**
+     * Render the pathways from the selected page to the given one
+     *
+     * @param marcherPages all marcher pages in the drill
+     * @param startPageId the selected page to render the pathway from
+     * @param endPageId the page to render the pathway to
+     * @param color color of the pathway
+     * @param strokeWidth width of the pathway
+     * @param dashed whether the pathway should be dashed
+     */
+    renderPathwaysAndMidpoints = ({
+        marcherPages,
+        startPageId,
+        endPageId,
+        color,
+        strokeWidth,
+        dashed = false,
+    }: {
+        marcherPages: MarcherPageMap;
+        startPageId: number;
+        endPageId: number;
         color: string;
         strokeWidth?: number;
         dashed?: boolean;
@@ -1139,13 +1210,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const createdPathways: Pathway[] = [];
         const createdMidpoints: Midpoint[] = [];
 
+        // Get MarcherPages for the start and end pages
+        const endPageMarcherPages = MarcherPage.getByPageId(
+            marcherPages,
+            endPageId,
+        );
+        const startPageMarcherPages =
+            marcherPages.marcherPagesByPage[startPageId];
+
         endPageMarcherPages.forEach((previousMarcherPage) => {
-            const selectedMarcherPage = startPageMarcherPages.find(
-                (marcherPage) =>
-                    marcherPage.marcher_id === previousMarcherPage.marcher_id,
-            );
+            const currentMarcherPage =
+                startPageMarcherPages[previousMarcherPage.marcher_id];
+
             // If the marcher does not exist on the selected page, return
-            if (!selectedMarcherPage) {
+            if (!currentMarcherPage) {
                 console.error(
                     "Selected marcher page not found - renderPathways: Canvas.tsx",
                     previousMarcherPage,
@@ -1156,7 +1234,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             // Add pathways
             const pathway = new Pathway({
                 start: previousMarcherPage,
-                end: selectedMarcherPage,
+                end: currentMarcherPage,
                 color,
                 strokeWidth,
                 dashed,
@@ -1167,12 +1245,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
             // Add midpoints if the marcher moves
             if (
-                previousMarcherPage.x !== selectedMarcherPage.x ||
-                previousMarcherPage.y !== selectedMarcherPage.y
+                previousMarcherPage.x !== currentMarcherPage.x ||
+                previousMarcherPage.y !== currentMarcherPage.y
             ) {
                 const midpoint = new Midpoint({
                     start: previousMarcherPage,
-                    end: selectedMarcherPage,
+                    end: currentMarcherPage,
                     innerColor: "white",
                     outerColor: color,
                     marcherId: previousMarcherPage.marcher_id,

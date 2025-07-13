@@ -41,6 +41,7 @@ import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
+import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -155,24 +156,24 @@ function CoordinateSheetExport() {
                 // Create quarter sheets for each marcher, organized by performer number
                 const marcherQuarterSheets = processedMarchers.flatMap(
                     (marcher, mIdx) => {
-                        const marcherPagesForMarcher = marcherPages
-                            .filter((mp) => mp.marcher_id === marcher.id)
-                            .sort((a, b) => {
-                                const pageA = pages.find(
-                                    (p) => p.id === a.page_id,
-                                );
-                                const pageB = pages.find(
-                                    (p) => p.id === b.page_id,
-                                );
-                                return (
-                                    (pageA?.order ?? 0) - (pageB?.order ?? 0)
-                                );
-                            });
+                        const marcherPagesForMarcher =
+                            MarcherPage.getByMarcherId(
+                                marcherPages,
+                                marcher.id,
+                            );
+
+                        // Sort by page order
+                        marcherPagesForMarcher.sort((a, b) => {
+                            const pageA = pages.find((p) => p.id === a.page_id);
+                            const pageB = pages.find((p) => p.id === b.page_id);
+                            return (pageA?.order ?? 0) - (pageB?.order ?? 0);
+                        });
 
                         const rowChunks = chunkArray(
                             marcherPagesForMarcher,
                             QUARTER_ROWS,
                         );
+
                         return rowChunks.map((rowChunk, chunkIdx) => {
                             try {
                                 const renderedHtml =
@@ -240,23 +241,34 @@ function CoordinateSheetExport() {
                 groupedSheets = marcherQuarterSheets;
             } else {
                 // regular format
-                groupedSheets = processedMarchers.map((marcher) => ({
-                    name: marcher.name,
-                    drillNumber: marcher.drill_number,
-                    section: marcher.section || "Unsorted",
-                    renderedPage: ReactDOMServer.renderToString(
-                        <StaticMarcherCoordinateSheet
-                            marcher={marcher}
-                            pages={pages}
-                            marcherPages={marcherPages}
-                            fieldProperties={fieldProperties}
-                            includeMeasures={includeMeasures}
-                            terse={isTerse}
-                            useXY={useXY}
-                            roundingDenominator={roundingDenominator}
-                        />,
-                    ),
-                }));
+                groupedSheets = processedMarchers.map((marcher) => {
+                    const marcherPagesForMarcher = MarcherPage.getByMarcherId(
+                        marcherPages,
+                        marcher.id,
+                    ).sort((a, b) => {
+                        const pageA = pages.find((p) => p.id === a.page_id);
+                        const pageB = pages.find((p) => p.id === b.page_id);
+                        return (pageA?.order ?? 0) - (pageB?.order ?? 0);
+                    });
+
+                    return {
+                        name: marcher.name,
+                        drillNumber: marcher.drill_number,
+                        section: marcher.section || "Unsorted",
+                        renderedPage: ReactDOMServer.renderToString(
+                            <StaticMarcherCoordinateSheet
+                                marcher={marcher}
+                                pages={pages}
+                                marcherPages={marcherPagesForMarcher}
+                                fieldProperties={fieldProperties}
+                                includeMeasures={includeMeasures}
+                                terse={isTerse}
+                                useXY={useXY}
+                                roundingDenominator={roundingDenominator}
+                            />,
+                        ),
+                    };
+                });
             }
 
             // Continue with fun phrases during PDF generation
@@ -664,17 +676,6 @@ function DrillChartExport() {
                 () => [],
             );
 
-            // Get marcherPages for this, prev, and next page
-            let currentMarcherPages: MarcherPage[] = MarcherPage.getByPageId(
-                marcherPages,
-                pages[0].id,
-            );
-            let prevMarcherPages: MarcherPage[] = [];
-            let nextMarcherPages: MarcherPage[] = MarcherPage.getByPageId(
-                marcherPages,
-                pages[1].id,
-            );
-
             // Readable coordinates storage for each marcher
             const readableCoords: string[][] = Array.from(
                 { length: marchers.length },
@@ -682,93 +683,87 @@ function DrillChartExport() {
             );
 
             // Generate SVGs for each page
-            for (let i = 0; i < pages.length; i++) {
+            for (let p = 0; p < pages.length; p++) {
                 setCurrentStep(
-                    `Processing page ${i + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
+                    `Processing page ${p + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
                 );
-
-                exportCanvas.currentPage = pages[i];
 
                 // Render marchers for this page
                 await exportCanvas.renderMarchers({
-                    currentMarcherPages: currentMarcherPages,
+                    marcherPages: marcherPages,
+                    pageId: pages[p].id,
                     allMarchers: marchers,
                 });
 
                 // Render pathways for individual marchers
                 if (individualCharts) {
                     for (let m = 0; m < marchers.length; m++) {
-                        const marcher = MarcherPage.getByMarcherId(
-                            currentMarcherPages,
+                        const marcher = MarcherPage.getByMarcherAndPageId(
+                            marcherPages,
                             marchers[m].id,
-                        )[0];
-                        const prevMarcher = MarcherPage.getByMarcherId(
-                            prevMarcherPages,
-                            marchers[m].id,
-                        )[0];
-                        const nextMarcher = MarcherPage.getByMarcherId(
-                            nextMarcherPages,
-                            marchers[m].id,
-                        )[0];
+                            pages[p].id,
+                        )!;
+                        const prevMarcher =
+                            p > 0
+                                ? MarcherPage.getByMarcherAndPageId(
+                                      marcherPages,
+                                      marchers[m].id,
+                                      pages[p - 1].id,
+                                  )!
+                                : null;
+                        const nextMarcher =
+                            p < pages.length - 1
+                                ? MarcherPage.getByMarcherAndPageId(
+                                      marcherPages,
+                                      marchers[m].id,
+                                      pages[p + 1].id,
+                                  )!
+                                : null;
 
                         // Store readable coordinates for this marcher
-                        readableCoords[m][i] =
+                        readableCoords[m][p] =
                             ReadableCoords.fromMarcherPage(marcher).toString();
 
                         // Collect pathways to add/remove
                         const objectsToRemove: fabric.Object[] = [];
 
                         // Render previous pathway and midpoint
-                        if (
-                            prevMarcherPages.length > 0 &&
-                            currentMarcherPages
-                        ) {
-                            const [prevPathways, prevMidpoints] =
-                                exportCanvas.renderPathways({
-                                    startPageMarcherPages: [prevMarcher],
-                                    endPageMarcherPages: [marcher],
-                                    color: rgbaToString(
-                                        exportCanvas.fieldProperties.theme
-                                            .previousPath,
-                                    ),
-                                    strokeWidth: 4,
-                                    dashed: true,
-                                });
-
+                        if (p > 0) {
                             objectsToRemove.push(
-                                ...prevPathways,
-                                ...prevMidpoints,
+                                ...exportCanvas.renderIndividualPathwayAndMidpoint(
+                                    {
+                                        start: prevMarcher!,
+                                        end: marcher,
+                                        marcherId: marcher.marcher_id,
+                                        color: rgbaToString(
+                                            fieldProperties!.theme.previousPath,
+                                        ),
+                                    },
+                                ),
                             );
                         }
 
                         // Render next pathway and midpoint
-                        if (
-                            currentMarcherPages &&
-                            nextMarcherPages.length > 0
-                        ) {
-                            const [nextPathways, nextMidpoints] =
-                                exportCanvas.renderPathways({
-                                    startPageMarcherPages: [marcher],
-                                    endPageMarcherPages: [nextMarcher],
-                                    color: rgbaToString(
-                                        exportCanvas.fieldProperties.theme
-                                            .nextPath,
-                                    ),
-                                    strokeWidth: 3,
-                                    dashed: false,
-                                });
-
+                        if (p < pages.length - 1) {
                             objectsToRemove.push(
-                                ...nextPathways,
-                                ...nextMidpoints,
+                                ...exportCanvas.renderIndividualPathwayAndMidpoint(
+                                    {
+                                        start: marcher,
+                                        end: nextMarcher!,
+                                        marcherId: marcher.marcher_id,
+                                        color: rgbaToString(
+                                            fieldProperties!.theme.nextPath,
+                                        ),
+                                    },
+                                ),
                             );
                         }
 
                         // Add box around prev coordinate
-                        if (prevMarcherPages.length > 0) {
+                        if (p > 0) {
                             const square = new fabric.Rect({
-                                left: prevMarcher.x,
-                                top: prevMarcher.y,
+                                left: prevMarcher!.x,
+                                top: prevMarcher!.y,
                                 width: 20,
                                 height: 20,
                                 fill: "transparent",
@@ -783,10 +778,10 @@ function DrillChartExport() {
                         }
 
                         // Add circle around next coordinate
-                        if (nextMarcherPages.length > 0) {
+                        if (p < pages.length - 1) {
                             const circle = new fabric.Circle({
-                                left: nextMarcher.x,
-                                top: nextMarcher.y,
+                                left: nextMarcher!.x,
+                                top: nextMarcher!.y,
                                 radius: 10,
                                 fill: "transparent",
                                 stroke: "hsl(281, 82%, 63%)",
@@ -816,26 +811,14 @@ function DrillChartExport() {
                             exportCanvas.remove(object),
                         );
                     }
-
-                    // Update current, prev, and next marcher pages
-                    prevMarcherPages = currentMarcherPages;
-                    currentMarcherPages = nextMarcherPages;
-                    nextMarcherPages = MarcherPage.getByPageId(
-                        marcherPages,
-                        pages[i + 2]?.id ?? -1,
-                    );
                 } else {
                     // No pathway rendering, just generate SVG
                     exportCanvas.renderAll();
                     svgPages[0].push(exportCanvas.toSVG());
-                    currentMarcherPages = MarcherPage.getByPageId(
-                        marcherPages,
-                        pages[i + 1]?.id,
-                    );
                 }
 
                 // Update progress smoothly
-                setProgress(50 * ((i + 1) / pages.length));
+                setProgress(50 * ((p + 1) / pages.length));
                 if (isCancelled.current) {
                     throw new Error("Export cancelled by user");
                 }
