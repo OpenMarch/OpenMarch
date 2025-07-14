@@ -21,3 +21,29 @@ export interface MarcherPageMap {
 
 /** A nested map structure for MarcherPages, indexed by marcher_id and page_id.*/
 export type MarcherPageNestedMap = Record<number, Record<number, MarcherPage>>;
+
+/**
+ * Creates a marcherPageMap from a flat array of MarcherPage(s),
+ * which are typically obtained via a DB fetch.
+ */
+export function marcherPageMapFromArray(
+    rawMarcherPages: MarcherPage[],
+): MarcherPageMap {
+    const marcherPagesByMarcher: MarcherPageNestedMap = {};
+    const marcherPagesByPage: MarcherPageNestedMap = {};
+
+    // Populate maps
+    rawMarcherPages.forEach((mp) => {
+        if (!marcherPagesByMarcher[mp.marcher_id]) {
+            marcherPagesByMarcher[mp.marcher_id] = {};
+        }
+        marcherPagesByMarcher[mp.marcher_id][mp.page_id] = mp;
+
+        if (!marcherPagesByPage[mp.page_id]) {
+            marcherPagesByPage[mp.page_id] = {};
+        }
+        marcherPagesByPage[mp.page_id][mp.marcher_id] = mp;
+    });
+
+    return { marcherPagesByMarcher, marcherPagesByPage };
+}

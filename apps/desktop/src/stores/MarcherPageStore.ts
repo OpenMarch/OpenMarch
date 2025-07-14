@@ -1,5 +1,6 @@
 import {
     MarcherPageMap,
+    marcherPageMapFromArray,
     MarcherPageNestedMap,
 } from "@/global/classes/MarcherPageIndex";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -19,26 +20,9 @@ export const useMarcherPageStore = create<MarcherPageStoreInterface>((set) => ({
         // Fetch all marcherPages from the DB
         const rawMarcherPages = await MarcherPage.getMarcherPages();
 
-        // Create maps
-        const marcherPagesByMarcher: MarcherPageNestedMap = {};
-        const marcherPagesByPage: MarcherPageNestedMap = {};
-
-        // Populate maps
-        rawMarcherPages.forEach((mp) => {
-            if (!marcherPagesByMarcher[mp.marcher_id]) {
-                marcherPagesByMarcher[mp.marcher_id] = {};
-            }
-            marcherPagesByMarcher[mp.marcher_id][mp.page_id] = mp;
-
-            if (!marcherPagesByPage[mp.page_id]) {
-                marcherPagesByPage[mp.page_id] = {};
-            }
-            marcherPagesByPage[mp.page_id][mp.marcher_id] = mp;
-        });
-
         // Update the store with the new maps
         set({
-            marcherPages: { marcherPagesByMarcher, marcherPagesByPage },
+            marcherPages: marcherPageMapFromArray(rawMarcherPages),
             marcherPagesAreLoading: false,
         });
     },

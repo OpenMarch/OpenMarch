@@ -5,6 +5,7 @@ import MarcherPage from "../MarcherPage";
 import Page from "../Page";
 import { StepSize } from "../StepSize";
 import { describe, expect, it } from "vitest";
+import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 
 describe("StepSize", () => {
     it("should be able to create a step size object", () => {
@@ -199,7 +200,7 @@ describe("StepSize", () => {
             id: 5,
             previousPageId: 4,
         } as Page;
-        const marcherPages = [
+        const marcherPageMap = marcherPageMapFromArray([
             // Marcher 1 - 8 to 5
             {
                 marcher_id: 1,
@@ -252,11 +253,11 @@ describe("StepSize", () => {
                 y: 783.96,
                 page_id: 5,
             },
-        ] as MarcherPage[];
+        ] as MarcherPage[]);
         const stepSizes = StepSize.createStepSizesForMarchers({
-            marchers,
-            marcherPages,
-            page,
+            marchers: marchers,
+            marcherPages: marcherPageMap,
+            page: page,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
 
@@ -306,7 +307,7 @@ describe("StepSize", () => {
             id: 5,
             previousPageId: 4,
         } as Page;
-        const marcherPages = [
+        const marcherPageMap = marcherPageMapFromArray([
             // Marcher 1 - 8 to 5
             {
                 marcher_id: 1,
@@ -359,11 +360,11 @@ describe("StepSize", () => {
                 y: 495.96,
                 page_id: 5,
             },
-        ] as MarcherPage[];
+        ] as MarcherPage[]);
         const stepSizes = StepSize.getMinAndMaxStepSizesForMarchers({
-            marchers,
-            marcherPages,
-            page,
+            marchers: marchers,
+            marcherPages: marcherPageMap,
+            page: page,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
 
@@ -397,7 +398,7 @@ describe("StepSize", () => {
             id: 5,
             previousPageId: 4,
         } as Page;
-        const marcherPages = [
+        const marcherPageMap = marcherPageMapFromArray([
             {
                 marcher_id: 1,
                 x: 960,
@@ -422,11 +423,11 @@ describe("StepSize", () => {
                 y: 495.96,
                 page_id: 5,
             },
-        ] as MarcherPage[];
+        ] as MarcherPage[]);
         const stepSizes = StepSize.getMinAndMaxStepSizesForMarchers({
-            marchers,
-            marcherPages,
-            page,
+            marchers: marchers,
+            marcherPages: marcherPageMap,
+            page: page,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
 

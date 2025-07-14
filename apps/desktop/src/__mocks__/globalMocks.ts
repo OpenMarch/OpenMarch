@@ -6,6 +6,7 @@ import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type { Shape } from "electron/database/tables/ShapeTable";
 import type { ShapePage } from "electron/database/tables/ShapePageTable";
+import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({
@@ -180,6 +181,8 @@ export const mockMarcherPages: MarcherPage[] = [
         notes: undefined,
     },
 ] as const;
+
+export const mockMarcherPageMap = marcherPageMapFromArray(mockMarcherPages);
 
 export const mockMarcherLines: MarcherLine[] = [
     new MarcherLine({

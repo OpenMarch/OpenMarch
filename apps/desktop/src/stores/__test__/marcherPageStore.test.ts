@@ -3,6 +3,7 @@ import { useMarcherPageStore } from "../MarcherPageStore";
 import { mockMarcherPages } from "@/__mocks__/globalMocks";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { describe, expect, it, vi, afterEach } from "vitest";
+import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex"; // <-- use your utility
 
 describe("marcherPageStore", () => {
     afterEach(async () => {
@@ -16,24 +17,29 @@ describe("marcherPageStore", () => {
     });
 
     it("marcherPagesStore - initial state", async () => {
-        // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherPageStore());
-        expect(result.current.marcherPages).toEqual([]);
+        // Expect the initial state to be an empty map object
+        expect(result.current.marcherPages).toEqual({
+            marcherPagesByMarcher: {},
+            marcherPagesByPage: {},
+        });
     });
 
     it("marcherPagesStore - fetch all", async () => {
         const mockToUse = mockMarcherPages;
         vi.spyOn(MarcherPage, "getMarcherPages").mockResolvedValue(mockToUse);
 
-        // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherPageStore());
-        expect(result.current.marcherPages).toEqual([]);
+        expect(result.current.marcherPages).toEqual({
+            marcherPagesByMarcher: {},
+            marcherPagesByPage: {},
+        });
         await act(async () => {
             result.current.fetchMarcherPages();
         });
 
-        // Copy the mockMarcherPages array to avoid reference equality issues
-        const expectedMarcherPages = [...mockToUse];
+        // Use the utility to create the expected map
+        const expectedMarcherPages = marcherPageMapFromArray(mockToUse);
         expect(result.current.marcherPages).toEqual(expectedMarcherPages);
     });
 
@@ -41,15 +47,16 @@ describe("marcherPageStore", () => {
         const mockToUse = [mockMarcherPages[0]];
         vi.spyOn(MarcherPage, "getMarcherPages").mockResolvedValue(mockToUse);
 
-        // Expect the initial state to be an empty array
         const { result } = renderHook(() => useMarcherPageStore());
-        expect(result.current.marcherPages).toEqual([]);
+        expect(result.current.marcherPages).toEqual({
+            marcherPagesByMarcher: {},
+            marcherPagesByPage: {},
+        });
         await act(async () => {
             result.current.fetchMarcherPages();
         });
 
-        // Copy the mockMarcherPages array to avoid reference equality issues
-        const expectedMarcherPages = [...mockToUse];
+        const expectedMarcherPages = marcherPageMapFromArray(mockToUse);
         expect(result.current.marcherPages).toEqual(expectedMarcherPages);
     });
 
@@ -62,8 +69,9 @@ describe("marcherPageStore", () => {
             result.current.fetchMarcherPages();
         });
 
-        // Copy the mockMarcherPages array to avoid reference equality issues
-        const expectedMarcherPages = [...mockToUse];
-        expect(result.current.marcherPages).toEqual(expectedMarcherPages);
+        expect(result.current.marcherPages).toEqual({
+            marcherPagesByMarcher: {},
+            marcherPagesByPage: {},
+        });
     });
 });
