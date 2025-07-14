@@ -5,7 +5,10 @@ import CanvasMarcher from "./CanvasMarcher";
  * Actions that must be taken when a group is rotated
  */
 const rotationSideEffects = (group: fabric.Group) => {
-    for (const object of group.getObjects()) {
+    if (!group || typeof group.getObjects !== "function") return;
+    const objects = group.getObjects?.();
+    if (!Array.isArray(objects)) return;
+    for (const object of objects) {
         if (object instanceof CanvasMarcher) {
             object.updateTextLabelPosition();
         }
@@ -43,7 +46,10 @@ export const handleGroupRotating = (
 };
 
 const handleGroupMoving = (e: fabric.IEvent<Event>, group: fabric.Group) => {
-    for (const object of group.getObjects()) {
+    if (!group || typeof group.getObjects !== "function") return;
+    const objects = group.getObjects?.();
+    if (!Array.isArray(objects)) return;
+    for (const object of objects) {
         if (object instanceof CanvasMarcher) {
             object.updateTextLabelPosition();
         }
@@ -54,10 +60,13 @@ export const handleGroupScaling = (
     e: fabric.IEvent<Event>,
     group: fabric.Group,
 ) => {
+    if (!group || typeof group.getObjects !== "function") return;
+    const objects = group.getObjects?.();
+    if (!Array.isArray(objects)) return;
     const transformMatrix = group.calcTransformMatrix();
     const decomposed = fabric.util.qrDecompose(transformMatrix);
 
-    for (const object of group.getObjects()) {
+    for (const object of objects) {
         // Apply the inverse scale to the child so it visually stays the same size
         object.scaleX = 1 / decomposed.scaleX;
         object.scaleY = 1 / decomposed.scaleY;

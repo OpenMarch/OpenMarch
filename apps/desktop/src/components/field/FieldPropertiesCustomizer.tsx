@@ -6,7 +6,7 @@ import FieldProperties, {
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
+import { BooksIcon, CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import * as Form from "@radix-ui/react-form";
 import {
     Input,
@@ -501,7 +501,24 @@ export default function FieldPropertiesCustomizer() {
             onSubmit={(e) => e.preventDefault()}
             className="mb-16 flex w-[34rem] flex-col gap-16"
         >
-            <h4 className="text-h4">Custom Field</h4>
+            <div className="flex items-center gap-8">
+                <h4 className="text-h4">Custom Field</h4>
+                <a
+                    href="https://openmarch.com/guides/editing-the-grid"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-fit w-fit"
+                >
+                    <Button
+                        size={"compact"}
+                        variant="secondary"
+                        className="w-fit min-w-fit whitespace-nowrap"
+                    >
+                        <BooksIcon size={22} />
+                        See docs
+                    </Button>
+                </a>
+            </div>
             <Tabs defaultValue="general">
                 <TabsList>
                     <TabItem value="general">General</TabItem>
