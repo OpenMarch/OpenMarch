@@ -527,7 +527,9 @@ export default function FieldPropertiesCustomizer() {
             className="mb-16 flex w-[34rem] flex-col gap-16"
         >
             <div className="flex items-center gap-8">
-                <h4 className="text-h4">Custom Field</h4>
+                <h4 className="text-h4">
+                    <T keyName="fieldProperties.customField" />
+                </h4>
                 <a
                     href="https://openmarch.com/guides/editing-the-grid"
                     target="_blank"
@@ -540,7 +542,7 @@ export default function FieldPropertiesCustomizer() {
                         className="w-fit min-w-fit whitespace-nowrap"
                     >
                         <BooksIcon size={22} />
-                        See docs
+                        <T keyName="fieldProperties.customFieldDocs" />
                     </Button>
                 </a>
             </div>

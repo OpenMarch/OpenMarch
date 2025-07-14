@@ -259,6 +259,8 @@
             "visible": "Visible",
             "visibleTooltip": "If this checkpoint should be visible on the field"
         },
+        "customField": "Custom Field",
+        "customFieldDocs": "See docs",
         "customFieldName": "Custom",
         "customization": "Customization",
         "customize": "Customize",

@@ -259,6 +259,7 @@
             "visible": "表示",
             "visibleTooltip": "フィールドに この チェックポイント が 表示 される 場合"
         },
+        "customField": "カスタムフィールド",
         "customFieldName": "カスタムフィールド名",
         "customization": "カスタマイズ",
         "customize": "カスタマイズ",

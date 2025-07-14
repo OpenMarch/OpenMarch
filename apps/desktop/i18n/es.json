@@ -259,6 +259,8 @@
             "visible": "Visible",
             "visibleTooltip": "Si este punto de control debe ser visible en el campo"
         },
+        "customField": "Campo Personalizado",
+        "customFieldDocs": "Ver documentación",
         "customFieldName": "Personalizado",
         "customization": "Personalización",
         "customize": "Personalizar",
