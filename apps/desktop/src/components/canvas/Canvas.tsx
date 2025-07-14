@@ -583,7 +583,10 @@ export default function Canvas({
             ) {
                 canvas.renderStaticMarchers({
                     marcherPages: marcherPages,
-                    pageId: selectedPage.previousPageId,
+                    intendedMarcherPages: MarcherPage.getByPageId(
+                        marcherPages,
+                        selectedPage.previousPageId,
+                    ),
                     color: rgbaToString(fieldProperties.theme.previousPath),
                 });
                 const [renderedPathways, renderedMidpoints] =
@@ -601,7 +604,10 @@ export default function Canvas({
             if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
                 canvas.renderStaticMarchers({
                     marcherPages: marcherPages,
-                    pageId: selectedPage.nextPageId,
+                    intendedMarcherPages: MarcherPage.getByPageId(
+                        marcherPages,
+                        selectedPage.nextPageId,
+                    ),
                     color: rgbaToString(fieldProperties.theme.nextPath),
                 });
                 const [renderedPathways, renderedMidpoints] =

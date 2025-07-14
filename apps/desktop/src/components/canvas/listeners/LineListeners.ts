@@ -222,14 +222,24 @@ export default class LineListeners
         const offsetNewDots = newDots.map((dot) => {
             return { ...dot, x: dot.x - gridOffset, y: dot.y - gridOffset };
         });
-        const [createdPathways, createdMidpoints] =
-            this.canvas.renderPathwaysAndMidpoints({
-                startPageMarcherPages: oldDots,
-                endPageMarcherPages: offsetNewDots,
-                color: rgbaToString(this.canvas.fieldProperties.theme.tempPath),
-                strokeWidth: 2,
-                dashed: true,
-            });
+
+        let createdPathways: Pathway[] = [];
+        let createdMidpoints: Midpoint[] = [];
+        for (let i = 0; i < oldDots.length; i++) {
+            const [pathway, midpoint] =
+                this.canvas.renderIndividualPathwayAndMidpoint({
+                    start: oldDots[i],
+                    end: offsetNewDots[i],
+                    marcherId: oldDots[i].marcher_id,
+                    color: rgbaToString(
+                        this.canvas.fieldProperties.theme.tempPath,
+                    ),
+                    strokeWidth: 2,
+                    dashed: true,
+                });
+            createdPathways.push(pathway as Pathway);
+            createdMidpoints.push(midpoint as Midpoint);
+        }
         this._pathways = new Map<number, fabric.Object>(
             createdPathways.map((pathway) => [pathway.marcherId, pathway]),
         );
@@ -237,13 +247,14 @@ export default class LineListeners
             createdMidpoints.map((midpoint) => [midpoint.marcherId, midpoint]),
         );
 
-        const createdStaticMarchers = this.canvas.renderStaticMarchers({
-            color: rgbaToString(this.canvas.fieldProperties.theme.tempPath),
-            intendedMarcherPages: offsetNewDots,
-            allMarchers: this.canvas.eventMarchers.map(
-                (canvasMarcher) => canvasMarcher.marcherObj,
-            ),
-        });
+        const createdStaticMarchers =
+            this.canvas.renderIndividualStaticMarchers({
+                color: rgbaToString(this.canvas.fieldProperties.theme.tempPath),
+                intendedMarcherPages: offsetNewDots,
+                allMarchers: this.canvas.eventMarchers.map(
+                    (canvasMarcher) => canvasMarcher.marcherObj,
+                ),
+            });
         this._staticMarchers = new Map<number, fabric.Object>(
             createdStaticMarchers.map((staticMarcher) => [
                 staticMarcher.marcherId || -1,

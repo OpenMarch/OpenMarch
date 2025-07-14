@@ -1061,29 +1061,69 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /**
      * Render static marchers for the given page
      *
+     * @param marcherPages All marcher pages
+     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
      * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @param marcherPages All marcher pages in the drill
-     * @param pageId The page ID to render the static marchers for
      * @returns The StaticCanvasMarcher objects created
      */
     renderStaticMarchers = ({
-        color,
         marcherPages,
-        pageId,
+        intendedMarcherPages,
+        color,
     }: {
-        color: string;
         marcherPages: MarcherPageMap;
-        pageId: number;
+        intendedMarcherPages: MarcherPage[];
+        color: string;
     }) => {
-        const intendedMarcherPages = MarcherPage.getByPageId(
-            marcherPages,
-            pageId,
-        );
         const createdStaticMarchers: StaticCanvasMarcher[] = [];
 
         intendedMarcherPages.forEach((marcherPage) => {
             const curMarcher =
                 marcherPages.marcherPagesByMarcher[marcherPage.marcher_id];
+
+            if (!curMarcher) {
+                console.error(
+                    "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
+                    marcherPage,
+                );
+                return;
+            }
+
+            const staticMarcher = new StaticCanvasMarcher({
+                marcherPage,
+                color,
+            });
+
+            this.add(staticMarcher);
+            createdStaticMarchers.push(staticMarcher);
+        });
+        this.requestRenderAll();
+
+        return createdStaticMarchers;
+    };
+
+    /**
+     * Render static marchers for the given page
+     *
+     * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
+     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
+     * @param allMarchers All marchers in the drill
+     * @returns The StaticCanvasMarcher objects created
+     */
+    renderIndividualStaticMarchers = ({
+        color,
+        intendedMarcherPages,
+        allMarchers,
+    }: {
+        color: string;
+        intendedMarcherPages: MarcherPage[];
+        allMarchers: Marcher[];
+    }) => {
+        const createdStaticMarchers: StaticCanvasMarcher[] = [];
+        intendedMarcherPages.forEach((marcherPage) => {
+            const curMarcher = allMarchers.find(
+                (marcher) => marcher.id === marcherPage.marcher_id,
+            );
             if (!curMarcher) {
                 console.error(
                     "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
