@@ -58,6 +58,8 @@ export function parseMusicXml(xmlText: string): Measure[] {
         "4/4": [4, 1],
         "6/4": [6, 1],
         "6/8": [2, 1.5],
+        "9/8": [3, 1.5],
+        "12/8": [4, 1.5],
         "7/8": [7, 1], // Likely this will end up being 3 "big beats" (for situations like 2+2+3)
     };
 
