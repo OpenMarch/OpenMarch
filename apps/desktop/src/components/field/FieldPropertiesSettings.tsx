@@ -49,7 +49,7 @@ export default function FieldPropertiesSettings() {
                             className="w-fit self-end"
                             variant="secondary"
                         >
-                            Customize
+                            <T keyName="fieldProperties.customize" />
                         </Button>
                     )}
                 </div>

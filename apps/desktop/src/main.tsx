@@ -38,6 +38,8 @@ const tolgee = Tolgee()
         staticData: {
             en: () => import("../i18n/en.json"),
             es: () => import("../i18n/es.json"),
+            "pt-BR": () => import("../i18n/pt-BR.json"),
+            ja: () => import("../i18n/ja.json"),
         },
     });
 

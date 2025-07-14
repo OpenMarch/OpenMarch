@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 const languages = [
     { code: "en", name: "English" },
     { code: "es", name: "Español" },
+    { code: "pt-BR", name: "Português (Brasil)" },
     { code: "ja", name: "日本語" },
 ];
 

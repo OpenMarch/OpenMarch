@@ -104,6 +104,7 @@ module.exports = {
         "tolgee",
         "Español", // Spanish
         "日本語", // Japanese
+        "Português", // Portuguese
     ],
     ignorePaths: [
         "node_modules/**",
