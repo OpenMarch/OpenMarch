@@ -15,7 +15,6 @@ export default defineConfig({
         "/alexdumo": "/about/alexdumo",
         "/developers/contributing": "/developers/codebase",
     },
-
     integrations: [
         react(),
         starlight({
@@ -33,7 +32,8 @@ export default defineConfig({
                 youtube: "https://www.youtube.com/@OpenMarchApp",
             },
             editLink: {
-                baseUrl: "https://github.com/OpenMarch/OpenMarch/tree/main/apps/website/",
+                baseUrl:
+                    "https://github.com/OpenMarch/OpenMarch/tree/main/apps/website/",
             },
             disable404Route: true,
             favicon: "./public/favicon.png",

@@ -1,99 +1,65 @@
 ---
 title: "Getting Started"
-description: "Beginner guide to OpenMarch"
+description: "Set up your first drill file and learn the basics"
+sidebar:
+  order: 1
 ---
 
 import { Steps } from "@astrojs/starlight/components";
+import { PlusIcon } from "@phosphor-icons/react";
 
-Welcome to OpenMarch! Make sure to [download](/download) and install the app if you haven't already.
+Welcome to OpenMarch! If you haven't already, [download](/download) and install the latest version. Let's get you set up to start writing drill.
 
-## Setting up your project
+## Creating Your First Project
 
 <Steps>
 
-1. Create a new file. On the launch page, click "Create New", and make a new `.dots` file.
+1. **Create a new file** - Click "Create New" on the launch page and save your `.dots` file.
 
-2. Now start off by adding some marchers. Open the marchers sidebar by clicking the "Marchers" button in the topbar. Then click "Add" and fill in your marcher info, for quantity and section. Then create the marchers. Repeat this step for multiple sections if you want.
+2. **Add your marchers** - Click the marchers icon in the sidebar, then "Add" to create sections. Fill in the quantity and section info, then hit create. Repeat for each section you need.
 
    ![Creating marchers in the marcher sidebar dialog](/docs/guides/createMarchers.png)
 
-3. If you have music you would like to write on top of, follow this step. If you don't and are just checking the app out, skip this step.
-
-   Make sure you have a MusicXML and audio file on hand. In a notation software like MuseScore, you should be able to export both.
-
-   Now go into the music modal by clicking "Music" in the topbar. Start by importing the MusicXML file by clicking "Import MusicXML"
-
-   :::note
-   There might be issues getting your tempo to line up. Make sure to avoid accelerandos and ritardandos.
-   :::
-
-   Then import your audio file by clicking the empty "Audio File" box at the bottom, and import your file. You may have to refresh the app `Ctrl/Cmd+R` for your audio file to appear. Once it does, make sure it's selected.
+3. **Import your music** (optional) - See our [music guide](/guides/music/audio) for details.
 
    ![The music modal](/docs/guides/music.png)
 
-4. Now, start adding pages by going into the "Pages" sidebar. Click "add" and fill in the quantity. You don't have to fill in the counts and subset right now, you can actually edit the counts and subset in the sidebar when a page is selected.
+4. **Create your pages** - Click the plus button in the timeline to add pages. Drag to adjust counts, use the right inspector to toggle subset or split pages, and right-click to delete.
 
-   ![The create pages sidebar](/docs/guides/pageSidebar.png)
+   ![The create pages sidebar](/docs/guides/pagesTimeline.png)
 
-5. If you'd like to change the field type, go into the "Field" sidebar. We have support for Highschool, College, Pro, and different indoor fields as of 0.0.5.
+5. **Choose your field** - Click the field icon to pick from high school, college, or pro football fields, plus some indoor presets. Want custom dimensions or a background image? Check out [Editing the Field](/guides/editing-the-grid).
 
 </Steps>
 
-## Navigating the app
+## Getting Around the App
 
-##### Titlebar
+**Launch Page** - Your home page with recent files, tutorials, and settings.
 
-- You can open, create, and save your file in the top left. This is also where you export individual coord sheets.
+![Launch page](/docs/guides/launchpage.png)
 
-##### Toolbar
+**Top Bar** - Everything's organized in tabs:
 
-- Most tools are in the topbar/toolbar.
-  - Playback
-  - Project setting dialogs
-  - Toggle viewing the marcher's prev/next paths
-  - Marcher alignment (lock x, lock y, snap to nearest whole)
-  - Aligning marchers
-  - Copying marchers to prev/next
+- **File** - Open, save, export drill charts, settings
+- **Alignment** - Tools for positioning marchers (see [Writing Drill](/guides/writing-drill))
+- **View** - Toggle paths, grid lines, and other display options
 
-##### Sidebar
+![Top bar](/docs/guides/topbar.png)
 
-- You can edit the selected page's properties in the sidebar.
-- You can only view the selected marcher's properties right now in the sidebar.
-- Select multiple marchers with `Ctrl/Cmd+A`. or holding `Shift` when dragging on the field
-- With multiple marchers selected you can perform more advanced alignment tasks in the sidebar
+**Inspector** (right side) - Split pages, toggle subset, and view marcher properties. Select multiple marchers by dragging or shift-clicking to access advanced alignment tools.
 
-##### Timeline
+![Inspector](/docs/guides/inspector.png)
 
-In the timeline (bottom) you can select a page, and view the counts and measures in a page.
+**Timeline** (bottom) - Playback controls, page selection, and fullscreen mode. Right-click pages for more options.
 
-## Writing drill
+![Timeline](/docs/guides/timeline.png)
 
-You're ready to write some drill now! Here's an overview on the tools.
+**Fullscreen Mode** - Click the fullscreen icon to hide the interface and focus on your drill, and change the viewing angle with the perspective slider. Hover near the top to access the toolbar again.
 
-### Alignment
+![fullscreen mode](/docs/guides/fullscreen.png)
 
-You can select different marchers that are on different points on the field, and press the different alignment buttons to make really basic lines.
+## What's Next?
 
-![Alignment buttons in the topbar](/docs/guides/alignment.png)
+Now you're ready to start [Writing Drill](/guides/writing-drill)!
 
-### Lines
-
-With multiple marchers selected, you can make lines way easier by clicking "Create line", then choosing 2 points and clicking "Apply coordinates".
-
-![Create line button](/docs/guides/lines.png)
-
-### Shapes
-
-This is the most exciting drill writing feature right now. With multiple marchers selected, and after drawing a line, click "Create shape". A shape is a group of multiple marchers on top of a line (SVG) path. You can copy the shape to the prev/next page, or ungroup it.
-
-You can add multiple segments, and make curved shapes. Each segment has multiple handles, which you can move. Right now, the segment types are `Line`, `Single Curve`, and `Double curve`. When you have multiple segments, there is also `Move` and `Close`.
-
-`Move` will move the next point to somewhere else, making a gap in the line. `Close` will close the shape, going back to the first segment, useful for making rectangles.
-
-![A demo shape](/docs/guides/shapes.png)
-
-## Support
-
-That's about it for getting started! If you have any more questions, feel free to ask in the [Discord](https://discord.gg/eTsQ98uZzq)!
-
-Please also report any bugs you encounter in the [GitHub](https://github.com/OpenMarch/OpenMarch/issues) by making an issue, or the Discord.
+Found a bug or have feedback? We'd love to hear from you - check out [Submitting Feedback](/guides/submitting-feedback) to help make OpenMarch better.

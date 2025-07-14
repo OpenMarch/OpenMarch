@@ -1,0 +1,73 @@
+---
+title: "Writing Drill"
+description: "Learn how to use the alignment tools and shape editor."
+sidebar:
+  order: 8
+---
+
+OpenMarch has alignment tools and custom shape editing to help you write drill efficiently.
+
+## Toolbar
+
+![Full toolbar](/docs/guides/writingDrill/toolbar.gif)
+
+### Coordinate Rounding
+
+Use the `Coordinate Rounding` option in the toolbar to snap marchers to grid positions automatically when you move them around. Left/right click the `X` and `Y` buttons to cycle through common values, or open the menu for custom rounding.
+
+To temporarily disable coordinate rounding, hold `Shift`.
+
+### Alignment Tools
+
+The toolbar includes several alignment options:
+
+- **Lock X/Y movement** - Constrain marcher movement to one axis
+- **Align vertical/horizontal** - Line up selected marchers
+- **Evenly distribute vertical/horizontal** - Evenly space selected marchers along the selected axis
+- **Copy from previous/next pages** - Copy positions from adjacent pages
+
+## Selecting Multiple Marchers
+
+- **Drag** to select marchers in a rectangle
+- **Shift + drag** for lasso selection
+- **Ctrl/Cmd + A** to select all marchers
+
+Once you have multiple marchers selected, you can:
+
+- **Create Line** - Draw a line in the inspector, then apply coordinates or group into a `Shape` (see below)
+- **Rotate** - Drag the rotation handle around the selection
+- **Scale** - Use the corner handles to expand or contract the selection
+
+![Group marcher editing](/docs/guides/writingDrill/groupMarcherEditing.gif)
+
+:::tip
+Press the `1` key (snap to nearest whole) to round the coordinates after manipulating multiple marcher positions, while all the marchers are still selected. (does not work for shapes yet)
+:::
+
+## Shapes
+
+After creating a shape from selected marchers, you can build more complex formations.
+
+- **Copy** - Apply the shape to previous or next pages
+- **Ungroup** - Break the shape back into individual marchers
+- **Segments**
+  - **Line** - Straight line
+  - **Single/double curve**, Curved lines
+  - **Move** - Set a new position to start the next segment from
+  - **Close** - Connect the back to the first
+
+The delete button removes the last segment from your shape.
+
+Shape segment handles also apply to your coordinate rounding settings, to temporarily disable coordinate rounding, hold `Shift`.
+
+![Shape demo and inspector](/home/shapes-dark.png)
+
+## Quick Workflow
+
+1. Select your marchers
+2. Create a line or shape using the inspector
+3. Fine-tune with alignment tools
+4. Use snap to nearest whole (`1` key) to snap marcher positions to the grid
+5. Copy to other pages as needed, and work on your next set
+
+These are the main tools for writing drill in OpenMarch currently.

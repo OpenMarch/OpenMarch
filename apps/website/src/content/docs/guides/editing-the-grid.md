@@ -1,6 +1,8 @@
 ---
-title: "Editing the Grid"
+title: "Editing the Field"
 description: "How to adjust the field or grid in OpenMarch to meet your ensemble's needs"
+sidebar:
+  order: 2
 ---
 
 OpenMarch allows designers to make their own field with whatever measurements and specifications they want, as long as it's a rectangle.
@@ -172,4 +174,4 @@ Adjust the color of most elements of the grid.
 
 Colors can easily reset to the system default by either clicking the return arrow for that specific property, or the `Reset Theme to Default` button.
 
-![Theme pallette](/docs/guides/field/image-12.png)
+![Theme palette](/docs/guides/field/image-12.png)

@@ -374,7 +374,7 @@ export default function EditableAudioPlayer() {
                 )}
                 <div className="bg-text-disabled size-4 rounded-full" />
                 <a
-                    href="https://github.com/OpenMarch/OpenMarch"
+                    href="https://openmarch.com/guides/music/tempo/#tapping-tempo"
                     target="_blank"
                     rel="noreferrer"
                 >

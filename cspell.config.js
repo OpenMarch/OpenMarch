@@ -14,9 +14,13 @@ module.exports = {
         "turborepo",
         "colours",
         "sicommand",
+        "vmin",
         "bostick",
         "dukc",
         "tabler",
+        "vilag",
+        "Sunbright",
+        "Cinnaminson",
         "ehlert",
         "aleksi",
         "saario",
@@ -73,6 +77,7 @@ module.exports = {
         "undoable",
         "shouldn",
         "aren", // for aren&apos;t
+        "couldn", // for couldn&apos;t
         "apos",
         "launchpage",
         "GLHF",
@@ -105,6 +110,10 @@ module.exports = {
         "Español", // Spanish
         "日本語", // Japanese
         "Português", // Portuguese
+        "ccpa",
+        "Schachner",
+        "pfps",
+        "seti",
     ],
     ignorePaths: [
         "node_modules/**",
@@ -121,6 +130,7 @@ module.exports = {
         "**/*.i18n.json",
         "**/locales/**",
         "locales/**",
+        "patreonMembers.json",
         "**/mock-databases/**",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],

@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
-import { Button, SelectTriggerCompact } from "@openmarch/ui";
+import {
+    Button,
+    SelectTriggerCompact,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectGroup,
+} from "@openmarch/ui";
 import { TrashIcon, CaretLeftIcon, XIcon } from "@phosphor-icons/react";
 import {
     AlertDialog,
@@ -11,7 +18,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@openmarch/ui";
-import { Select, SelectContent, SelectItem, SelectGroup } from "@openmarch/ui";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import {
     SectionAppearance,
@@ -19,7 +26,7 @@ import {
     NewSectionAppearanceArgs,
 } from "@/global/classes/SectionAppearance";
 import * as Form from "@radix-ui/react-form";
-import * as RadixSelect from "@radix-ui/react-select";
+import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import ColorPicker from "../../ui/ColorPicker";
 import { SECTIONS } from "@/global/classes/Sections";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
@@ -81,6 +88,8 @@ export default function SectionAppearanceList() {
                 deletionsRef.current,
             );
         }
+
+        window.location.reload();
 
         await fetchSectionAppearances();
     }
@@ -180,28 +189,37 @@ export default function SectionAppearanceList() {
                     <h4 className="text-h4 leading-none">Section Styles</h4>
                 </div>
                 <div className="flex items-center gap-6">
-                    <Select
-                        onValueChange={handleCreateNewAppearance}
-                        disabled={availableSections.length === 0}
-                    >
-                        <RadixSelect.Trigger>
-                            <Button variant="primary" size="compact">
-                                Add Section Style
+                    <Dropdown.Root>
+                        <Dropdown.Trigger
+                            disabled={availableSections.length === 0}
+                            asChild
+                        >
+                            <Button
+                                variant="primary"
+                                size="compact"
+                                className="flex items-center gap-6"
+                            >
+                                Add Section Style <CaretDownIcon size={16} />
                             </Button>
-                        </RadixSelect.Trigger>
-                        <SelectContent>
-                            <SelectGroup>
+                        </Dropdown.Trigger>
+                        <Dropdown.Portal>
+                            <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke z-[999] flex max-h-[70vh] flex-col items-start gap-0 overflow-y-auto border p-8">
                                 {availableSections.map((sectionName) => (
-                                    <SelectItem
+                                    <Dropdown.Item
                                         key={sectionName}
-                                        value={sectionName}
+                                        onSelect={() =>
+                                            handleCreateNewAppearance(
+                                                sectionName,
+                                            )
+                                        }
+                                        className="text-text text-body hover:text-accent w-full cursor-pointer px-6 py-4 text-left duration-150 ease-out outline-none"
                                     >
                                         {sectionName}
-                                    </SelectItem>
+                                    </Dropdown.Item>
                                 ))}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                            </Dropdown.Content>
+                        </Dropdown.Portal>
+                    </Dropdown.Root>
                     <button
                         onClick={toggleOpen}
                         className="hover:text-red duration-150 ease-out"
