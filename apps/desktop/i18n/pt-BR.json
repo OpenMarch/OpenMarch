@@ -3,7 +3,7 @@
         "alignment": {
             "alignHorizontally": "Alinhar horizontalmente",
             "alignVertically": "Alinhar verticalmente",
-            "cancelUpdates": "Cancelar atualizações para marchadores",
+            "cancelUpdates": "Cancelar atualizações para os marchadores",
             "distributeHorizontally": "Distribuir marchadores uniformemente na horizontal",
             "distributeVertically": "Distribuir marchadores uniformemente na vertical",
             "lockX": "Travar eixo X",
@@ -12,11 +12,11 @@
             "lockY": "Travar eixo Y",
             "lockYOff": "Habilitar movimento em Y",
             "lockYOn": "Bloquear movimento Y",
-            "snapToWhole": "Alinhar ao inteiro mais próximo"
+            "snapToWhole": "Ajustar para o inteiro mais próximo"
         },
         "batchEdit": {
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",
-            "noPreviousPage": "Não é possível definir coordenadas do marcador para a página anterior. Não há página anterior",
+            "noPreviousPage": "Não é possível definir coordenadas do marcador para a página anterior. Não há página anterior.",
             "setAllToNext": "Defina todas as coordenadas dos marchadores para a próxima página",
             "setAllToNextSuccess": "\"Todas as {{count}} coordenadas dos marchadores na página {{currentPage}} foram definidas com sucesso para as coordenadas da próxima página {{nextPage}}\"",
             "setAllToPrevious": "Defina todas as coordenadas dos marchadores para a página anterior",
@@ -28,14 +28,14 @@
         },
         "cursor": {
             "defaultMode": "Definir modo do cursor como padrão",
-            "lineMode": "Criar uma linha com os marchadores selecionados"
+            "lineMode": "Criar uma linha com os selecionados"
         },
         "edit": {
             "redo": "Refazer",
             "undo": "Desfazer"
         },
         "file": {
-            "importMusicXml": "Importar arquivo MusicXML para obter medidas",
+            "importMusicXml": "Importar arquivo MusicXML para obter compassos",
             "insertAudio": "Carregar novo arquivo de áudio no show",
             "loadDialogue": "Iniciar diálogo de carregamento de arquivo",
             "newDialogue": "Iniciar diálogo de novo arquivo",
@@ -56,10 +56,10 @@
         "playback": {
             "pause": "Pausar",
             "play": "Reproduzir",
-            "playPause": "Reproduzir ou Pausar"
+            "playPause": "Tocar ou pausar"
         },
         "select": {
-            "selectAll": "Selecionar todos os manifestantes"
+            "selectAll": "Selecionar todos os marchadores"
         },
         "shape": {
             "applyQuick": "Alinha marchadores à forma sem criar um objeto editável",
@@ -68,8 +68,8 @@
         },
         "swap": {
             "error": "Não foi possível trocar marchadores {{marcher1}} e {{marcher2}}",
-            "mustSelectTwo": "Só é possível trocar quando 2 marchadores são selecionados.",
-            "success": "Marchadores trocados {{marcher1}} e {{marcher2}}",
+            "mustSelectTwo": "Só é possível trocar quando 2 marchadores estão selecionados.",
+            "success": "Trocou marchadores {{marcher1}} e {{marcher2}}",
             "swap": "Trocar marchadores"
         },
         "ui": {
@@ -79,15 +79,15 @@
             "hidePreviousPaths": "Ocultar pontos/caminhos anteriores",
             "showNextPaths": "Mostrar próximos pontos/caminhos",
             "showPreviousPaths": "Mostrar pontos/caminhos anteriores",
-            "toggleNextPaths": "Alternar visualização dos próximos caminhos de página",
+            "toggleNextPaths": "Alternar visualização dos caminhos de próxima página",
             "togglePreviousPaths": "Alternar visualização dos caminhos de página anteriores"
         }
     },
     "analyticsOptIn": {
-        "description": "Para nos ajudar a melhorar o OpenMarch, coletamos dados de análise, registros de erros e capturas de sessão. Isso nos ajuda a entender como você usa o aplicativo e identificar bugs. Leia nossa <a>política de privacidade</a> para saber mais.",
-        "optIn": "Concordar",
-        "optOut": "Desativar",
-        "settings": "Você pode alterar esta configuração a qualquer momento nas configurações do aplicativo.",
+        "description": "Para nos ajudar a melhorar o OpenMarch, coletamos dados de análise, logs de erros e capturas de sessão. Isso nos ajuda a entender como você usa o aplicativo e a identificar bugs. Leia nossa <a>política de privacidade</a> para saber mais.",
+        "optIn": "Participar",
+        "optOut": "Cancelar participação",
+        "settings": "Você pode alterar essa configuração a qualquer momento nas configurações do aplicativo.",
         "title": "Ajude-nos a Melhorar o OpenMarch",
         "whenYouOptIn": "Quando você optar por participar",
         "whenYouOptOut": "Quando você optar por não participar"
@@ -99,28 +99,28 @@
             },
             "save": {
                 "error": "Erro ao criar novos beats",
-                "success": "Beats salvos com sucesso"
+                "success": "Batidas salvas com sucesso"
             }
         },
         "editableBeatPlayer": {
-            "description": "Arraste a borda direita de qualquer batida para ajustar sua duração."
+            "description": "Arraste a borda direita de qualquer batida para ajustar sua duração"
         },
         "play": {
             "error": "Falha ao reproduzir áudio"
         },
         "saveNewBeats": {
-            "label": "Salvar Novas Batidas"
+            "label": "Salvar Novos Ritmos"
         },
         "seeDocs": {
-            "label": "Ver documentos"
+            "label": "Ver documentação"
         },
         "tapNewTempo": {
             "exit": "Sair",
-            "label": "Toque no Novo Tempo",
+            "label": "Toque Novo Tempo",
             "restart": "Reiniciar"
         },
         "tapTempo": {
-            "label": "Toque no Tempo"
+            "label": "Toque Tempo"
         }
     },
     "colorPicker": {
@@ -132,13 +132,93 @@
         "disableOffset": "Desativar Offset",
         "enableOffset": "Ativar Offset",
         "groupNotice": "Ainda não funciona com grupos",
-        "nearestSteps": "Passos mais próximos {axis}",
+        "nearestSteps": "Passos mais próximos de {axis}",
         "none": "Nenhum",
         "offset": "Offset",
         "title": "Arredondamento de Coordenadas",
         "unit": "etapas",
         "xStepDescription": "Clique com o botão esquerdo para avançar, clique com o botão direito para retroceder pelas opções de passo X",
         "yStepDescription": "Clique com o botão esquerdo para avançar, clique com o botão direito para retroceder pelas opções de passo Y"
+    },
+    "coordinateSheet": {
+        "countAbbreviation": "Qtd.",
+        "frontToBack": "Frente para Trás",
+        "frontToBackAbbreviation": "F. para T.",
+        "measureAbbreviation": "Sra.",
+        "measures": "Medidas",
+        "page": "Página {page}",
+        "pageAbbreviation": "Pág.",
+        "sideToSide": "Lado a Lado",
+        "sideToSideAbbreviation": "L. a L."
+    },
+    "exportCoordinates": {
+        "abbreviateCoordinateDescriptions": "Abreviar descrições de coordenadas",
+        "cancel": "Cancelar",
+        "cancelledByUser": "Exportação cancelada pelo usuário",
+        "coordinatesError": "Erro: Não foi possível calcular coordenadas para a página do caminhante {id}",
+        "coordinateSheets": "Planilhas de Coordenadas",
+        "drillCharts": "Gráficos de Perfuração",
+        "errorRendering": "Erro ao renderizar {drillNumber}",
+        "errorTitle": "Erro ao exportar folha de coordenadas",
+        "exampleMarcherName": "Exemplo Caminhante",
+        "exampleMarcherSection": "Barítono",
+        "export": "Exportar",
+        "exportButton": "Exportar",
+        "exportComplete": "Exportação concluída!",
+        "exportFailed": "Falha na exportação",
+        "exportFailedToast": "Falha na exportação: {error}",
+        "exporting": "Exportando... Por favor, aguarde",
+        "exportNotAvailable": "Exportação Indisponível",
+        "exportNotAvailableDescription": "A exportação requer propriedades do campo, pelo menos uma página não padrão e pelo menos um marcador.",
+        "exportPDFSuccess": "Exportado com sucesso como PDF!",
+        "exportSuccess": "{count, plural, one {Coordenadas exportadas com sucesso para # caminhante!} other {Coordenadas exportadas com sucesso para # caminhantes!} }",
+        "fieldProperties": "Propriedades do Campo: {status}",
+        "fieldPropertiesRequired": "As propriedades do campo são obrigatórias para exportação",
+        "frontToBackHeader": "Frente para Trás",
+        "funPhrase": {
+            "0": "Prepare-se para marchar um perfeito 8 para 5! \uD83C\uDFBA",
+            "1": "Obtendo os arquivos para cobrir \uD83D\uDCCB",
+            "10": "Aumentando o ritmo para o sucesso \uD83C\uDFBC",
+            "11": "Ajustando cada contagem de passos \uD83D\uDD27",
+            "2": "Limpando a broca da caixa \uD83E\uDDF9",
+            "3": "Garantindo que todos estejam em sintonia \uD83D\uDC5F",
+            "4": "Pintando um campo perfeito \uD83D\uDD8C️",
+            "5": "Marchando em direção à perfeição! \uD83C\uDFAF",
+            "6": "Polindo aqueles marcadores de linha do campo ✨",
+            "7": "Contando o tempo perfeito \uD83E\uDD41",
+            "8": "Alinhando a formação como um profissional \uD83D\uDCD0",
+            "9": "Marchando em direção à perfeição! \uD83C\uDFAF"
+        },
+        "generatingPDF": "Gerando arquivo PDF para: {drillNumber}",
+        "includeMeasures": "Incluir medidas",
+        "individualCharts": "Gráficos de Perfuração Individuais",
+        "individualChartsTooltip": "Crie PDFs de gráficos detalhados personalizados para cada integrante.",
+        "individualChartsTooltipDescription": "Se isso não estiver marcado, será criado um PDF de gráfico de perfuração de visão geral.",
+        "marcher": "Marcher: {status}",
+        "measuresHeader": "Medida",
+        "noFieldProperties": "Nenhuma propriedade de campo fornecida",
+        "noMarcher": "Nenhum marchador fornecido",
+        "noMarcherPages": "Nenhuma página de marchador fornecida",
+        "noPages": "Nenhuma página fornecida",
+        "openExportDirectory": "Clique para abrir exportação",
+        "openExportDirectoryError": "Não foi possível abrir o diretório de exportação: {error}",
+        "organizeBySection": "Organizar por Seção",
+        "organizeBySectionTooltip": "Crie arquivos PDF para cada marchador individual, organizados em pastas por seção.\\nSe isso não estiver selecionado, um arquivo PDF grande será criado com cada folha de coordenadas em ordem de partitura.",
+        "page": "Página: {status}",
+        "pageNotFound": "Erro: Página não encontrada para a página do caminhante {id}",
+        "pdfExportFailed": "Falha na exportação de PDF: {error}",
+        "preview": "Pré-visualização",
+        "processingPage": "Processando página {pageNumber} de {totalPages}: {pageName}",
+        "quarterPageLayout": "Layout de quarto de página",
+        "roundingDenominator": "Arredondamento de coordenadas:",
+        "selectRoundingDenominator": "Selecionar arredondamento",
+        "sideToSideHeader": "Lado a Lado",
+        "svgExportFailed": "Exportação SVG para {drillNumber} falhou com erro: {error}",
+        "svgGenerationFailed": "Geração de SVG Falhou: {error}",
+        "title": "Exportar",
+        "unknownError": "Erro desconhecido",
+        "unsortedSection": "Sem classificação",
+        "useXYHeaders": "Usar cabeçalhos X/Y"
     },
     "field": {
         "general": {
@@ -151,7 +231,7 @@
     },
     "fieldProperties": {
         "applyFieldType": "Aplicar Tipo de Campo",
-        "applyFieldTypeWarning": "Marchadores não mudarão para o novo tamanho do tipo de campo, eles permanecerão onde estão na tela. Você sempre pode mudar o tipo de campo de volta.",
+        "applyFieldTypeWarning": "Marchers não irão mover para o novo tamanho do tipo de campo, eles permanecerão onde estão na tela. Você sempre pode reverter o tipo de campo.",
         "buttons": {
             "importImage": "Importar Imagem",
             "newXCheckpoint": "Novo Ponto de Verificação X",
@@ -162,14 +242,14 @@
             "created": "\"{axis}-checkpoint em {steps} etapas criado\"",
             "delete": "Excluir",
             "deleted": "\"{axis}-checkpoint em {steps} etapas deletado - \"{name}\"\"",
-            "fieldLabel": "Rótulo do campo",
-            "fieldLabelTooltip": "O rótulo a aparecer no campo (ou seja, as marcações do pátio)",
+            "fieldLabel": "Rótulo de Campo",
+            "fieldLabelTooltip": "O rótulo para aparecer no campo (ou seja, os marcadores do campo)",
             "name": "Nome",
             "nameTooltip": "Nomeie seu ponto de verificação como quiser. Isso é apenas para você saber qual ponto de verificação está selecionando.",
             "newXCheckpointName": "Novo Ponto de Verificação X",
             "newYCheckpointName": "Novo Ponto de Verificação Y",
             "shortName": "Nome Curto",
-            "shortNameTooltip": "O nome principal do ponto de verificação. (Ex. \"Linha de 45 Jardas - Lado 1\")",
+            "shortNameTooltip": "O nome principal do ponto de verificação. (Ex.: \"Linha de 45 jardas - Lado 1\")",
             "stepsFromCenter": "Passos a partir do centro",
             "stepsFromCenterTooltip": "O número de passos afastados do centro do campo que este ponto de verificação está. Negativo é em direção à parte de trás.",
             "stepsFromFront": "Passos a partir da frente",
@@ -177,13 +257,14 @@
             "useAsReference": "Usar como referência",
             "useAsReferenceTooltip": "Se este ponto de verificação deve ser usado como referência para coordenadas.",
             "visible": "Visível",
-            "visibleTooltip": "Se este ponto de controle deve ser visível no campo"
+            "visibleTooltip": "Se este ponto de verificação deve ser visível no campo"
         },
         "customFieldName": "Personalizado",
         "customization": "Personalização",
+        "customize": "Personalizar",
         "errors": {
             "invalidColor": "Cor inválida",
-            "noPropertiesToLoad": "Nenhuma propriedade de campo para carregar! Isso nunca deveria acontecer, por favor entre em contato com o suporte",
+            "noPropertiesToLoad": "Nenhuma propriedade de campo para carregar! Isso nunca deveria acontecer, por favor entre em contato com o suporte.",
             "notDefined": "FieldProperties não está definido. Isso nunca deveria acontecer, por favor entre em contato com o suporte."
         },
         "fieldTemplate": {
@@ -201,19 +282,19 @@
             "conformMethod": "Método de Conformação",
             "directorsLeft": "Diretoria Esquerda",
             "directorsRight": "Diretoria Direita",
-            "externalLabels": "Etiquetas Externas",
+            "externalLabels": "Rótulos Externos",
             "fieldLabels": "Rótulos de Campo",
             "fieldName": "Nome do Campo",
             "fieldRatio": "Razão do Campo",
             "gridLines": "Linhas de Grade",
             "halfLineXInterval": "Intervalo da Linha X-Metade",
-            "halfLineYInterval": "Intervalo de Linha Meio Y",
+            "halfLineYInterval": "Intervalo da Linha Y-Metade",
             "height": "Altura",
             "left": "Esquerda",
             "leftAbbreviation": "Abreviação Esquerda",
-            "marcherFill": "Preenchimento de Marcha",
-            "marcherOutline": "Contorno de Marcha",
-            "marcherText": "Texto do Marchador",
+            "marcherFill": "Preenchimento Marchar",
+            "marcherOutline": "Contorno Marcha",
+            "marcherText": "Texto de Marcha",
             "measurementSystem": "Sistema de Medição",
             "nextPath": "Próximo Caminho",
             "previousPath": "Caminho Anterior",
@@ -222,11 +303,11 @@
             "rightAbbreviation": "Abreviação Direita",
             "secondaryLines": "Linhas Secundárias",
             "shapes": "Formas",
-            "showBackgroundImage": "Mostrar Imagem de Fundo",
+            "showBackgroundImage": "Exibir Imagem de Fundo",
             "stepsFromFrontToAwayLabelBottom": "Passos da frente para longe selo abaixo",
-            "stepsFromFrontToAwayLabelTop": "Passos da frente para o selo acima",
+            "stepsFromFrontToAwayLabelTop": "Passos da frente para longe selo acima",
             "stepsFromFrontToHomeLabel": "Passos da frente para a casa selo abaixo",
-            "stepsFromFrontToHomeLabelTop": "Passos da frente para o selo acima",
+            "stepsFromFrontToHomeLabelTop": "Passos da frente para a casa selo acima",
             "stepSize": "Tamanho do Passo",
             "temporaryPath": "Caminho Temporário",
             "top": "Superior",
@@ -236,9 +317,9 @@
         },
         "messages": {
             "fieldRatio": "{ratio} ou {decimal}",
-            "measurementModificationNote": "Esses valores podem ser modificados ajustando-se as coordenadas X e Y, o tamanho do passo e a imagem de fundo",
+            "measurementModificationNote": "Esses valores podem ser modificados ajustando as coordenadas X e Y, o tamanho da etapa e a imagem de fundo",
             "refreshAfterImporting": "Atualizar após importar [Ctrl + R]",
-            "refreshNote": "Os valores abaixo podem não ser aplicados até uma atualização"
+            "refreshNote": "Os valores abaixo podem não ser aplicados até que seja feito um recarregamento"
         },
         "options": {
             "fill": "Preencher",
@@ -252,7 +333,7 @@
             "general": "Geral",
             "imageRendering": "Renderização de Imagem",
             "measurements": "Medições",
-            "sideDescriptions": "Descrições Laterais",
+            "sideDescriptions": "Descrições de Lado",
             "theme": "Tema",
             "xCheckpoints": "Pontos de Verificação X",
             "yCheckpoints": "Pontos de Verificação Y"
@@ -265,30 +346,30 @@
         },
         "title": "Propriedades do Campo",
         "tooltips": {
-            "conformMethod": "Se a imagem de fundo deve ajustar-se dentro do campo ou preenchê-lo. A proporção é sempre mantida",
-            "directorsLeft": "Por exemplo, \"Lado 1\", \"Esquerda da plateia\" ou \"Direita do palco\"",
-            "directorsRight": "Por exemplo, \"Lado 2\", \"Direita da plateia\" ou \"Esquerda do palco\"",
-            "fieldName": "O nome ou título do modelo de campo",
+            "conformMethod": "Se a imagem de fundo deve se ajustar dentro do campo ou preenchê-lo. A proporção é sempre mantida.",
+            "directorsLeft": "Ex.: \"Lado 1\", \"Esquerda da plateia\" ou \"Direita do palco\"",
+            "directorsRight": "Ex.: \"Lado 2\", \"Direita da Plateia\" ou \"Esquerda do Palco\"",
+            "fieldName": "Nome ou título do modelo de campo",
             "halfLineXInterval": "O intervalo em que linhas intermediárias aparecem na interface do usuário no eixo X a partir do centro do campo. Deixe em branco para omitir linhas intermediárias no eixo X. Isso é puramente cosmético e não afeta de forma alguma as coordenadas.",
             "halfLineYInterval": "O intervalo em que linhas intermediárias aparecem na interface do usuário no eixo Y a partir da frente do campo. Deixe em branco para omitir linhas intermediárias no eixo Y. Isso é puramente cosmético e não afeta de forma alguma as coordenadas.",
-            "importImage": "Importe uma imagem para exibir no campo",
-            "leftAbbreviation": "Ex.: \"S1\", \"AE\" ou \"DP\" (abreviação de \"Lado 1\", \"Esquerda da Audiência\" ou \"Direita do Palco\")",
-            "measurementSystem": "A unidade de medida para definir o tamanho do passo é em. Pode ir e voltar",
+            "importImage": "Importe uma imagem para mostrar no campo",
+            "leftAbbreviation": "Ex.: \"S1\", \"EP\" ou \"DP\" (abreviação de \"Lado 1\", \"Esquerda da Plateia\" ou \"Direita do Palco\")",
+            "measurementSystem": "A unidade de medida para definir o tamanho do passo. Pode ir e voltar",
             "resetTheme": "Redefinir o tema para os valores padrão",
-            "rightAbbreviation": "Ex.: \"S2\", \"AD\" ou \"EP\" (abreviação de \"Lado 2\", \"Direita da Audiência\" ou \"Esquerda do Palco\")",
+            "rightAbbreviation": "Ex.: \"S2\", \"DP\" ou \"EP\" (abreviação de \"Lado 2\", \"Direita da Plateia\" ou \"Esquerda do Palco\")",
             "stepsFromFrontToAwayLabelBottom": "Número de passos da linha lateral da frente até o lado de fora do número visitante (mais próximo à linha lateral de trás)",
-            "stepsFromFrontToAwayLabelTop": "Número de passos da linha lateral da frente para o interior da numeração visitante (mais próximo ao centro do campo)",
+            "stepsFromFrontToAwayLabelTop": "Número de passos da linha lateral da frente para o interior do número visitante (mais próximo ao centro do campo)",
             "stepsFromFrontToHomeLabel": "Número de passos da linha lateral da frente até o lado de fora do número da casa (mais próximo à linha lateral da frente)",
             "stepsFromFrontToHomeLabelTop": "Número de passos da linha lateral da frente para o interior do número da casa (mais próximo ao centro do campo)",
             "stepSize": "O tamanho de cada passo no campo em polegadas ou centímetros",
-            "useHashes": "Use hashes para os pontos de verificação Y, como um campo de futebol. Se desmarcado, linhas serão usadas."
+            "useHashes": "Usar hashtags para os pontos de verificação Y, como um campo de futebol. Se desmarcado, linhas serão usadas."
         },
         "units": {
-            "steps": "etapas"
+            "steps": "passos"
         },
         "warnings": {
-            "xCheckpointsNotEquidistant": "AVISO - Os pontos de verificação X à esquerda e à direita não estão equidistantes do centro. Isso pode causar artefatos gráficos estranhos e deve ser corrigido.",
-            "yCheckpointsNegative": "ATENÇÃO - É altamente recomendado que todos os passos dos pontos de verificação Y sejam menores que zero (ou seja, números negativos). Todas as coordenadas Y devem estar atrás da frente do campo. Não seguir esta recomendação pode causar erros gráficos e coordenadas inesperadas."
+            "xCheckpointsNotEquidistant": "AVISO - Os pontos de verificação X mais à esquerda e à direita não são equidistantes do centro. Isso pode causar artefatos gráficos estranhos e deve ser corrigido.",
+            "yCheckpointsNegative": "AVISO - É altamente recomendado que todos os passos dos Pontos de Verificação Y sejam menores que zero (ou seja, números negativos). Todas as coordenadas Y devem estar atrás da frente do campo. Não seguir essa recomendação pode causar erros gráficos e coordenadas inesperadas."
         }
     },
     "formButtons": {
@@ -308,7 +389,7 @@
         },
         "marcher": {
             "createLine": "Criar Linha",
-            "drillNumber": "Número do Exercício",
+            "drillNumber": "Número do Furo",
             "errorLoadingCoords": "Erro ao carregar coordenadas",
             "maxStepSize": "Maior tamanho do passo",
             "minStepSize": "Menor tamanho do passo",
@@ -318,7 +399,7 @@
             "stepSize": "Tamanho do Passo",
             "swapMarchers": "Trocar marchadores",
             "title": "{count} Marchadores",
-            "titleSingle": "Marchador {drillNumber}"
+            "titleSingle": "Marcher {drillNumber}"
         },
         "page": {
             "counts": "Contagens",
@@ -337,12 +418,12 @@
             "copyToNextPage": "Copiar esta forma para a próxima página",
             "copyToNextPageButton": "Copiar para a próxima página",
             "copyToPreviousPage": "Copiar esta forma para a página anterior",
-            "copyToPreviousPageButton": "Copiar para a pág anterior",
+            "copyToPreviousPageButton": "Copiar para a página anterior",
             "deleteLastSegmentTooltip": "Excluir último segmento",
-            "errorCopyingPage": "Erro ao copiar para a página {pageName}. Já há marcadores atribuídos às formas?",
+            "errorCopyingPage": "Erro ao copiar para a página {pageName}. Existem correspondências já atribuídas às formas?",
             "errorNoNextPage": "Não é possível copiar. Não há próxima página",
             "errorNoPreviousPage": "Não é possível copiar. Não há página anterior.",
-            "errorPageNotFound": "Página não encontrada com id {pageId}",
+            "errorPageNotFound": "Página não encontrada com o id {pageId}",
             "fileTab": "Arquivo",
             "marchersOnShape": "{marchersCount} Marchadores",
             "segment": "Segmento {index}",
@@ -351,7 +432,7 @@
             },
             "successfullyCopied": "Forma copiada com sucesso para a página {pageName}",
             "ungroupShapeButton": "Desagrupar",
-            "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá os marchers da posição atual",
+            "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá marchadores de sua posição atual",
             "viewTab": "Visualizar"
         },
         "title": "Inspetor"
@@ -360,8 +441,8 @@
         "files": {
             "createNew": "Novo Arquivo",
             "failedToLoadRecent": "Falha ao carregar arquivos recentes",
-            "failedToOpen": "Falha ao abrir o arquivo",
-            "failedToRemoveRecent": "Falha ao remover arquivo da lista recente",
+            "failedToOpen": "Falha ao abrir arquivo",
+            "failedToRemoveRecent": "Falha ao remover arquivo da lista de recentes",
             "fieldPreview": "Pré-visualização do Campo",
             "openFile": "Abrir Arquivo",
             "removeFile": "Remover dos arquivos recentes",
@@ -375,17 +456,17 @@
             "troubleshooting": {
                 "clearCache": "Limpar o cache",
                 "clearCache.description": "Excluir a pasta de cache e metadados pode frequentemente corrigir problemas de desempenho. (Isso também excluirá sua lista de arquivos recentes e tema!)",
-                "description": "OpenMarch ainda está em desenvolvimento, então aqui estão algumas dicas para quando algo der errado.",
-                "refresh": "Atualizar a página",
-                "refresh.description": "\"Quando em dúvida, atualize a página (Ctrl/Cmd + R). Se o OpenMarch parecer estar com problemas, atualizar geralmente resolve.\"",
+                "description": "O OpenMarch ainda está em desenvolvimento, então aqui estão algumas dicas para quando algo der errado.",
+                "refresh": "Atualize a página",
+                "refresh.description": "Se tiver dúvidas, atualize a página (Ctrl/Cmd + R). Se o OpenMarch parecer quebrado, atualizar geralmente resolve o problema.",
                 "title": "Dicas de Solução de Problemas"
             }
         },
-        "merch": "Peça o Merch Oficial da OpenMarch!",
+        "merch": "Obtenha OpenMarch Merch!",
         "settings": {
             "title": "Configurações"
         },
-        "title": "Página Inicial"
+        "title": "Página de Lançamento"
     },
     "settings": {
         "general": "Geral",
@@ -395,7 +476,7 @@
         "general.language": "Idioma",
         "mouse": "Mouse e Trackpad",
         "mouse.panSensitivity": "Sensibilidade de panorâmica",
-        "mouse.trackpadMode": "Modo de trackpad (recomendado para macOS)",
+        "mouse.trackpadMode": "Modo Trackpad (recomendado para macOS)",
         "mouse.trackpadPanSensitivity": "Sensibilidade de panorâmica do trackpad",
         "mouse.zoomSensitivity": "Sensibilidade de zoom",
         "plugins": "Plugins",
@@ -408,23 +489,23 @@
         "plugins.noOfficialPlugins": "Nenhum plugin oficial disponível.",
         "plugins.noPlugins": "Nenhum plugin instalado.",
         "plugins.official": "Oficial",
-        "plugins.refreshNotice": "Por favor <a>recarregue o aplicativo</a> para atualizar os plugins.",
-        "plugins.toast.installFailed": "Falha ao instalar o plugin {pluginName}",
+        "plugins.refreshNotice": "Por favor, <a>recarregue o aplicativo</a> para atualizar os plugins.",
+        "plugins.toast.installFailed": "Falha ao instalar plugin {pluginName}",
         "plugins.toast.installSuccess": "Plugin {pluginName} instalado com sucesso!",
         "plugins.toast.uninstallFailed": "Falha ao remover {pluginName}",
         "plugins.toast.uninstallSuccess": "Plugin {pluginName} removido com sucesso!",
         "plugins.uninstall": "Desinstalar",
         "plugins.uninstalled": "Removido",
-        "plugins.uninstallFailed": "Falha na Remoção",
+        "plugins.uninstallFailed": "Remoção Falhou",
         "plugins.uninstalling": "Removendo...",
         "privacy": "Privacidade",
-        "privacy.analytics": "Compartilhar análise de uso",
-        "privacy.analytics.description": "Para nos ajudar a melhorar o OpenMarch, coletamos dados de análise, registros de erros e gravações de sessões. Isso nos ajuda a entender como você usa o aplicativo e identificar bugs. Leia nossa <a>política de privacidade</a> para saber mais.",
-        "privacy.analytics.description.opt_out": "Você pode desativar isso, se preferir. Apenas saiba que o OpenMarch é uma ferramenta gratuita criada por voluntários, e estes dados ajudam muito a understand como os designers estão usando o aplicativo e encontrar bugs — especialmente quando não ouvimos sobre eles imediatamente no Discord ou Facebook :)",
-        "privacy.analytics.disabled": "Você não está compartilhando análises. Se você enfrentar problemas ou bugs, não estaremos cientes deles. Se você tiver um problema, por favor, <a>envie feedback</a> para que possamos resolvê-lo.",
+        "privacy.analytics": "Compartilhar análises de uso",
+        "privacy.analytics.description": "Para nos ajudar a melhorar o OpenMarch, coletamos dados de análise, logs de erros e gravações de sessão. Isso nos ajuda a entender como você usa o aplicativo e a identificar bugs. Leia nossa <a>política de privacidade</a> para saber mais.",
+        "privacy.analytics.description.opt_out": "Você pode optar por não participar se preferir. Apenas saiba que o OpenMarch é uma ferramenta gratuita construída por voluntários, e esses dados realmente nos ajudam a entender como os designers estão usando o aplicativo e a encontrar bugs—especialmente quando não ouvimos falar deles imediatamente no Discord ou no Facebook :)",
+        "privacy.analytics.disabled": "Você não está compartilhando análises. Se você tiver problemas ou bugs, não ficaremos cientes deles. Se você tiver um problema, por favor <a>enviar feedback</a> para que possamos resolvê-lo.",
         "privacy.analytics.enabled": "Você está compartilhando análises de uso. Obrigado por nos ajudar a melhorar o OpenMarch para todos.",
         "privacy.analytics.feedback.link": "enviar feedback",
-        "privacy.analytics.toggle": "Ativar análise",
+        "privacy.analytics.toggle": "Ativar análises",
         "title": "Configurações"
     },
     "timeline": {
@@ -432,7 +513,7 @@
         "controls": {
             "label": "Controles de Reprodução"
         },
-        "label": "Linha do tempo",
+        "label": "Linha do Tempo",
         "music": {
             "add": "Adicionar Música"
         },
@@ -442,8 +523,8 @@
                 "subsetToggle": "Subconjunto",
                 "title": "Página {pageName}"
             },
-            "deleted": "Página {pageName} deletada",
-            "deleteFailed": "Falha ao excluir a página",
+            "deleted": "Página {pageName} excluída",
+            "deleteFailed": "Falha ao excluir página",
             "firstPage": "Primeira página",
             "label": "Página {pageName}",
             "subset": "Subconjunto"
@@ -454,19 +535,19 @@
         }
     },
     "titlebar": {
-        "bugReport": "Enviar bug ou feedback",
+        "bugReport": "Enviar erro ou feedback",
         "bugReport.placeholder": "O que deu errado?\nO que você esperava?\nComo podemos reproduzir o problema?",
         "databasePathError": "Erro no Caminho do Banco de Dados",
         "databasePathError.description": "Falha ao buscar o caminho do arquivo .dots!\n\nPor favor, saia completamente do aplicativo e tente novamente.\n\nSe o problema persistir, entre em contato com o suporte.",
-        "databasePathError.dismiss": "Descartar"
+        "databasePathError.dismiss": "Dispensar"
     },
     "toolbar": {
-        "settings": "Configurações do Aplicativo"
+        "settings": "Configurações do App"
     },
     "versionCheck": {
         "error": {
             "fetchFailed": "Ocorreu um erro ao buscar a versão.",
-            "noVersion": "Não foi possível obter a última versão."
+            "noVersion": "Não foi possível buscar a versão mais recente."
         },
         "installLinux": "Instalar para Linux",
         "installMacArm": "Instalar para Apple Silicon",
@@ -477,7 +558,7 @@
         "trigger": "Nova Versão Disponível!"
     },
     "welcome": {
-        "description": "Nenhum arquivo encontrado. Crie um e certifique-se de conferir os guias. Personalize seu tema e navegação em Configurações.",
+        "description": "Nenhum arquivo encontrado. Crie um e não deixe de conferir os guias. Personalize seu tema e navegação em Configurações.",
         "title": "Bem-vindo ao OpenMarch"
     }
 }
