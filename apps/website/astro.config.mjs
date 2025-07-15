@@ -14,6 +14,7 @@ export default defineConfig({
     redirects: {
         "/alexdumo": "/about/alexdumo",
         "/developers/contributing": "/developers/codebase",
+        "/about/submitting-feedback/": "/guides/submitting-feedback/",
     },
     integrations: [
         react(),
