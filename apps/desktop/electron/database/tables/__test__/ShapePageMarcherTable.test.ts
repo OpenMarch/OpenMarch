@@ -50,7 +50,11 @@ const NewShapePages: NewShapePageArgs[] = [
 ];
 
 const noUpdatedOrCreatedAt = (object: any) => {
-    const { updated_at, created_at, ...rest } = object;
+    const {
+        updated_at: _updated_at,
+        created_at: _created_at,
+        ...rest
+    } = object;
     return rest;
 };
 

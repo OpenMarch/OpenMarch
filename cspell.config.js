@@ -110,6 +110,8 @@ module.exports = {
         "Schachner",
         "pfps",
         "seti",
+        "midset",
+        "midsets",
     ],
     ignorePaths: [
         "node_modules/**",
@@ -123,6 +125,7 @@ module.exports = {
         "**/.turbo/**",
         "patreonMembers.json",
         "**/mock-databases/**",
+        "**/_journal.json",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };
