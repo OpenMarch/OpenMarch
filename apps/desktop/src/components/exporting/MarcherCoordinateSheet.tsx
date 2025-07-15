@@ -198,7 +198,9 @@ export default function MarcherCoordinateSheet({
         } else {
             setMarcherToUse(marcher);
             setPagesToUse(pages);
-            setMarcherPagesToUse(marcherPages);
+            setMarcherPagesToUse(
+                MarcherPage.getByMarcherId(marcherPages, marcher?.id || -1),
+            );
         }
     }, [marcher, marcherPages, pages, example, fieldProperties]);
     return (
@@ -481,14 +483,8 @@ export function StaticMarcherCoordinateSheet({
                             </tr>
                         </thead>
                         <tbody>
-                            {marcherPagesState
-                                .filter(
-                                    (marcherPage) =>
-                                        marcherPage.marcher_id ===
-                                        marcherState.id,
-                                )
-                                .sort(sortMarcherPages)
-                                .map((marcherPage: MarcherPage) => {
+                            {marcherPagesState.map(
+                                (marcherPage: MarcherPage) => {
                                     if (!fieldPropertiesState) return null;
 
                                     const page = pagesState.find(
@@ -559,7 +555,8 @@ export function StaticMarcherCoordinateSheet({
                                             </td>
                                         </tr>
                                     );
-                                })}
+                                },
+                            )}
                         </tbody>
                     </table>
                 </>

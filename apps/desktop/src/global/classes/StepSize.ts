@@ -1,6 +1,7 @@
 import FieldProperties from "./FieldProperties";
 import Marcher from "./Marcher";
 import MarcherPage from "./MarcherPage";
+import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
 import Page from "./Page";
 
 const INCHES_PER_YARD = 36;
@@ -158,25 +159,25 @@ export class StepSize {
         fieldProperties,
     }: {
         marchers: Marcher[];
-        marcherPages: MarcherPage[];
+        marcherPages: MarcherPageMap;
         page: Page;
         fieldProperties: FieldProperties;
     }) {
-        const startingPages = marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === page.previousPageId,
-        );
-        const endingPages = marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === page.id,
-        );
+        const startingPages = page.previousPageId
+            ? marcherPages.marcherPagesByPage[page.previousPageId]
+            : null;
+        const endingPages = marcherPages.marcherPagesByPage[page.id];
+
         const output: StepSize[] = [];
         marchers.forEach((marcher) => {
-            const startingPage = startingPages.find(
-                (marcherPage) => marcherPage.marcher_id === marcher.id,
-            );
-            const endingPage = endingPages.find(
-                (marcherPage) => marcherPage.marcher_id === marcher.id,
-            );
-            if (!endingPage) return undefined;
+            const startingPage = startingPages
+                ? startingPages[marcher.id]
+                : undefined;
+            const endingPage = endingPages
+                ? endingPages[marcher.id]
+                : undefined;
+
+            if (!endingPage || !startingPage) return undefined;
 
             const stepSize = StepSize.createStepSizeForMarcher({
                 startingPage,
@@ -205,7 +206,7 @@ export class StepSize {
         fieldProperties,
     }: {
         marchers: Marcher[];
-        marcherPages: MarcherPage[];
+        marcherPages: MarcherPageMap;
         page: Page;
         fieldProperties: FieldProperties;
     }) {
