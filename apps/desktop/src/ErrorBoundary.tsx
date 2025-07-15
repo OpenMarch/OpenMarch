@@ -78,7 +78,7 @@ export default class ErrorBoundary extends React.Component<
                                     size="compact"
                                     onClick={() =>
                                         window.open(
-                                            "https://openmarch.com/about/submitting-feedback/",
+                                            "https://openmarch.com/guides/submitting-feedback/",
                                             "_blank",
                                             "noopener,noreferrer",
                                         )
