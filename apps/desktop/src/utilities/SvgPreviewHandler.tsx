@@ -14,7 +14,7 @@ const SvgPreviewHandler: React.FC = () => {
 
     // Get current values
     const { fieldProperties } = useFieldProperties() ?? {};
-    const { marcherPages = [] } = useMarcherPageStore() ?? {};
+    const { marcherPages = {} } = useMarcherPageStore() ?? {};
     const { marchers = [] } = useMarcherStore() ?? {};
     const { pages = [] } = useTimingObjectsStore() ?? {};
 
@@ -98,7 +98,7 @@ const SvgPreviewHandler: React.FC = () => {
         async (
             fieldProps: any,
             page: any,
-            marcherPages: any[],
+            marcherPages: any,
             allMarchers: any[],
         ): Promise<string> => {
             if (!fieldProps || !page) {
@@ -110,12 +110,9 @@ const SvgPreviewHandler: React.FC = () => {
             try {
                 svgCanvas = await createSvgCanvas(fieldProps, page);
 
-                const currentPageMarcherPages = marcherPages.filter(
-                    (mp) => mp.page_id === page.id,
-                );
-
                 await svgCanvas.renderMarchers({
-                    currentMarcherPages: currentPageMarcherPages,
+                    marcherPages: marcherPages,
+                    pageId: page.id,
                     allMarchers: allMarchers,
                 });
 

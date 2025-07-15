@@ -1,10 +1,9 @@
 import DefaultListeners from "../DefaultListeners";
 import OpenMarchCanvas from "../../../../global/classes/canvasObjects/OpenMarchCanvas";
-import MarcherPage from "@/global/classes/MarcherPage";
 import { beforeEach, describe, expect, it, vi, afterEach } from "vitest";
 import {
     falsyUiSettings,
-    mockMarcherPages,
+    mockMarcherPageMap,
     mockMarchers,
     mockPages,
 } from "../../__test__/MocksForCanvas";
@@ -36,11 +35,9 @@ describe.skip("DefaultListeners", () => {
         });
         const selectedPage = mockPages[0];
         canvas.renderMarchers({
+            marcherPages: mockMarcherPageMap,
+            pageId: selectedPage.id,
             allMarchers: mockMarchers,
-            currentMarcherPages: MarcherPage.filterByPageId(
-                mockMarcherPages,
-                selectedPage.id,
-            ),
         });
         listeners = new DefaultListeners({ canvas });
     });

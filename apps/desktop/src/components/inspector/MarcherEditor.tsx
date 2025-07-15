@@ -99,9 +99,9 @@ function MarcherEditor() {
                 setMinMaxStepSize(
                     StepSize.getMinAndMaxStepSizesForMarchers({
                         marchers: selectedMarchers,
-                        marcherPages,
+                        marcherPages: marcherPages,
                         page: selectedPage,
-                        fieldProperties,
+                        fieldProperties: fieldProperties,
                     }),
                 );
             }
@@ -109,27 +109,25 @@ function MarcherEditor() {
             return;
         }
 
-        const selectedMarcherPages = marcherPages.filter(
-            (marcherPage) => marcherPage.marcher_id === selectedMarchers[0]?.id,
-        );
-        const selectedMarcherPage = selectedMarcherPages.find(
-            (marcherPage) =>
-                marcherPage.marcher_id === selectedMarchers[0]?.id &&
-                marcherPage.page_id === selectedPage?.id,
-        );
+        const selectedMarcherPages =
+            marcherPages.marcherPagesByMarcher[selectedMarchers[0]?.id];
+
+        const selectedMarcherPage =
+            selectedPage?.id !== undefined
+                ? selectedMarcherPages[selectedPage?.id]
+                : undefined;
+
         if (selectedMarcherPage) {
             const newRcoords =
                 ReadableCoords.fromMarcherPage(selectedMarcherPage);
             setRCoords(newRcoords);
 
             if (selectedPage) {
-                const previousMarcherPage = selectedMarcherPages.find(
-                    (previousMarcherPage) =>
-                        previousMarcherPage.marcher_id ===
-                            selectedMarcherPage.marcher_id &&
-                        previousMarcherPage.page_id ===
-                            selectedPage?.previousPageId,
-                );
+                const previousMarcherPage =
+                    selectedPage?.previousPageId !== null
+                        ? selectedMarcherPages[selectedPage?.previousPageId]
+                        : undefined;
+
                 setStepSize(
                     StepSize.createStepSizeForMarcher({
                         startingPage: previousMarcherPage,

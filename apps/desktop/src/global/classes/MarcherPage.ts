@@ -1,4 +1,5 @@
 import type { DatabaseResponse } from "electron/database/DatabaseActions";
+import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
 
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.
@@ -37,12 +38,11 @@ export default class MarcherPage {
     }
 
     /**
-     * Get's all the MarcherPages that are associated with a given Marcher and/or Page.
+     * Gets all the MarcherPages that are associated with a given Marcher and/or Page.
+     * This is a DB query and should not be called other than from the store.
      *
      * NO ARGS - get all MarcherPages.
-     *
      * ONE ARG - get all MarcherPages for that Marcher or Page.
-     *
      * BOTH ARGS - a single MarcherPage for that specific Marcher and Page.
      *
      * @param marcher_id - The id of the marcher. Optional
@@ -71,7 +71,8 @@ export default class MarcherPage {
     ): Promise<DatabaseResponse<MarcherPage>> {
         const response =
             await window.electron.updateMarcherPages(modifiedMarcherPages);
-        // fetch the MarcherPages to update the store
+
+        // Fetch the MarcherPages to update the store
         this.checkForFetchMarcherPages();
         this.fetchMarcherPages();
         return response;
@@ -88,35 +89,51 @@ export default class MarcherPage {
     }
 
     /**
-     * A simple filter function to filter MarcherPages by page_id.
-     * If given a null page_id, it will return an empty array.
+     * A function to get all MarcherPages that are associated with a given page_id.
      *
      * @param marcherPages All MarcherPages to filter
      * @param page_id The page_id to filter by
      * @returns Array of MarcherPages that have the given page_id
      */
-    static filterByPageId(
-        marcherPages: MarcherPage[],
-        page_id: number | null,
+    static getByPageId(
+        marcherPages: MarcherPageMap,
+        page_id: number,
     ): MarcherPage[] {
-        return marcherPages.filter(
-            (marcherPage) => marcherPage.page_id === page_id,
-        );
+        return Object.values(marcherPages.marcherPagesByPage[page_id] || {});
     }
 
     /**
-     * A simple filter function to filter MarcherPages by marcher_id.
+     * A function to get all MarcherPages that are associated with a given marcher_id.
      *
      * @param marcherPages All MarcherPages to filter
      * @param marcher_id The marcher_id to filter by
      * @returns Array of MarcherPages that have the given marcher_id
      */
-    static filterByMarcherId(
-        marcherPages: MarcherPage[],
+    static getByMarcherId(
+        marcherPages: MarcherPageMap,
         marcher_id: number,
     ): MarcherPage[] {
-        return marcherPages.filter(
-            (marcherPage) => marcherPage.marcher_id === marcher_id,
+        return Object.values(
+            marcherPages.marcherPagesByMarcher[marcher_id] || {},
+        );
+    }
+
+    /**
+     * A function to get a single MarcherPage that matches the given marcher_id and page_id.
+     *
+     * @param marcherPages All MarcherPages to filter
+     * @param marcher_id The marcher_id to filter by
+     * @param page_id The page_id to filter by
+     * @returns The MarcherPage that matches the given marcher_id and page_id, or undefined if not found.
+     */
+    static getByMarcherAndPageId(
+        marcherPages: MarcherPageMap,
+        marcher_id: number,
+        page_id: number,
+    ): MarcherPage | undefined {
+        return (
+            marcherPages.marcherPagesByMarcher[marcher_id]?.[page_id] ||
+            marcherPages.marcherPagesByPage[page_id]?.[marcher_id]
         );
     }
 }

@@ -22,7 +22,7 @@ import GithubReleases from "@/components/download/GithubReleases.tsx";
         >
             <div class="w-[512px] flex flex-col gap-16 max-[600px]:w-full">
                 <p class="font-mono text-accent text-lg">
-                    <span class="font-bold" id="download-count">5,000+</span>
+                    <span class="font-bold" id="download-count">6,000+</span>
                     downloads & counting!
                 </p>
                 <h1 class="text-h2">Download the Modern Drill Writing App</h1>
@@ -127,7 +127,7 @@ import GithubReleases from "@/components/download/GithubReleases.tsx";
             return totalDownloads.toLocaleString();
         } catch (error) {
             console.error("Failed to fetch download count", error);
-            return "5,000+";
+            return "6,000+";
         }
     }
     getTotalDownloadCount().then((count) => {

@@ -342,18 +342,6 @@ export default function Canvas({
                 (cm) => cm.marcherObj.id,
             );
 
-            // Find previous/next MarcherPages for selected marchers
-            const prevPages = marcherPages.filter(
-                (mp) =>
-                    selectedIds.includes(mp.marcher_id) &&
-                    mp.page_id === selectedPage.previousPageId,
-            );
-            const nextPages = marcherPages.filter(
-                (mp) =>
-                    selectedIds.includes(mp.marcher_id) &&
-                    mp.page_id === selectedPage.nextPageId,
-            );
-
             // Remove pathways and midpoints only for selected marchers
             for (const pathwayMidpoint of pagePathwaysMidpoints.current as Pathway[]) {
                 if (selectedIds.includes(pathwayMidpoint.marcherId)) {
@@ -380,57 +368,47 @@ export default function Canvas({
                         : cm.getAbsoluteCoords();
 
                 // Previous pathway
-                const prev = prevPages.find(
-                    (mp: any) => mp.marcher_id === marcherId,
-                );
+                const prev =
+                    selectedPage.previousPageId !== null
+                        ? MarcherPage.getByMarcherAndPageId(
+                              marcherPages,
+                              marcherId,
+                              selectedPage.previousPageId,
+                          )
+                        : null;
                 if (prev && uiSettings.previousPaths) {
-                    const pathway = new Pathway({
-                        start: { x: prev.x, y: prev.y },
-                        end: movingCoords,
-                        color: rgbaToString(
-                            fieldProperties!.theme.previousPath,
-                        ),
-                        marcherId: marcherId,
-                    });
-                    const midpoint = new Midpoint({
-                        start: { x: prev.x, y: prev.y },
-                        end: movingCoords,
-                        innerColor: "white",
-                        outerColor: rgbaToString(
-                            fieldProperties!.theme.previousPath,
-                        ),
-                        marcherId: marcherId,
-                    });
-                    canvas.add(pathway);
-                    canvas.add(midpoint);
-                    pagePathwaysMidpoints.current.push(pathway);
-                    pagePathwaysMidpoints.current.push(midpoint);
+                    pagePathwaysMidpoints.current.push(
+                        ...canvas.renderIndividualPathwayAndMidpoint({
+                            start: prev,
+                            end: movingCoords,
+                            marcherId: marcherId,
+                            color: rgbaToString(
+                                fieldProperties!.theme.previousPath,
+                            ),
+                        }),
+                    );
                 }
 
                 // Next pathway
-                const next = nextPages.find(
-                    (mp: any) => mp.marcher_id === marcherId,
-                );
+                const next =
+                    selectedPage.nextPageId !== null
+                        ? MarcherPage.getByMarcherAndPageId(
+                              marcherPages,
+                              marcherId,
+                              selectedPage.nextPageId,
+                          )
+                        : null;
                 if (next && uiSettings.nextPaths) {
-                    const pathway = new Pathway({
-                        start: movingCoords,
-                        end: { x: next.x, y: next.y },
-                        color: rgbaToString(fieldProperties!.theme.nextPath),
-                        marcherId: marcherId,
-                    });
-                    const midpoint = new Midpoint({
-                        start: { x: next.x, y: next.y },
-                        end: movingCoords,
-                        innerColor: "white",
-                        outerColor: rgbaToString(
-                            fieldProperties!.theme.nextPath,
-                        ),
-                        marcherId: marcherId,
-                    });
-                    canvas.add(pathway);
-                    canvas.add(midpoint);
-                    pagePathwaysMidpoints.current.push(pathway);
-                    pagePathwaysMidpoints.current.push(midpoint);
+                    pagePathwaysMidpoints.current.push(
+                        ...canvas.renderIndividualPathwayAndMidpoint({
+                            start: movingCoords,
+                            end: next,
+                            marcherId: marcherId,
+                            color: rgbaToString(
+                                fieldProperties!.theme.nextPath,
+                            ),
+                        }),
+                    );
                 }
             });
 
@@ -583,10 +561,8 @@ export default function Canvas({
         if (canvas && selectedPage && marchers && marcherPages) {
             canvas.currentPage = selectedPage;
             canvas.renderMarchers({
-                currentMarcherPages: MarcherPage.filterByPageId(
-                    marcherPages,
-                    selectedPage.id,
-                ),
+                marcherPages: marcherPages,
+                pageId: selectedPage.id,
                 allMarchers: marchers,
             });
         }
@@ -601,33 +577,23 @@ export default function Canvas({
             pagePathwaysMidpoints.current = [];
             canvas.removeStaticCanvasMarchers();
 
-            // Only find the marcher pages if the settings are enabled. This is to prevent unnecessary calculations
-            let selectedPageMarcherPages: MarcherPage[] = [];
-            if (uiSettings.previousPaths || uiSettings.nextPaths) {
-                selectedPageMarcherPages = MarcherPage.filterByPageId(
-                    marcherPages,
-                    selectedPage.id,
-                );
-            }
-
             if (
                 uiSettings.previousPaths &&
                 selectedPage.previousPageId !== null
             ) {
-                const prevPageMarcherPages = MarcherPage.filterByPageId(
-                    marcherPages,
-                    selectedPage.previousPageId,
-                );
-
                 canvas.renderStaticMarchers({
-                    intendedMarcherPages: prevPageMarcherPages,
+                    marcherPages: marcherPages,
+                    intendedMarcherPages: MarcherPage.getByPageId(
+                        marcherPages,
+                        selectedPage.previousPageId,
+                    ),
                     color: rgbaToString(fieldProperties.theme.previousPath),
-                    allMarchers: marchers,
                 });
                 const [renderedPathways, renderedMidpoints] =
-                    canvas.renderPathways({
-                        startPageMarcherPages: prevPageMarcherPages,
-                        endPageMarcherPages: selectedPageMarcherPages,
+                    canvas.renderPathwaysAndMidpoints({
+                        marcherPages: marcherPages,
+                        startPageId: selectedPage.previousPageId,
+                        endPageId: selectedPage.id,
                         color: rgbaToString(fieldProperties.theme.previousPath),
                     });
                 pagePathwaysMidpoints.current.push(
@@ -636,20 +602,19 @@ export default function Canvas({
                 );
             }
             if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
-                const nextPageMarcherPages = MarcherPage.filterByPageId(
-                    marcherPages,
-                    selectedPage.nextPageId,
-                );
-
                 canvas.renderStaticMarchers({
-                    intendedMarcherPages: nextPageMarcherPages,
+                    marcherPages: marcherPages,
+                    intendedMarcherPages: MarcherPage.getByPageId(
+                        marcherPages,
+                        selectedPage.nextPageId,
+                    ),
                     color: rgbaToString(fieldProperties.theme.nextPath),
-                    allMarchers: marchers,
                 });
                 const [renderedPathways, renderedMidpoints] =
-                    canvas.renderPathways({
-                        startPageMarcherPages: selectedPageMarcherPages,
-                        endPageMarcherPages: nextPageMarcherPages,
+                    canvas.renderPathwaysAndMidpoints({
+                        marcherPages: marcherPages,
+                        startPageId: selectedPage.id,
+                        endPageId: selectedPage.nextPageId,
                         color: rgbaToString(fieldProperties.theme.nextPath),
                     });
                 pagePathwaysMidpoints.current.push(
@@ -841,16 +806,11 @@ export default function Canvas({
                 const nextPage = pages.find((page) => page.id === nextPageId);
                 if (!nextPage) return;
 
-                const nextPageMarcherPages = marcherPages.filter(
-                    (marcherPage) => marcherPage.page_id === nextPageId,
-                );
+                const nextPageMarcherPages =
+                    marcherPages.marcherPagesByPage[nextPageId];
                 canvas.getCanvasMarchers().forEach((canvasMarcher) => {
-                    const marcherPageToUse = nextPageMarcherPages.find(
-                        (marcherPage) =>
-                            marcherPage.marcher_id ===
-                                canvasMarcher.marcherObj.id &&
-                            marcherPage.page_id === nextPageId,
-                    );
+                    const marcherPageToUse =
+                        nextPageMarcherPages[canvasMarcher.marcherObj.id];
                     if (!marcherPageToUse) {
                         console.error(
                             "Marcher page not found - startAnimation: Canvas.tsx",
@@ -884,10 +844,8 @@ export default function Canvas({
                 }
 
                 canvas.renderMarchers({
-                    currentMarcherPages: MarcherPage.filterByPageId(
-                        marcherPages,
-                        selectedPage.id,
-                    ),
+                    marcherPages: marcherPages,
+                    pageId: selectedPage.id,
                     allMarchers: marchers,
                 });
             }

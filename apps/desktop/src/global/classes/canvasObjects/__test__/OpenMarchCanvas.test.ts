@@ -3,7 +3,7 @@ import { describe, expect, afterEach, it, vi, beforeEach } from "vitest";
 import OpenMarchCanvas from "../OpenMarchCanvas";
 import {
     falsyUiSettings,
-    mockMarcherPages,
+    mockMarcherPageMap,
     mockMarchers,
     mockPages,
 } from "@/components/canvas/__test__/MocksForCanvas";
@@ -39,11 +39,9 @@ describe.skip("OpenMarchCanvas", () => {
             });
             const selectedPage = mockPages[0];
             await canvas.renderMarchers({
+                marcherPages: mockMarcherPageMap,
+                pageId: selectedPage.id,
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
-                    mockMarcherPages,
-                    selectedPage.id,
-                ),
             });
             const canvasMarchers = canvas.getCanvasMarchers();
             // expect(canvasMarchers.length).toBe(mockMarchers.length);
@@ -54,10 +52,10 @@ describe.skip("OpenMarchCanvas", () => {
                 );
                 expect(canvasMarcher).toBeDefined();
                 if (!canvasMarcher) return;
-                const marcherPage = mockMarcherPages.find(
-                    (marcherPage) =>
-                        marcherPage.marcher_id === marcher.id &&
-                        marcherPage.page_id === selectedPage.id,
+                const marcherPage = MarcherPage.getByMarcherAndPageId(
+                    mockMarcherPageMap,
+                    marcher.id,
+                    selectedPage.id,
                 );
                 expect(marcherPage).toBeDefined();
                 if (!marcherPage) return;
@@ -92,11 +90,9 @@ describe.skip("OpenMarchCanvas", () => {
                 },
             });
             await canvas.renderMarchers({
+                marcherPages: mockMarcherPageMap,
+                pageId: selectedPage.id,
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
-                    mockMarcherPages,
-                    selectedPage.id,
-                ),
             });
 
             expect(canvas.uiSettings.lockX).toBe(true);
@@ -123,11 +119,9 @@ describe.skip("OpenMarchCanvas", () => {
                 },
             });
             await canvas.renderMarchers({
+                marcherPages: mockMarcherPageMap,
+                pageId: selectedPage.id,
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
-                    mockMarcherPages,
-                    selectedPage.id,
-                ),
             });
 
             expect(canvas.uiSettings.lockX).toBe(false);
@@ -169,11 +163,9 @@ describe.skip("OpenMarchCanvas", () => {
                 },
             });
             await canvas.renderMarchers({
+                marcherPages: mockMarcherPageMap,
+                pageId: selectedPage.id,
                 allMarchers: mockMarchers,
-                currentMarcherPages: MarcherPage.filterByPageId(
-                    mockMarcherPages,
-                    selectedPage.id,
-                ),
             });
 
             expect(canvas.uiSettings.lockX).toBe(false);
