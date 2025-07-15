@@ -56,9 +56,9 @@ export default function Community() {
                 // console.log("Contributors:", contributors);
                 const commitCount = await fetchFromGitHub(
                     "/repos/OpenMarch/OpenMarch/stats/commit_activity",
-                    600,
+                    900,
                 );
-                // console.log("Commit count:", commitCount);
+                console.log("Commit count:", commitCount);
                 const totalCommits = commitCount.reduce(
                     (sum: number, week: { total: number }) => sum + week.total,
                     0,
