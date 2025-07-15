@@ -8,20 +8,25 @@ class Section {
     readonly scoreOrder: number;
     /** The prefix of the drill number for this section E.g. "B" for Baritone */
     readonly prefix: string;
+    /** The translation key for the section name */
+    readonly tName: string;
 
     constructor({
         name,
         family,
         prefix,
+        tName,
     }: {
         name: string;
         family: SectionFamily;
         prefix: string;
+        tName: string;
     }) {
         this.name = name;
         this.family = family;
         this.scoreOrder = Section.currentScoreOrder++;
         this.prefix = prefix;
+        this.tName = tName;
     }
 
     /**
@@ -100,152 +105,201 @@ export const SECTIONS: { [key: string]: Section } = {
     Piccolo: new Section({
         family: FAMILIES.Woodwind,
         name: "Piccolo",
+        tName: "section.instrument.piccolo",
         prefix: "P",
     }),
     Flute: new Section({
         family: FAMILIES.Woodwind,
         name: "Flute",
+        tName: "section.instrument.flute",
         prefix: "F",
     }),
     Clarinet: new Section({
         family: FAMILIES.Woodwind,
         name: "Clarinet",
+        tName: "section.instrument.clarinet",
         prefix: "C",
     }),
     BassClarinet: new Section({
         family: FAMILIES.Woodwind,
         name: "Bass Clarinet",
+        tName: "section.instrument.bassClarinet",
         prefix: "BC",
     }),
     SopranoSax: new Section({
         family: FAMILIES.Woodwind,
         name: "Soprano Sax",
+        tName: "section.instrument.sopranoSax",
         prefix: "SS",
     }),
     AltoSax: new Section({
         family: FAMILIES.Woodwind,
         name: "Alto Sax",
+        tName: "section.instrument.altoSax",
         prefix: "A",
     }),
     TenorSax: new Section({
         family: FAMILIES.Woodwind,
         name: "Tenor Sax",
+        tName: "section.instrument.tenorSax",
         prefix: "N",
     }),
     BariSax: new Section({
         family: FAMILIES.Woodwind,
         name: "Bari Sax",
+        tName: "section.instrument.bariSax",
         prefix: "I",
     }),
     Trumpet: new Section({
         family: FAMILIES.Brass,
         name: "Trumpet",
+        tName: "section.instrument.trumpet",
         prefix: "T",
     }),
     Mellophone: new Section({
         family: FAMILIES.Brass,
         name: "Mellophone",
+        tName: "section.instrument.mellophone",
         prefix: "M",
     }),
     Trombone: new Section({
         family: FAMILIES.Brass,
         name: "Trombone",
+        tName: "section.instrument.trombone",
         prefix: "O",
     }),
     BassTrombone: new Section({
         family: FAMILIES.Brass,
         name: "Bass Trombone",
+        tName: "section.instrument.bassTrombone",
         prefix: "BO",
     }),
     Baritone: new Section({
         family: FAMILIES.Brass,
         name: "Baritone",
+        tName: "section.instrument.baritone",
         prefix: "B",
     }),
     Euphonium: new Section({
         family: FAMILIES.Brass,
         name: "Euphonium",
+        tName: "section.instrument.euphonium",
         prefix: "E",
     }),
-    Tuba: new Section({ family: FAMILIES.Brass, name: "Tuba", prefix: "U" }),
+    Tuba: new Section({
+        family: FAMILIES.Brass,
+        name: "Tuba",
+        tName: "section.instrument.tuba",
+        prefix: "U",
+    }),
     Snare: new Section({
         family: FAMILIES.Battery,
         name: "Snare",
+        tName: "section.instrument.snare",
         prefix: "S",
     }),
     Tenors: new Section({
         family: FAMILIES.Battery,
         name: "Tenors",
+        tName: "section.instrument.tenors",
         prefix: "Q",
     }),
     BassDrum: new Section({
         family: FAMILIES.Battery,
         name: "Bass Drum",
+        tName: "section.instrument.bassDrum",
         prefix: "D",
     }),
     Cymbals: new Section({
         family: FAMILIES.Battery,
         name: "Cymbals",
+        tName: "section.instrument.cymbals",
         prefix: "C",
     }),
     FlubDrum: new Section({
         family: FAMILIES.Battery,
         name: "Flub Drum",
+        tName: "section.instrument.flubDrum",
         prefix: "L",
     }),
     ColorGuard: new Section({
         family: FAMILIES.Guard,
         name: "Color Guard",
+        tName: "section.guard.colorGuard",
         prefix: "G",
     }),
-    Rifle: new Section({ family: FAMILIES.Guard, name: "Rifle", prefix: "R" }),
-    Flag: new Section({ family: FAMILIES.Guard, name: "Flag", prefix: "FL" }),
+    Rifle: new Section({
+        family: FAMILIES.Guard,
+        name: "Rifle",
+        tName: "section.guard.rifle",
+        prefix: "R",
+    }),
+    Flag: new Section({
+        family: FAMILIES.Guard,
+        name: "Flag",
+        tName: "section.guard.flag",
+        prefix: "FL",
+    }),
     Dancer: new Section({
         family: FAMILIES.Guard,
         name: "Dancer",
+        tName: "section.guard.dancer",
         prefix: "DN",
     }),
     Twirler: new Section({
         family: FAMILIES.Guard,
         name: "Twirler",
+        tName: "section.guard.twirler",
         prefix: "TW",
     }),
     Soloist: new Section({
         family: FAMILIES.Other,
         name: "Soloist",
+        tName: "section.soloist.soloist",
         prefix: "SL",
     }),
     Marimba: new Section({
         family: FAMILIES.Pit,
         name: "Marimba",
+        tName: "section.pit.marimba",
         prefix: "MR",
     }),
     Vibraphone: new Section({
         family: FAMILIES.Pit,
         name: "Vibraphone",
+        tName: "section.pit.vibraphone",
         prefix: "VB",
     }),
     Xylophone: new Section({
         family: FAMILIES.Pit,
         name: "Xylophone",
+        tName: "section.pit.xylophone",
         prefix: "X",
     }),
     AuxPercussion: new Section({
         family: FAMILIES.Pit,
         name: "Aux Percussion",
+        tName: "section.pit.auxPercussion",
         prefix: "AX",
     }),
     Synthesizer: new Section({
         family: FAMILIES.Pit,
         name: "Synthesizer",
+        tName: "section.pit.synthesizer",
         prefix: "SY",
     }),
     DrumMajor: new Section({
         family: FAMILIES.Other,
         name: "Drum Major",
+        tName: "section.drumMajor",
         prefix: "DM",
     }),
-    Other: new Section({ family: FAMILIES.Other, name: "Other", prefix: "OT" }),
+    Other: new Section({
+        family: FAMILIES.Other,
+        name: "Other",
+        tName: "section.other",
+        prefix: "OT",
+    }),
 } as const;
 
 /**
@@ -264,4 +318,19 @@ export function getSectionObjectByName(name: string): Section {
         Object.values(SECTIONS).find((section) => section.name === name) ||
         SECTIONS.Other;
     return section;
+}
+
+/**
+ * Use this function to get the translated name of a section.
+ *
+ * @param name The name of the section to get. E.g. "Bass Drum"
+ * @param t The translation function to use.
+ * @returns The translated name of the section.
+ */
+export function getTranslatedSectionName(
+    name: string,
+    t: (key: string) => string,
+): string {
+    const section = getSectionObjectByName(name);
+    return t(section.tName);
 }

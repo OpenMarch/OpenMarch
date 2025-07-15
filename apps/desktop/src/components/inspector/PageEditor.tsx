@@ -167,7 +167,7 @@ function PageEditor() {
                             htmlFor={notesInputId}
                             className="text-body text-text/80"
                         >
-                            Notes
+                            <T keyName="inspector.page.notes" />
                         </label>
                         <TextArea
                             id={notesInputId}
@@ -176,7 +176,7 @@ function PageEditor() {
                                 e: React.ChangeEvent<HTMLTextAreaElement>,
                             ) => setNotes(e.target.value)}
                             onBlur={handleNotesBlur}
-                            placeholder="Add notes for this page..."
+                            placeholder={t("inspector.page.notesPlaceholder")}
                             disabled={isFirstPage}
                         />
                     </div>

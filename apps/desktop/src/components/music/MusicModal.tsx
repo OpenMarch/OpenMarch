@@ -13,6 +13,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import TempoGroupCard from "./TempoGroup/TempoGroupCard";
 import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
 import { MusicNotesIcon } from "@phosphor-icons/react";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function MusicModal({
     label = <MusicNotesIcon size={24} />,
@@ -30,6 +31,7 @@ export default function MusicModal({
         />
     );
 }
+
 function MusicModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const { measures } = useTimingObjectsStore();
@@ -44,6 +46,7 @@ function MusicModalContents() {
         [measures],
     );
     const newFormRef = useRef<HTMLDivElement>(null);
+    const { t } = useTolgee();
 
     const scrollToBottom = () => {
         newFormRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -70,7 +73,9 @@ function MusicModalContents() {
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">Music</h4>
+                <h4 className="text-h4 leading-none">
+                    <T keyName="music.title" />
+                </h4>
                 <button
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
@@ -84,7 +89,9 @@ function MusicModalContents() {
                     <AudioSelector />
                 </div>
                 <div className="flex items-center gap-8">
-                    <h4 className="text-h4 leading-none">Tempo Groups</h4>
+                    <h4 className="text-h4 leading-none">
+                        <T keyName="music.tempoGroups" />
+                    </h4>
                     <a
                         href="https://openmarch.com/guides/music/tempo"
                         target="_blank"
@@ -96,7 +103,7 @@ function MusicModalContents() {
                             className="w-fit min-w-fit whitespace-nowrap"
                         >
                             <BooksIcon size={22} />
-                            See docs
+                            <T keyName="music.seeDocs" />
                         </Button>
                     </a>
                 </div>
@@ -136,8 +143,8 @@ function MusicModalContents() {
                                 }
                             >
                                 {newGroupFormHidden
-                                    ? "Add New Group"
-                                    : "Cancel"}
+                                    ? t("music.addTempoGroup")
+                                    : t("music.cancel")}
                             </Button>
                         </div>
                         <div ref={newFormRef}>
