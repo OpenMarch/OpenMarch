@@ -4,7 +4,6 @@ import { useUiSettingsStore } from "../../stores/UiSettingsStore";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -16,14 +15,15 @@ import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectabl
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
-import { Pathway } from "@/global/classes/canvasObjects/Pathway";
-import { Midpoint } from "@/global/classes/canvasObjects/Midpoint";
+import Pathway from "@/global/classes/canvasObjects/Pathway";
+import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
 
 /**
  * The field/stage UI of OpenMarch
@@ -43,7 +43,7 @@ export default function Canvas({
     onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const { marchers } = useMarcherStore()!;
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =

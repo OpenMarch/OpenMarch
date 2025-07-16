@@ -1,7 +1,10 @@
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { Pathway } from "@/global/classes/canvasObjects/Pathway";
-import { Midpoint } from "@/global/classes/canvasObjects/Midpoint";
+import Pathway from "@/global/classes/canvasObjects/Pathway";
+import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
+import { useMarcherStore } from "@/stores/MarcherStore";
+import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
+import { useEffect } from "react";
 
 /**
  * MarcherVisualSet is a class that contains all the visual elements of a marcher.
@@ -11,10 +14,10 @@ export default class MarcherVisualSet {
     /** The ID of the marcher this visual is associated with */
     marcherId: number;
 
-    /** The containing the visual elements of the marcher */
+    /** Group of selectable visual elements of the marcher */
     canvasMarcher: CanvasMarcher;
 
-    /** The visual elements of pathways */
+    /** Unselectable visual elements of pathways */
     previousPathway: Pathway;
     nextPathway: Pathway;
     previousMidpoint: Midpoint;
@@ -24,7 +27,36 @@ export default class MarcherVisualSet {
 
     constructor(marcherId: number) {
         this.marcherId = marcherId;
-
-        // TODO add all objects
+        //this.canvasMarcher = new CanvasMarcher(marcherId); TODO
     }
+}
+
+/**
+ * Fetches marchers and their associated visuals from the store.
+ */
+export async function fetchMarchersAndVisuals() {
+    await useMarcherStore.getState().fetchMarchers();
+    const marchers = useMarcherStore.getState().marchers;
+    await useMarcherVisualStore.getState().updateMarcherVisuals(marchers);
+}
+
+/**
+ * Combined store fetch to retrieve marchers and their associated visuals.
+ */
+export function useMarchersWithVisuals() {
+    const marchers = useMarcherStore((state) => state.marchers);
+    const marcherVisuals = useMarcherVisualStore(
+        (state) => state.marcherVisuals,
+    );
+    const updateMarcherVisuals = useMarcherVisualStore(
+        (state) => state.updateMarcherVisuals,
+    );
+
+    useEffect(() => {
+        if (marchers && marchers.length) {
+            updateMarcherVisuals(marchers);
+        }
+    }, [marchers, updateMarcherVisuals]);
+
+    return { marchers, marcherVisuals };
 }

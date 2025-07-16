@@ -5,16 +5,14 @@ import MarcherVisualSet from "@/global/classes/MarcherVisualSet";
 
 interface MarcherVisualStoreInterface {
     marcherVisuals: Record<number, MarcherVisualSet>;
-    updateMarcherVisuals: () => Promise<void>;
+    updateMarcherVisuals: (receivedMarchers: Marcher[]) => Promise<void>;
 }
 
 export const useMarcherVisualStore = create<MarcherVisualStoreInterface>(
     (set, get) => ({
         marcherVisuals: {},
 
-        updateMarcherVisuals: async () => {
-            const receivedMarchers = await Marcher.getMarchers();
-
+        updateMarcherVisuals: async (receivedMarchers) => {
             set((state) => {
                 const newVisuals: Record<number, MarcherVisualSet> = {
                     ...state.marcherVisuals,
@@ -39,6 +37,7 @@ export const useMarcherVisualStore = create<MarcherVisualStoreInterface>(
 
                 return { marcherVisuals: newVisuals };
             });
+            console.debug("Marcher visuals updated:", get().marcherVisuals);
         },
     }),
 );

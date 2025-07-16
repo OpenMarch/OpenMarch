@@ -3,8 +3,8 @@ import CanvasListeners from "./CanvasListeners";
 import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { Pathway } from "@/global/classes/canvasObjects/Pathway";
-import { Midpoint } from "@/global/classes/canvasObjects/Midpoint";
+import Pathway from "@/global/classes/canvasObjects/Pathway";
+import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 
 /**

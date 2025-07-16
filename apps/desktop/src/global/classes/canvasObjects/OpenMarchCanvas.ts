@@ -1,14 +1,14 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 import Endpoint from "./Endpoint";
-import { Pathway } from "./Pathway";
-import { Midpoint } from "./Midpoint";
+import Pathway from "./Pathway";
+import Midpoint from "./Midpoint";
 import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
-import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
+import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";

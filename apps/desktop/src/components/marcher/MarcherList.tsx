@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { ListFormProps } from "../../global/Interfaces";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
 import { SECTIONS } from "@/global/classes/Sections";
 import { Button } from "@openmarch/ui";
@@ -15,6 +14,7 @@ import {
     SelectTriggerText,
 } from "@openmarch/ui";
 import { AlertDialogAction, AlertDialogCancel } from "@openmarch/ui";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
 
 export default function MarcherList({
     hasHeader = false,
@@ -36,7 +36,7 @@ export default function MarcherList({
         false,
         undefined,
     ];
-    const { marchers } = useMarcherStore();
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
 
     // localMarchers are the marchers that are displayed in the table
     const [localMarchers, setLocalMarchers] = useState<Marcher[]>();

@@ -7,9 +7,7 @@ import MarcherCoordinateSheet, {
     StaticCompactMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import MarcherPage from "@/global/classes/MarcherPage";
-import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
     Dialog,
@@ -42,6 +40,7 @@ import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -59,7 +58,7 @@ function CoordinateSheetExport() {
     const [roundingDenominator, setRoundingDenominator] = useState(4);
     const [organizeBySection, setOrganizeBySection] = useState(false);
     const [quarterPages, setQuarterPages] = useState(false);
-    const { marchers } = useMarcherStore()!;
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -639,7 +638,7 @@ function DrillChartExport() {
     const { pages } = useTimingObjectsStore()!;
     const { fieldProperties } = useFieldProperties()!;
     const { marcherPages } = useMarcherPageStore()!;
-    const { marchers } = useMarcherStore()!;
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);

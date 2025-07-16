@@ -14,6 +14,8 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
+import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
+import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualSet";
 
 /**
  * A component that initializes the state of the application.
@@ -21,6 +23,7 @@ import { useUndoRedoStore } from "@/stores/UndoRedoStore";
  */
 function StateInitializer() {
     const { marchers, fetchMarchers } = useMarcherStore();
+    const { marcherVisuals, updateMarcherVisuals } = useMarcherVisualStore();
     const { fetchMarcherPages } = useMarcherPageStore()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
@@ -43,7 +46,7 @@ function StateInitializer() {
      */
 
     useEffect(() => {
-        Marcher.fetchMarchers = fetchMarchers;
+        Marcher.fetchMarchers = fetchMarchersAndVisuals;
         Marcher.fetchMarchers();
     }, [fetchMarchers]);
 

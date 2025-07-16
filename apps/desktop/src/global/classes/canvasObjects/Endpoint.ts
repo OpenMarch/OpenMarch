@@ -1,10 +1,10 @@
 import MarcherPage from "../MarcherPage";
 import { fabric } from "fabric";
 import FieldProperties from "@/global/classes/FieldProperties";
-import { NoControls } from "../../../components/canvas/CanvasConstants";
+import { NoControls } from "@/components/canvas/CanvasConstants";
 
 /**
- * A Endpoint is fabric circle that cannot be edited by the user.
+ * An Endpoint is fabric circle that cannot be edited by the user.
  * It is used to represent the coordinates on the previous and next pages.
  */
 export default class Endpoint extends fabric.Circle {
