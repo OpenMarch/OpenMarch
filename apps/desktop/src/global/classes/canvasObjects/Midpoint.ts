@@ -25,8 +25,8 @@ export default class Midpoint extends fabric.Circle {
         radius = 3,
     }: {
         marcherId: number;
-        start: { x: number; y: number };
-        end: { x: number; y: number };
+        start: { x: number; y: number; [key: string]: any };
+        end: { x: number; y: number; [key: string]: any };
         innerColor: string;
         outerColor: string;
         radius?: number;

@@ -15,7 +15,7 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
-import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualSet";
+import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
 
 /**
  * A component that initializes the state of the application.

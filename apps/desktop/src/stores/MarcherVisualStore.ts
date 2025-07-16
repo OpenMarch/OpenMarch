@@ -1,10 +1,9 @@
 import { create } from "zustand";
-
 import Marcher from "@/global/classes/Marcher";
-import MarcherVisualSet from "@/global/classes/MarcherVisualSet";
+import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
 
 interface MarcherVisualStoreInterface {
-    marcherVisuals: Record<number, MarcherVisualSet>;
+    marcherVisuals: Record<number, MarcherVisualGroup>;
     updateMarcherVisuals: (receivedMarchers: Marcher[]) => Promise<void>;
 }
 
@@ -14,15 +13,15 @@ export const useMarcherVisualStore = create<MarcherVisualStoreInterface>(
 
         updateMarcherVisuals: async (receivedMarchers) => {
             set((state) => {
-                const newVisuals: Record<number, MarcherVisualSet> = {
+                const newVisuals: Record<number, MarcherVisualGroup> = {
                     ...state.marcherVisuals,
                 };
 
                 // add new visuals for received marchers
                 for (const marcher of receivedMarchers) {
                     if (!newVisuals[marcher.id]) {
-                        newVisuals[marcher.id] = new MarcherVisualSet(
-                            marcher.id,
+                        newVisuals[marcher.id] = new MarcherVisualGroup(
+                            marcher,
                         );
                     }
                 }
@@ -37,7 +36,8 @@ export const useMarcherVisualStore = create<MarcherVisualStoreInterface>(
 
                 return { marcherVisuals: newVisuals };
             });
-            console.debug("Marcher visuals updated:", get().marcherVisuals);
+
+            console.log("Marcher visuals updated:", get().marcherVisuals);
         },
     }),
 );

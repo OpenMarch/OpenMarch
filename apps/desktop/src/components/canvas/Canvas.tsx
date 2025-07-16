@@ -16,14 +16,13 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
-import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 /**
  * The field/stage UI of OpenMarch

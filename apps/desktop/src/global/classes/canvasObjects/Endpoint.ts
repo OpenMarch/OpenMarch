@@ -18,23 +18,23 @@ export default class Endpoint extends fabric.Circle {
      * @param color The color of the dot (use rgba for transparency)
      */
     constructor({
-        marcherPage,
+        coordinate,
         dotRadius = 3,
         color = "rgba(0, 0, 0, 1)",
     }: {
-        marcherPage: MarcherPage;
+        coordinate: { x: number; y: number; [key: string]: any };
         dotRadius?: number;
         color?: string;
     }) {
         super({
-            left: marcherPage.x + Endpoint.gridOffset,
-            top: marcherPage.y + Endpoint.gridOffset,
+            left: coordinate.x + Endpoint.gridOffset,
+            top: coordinate.y + Endpoint.gridOffset,
             originX: "center",
             originY: "center",
             fill: color,
             radius: dotRadius,
             ...NoControls,
         });
-        this.marcherId = marcherPage.marcher_id;
+        this.marcherId = coordinate.marcher_id;
     }
 }

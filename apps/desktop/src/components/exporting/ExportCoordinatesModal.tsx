@@ -40,7 +40,7 @@ import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];

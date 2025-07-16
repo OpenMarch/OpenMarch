@@ -4,7 +4,7 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 /**
  * Handler for generating canvas preview SVGs on app close for launch page

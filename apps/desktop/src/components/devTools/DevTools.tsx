@@ -7,7 +7,7 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import StoreTab from "./StoreTab";
 
 const DevTools = () => {

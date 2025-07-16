@@ -17,7 +17,7 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.

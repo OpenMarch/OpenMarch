@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
 import FormField from "../ui/FormField";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 interface NewMarcherFormProps {
     disabledProp?: boolean;

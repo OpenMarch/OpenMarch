@@ -967,7 +967,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 );
                 const canvasMarcher = new CanvasMarcher({
                     marcher: curMarcher,
-                    marcherPage,
+                    coordinate: marcherPage,
                     sectionAppearance,
                 });
                 this.add(canvasMarcher);
@@ -1000,7 +1000,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
-            canvasMarcher.setMarcherCoords(canvasMarcher.marcherPage);
+            canvasMarcher.setMarcherCoords(canvasMarcher.coordinate);
         });
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
@@ -1090,8 +1090,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
 
             const staticMarcher = new Endpoint({
-                marcherPage,
-                color,
+                coordinate: marcherPage,
+                color: color,
             });
 
             this.add(staticMarcher);
@@ -1133,8 +1133,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
 
             const staticMarcher = new Endpoint({
-                marcherPage,
-                color,
+                coordinate: marcherPage,
+                color: color,
             });
 
             this.add(staticMarcher);

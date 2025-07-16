@@ -6,7 +6,7 @@ import {
     useState,
 } from "react";
 import { Marcher } from "@/global/classes/Marcher";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {

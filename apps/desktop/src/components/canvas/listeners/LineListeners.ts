@@ -166,7 +166,7 @@ export default class LineListeners
         this.clearPathwaysAndStaticMarchers();
         const oldDots = this.canvas.eventMarchers.map((canvasMarcher) => {
             return {
-                ...canvasMarcher.marcherPage,
+                ...canvasMarcher.coordinate,
                 ...canvasMarcher.getMarcherCoords(),
             };
         });

@@ -26,8 +26,8 @@ export default class Pathway extends fabric.Line {
         dashed = false,
     }: {
         marcherId: number;
-        start: { x: number; y: number };
-        end: { x: number; y: number };
+        start: { x: number; y: number; [key: string]: any };
+        end: { x: number; y: number; [key: string]: any };
         color: string;
         strokeWidth?: number;
         dashed?: boolean;

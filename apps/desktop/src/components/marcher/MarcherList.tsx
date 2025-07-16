@@ -14,7 +14,7 @@ import {
     SelectTriggerText,
 } from "@openmarch/ui";
 import { AlertDialogAction, AlertDialogCancel } from "@openmarch/ui";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualSet";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 export default function MarcherList({
     hasHeader = false,

@@ -66,7 +66,7 @@ describe.skip("CanvasMarcher", () => {
             const canvasMarcherWithDefaultParams = getCanvasMarcher();
             expect(canvasMarcherWithDefaultParams.id).toBe(marcher1.id);
             expect(canvasMarcherWithDefaultParams.marcherObj).toBe(marcher1);
-            expect(canvasMarcherWithDefaultParams.marcherPage).toBe(
+            expect(canvasMarcherWithDefaultParams.coordinate).toBe(
                 marcherPage1,
             );
         });
