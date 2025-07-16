@@ -575,7 +575,7 @@ export default function Canvas({
                 canvas.remove(pathway);
             }
             pagePathwaysMidpoints.current = [];
-            canvas.removeStaticCanvasMarchers();
+            canvas.removeEndpoints();
 
             if (
                 uiSettings.previousPaths &&

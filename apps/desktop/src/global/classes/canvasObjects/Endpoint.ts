@@ -4,10 +4,10 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import { NoControls } from "../../../components/canvas/CanvasConstants";
 
 /**
- * A StaticCanvasMarcher is fabric circle that cannot be edited by the user.
+ * A Endpoint is fabric circle that cannot be edited by the user.
  * It is used to represent the coordinates on the previous and next pages.
  */
-export default class StaticCanvasMarcher extends fabric.Group {
+export default class Endpoint extends fabric.Circle {
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
     /** The id of the marcher associated with this static marcher */
     marcherId?: number;
@@ -26,20 +26,15 @@ export default class StaticCanvasMarcher extends fabric.Group {
         dotRadius?: number;
         color?: string;
     }) {
-        super(
-            [
-                new fabric.Circle({
-                    left: marcherPage.x + StaticCanvasMarcher.gridOffset,
-                    top: marcherPage.y + StaticCanvasMarcher.gridOffset,
-                    originX: "center",
-                    originY: "center",
-                    fill: color,
-                    radius: dotRadius,
-                    ...NoControls,
-                }),
-            ],
-            NoControls,
-        );
+        super({
+            left: marcherPage.x + Endpoint.gridOffset,
+            top: marcherPage.y + Endpoint.gridOffset,
+            originX: "center",
+            originY: "center",
+            fill: color,
+            radius: dotRadius,
+            ...NoControls,
+        });
         this.marcherId = marcherPage.marcher_id;
     }
 }

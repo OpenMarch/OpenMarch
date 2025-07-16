@@ -1,5 +1,5 @@
 import type { DatabaseResponse } from "electron/database/DatabaseActions";
-import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
+import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.

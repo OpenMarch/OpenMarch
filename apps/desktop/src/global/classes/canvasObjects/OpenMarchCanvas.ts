@@ -1,13 +1,13 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
-import StaticCanvasMarcher from "./StaticCanvasMarcher";
+import Endpoint from "./Endpoint";
 import { Pathway } from "./Pathway";
 import { Midpoint } from "./Midpoint";
 import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
+import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
@@ -1064,7 +1064,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param marcherPages All marcher pages
      * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
      * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @returns The StaticCanvasMarcher objects created
+     * @returns The Endpoint objects created
      */
     renderStaticMarchers = ({
         marcherPages,
@@ -1075,7 +1075,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         intendedMarcherPages: MarcherPage[];
         color: string;
     }) => {
-        const createdStaticMarchers: StaticCanvasMarcher[] = [];
+        const createdStaticMarchers: Endpoint[] = [];
 
         intendedMarcherPages.forEach((marcherPage) => {
             const curMarcher =
@@ -1089,7 +1089,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 return;
             }
 
-            const staticMarcher = new StaticCanvasMarcher({
+            const staticMarcher = new Endpoint({
                 marcherPage,
                 color,
             });
@@ -1108,7 +1108,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
      * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
      * @param allMarchers All marchers in the drill
-     * @returns The StaticCanvasMarcher objects created
+     * @returns The Endpoint objects created
      */
     renderIndividualStaticMarchers = ({
         color,
@@ -1119,7 +1119,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         intendedMarcherPages: MarcherPage[];
         allMarchers: Marcher[];
     }) => {
-        const createdStaticMarchers: StaticCanvasMarcher[] = [];
+        const createdStaticMarchers: Endpoint[] = [];
         intendedMarcherPages.forEach((marcherPage) => {
             const curMarcher = allMarchers.find(
                 (marcher) => marcher.id === marcherPage.marcher_id,
@@ -1132,7 +1132,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 return;
             }
 
-            const staticMarcher = new StaticCanvasMarcher({
+            const staticMarcher = new Endpoint({
                 marcherPage,
                 color,
             });
@@ -1148,10 +1148,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /**
      * Remove the static canvas marchers from the canvas
      */
-    removeStaticCanvasMarchers = () => {
-        const curStaticCanvasMarchers = this.getStaticCanvasMarchers();
+    removeEndpoints = () => {
+        const curEndpoints = this.getEndpoints();
 
-        curStaticCanvasMarchers.forEach((canvasMarcher) => {
+        curEndpoints.forEach((canvasMarcher) => {
             this.remove(canvasMarcher);
         });
         this.requestRenderAll();
@@ -1993,14 +1993,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /**
      * @param active true if you only want to return active (selected) objects. By default, false
-     * @returns A list of all StaticCanvasMarcher objects in the canvas
+     * @returns A list of all Endpoint objects in the canvas
      */
-    getStaticCanvasMarchers({
-        active = false,
-    }: { active?: boolean } = {}): StaticCanvasMarcher[] {
+    getEndpoints({ active = false }: { active?: boolean } = {}): Endpoint[] {
         return active
-            ? this.getActiveObjectsByType(StaticCanvasMarcher)
-            : this.getObjectsByType(StaticCanvasMarcher);
+            ? this.getActiveObjectsByType(Endpoint)
+            : this.getObjectsByType(Endpoint);
     }
 
     /**

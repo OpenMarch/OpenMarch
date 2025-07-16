@@ -1,7 +1,5 @@
-import {
-    MarcherPageMap,
+import MarcherPageMap, {
     marcherPageMapFromArray,
-    MarcherPageNestedMap,
 } from "@/global/classes/MarcherPageIndex";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { create } from "zustand";

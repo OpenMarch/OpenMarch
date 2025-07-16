@@ -9,6 +9,7 @@ import MarcherCoordinateSheet, {
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
     Dialog,
@@ -41,7 +42,6 @@ import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
-import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];

@@ -1,7 +1,7 @@
 import FieldProperties from "./FieldProperties";
 import Marcher from "./Marcher";
 import MarcherPage from "./MarcherPage";
-import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
+import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import Page from "./Page";
 
 const INCHES_PER_YARD = 36;
