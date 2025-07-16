@@ -10,6 +10,8 @@ import {
     AlignCenterVerticalIcon,
     ShapesIcon,
 } from "@phosphor-icons/react";
+import { Badge } from "@openmarch/ui";
+import { LogoTolgee } from "@/components/Logos";
 ---
 
 <section id="features" class="relative flex h-fit flex-col gap-32">
@@ -178,7 +180,7 @@ import {
         >
             <Image
                 src={"/home/drill-chart.png"}
-                alt="Editor Screenshot"
+                alt="Drill chart Screenshot"
                 width={1920}
                 height={1080}
                 format="webp"
@@ -211,6 +213,56 @@ import {
                     </p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-16">
+        <h2 class="text-h2 flex gap-8 items-center">
+            Drill design, international
+        </h2>
+        <div
+            class="grid grid-cols-4 grid-rows-1 max-[850px]:grid-rows-2 max-[850px]:grid-cols-2 gap-8"
+        >
+            <div
+                class="grid grid-cols-1 grid-rows-1 gap-8 col-span-2 row-span-1"
+            >
+                <div
+                    class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
+                >
+                    <Badge>Coming soon</Badge>
+                    <h4 class="text-h4">Localization & translation</h4>
+                    <p class="text-body leading-[180%]">
+                        We're adding support for more languages across the app,
+                        and soon the website too. This will make drill design
+                        even more accessible to the world.
+                        <a
+                            href="https://tolgee.io"
+                            class="text-body leading-[100%] hover:text-accent underline duration-150 inline"
+                        >
+                            Powered by Tolgee!
+                        </a>
+                    </p>
+                    <LogoTolgee className="text-[#2C3C52] dark:text-white" />
+                </div>
+            </div>
+            <Image
+                src={"/home/translation-dark.png"}
+                alt="Desktop app in spanish"
+                width={1920}
+                height={1080}
+                format="webp"
+                quality={80}
+                class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
+            />
+            <Image
+                src={"/home/translation-light.png"}
+                alt="Desktop app in spanish"
+                width={1920}
+                height={1080}
+                format="webp"
+                quality={80}
+                class="block dark:hidden border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
+            />
         </div>
     </div>
 </section>
