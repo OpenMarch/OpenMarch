@@ -110,6 +110,9 @@ module.exports = {
         "Schachner",
         "pfps",
         "seti",
+        "DELME",
+        "CHANGEME",
+        "ADDME",
     ],
     ignorePaths: [
         "node_modules/**",

@@ -22,7 +22,9 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
+import MarcherVisualGroup, {
+    useMarchersWithVisuals,
+} from "@/global/classes/MarcherVisualGroup";
 
 /**
  * The field/stage UI of OpenMarch
@@ -123,7 +125,7 @@ export default function Canvas({
      *
      * NOTE - every time you add a new SelectableClass, it's handler for classIds must be added in the switch statement
      */
-    const getGLobalSelectedObjectClassIds = useCallback(() => {
+    const getGlobalSelectedObjectClassIds = useCallback(() => {
         if (!canvas) return;
 
         const globalSelectedClassIds: Set<string> = new Set<string>();
@@ -196,7 +198,7 @@ export default function Canvas({
             ),
         );
 
-        const globalSelectedClassIds = getGLobalSelectedObjectClassIds();
+        const globalSelectedClassIds = getGlobalSelectedObjectClassIds();
         if (!globalSelectedClassIds) return false;
 
         // Check if both sets are equal
@@ -211,7 +213,7 @@ export default function Canvas({
             }
         }
         return activeObjectsAreGloballySelected;
-    }, [canvas, getGLobalSelectedObjectClassIds]);
+    }, [canvas, getGlobalSelectedObjectClassIds]);
 
     /**
      * Handler for updating what is selected in global state on the canvas.
@@ -449,7 +451,7 @@ export default function Canvas({
                 ]),
         );
 
-        const globalSelectedClassIds = getGLobalSelectedObjectClassIds();
+        const globalSelectedClassIds = getGlobalSelectedObjectClassIds();
         if (!globalSelectedClassIds) return;
 
         const objectsToSelect: Selectable.ISelectable[] = [];
@@ -468,7 +470,7 @@ export default function Canvas({
         selectedPage,
         canvas,
         setSelectedMarchers,
-        getGLobalSelectedObjectClassIds,
+        getGlobalSelectedObjectClassIds,
         activeObjectsAreGloballySelected,
     ]);
 
@@ -542,6 +544,41 @@ export default function Canvas({
         isFullscreen,
     ]);
 
+    // Initialize canvas marcher visuals
+    useEffect(() => {
+        if (!canvas || !marchers || !marcherVisuals) return;
+
+        // Remove all marcher visuals from the canvas
+        canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+            canvas.remove(canvasMarcher);
+            canvas.remove(canvasMarcher.textLabel);
+        });
+        canvas.getPathways().forEach((pathway) => {
+            canvas.remove(pathway);
+        });
+        canvas.getMidpoints().forEach((midpoint) => {
+            canvas.remove(midpoint);
+        });
+        canvas.getEndpoints().forEach((endpoint) => {
+            canvas.remove(endpoint);
+        });
+
+        // Add all marcher visuals to the canvas
+        marchers.forEach((marcher) => {
+            canvas.add(marcherVisuals[marcher.id].getCanvasMarcher());
+            canvas.add(marcherVisuals[marcher.id].getCanvasMarcher().textLabel);
+            canvas.add(marcherVisuals[marcher.id].getPreviousPathway());
+            canvas.add(marcherVisuals[marcher.id].getNextPathway());
+            canvas.add(marcherVisuals[marcher.id].getPreviousMidpoint());
+            canvas.add(marcherVisuals[marcher.id].getNextMidpoint());
+            canvas.add(marcherVisuals[marcher.id].getPreviousEndpoint());
+            canvas.add(marcherVisuals[marcher.id].getNextEndpoint());
+        });
+
+        // Request render all to ensure the canvas is updated
+        canvas.requestRenderAll();
+    }, [canvas, marchers, marcherVisuals]);
+
     // Setters for alignmentEvent state
     useEffect(() => {
         if (canvas) {
@@ -559,14 +596,20 @@ export default function Canvas({
     useEffect(() => {
         if (canvas && selectedPage && marchers && marcherPages) {
             canvas.currentPage = selectedPage;
-            canvas.renderMarchers({
-                marcherPages: marcherPages,
-                pageId: selectedPage.id,
-                allMarchers: marchers,
+
+            // Render the marchers on the canvas
+            marchers.forEach((marcher) => {
+                canvas.renderMarcher({
+                    canvasMarcher:
+                        marcherVisuals[marcher.id].getCanvasMarcher(),
+                    marcherPages: marcherPages,
+                    pageId: selectedPage.id,
+                });
             });
         }
     }, [canvas, marcherPages, marchers, selectedPage]);
 
+    // CHANGEME
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage && fieldProperties) {
@@ -842,10 +885,13 @@ export default function Canvas({
                     clearTimeout(timeoutID.current);
                 }
 
-                canvas.renderMarchers({
-                    marcherPages: marcherPages,
-                    pageId: selectedPage.id,
-                    allMarchers: marchers,
+                marchers.forEach((marcher) => {
+                    canvas.renderMarcher({
+                        canvasMarcher:
+                            marcherVisuals[marcher.id].getCanvasMarcher(),
+                        marcherPages: marcherPages,
+                        pageId: selectedPage.id,
+                    });
                 });
             }
         }

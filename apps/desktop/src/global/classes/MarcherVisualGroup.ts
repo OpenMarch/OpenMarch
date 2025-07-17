@@ -79,6 +79,29 @@ export default class MarcherVisualGroup {
             color: "green", //rgbaToString(fieldProperties.theme.nextPath),
         });
     }
+
+    // Getters
+    getCanvasMarcher() {
+        return this.canvasMarcher;
+    }
+    getPreviousPathway() {
+        return this.previousPathway;
+    }
+    getNextPathway() {
+        return this.nextPathway;
+    }
+    getPreviousMidpoint() {
+        return this.previousMidpoint;
+    }
+    getNextMidpoint() {
+        return this.nextMidpoint;
+    }
+    getPreviousEndpoint() {
+        return this.previousEndPoint;
+    }
+    getNextEndpoint() {
+        return this.nextEndPoint;
+    }
 }
 
 /**

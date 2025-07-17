@@ -913,6 +913,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
     }
+
+    // CHANGEME
     /**
      * Render the given marcherPages on the canvas
      *
@@ -920,6 +922,36 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param pageId The id of the page to render marchers for
      * @param allMarchers All marchers in the drill
      */
+    renderMarcher = async ({
+        canvasMarcher,
+        marcherPages,
+        pageId,
+    }: {
+        canvasMarcher: CanvasMarcher;
+        marcherPages: MarcherPageMap;
+        pageId: number;
+    }) => {
+        CanvasMarcher.theme = this.fieldProperties.theme;
+
+        // Add canvasMarcher to the canvas if it isn't already
+        if (!canvasMarcher.canvas) {
+            this.add(canvasMarcher); // 'this' should be your Fabric.Canvas instance
+        }
+
+        // Now it's safe to call methods that use canvas
+        canvasMarcher.setMarcherCoords(
+            marcherPages.marcherPagesByPage[pageId][
+                canvasMarcher.marcherObj.id
+            ],
+        );
+
+        if (this._listeners && this._listeners.refreshMarchers)
+            this._listeners?.refreshMarchers();
+        this.bringAllControlPointsTooFront();
+        this.requestRenderAll();
+    };
+
+    /*
     renderMarchers = async ({
         marcherPages,
         pageId,
@@ -995,8 +1027,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this._listeners?.refreshMarchers();
         this.bringAllControlPointsTooFront();
         this.requestRenderAll();
-    };
+    };*/
 
+    // CHANGEME
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
@@ -1039,6 +1072,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     };
 
+    // CHANGEME
     /**
      * Brings all of the canvasMarchers to the front of the canvas
      */
@@ -1050,6 +1084,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.bringAllControlPointsTooFront();
     };
 
+    // CHANGEME
     /**
      * Brings the specified canvasMarcher to the front of the canvas
      */
@@ -1058,6 +1093,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.bringAllControlPointsTooFront();
     };
 
+    // CHANGEME
     /**
      * Render static marchers for the given page
      *
@@ -1102,6 +1138,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return createdStaticMarchers;
     };
 
+    // CHANGEME
     /**
      * Render static marchers for the given page
      *
@@ -1145,8 +1182,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return createdStaticMarchers;
     };
 
+    // CHANGEME
     /**
-     * Remove the static canvas marchers from the canvas
+     * Remove endpoints from the canvas
      */
     removeEndpoints = () => {
         const curEndpoints = this.getEndpoints();
@@ -1173,6 +1211,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     };
 
+    // CHANGEME
     /**
      * Render pathways from any object containing an XY coordinate
      * to another object containing an XY coordinate, including MarcherPage(s).
@@ -1222,6 +1261,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return [pathway, midpoint];
     };
 
+    // CHANGEME
     /**
      * Render the pathways from the selected page to the given one
      *
@@ -1999,6 +2039,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return active
             ? this.getActiveObjectsByType(Endpoint)
             : this.getObjectsByType(Endpoint);
+    }
+
+    /**
+     * @param active true if you only want to return active (selected) objects. By default, false
+     * @returns A list of all Midpoint objects in the canvas
+     */
+    getMidpoints({ active = false }: { active?: boolean } = {}): Midpoint[] {
+        return active
+            ? this.getActiveObjectsByType(Midpoint)
+            : this.getObjectsByType(Midpoint);
     }
 
     /**
