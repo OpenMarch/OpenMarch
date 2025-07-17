@@ -260,7 +260,9 @@ function CoordinateSheetExport() {
                     return {
                         name: marcher.name,
                         drillNumber: marcher.drill_number,
-                        section: marcher.section || t("exportCoordinates.unsortedSection"),
+                        section:
+                            marcher.section ||
+                            t("exportCoordinates.unsortedSection"),
                         renderedPage: ReactDOMServer.renderToString(
                             <StaticMarcherCoordinateSheet
                                 marcher={marcher}
@@ -696,7 +698,7 @@ function DrillChartExport() {
             for (let p = 0; p < pages.length; p++) {
                 setCurrentStep(
                     t("exportCoordinates.processingPage", {
-                        pageNumber: i + 1,
+                        pageNumber: p + 1,
                         totalPages: pages.length,
                         pageName: exportCanvas.currentPage.name,
                     }),
