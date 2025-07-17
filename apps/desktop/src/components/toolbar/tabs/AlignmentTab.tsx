@@ -15,10 +15,8 @@ import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
-import { useTranslate } from "@tolgee/react";
 
 export default function AlignmentTab() {
-    const { t } = useTranslate();
     const { uiSettings } = useUiSettingsStore();
     return (
         <div className="flex w-full flex-wrap gap-8">
@@ -27,12 +25,8 @@ export default function AlignmentTab() {
                 <RegisteredActionButton
                     instructionalString={
                         uiSettings.lockX
-                            ? RegisteredActionsObjects.lockX.getInstructionalStringToggleOff(
-                                  t,
-                              )
-                            : RegisteredActionsObjects.lockX.getInstructionalStringToggleOn(
-                                  t,
-                              )
+                            ? RegisteredActionsObjects.lockX.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.lockX.getInstructionalStringToggleOn()
                     }
                     registeredAction={RegisteredActionsObjects.lockX}
                     className={clsx(
@@ -45,12 +39,8 @@ export default function AlignmentTab() {
                 <RegisteredActionButton
                     instructionalString={
                         uiSettings.lockY
-                            ? RegisteredActionsObjects.lockY.getInstructionalStringToggleOff(
-                                  t,
-                              )
-                            : RegisteredActionsObjects.lockY.getInstructionalStringToggleOn(
-                                  t,
-                              )
+                            ? RegisteredActionsObjects.lockY.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.lockY.getInstructionalStringToggleOn()
                     }
                     registeredAction={RegisteredActionsObjects.lockY}
                     className={`flex gap-6 ${uiSettings.lockY ? "text-accent" : "text-text"}`}

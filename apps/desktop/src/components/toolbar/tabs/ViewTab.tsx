@@ -3,7 +3,6 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
-import { useTranslate } from "@tolgee/react";
 
 export default function ViewTab() {
     return (
@@ -14,7 +13,6 @@ export default function ViewTab() {
 }
 
 function UiSettingsToolbar() {
-    const { t } = useTranslate();
     const { uiSettings, setUiSettings } = useUiSettingsStore();
 
     return (
@@ -26,12 +24,8 @@ function UiSettingsToolbar() {
                     }
                     instructionalString={
                         uiSettings.previousPaths
-                            ? RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOff(
-                                  t,
-                              )
-                            : RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOn(
-                                  t,
-                              )
+                            ? RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOn()
                     }
                     className={`hover:text-accent flex gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`}
                 >
@@ -48,12 +42,8 @@ function UiSettingsToolbar() {
                     }
                     instructionalString={
                         uiSettings.nextPaths
-                            ? RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOff(
-                                  t,
-                              )
-                            : RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOn(
-                                  t,
-                              )
+                            ? RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOn()
                     }
                     className={`hover:text-accent flex gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`}
                 >

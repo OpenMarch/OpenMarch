@@ -18,11 +18,11 @@
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
             "setAllToNext": "Set all marcher coordinates to next page",
-            "setAllToNextSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the next page {{nextPage}}",
+            "setAllToNextSuccess": "Successfully set all {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}",
             "setAllToPrevious": "Set all marcher coordinates to previous page",
             "setAllToPreviousSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the previous page {{previousPage}}",
             "setSelectedToNext": "Set selected marcher(s) coordinates to next page",
-            "setSelectedToNextSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the next page {{nextPage}}",
+            "setSelectedToNextSuccess": "{count, plural, one {Successfully set {count} marcher coordinate on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
             "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
             "setSelectedToPreviousSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the previous page {{previousPage}}"
         },
@@ -655,6 +655,14 @@
         "square": "Square",
         "triangle": "Triangle",
         "x": "X"
+    },
+    "tempoGroup": {
+        "createBeatsError": "Error creating beats",
+        "createNewBeatsError": "Error creating new beats",
+        "deletedSuccessfully": "Tempo group deleted successfully",
+        "deleteFailed": "Failed to delete tempo group",
+        "differentBeatsError": "Tempo group has different number of beats. This should not happen. Please reach out to us!",
+        "noMeasures": "Tempo group has no measures"
     },
     "timeline": {
         "audio": "Audio",

@@ -18,11 +18,10 @@
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",
             "noPreviousPage": "Não é possível definir coordenadas do marcador para a página anterior. Não há página anterior.",
             "setAllToNext": "Defina todas as coordenadas dos marchadores para a próxima página",
-            "setAllToNextSuccess": "\"Todas as {{count}} coordenadas dos marchadores na página {{currentPage}} foram definidas com sucesso para as coordenadas da próxima página {{nextPage}}\"",
+            "setAllToNextSuccess": "Todas as {count} coordenadas dos marchadores na página {currentPage} foram definidas com sucesso para as coordenadas da próxima página {nextPage}",
             "setAllToPrevious": "Defina todas as coordenadas dos marchadores para a página anterior",
             "setAllToPreviousSuccess": "\"Todas as {{count}} coordenadas dos marchadores na página {{currentPage}} foram definidas com sucesso para as coordenadas da página anterior {{previousPage}}\"",
             "setSelectedToNext": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a próxima página",
-            "setSelectedToNextSuccess": "\"{{count}} coordenada{{count, plural, one {} other {s}}} dos marchadores na página {{currentPage}} foi definida com sucesso para as coordenadas da próxima página {{nextPage}}\"",
             "setSelectedToPrevious": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a página anterior",
             "setSelectedToPreviousSuccess": "\"{{count}} coordenada{{count, plural, one {} other {s}}} dos marchadores na página {{currentPage}} foi definida com sucesso para as coordenadas da página anterior {{previousPage}}\""
         },

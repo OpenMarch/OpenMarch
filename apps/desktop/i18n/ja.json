@@ -18,11 +18,10 @@
             "noNextPage": "進行中の座標を 次のページには設定できません 。次のページがありません",
             "noPreviousPage": "進行中の座標を 前のページには設定できません 。前のページがありません",
             "setAllToNext": "すべての マーカー座標を 次のページに設定",
-            "setAllToNextSuccess": "すべての {{count}} マーカー座標をページ {{currentPage}} 上の次のページ {{nextPage}} の座標に成功して設定しました",
+            "setAllToNextSuccess": "すべての {count} マーカー座標をページ {currentPage} 上の次のページ {nextPage} の座標に成功して設定しました",
             "setAllToPrevious": "すべての マーカー座標を 前のページに設定",
             "setAllToPreviousSuccess": "すべての {{count}} マーカー座標をページ {{currentPage}} 上の前のページ {{previousPage}} の座標に成功して設定しました",
             "setSelectedToNext": "選択したマーチャーの座標を 次のページに設定",
-            "setSelectedToNextSuccess": "ページ {{currentPage}} 上の {{count}} マーカー座標を次のページ {{nextPage}} の座標に成功して設定しました",
             "setSelectedToPrevious": "選択したマーチャーの座標を 前のページに設定",
             "setSelectedToPreviousSuccess": "ページ {{currentPage}} 上の {{count}} マーカー座標を前のページ {{previousPage}} の座標に成功して設定しました"
         },

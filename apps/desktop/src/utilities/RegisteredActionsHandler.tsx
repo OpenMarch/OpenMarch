@@ -17,7 +17,8 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useTranslate } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
+import { useTolgee } from "@tolgee/react";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -140,33 +141,33 @@ export class RegisteredAction {
     /**
      * Get the translated description with optional keyboard shortcut
      */
-    getInstructionalString(t: (key: string) => string): string {
+    getInstructionalString(): string {
         const keyString = this.keyboardShortcut
             ? ` [${this.keyboardShortcut.toString()}]`
             : "";
-        return t(this.descKey) + keyString;
+        return tolgee.t(this.descKey) + keyString;
     }
 
     /**
      * Get the translated toggle on string with optional keyboard shortcut
      */
-    getInstructionalStringToggleOn(t: (key: string) => string): string {
+    getInstructionalStringToggleOn(): string {
         const keyString = this.keyboardShortcut
             ? ` [${this.keyboardShortcut.toString()}]`
             : "";
         const key = this.toggleOnKey || this.descKey;
-        return t(key) + keyString;
+        return tolgee.t(key) + keyString;
     }
 
     /**
      * Get the translated toggle off string with optional keyboard shortcut
      */
-    getInstructionalStringToggleOff(t: (key: string) => string): string {
+    getInstructionalStringToggleOff(): string {
         const keyString = this.keyboardShortcut
             ? ` [${this.keyboardShortcut.toString()}]`
             : "";
         const key = this.toggleOffKey || this.descKey;
-        return t(key) + keyString;
+        return tolgee.t(key) + keyString;
     }
 }
 
@@ -468,7 +469,7 @@ export const RegisteredActionsObjects: {
  * All actions in OpenMarch that can be a keyboard shortcut or a button click should be registered here.
  */
 function RegisteredActionsHandler() {
-    const { t } = useTranslate();
+    const { t } = useTolgee();
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { pages } = useTimingObjectsStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;

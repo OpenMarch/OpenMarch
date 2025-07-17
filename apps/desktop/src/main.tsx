@@ -5,11 +5,11 @@ import "./styles/index.css";
 import "@fontsource/dm-mono";
 import "@fontsource/dm-sans";
 import { ThemeProvider } from "./context/ThemeContext";
-import { Tolgee, DevTools, TolgeeProvider, FormatSimple } from "@tolgee/react";
-import { FormatIcu } from "@tolgee/format-icu";
+import { TolgeeProvider } from "@tolgee/react";
 import * as Sentry from "@sentry/electron/renderer";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
+import tolgee from "@/global/singletons/Tolgee";
 
 const options = {
     api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
@@ -21,27 +21,6 @@ const options = {
 if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {
     posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
 }
-
-const tolgee = Tolgee()
-    .use(DevTools())
-    .use(FormatSimple())
-    .use(FormatIcu())
-    .init({
-        language: "en", // Default language, will be overridden by saved language
-
-        // for development only
-        ...(import.meta.env.MODE === "development" && {
-            apiUrl: import.meta.env.VITE_APP_TOLGEE_API_URL,
-            apiKey: import.meta.env.VITE_APP_TOLGEE_API_KEY,
-        }),
-
-        staticData: {
-            en: () => import("../i18n/en.json"),
-            es: () => import("../i18n/es.json"),
-            "pt-BR": () => import("../i18n/pt-BR.json"),
-            ja: () => import("../i18n/ja.json"),
-        },
-    });
 
 // Load saved language from electron store on app start
 window.electron
