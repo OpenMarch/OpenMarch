@@ -3,6 +3,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { ClockIcon } from "@phosphor-icons/react";
 import { useEffect, useRef } from "react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { clsx } from "clsx";
 
 interface ClockProps {
     milliseconds: number;
@@ -20,9 +21,9 @@ export function Clock({ milliseconds, className = "" }: ClockProps) {
     };
 
     return (
-        <div className={`text-text flex items-center gap-8 ${className}`}>
-            <ClockIcon size={16} />
-            <span className="font-mono text-sm">
+        <div className={clsx("text-text flex items-center gap-6", className)}>
+            <ClockIcon size={14} />
+            <span className="font-mono text-xs">
                 {formatTime(milliseconds)}
             </span>
         </div>
@@ -89,9 +90,9 @@ export function AudioClock() {
     }, [audio, isPlaying]);
 
     return (
-        <div className="text-text flex items-center gap-8">
-            <ClockIcon size={16} />
-            <span className="font-mono text-sm" ref={spanRef}>
+        <div className="text-text flex items-center gap-6">
+            <ClockIcon size={14} />
+            <span className="font-mono text-xs" ref={spanRef}>
                 00:00.000
             </span>
         </div>

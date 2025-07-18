@@ -30,9 +30,11 @@ export default function TimelineControls() {
             )}
         >
             {!isFullscreen && (
-                <p className="text-body text-text/60">Timeline</p>
+                <div className="flex items-center justify-between gap-6">
+                    <p className="text-body text-text/60">Timeline</p>
+                    <AudioClock />
+                </div>
             )}
-            <AudioClock />
 
             <div
                 className={clsx("flex gap-12", {
