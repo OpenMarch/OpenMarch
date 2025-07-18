@@ -22,6 +22,7 @@ import {
     getSectionAppearance,
 } from "@/global/classes/SectionAppearance";
 import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
+import { MarcherVisualMap } from "@/stores/MarcherVisualStore";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -914,120 +915,38 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    // CHANGEME
+    // CHANGED
     /**
      * Render the given marcherPages on the canvas
      *
+     * @param marcherVisuals The map of marcher visuals
      * @param marcherPages All of the marcher pages
      * @param pageId The id of the page to render marchers for
-     * @param allMarchers All marchers in the drill
      */
-    renderMarcher = async ({
-        canvasMarcher,
+    renderMarchers = async ({
+        marcherVisuals,
         marcherPages,
         pageId,
     }: {
-        canvasMarcher: CanvasMarcher;
+        marcherVisuals: MarcherVisualMap;
         marcherPages: MarcherPageMap;
         pageId: number;
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
-        // Add canvasMarcher to the canvas if it isn't already
-        if (!canvasMarcher.canvas) {
-            this.add(canvasMarcher); // 'this' should be your Fabric.Canvas instance
-        }
-
-        // Now it's safe to call methods that use canvas
-        canvasMarcher.setMarcherCoords(
-            marcherPages.marcherPagesByPage[pageId][
-                canvasMarcher.marcherObj.id
-            ],
-        );
+        // update coordinate for every canvas marcher
+        const marchers = MarcherPage.getByPageId(marcherPages, pageId);
+        marchers.forEach((marcherPage) => {
+            marcherVisuals[marcherPage.marcher_id]
+                .getCanvasMarcher()
+                .setMarcherCoords(marcherPage);
+        });
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.bringAllControlPointsTooFront();
         this.requestRenderAll();
     };
-
-    /*
-    renderMarchers = async ({
-        marcherPages,
-        pageId,
-        allMarchers,
-    }: {
-        marcherPages: MarcherPageMap;
-        pageId: number;
-        allMarchers: Marcher[];
-    }) => {
-        CanvasMarcher.theme = this.fieldProperties.theme;
-        const sectionAppearances =
-            await SectionAppearance.getSectionAppearances();
-
-        // Get the marcher pages for the target pageId
-        const pageMarcherPageMap = MarcherPage.getByPageId(
-            marcherPages,
-            pageId,
-        );
-
-        // Get the canvas marchers on the canvas
-        const canvasMarchersMap = new Map<number, CanvasMarcher>(
-            this.getCanvasMarchers().map((m) => [m.marcherObj.id, m]),
-        );
-        const allMarchersMap = new Map<number, Marcher>(
-            allMarchers.map((m) => [m.id, m]),
-        );
-
-        // For each marcherPage in the page's marcher map
-        for (const marcherPage of Object.values(pageMarcherPageMap)) {
-            const curCanvasMarcher = canvasMarchersMap.get(
-                marcherPage.marcher_id,
-            );
-            if (!curCanvasMarcher) {
-                const curMarcher = allMarchersMap.get(marcherPage.marcher_id);
-                if (!curMarcher) {
-                    console.error(
-                        "Marcher object not found in the store for given MarcherPage  - renderMarchers: Canvas.tsx",
-                        marcherPage,
-                    );
-                    continue;
-                }
-                const sectionAppearance = getSectionAppearance(
-                    curMarcher.section,
-                    sectionAppearances,
-                );
-                const canvasMarcher = new CanvasMarcher({
-                    marcher: curMarcher,
-                    coordinate: marcherPage,
-                    sectionAppearance,
-                });
-                this.add(canvasMarcher);
-                this.add(canvasMarcher.textLabel);
-            }
-            // Marcher exists on the Canvas, move it to the new location if it has changed
-            else {
-                curCanvasMarcher.setMarcherCoords(marcherPage);
-            }
-        }
-
-        const marcherPageMarcherIds: Set<number> = new Set(
-            pageMarcherPageMap.map((marcherPage) => marcherPage.marcher_id),
-        );
-
-        // Check for any canvas marchers that are no longer in the current marcher pages
-        if (marcherPageMarcherIds.size !== canvasMarchersMap.size) {
-            canvasMarchersMap.forEach((canvasMarcher, marcherId) => {
-                if (!marcherPageMarcherIds.has(marcherId)) {
-                    this.remove(canvasMarcher);
-                }
-            });
-        }
-        if (this._listeners && this._listeners.refreshMarchers)
-            this._listeners?.refreshMarchers();
-        this.bringAllControlPointsTooFront();
-        this.requestRenderAll();
-    };*/
 
     // CHANGEME
     refreshMarchers = () => {
@@ -1095,47 +1014,55 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     // CHANGEME
     /**
-     * Render static marchers for the given page
+     * Render static marchers for the given pages
      *
-     * @param marcherPages All marcher pages
-     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
-     * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @returns The Endpoint objects created
+     * @param marcherVisuals The marcher visual map
+     * @param marcherPages All of the marcher pages
+     * @param prevPageId The id of the page to render marchers for
+     * @param nextPageId The id of the next page to render marchers for
      */
-    renderStaticMarchers = ({
+    renderEndpoints = async ({
+        marcherVisuals,
         marcherPages,
-        intendedMarcherPages,
-        color,
+        prevPageId,
+        nextPageId,
     }: {
+        marcherVisuals: MarcherVisualMap;
         marcherPages: MarcherPageMap;
-        intendedMarcherPages: MarcherPage[];
-        color: string;
+        prevPageId: number | null;
+        nextPageId: number | null;
     }) => {
-        const createdStaticMarchers: Endpoint[] = [];
-
-        intendedMarcherPages.forEach((marcherPage) => {
-            const curMarcher =
-                marcherPages.marcherPagesByMarcher[marcherPage.marcher_id];
-
-            if (!curMarcher) {
-                console.error(
-                    "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
-                    marcherPage,
-                );
-                return;
-            }
-
-            const staticMarcher = new Endpoint({
-                coordinate: marcherPage,
-                color: color,
+        // show previous endpoint and update its coordinates, hide if no previous page
+        if (prevPageId !== null) {
+            const marchers = MarcherPage.getByPageId(marcherPages, prevPageId);
+            marchers.forEach((marcherPage) => {
+                marcherVisuals[marcherPage.marcher_id]
+                    .getPreviousEndpoint()
+                    .show();
+                marcherVisuals[marcherPage.marcher_id]
+                    .getPreviousEndpoint()
+                    .updateCoords(marcherPage);
             });
+        } else {
+            Object.values(marcherVisuals).forEach((marcherVisual) => {
+                marcherVisual.getPreviousEndpoint().hide();
+            });
+        }
 
-            this.add(staticMarcher);
-            createdStaticMarchers.push(staticMarcher);
-        });
-        this.requestRenderAll();
-
-        return createdStaticMarchers;
+        // show next endpoint and update its coordinates, hide if no next page
+        if (nextPageId !== null) {
+            const marchers = MarcherPage.getByPageId(marcherPages, nextPageId);
+            marchers.forEach((marcherPage) => {
+                marcherVisuals[marcherPage.marcher_id].getNextEndpoint().show();
+                marcherVisuals[marcherPage.marcher_id]
+                    .getNextEndpoint()
+                    .updateCoords(marcherPage);
+            });
+        } else {
+            Object.values(marcherVisuals).forEach((marcherVisual) => {
+                marcherVisual.getNextEndpoint().hide();
+            });
+        }
     };
 
     // CHANGEME
@@ -1263,15 +1190,94 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     // CHANGEME
     /**
-     * Render the pathways from the selected page to the given one
+     * Renders pathways, midpoints, and endpoints for the given pages.
+     * If any page is null, the pathway/midpoint/endpoint will be hidden.
      *
-     * @param marcherPages all marcher pages in the drill
-     * @param startPageId the selected page to render the pathway from
-     * @param endPageId the page to render the pathway to
-     * @param color color of the pathway
-     * @param strokeWidth width of the pathway
-     * @param dashed whether the pathway should be dashed
+     * @param marcherVisuals The marcher visual map
+     * @param marcherPages All of the marcher pages
+     * @param prevPageId The id of the page to render paths for
+     * @param currPageId The id of the current page to render paths for
+     * @param nextPageId The id of the next page to render paths for
      */
+    renderPathVisuals = async ({
+        marcherVisuals,
+        marcherPages,
+        prevPageId,
+        currPageId,
+        nextPageId,
+    }: {
+        marcherVisuals: MarcherVisualMap;
+        marcherPages: MarcherPageMap;
+        prevPageId: number | null;
+        currPageId: number;
+        nextPageId: number | null;
+    }) => {
+        // hide/show objects
+        if (prevPageId == null) {
+            Object.values(marcherVisuals).forEach((marcherVisual) => {
+                marcherVisual.getPreviousPathway().hide();
+                marcherVisual.getPreviousMidpoint().hide();
+                marcherVisual.getPreviousEndpoint().hide();
+            });
+        }
+        if (nextPageId == null) {
+            Object.values(marcherVisuals).forEach((marcherVisual) => {
+                marcherVisual.getNextPathway().hide();
+                marcherVisual.getNextMidpoint().hide();
+                marcherVisual.getNextEndpoint().hide();
+            });
+        }
+
+        if (prevPageId !== null) {
+            const prevMarchers = MarcherPage.getByPageId(
+                marcherPages,
+                prevPageId,
+            );
+            prevMarchers.forEach((marcherPage) => {
+                const marcherVisual = marcherVisuals[marcherPage.marcher_id];
+                if (marcherVisual) {
+                    const previousPathway = marcherVisual.getPreviousPathway();
+                    const previousMidpoint =
+                        marcherVisual.getPreviousMidpoint();
+                    const previousEndpoint =
+                        marcherVisual.getPreviousEndpoint();
+
+                    previousPathway.show();
+                    previousMidpoint.show();
+                    previousEndpoint.show();
+
+                    previousPathway.updateEndCoords(marcherPage);
+                    previousMidpoint.updateCoords(marcherPage);
+                    previousEndpoint.updateCoords(marcherPage);
+                }
+            });
+        }
+
+        if (nextPageId !== null) {
+            const nextMarchers = MarcherPage.getByPageId(
+                marcherPages,
+                nextPageId,
+            );
+            nextMarchers.forEach((marcherPage) => {
+                const marcherVisual = marcherVisuals[marcherPage.marcher_id];
+                if (marcherVisual) {
+                    const nextPathway = marcherVisual.getNextPathway();
+                    const nextMidpoint = marcherVisual.getNextMidpoint();
+                    const nextEndpoint = marcherVisual.getNextEndpoint();
+
+                    nextPathway.show();
+                    nextMidpoint.show();
+                    nextEndpoint.show();
+
+                    nextPathway.updateStartCoords(marcherPage);
+                    nextMidpoint.updateCoords(marcherPage);
+                    nextEndpoint.updateCoords(marcherPage);
+                }
+            });
+        }
+    };
+
+    /*
     renderPathwaysAndMidpoints = ({
         marcherPages,
         startPageId,
@@ -1342,7 +1348,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
         this.requestRenderAll();
         return [createdPathways, createdMidpoints];
-    };
+    };*/
 
     /**
      * Rounds an x and y coordinate to the nearest step multiple of the denominator

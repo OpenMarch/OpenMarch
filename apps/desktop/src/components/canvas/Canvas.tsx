@@ -597,14 +597,10 @@ export default function Canvas({
         if (canvas && selectedPage && marchers && marcherPages) {
             canvas.currentPage = selectedPage;
 
-            // Render the marchers on the canvas
-            marchers.forEach((marcher) => {
-                canvas.renderMarcher({
-                    canvasMarcher:
-                        marcherVisuals[marcher.id].getCanvasMarcher(),
-                    marcherPages: marcherPages,
-                    pageId: selectedPage.id,
-                });
+            canvas.renderMarchers({
+                marcherVisuals: marcherVisuals,
+                marcherPages: marcherPages,
+                pageId: selectedPage.id,
             });
         }
     }, [canvas, marcherPages, marchers, selectedPage]);
@@ -613,24 +609,16 @@ export default function Canvas({
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage && fieldProperties) {
+            /*
             for (const pathway of pagePathwaysMidpoints.current) {
                 canvas.remove(pathway);
             }
             pagePathwaysMidpoints.current = [];
-            canvas.removeEndpoints();
 
             if (
                 uiSettings.previousPaths &&
                 selectedPage.previousPageId !== null
             ) {
-                canvas.renderStaticMarchers({
-                    marcherPages: marcherPages,
-                    intendedMarcherPages: MarcherPage.getByPageId(
-                        marcherPages,
-                        selectedPage.previousPageId,
-                    ),
-                    color: rgbaToString(fieldProperties.theme.previousPath),
-                });
                 const [renderedPathways, renderedMidpoints] =
                     canvas.renderPathwaysAndMidpoints({
                         marcherPages: marcherPages,
@@ -644,14 +632,6 @@ export default function Canvas({
                 );
             }
             if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
-                canvas.renderStaticMarchers({
-                    marcherPages: marcherPages,
-                    intendedMarcherPages: MarcherPage.getByPageId(
-                        marcherPages,
-                        selectedPage.nextPageId,
-                    ),
-                    color: rgbaToString(fieldProperties.theme.nextPath),
-                });
                 const [renderedPathways, renderedMidpoints] =
                     canvas.renderPathwaysAndMidpoints({
                         marcherPages: marcherPages,
@@ -663,7 +643,20 @@ export default function Canvas({
                     ...renderedPathways,
                     ...renderedMidpoints,
                 );
-            }
+            }*/
+
+            canvas.renderPathways({});
+
+            canvas.renderEndpoints({
+                marcherVisuals: marcherVisuals,
+                marcherPages: marcherPages,
+                prevPageId: uiSettings.previousPaths
+                    ? selectedPage.previousPageId
+                    : null,
+                nextPageId: uiSettings.nextPaths
+                    ? selectedPage.nextPageId
+                    : null,
+            });
 
             canvas.sendCanvasMarchersToFront();
         }
@@ -885,13 +878,10 @@ export default function Canvas({
                     clearTimeout(timeoutID.current);
                 }
 
-                marchers.forEach((marcher) => {
-                    canvas.renderMarcher({
-                        canvasMarcher:
-                            marcherVisuals[marcher.id].getCanvasMarcher(),
-                        marcherPages: marcherPages,
-                        pageId: selectedPage.id,
-                    });
+                canvas.renderMarchers({
+                    marcherVisuals: marcherVisuals,
+                    marcherPages: marcherPages,
+                    pageId: selectedPage.id,
                 });
             }
         }

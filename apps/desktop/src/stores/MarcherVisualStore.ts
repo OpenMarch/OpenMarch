@@ -2,8 +2,11 @@ import { create } from "zustand";
 import Marcher from "@/global/classes/Marcher";
 import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
 
+/** MarcherVisualMap is a type that maps marcher IDs to their visual groups. **/
+export type MarcherVisualMap = Record<number, MarcherVisualGroup>;
+
 interface MarcherVisualStoreInterface {
-    marcherVisuals: Record<number, MarcherVisualGroup>;
+    marcherVisuals: MarcherVisualMap;
     updateMarcherVisuals: (receivedMarchers: Marcher[]) => Promise<void>;
 }
 

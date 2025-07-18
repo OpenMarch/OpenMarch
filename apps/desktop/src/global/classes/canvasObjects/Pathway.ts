@@ -11,8 +11,8 @@ export default class Pathway extends fabric.Line {
 
     /**
      * @param marcherId The ID of the marcher this pathway is associated with
-     * @param start The starting MarcherPage
-     * @param end The ending MarcherPage
+     * @param start The coordinate pointing to the CanvasMarcher
+     * @param end The coordinate pointing to the Endpoint
      * @param color Color of the pathway
      * @param strokeWidth Width of the pathway
      * @param dashed Whether the pathway should be dashed
@@ -48,5 +48,33 @@ export default class Pathway extends fabric.Line {
             },
         );
         this.marcherId = marcherId;
+    }
+
+    // Makes the endpoint invisible
+    hide(): void {
+        this.set("visible", false);
+    }
+
+    // Makes the endpoint visible
+    show(): void {
+        this.set("visible", true);
+    }
+
+    // update coords of start of pathway
+    updateStartCoords(coord: {
+        x: number;
+        y: number;
+        [key: string]: any;
+    }): void {
+        this.set("x1", coord.x + FieldProperties.GRID_STROKE_WIDTH / 2);
+        this.set("y1", coord.y + FieldProperties.GRID_STROKE_WIDTH / 2);
+        this.setCoords();
+    }
+
+    // update coords of end of pathway
+    updateEndCoords(coord: { x: number; y: number; [key: string]: any }): void {
+        this.set("x2", coord.x + FieldProperties.GRID_STROKE_WIDTH / 2);
+        this.set("y2", coord.y + FieldProperties.GRID_STROKE_WIDTH / 2);
+        this.setCoords();
     }
 }

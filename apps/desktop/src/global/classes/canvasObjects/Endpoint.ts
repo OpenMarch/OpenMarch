@@ -37,4 +37,21 @@ export default class Endpoint extends fabric.Circle {
         });
         this.marcherId = coordinate.marcher_id;
     }
+
+    // Sets the coordinates of an endpoint
+    updateCoords(coord: { x: number; y: number; [key: string]: any }): void {
+        this.set("left", coord.x + Endpoint.gridOffset);
+        this.set("top", coord.y + Endpoint.gridOffset);
+        this.setCoords();
+    }
+
+    // Makes the endpoint invisible
+    hide(): void {
+        this.set("visible", false);
+    }
+
+    // Makes the endpoint visible
+    show(): void {
+        this.set("visible", true);
+    }
 }

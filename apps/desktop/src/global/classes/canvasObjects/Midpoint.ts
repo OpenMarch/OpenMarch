@@ -44,4 +44,21 @@ export default class Midpoint extends fabric.Circle {
         });
         this.marcherId = marcherId;
     }
+
+    // Sets the coordinates of a midpoint
+    updateCoords(coord: { x: number; y: number; [key: string]: any }): void {
+        this.set("left", coord.x);
+        this.set("top", coord.y);
+        this.setCoords();
+    }
+
+    // Makes the midpoint invisible
+    hide(): void {
+        this.set("visible", false);
+    }
+
+    // Makes the midpoint visible
+    show(): void {
+        this.set("visible", true);
+    }
 }
