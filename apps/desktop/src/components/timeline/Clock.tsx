@@ -14,7 +14,7 @@ export function Clock({ milliseconds, className = "" }: ClockProps) {
         const totalSeconds = Math.floor(ms / 1000);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
-        const remainingMs = ms % 1000;
+        const remainingMs = Math.floor(ms % 1000);
 
         return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}.${remainingMs.toString().padStart(3, "0")}`;
     };
@@ -34,7 +34,7 @@ export function AudioClock() {
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage } = useSelectedPage()!;
     const spanRef = useRef<HTMLSpanElement>(null);
-    const wasPlaying = useRef(false);
+    const animationFrameRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (spanRef.current && selectedPage) {
@@ -47,13 +47,11 @@ export function AudioClock() {
                 .toString()
                 .padStart(2, "0")}.${remainingMs.toString().padStart(3, "0")}`;
         }
-    }, [selectedPage]);
+    }, [selectedPage, isPlaying]);
 
     useEffect(() => {
-        let animationFrame: number;
-
         const updateClock = () => {
-            if (spanRef.current) {
+            if (spanRef.current && isPlaying) {
                 const ms = audio.currentTime * 1000;
                 const totalSeconds = Math.floor(ms / 1000);
                 const minutes = Math.floor(totalSeconds / 60);
@@ -65,20 +63,29 @@ export function AudioClock() {
                         2,
                         "0",
                     )}.${remainingMs.toString().padStart(3, "0")}`;
-            }
 
-            animationFrame = requestAnimationFrame(updateClock);
+                // Only continue the animation loop if still playing
+                animationFrameRef.current = requestAnimationFrame(updateClock);
+            }
         };
 
         if (isPlaying) {
-            wasPlaying.current = true;
-            animationFrame = requestAnimationFrame(updateClock);
-        } else if (wasPlaying.current) {
-            wasPlaying.current = false;
-            animationFrame = requestAnimationFrame(updateClock);
+            // Start the animation loop
+            animationFrameRef.current = requestAnimationFrame(updateClock);
+        } else {
+            // Cancel any ongoing animation when not playing
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
         }
 
-        return () => cancelAnimationFrame(animationFrame);
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+        };
     }, [audio, isPlaying]);
 
     return (
