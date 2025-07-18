@@ -592,7 +592,7 @@ export default function Canvas({
         if (canvas) canvas.setUiSettings(uiSettings);
     }, [canvas, uiSettings]);
 
-    // Update/render the marchers when the selected page or the marcher pages change
+    // Render the marchers when the selected page or the marcher pages change
     useEffect(() => {
         if (canvas && selectedPage && marchers && marcherPages) {
             canvas.currentPage = selectedPage;
@@ -605,59 +605,16 @@ export default function Canvas({
         }
     }, [canvas, marcherPages, marchers, selectedPage]);
 
-    // CHANGEME
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage && fieldProperties) {
-            /*
-            for (const pathway of pagePathwaysMidpoints.current) {
-                canvas.remove(pathway);
-            }
-            pagePathwaysMidpoints.current = [];
-
-            if (
-                uiSettings.previousPaths &&
-                selectedPage.previousPageId !== null
-            ) {
-                const [renderedPathways, renderedMidpoints] =
-                    canvas.renderPathwaysAndMidpoints({
-                        marcherPages: marcherPages,
-                        startPageId: selectedPage.previousPageId,
-                        endPageId: selectedPage.id,
-                        color: rgbaToString(fieldProperties.theme.previousPath),
-                    });
-                pagePathwaysMidpoints.current.push(
-                    ...renderedPathways,
-                    ...renderedMidpoints,
-                );
-            }
-            if (uiSettings.nextPaths && selectedPage.nextPageId !== null) {
-                const [renderedPathways, renderedMidpoints] =
-                    canvas.renderPathwaysAndMidpoints({
-                        marcherPages: marcherPages,
-                        startPageId: selectedPage.id,
-                        endPageId: selectedPage.nextPageId,
-                        color: rgbaToString(fieldProperties.theme.nextPath),
-                    });
-                pagePathwaysMidpoints.current.push(
-                    ...renderedPathways,
-                    ...renderedMidpoints,
-                );
-            }*/
-
-            canvas.renderPathways({});
-
-            canvas.renderEndpoints({
+            canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
                 marcherPages: marcherPages,
-                prevPageId: uiSettings.previousPaths
-                    ? selectedPage.previousPageId
-                    : null,
-                nextPageId: uiSettings.nextPaths
-                    ? selectedPage.nextPageId
-                    : null,
+                prevPageId: selectedPage.previousPageId,
+                currPageId: selectedPage.id,
+                nextPageId: selectedPage.nextPageId,
             });
-
             canvas.sendCanvasMarchersToFront();
         }
     }, [

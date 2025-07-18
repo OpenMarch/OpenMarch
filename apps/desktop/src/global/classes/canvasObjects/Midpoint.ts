@@ -1,10 +1,13 @@
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
+import FieldProperties from "@/global/classes/FieldProperties";
 
 /**
  * A Midpoint is the object used on the canvas to represent the midpoint marker of a pathway.
  */
 export default class Midpoint extends fabric.Circle {
+    private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
+
     /** The marcher this midpoint is for */
     marcherId: number;
 
@@ -31,15 +34,17 @@ export default class Midpoint extends fabric.Circle {
         outerColor: string;
         radius?: number;
     }) {
-        const midX = (start.x + end.x) / 2;
-        const midY = (start.y + end.y) / 2;
+        const midX = (start.x + end.x) / 2 + Midpoint.gridOffset;
+        const midY = (start.y + end.y) / 2 + Midpoint.gridOffset;
         super({
-            left: midX - radius,
-            top: midY - radius,
+            left: midX,
+            top: midY,
             radius,
             fill: innerColor,
             stroke: outerColor,
             strokeWidth: 2,
+            originX: "center",
+            originY: "center",
             ...NoControls,
         });
         this.marcherId = marcherId;
@@ -47,8 +52,8 @@ export default class Midpoint extends fabric.Circle {
 
     // Sets the coordinates of a midpoint
     updateCoords(coord: { x: number; y: number; [key: string]: any }): void {
-        this.set("left", coord.x);
-        this.set("top", coord.y);
+        this.set("left", coord.x + Midpoint.gridOffset);
+        this.set("top", coord.y + Midpoint.gridOffset);
         this.setCoords();
     }
 

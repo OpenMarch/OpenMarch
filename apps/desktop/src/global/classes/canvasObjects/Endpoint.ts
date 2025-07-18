@@ -4,11 +4,11 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 
 /**
- * An Endpoint is fabric circle that cannot be edited by the user.
- * It is used to represent the coordinates on the previous and next pages.
+ * A Midpoint is the object used on the canvas to represent the endpoint marker of a pathway.
  */
 export default class Endpoint extends fabric.Circle {
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
+
     /** The id of the marcher associated with this static marcher */
     marcherId?: number;
 

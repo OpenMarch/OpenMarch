@@ -28,7 +28,7 @@ export default class MarcherVisualGroup {
 
     /**
      * Creates a new MarcherVisualGroup instance.
-     * @param marcher
+     * @param marcher the marcher this visual group is associated with
      */
     constructor(marcher: Marcher) {
         this.marcherId = marcher.id;
@@ -101,17 +101,6 @@ export default class MarcherVisualGroup {
     }
     getNextEndpoint() {
         return this.nextEndPoint;
-    }
-
-    getAllPathVisuals() {
-        return [
-            this.previousPathway,
-            this.nextPathway,
-            this.previousMidpoint,
-            this.nextMidpoint,
-            this.previousEndPoint,
-            this.nextEndPoint,
-        ];
     }
 }
 

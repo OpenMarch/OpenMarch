@@ -1188,16 +1188,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return [pathway, midpoint];
     };
 
-    // CHANGEME
     /**
-     * Renders pathways, midpoints, and endpoints for the given pages.
+     * Renders pathways, midpoints, and endpoints for the given pages,
+     * at the coordinates in the MarcherPages of the provided pages.
      * If any page is null, the pathway/midpoint/endpoint will be hidden.
      *
      * @param marcherVisuals The marcher visual map
-     * @param marcherPages All of the marcher pages
-     * @param prevPageId The id of the page to render paths for
-     * @param currPageId The id of the current page to render paths for
-     * @param nextPageId The id of the next page to render paths for
+     * @param marcherPages The marcher pages map
+     * @param prevPageId The id of the previous page
+     * @param currPageId The id of the current page
+     * @param nextPageId The id of the next page
      */
     renderPathVisuals = async ({
         marcherVisuals,
@@ -1209,146 +1209,74 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         marcherVisuals: MarcherVisualMap;
         marcherPages: MarcherPageMap;
         prevPageId: number | null;
-        currPageId: number;
+        currPageId: number | null;
         nextPageId: number | null;
     }) => {
-        // hide/show objects
-        if (prevPageId == null) {
-            Object.values(marcherVisuals).forEach((marcherVisual) => {
-                marcherVisual.getPreviousPathway().hide();
-                marcherVisual.getPreviousMidpoint().hide();
-                marcherVisual.getPreviousEndpoint().hide();
-            });
-        }
-        if (nextPageId == null) {
-            Object.values(marcherVisuals).forEach((marcherVisual) => {
-                marcherVisual.getNextPathway().hide();
-                marcherVisual.getNextMidpoint().hide();
-                marcherVisual.getNextEndpoint().hide();
-            });
-        }
+        // get the marcher page maps for the previous, current, and next pages
+        const prevByMarcher =
+            prevPageId !== null
+                ? marcherPages.marcherPagesByPage[prevPageId] || {}
+                : {};
+        const currByMarcher =
+            currPageId !== null
+                ? marcherPages.marcherPagesByPage[currPageId] || {}
+                : {};
+        const nextByMarcher =
+            nextPageId !== null
+                ? marcherPages.marcherPagesByPage[nextPageId] || {}
+                : {};
 
-        if (prevPageId !== null) {
-            const prevMarchers = MarcherPage.getByPageId(
-                marcherPages,
-                prevPageId,
-            );
-            prevMarchers.forEach((marcherPage) => {
-                const marcherVisual = marcherVisuals[marcherPage.marcher_id];
-                if (marcherVisual) {
-                    const previousPathway = marcherVisual.getPreviousPathway();
-                    const previousMidpoint =
-                        marcherVisual.getPreviousMidpoint();
-                    const previousEndpoint =
-                        marcherVisual.getPreviousEndpoint();
+        // iterate through each marcher visual and update the pathways, midpoints, and endpoints
+        Object.entries(marcherVisuals).forEach(([marcherIdStr, visual]) => {
+            const marcherId = Number(marcherIdStr);
+            const prev =
+                prevPageId !== null ? prevByMarcher[marcherId] : undefined;
+            const curr =
+                currPageId !== null ? currByMarcher[marcherId] : undefined;
+            const next =
+                nextPageId !== null ? nextByMarcher[marcherId] : undefined;
 
-                    previousPathway.show();
-                    previousMidpoint.show();
-                    previousEndpoint.show();
+            // previous pathway, midpoint, endpoint
+            if (prevPageId !== null && prev && curr) {
+                visual.getPreviousPathway().show();
+                visual.getPreviousPathway().updateStartCoords(curr);
+                visual.getPreviousPathway().updateEndCoords(prev);
 
-                    previousPathway.updateEndCoords(marcherPage);
-                    previousMidpoint.updateCoords(marcherPage);
-                    previousEndpoint.updateCoords(marcherPage);
-                }
-            });
-        }
-
-        if (nextPageId !== null) {
-            const nextMarchers = MarcherPage.getByPageId(
-                marcherPages,
-                nextPageId,
-            );
-            nextMarchers.forEach((marcherPage) => {
-                const marcherVisual = marcherVisuals[marcherPage.marcher_id];
-                if (marcherVisual) {
-                    const nextPathway = marcherVisual.getNextPathway();
-                    const nextMidpoint = marcherVisual.getNextMidpoint();
-                    const nextEndpoint = marcherVisual.getNextEndpoint();
-
-                    nextPathway.show();
-                    nextMidpoint.show();
-                    nextEndpoint.show();
-
-                    nextPathway.updateStartCoords(marcherPage);
-                    nextMidpoint.updateCoords(marcherPage);
-                    nextEndpoint.updateCoords(marcherPage);
-                }
-            });
-        }
-    };
-
-    /*
-    renderPathwaysAndMidpoints = ({
-        marcherPages,
-        startPageId,
-        endPageId,
-        color,
-        strokeWidth,
-        dashed = false,
-    }: {
-        marcherPages: MarcherPageMap;
-        startPageId: number;
-        endPageId: number;
-        color: string;
-        strokeWidth?: number;
-        dashed?: boolean;
-    }) => {
-        const createdPathways: Pathway[] = [];
-        const createdMidpoints: Midpoint[] = [];
-
-        // Get MarcherPages for the start and end pages
-        const endPageMarcherPages = MarcherPage.getByPageId(
-            marcherPages,
-            endPageId,
-        );
-        const startPageMarcherPages =
-            marcherPages.marcherPagesByPage[startPageId];
-
-        endPageMarcherPages.forEach((previousMarcherPage) => {
-            const currentMarcherPage =
-                startPageMarcherPages[previousMarcherPage.marcher_id];
-
-            // If the marcher does not exist on the selected page, return
-            if (!currentMarcherPage) {
-                console.error(
-                    "Selected marcher page not found - renderPathways: Canvas.tsx",
-                    previousMarcherPage,
-                );
-                return;
-            }
-
-            // Add pathways
-            const pathway = new Pathway({
-                start: previousMarcherPage,
-                end: currentMarcherPage,
-                color,
-                strokeWidth,
-                dashed,
-                marcherId: previousMarcherPage.marcher_id,
-            });
-            createdPathways.push(pathway);
-            this.add(pathway);
-
-            // Add midpoints if the marcher moves
-            if (
-                previousMarcherPage.x !== currentMarcherPage.x ||
-                previousMarcherPage.y !== currentMarcherPage.y
-            ) {
-                const midpoint = new Midpoint({
-                    start: previousMarcherPage,
-                    end: currentMarcherPage,
-                    innerColor: "white",
-                    outerColor: color,
-                    marcherId: previousMarcherPage.marcher_id,
+                visual.getPreviousMidpoint().show();
+                visual.getPreviousMidpoint().updateCoords({
+                    x: (curr.x + prev.x) / 2,
+                    y: (curr.y + prev.y) / 2,
                 });
 
-                createdMidpoints.push(midpoint);
-                this.add(midpoint);
+                visual.getPreviousEndpoint().show();
+                visual.getPreviousEndpoint().updateCoords(prev);
+            } else {
+                visual.getPreviousPathway().hide();
+                visual.getPreviousMidpoint().hide();
+                visual.getPreviousEndpoint().hide();
+            }
+
+            // next pathway, midpoint, endpoint
+            if (nextPageId !== null && next && curr) {
+                visual.getNextPathway().show();
+                visual.getNextPathway().updateStartCoords(curr);
+                visual.getNextPathway().updateEndCoords(next);
+
+                visual.getNextMidpoint().show();
+                visual.getNextMidpoint().updateCoords({
+                    x: (curr.x + next.x) / 2,
+                    y: (curr.y + next.y) / 2,
+                });
+
+                visual.getNextEndpoint().show();
+                visual.getNextEndpoint().updateCoords(next);
+            } else {
+                visual.getNextPathway().hide();
+                visual.getNextMidpoint().hide();
+                visual.getNextEndpoint().hide();
             }
         });
-        this.requestRenderAll();
-        return [createdPathways, createdMidpoints];
-    };*/
+    };
 
     /**
      * Rounds an x and y coordinate to the nearest step multiple of the denominator

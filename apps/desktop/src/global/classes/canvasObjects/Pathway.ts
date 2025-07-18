@@ -32,21 +32,12 @@ export default class Pathway extends fabric.Line {
         strokeWidth?: number;
         dashed?: boolean;
     }) {
-        const gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2;
-        super(
-            [
-                start.x - gridOffset,
-                start.y - gridOffset,
-                end.x - gridOffset,
-                end.y - gridOffset,
-            ],
-            {
-                stroke: color,
-                strokeWidth,
-                strokeDashArray: dashed ? [5, 3] : [],
-                ...NoControls,
-            },
-        );
+        super([start.x, start.y, end.x, end.y], {
+            stroke: color,
+            strokeWidth,
+            strokeDashArray: dashed ? [5, 3] : [],
+            ...NoControls,
+        });
         this.marcherId = marcherId;
     }
 
@@ -66,15 +57,15 @@ export default class Pathway extends fabric.Line {
         y: number;
         [key: string]: any;
     }): void {
-        this.set("x1", coord.x + FieldProperties.GRID_STROKE_WIDTH / 2);
-        this.set("y1", coord.y + FieldProperties.GRID_STROKE_WIDTH / 2);
+        this.set("x1", coord.x);
+        this.set("y1", coord.y);
         this.setCoords();
     }
 
     // update coords of end of pathway
     updateEndCoords(coord: { x: number; y: number; [key: string]: any }): void {
-        this.set("x2", coord.x + FieldProperties.GRID_STROKE_WIDTH / 2);
-        this.set("y2", coord.y + FieldProperties.GRID_STROKE_WIDTH / 2);
+        this.set("x2", coord.x);
+        this.set("y2", coord.y);
         this.setCoords();
     }
 }
