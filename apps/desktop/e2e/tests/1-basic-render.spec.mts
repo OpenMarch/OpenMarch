@@ -46,9 +46,7 @@ test("Canvas is visible", async ({ electronApp }) => {
     expect(isPackaged).toBe(false);
     await expect(page.getByText("FileAlignmentView")).toBeVisible();
     await expect(page.getByText("InspectorPage")).toBeVisible();
-    await expect(
-        page.locator("div").filter({ hasText: /^Timeline$/ }),
-    ).toBeVisible();
+    await expect(page.getByText("Timeline")).toBeVisible();
     await expect(page.locator("canvas").nth(1)).toBeVisible();
 });
 
