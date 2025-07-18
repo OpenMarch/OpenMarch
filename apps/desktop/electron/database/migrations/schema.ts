@@ -5,6 +5,8 @@ import {
     real,
     index,
     blob,
+    check,
+    unique,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -20,25 +22,37 @@ export const history_redo = sqliteTable("history_redo", {
     sql: text().notNull(),
 });
 
-export const history_stats = sqliteTable("history_stats", {
-    id: integer().primaryKey(),
-    cur_undo_group: integer().notNull(),
-    cur_redo_group: integer().notNull(),
-    group_limit: integer().notNull(),
-});
+export const history_stats = sqliteTable(
+    "history_stats",
+    {
+        id: integer().primaryKey(),
+        cur_undo_group: integer().notNull(),
+        cur_redo_group: integer().notNull(),
+        group_limit: integer().notNull(),
+    },
+    (_table) => [check("history_stats_id_check", sql`id = 1`)],
+);
 
-export const beats = sqliteTable("beats", {
-    id: integer().primaryKey(),
-    duration: real().notNull(),
-    position: integer().notNull(),
-    include_in_measure: integer().default(1).notNull(),
-    notes: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
-    updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-});
+export const beats = sqliteTable(
+    "beats",
+    {
+        id: integer().primaryKey(),
+        duration: real().notNull(),
+        position: integer().notNull(),
+        include_in_measure: integer().default(1).notNull(),
+        notes: text(),
+        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        updated_at: text()
+            .default("sql`(CURRENT_TIMESTAMP)`")
+            .notNull()
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+    },
+    (_table) => [
+        check("beats_duration_check", sql`duration >= 0`),
+        check("beats_position_check", sql`position >= 0`),
+        check("beats_include_in_measure", sql`include_in_measure IN (0, 1)`),
+    ],
+);
 
 export const measures = sqliteTable("measures", {
     id: integer().primaryKey(),
@@ -54,33 +68,44 @@ export const measures = sqliteTable("measures", {
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
-export const pages = sqliteTable("pages", {
-    id: integer().primaryKey(),
-    is_subset: integer().default(0).notNull(),
-    notes: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
-    updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-    start_beat: integer()
-        .notNull()
-        .references(() => beats.id),
-});
+export const pages = sqliteTable(
+    "pages",
+    {
+        id: integer().primaryKey(),
+        is_subset: integer().default(0).notNull(),
+        notes: text(),
+        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        updated_at: text()
+            .default("sql`(CURRENT_TIMESTAMP)`")
+            .notNull()
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        start_beat: integer()
+            .notNull()
+            .references(() => beats.id),
+    },
+    (table) => [
+        check("pages_is_subset_check", sql`is_subset IN (0, 1)`),
+        unique().on(table.start_beat),
+    ],
+);
 
-export const marchers = sqliteTable("marchers", {
-    id: integer().primaryKey(),
-    name: text(),
-    section: text().notNull(),
-    year: text(),
-    notes: text(),
-    drill_prefix: text().notNull(),
-    drill_order: integer().notNull(),
-    created_at: text().notNull(),
-    updated_at: text()
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-});
+export const marchers = sqliteTable(
+    "marchers",
+    {
+        id: integer().primaryKey(),
+        name: text(),
+        section: text().notNull(),
+        year: text(),
+        notes: text(),
+        drill_prefix: text().notNull(),
+        drill_order: integer().notNull(),
+        created_at: text().notNull(),
+        updated_at: text()
+            .notNull()
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+    },
+    (table) => [unique().on(table.drill_prefix, table.drill_order)],
+);
 
 export const marcher_pages = sqliteTable(
     "marcher_pages",
@@ -99,19 +124,49 @@ export const marcher_pages = sqliteTable(
         updated_at: text()
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        svg_path: text(),
         notes: text(),
     },
     (table) => [
         index("index_marcher_pages_on_page_id").on(table.page_id),
         index("index_marcher_pages_on_marcher_id").on(table.marcher_id),
+        unique().on(table.marcher_id, table.page_id),
     ],
 );
 
-export const field_properties = sqliteTable("field_properties", {
-    id: integer().primaryKey(),
-    json_data: text().notNull(),
-    image: blob(),
-});
+export const midsets = sqliteTable(
+    "midsets",
+    {
+        id: integer().primaryKey(),
+        page_id: integer()
+            .notNull()
+            .references(() => pages.id, { onDelete: "cascade" }),
+        x: real().notNull(),
+        y: real().notNull(),
+        placement: real().notNull(),
+        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        updated_at: text()
+            .default("sql`(CURRENT_TIMESTAMP)`")
+            .notNull()
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        svg_path: text(),
+        notes: text(),
+    },
+    (table) => [
+        check("placement_check", sql`placement > 0 AND placement < 1`),
+        unique().on(table.page_id, table.placement),
+    ],
+);
+
+export const field_properties = sqliteTable(
+    "field_properties",
+    {
+        id: integer().primaryKey(),
+        json_data: text().notNull(),
+        image: blob(),
+    },
+    (_table) => [check("field_properties_id_check", sql`id = 1`)],
+);
 
 export const audio_files = sqliteTable("audio_files", {
     id: integer().primaryKey(),
@@ -136,22 +191,26 @@ export const shapes = sqliteTable("shapes", {
     notes: text(),
 });
 
-export const shape_pages = sqliteTable("shape_pages", {
-    id: integer().primaryKey(),
-    shape_id: integer()
-        .notNull()
-        .references(() => shapes.id, { onDelete: "cascade" }),
-    page_id: integer()
-        .notNull()
-        .references(() => pages.id, { onDelete: "cascade" }),
-    svg_path: text().notNull(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
-    updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-    notes: text(),
-});
+export const shape_pages = sqliteTable(
+    "shape_pages",
+    {
+        id: integer().primaryKey(),
+        shape_id: integer()
+            .notNull()
+            .references(() => shapes.id, { onDelete: "cascade" }),
+        page_id: integer()
+            .notNull()
+            .references(() => pages.id, { onDelete: "cascade" }),
+        svg_path: text().notNull(),
+        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        updated_at: text()
+            .default("sql`(CURRENT_TIMESTAMP)`")
+            .notNull()
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        notes: text(),
+    },
+    (table) => [unique().on(table.page_id, table.shape_id)],
+);
 
 export const shape_page_marchers = sqliteTable(
     "shape_page_marchers",
@@ -159,10 +218,10 @@ export const shape_page_marchers = sqliteTable(
         id: integer().primaryKey(),
         shape_page_id: integer()
             .notNull()
-            .references(() => shape_pages.id),
+            .references(() => shape_pages.id, { onDelete: "cascade" }),
         marcher_id: integer()
             .notNull()
-            .references(() => marchers.id),
+            .references(() => marchers.id, { onDelete: "cascade" }),
         position_order: integer(),
         created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
         updated_at: text()
@@ -174,6 +233,8 @@ export const shape_page_marchers = sqliteTable(
     (table) => [
         index("idx-spm-marcher_id").on(table.marcher_id),
         index("idx-spm-shape_page_id").on(table.shape_page_id),
+        unique().on(table.shape_page_id, table.marcher_id),
+        unique().on(table.shape_page_id, table.position_order),
     ],
 );
 
@@ -190,7 +251,14 @@ export const section_appearances = sqliteTable("section_appearances", {
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
-export const utility = sqliteTable("utility", {
-    id: integer().primaryKey(),
-    last_page_counts: integer(),
-});
+export const utility = sqliteTable(
+    "utility",
+    {
+        id: integer().primaryKey(),
+        last_page_counts: integer(),
+    },
+    (_table) => [
+        check("utility_last_page_counts_check", sql`last_page_counts > 0`),
+        check("utility_id_check", sql`id = 0`),
+    ],
+);

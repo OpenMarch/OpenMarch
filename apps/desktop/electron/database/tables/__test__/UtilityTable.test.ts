@@ -168,7 +168,7 @@ describe("UtilityTable", () => {
                 `,
                     )
                     .run(),
-            ).toThrow("CHECK constraint failed: id = 0");
+            ).toThrow("CHECK constraint failed: utility_id_check");
         });
 
         describe("last_page_counts", () => {
@@ -183,7 +183,7 @@ describe("UtilityTable", () => {
                                 `,
                         )
                         .run(),
-                ).toThrow("CHECK constraint failed: last_page_counts >= 1");
+                ).toThrow("utility_last_page_counts_check");
             });
 
             it("should allow last_page_counts to be null", () => {

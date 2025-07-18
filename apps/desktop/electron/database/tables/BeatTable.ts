@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import * as History from "../database.history";
 import * as DbActions from "../DatabaseActions";
 import Constants from "../../../src/global/Constants";
-import { DB, getOrm } from "../db";
+import { getOrm } from "../db";
 import { eq } from "drizzle-orm";
 import * as schema from "../migrations/schema";
 
@@ -168,6 +168,21 @@ export function shiftBeats({
         db,
     });
     let output: DbActions.DatabaseResponse<DatabaseBeat[]>;
+
+    if (startingPosition <= 0) {
+        return {
+            success: false,
+            data: [],
+            error: { message: "Cannot shift beat at position <= 0" },
+        };
+    }
+    if (startingPosition + shiftAmount <= 0) {
+        return {
+            success: false,
+            data: [],
+            error: { message: "Cannot shift beats to any position <= 0" },
+        };
+    }
 
     if (allBeatsResponse.success) {
         const allBeats = allBeatsResponse.data;

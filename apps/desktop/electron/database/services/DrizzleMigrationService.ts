@@ -6,7 +6,9 @@ import path from "path";
 import fs from "fs";
 import Constants, { TablesWithHistory } from "../../../src/global/Constants";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
-import { createUndoTriggers } from "../database.history";
+import { createUndoTriggers, dropAllUndoTriggers } from "../database.history";
+import { dropAllTriggers } from "../migrations/triggers";
+import { createAllTriggers } from "../migrations/triggers";
 
 export type DB = BetterSQLite3Database<typeof schema>;
 
@@ -46,9 +48,15 @@ export class DrizzleMigrationService {
             folder = folder.replace("/dist-electron/main", "");
         }
 
-        console.log("migrationsFolder", folder);
+        console.debug("migrationsFolder:", folder);
 
         try {
+            console.log("Dropping history triggers...");
+            dropAllUndoTriggers(this.rawDb);
+            dropAllTriggers(this.rawDb);
+            console.log("Disabling foreign key checks...");
+            this.rawDb.pragma("foreign_keys = OFF");
+
             console.log("Applying pending Drizzle migrations...");
 
             await migrate(this.db, {
@@ -60,6 +68,15 @@ export class DrizzleMigrationService {
         } catch (error) {
             console.error("Error applying Drizzle migrations:", error);
             throw error;
+        } finally {
+            console.log("Recreating history triggers...");
+            for (const table of TablesWithHistory) {
+                createUndoTriggers(this.rawDb, table);
+            }
+            console.log("Recreating triggers...");
+            createAllTriggers(this.rawDb);
+            console.log("Enabling foreign key checks...");
+            this.rawDb.pragma("foreign_keys = ON");
         }
     }
 
@@ -135,5 +152,7 @@ export class DrizzleMigrationService {
         for (const table of TablesWithHistory) {
             createUndoTriggers(db, table);
         }
+
+        createAllTriggers(db);
     }
 }
