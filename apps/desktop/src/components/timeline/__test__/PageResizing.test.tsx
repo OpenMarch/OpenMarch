@@ -27,11 +27,18 @@ import PageTimeline from "../TimelineContainer";
 import { ModifiedPageArgs } from "electron/database/tables/PageTable";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { TolgeeProvider } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
-    <ThemeProvider>
-        <TooltipProvider>{children}</TooltipProvider>
-    </ThemeProvider>
+    <TolgeeProvider
+        tolgee={tolgee}
+        fallback="Loading..." // loading fallback
+    >
+        <ThemeProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+        </ThemeProvider>
+    </TolgeeProvider>
 );
 
 // Mock the hooks

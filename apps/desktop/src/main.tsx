@@ -5,10 +5,10 @@ import "./styles/index.css";
 import "@fontsource/dm-mono";
 import "@fontsource/dm-sans";
 import { ThemeProvider } from "./context/ThemeContext";
-import { TolgeeProvider } from "@tolgee/react";
 import * as Sentry from "@sentry/electron/renderer";
 import posthog from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
+import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 
 const options = {
