@@ -1,6 +1,8 @@
 import FieldProperties from "@/global/classes/FieldProperties";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
+import { rgbaToString } from "@/global/classes/FieldTheme";
+import { RgbaColor } from "@uiw/react-color";
 
 /**
  * A Pathway is the object used on the canvas to represent a pathway between two marchers.
@@ -41,6 +43,11 @@ export default class Pathway extends fabric.Line {
         this.marcherId = marcherId;
     }
 
+    // Set color of the pathway
+    setColor(color: RgbaColor): void {
+        this.set("stroke", rgbaToString(color));
+    }
+
     // Makes the endpoint invisible
     hide(): void {
         this.set("visible", false);
@@ -51,7 +58,7 @@ export default class Pathway extends fabric.Line {
         this.set("visible", true);
     }
 
-    // update coords of start of pathway
+    // Update coords of start of pathway
     updateStartCoords(coord: {
         x: number;
         y: number;
@@ -62,7 +69,7 @@ export default class Pathway extends fabric.Line {
         this.setCoords();
     }
 
-    // update coords of end of pathway
+    // Update coords of end of pathway
     updateEndCoords(coord: { x: number; y: number; [key: string]: any }): void {
         this.set("x2", coord.x);
         this.set("y2", coord.y);

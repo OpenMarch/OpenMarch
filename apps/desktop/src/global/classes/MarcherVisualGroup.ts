@@ -42,14 +42,14 @@ export default class MarcherVisualGroup {
             marcherId: this.marcherId,
             start: { x: 0, y: 0 },
             end: { x: 0, y: 0 },
-            color: "black", //rgbaToString(fieldProperties.theme.previousPath), TODO
+            color: "black",
             strokeWidth: 2,
         });
         this.nextPathway = new Pathway({
             marcherId: this.marcherId,
             start: { x: 0, y: 0 },
             end: { x: 0, y: 0 },
-            color: "green", //rgbaToString(fieldProperties.theme.nextPath),
+            color: "black",
             strokeWidth: 2,
         });
 
@@ -57,26 +57,26 @@ export default class MarcherVisualGroup {
             marcherId: this.marcherId,
             start: { x: 0, y: 0 },
             end: { x: 0, y: 0 },
-            innerColor: "white",
-            outerColor: "black", //rgbaToString(fieldProperties.theme.previousPath),
+            innerColor: "black",
+            outerColor: "black",
         });
         this.nextMidpoint = new Midpoint({
             marcherId: this.marcherId,
             start: { x: 0, y: 0 },
             end: { x: 0, y: 0 },
-            innerColor: "white",
-            outerColor: "green", //rgbaToString(fieldProperties.theme.nextPath),
+            innerColor: "black",
+            outerColor: "black",
         });
 
         this.previousEndPoint = new Endpoint({
             coordinate: { x: 0, y: 0 },
             dotRadius: 3,
-            color: "black", //rgbaToString(fieldProperties.theme.previousPath),
+            color: "black",
         });
         this.nextEndPoint = new Endpoint({
             coordinate: { x: 0, y: 0 },
             dotRadius: 3,
-            color: "green", //rgbaToString(fieldProperties.theme.nextPath),
+            color: "black",
         });
     }
 

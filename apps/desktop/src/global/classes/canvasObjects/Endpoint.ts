@@ -1,7 +1,8 @@
-import MarcherPage from "../MarcherPage";
 import { fabric } from "fabric";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { NoControls } from "@/components/canvas/CanvasConstants";
+import { rgbaToString } from "@/global/classes/FieldTheme";
+import { RgbaColor } from "@uiw/react-color";
 
 /**
  * A Midpoint is the object used on the canvas to represent the endpoint marker of a pathway.
@@ -36,6 +37,11 @@ export default class Endpoint extends fabric.Circle {
             ...NoControls,
         });
         this.marcherId = coordinate.marcher_id;
+    }
+
+    // Sets the color of the endpoint
+    setColor(color: RgbaColor): void {
+        this.set("fill", rgbaToString(color));
     }
 
     // Sets the coordinates of an endpoint

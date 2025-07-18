@@ -1201,7 +1201,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param marcherIds The ids of the marchers to render pathways for
      * @param fromCanvasMarchers Gets target positions from canvas marchers instead of marcher pages.
      */
-    renderPathVisuals = async ({
+    renderPathVisuals = ({
         marcherVisuals,
         marcherPages,
         prevPageId,
@@ -1288,6 +1288,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
     };
 
+    hideAllPathVisuals = ({
+        marcherVisuals,
+    }: {
+        marcherVisuals: MarcherVisualMap;
+    }) => {
+        Object.values(marcherVisuals).forEach((visual) => {
+            visual.getPreviousPathway().hide();
+            visual.getPreviousMidpoint().hide();
+            visual.getPreviousEndpoint().hide();
+            visual.getNextPathway().hide();
+            visual.getNextMidpoint().hide();
+            visual.getNextEndpoint().hide();
+        });
+    };
     /**
      * Rounds an x and y coordinate to the nearest step multiple of the denominator
      *

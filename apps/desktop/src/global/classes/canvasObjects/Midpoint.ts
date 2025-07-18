@@ -1,6 +1,8 @@
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import FieldProperties from "@/global/classes/FieldProperties";
+import { rgbaToString } from "@/global/classes/FieldTheme";
+import { RgbaColor } from "@uiw/react-color";
 
 /**
  * A Midpoint is the object used on the canvas to represent the midpoint marker of a pathway.
@@ -48,6 +50,12 @@ export default class Midpoint extends fabric.Circle {
             ...NoControls,
         });
         this.marcherId = marcherId;
+    }
+
+    // Set colors of the midpoint
+    setColor(outerColor: RgbaColor): void {
+        this.set("fill", "white");
+        this.set("stroke", rgbaToString(outerColor));
     }
 
     // Sets the coordinates of a midpoint

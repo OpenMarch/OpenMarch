@@ -488,7 +488,7 @@ export default function Canvas({
 
     // Initialize canvas marcher visuals
     useEffect(() => {
-        if (!canvas || !marchers || !marcherVisuals) return;
+        if (!canvas || !marchers || !marcherVisuals || !fieldProperties) return;
 
         // Remove all marcher visuals from the canvas
         canvas.getCanvasMarchers().forEach((canvasMarcher) => {
@@ -507,19 +507,44 @@ export default function Canvas({
 
         // Add all marcher visuals to the canvas
         marchers.forEach((marcher) => {
+            if (!marcherVisuals[marcher.id]) {
+                marcherVisuals[marcher.id] = new MarcherVisualGroup(marcher);
+            }
+
             canvas.add(marcherVisuals[marcher.id].getCanvasMarcher());
             canvas.add(marcherVisuals[marcher.id].getCanvasMarcher().textLabel);
+
             canvas.add(marcherVisuals[marcher.id].getPreviousPathway());
             canvas.add(marcherVisuals[marcher.id].getNextPathway());
+            marcherVisuals[marcher.id]
+                .getPreviousPathway()
+                .setColor(fieldProperties.theme.previousPath);
+            marcherVisuals[marcher.id]
+                .getNextPathway()
+                .setColor(fieldProperties.theme.nextPath);
+
             canvas.add(marcherVisuals[marcher.id].getPreviousMidpoint());
             canvas.add(marcherVisuals[marcher.id].getNextMidpoint());
+            marcherVisuals[marcher.id]
+                .getPreviousMidpoint()
+                .setColor(fieldProperties.theme.previousPath);
+            marcherVisuals[marcher.id]
+                .getNextMidpoint()
+                .setColor(fieldProperties.theme.nextPath);
+
             canvas.add(marcherVisuals[marcher.id].getPreviousEndpoint());
             canvas.add(marcherVisuals[marcher.id].getNextEndpoint());
+            marcherVisuals[marcher.id]
+                .getPreviousEndpoint()
+                .setColor(fieldProperties.theme.previousPath);
+            marcherVisuals[marcher.id]
+                .getNextEndpoint()
+                .setColor(fieldProperties.theme.nextPath);
         });
 
         // Request render all to ensure the canvas is updated
         canvas.requestRenderAll();
-    }, [canvas, marchers, marcherVisuals]);
+    }, [canvas, marchers, marcherVisuals, fieldProperties]);
 
     // Setters for alignmentEvent state
     useEffect(() => {
@@ -550,16 +575,24 @@ export default function Canvas({
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (canvas && selectedPage && fieldProperties) {
-            canvas.renderPathVisuals({
-                marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
-                prevPageId: selectedPage.previousPageId,
-                currPageId: selectedPage.id,
-                nextPageId: selectedPage.nextPageId,
-                marcherIds: marchers.map((m) => m.id),
-            });
-            canvas.sendCanvasMarchersToFront();
-            // TODO hide all if no paths shown
+            if (uiSettings.nextPaths || uiSettings.previousPaths) {
+                canvas.renderPathVisuals({
+                    marcherVisuals: marcherVisuals,
+                    marcherPages: marcherPages,
+                    prevPageId: uiSettings.previousPaths
+                        ? selectedPage.previousPageId
+                        : null,
+                    currPageId: selectedPage.id,
+                    nextPageId: uiSettings.nextPaths
+                        ? selectedPage.nextPageId
+                        : null,
+                    marcherIds: marchers.map((m) => m.id),
+                });
+                canvas.sendCanvasMarchersToFront();
+            } else {
+                canvas.hideAllPathVisuals({ marcherVisuals: marcherVisuals });
+                canvas.requestRenderAll();
+            }
         }
     }, [
         canvas,
