@@ -3,6 +3,7 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function ViewTab() {
     return (
@@ -13,25 +14,24 @@ export default function ViewTab() {
 }
 
 function UiSettingsToolbar() {
+    const { t } = useTolgee();
     const { uiSettings, setUiSettings } = useUiSettingsStore();
 
     return (
         <>
-            <ToolbarSection aria-label="Ui Settings Toolbar">
+            <ToolbarSection aria-label={t("toolbar.view.uiSettingsToolbar")}>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.togglePreviousPagePaths
                     }
                     instructionalString={
                         uiSettings.previousPaths
-                            ? RegisteredActionsObjects.togglePreviousPagePaths
-                                  .instructionalStringToggleOff
-                            : RegisteredActionsObjects.togglePreviousPagePaths
-                                  .instructionalStringToggleOn
+                            ? RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOn()
                     }
                     className={`hover:text-accent flex gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`}
                 >
-                    Prev paths
+                    <T keyName="toolbar.view.previousPaths" />
                     {uiSettings.previousPaths ? (
                         <EyeIcon className="text-accent" size={24} />
                     ) : (
@@ -44,14 +44,12 @@ function UiSettingsToolbar() {
                     }
                     instructionalString={
                         uiSettings.nextPaths
-                            ? RegisteredActionsObjects.toggleNextPagePaths
-                                  .instructionalStringToggleOff
-                            : RegisteredActionsObjects.toggleNextPagePaths
-                                  .instructionalStringToggleOn
+                            ? RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOn()
                     }
                     className={`hover:text-accent flex gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`}
                 >
-                    Next paths
+                    <T keyName="toolbar.view.nextPaths" />
                     {uiSettings.nextPaths ? (
                         <EyeIcon className="text-accent" size={24} />
                     ) : (
@@ -69,7 +67,7 @@ function UiSettingsToolbar() {
                     }}
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
-                    Grid lines
+                    <T keyName="toolbar.view.gridLines" />
                     {uiSettings.gridLines ? (
                         <EyeIcon className="text-accent" size={24} />
                     ) : (
@@ -85,7 +83,7 @@ function UiSettingsToolbar() {
                     }}
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
-                    Half lines
+                    <T keyName="toolbar.view.halfLines" />
                     {uiSettings.halfLines ? (
                         <EyeIcon className="text-accent" size={24} />
                     ) : (

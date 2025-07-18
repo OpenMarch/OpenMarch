@@ -107,6 +107,10 @@ module.exports = {
         "spinbutton",
         "monokai",
         "openmarchdev",
+        "tolgee",
+        "Español", // Spanish
+        "日本語", // Japanese
+        "Português", // Portuguese
         "ccpa",
         "Schachner",
         "pfps",
@@ -124,6 +128,11 @@ module.exports = {
         "**/package.json",
         "**/.astro/**",
         "**/.turbo/**",
+        "**/i18n/**",
+        "i18n/**",
+        "**/*.i18n.json",
+        "**/locales/**",
+        "locales/**",
         "patreonMembers.json",
         "**/mock-databases/**",
         "**/_journal.json",

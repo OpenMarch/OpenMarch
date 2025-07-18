@@ -13,6 +13,7 @@ import React, { useMemo, useState } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { toast } from "sonner";
+import { T, useTolgee } from "@tolgee/react";
 
 interface EditableTempoGroupProps {
     tempoGroup: TempoGroup;
@@ -25,6 +26,7 @@ export default function EditableTempoGroup({
 }: EditableTempoGroupProps) {
     const subTextClass = clsx("text-text-subtitle text-sub");
     const { fetchTimingObjects } = useTimingObjectsStore();
+    const { t } = useTolgee();
     const isMixedMeter = useMemo(
         () => isMixedMeterTempoGroup(tempoGroup),
         [tempoGroup],
@@ -79,7 +81,7 @@ export default function EditableTempoGroup({
                 refreshFunction: fetchTimingObjects,
             });
         }
-        toast.success("Tempo group updated");
+        toast.success(t("music.tempoGroupUpdated"));
         setIsVisible(false);
     };
 
@@ -102,18 +104,20 @@ export default function EditableTempoGroup({
                               : "col-span-3",
                     )}
                 >
-                    <Label className="text-sm select-all">Name</Label>
+                    <Label className="text-sm select-all">
+                        <T keyName="music.name" />
+                    </Label>
                     <Input
                         id="name-input"
                         name="name"
-                        placeholder="Optional"
+                        placeholder={t("music.namePlaceholder")}
                         type="text"
                         className="select-all"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                     />
                     <p className={subTextClass}>
-                        Rehearsal letter or identifier
+                        <T keyName="music.nameDescription" />
                     </p>
                 </FormField>
                 {!isManualTempo ? (
@@ -125,7 +129,9 @@ export default function EditableTempoGroup({
                                 isMixedMeter ? "col-span-2" : "col-span-3",
                             )}
                         >
-                            <Label className="text-sm">Tempo *</Label>
+                            <Label className="text-sm">
+                                <T keyName="music.tempo" />
+                            </Label>
                             <Input
                                 id="start-tempo-input"
                                 name="tempo"
@@ -135,7 +141,9 @@ export default function EditableTempoGroup({
                                 onChange={(e) => setTempo(e.target.value)}
                                 required
                             />
-                            <p className={subTextClass}>Beats per minute</p>
+                            <p className={subTextClass}>
+                                <T keyName="music.tempoDescription" />
+                            </p>
                         </FormField>
 
                         {isMixedMeter && (
@@ -144,7 +152,7 @@ export default function EditableTempoGroup({
                                 className="col-span-2 flex flex-col gap-2"
                             >
                                 <Label className="text-sm">
-                                    Beat Pattern *
+                                    <T keyName="music.beatPattern" />
                                 </Label>
                                 <select
                                     className="bg-bg-1 border-stroke rounded-4 border px-8 py-4"
@@ -154,7 +162,9 @@ export default function EditableTempoGroup({
                                         setSelectedPattern(e.target.value)
                                     }
                                 >
-                                    <option value="">Select a pattern</option>
+                                    <option value="">
+                                        <T keyName="music.selectPattern" />
+                                    </option>
                                     {mixedMeterPermutations(beatsPerMeasure)
                                         .filter(
                                             (p) =>
@@ -184,7 +194,7 @@ export default function EditableTempoGroup({
                             className={clsx("col-span-3 flex flex-col gap-2")}
                         >
                             <Label className={clsx("text-sm")}>
-                                Beats per measure *
+                                <T keyName="music.beatsPerMeasure" />
                             </Label>
                             <Input
                                 id="bpm-input"
@@ -196,8 +206,9 @@ export default function EditableTempoGroup({
                             />
 
                             <p className={subTextClass}>
-                                Time signature: {beatsPerMeasure}/
-                                {isMixedMeter ? "8" : "4"}
+                                {t("music.timeSignature", {
+                                    timeSignature: `${beatsPerMeasure}/${isMixedMeter ? "8" : "4"}`,
+                                })}
                             </p>
                         </FormField>
                         <FormField
@@ -205,7 +216,7 @@ export default function EditableTempoGroup({
                             className={clsx("col-span-3 flex flex-col gap-2")}
                         >
                             <Label className="text-sm">
-                                Number of measures *
+                                <T keyName="music.numberOfMeasures" />
                             </Label>
                             <Input
                                 id="repeats-input"
@@ -218,7 +229,9 @@ export default function EditableTempoGroup({
                     </>
                 ) : (
                     <div className="col-span-6 flex flex-col gap-8">
-                        <p className="mb-4 text-sm">Individual beat tempos</p>
+                        <p className="mb-4 text-sm">
+                            <T keyName="music.individualBeatTempos" />
+                        </p>
                         <div className="col-span-6 flex list-decimal flex-col gap-8">
                             {manualTempos.map((tempo, index) => (
                                 <li
@@ -254,10 +267,10 @@ export default function EditableTempoGroup({
                         variant="secondary"
                         onClick={() => setIsVisible(false)}
                     >
-                        Cancel
+                        <T keyName="music.cancel" />
                     </Button>
                     <Button type="submit" disabled={saveDisabled}>
-                        Save Changes
+                        <T keyName="music.saveChanges" />
                     </Button>
                 </div>
             </Form>

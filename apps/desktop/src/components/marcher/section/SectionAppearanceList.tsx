@@ -33,8 +33,11 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { toast } from "sonner";
 import { MarcherListContents } from "../MarchersModal";
 import FormField from "@/components/ui/FormField";
+import { T, useTolgee } from "@tolgee/react";
+import { getTranslatedSectionName } from "@/global/classes/Sections";
 
 export default function SectionAppearanceList() {
+    const { t } = useTolgee();
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     const { sectionAppearances, fetchSectionAppearances } =
@@ -137,7 +140,7 @@ export default function SectionAppearanceList() {
                 const sectionName = sectionAppearances.find(
                     (appearance) => appearance.id === id,
                 )?.section;
-                return sectionName || "Unknown";
+                return getTranslatedSectionName(sectionName || "", t);
             })
             .join(", ");
     }
@@ -186,7 +189,9 @@ export default function SectionAppearanceList() {
                     >
                         <CaretLeftIcon size={24} />
                     </button>
-                    <h4 className="text-h4 leading-none">Section Styles</h4>
+                    <h4 className="text-h4 leading-none">
+                        <T keyName="marchers.list.sectionStyles" />
+                    </h4>
                 </div>
                 <div className="flex items-center gap-6">
                     <Dropdown.Root>
@@ -199,7 +204,8 @@ export default function SectionAppearanceList() {
                                 size="compact"
                                 className="flex items-center gap-6"
                             >
-                                Add Section Style <CaretDownIcon size={16} />
+                                <T keyName="marchers.list.addSectionStyle" />{" "}
+                                <CaretDownIcon size={16} />
                             </Button>
                         </Dropdown.Trigger>
                         <Dropdown.Portal>
@@ -214,7 +220,10 @@ export default function SectionAppearanceList() {
                                         }
                                         className="text-text text-body hover:text-accent w-full cursor-pointer px-6 py-4 text-left duration-150 ease-out outline-none"
                                     >
-                                        {sectionName}
+                                        {getTranslatedSectionName(
+                                            sectionName,
+                                            t,
+                                        )}
                                     </Dropdown.Item>
                                 ))}
                             </Dropdown.Content>
@@ -243,24 +252,24 @@ export default function SectionAppearanceList() {
                                 size="compact"
                                 onClick={handleCancel}
                             >
-                                Discard Changes
+                                <T keyName="marchers.list.discardChanges" />
                             </Button>
                             {deletionsRef.current.length > 0 ? (
                                 <AlertDialog>
                                     <AlertDialogTrigger>
                                         <Button variant="red" size="compact">
-                                            Save Changes
+                                            <T keyName="marchers.list.saveChanges" />
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogTitle>
-                                            Warning
+                                            <T keyName="marchers.deleteTitle" />
                                         </AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            You are about to delete these
-                                            section styles:{" "}
-                                            {getDeletedSectionNames()}. This can
-                                            be undone with [Ctrl/Cmd+Z].
+                                            {t("marchers.deleteDescription", {
+                                                sections:
+                                                    getDeletedSectionNames(),
+                                            })}
                                         </AlertDialogDescription>
                                         <div className="flex w-full justify-end gap-8">
                                             <AlertDialogCancel>
@@ -268,7 +277,7 @@ export default function SectionAppearanceList() {
                                                     variant="secondary"
                                                     size="compact"
                                                 >
-                                                    Cancel
+                                                    <T keyName="marchers.cancelDeleteButton" />
                                                 </Button>
                                             </AlertDialogCancel>
                                             <AlertDialogAction>
@@ -277,7 +286,7 @@ export default function SectionAppearanceList() {
                                                     size="compact"
                                                     onClick={handleSubmit}
                                                 >
-                                                    Delete
+                                                    <T keyName="marchers.deleteButton" />
                                                 </Button>
                                             </AlertDialogAction>
                                         </div>
@@ -289,7 +298,7 @@ export default function SectionAppearanceList() {
                                     size="compact"
                                     onClick={handleSubmit}
                                 >
-                                    Save Changes
+                                    <T keyName="marchers.list.saveChanges" />
                                 </Button>
                             ) : null}
                         </div>
@@ -297,7 +306,7 @@ export default function SectionAppearanceList() {
                 </div>
                 {hasPendingChanges && (
                     <div className="bg-fg-2 text-text text-sub border-stroke rounded-full border px-8 py-4 text-center">
-                        Below values may not be applied until after a refresh
+                        <T keyName="marchers.list.pendingChanges" />
                     </div>
                 )}
 
@@ -311,7 +320,10 @@ export default function SectionAppearanceList() {
                                 >
                                     <div className="flex items-center justify-between">
                                         <h4 className="text-h5">
-                                            {appearance.section}
+                                            {getTranslatedSectionName(
+                                                appearance.section,
+                                                t,
+                                            )}
                                         </h4>
                                         <Button
                                             variant="red"
@@ -322,7 +334,9 @@ export default function SectionAppearanceList() {
                                                     appearance.id,
                                                 )
                                             }
-                                            tooltipText="Delete this section style"
+                                            tooltipText={t(
+                                                "marchers.list.deleteSectionStyle",
+                                            )}
                                             tooltipSide="left"
                                         >
                                             <TrashIcon size={18} />
@@ -330,7 +344,7 @@ export default function SectionAppearanceList() {
                                     </div>
 
                                     <ColorPicker
-                                        label="Fill Color"
+                                        label={t("marchers.list.fillColor")}
                                         initialColor={appearance.fill_color}
                                         onChange={(color) => {
                                             handleChange(
@@ -349,7 +363,7 @@ export default function SectionAppearanceList() {
                                     />
 
                                     <ColorPicker
-                                        label="Outline Color"
+                                        label={t("marchers.list.outlineColor")}
                                         initialColor={appearance.outline_color}
                                         onChange={(color) => {
                                             handleChange(
@@ -367,7 +381,10 @@ export default function SectionAppearanceList() {
                                         }}
                                     />
 
-                                    <FormField label="Shape" className="px-0">
+                                    <FormField
+                                        label={t("marchers.list.shape")}
+                                        className="px-0"
+                                    >
                                         <Select
                                             value={appearance.shape_type}
                                             onValueChange={(value) =>
@@ -378,8 +395,12 @@ export default function SectionAppearanceList() {
                                                 )
                                             }
                                         >
-                                            <SelectTriggerCompact label="Shape">
-                                                {appearance.shape_type}
+                                            <SelectTriggerCompact
+                                                label={t("marchers.list.shape")}
+                                            >
+                                                {t(
+                                                    `shapes.${appearance.shape_type}`,
+                                                )}
                                             </SelectTriggerCompact>
                                             <SelectContent>
                                                 <SelectGroup>
@@ -389,7 +410,9 @@ export default function SectionAppearanceList() {
                                                                 key={shape}
                                                                 value={shape}
                                                             >
-                                                                {shape}
+                                                                {t(
+                                                                    `shapes.${shape}`,
+                                                                )}
                                                             </SelectItem>
                                                         ),
                                                     )}
@@ -402,8 +425,7 @@ export default function SectionAppearanceList() {
                         </>
                     ) : (
                         <p className="text-body text-text/90">
-                            No section styles defined yet. Add one to customize
-                            how each section appears.
+                            <T keyName="marchers.list.noSectionStyles" />
                         </p>
                     )}
                 </div>

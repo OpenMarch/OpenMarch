@@ -4,6 +4,7 @@ import Page, { measureRangeString } from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import { T, useTolgee } from "@tolgee/react";
 
 // Common props for all coordinate sheet templates
 interface CoordinateSheetProps {
@@ -28,6 +29,8 @@ export function FullPageCoordinateSheet({
     includeMeasures = true,
     useXY = false,
 }: CoordinateSheetProps) {
+    const { t } = useTolgee();
+
     if (!marcher || !fieldProperties) return null;
 
     ReadableCoords.setFieldProperties(fieldProperties);
@@ -99,14 +102,14 @@ export function FullPageCoordinateSheet({
                         <th style={{ ...thTdStyle, width: "8%" }}>Ct</th>
                         {includeMeasures && (
                             <th style={{ ...thTdStyle, width: "15%" }}>
-                                Measures
+                                {t("coordinateSheet.measures")}
                             </th>
                         )}
                         <th style={thTdStyle}>
-                            {useXY ? "X" : "Side to Side"}
+                            {useXY ? "X" : t("coordinateSheet.sideToSide")}
                         </th>
                         <th style={thTdStyle}>
-                            {useXY ? "Y" : "Front to Back"}
+                            {useXY ? "Y" : t("coordinateSheet.frontToBack")}
                         </th>
                     </tr>
                 </thead>
@@ -165,6 +168,8 @@ export function QuarterPageCoordinateSheet({
     terse = false,
     quarterPageNumber,
 }: CompactSheetProps) {
+    const { t } = useTolgee();
+
     if (!marcher || !fieldProperties) return null;
 
     ReadableCoords.setFieldProperties(fieldProperties);
@@ -239,7 +244,9 @@ export function QuarterPageCoordinateSheet({
                     </div>
                 )}
                 <div style={{ ...leftBorderStyle, ...headingContainerStyle }}>
-                    <h4 style={h4Style}>Page {quarterPageNumber}</h4>
+                    <h4 style={h4Style}>
+                        {t("coordinateSheet.page", { page: quarterPageNumber })}
+                    </h4>
                 </div>
             </div>
             <table
@@ -251,14 +258,20 @@ export function QuarterPageCoordinateSheet({
             >
                 <thead>
                     <tr>
-                        <th style={{ ...thTdStyle, width: "4ch" }}>Pg.</th>
-                        <th style={{ ...thTdStyle, width: "2ch" }}>Ct.</th>
-                        <th style={{ ...thTdStyle, width: "11ch" }}>Ms.</th>
-                        <th style={{ ...thTdStyle, width: "auto" }}>
-                            S. to S.
+                        <th style={{ ...thTdStyle, width: "4ch" }}>
+                            <T keyName="coordinateSheet.pageAbbreviation" />
+                        </th>
+                        <th style={{ ...thTdStyle, width: "2ch" }}>
+                            <T keyName="coordinateSheet.countAbbreviation" />
+                        </th>
+                        <th style={{ ...thTdStyle, width: "11ch" }}>
+                            <T keyName="coordinateSheet.measureAbbreviation" />
                         </th>
                         <th style={{ ...thTdStyle, width: "auto" }}>
-                            F. to B.
+                            <T keyName="coordinateSheet.sideToSideAbbreviation" />
+                        </th>
+                        <th style={{ ...thTdStyle, width: "auto" }}>
+                            <T keyName="coordinateSheet.frontToBackAbbreviation" />
                         </th>
                     </tr>
                 </thead>

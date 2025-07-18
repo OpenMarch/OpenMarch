@@ -62,7 +62,7 @@ test("Toolbars are visible", async ({ electronApp }) => {
     console.log("clicking view tab");
     await page.getByRole("tab", { name: "View" }).click();
     console.log("clicking prev paths");
-    await expect(page.getByText("Prev pathsNext paths")).toBeVisible();
+    await expect(page.getByText("Previous pathsNext paths")).toBeVisible();
     console.log("clicking alignment tab");
     await page.getByRole("tab", { name: "Alignment" }).click();
     await expect(

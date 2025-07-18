@@ -5,6 +5,7 @@ import { InfoIcon } from "@phosphor-icons/react";
 import { twMerge } from "tailwind-merge";
 import { clsx } from "clsx";
 import { forwardRef } from "react";
+import { T } from "@tolgee/react";
 
 interface FormFieldProps {
     label: string;
@@ -56,7 +57,7 @@ const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
                     match={"valueMissing"}
                     className="text-sub text-red leading-none"
                 >
-                    Please enter a value.
+                    <T keyName="formField.valueMissing" />
                 </Form.Message>
             </Form.Field>
         );

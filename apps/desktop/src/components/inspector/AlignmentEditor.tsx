@@ -3,6 +3,7 @@ import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button } from "@openmarch/ui";
+import { T } from "@tolgee/react";
 
 export default function AlignmentEditor() {
     const {
@@ -26,7 +27,9 @@ export default function AlignmentEditor() {
                                     RegisteredActionsObjects.createMarcherShape
                                 }
                             >
-                                <Button size="compact">Create Shape</Button>
+                                <Button size="compact">
+                                    <T keyName="inspector.alignment.createShape" />
+                                </Button>
                             </RegisteredActionButton>
                             <RegisteredActionButton
                                 registeredAction={
@@ -34,12 +37,14 @@ export default function AlignmentEditor() {
                                 }
                             >
                                 <Button size="compact" variant="secondary">
-                                    Apply coordinates
+                                    <T keyName="inspector.alignment.applyCoordinates" />
                                 </Button>
                             </RegisteredActionButton>
                         </>
                     ) : (
-                        <p className="text-body text-text/75">Draw a line.</p>
+                        <p className="text-body text-text/75">
+                            <T keyName="inspector.alignment.drawLine" />
+                        </p>
                     )}
                     <RegisteredActionButton
                         registeredAction={
@@ -47,7 +52,7 @@ export default function AlignmentEditor() {
                         }
                     >
                         <Button size="compact" variant="secondary">
-                            Cancel
+                            <T keyName="inspector.alignment.cancelUpdates" />
                         </Button>
                     </RegisteredActionButton>
                 </div>

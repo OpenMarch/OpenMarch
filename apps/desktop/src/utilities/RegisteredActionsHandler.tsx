@@ -9,7 +9,6 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
@@ -18,6 +17,8 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import tolgee from "@/global/singletons/Tolgee";
+import { useTolgee } from "@tolgee/react";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -89,53 +90,43 @@ export enum RegisteredActionsEnum {
 export class RegisteredAction {
     /** The KeyboardShortcut to trigger the action */
     readonly keyboardShortcut?: KeyboardShortcut;
-    /** The description of the action. Also used for the instructional string
-     * E.g. "Lock the X axis" */
-    readonly desc: string;
-    /** The string to display in the UI for the keyboard shortcut. Eg. "Snap to nearest whole [Shift + X]" */
-    readonly instructionalString: string;
-    /** Instructional string to toggle on the given action (only relevant for toggle-based actions)
-     * E.g. "Enable X axis [Shift + X]" */
-    readonly instructionalStringToggleOn: string;
-    /** Instructional string to toggle off the given action (only relevant for toggle-based actions)
-     * E.g. "Lock X axis [Shift + X]" */
-    readonly instructionalStringToggleOff: string;
+    /** The translation key for the description of the action. Also used for the instructional string
+     * E.g. "actions.alignment.lockX" */
+    readonly descKey: string;
+    /** The translation key for toggle on state (only relevant for toggle-based actions)
+     * E.g. "actions.alignment.lockXOn" */
+    readonly toggleOnKey?: string;
+    /** The translation key for toggle off state (only relevant for toggle-based actions)
+     * E.g. "actions.alignment.lockXOff" */
+    readonly toggleOffKey?: string;
     /** The string representation of the action. E.g. "lockX" */
     readonly enumString: string;
 
     /**
      *
      * @param keyboardShortcut The keyboard shortcut to trigger the action. Optional.
-     * @param desc The description of the action. Also used for the instructional string. "Lock the X axis"
-     * @param toggleOnStr The string to display in the UI for the keyboard shortcut when the action is toggled on. Defaults to the desc
-     * @param toggleOffStr The string to display in the UI for the keyboard shortcut when the action is toggled off. Defaults to the desc
+     * @param descKey The translation key for the description of the action. "actions.alignment.lockX"
+     * @param toggleOnKey The translation key for toggle on state. Optional.
+     * @param toggleOffKey The translation key for toggle off state. Optional.
      */
     constructor({
         keyboardShortcut,
-        desc,
-        toggleOnStr,
-        toggleOffStr,
+        descKey,
+        toggleOnKey,
+        toggleOffKey,
         enumString,
     }: {
         keyboardShortcut?: KeyboardShortcut;
-        desc: string;
+        descKey: string;
         action?: () => any;
-        toggleOnStr?: string;
-        toggleOffStr?: string;
+        toggleOnKey?: string;
+        toggleOffKey?: string;
         enumString: string;
     }) {
         this.keyboardShortcut = keyboardShortcut;
-        this.desc = desc;
-        const keyString = keyboardShortcut
-            ? ` [${keyboardShortcut.toString()}]`
-            : "";
-        this.instructionalString = this.desc + keyString;
-        this.instructionalStringToggleOn = toggleOnStr
-            ? toggleOnStr + keyString
-            : this.instructionalString;
-        this.instructionalStringToggleOff = toggleOffStr
-            ? toggleOffStr + keyString
-            : this.instructionalString;
+        this.descKey = descKey;
+        this.toggleOnKey = toggleOnKey;
+        this.toggleOffKey = toggleOffKey;
 
         if (
             !Object.values(RegisteredActionsEnum).includes(
@@ -143,8 +134,40 @@ export class RegisteredAction {
             )
         )
             console.error(`Invalid enumString: ${enumString}. This should be a RegisteredActionsEnum value.
-        \nRegistered action for "${desc}" will not be registered to buttons.`);
+        \nRegistered action for "${descKey}" will not be registered to buttons.`);
         this.enumString = enumString;
+    }
+
+    /**
+     * Get the translated description with optional keyboard shortcut
+     */
+    getInstructionalString(): string {
+        const keyString = this.keyboardShortcut
+            ? ` [${this.keyboardShortcut.toString()}]`
+            : "";
+        return tolgee.t(this.descKey) + keyString;
+    }
+
+    /**
+     * Get the translated toggle on string with optional keyboard shortcut
+     */
+    getInstructionalStringToggleOn(): string {
+        const keyString = this.keyboardShortcut
+            ? ` [${this.keyboardShortcut.toString()}]`
+            : "";
+        const key = this.toggleOnKey || this.descKey;
+        return tolgee.t(key) + keyString;
+    }
+
+    /**
+     * Get the translated toggle off string with optional keyboard shortcut
+     */
+    getInstructionalStringToggleOff(): string {
+        const keyString = this.keyboardShortcut
+            ? ` [${this.keyboardShortcut.toString()}]`
+            : "";
+        const key = this.toggleOffKey || this.descKey;
+        return tolgee.t(key) + keyString;
     }
 }
 
@@ -207,6 +230,9 @@ class KeyboardShortcut {
 /**
  * Details for all the registered actions.
  * This is useful for getting the details of a registered action at compile time.
+ *
+ * When adding a new action, use a translation key and translate it in the i18n files or on Tolgee.
+ * The translation key should be in the format "actions.{category}.{action}".
  */
 export const RegisteredActionsObjects: {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -214,66 +240,66 @@ export const RegisteredActionsObjects: {
 } = {
     // Electron interactions
     launchLoadFileDialogue: new RegisteredAction({
-        desc: "Launch load file dialogue",
+        descKey: "actions.file.loadDialogue",
         enumString: "launchLoadFileDialogue",
     }),
     launchSaveFileDialogue: new RegisteredAction({
-        desc: "Launch save file dialogue",
+        descKey: "actions.file.saveDialogue",
         enumString: "launchSaveFileDialogue",
     }),
     launchNewFileDialogue: new RegisteredAction({
-        desc: "Launch new file dialogue",
+        descKey: "actions.file.newDialogue",
         enumString: "launchNewFileDialogue",
     }),
     launchInsertAudioFileDialogue: new RegisteredAction({
-        desc: "Load new audio file into the show",
+        descKey: "actions.file.insertAudio",
         enumString: "launchInsertAudioFileDialogue",
     }),
     launchImportMusicXmlFileDialogue: new RegisteredAction({
-        desc: "Import MusicXML file to get measures",
+        descKey: "actions.file.importMusicXml",
         enumString: "launchImportMusicXmlFileDialogue",
     }),
     performUndo: new RegisteredAction({
-        desc: "Perform undo",
+        descKey: "actions.edit.undo",
         enumString: "performUndo",
     }),
     performRedo: new RegisteredAction({
-        desc: "Perform redo",
+        descKey: "actions.edit.redo",
         enumString: "performRedo",
     }),
 
     // Navigation and playback
     nextPage: new RegisteredAction({
-        desc: "Next page",
+        descKey: "actions.navigation.nextPage",
         keyboardShortcut: new KeyboardShortcut({ key: "e" }),
         enumString: "nextPage",
     }),
     lastPage: new RegisteredAction({
-        desc: "Last page",
+        descKey: "actions.navigation.lastPage",
         keyboardShortcut: new KeyboardShortcut({ key: "e", shift: true }),
         enumString: "lastPage",
     }),
     previousPage: new RegisteredAction({
-        desc: "Previous page",
+        descKey: "actions.navigation.previousPage",
         keyboardShortcut: new KeyboardShortcut({ key: "q" }),
         enumString: "previousPage",
     }),
     firstPage: new RegisteredAction({
-        desc: "First page",
+        descKey: "actions.navigation.firstPage",
         keyboardShortcut: new KeyboardShortcut({ key: "q", shift: true }),
         enumString: "firstPage",
     }),
     playPause: new RegisteredAction({
-        desc: "Play or pause",
-        toggleOnStr: "Play",
-        toggleOffStr: "Pause",
+        descKey: "actions.playback.playPause",
+        toggleOnKey: "actions.playback.play",
+        toggleOffKey: "actions.playback.pause",
         keyboardShortcut: new KeyboardShortcut({ key: " " }),
         enumString: "playPause",
     }),
 
     // Batch editing
     setAllMarchersToPreviousPage: new RegisteredAction({
-        desc: "Set all marcher coordinates to previous page",
+        descKey: "actions.batchEdit.setAllToPrevious",
         keyboardShortcut: new KeyboardShortcut({
             key: "p",
             shift: true,
@@ -282,12 +308,12 @@ export const RegisteredActionsObjects: {
         enumString: "setAllMarchersToPreviousPage",
     }),
     setSelectedMarchersToPreviousPage: new RegisteredAction({
-        desc: "Set selected marcher(s) coordinates to previous page",
+        descKey: "actions.batchEdit.setSelectedToPrevious",
         keyboardShortcut: new KeyboardShortcut({ key: "p", shift: true }),
         enumString: "setSelectedMarchersToPreviousPage",
     }),
     setAllMarchersToNextPage: new RegisteredAction({
-        desc: "Set all marcher coordinates to next page",
+        descKey: "actions.batchEdit.setAllToNext",
         keyboardShortcut: new KeyboardShortcut({
             key: "n",
             shift: true,
@@ -296,7 +322,7 @@ export const RegisteredActionsObjects: {
         enumString: "setAllMarchersToNextPage",
     }),
     setSelectedMarchersToNextPage: new RegisteredAction({
-        desc: "Set selected marcher(s) coordinates to next page",
+        descKey: "actions.batchEdit.setSelectedToNext",
         keyboardShortcut: new KeyboardShortcut({ key: "n", shift: true }),
         enumString: "setSelectedMarchersToNextPage",
     }),
@@ -304,133 +330,133 @@ export const RegisteredActionsObjects: {
     // Marcher movement
     // The following special commands are triggered by WASD/Arrows in handleKeyDown
     moveSelectedMarchersUp: new RegisteredAction({
-        desc: "Move selected marcher(s) up",
+        descKey: "actions.movement.moveUp",
         keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersUp",
     }),
     moveSelectedMarchersDown: new RegisteredAction({
-        desc: "Move selected marcher(s) down",
+        descKey: "actions.movement.moveDown",
         keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersDown",
     }),
     moveSelectedMarchersLeft: new RegisteredAction({
-        desc: "Move selected marcher(s) left",
+        descKey: "actions.movement.moveLeft",
         keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersLeft",
     }),
     moveSelectedMarchersRight: new RegisteredAction({
-        desc: "Move selected marcher(s) right",
+        descKey: "actions.movement.moveRight",
         keyboardShortcut: new KeyboardShortcut({ key: "" }),
         enumString: "moveSelectedMarchersRight",
     }),
 
     // Alignment
     snapToNearestWhole: new RegisteredAction({
-        desc: "Snap to nearest whole",
+        descKey: "actions.alignment.snapToWhole",
         keyboardShortcut: new KeyboardShortcut({ key: "1" }),
         enumString: "snapToNearestWhole",
     }),
     lockX: new RegisteredAction({
-        desc: "Lock X axis",
-        toggleOnStr: "Lock X movement",
-        toggleOffStr: "Enable X movement",
+        descKey: "actions.alignment.lockX",
+        toggleOnKey: "actions.alignment.lockXOn",
+        toggleOffKey: "actions.alignment.lockXOff",
         keyboardShortcut: new KeyboardShortcut({ key: "y" }),
         enumString: "lockX",
     }),
     lockY: new RegisteredAction({
-        desc: "Lock Y axis",
-        toggleOnStr: "Lock Y movement",
-        toggleOffStr: "Enable Y movement",
+        descKey: "actions.alignment.lockY",
+        toggleOnKey: "actions.alignment.lockYOn",
+        toggleOffKey: "actions.alignment.lockYOff",
         keyboardShortcut: new KeyboardShortcut({ key: "x" }),
         enumString: "lockY",
     }),
     alignVertically: new RegisteredAction({
-        desc: "Align vertically",
+        descKey: "actions.alignment.alignVertically",
         keyboardShortcut: new KeyboardShortcut({ key: "v", alt: true }),
         enumString: "alignVertically",
     }),
     alignHorizontally: new RegisteredAction({
-        desc: "Align horizontally",
+        descKey: "actions.alignment.alignHorizontally",
         keyboardShortcut: new KeyboardShortcut({ key: "h", alt: true }),
         enumString: "alignHorizontally",
     }),
     evenlyDistributeVertically: new RegisteredAction({
-        desc: "Evenly distribute marchers vertically",
+        descKey: "actions.alignment.distributeVertically",
         keyboardShortcut: new KeyboardShortcut({ key: "v", shift: true }),
         enumString: "evenlyDistributeVertically",
     }),
     evenlyDistributeHorizontally: new RegisteredAction({
-        desc: "Evenly distribute marchers horizontally",
+        descKey: "actions.alignment.distributeHorizontally",
         keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true }),
         enumString: "evenlyDistributeHorizontally",
     }),
     swapMarchers: new RegisteredAction({
-        desc: "Swap marchers",
+        descKey: "actions.swap.swap",
         keyboardShortcut: new KeyboardShortcut({ key: "s", control: true }),
         enumString: "swapMarchers",
     }),
 
     // UI settings
     togglePreviousPagePaths: new RegisteredAction({
-        desc: "Toggle viewing previous page paths",
-        toggleOnStr: "Show previous page dots/paths",
-        toggleOffStr: "Hide previous page dots/paths",
+        descKey: "actions.ui.togglePreviousPaths",
+        toggleOnKey: "actions.ui.showPreviousPaths",
+        toggleOffKey: "actions.ui.hidePreviousPaths",
         keyboardShortcut: new KeyboardShortcut({ key: "n" }),
         enumString: "togglePreviousPagePaths",
     }),
     toggleNextPagePaths: new RegisteredAction({
-        desc: "Toggle viewing next page paths",
-        toggleOnStr: "Show next page dots/paths",
-        toggleOffStr: "Hide next page dots/paths",
+        descKey: "actions.ui.toggleNextPaths",
+        toggleOnKey: "actions.ui.showNextPaths",
+        toggleOffKey: "actions.ui.hideNextPaths",
         keyboardShortcut: new KeyboardShortcut({ key: "m" }),
         enumString: "toggleNextPagePaths",
     }),
     focusCanvas: new RegisteredAction({
-        desc: "Focus the canvas",
+        descKey: "actions.ui.focusCanvas",
         enumString: "focusCanvas",
         keyboardShortcut: new KeyboardShortcut({ key: "c", alt: true }),
     }),
     focusTimeline: new RegisteredAction({
-        desc: "Focus the timeline",
+        descKey: "actions.ui.focusTimeline",
         enumString: "focusTimeline",
         keyboardShortcut: new KeyboardShortcut({ key: "t", alt: true }),
     }),
 
     // Cursor Mode
     applyQuickShape: new RegisteredAction({
-        desc: "Snaps marchers to shape without creating an editable object",
+        descKey: "actions.shape.applyQuick",
         enumString: "applyQuickShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter", shift: true }),
     }),
     createMarcherShape: new RegisteredAction({
-        desc: "Creates a new shape with lines or curves that can be edited across pages",
+        descKey: "actions.shape.create",
         enumString: "createMarcherShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Enter" }),
     }),
     deleteMarcherShape: new RegisteredAction({
-        desc: "Deletes the current selected shapes",
+        descKey: "actions.shape.delete",
         enumString: "deleteMarcherShape",
         keyboardShortcut: new KeyboardShortcut({ key: "Delete" }),
     }),
     cancelAlignmentUpdates: new RegisteredAction({
-        desc: "Cancel updates to marchers",
+        descKey: "actions.alignment.cancelUpdates",
         enumString: "cancelAlignmentUpdates",
         keyboardShortcut: new KeyboardShortcut({ key: "Escape" }),
     }),
     alignmentEventDefault: new RegisteredAction({
-        desc: "Set cursor mode to default",
+        descKey: "actions.cursor.defaultMode",
         enumString: "alignmentEventDefault",
         keyboardShortcut: new KeyboardShortcut({ key: "v" }),
     }),
     alignmentEventLine: new RegisteredAction({
-        desc: "Create a line out of the selected marchers",
+        descKey: "actions.cursor.lineMode",
         enumString: "alignmentEventLine",
         keyboardShortcut: new KeyboardShortcut({ key: "l" }),
     }),
 
     // Select
     selectAllMarchers: new RegisteredAction({
-        desc: "Select all marchers",
+        descKey: "actions.select.selectAll",
         keyboardShortcut: new KeyboardShortcut({ key: "a", control: true }),
         enumString: "selectAllMarchers",
     }),
@@ -443,8 +469,8 @@ export const RegisteredActionsObjects: {
  * All actions in OpenMarch that can be a keyboard shortcut or a button click should be registered here.
  */
 function RegisteredActionsHandler() {
+    const { t } = useTolgee();
     const { registeredButtonActions } = useRegisteredActionsStore()!;
-    const { marchers } = useMarcherStore()!;
     const { pages } = useTimingObjectsStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marcherPages } = useMarcherPageStore()!;
@@ -532,7 +558,6 @@ function RegisteredActionsHandler() {
                 console.error("No field properties");
                 return;
             }
-            const registeredActionObject = RegisteredActionsObjects[action];
             switch (action) {
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.launchLoadFileDialogue:
@@ -579,9 +604,7 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
                     const previousPage = getPreviousPage(selectedPage, pages);
                     if (!previousPage) {
-                        toast.error(
-                            "Cannot set marcher coordinates to previous page. There is no previous page",
-                        );
+                        toast.error(t("actions.batchEdit.noPreviousPage"));
                         return;
                     }
 
@@ -598,16 +621,18 @@ function RegisteredActionsHandler() {
                     MarcherPage.updateMarcherPages(changes);
 
                     toast.success(
-                        `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
+                        t("actions.batchEdit.setAllToPreviousSuccess", {
+                            count: previousPageMarcherPages.length,
+                            currentPage: selectedPage.name,
+                            previousPage: previousPage.name,
+                        }),
                     );
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
                     const previousPage = getPreviousPage(selectedPage, pages);
                     if (!previousPage) {
-                        toast.error(
-                            "Cannot set marcher coordinates to previous page. There is no previous page",
-                        );
+                        toast.error(t("actions.batchEdit.noPreviousPage"));
                         return;
                     }
 
@@ -636,7 +661,14 @@ function RegisteredActionsHandler() {
                         MarcherPage.updateMarcherPages(changes);
 
                         toast.success(
-                            `Successfully set ${previousMarcherPages.length} marcher coordinate${previousMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the previous page ${previousPage.name}`,
+                            t(
+                                "actions.batchEdit.setSelectedToPreviousSuccess",
+                                {
+                                    count: previousMarcherPages.length,
+                                    currentPage: selectedPage.name,
+                                    previousPage: previousPage.name,
+                                },
+                            ),
                         );
                     }
                     break;
@@ -644,9 +676,7 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.setAllMarchersToNextPage: {
                     const nextPage = getNextPage(selectedPage, pages);
                     if (!nextPage) {
-                        toast.error(
-                            "Cannot set marcher coordinates to next page. There is no next page",
-                        );
+                        toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
 
@@ -661,16 +691,18 @@ function RegisteredActionsHandler() {
                     MarcherPage.updateMarcherPages(changes);
 
                     toast.success(
-                        `Successfully set all marcher coordinates on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
+                        t("actions.batchEdit.setAllToNextSuccess", {
+                            count: nextPageMarcherPages.length,
+                            currentPage: selectedPage.name,
+                            nextPage: nextPage.name,
+                        }),
                     );
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
                     const nextPage = getNextPage(selectedPage, pages);
                     if (!nextPage) {
-                        toast.error(
-                            "Cannot set marcher coordinates to next page. There is no next page",
-                        );
+                        toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
                     const nextMarcherPages = selectedMarchers
@@ -696,7 +728,11 @@ function RegisteredActionsHandler() {
                         MarcherPage.updateMarcherPages(changes);
 
                         toast.success(
-                            `Successfully set ${nextMarcherPages.length} marcher coordinate${nextMarcherPages.length === 1 ? "" : "s"} on page ${selectedPage.name} to the coordinates of the next page ${nextPage.name}`,
+                            t("actions.batchEdit.setSelectedToNextSuccess", {
+                                count: nextMarcherPages.length,
+                                currentPage: selectedPage.name,
+                                nextPage: nextPage.name,
+                            }),
                         );
                     }
                     break;
@@ -816,9 +852,7 @@ function RegisteredActionsHandler() {
                             "Can only swap 2 marchers. Selected marchers:",
                             selectedMarchers,
                         );
-                        toast.error(
-                            "Can only swap when 2 marchers are selected.",
-                        );
+                        toast.error(t("actions.swap.mustSelectTwo"));
                         return;
                     }
 
@@ -831,7 +865,14 @@ function RegisteredActionsHandler() {
                         })
                         .then((response) => {
                             if (response.success) {
-                                toast.success(`Swapped ${marchersStr}`);
+                                toast.success(
+                                    t("actions.swap.success", {
+                                        marcher1:
+                                            selectedMarchers[0].drill_number,
+                                        marcher2:
+                                            selectedMarchers[1].drill_number,
+                                    }),
+                                );
                                 MarcherPage.fetchMarcherPages();
                                 // This causes an infinite loop
                                 // It's not a huge deal to leave it like this as marchers are updated on a refresh
@@ -840,7 +881,14 @@ function RegisteredActionsHandler() {
                                 const errorMessage =
                                     "Could not swap marchers " + marchersStr;
                                 console.error(errorMessage, response.error);
-                                toast.error(errorMessage);
+                                toast.error(
+                                    t("actions.swap.error", {
+                                        marcher1:
+                                            selectedMarchers[0].drill_number,
+                                        marcher2:
+                                            selectedMarchers[1].drill_number,
+                                    }),
+                                );
                             }
                         });
                     break;
@@ -938,9 +986,7 @@ function RegisteredActionsHandler() {
                 }
 
                 default:
-                    console.error(
-                        `No action registered for "${registeredActionObject.instructionalString}"`,
-                    );
+                    console.error(`No action registered for "${action}"`);
                     return;
             }
         },
@@ -951,7 +997,6 @@ function RegisteredActionsHandler() {
             getSelectedMarcherPages,
             isPlaying,
             marcherPages,
-            marchers,
             pages,
             resetAlignmentEvent,
             selectedMarchers,
@@ -964,6 +1009,7 @@ function RegisteredActionsHandler() {
             setSelectedMarchers,
             setSelectedPage,
             setUiSettings,
+            t,
             uiSettings,
         ],
     );
@@ -1001,7 +1047,8 @@ function RegisteredActionsHandler() {
                 !document.activeElement?.matches(
                     "input, textarea, select, [contenteditable]",
                 ) &&
-                document.activeElement?.id !== "sentry-feedback"
+                document.activeElement?.id !== "sentry-feedback" &&
+                document.activeElement?.id !== "__tolgee_dev_tools"
             ) {
                 // Check the key code and convert it to a key string
                 // This must happen rather than using e.key because e.key changes on MacOS with the option key

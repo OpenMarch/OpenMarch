@@ -20,6 +20,8 @@ import Page from "@/global/classes/Page";
 import PageTimeline from "../TimelineContainer";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { TolgeeProvider } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 
 // Mock the hooks
 vi.mock("@/stores/TimingObjectsStore");
@@ -107,9 +109,14 @@ const mockPages: Page[] = [
 ];
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
-    <ThemeProvider>
-        <TooltipProvider>{children}</TooltipProvider>
-    </ThemeProvider>
+    <TolgeeProvider
+        tolgee={tolgee}
+        fallback="Loading..." // loading fallback
+    >
+        <ThemeProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+        </ThemeProvider>
+    </TolgeeProvider>
 );
 
 describe.todo("Adjacent Page Resizing", () => {

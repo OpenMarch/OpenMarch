@@ -12,6 +12,7 @@ import {
     DangerNote,
 } from "@openmarch/ui";
 import { StaticFormField } from "../ui/FormField";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function FieldPropertiesSelector() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
@@ -19,6 +20,7 @@ export default function FieldPropertiesSelector() {
         FieldProperties | undefined
     >(fieldProperties);
     const selectRef = useRef<HTMLButtonElement>(null);
+    const { t } = useTolgee();
 
     const handleFieldTypeChange = useCallback((value: string) => {
         const template = Object.values(FieldPropertiesTemplates).find(
@@ -38,12 +40,14 @@ export default function FieldPropertiesSelector() {
     }, [fieldProperties]);
 
     if (!fieldProperties)
-        return <div>FieldProperties not defined. This should never happen</div>;
+        return <div>{t("fieldProperties.errors.notDefined")}</div>;
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
-                <StaticFormField label="Field Template">
+                <StaticFormField
+                    label={t("fieldProperties.fieldTemplate.label")}
+                >
                     <Select
                         onValueChange={handleFieldTypeChange}
                         defaultValue={
@@ -54,7 +58,10 @@ export default function FieldPropertiesSelector() {
                         ref={selectRef}
                     >
                         <SelectTriggerButton
-                            label={fieldProperties.name || "Field type"}
+                            label={
+                                fieldProperties.name ||
+                                t("fieldProperties.fieldType.label")
+                            }
                         />
                         <SelectContent>
                             <SelectGroup>
@@ -70,7 +77,7 @@ export default function FieldPropertiesSelector() {
                                 )}
                                 {fieldProperties.isCustom && (
                                     <SelectItem key={"custom"} value={"Custom"}>
-                                        Custom
+                                        {t("fieldProperties.customFieldName")}
                                     </SelectItem>
                                 )}
                             </SelectGroup>
@@ -81,7 +88,7 @@ export default function FieldPropertiesSelector() {
                     className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
                     onClick={applyChanges}
                 >
-                    Apply Field Type
+                    <T keyName="fieldProperties.applyFieldType" />
                 </Button>
             </div>
             <div
@@ -96,9 +103,7 @@ export default function FieldPropertiesSelector() {
                 }
             >
                 <DangerNote>
-                    Marchers will not move to the new field type size, they will
-                    stay where they are on the canvas. You can always change
-                    back the field type.
+                    <T keyName="fieldProperties.applyFieldTypeWarning" />
                 </DangerNote>
             </div>
         </div>
