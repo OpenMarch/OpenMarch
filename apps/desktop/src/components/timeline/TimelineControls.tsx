@@ -17,11 +17,11 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
+import { AudioClock } from "./Clock";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
     const { uiSettings } = useUiSettingsStore();
-
     return (
         <div
             className={clsx(
@@ -32,6 +32,8 @@ export default function TimelineControls() {
             {!isFullscreen && (
                 <p className="text-body text-text/60">Timeline</p>
             )}
+            <AudioClock />
+
             <div
                 className={clsx("flex gap-12", {
                     "flex-col": !isFullscreen,
