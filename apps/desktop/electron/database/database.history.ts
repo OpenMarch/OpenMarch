@@ -3,7 +3,6 @@ import Database from "better-sqlite3";
 import { DB, getOrm } from "./db";
 import { desc, not, inArray, sql } from "drizzle-orm";
 import * as schema from "./migrations/schema";
-import { drizzle } from "drizzle-orm/better-sqlite3";
 
 type HistoryType = "undo" | "redo";
 
@@ -178,6 +177,29 @@ export function dropUndoTriggers(db: Database.Database, tableName: string) {
     db.prepare(`DROP TRIGGER IF EXISTS "${tableName}_it";`).run();
     db.prepare(`DROP TRIGGER IF EXISTS "${tableName}_ut";`).run();
     db.prepare(`DROP TRIGGER IF EXISTS "${tableName}_dt";`).run();
+}
+
+/**
+ * Drops all undo triggers from all user tables in the database.
+ * Excludes SQLite internal tables and history/undo/redo tables.
+ *
+ * @param db database connection
+ */
+export function dropAllUndoTriggers(db: Database.Database) {
+    // Get all user tables (exclude sqlite internal and history tables)
+    const tables = db
+        .prepare(
+            `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN (?, ?, ?);`,
+        )
+        .all(
+            Constants.UndoHistoryTableName,
+            Constants.RedoHistoryTableName,
+            Constants.HistoryStatsTableName,
+        ) as { name: string }[];
+
+    for (const { name } of tables) {
+        dropUndoTriggers(db, name);
+    }
 }
 
 /**

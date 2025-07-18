@@ -35,7 +35,7 @@
         "test:clearCache": "vitest --clearCache",
         "e2e": "playwright test",
         "e2e:codegen": "node e2e/_codegen.mjs",
-        "create-migration": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate"
+        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate"
     },
     "dependencies": {
         "@fontsource/dm-mono": "^5.2.6",

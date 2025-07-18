@@ -29,22 +29,6 @@ CREATE TABLE `beats` (
 );
 --> statement-breakpoint
 INSERT INTO beats (duration, position, id) VALUES (0, 0, 0);
---> statement-breakpoint
-CREATE TRIGGER prevent_beat_modification
-	BEFORE UPDATE ON beats
-	FOR EACH ROW
-	WHEN OLD.id = 0
-	BEGIN
-		SELECT RAISE(FAIL, 'Modification not allowed for the first beat.');
-	END;
---> statement-breakpoint
-CREATE TRIGGER prevent_beat_deletion
-	BEFORE DELETE ON beats
-	FOR EACH ROW
-	WHEN OLD.id = 0
-	BEGIN
-		SELECT RAISE(FAIL, 'Deletion not allowed for the first beat.');
-	END;
 
 --> statement-breakpoint
 CREATE TABLE `measures` (
@@ -68,22 +52,7 @@ CREATE TABLE `pages` (
 );
 --> statement-breakpoint
 INSERT INTO pages (start_beat, id) VALUES (0, 0);
---> statement-breakpoint
-CREATE TRIGGER prevent_page_modification
-	BEFORE UPDATE ON pages
-	FOR EACH ROW
-	WHEN OLD.id = 0
-	BEGIN
-		SELECT RAISE(FAIL, 'Modification not allowed for the first page.');
-	END;
---> statement-breakpoint
-CREATE TRIGGER prevent_page_deletion
-	BEFORE DELETE ON pages
-	FOR EACH ROW
-	WHEN OLD.id = 0
-	BEGIN
-		SELECT RAISE(FAIL, 'Deletion not allowed for the first page.');
-	END;
+
 --> statement-breakpoint
 CREATE TABLE `marchers` (
 	`id` integer PRIMARY KEY,
@@ -184,18 +153,9 @@ CREATE TABLE `utility` (
 );
 --> statement-breakpoint
 INSERT INTO `utility` (`id`, `last_page_counts`) VALUES (0, 8);
---> statement-breakpoint
-CREATE TRIGGER `prevent_utility_deletion`
-	BEFORE DELETE ON `utility`
-	FOR EACH ROW
-	WHEN OLD.id = 0
-	BEGIN
-		SELECT RAISE(FAIL, 'Deletion not allowed for the utility record.');
-	END;
-
 
 --> statement-breakpoint
-INSERT INTO `history_stats` (`id`, `cur_undo_group`, `cur_redo_group`, `group_limit`) 
+INSERT INTO `history_stats` (`id`, `cur_undo_group`, `cur_redo_group`, `group_limit`)
 VALUES (1, 0, 0, 500);
 
 
