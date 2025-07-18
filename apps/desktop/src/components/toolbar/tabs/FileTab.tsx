@@ -13,6 +13,7 @@ import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import SettingsModal from "../SettingsModal";
+import { T } from "@tolgee/react";
 
 export function FileTab() {
     const { isFullscreen } = useFullscreenStore();
@@ -26,7 +27,7 @@ export function FileTab() {
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FolderOpenIcon size={24} />
-                    Open File
+                    <T keyName="fileTab.openFile" />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
@@ -35,7 +36,7 @@ export function FileTab() {
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FileIcon size={24} />
-                    New File
+                    <T keyName="fileTab.newFile" />
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
@@ -44,7 +45,7 @@ export function FileTab() {
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FloppyDiskIcon size={24} />
-                    Save Copy
+                    <T keyName="fileTab.saveFile" />
                 </RegisteredActionButton>
             </ToolbarSection>
             <ToolbarSection>
@@ -53,7 +54,7 @@ export function FileTab() {
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <SignOutIcon size={24} />
-                    Exit File
+                    <T keyName="fileTab.exitFile" />
                 </button>
             </ToolbarSection>
             {!isFullscreen && (
@@ -63,14 +64,14 @@ export function FileTab() {
                         className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                     >
                         <ArrowUUpLeftIcon size={24} />
-                        Undo
+                        <T keyName="fileTab.undo" />
                     </button>
                     <button
                         onClick={api.performRedo}
                         className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                     >
                         <ArrowUUpRightIcon size={24} />
-                        Redo
+                        <T keyName="fileTab.redo" />
                     </button>
                 </ToolbarSection>
             )}

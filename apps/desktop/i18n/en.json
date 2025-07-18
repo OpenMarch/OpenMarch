@@ -374,6 +374,14 @@
             "yCheckpointsNegative": "WARNING - It is highly recommended that all Y-checkpoints' steps be less than zero (i.e. negative numbers). All of the Y-coordinates should be behind the front of the field. Failing to do so may cause graphical errors and unexpected coordinates."
         }
     },
+    "fileTab": {
+        "exitFile": "Exit File",
+        "newFile": "New File",
+        "openFile": "Open File",
+        "redo": "Redo",
+        "saveFile": "Save Copy",
+        "undo": "Undo"
+    },
     "formButtons": {
         "cancel": "Cancel",
         "editButton": "Edit",
@@ -698,7 +706,22 @@
         "databasePathError.dismiss": "Dismiss"
     },
     "toolbar": {
-        "settings": "App Settings"
+        "alignment": {
+            "alignMarchersAriaLabel": "Align marchers",
+            "lockMarchersAriaLabel": "Cursor movement and marcher snap",
+            "placeAllMarchers": "Place all marchers",
+            "placeSelectedMarchers": "Place selected marchers",
+            "toNextPagePositions": "...to next page positions",
+            "toPreviousPagePositions": "...to previous page positions"
+        },
+        "settings": "App Settings",
+        "view": {
+            "gridLines": "Grid lines",
+            "halfLines": "Half lines",
+            "nextPaths": "Next paths",
+            "previousPaths": "Previous paths",
+            "uiSettingsToolbar": "Ui Settings Toolbar"
+        }
     },
     "versionCheck": {
         "error": {

@@ -22,6 +22,7 @@
             "setAllToPrevious": "Fijar todas las coordenadas de marchadores a la página anterior",
             "setAllToPreviousSuccess": "Configurado con éxito todas las {{count}} coordenadas de marchadores en la página {{currentPage}} a las coordenadas de la página anterior {{previousPage}}",
             "setSelectedToNext": "Fijar las coordenadas de los marchadores seleccionados a la página siguiente",
+            "setSelectedToNextSuccess": "{count, plural, one {Configuró exitosamente {count} coordenada de marcha en la página {currentPage} a las coordenadas de la próxima página {nextPage}} other {Configuró exitosamente {count} coordenadas de marcha en la página {currentPage} a las coordenadas de la próxima página {nextPage}}}",
             "setSelectedToPrevious": "Fijar las coordenadas de los marchadores seleccionados a la página anterior",
             "setSelectedToPreviousSuccess": "Configurado con éxito {{count}} coordenada{{count, plural, one {} other {s}}} de marcha en la página {{currentPage}} a las coordenadas de la página anterior {{previousPage}}"
         },
@@ -373,6 +374,14 @@
             "yCheckpointsNegative": "ADVERTENCIA - Se recomienda encarecidamente que todos los pasos de los puntos de control Y sean menores a cero (es decir, números negativos). Todas las coordenadas Y deben estar detrás del frente del campo. No seguir estas recomendaciones puede causar errores gráficos y coordenadas inesperadas."
         }
     },
+    "fileTab": {
+        "exitFile": "Salir del Archivo",
+        "newFile": "Nuevo Archivo",
+        "openFile": "Abrir archivo",
+        "redo": "Rehacer",
+        "saveFile": "Guardar Copia",
+        "undo": "Deshacer"
+    },
     "formButtons": {
         "cancel": "Cancelar",
         "editButton": "Editar",
@@ -655,6 +664,14 @@
         "triangle": "Triángulo",
         "x": "X"
     },
+    "tempoGroup": {
+        "createBeatsError": "Error al crear ritmos",
+        "createNewBeatsError": "Error al crear nuevos ritmos",
+        "deletedSuccessfully": "Grupo de tempo eliminado exitosamente",
+        "deleteFailed": "No se pudo eliminar el grupo de tiempo",
+        "differentBeatsError": "Grupo de tempo tiene diferente número de tiempos. Esto no debería ocurrir. ¡Por favor contáctenos!",
+        "noMeasures": "El grupo de tempo no tiene medidas"
+    },
     "timeline": {
         "audio": "Audio",
         "controls": {
@@ -689,7 +706,22 @@
         "databasePathError.dismiss": "Descartar"
     },
     "toolbar": {
-        "settings": "Configuración de la App"
+        "alignment": {
+            "alignMarchersAriaLabel": "Alinear marchadores",
+            "lockMarchersAriaLabel": "Movimiento del cursor y ajuste de marchadores",
+            "placeAllMarchers": "Colocar todos los manifestantes",
+            "placeSelectedMarchers": "Colocar manifestantes seleccionados",
+            "toNextPagePositions": "...a posiciones de página siguientes",
+            "toPreviousPagePositions": "...a posiciones en la página anterior"
+        },
+        "settings": "Configuración de la App",
+        "view": {
+            "gridLines": "Líneas de cuadrícula",
+            "halfLines": "Medias líneas",
+            "nextPaths": "Próximas Rutas",
+            "previousPaths": "Rutas anteriores",
+            "uiSettingsToolbar": "Barra de herramientas de configuración"
+        }
     },
     "versionCheck": {
         "error": {

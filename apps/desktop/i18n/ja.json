@@ -22,6 +22,7 @@
             "setAllToPrevious": "すべての マーカー座標を 前のページに設定",
             "setAllToPreviousSuccess": "すべての {{count}} マーカー座標をページ {{currentPage}} 上の前のページ {{previousPage}} の座標に成功して設定しました",
             "setSelectedToNext": "選択したマーチャーの座標を 次のページに設定",
+            "setSelectedToNextSuccess": "{value, plural, other {'{'count, plural, other '{'ページ '{'currentPage'}' 上の '{'count'}' ヶ所の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'\n'{'count, plural, one '{'ページ '{'currentPage'}' 上の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'}}",
             "setSelectedToPrevious": "選択したマーチャーの座標を 前のページに設定",
             "setSelectedToPreviousSuccess": "ページ {{currentPage}} 上の {{count}} マーカー座標を前のページ {{previousPage}} の座標に成功して設定しました"
         },
@@ -373,6 +374,14 @@
             "yCheckpointsNegative": "警告 - Y チェックポイントのステップは全てゼロ以下 (つまり負の数値) であることが強く推奨されます。全ての Y 座標はフィールドの前面よりも後ろにあるべきです。これを行わないと、グラフィカルエラーや予期しない座標が発生する可能性があります。"
         }
     },
+    "fileTab": {
+        "exitFile": "退出 ファイル",
+        "newFile": "新しい ファイル",
+        "openFile": "ファイル を 開く",
+        "redo": "やり直し",
+        "saveFile": "保存 コピー",
+        "undo": "元に戻す"
+    },
     "formButtons": {
         "cancel": "キャンセル",
         "editButton": "編集",
@@ -655,6 +664,14 @@
         "triangle": "三角形",
         "x": "X"
     },
+    "tempoGroup": {
+        "createBeatsError": "ビーツ の作成エラー",
+        "createNewBeatsError": "新しい ビーツ の作成エラー",
+        "deletedSuccessfully": "テンポ グループ が正常に削除されました",
+        "deleteFailed": "テンポ グループの削除に失敗しました",
+        "differentBeatsError": "テンポ グループ に は 異なる 数 の ビート が あります。これは発生しないはず です。ぜひ お問い合わせ ください！",
+        "noMeasures": "テンポ グループに 測定値 が ありません"
+    },
     "timeline": {
         "audio": "オーディオ",
         "controls": {
@@ -689,7 +706,22 @@
         "databasePathError.dismiss": "無視"
     },
     "toolbar": {
-        "settings": "アプリ 設定"
+        "alignment": {
+            "alignMarchersAriaLabel": "マーチャーズ 整列",
+            "lockMarchersAriaLabel": "カーソル 移動 と マーチャー スナップ",
+            "placeAllMarchers": "すべての行進者を配置",
+            "placeSelectedMarchers": "選択された行進者を配置",
+            "toNextPagePositions": "次の ページ位置 に進む",
+            "toPreviousPagePositions": "...前のページ位置へ"
+        },
+        "settings": "アプリ 設定",
+        "view": {
+            "gridLines": "グリッド ライン",
+            "halfLines": "半分 の 線",
+            "nextPaths": "次の パス",
+            "previousPaths": "前の パス",
+            "uiSettingsToolbar": "UI 設定 ツールバー"
+        }
     },
     "versionCheck": {
         "error": {
