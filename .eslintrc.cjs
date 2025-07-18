@@ -21,6 +21,14 @@ module.exports = {
     plugins: ["eslint-plugin-react"],
     rules: {
         "@typescript-eslint/no-var-requires": "off",
+        "no-unused-vars": [
+            "error",
+            {
+                args: "after-used",
+                argsIgnorePattern: "^_",
+                varsIgnorePattern: "^_",
+            },
+        ],
         "react/prop-types": "warn",
         "react/no-unescaped-entities": "warn",
         "react/jsx-key": "warn",
