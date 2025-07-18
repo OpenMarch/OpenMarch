@@ -1198,6 +1198,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param prevPageId The id of the previous page
      * @param currPageId The id of the current page
      * @param nextPageId The id of the next page
+     * @param marcherIds The ids of the marchers to render pathways for
+     * @param fromCanvasMarchers Gets target positions from canvas marchers instead of marcher pages.
      */
     renderPathVisuals = async ({
         marcherVisuals,
@@ -1205,12 +1207,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         prevPageId,
         currPageId,
         nextPageId,
+        marcherIds,
+        fromCanvasMarchers = false,
     }: {
         marcherVisuals: MarcherVisualMap;
         marcherPages: MarcherPageMap;
         prevPageId: number | null;
         currPageId: number | null;
         nextPageId: number | null;
+        marcherIds: number[];
+        fromCanvasMarchers?: boolean;
     }) => {
         // get the marcher page maps for the previous, current, and next pages
         const prevByMarcher =
@@ -1227,12 +1233,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 : {};
 
         // iterate through each marcher visual and update the pathways, midpoints, and endpoints
-        Object.entries(marcherVisuals).forEach(([marcherIdStr, visual]) => {
-            const marcherId = Number(marcherIdStr);
+        marcherIds.forEach((marcherId) => {
+            const visual = marcherVisuals[marcherId];
+
             const prev =
                 prevPageId !== null ? prevByMarcher[marcherId] : undefined;
-            const curr =
-                currPageId !== null ? currByMarcher[marcherId] : undefined;
+            const curr = fromCanvasMarchers
+                ? visual.getCanvasMarcher().getMarcherCoords()
+                : currPageId !== null
+                  ? currByMarcher[marcherId]
+                  : undefined;
             const next =
                 nextPageId !== null ? nextByMarcher[marcherId] : undefined;
 

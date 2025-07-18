@@ -322,10 +322,7 @@ export default function Canvas({
         }
     }, [setSelectedMarchers]);
 
-    /**
-     * Handler for moving CanvasMarchers to update paths.
-     */
-    const handleObjectMoving = useCallback(
+    const handleRotate = useCallback(
         (fabricEvent: fabric.IEvent<Event>) => {
             if (!canvas || !selectedPage || !marcherPages) return;
 
@@ -335,88 +332,29 @@ export default function Canvas({
                 fabricEvent.target as fabric.Group,
             );
 
-            // Get selected CanvasMarchers and their IDs
-            const selectedCanvasMarchers = canvas.getCanvasMarchers({
-                active: true,
-            });
-            const selectedIds = selectedCanvasMarchers.map(
-                (cm) => cm.marcherObj.id,
-            );
-
-            // Remove pathways and midpoints only for selected marchers
-            for (const pathwayMidpoint of pagePathwaysMidpoints.current as Pathway[]) {
-                if (selectedIds.includes(pathwayMidpoint.marcherId)) {
-                    canvas.remove(pathwayMidpoint);
-                }
-            }
-            pagePathwaysMidpoints.current =
-                pagePathwaysMidpoints.current.filter(
-                    (pathwayMidpoint) =>
-                        !selectedIds.includes(
-                            (pathwayMidpoint as Pathway).marcherId,
-                        ),
-                );
-
-            // Draw previous/next pathways for selected marchers
-            selectedCanvasMarchers.forEach((cm: any) => {
-                const marcherId = cm.marcherObj.id;
-
-                // Adjust coords for snapping
-                const movingCoords =
-                    selectedCanvasMarchers.length === 1 &&
-                    !(fabricEvent.e as MouseEvent).shiftKey
-                        ? cm.getMarcherCoords(uiSettings)
-                        : cm.getAbsoluteCoords();
-
-                // Previous pathway
-                const prev =
-                    selectedPage.previousPageId !== null
-                        ? MarcherPage.getByMarcherAndPageId(
-                              marcherPages,
-                              marcherId,
-                              selectedPage.previousPageId,
-                          )
-                        : null;
-                if (prev && uiSettings.previousPaths) {
-                    pagePathwaysMidpoints.current.push(
-                        ...canvas.renderIndividualPathwayAndMidpoint({
-                            start: prev,
-                            end: movingCoords,
-                            marcherId: marcherId,
-                            color: rgbaToString(
-                                fieldProperties!.theme.previousPath,
-                            ),
-                        }),
-                    );
-                }
-
-                // Next pathway
-                const next =
-                    selectedPage.nextPageId !== null
-                        ? MarcherPage.getByMarcherAndPageId(
-                              marcherPages,
-                              marcherId,
-                              selectedPage.nextPageId,
-                          )
-                        : null;
-                if (next && uiSettings.nextPaths) {
-                    pagePathwaysMidpoints.current.push(
-                        ...canvas.renderIndividualPathwayAndMidpoint({
-                            start: movingCoords,
-                            end: next,
-                            marcherId: marcherId,
-                            color: rgbaToString(
-                                fieldProperties!.theme.nextPath,
-                            ),
-                        }),
-                    );
-                }
-            });
-
             canvas.requestRenderAll();
         },
-        [canvas, marcherPages, selectedPage, uiSettings, pagePathwaysMidpoints],
+        [canvas, marcherPages, selectedPage],
     );
+
+    /**
+     * Update paths of moving CanvasMarchers
+     */
+    const updateTemporaryPaths = useCallback(() => {
+        if (!canvas || !selectedPage || !marcherPages) return;
+
+        canvas.renderPathVisuals({
+            marcherVisuals: marcherVisuals,
+            marcherPages: marcherPages,
+            prevPageId: selectedPage.previousPageId,
+            currPageId: selectedPage.id,
+            nextPageId: selectedPage.nextPageId,
+            marcherIds: selectedMarchers.map((m) => m.id),
+            fromCanvasMarchers: true,
+        });
+
+        //canvas.requestRenderAll();
+    }, [canvas, marcherPages, selectedMarchers, selectedPage, uiSettings]);
 
     useEffect(() => {
         if (!canvas) return;
@@ -424,20 +362,24 @@ export default function Canvas({
         canvas.on("selection:updated", handleSelect);
         canvas.on("selection:cleared", handleDeselect);
 
-        canvas.on("object:moving", handleObjectMoving);
-        canvas.on("object:scaling", handleObjectMoving);
-        canvas.on("object:rotating", handleObjectMoving);
+        canvas.on("object:rotating", handleRotate);
+
+        canvas.on("object:moving", updateTemporaryPaths);
+        canvas.on("object:scaling", updateTemporaryPaths);
+        canvas.on("object:rotating", updateTemporaryPaths);
 
         return () => {
             canvas.off("selection:created", handleSelect);
             canvas.off("selection:updated", handleSelect);
             canvas.off("selection:cleared", handleDeselect);
 
-            canvas.off("object:moving", handleObjectMoving);
-            canvas.off("object:scaling", handleObjectMoving);
-            canvas.off("object:rotating", handleObjectMoving);
+            canvas.off("object:rotating", handleRotate);
+
+            canvas.off("object:moving", updateTemporaryPaths);
+            canvas.off("object:scaling", updateTemporaryPaths);
+            canvas.off("object:rotating", updateTemporaryPaths);
         };
-    }, [canvas, handleDeselect, handleSelect, handleObjectMoving]);
+    }, [canvas, handleDeselect, handleSelect, updateTemporaryPaths]);
 
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {
@@ -614,8 +556,10 @@ export default function Canvas({
                 prevPageId: selectedPage.previousPageId,
                 currPageId: selectedPage.id,
                 nextPageId: selectedPage.nextPageId,
+                marcherIds: marchers.map((m) => m.id),
             });
             canvas.sendCanvasMarchersToFront();
+            // TODO hide all if no paths shown
         }
     }, [
         canvas,
