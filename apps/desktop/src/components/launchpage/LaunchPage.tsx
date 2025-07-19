@@ -14,6 +14,7 @@ import {
 import * as Tabs from "@radix-ui/react-tabs";
 import { useState } from "react";
 import SettingsContent from "./settings/SettingsContent";
+import { T } from "@tolgee/react";
 import FilesContent from "./files/FilesContent";
 import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
@@ -45,7 +46,9 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                     value="settings"
                     className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6 select-text"
                 >
-                    <h3 className="text-h3 w-[512px] pb-16">Settings</h3>
+                    <h3 className="text-h3 w-[512px] pb-16">
+                        <T keyName="settings.title" />
+                    </h3>
                     <SettingsContent />
                 </Tabs.Content>
             </Tabs.Root>
@@ -91,7 +94,9 @@ function Sidebar({
     return (
         <Tabs.List className="bg-fg-1 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
             <section className="flex flex-col gap-12">
-                <p className="text-body text-text/60">Launch Page</p>
+                <p className="text-body text-text/60">
+                    <T keyName="launchpage.title" />
+                </p>
                 <div className="flex gap-8">
                     <Button
                         className="h-fit w-full px-8 leading-none whitespace-nowrap"
@@ -99,7 +104,7 @@ function Sidebar({
                     >
                         <PlusIcon size={24} />{" "}
                         <span className="h-fit leading-none whitespace-nowrap">
-                            New File
+                            <T keyName="launchpage.files.createNew" />
                         </span>
                     </Button>
                     <Button
@@ -109,7 +114,7 @@ function Sidebar({
                     >
                         <FolderIcon size={24} />
                         <span className="h-fit leading-none whitespace-nowrap">
-                            Open File
+                            <T keyName="launchpage.files.openFile" />
                         </span>
                     </Button>
                 </div>
@@ -117,13 +122,13 @@ function Sidebar({
                     <Tabs.Trigger value="files">
                         <ListItem selected={selectedTab === "files"}>
                             <FolderIcon size={24} />
-                            Files
+                            <T keyName="launchpage.files.title" />
                         </ListItem>
                     </Tabs.Trigger>
                     <Tabs.Trigger value="learn">
                         <ListItem selected={selectedTab === "learn"}>
                             <LightbulbIcon size={24} />
-                            Learn
+                            <T keyName="launchpage.learn.title" />
                         </ListItem>
                     </Tabs.Trigger>
                 </div>
@@ -162,7 +167,8 @@ function Sidebar({
                         rel="noreferrer"
                         className={`rounded-6 border-stroke text-text bg-fg-2 hover:border-accent relative mb-8 flex h-[2.5rem] w-full items-center justify-start gap-8 overflow-clip border px-12 duration-150 ease-out`}
                     >
-                        <TShirtIcon size={24} /> Get OpenMarch Merch!
+                        <TShirtIcon size={24} />{" "}
+                        <T keyName="launchpage.merch" />
                         <div className="bg-accent absolute right-[5%] bottom-[-15%] -z-10 h-[1rem] w-[6rem] rounded-full opacity-75 blur-xl">
                             a
                         </div>
@@ -173,7 +179,7 @@ function Sidebar({
                     <Tabs.Trigger value="settings">
                         <ListItem selected={selectedTab === "settings"}>
                             <GearSixIcon size={24} />
-                            Settings
+                            <T keyName="launchpage.settings.title" />
                         </ListItem>
                     </Tabs.Trigger>
                 </div>

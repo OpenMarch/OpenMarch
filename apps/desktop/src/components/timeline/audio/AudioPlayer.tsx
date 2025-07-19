@@ -12,6 +12,7 @@ import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
 import { useAudioStore } from "@/stores/AudioStore";
+import { useTolgee } from "@tolgee/react";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -37,6 +38,7 @@ export default function AudioPlayer() {
     const waveformRef = useRef<HTMLDivElement>(null);
     const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
     const { setAudio } = useAudioStore();
+    const { t } = useTolgee();
 
     useEffect(() => {
         if (!audioRef.current) return;
@@ -46,7 +48,7 @@ export default function AudioPlayer() {
 
         if (isPlaying) {
             audio.play().catch((error) => {
-                toast.error("Failed to play audio");
+                toast.error(t("audio.play.error"));
                 console.error("Error playing audio:", error);
             });
         } else {
@@ -55,12 +57,14 @@ export default function AudioPlayer() {
                 : 0;
             audio.pause();
         }
+
     }, [
         audioFileUrl,
         isPlaying,
         selectedPage,
         selectedPage?.timestamp,
         setAudio,
+        t
     ]);
 
     useEffect(() => {

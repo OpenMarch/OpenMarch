@@ -3,6 +3,7 @@ import { usePostHog } from "posthog-js/react";
 import * as Sentry from "@sentry/electron/renderer";
 import { useState, useEffect } from "react";
 import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
+import { T } from "@tolgee/react";
 
 interface AnalyticsOptInModalProps {
     onChoice: (hasOptedIn: boolean) => void;
@@ -72,42 +73,47 @@ export default function AnalyticsOptInModal({
                 className="w-[40rem]"
                 aria-describedby="Analytics Opt-In"
             >
-                <DialogTitle>Help Us Improve OpenMarch</DialogTitle>
+                <DialogTitle>
+                    <T keyName="analyticsOptIn.title" />
+                </DialogTitle>
                 <div className="flex flex-col gap-16">
                     <p className="text-text-subtitle text-sm">
-                        To help us improve OpenMarch, we collect analytics data,
-                        error logs, and session captures. This helps us
-                        understand how you use the app and identify bugs. Read
-                        our{" "}
-                        <a
-                            href="https://openmarch.com/privacy"
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-accent underline"
-                        >
-                            privacy policy
-                        </a>{" "}
-                        to learn more.
+                        <T
+                            keyName="analyticsOptIn.description"
+                            params={{
+                                a: (content) => (
+                                    <a
+                                        href="https://openmarch.com/privacy"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-accent underline"
+                                    >
+                                        {content}
+                                    </a>
+                                ),
+                            }}
+                        />
                     </p>
                     <p className="text-text-subtitle text-sm">
-                        You can change this setting at any time in the app
-                        settings.
+                        <T keyName="analyticsOptIn.settings" />
                     </p>
 
                     <div className="flex flex-col gap-16 text-sm">
-                        When you opt-in
+                        <T keyName="analyticsOptIn.whenYouOptIn" />
                         <AnalyticsMessage hasOptedOut={false} />
                     </div>
                     <div className="flex flex-col gap-16 text-sm">
-                        When you opt-out
+                        <T keyName="analyticsOptIn.whenYouOptOut" />
                         <AnalyticsMessage hasOptedOut={true} />
                     </div>
 
                     <div className="flex justify-end gap-12 pt-16">
                         <Button onClick={handleOptOut} variant="secondary">
-                            Opt Out
+                            <T keyName="analyticsOptIn.optOut" />
                         </Button>
-                        <Button onClick={handleOptIn}>Opt In</Button>
+                        <Button onClick={handleOptIn}>
+                            <T keyName="analyticsOptIn.optIn" />
+                        </Button>
                     </div>
                 </div>
             </DialogContent>

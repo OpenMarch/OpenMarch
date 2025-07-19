@@ -13,6 +13,7 @@ import {
 } from "@openmarch/ui";
 import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
+import { T } from "@tolgee/react";
 
 export default function TitleBar({ showControls }: { showControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
@@ -43,20 +44,18 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                 <AlertDialogContent>
                     <div className="flex flex-col items-center gap-12">
                         <SealWarningIcon size={48} className="text-red" />
-                        <AlertDialogTitle>Database Path Error</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            <T keyName="titlebar.databasePathError" />
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Failed to fetch .dots file path!
-                            <br />
-                            Please fully quit the app and try again.
-                            <br />
-                            If the issue persists, please reach out to support.
+                            <T keyName="titlebar.databasePathError.description" />
                         </AlertDialogDescription>
                         <AlertDialogAction>
                             <Button
                                 variant="primary"
                                 onClick={() => setDbPathError(false)}
                             >
-                                Dismiss
+                                <T keyName="titlebar.databasePathError.dismiss" />
                             </Button>
                         </AlertDialogAction>
                     </div>

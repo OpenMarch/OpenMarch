@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ListFormProps } from "../../global/Interfaces";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
-import { SECTIONS } from "@/global/classes/Sections";
+import { SECTIONS, getTranslatedSectionName } from "@/global/classes/Sections";
 import { Button } from "@openmarch/ui";
 import { TrashIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
@@ -15,6 +15,7 @@ import {
     SelectTriggerText,
 } from "@openmarch/ui";
 import { AlertDialogAction, AlertDialogCancel } from "@openmarch/ui";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function MarcherList({
     hasHeader = false,
@@ -28,6 +29,7 @@ export default function MarcherList({
         isEditingLocal,
         setIsEditingLocal,
     ];
+    const { t } = useTolgee();
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [
         false,
         undefined,
@@ -128,7 +130,9 @@ export default function MarcherList({
                 className="text-body text-text flex flex-col gap-16 select-text"
             >
                 <div className="flex w-full items-center justify-between">
-                    <p className="text-body text-text">List</p>
+                    <p className="text-body text-text">
+                        <T keyName="marchers.listTitle" />
+                    </p>
                     <div className="flex gap-8">
                         {!isEditingStateProp &&
                         localMarchers &&
@@ -139,30 +143,33 @@ export default function MarcherList({
                                         variant="primary"
                                         size="compact"
                                         handleCancel={handleCancel}
-                                        editButton={"Edit Marchers"}
+                                        editButton={t("marchers.editButton")}
                                         isEditingProp={isEditing}
                                         setIsEditingProp={setIsEditing}
                                         handleSubmit={handleSubmit}
                                         isDangerButton={true}
-                                        alertDialogTitle="Warning"
-                                        alertDialogDescription={`
-                                            You are about to delete these marchers:
-                                            ${deletionsRef.current
-                                                .map((marcherId) => {
-                                                    const marcherName =
-                                                        marchers?.find(
-                                                            (marcher) =>
-                                                                marcher.id ===
-                                                                marcherId,
-                                                        )?.drill_number;
-                                                    return (
-                                                        marcherName || "Unknown"
-                                                    );
-                                                })
-                                                .join(
-                                                    ", ",
-                                                )}. This can be undone with [Ctrl/Cmd+Z].
-                                        `}
+                                        alertDialogTitle={t(
+                                            "marchers.deleteTitle",
+                                        )}
+                                        alertDialogDescription={t(
+                                            "marchers.deleteWarning",
+                                            {
+                                                marchers: deletionsRef.current
+                                                    .map((marcherId) => {
+                                                        const marcherName =
+                                                            marchers?.find(
+                                                                (marcher) =>
+                                                                    marcher.id ===
+                                                                    marcherId,
+                                                            )?.drill_number;
+                                                        return (
+                                                            marcherName ||
+                                                            "Unknown"
+                                                        );
+                                                    })
+                                                    .join(", "),
+                                            },
+                                        )}
                                         alertDialogActions={
                                             <>
                                                 <AlertDialogAction>
@@ -171,7 +178,7 @@ export default function MarcherList({
                                                         size="compact"
                                                         onClick={handleSubmit}
                                                     >
-                                                        Delete
+                                                        <T keyName="marchers.deleteButton" />
                                                     </Button>
                                                 </AlertDialogAction>
                                                 <AlertDialogCancel>
@@ -180,7 +187,7 @@ export default function MarcherList({
                                                         size="compact"
                                                         onClick={handleCancel}
                                                     >
-                                                        Cancel
+                                                        <T keyName="marchers.cancelDeleteButton" />
                                                     </Button>
                                                 </AlertDialogCancel>
                                             </>
@@ -191,7 +198,7 @@ export default function MarcherList({
                                         variant="secondary"
                                         size="compact"
                                         handleCancel={handleCancel}
-                                        editButton={"Edit Marchers"}
+                                        editButton={t("marchers.editButton")}
                                         isEditingProp={isEditing}
                                         setIsEditingProp={setIsEditing}
                                         handleSubmit={handleSubmit}
@@ -213,17 +220,17 @@ export default function MarcherList({
                             <div id="key" className="flex items-center gap-4">
                                 <div className="w-[13%]">
                                     <p className="text-sub text-text/90 font-mono">
-                                        #
+                                        <T keyName="marchers.list.drillNumberTitle" />
                                     </p>
                                 </div>
                                 <div className="w-[45%]">
                                     <p className="text-sub text-text/90">
-                                        Section
+                                        <T keyName="marchers.list.sectionTitle" />
                                     </p>
                                 </div>
                                 <div className="w-[45%]">
                                     <p className="text-sub text-text/90">
-                                        Name
+                                        <T keyName="marchers.list.nameTitle" />
                                     </p>
                                 </div>
                             </div>
@@ -264,8 +271,13 @@ export default function MarcherList({
                                             >
                                                 <SelectTriggerText
                                                     label={
-                                                        marcher.section ||
-                                                        "Section"
+                                                        getTranslatedSectionName(
+                                                            marcher.section,
+                                                            t,
+                                                        ) ||
+                                                        t(
+                                                            "marchers.list.selectSection",
+                                                        )
                                                     }
                                                 />
                                                 <SelectContent>
@@ -281,7 +293,10 @@ export default function MarcherList({
                                                                     section.name
                                                                 }
                                                             >
-                                                                {section.name}
+                                                                {getTranslatedSectionName(
+                                                                    section.name,
+                                                                    t,
+                                                                )}
                                                             </SelectItem>
                                                         );
                                                     })}
@@ -292,7 +307,10 @@ export default function MarcherList({
                                                 className="text-body text-text"
                                                 data-testid="marcher-section"
                                             >
-                                                {marcher.section}
+                                                {getTranslatedSectionName(
+                                                    marcher.section,
+                                                    t,
+                                                )}
                                             </p>
                                         )}
                                     </div>
@@ -349,7 +367,9 @@ export default function MarcherList({
         );
     return (
         <div className="flex flex-col">
-            <p className="text-body text-text/90">No marchers created yet.</p>
+            <p className="text-body text-text/90">
+                <T keyName="marchers.list.noMarchers" />
+            </p>
         </div>
     );
 }

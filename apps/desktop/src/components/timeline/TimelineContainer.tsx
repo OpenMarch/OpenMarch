@@ -13,6 +13,7 @@ import TimelineControls from "./TimelineControls";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
@@ -22,6 +23,7 @@ export default function TimelineContainer() {
     const { beats } = useTimingObjectsStore()!;
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
+    const { t } = useTolgee();
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -80,13 +82,15 @@ export default function TimelineContainer() {
                     {beats.length > 1 ? (
                         <div className="flex h-fit items-center">
                             <div>
-                                <p className="text-sub w-[4rem]">Pages</p>
+                                <p className="text-sub w-[4rem]">
+                                    <T keyName="timeline.pages" />
+                                </p>
                             </div>
                             <PageTimeline />
                         </div>
                     ) : (
                         <MusicModal
-                            label="Add Music"
+                            label={t("timeline.music.add")}
                             buttonClassName="bg-accent rounded-full text-text-invert hover:text-text-invert border border-stroke px-8 w-fit enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out"
                         />
                     )}
@@ -94,7 +98,9 @@ export default function TimelineContainer() {
                     {!isFullscreen && (
                         <div className={"flex items-center"}>
                             <div className="flex w-[4rem] gap-6">
-                                <p className="text-sub">Audio</p>
+                                <p className="text-sub">
+                                    <T keyName="timeline.audio" />
+                                </p>
                                 {uiSettings.focussedComponent !== "timeline" ? (
                                     <RegisteredActionButton
                                         registeredAction={

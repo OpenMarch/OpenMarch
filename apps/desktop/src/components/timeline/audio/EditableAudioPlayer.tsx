@@ -36,6 +36,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { conToastError } from "@/utilities/utils";
 import { toast } from "sonner";
 import Measure from "@/global/classes/Measure";
+import { T, useTolgee } from "@tolgee/react";
 
 /**
  * Editable version of the AudioPlayer component.
@@ -61,6 +62,7 @@ export default function EditableAudioPlayer() {
     );
     const [temporaryBeats, setTemporaryBeats] = useState<Beat[]>([]);
     const [temporaryMeasures, setTemporaryMeasures] = useState<Measure[]>([]);
+    const { t } = useTolgee();
 
     const togglePlayPause = useCallback(() => {
         if (!waveSurfer) return;
@@ -270,12 +272,13 @@ export default function EditableAudioPlayer() {
             oldMeasures: measures,
             pages,
             refreshFunction: fetchTimingObjects,
+            t,
         });
         if (!pageUpdates.success) {
-            conToastError("Error creating new beats", pageUpdates);
+            conToastError(t("audio.beats.save.error"), pageUpdates);
             return;
         } else {
-            toast.success("Beats saved successfully");
+            toast.success(t("audio.beats.save.success"));
             setBeatsToDisplay("real");
         }
     };
@@ -300,7 +303,7 @@ export default function EditableAudioPlayer() {
             <div id="waveform" ref={waveformRef}></div>
             <div className="border-stroke rounded-6 bg-modal backdrop-blur-32 shadow-modal fixed bottom-[212px] z-50 flex w-fit min-w-0 items-center gap-12 border p-6">
                 <p className="text-sub text-text-subtitle whitespace-nowrap">
-                    Tap Tempo
+                    <T keyName="audio.tapTempo.label" />
                 </p>
                 <div className="flex items-center gap-6">
                     <button
@@ -330,7 +333,7 @@ export default function EditableAudioPlayer() {
                             size={"compact"}
                             className="w-fit min-w-0 whitespace-nowrap"
                         >
-                            Tap New Tempo
+                            <T keyName="audio.tapNewTempo.label" />
                         </Button>
                     </div>
                 ) : (
@@ -345,7 +348,7 @@ export default function EditableAudioPlayer() {
                                 disabled={isAudioPlaying}
                                 onClick={handleSave}
                             >
-                                Save New Beats
+                                <T keyName="audio.saveNewBeats.label" />
                             </Button>
                             <Button
                                 className="w-full"
@@ -356,7 +359,7 @@ export default function EditableAudioPlayer() {
                                 }}
                                 size={"compact"}
                             >
-                                Restart
+                                <T keyName="audio.tapNewTempo.restart" />
                             </Button>
                             <Button
                                 className="w-full"
@@ -364,7 +367,7 @@ export default function EditableAudioPlayer() {
                                 variant="secondary"
                                 onClick={handleCancel}
                             >
-                                Exit
+                                <T keyName="audio.tapNewTempo.exit" />
                             </Button>
                         </div>
                     </div>
@@ -381,7 +384,7 @@ export default function EditableAudioPlayer() {
                         className="w-fit min-w-fit whitespace-nowrap"
                     >
                         <BooksIcon size={22} />
-                        See docs
+                        <T keyName="audio.seeDocs.label" />
                     </Button>
                 </a>
             </div>

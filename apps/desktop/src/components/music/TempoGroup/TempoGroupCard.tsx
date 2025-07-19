@@ -18,6 +18,7 @@ import {
 import { AlertDialog } from "@openmarch/ui";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function TempoGroupCard({
     tempoGroup,
@@ -59,6 +60,7 @@ function StaticTempoGroupCard({
     index: number;
 }) {
     const [isDeleting, setIsDeleting] = useState(false);
+    const t = useTolgee();
     const isManualTempo = useMemo(
         () => !!tempoGroup.manualTempos?.length,
         [tempoGroup.manualTempos],
@@ -84,7 +86,9 @@ function StaticTempoGroupCard({
                 <div className="flex flex-col gap-8">
                     {tempoGroup.manualTempos ? (
                         <div>
-                            <h3 className="text-h3">Custom</h3>
+                            <h3 className="text-h3">
+                                <T keyName="music.custom" />
+                            </h3>
 
                             <div className="flex- flex flex-wrap gap-4">
                                 {tempoGroup.manualTempos.map((tempo, index) => (
@@ -148,11 +152,10 @@ function StaticTempoGroupCard({
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                                 <AlertDialogTitle>
-                                    Are you sure?
+                                    <T keyName="music.deleteTempoGroupAlert" />
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Deleting the tempo group will also delete
-                                    all pages associated with it.
+                                    <T keyName="music.deleteTempoGroupDescription" />
                                 </AlertDialogDescription>
                                 <div className="flex flex-col items-center justify-center gap-8 align-middle">
                                     <AlertDialogAction>
@@ -170,12 +173,11 @@ function StaticTempoGroupCard({
                                             }}
                                             disabled={isDeleting}
                                         >
-                                            Delete all measures and their
-                                            associated pages
+                                            <T keyName="music.deleteAllMeasures" />
                                         </Button>
                                     </AlertDialogAction>
                                     <div className="text-sub text-text-subtitle">
-                                        This action is undoable with Ctrl + Z
+                                        <T keyName="music.undoWithCtrlZ" />
                                     </div>
                                     <AlertDialogCancel asChild>
                                         <Button
@@ -183,7 +185,7 @@ function StaticTempoGroupCard({
                                             disabled={isDeleting}
                                             className="w-full"
                                         >
-                                            Cancel
+                                            <T keyName="music.cancel" />
                                         </Button>
                                     </AlertDialogCancel>
                                 </div>
@@ -207,7 +209,7 @@ function StaticTempoGroupCard({
                                     className={TooltipClassName}
                                     side="top"
                                 >
-                                    Add a new tempo group after this one
+                                    <T keyName="music.addNewTempoGroupAfter" />
                                 </Tooltip.Content>
                             </Tooltip.Portal>
                         </Tooltip.Root>

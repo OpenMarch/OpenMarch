@@ -9,8 +9,10 @@ import { version as currentVersion } from "../../package.json";
 import { Button } from "@openmarch/ui";
 import StyledMarkdown from "./StyledMarkdown";
 import { Skeleton } from "@openmarch/ui";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function VersionChecker() {
+    const { t } = useTolgee();
     const [isOpen, setIsOpen] = useState(false);
     const [latestVersion, setLatestVersion] = useState<string | null>(null);
     const [changelog, setChangelog] = useState<string | null>(null);
@@ -59,12 +61,12 @@ export default function VersionChecker() {
 
                 setDownloadUrls(assetUrls);
             } else {
-                setError("Unable to fetch latest version.");
+                setError(t("versionCheck.error.noVersion"));
             }
         } catch (err) {
-            setError("An error occurred while fetching the version.");
+            setError(t("versionCheck.error.fetchFailed"));
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchLatestVersion(); // Fetch the latest
@@ -165,7 +167,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install for Windows
+                                    <T keyName="versionCheck.installWindows" />
                                 </Button>
                             )}
                         {downloadUrls.macArm &&
@@ -178,7 +180,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install for Apple Silicon
+                                    <T keyName="versionCheck.installMacArm" />
                                 </Button>
                             )}
                         {downloadUrls.macIntel &&
@@ -191,7 +193,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install for Intel Mac
+                                    <T keyName="versionCheck.installMacIntel" />
                                 </Button>
                             )}
                         {downloadUrls.linux &&
@@ -204,7 +206,7 @@ export default function VersionChecker() {
                                         )
                                     }
                                 >
-                                    Install for Linux
+                                    <T keyName="versionCheck.installLinux" />
                                 </Button>
                             )}{" "}
                         <Button
@@ -217,7 +219,7 @@ export default function VersionChecker() {
                             }}
                             variant="secondary"
                         >
-                            Skip this version
+                            <T keyName="versionCheck.skipVersion" />
                         </Button>
                     </div>
                 </div>
@@ -233,10 +235,12 @@ export default function VersionChecker() {
                     asChild
                     className="titlebar-button text-sub hover:text-accent flex cursor-pointer items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50"
                 >
-                    New Version Available!
+                    <T keyName="versionCheck.trigger" />
                 </DialogTrigger>
                 <DialogContent className="w-[60rem] max-w-full select-text">
-                    <DialogTitle>New Version Available</DialogTitle>
+                    <DialogTitle>
+                        <T keyName="versionCheck.title" />
+                    </DialogTitle>
                     <SettingsModalContents />
                 </DialogContent>
             </Dialog>

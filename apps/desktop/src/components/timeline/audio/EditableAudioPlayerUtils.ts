@@ -466,6 +466,7 @@ export const replaceAllBeatObjects = async ({
     oldMeasures,
     pages,
     refreshFunction,
+    t,
 }: {
     newBeats: Beat[];
     oldBeats: Beat[];
@@ -473,6 +474,7 @@ export const replaceAllBeatObjects = async ({
     oldMeasures: Measure[];
     pages: Page[];
     refreshFunction: () => Promise<void>;
+    t: (key: string) => string; // Tolgee translation function
 }): Promise<{ success: boolean }> => {
     // Step 1: Prepare beats for creation
     const beatsToCreate = prepareBeatsForCreation(newBeats);
@@ -484,7 +486,7 @@ export const replaceAllBeatObjects = async ({
         useNextUndoGroup: true,
     });
     if (!createBeatsResponse.success) {
-        conToastError("Error creating beats", createBeatsResponse);
+        conToastError(t("audio.beats.create.error"), createBeatsResponse);
         return { success: false };
     }
     try {

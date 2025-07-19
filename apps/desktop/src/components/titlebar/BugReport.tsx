@@ -1,21 +1,28 @@
 import { useEffect } from "react";
 import * as Sentry from "@sentry/electron/renderer";
 import { BugBeetleIcon } from "@phosphor-icons/react/dist/ssr";
+import { T, useTolgee } from "@tolgee/react";
 
 export const feedbackObj = Sentry.feedbackIntegration({
     autoInject: false,
     showBranding: false,
-    messagePlaceholder:
-        "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
+    messagePlaceholder: "", // Will be set dynamically
     enableScreenshot: false,
 });
+
 export default function BugReport() {
+    const { t } = useTolgee();
+
     useEffect(() => {
-        feedbackObj.attachTo("#feedback-button", {});
+        // Update the feedback integration with translated text
+        feedbackObj.attachTo("#feedback-button", {
+            messagePlaceholder: t("titlebar.bugReport.placeholder"),
+        });
+
         return () => {
             feedbackObj.remove();
         };
-    }, []);
+    }, [t]);
 
     // If the version is the same, don't show the modal
     return (
@@ -24,7 +31,7 @@ export default function BugReport() {
             id="feedback-button"
         >
             <BugBeetleIcon size={16} />
-            Submit bug or feedback
+            <T keyName="titlebar.bugReport" />
         </div>
     );
 }

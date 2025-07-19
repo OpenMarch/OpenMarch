@@ -4,6 +4,7 @@ import { FileDottedIcon, CircleNotchIcon, XIcon } from "@phosphor-icons/react";
 import WelcomeContent from "./WelcomeContent";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
+import { T, useTolgee } from "@tolgee/react";
 
 interface RecentFile {
     path: string;
@@ -13,6 +14,8 @@ interface RecentFile {
 }
 
 export default function FilesTabContent() {
+    const { t } = useTolgee();
+
     const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -27,7 +30,7 @@ export default function FilesTabContent() {
             setRecentFiles(files);
         } catch (error) {
             console.error("Failed to load recent files:", error);
-            toast.error("Failed to load recent files");
+            toast.error(t("launchpage.files.failedToLoadRecent"));
         } finally {
             setIsLoading(false);
         }
@@ -42,7 +45,7 @@ export default function FilesTabContent() {
             }
         } catch (error) {
             console.error("Failed to open file:", error);
-            toast.error("Failed to open file");
+            toast.error(t("launchpage.files.failedToOpen"));
         }
     };
 
@@ -56,7 +59,7 @@ export default function FilesTabContent() {
             loadRecentFiles(); // Reload the list
         } catch (error) {
             console.error("Failed to remove file from recent list:", error);
-            toast.error("Failed to remove file from recent list");
+            toast.error(t("launchpage.files.failedToRemoveRecent"));
         }
     };
 
@@ -67,7 +70,9 @@ export default function FilesTabContent() {
         >
             <div className="flex h-full w-full flex-col p-6">
                 {recentFiles.length !== 0 && (
-                    <h2 className="text-h3 font-medium">Files</h2>
+                    <h2 className="text-h3 font-medium">
+                        <T keyName="launchpage.files.title" />
+                    </h2>
                 )}
 
                 {isLoading ? (
@@ -95,7 +100,9 @@ export default function FilesTabContent() {
                                                 src={`data:image/svg+xml;base64,${btoa(
                                                     file.svgPreview,
                                                 )}`}
-                                                alt="Field Preview"
+                                                alt={t(
+                                                    "launchpage.files.fieldPreview",
+                                                )}
                                                 className="max-h-full max-w-full object-contain"
                                                 loading="lazy"
                                             />
@@ -127,7 +134,9 @@ export default function FilesTabContent() {
                                     <Button
                                         size="compact"
                                         variant="secondary"
-                                        tooltipText="Remove from recent files"
+                                        tooltipText={t(
+                                            "launchpage.files.removeFile",
+                                        )}
                                         tooltipDelay={300}
                                         tooltipSide="top"
                                         onClick={(e) =>

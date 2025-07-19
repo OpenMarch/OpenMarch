@@ -1,11 +1,14 @@
+import { T } from "@tolgee/react";
+
 export default function WelcomeContent() {
     return (
         <div className="flex h-full w-[512px] flex-col items-center justify-center gap-12 self-center">
             <MarcherLogo />
-            <h3 className="text-h3 text-center">Welcome to OpenMarch</h3>
+            <h3 className="text-h3 text-center">
+                <T keyName="welcome.title" />
+            </h3>
             <p className="text-body text-text-subtitle text-center leading-[190%]">
-                No files found. Create one, and make sure to checkout the
-                guides. Customize your theme and navigation in Settings.
+                <T keyName="welcome.description" />
             </p>
         </div>
     );

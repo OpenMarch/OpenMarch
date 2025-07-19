@@ -174,6 +174,11 @@ const APP_API = {
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 
+    // Language
+    getLanguage: () => ipcRenderer.invoke("get-language"),
+    setLanguage: (language: string) =>
+        ipcRenderer.invoke("set-language", language),
+
     // Settings
     send: (channel: string, ...args: any[]) => {
         ipcRenderer.send(channel, ...args);

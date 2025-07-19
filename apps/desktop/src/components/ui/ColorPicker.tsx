@@ -14,6 +14,7 @@ import {
 } from "@uiw/react-color";
 import * as Popover from "@radix-ui/react-popover";
 import FormField from "./FormField";
+import { T } from "@tolgee/react";
 
 interface ColorPickerProps {
     initialColor: RgbaColor;
@@ -115,14 +116,14 @@ export default function ColorPicker({
                                         setCurrentColor(initialColor);
                                     }}
                                 >
-                                    Discard
+                                    <T keyName="colorPicker.discard" />
                                     <TrashSimpleIcon size={22} />
                                 </Popover.Close>
                                 <Popover.Close
                                     className="text-sub flex w-fit items-center gap-4 text-black duration-150 ease-out hover:text-green-800"
                                     onClick={handleClose}
                                 >
-                                    Save
+                                    <T keyName="colorPicker.save" />
                                     <CheckIcon size={22} />
                                 </Popover.Close>
                             </div>

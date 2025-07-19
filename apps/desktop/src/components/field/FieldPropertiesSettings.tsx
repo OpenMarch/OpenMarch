@@ -4,6 +4,7 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldIoButtons from "./FieldIoButtons";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { Button } from "@openmarch/ui";
+import { T } from "@tolgee/react";
 
 export default function FieldPropertiesSettings() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;
@@ -11,15 +12,16 @@ export default function FieldPropertiesSettings() {
     if (!fieldProperties)
         return (
             <div>
-                No field properties to load! This should never happen, please
-                reach out to support
+                <T keyName="fieldProperties.errors.noPropertiesToLoad" />
             </div>
         );
 
     return (
         <div className="flex h-full flex-col overflow-y-auto pb-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
-                <h4 className="text-h5 leading-none">General</h4>
+                <h4 className="text-h5 leading-none">
+                    <T keyName="fieldProperties.general" />
+                </h4>
                 <div className="flex flex-col gap-16">
                     <div className="m-8">
                         <FieldIoButtons />
@@ -27,7 +29,9 @@ export default function FieldPropertiesSettings() {
                 </div>
 
                 <div className="flex w-full min-w-0 flex-col gap-16">
-                    <h4 className="text-h5 leading-none">Customization</h4>
+                    <h4 className="text-h5 leading-none">
+                        <T keyName="fieldProperties.customization" />
+                    </h4>
                     <FieldPropertiesSelector />
                     {fieldProperties?.isCustom ? (
                         <FieldPropertiesCustomizer />
@@ -45,7 +49,7 @@ export default function FieldPropertiesSettings() {
                             className="w-fit self-end"
                             variant="secondary"
                         >
-                            Customize
+                            <T keyName="fieldProperties.customize" />
                         </Button>
                     )}
                 </div>

@@ -3,6 +3,7 @@ import { Collapsible } from "@/components/ui/Collapsible";
 import { Switch } from "@openmarch/ui";
 import { usePostHog } from "posthog-js/react";
 import { useState, useEffect } from "react";
+import { T } from "@tolgee/react";
 import * as Sentry from "@sentry/electron/renderer";
 
 export default function PrivacySettings() {
@@ -19,34 +20,39 @@ export default function PrivacySettings() {
             <Collapsible
                 trigger={
                     <p className="flex flex-col gap-16 px-8">
-                        Share usage analytics
+                        <T keyName="settings.privacy.analytics" />
                     </p>
                 }
                 className="flex flex-col gap-16 pt-16"
             >
                 <p className="text-text-subtitle px-12 text-sm">
-                    To help us improve OpenMarch, we collect analytics data,
-                    error logs, and session recordings. This helps us understand
-                    how you use the app and identify bugs. Read our{" "}
-                    <a
-                        href="https://openmarch.com/privacy"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-accent underline"
-                    >
-                        privacy policy
-                    </a>{" "}
-                    to learn more.
+                    <T
+                        keyName="settings.privacy.analytics.description"
+                        params={{
+                            a: (content) => (
+                                <a
+                                    href="https://openmarch.com/privacy"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-accent underline"
+                                >
+                                    {content}
+                                </a>
+                            ),
+                        }}
+                    />
                 </p>
                 <p className="text-text-subtitle px-12 text-sm">
-                    You can opt out of this if you&apos;d prefer. Just know that
-                    OpenMarch is a free tool built by volunteers, and this data
-                    really helps us understand how designers are using the app
-                    and find bugs—especially when we don&apos;t hear about them
-                    right away on Discord or Facebook :)
+                    <T
+                        keyName={
+                            "settings.privacy.analytics.description.opt_out"
+                        }
+                    />
                 </p>
                 <div className="flex w-full items-center justify-between gap-16 px-12">
-                    <p className="text-body">Enable analytics</p>
+                    <p className="text-body">
+                        <T keyName={"settings.privacy.analytics.toggle"} />
+                    </p>
                     <Switch
                         id="share-usage-analytics"
                         checked={!hasOptedOut}

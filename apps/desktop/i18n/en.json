@@ -1,0 +1,743 @@
+{
+    "actions": {
+        "alignment": {
+            "alignHorizontally": "Align horizontally",
+            "alignVertically": "Align vertically",
+            "cancelUpdates": "Cancel updates to marchers",
+            "distributeHorizontally": "Evenly distribute marchers horizontally",
+            "distributeVertically": "Evenly distribute marchers vertically",
+            "lockX": "Lock X axis",
+            "lockXOff": "Enable X movement",
+            "lockXOn": "Lock X movement",
+            "lockY": "Lock Y axis",
+            "lockYOff": "Enable Y movement",
+            "lockYOn": "Lock Y movement",
+            "snapToWhole": "Snap to nearest whole"
+        },
+        "batchEdit": {
+            "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
+            "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
+            "setAllToNext": "Set all marcher coordinates to next page",
+            "setAllToNextSuccess": "Successfully set all {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}",
+            "setAllToPrevious": "Set all marcher coordinates to previous page",
+            "setAllToPreviousSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the previous page {{previousPage}}",
+            "setSelectedToNext": "Set selected marcher(s) coordinates to next page",
+            "setSelectedToNextSuccess": "{count, plural, one {Successfully set {count} marcher coordinate on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
+            "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
+            "setSelectedToPreviousSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the previous page {{previousPage}}"
+        },
+        "cursor": {
+            "defaultMode": "Set cursor mode to default",
+            "lineMode": "Create a line out of the selected marchers"
+        },
+        "edit": {
+            "redo": "Perform redo",
+            "undo": "Perform undo"
+        },
+        "file": {
+            "importMusicXml": "Import MusicXML file to get measures",
+            "insertAudio": "Load new audio file into the show",
+            "loadDialogue": "Launch load file dialogue",
+            "newDialogue": "Launch new file dialogue",
+            "saveDialogue": "Launch save file dialogue"
+        },
+        "movement": {
+            "moveDown": "Move selected marcher(s) down",
+            "moveLeft": "Move selected marcher(s) left",
+            "moveRight": "Move selected marcher(s) right",
+            "moveUp": "Move selected marcher(s) up"
+        },
+        "navigation": {
+            "firstPage": "First page",
+            "lastPage": "Last page",
+            "nextPage": "Next page",
+            "previousPage": "Previous page"
+        },
+        "playback": {
+            "pause": "Pause",
+            "play": "Play",
+            "playPause": "Play or pause"
+        },
+        "select": {
+            "selectAll": "Select all marchers"
+        },
+        "shape": {
+            "applyQuick": "Snaps marchers to shape without creating an editable object",
+            "create": "Creates a new shape with lines or curves that can be edited across pages",
+            "delete": "Deletes the current selected shapes"
+        },
+        "swap": {
+            "error": "Could not swap marchers {{marcher1}} and {{marcher2}}",
+            "mustSelectTwo": "Can only swap when 2 marchers are selected.",
+            "success": "Swapped marchers {{marcher1}} and {{marcher2}}",
+            "swap": "Swap marchers"
+        },
+        "ui": {
+            "focusCanvas": "Focus the canvas",
+            "focusTimeline": "Focus the timeline",
+            "hideNextPaths": "Hide next page dots/paths",
+            "hidePreviousPaths": "Hide previous page dots/paths",
+            "showNextPaths": "Show next page dots/paths",
+            "showPreviousPaths": "Show previous page dots/paths",
+            "toggleNextPaths": "Toggle viewing next page paths",
+            "togglePreviousPaths": "Toggle viewing previous page paths"
+        }
+    },
+    "analyticsOptIn": {
+        "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
+        "optIn": "Opt In",
+        "optOut": "Opt Out",
+        "settings": "You can change this setting at any time in the app settings.",
+        "title": "Help Us Improve OpenMarch",
+        "whenYouOptIn": "When you opt-in",
+        "whenYouOptOut": "When you opt-out"
+    },
+    "audio": {
+        "beats": {
+            "create": {
+                "error": "Error creating beats"
+            },
+            "save": {
+                "error": "Error creating new beats",
+                "success": "Beats saved successfully"
+            }
+        },
+        "editableBeatPlayer": {
+            "description": "Drag the right edge of any beat to adjust its duration"
+        },
+        "play": {
+            "error": "Failed to play audio"
+        },
+        "saveNewBeats": {
+            "label": "Save New Beats"
+        },
+        "seeDocs": {
+            "label": "See docs"
+        },
+        "tapNewTempo": {
+            "exit": "Exit",
+            "label": "Tap New Tempo",
+            "restart": "Restart"
+        },
+        "tapTempo": {
+            "label": "Tap Tempo"
+        }
+    },
+    "colorPicker": {
+        "discard": "Discard",
+        "save": "Save"
+    },
+    "coordinateRoundingSettings": {
+        "custom": "Custom",
+        "disableOffset": "Disable Offset",
+        "enableOffset": "Enable Offset",
+        "groupNotice": "Does not yet work with groups",
+        "nearestSteps": "Nearest {axis}-steps",
+        "none": "None",
+        "offset": "Offset",
+        "title": "Coordinate Rounding",
+        "unit": "steps",
+        "xStepDescription": "Left-click to cycle forward, right-click to cycle backward through X-step options",
+        "yStepDescription": "Left-click to cycle forward, right-click to cycle backward through Y-step options"
+    },
+    "coordinateSheet": {
+        "countAbbreviation": "Ct.",
+        "frontToBack": "Front to Back",
+        "frontToBackAbbreviation": "F. to B.",
+        "measureAbbreviation": "Ms.",
+        "measures": "Measures",
+        "page": "Page {page}",
+        "pageAbbreviation": "Pg.",
+        "sideToSide": "Side to Side",
+        "sideToSideAbbreviation": "S. to S."
+    },
+    "exportCoordinates": {
+        "abbreviateCoordinateDescriptions": "Abbreviate coordinate descriptions",
+        "cancel": "Cancel",
+        "cancelledByUser": "Export cancelled by user",
+        "coordinatesError": "Error: Could not calculate coordinates for marcher page {id}",
+        "coordinateSheets": "Coordinate Sheets",
+        "drillCharts": "Drill Charts",
+        "errorRendering": "Error rendering {drillNumber}",
+        "errorTitle": "Error exporting coordinate sheet",
+        "exampleMarcherName": "Example Marcher",
+        "exampleMarcherSection": "Baritone",
+        "export": "Export",
+        "exportButton": "Export",
+        "exportComplete": "Export completed!",
+        "exportFailed": "Export failed",
+        "exportFailedToast": "Export failed: {error}",
+        "exporting": "Exporting... Please wait",
+        "exportNotAvailable": "Export Not Available",
+        "exportNotAvailableDescription": "Export requires field properties, at least one non-default page, and at least one marcher.",
+        "exportPDFSuccess": "Successfully exported as PDF!",
+        "exportSuccess": "{count, plural, one {Successfully exported coordinate sheets for {count} marcher!} other {Successfully exported coordinate sheets for {count} marchers!}}",
+        "fieldProperties": "Field Properties: {status}",
+        "fieldPropertiesRequired": "Field properties are required for export",
+        "frontToBackHeader": "Front to Back",
+        "funPhrase": {
+            "0": "Get ready to march a perfect 8 to 5! \uD83C\uDFBA",
+            "1": "Getting the files to cover down \uD83D\uDCCB",
+            "10": "Setting the tempo for success \uD83C\uDFBC",
+            "11": "Fine-tuning every step count \uD83D\uDD27",
+            "2": "Cleaning drill from the box \uD83E\uDDF9",
+            "3": "Making sure everyone's in step \uD83D\uDC5F",
+            "4": "Painting a perfect field \uD83D\uDD8C️",
+            "5": "Marching toward perfection! \uD83C\uDFAF",
+            "6": "Polishing those yard line markers ✨",
+            "7": "Counting off the perfect tempo \uD83E\uDD41",
+            "8": "Aligning the formation like a pro \uD83D\uDCD0",
+            "9": "Marching toward perfection! \uD83C\uDFAF"
+        },
+        "generatingPDF": " Generating PDF file for: {drillNumber}",
+        "includeMeasures": "Include measures",
+        "individualCharts": "Individual Drill Charts",
+        "individualChartsTooltip": "Create customized drill chart PDFs for each individual marcher.",
+        "individualChartsTooltipDescription": "If this is not checked, one overview drill chart PDF will be created.",
+        "marcher": "Marcher: {status}",
+        "measuresHeader": "Measure",
+        "noFieldProperties": "No field properties provided",
+        "noMarcher": "No marcher provided",
+        "noMarcherPages": "No marcher pages provided",
+        "noPages": "No pages provided",
+        "openExportDirectory": "Click to open export",
+        "openExportDirectoryError": "Could not open export directory: {error}",
+        "organizeBySection": "Organize by Section",
+        "organizeBySectionTooltip": "Create PDF files for each individual marcher, organized in folders by section.\\nIf this is not checked, one large PDF file will be created with every coordinate sheet in score order.",
+        "page": "Page: {status}",
+        "pageNotFound": "Error: Page not found for marcher page {id}",
+        "pdfExportFailed": "PDF Export failed: {error}",
+        "preview": "Preview",
+        "processingPage": "Processing page {pageNumber} of {totalPages}: {pageName}",
+        "quarterPageLayout": "Quarter-page layout",
+        "roundingDenominator": "Coordinate rounding:",
+        "selectRoundingDenominator": "Select rounding",
+        "sideToSideHeader": "Side to Side",
+        "svgExportFailed": "SVG export for {drillNumber} failed with error: {error}",
+        "svgGenerationFailed": "SVG Generation Failed: {error}",
+        "title": "Export",
+        "unknownError": "Unknown error",
+        "unsortedSection": "Unsorted",
+        "useXYHeaders": "Use X/Y headers"
+    },
+    "field": {
+        "general": {
+            "exportField": "Export Field",
+            "exportField.tooltip": "Export this field to a file to use in other projects",
+            "importField": "Import Field",
+            "importField.tooltip": "Import a custom field"
+        },
+        "title": "Field"
+    },
+    "fieldProperties": {
+        "applyFieldType": "Apply Field Type",
+        "applyFieldTypeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
+        "buttons": {
+            "importImage": "Import Image",
+            "newXCheckpoint": "New X-Checkpoint",
+            "newYCheckpoint": "New Y-Checkpoint",
+            "resetTheme": "Reset Theme to Default"
+        },
+        "checkpoint": {
+            "created": "{axis}-checkpoint at {steps} steps created",
+            "delete": "Delete",
+            "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
+            "fieldLabel": "Field label",
+            "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
+            "name": "Name",
+            "nameTooltip": "Name your checkpoint whatever you want. This is just for you to know what checkpoint you're selecting.",
+            "newXCheckpointName": "New X Checkpoint",
+            "newYCheckpointName": "New Y Checkpoint",
+            "shortName": "Short Name",
+            "shortNameTooltip": "The primary name of the checkpoint. (E.g. \"45 Yard Line - Side 1\")",
+            "stepsFromCenter": "Steps from center",
+            "stepsFromCenterTooltip": "The number of steps away from the center of the field that this checkpoint is. Negative is towards the back.",
+            "stepsFromFront": "Steps from front",
+            "stepsFromFrontTooltip": "The number of steps away from the front of the field that this checkpoint is. Negative is towards the back.",
+            "useAsReference": "Use as reference",
+            "useAsReferenceTooltip": "If this checkpoint should be used as a reference for coordinates.",
+            "visible": "Visible",
+            "visibleTooltip": "If this checkpoint should be visible on the field"
+        },
+        "customField": "Custom Field",
+        "customFieldDocs": "See docs",
+        "customFieldName": "Custom",
+        "customization": "Customization",
+        "customize": "Customize",
+        "errors": {
+            "invalidColor": "Invalid color",
+            "noPropertiesToLoad": "No field properties to load! This should never happen, please reach out to support",
+            "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support."
+        },
+        "fieldTemplate": {
+            "label": "Field Template"
+        },
+        "fieldType": {
+            "label": "Field type"
+        },
+        "general": "General",
+        "labels": {
+            "background": "Background",
+            "backgroundImageRatio": "Background Image Ratio",
+            "bottom": "Bottom",
+            "conformingMethod": "Conforming Method",
+            "conformMethod": "Conform Method",
+            "directorsLeft": "Director's Left",
+            "directorsRight": "Director's Right",
+            "externalLabels": "External Labels",
+            "fieldLabels": "Field Labels",
+            "fieldName": "Field Name",
+            "fieldRatio": "Field Ratio",
+            "gridLines": "Grid Lines",
+            "halfLineXInterval": "Half Line X-Interval",
+            "halfLineYInterval": "Half Line Y-Interval",
+            "height": "Height",
+            "left": "Left",
+            "leftAbbreviation": "Left Abbreviation",
+            "marcherFill": "Marcher Fill",
+            "marcherOutline": "Marcher Outline",
+            "marcherText": "Marcher Text",
+            "measurementSystem": "Measurement System",
+            "nextPath": "Next Path",
+            "previousPath": "Previous Path",
+            "primaryLines": "Primary Lines",
+            "right": "Right",
+            "rightAbbreviation": "Right Abbreviation",
+            "secondaryLines": "Secondary Lines",
+            "shapes": "Shapes",
+            "showBackgroundImage": "Show Background Image",
+            "stepsFromFrontToAwayLabelBottom": "Steps from front to away label bottom",
+            "stepsFromFrontToAwayLabelTop": "Steps from front to away label top",
+            "stepsFromFrontToHomeLabel": "Steps from front to home label bottom",
+            "stepsFromFrontToHomeLabelTop": "Steps from front to home label top",
+            "stepSize": "Step Size",
+            "temporaryPath": "Temporary Path",
+            "top": "Top",
+            "useHashes": "Use Hashes",
+            "width": "Width",
+            "widthHeight": "w/h"
+        },
+        "messages": {
+            "fieldRatio": "{ratio} or {decimal}",
+            "measurementModificationNote": "These values can be modified by adjusting the X and Y coordinates, the step size and the background image",
+            "refreshAfterImporting": "Refresh after importing [Ctrl + R]",
+            "refreshNote": "Below values may not be applied until after a refresh"
+        },
+        "options": {
+            "fill": "Fill",
+            "fit": "Fit",
+            "imperial": "Imperial",
+            "metric": "Metric"
+        },
+        "sections": {
+            "externalLabels": "External Labels",
+            "fieldLabels": "Field Labels",
+            "general": "General",
+            "imageRendering": "Image Rendering",
+            "measurements": "Measurements",
+            "sideDescriptions": "Side Descriptions",
+            "theme": "Theme",
+            "xCheckpoints": "X-Checkpoints",
+            "yCheckpoints": "Y-Checkpoints"
+        },
+        "tabs": {
+            "checkpoints": "Checkpoints",
+            "general": "General",
+            "image": "Image",
+            "theme": "Theme"
+        },
+        "title": "Field Properties",
+        "tooltips": {
+            "conformMethod": "Whether to fit the background image inside the field or fill it. The aspect ratio is always maintained",
+            "directorsLeft": "E.g. \"Side 1\", \"Audience Left\" or \"Stage Right\"",
+            "directorsRight": "E.g. \"Side 2\", \"Audience Right\" or \"Stage Left\"",
+            "fieldName": "The name or title of the field template",
+            "halfLineXInterval": "The interval that half lines appear in the UI on the X axis from the center of the field. Leave empty to omit half lines on the X-axis. This is purely cosmetic and does not affect coordinates in any way",
+            "halfLineYInterval": "The interval that half lines appear in the UI on the Y axis from the front of the field. Leave empty to omit half lines on the Y-axis. This is purely cosmetic and does not affect coordinates in any way",
+            "importImage": "Import an image to display on the field",
+            "leftAbbreviation": "E.g. \"S1\", \"AL\" or \"SR\" (short for \"Side 1\", \"Audience Left\" or \"Stage Right\")",
+            "measurementSystem": "The unit of measurement to define the step size in. Can go back and forth",
+            "resetTheme": "Reset the theme to the default values",
+            "rightAbbreviation": "E.g. \"S2\", \"AR\" or \"SL\" (short for \"Side 2\", \"Audience Right\" or \"Stage Left\")",
+            "stepsFromFrontToAwayLabelBottom": "Number of steps from the front sideline to the outside of the away number (closer to the back sideline)",
+            "stepsFromFrontToAwayLabelTop": "Number of steps from the front sideline to the inside of the away number (closer to the center of the field)",
+            "stepsFromFrontToHomeLabel": "Number of steps from the front sideline to the outside of the home number (closer to the front sideline)",
+            "stepsFromFrontToHomeLabelTop": "Number of steps from the front sideline to the inside of the home number (closer to the center of the field)",
+            "stepSize": "The size of each step on the field in inches or centimeters",
+            "useHashes": "Use hashes for the Y-checkpoints, like a football field. If unchecked, lines will be used."
+        },
+        "units": {
+            "steps": "steps"
+        },
+        "warnings": {
+            "xCheckpointsNotEquidistant": "WARNING - The left and rightmost X-checkpoints are not equidistant from the center. This may cause strange graphical artifacts and should be fixed.",
+            "yCheckpointsNegative": "WARNING - It is highly recommended that all Y-checkpoints' steps be less than zero (i.e. negative numbers). All of the Y-coordinates should be behind the front of the field. Failing to do so may cause graphical errors and unexpected coordinates."
+        }
+    },
+    "fileTab": {
+        "exitFile": "Exit File",
+        "newFile": "New File",
+        "openFile": "Open File",
+        "redo": "Redo",
+        "saveFile": "Save Copy",
+        "undo": "Undo"
+    },
+    "formButtons": {
+        "cancel": "Cancel",
+        "editButton": "Edit",
+        "saveChanges": "Save Changes"
+    },
+    "formField": {
+        "valueMissing": "Please enter a value."
+    },
+    "inspector": {
+        "alignment": {
+            "applyCoordinates": "Apply coordinates",
+            "cancelUpdates": "Cancel",
+            "createShape": "Create Shape",
+            "drawLine": "Draw a line."
+        },
+        "marcher": {
+            "createLine": "Create Line",
+            "drillNumber": "Drill Number",
+            "errorLoadingCoords": "Error loading coordinates",
+            "maxStepSize": "Largest step size",
+            "minStepSize": "Smallest step size",
+            "name": "Name",
+            "noPageSelected": "No page selected.",
+            "section": "Section",
+            "stepSize": "Step Size",
+            "swapMarchers": "Swap marchers",
+            "title": "{count} Marchers",
+            "titleSingle": "Marcher {drillNumber}"
+        },
+        "page": {
+            "counts": "Counts",
+            "measures": "Measures",
+            "notes": "Notes",
+            "notesPlaceholder": "Add notes for this page...",
+            "splitPage": "Split page",
+            "split": {
+                "success": "Page split successfully"
+            },
+            "subset": "Subset",
+            "title": "Page {pageNumber}"
+        },
+        "shape": {
+            "addSegmentButton": "Add",
+            "addSegmentTooltip": "Add segment to shape",
+            "alignmentTab": "Alignment",
+            "copyToNextPage": "Copy this shape to the next page",
+            "copyToNextPageButton": "Copy to next page",
+            "copyToPreviousPage": "Copy this shape to the previous page",
+            "copyToPreviousPageButton": "Copy to prev page",
+            "deleteLastSegmentTooltip": "Delete last segment",
+            "errorCopyingPage": "Error copying to page {pageName}. Are there marchers already assigned to shapes?",
+            "errorNoNextPage": "Cannot copy. There is no next page",
+            "errorNoPreviousPage": "Cannot copy. There is no previous page.",
+            "errorPageNotFound": "Page not found with id {pageId}",
+            "fileTab": "File",
+            "marchersOnShape": "{marchersCount} Marchers",
+            "segment": "Segment {index}",
+            "segments": {
+                "title": "Segments"
+            },
+            "successfullyCopied": "Shape successfully copied to page {pageName}",
+            "ungroupShapeButton": "Un-group",
+            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
+            "viewTab": "View"
+        },
+        "title": "Inspector"
+    },
+    "launchpage": {
+        "files": {
+            "createNew": "New File",
+            "failedToLoadRecent": "Failed to load recent files",
+            "failedToOpen": "Failed to open file",
+            "failedToRemoveRecent": "Failed to remove file from recent list",
+            "fieldPreview": "Field Preview",
+            "openFile": "Open File",
+            "removeFile": "Remove from recent files",
+            "title": "Recent Files"
+        },
+        "learn": {
+            "guides": {
+                "title": "Guides"
+            },
+            "title": "Learn",
+            "troubleshooting": {
+                "clearCache": "Clear the cache",
+                "clearCache.description": "Deleting the cache and metadata folder can often fix performance issues. (This will also delete your recent files list and theme!)",
+                "description": "OpenMarch is still under development, so here are some tips when something goes wrong.",
+                "refresh": "Refresh the page",
+                "refresh.description": "When in doubt, refresh the page (Ctrl/Cmd + R). If OpenMarch ever seems broken, refreshing will often fix it.",
+                "title": "Troubleshooting Tips"
+            }
+        },
+        "merch": "Get OpenMarch Merch!",
+        "settings": {
+            "title": "Settings"
+        },
+        "title": "Launch Page"
+    },
+    "marchers": {
+        "addMarcher": "Add",
+        "addMarchers": "Add Marchers",
+        "cancelDeleteButton": "Cancel",
+        "createButton": "{quantity, plural, one {Create Marcher} other {Create Marchers}}",
+        "createButtonWithSection": "{quantity, plural, one {Create {section} Marcher} other {Create {section} Marchers}}",
+        "created": "{count, plural, one {Marcher {drillNumbers} created successfully} other {Marchers {drillNumbers} created successfully}}",
+        "createError": "{count, plural, one {Error creating marcher {drillNumbers}} other {Error creating marchers {drillNumbers}}}",
+        "createInfo": "New marchers may not show up until a refresh",
+        "deleteButton": "Delete",
+        "deleteDescription": "You are about to delete these section styles: {sections}. This can be undone with [Ctrl/Cmd+Z].",
+        "deleteTitle": "Warning",
+        "deleteWarning": "You are about to delete these marchers: {marchers}. This can be undone with [Crtl/Cmd+Z].",
+        "drillOrder": "Drill Number",
+        "drillOrderError": {
+            "exists": "This drill number already exists"
+        },
+        "drillPrefix": "Drill Prefix",
+        "editButton": "Edit Marchers",
+        "list": {
+            "addSectionStyle": "Add Section Style",
+            "deleteSectionStyle": "Delete this section style",
+            "discardChanges": "Discard Changes",
+            "drillNumberTitle": "#",
+            "fillColor": "Fill Color",
+            "nameTitle": "Name",
+            "noMarchers": "No marchers created yet. Why don't you create one?",
+            "noSectionStyles": "No section styles defined yet. Add one to customize how each section appears.",
+            "outlineColor": "Outline Color",
+            "pendingChanges": "Below values may not be applied until after a refresh",
+            "saveChanges": "Save Changes",
+            "sectionStyles": "Section Styles",
+            "sectionTitle": "Section",
+            "selectSection": "Section",
+            "shape": "Shape"
+        },
+        "listTitle": "List",
+        "quantity": "Quantity",
+        "section": "Section",
+        "sectionError": {
+            "chooseSection": "Please choose a section"
+        },
+        "sectionStyles": "Section Styles",
+        "title": "Marchers"
+    },
+    "music": {
+        "addNewTempoGroupAfter": "Add a new tempo group after this one",
+        "addTempoGroup": "Add New Group",
+        "audio": "Audio",
+        "audioFile": "Audio File",
+        "beatPattern": "Beat Pattern *",
+        "beatsPerMeasure": "Beats per measure *",
+        "cancel": "Cancel",
+        "create": "Create",
+        "custom": "Custom",
+        "delete": "Delete",
+        "deleteAllMeasures": "Delete all measures and their associated pages",
+        "deleteAudioFile": "Delete audio file",
+        "deleteAudioFileDescription": "Are you sure you want to delete this audio file? This action cannot be undone.",
+        "deleteSuccess": "Successfully deleted {fileName}",
+        "deleteTempoGroupAlert": "Are you sure?",
+        "deleteTempoGroupDescription": "Deleting the tempo group will also delete all pages associated with it.",
+        "endTempo": "End Tempo",
+        "endTempoPlaceholder": "Optional",
+        "endTempoTooltip": "The new group will gradually go towards the end tempo, but will not reach it.\nThis is to create a smooth transition to a new group.",
+        "import": "Import",
+        "importAudioFile": "Import audio file",
+        "importButton": "Import MusicXML File",
+        "importError": "Failed to import MusicXML file",
+        "importing": "Importing...",
+        "importLabel": "MusicXML Import",
+        "importSuccess": "MusicXML file: \"{fileName}\" imported successfully!",
+        "individualBeatTempos": "Individual beat tempos",
+        "makeMixedMeter": "Make Mixed Meter",
+        "makeSimpleMeter": "Make Regular Meter",
+        "mixedMeterTooManyBeats": "Mixed-meter shouldn't have more than {maxBeats} beats. It will make your computer sad. If you really need this, please contact us so we can hear your cool mixed-meter music that has {beatsPerMeasure} beats per measure.",
+        "name": "Name",
+        "nameDescription": "Rehearsal letter or identifier",
+        "namePlaceholder": "Optional",
+        "numberOfMeasures": "Number of measures *",
+        "rehearsalLetterOrIdentifier": "Rehearsal letter or identifier",
+        "saveChanges": "Save Changes",
+        "seeDocs": "See docs",
+        "selectPattern": "Select a pattern",
+        "startTempo": "Start Tempo *",
+        "tempo": "Tempo *",
+        "tempoDescription": "Beats per minute",
+        "tempoGroupCreated": "Tempo group created",
+        "tempoGroupNamePlaceholder": "Optional",
+        "tempoGroups": "Tempo Groups",
+        "tempoGroupUpdated": "Tempo group updated",
+        "timeSignature": "Time signature: {timeSignature}",
+        "title": "Music",
+        "undoWithCtrlZ": "This action is undoable with Ctrl + Z"
+    },
+    "section": {
+        "drumMajor": "Drum Major",
+        "guard": {
+            "colorGuard": "Color Guard",
+            "dancer": "Dancer",
+            "flag": "Flag",
+            "rifle": "Rifle",
+            "twirler": "Twirler"
+        },
+        "instrument": {
+            "altoSax": "Alto Sax",
+            "bariSax": "Bari Sax",
+            "baritone": "Baritone",
+            "bassClarinet": "Bass Clarinet",
+            "bassDrum": "Bass Drum",
+            "bassTrombone": "Bass Trombone",
+            "clarinet": "Clarinet",
+            "cymbals": "Cymbals",
+            "euphonium": "Euphonium",
+            "flubDrum": "Flub Drum",
+            "flute": "Flute",
+            "mellophone": "Mellophone",
+            "piccolo": "Piccolo",
+            "snare": "Snare",
+            "sopranoSax": "Soprano Sax",
+            "tenors": "Tenors",
+            "tenorSax": "Tenor Sax",
+            "trombone": "Trombone",
+            "trumpet": "Trumpet",
+            "tuba": "Tuba"
+        },
+        "other": "Other",
+        "pit": {
+            "auxPercussion": "Aux Percussion",
+            "marimba": "Marimba",
+            "synthesizer": "Synthesizer",
+            "vibraphone": "Vibraphone",
+            "xylophone": "Xylophone"
+        },
+        "soloist": {
+            "soloist": "Soloist"
+        }
+    },
+    "settings": {
+        "general": "General",
+        "general.appearance": "Appearance",
+        "general.appearance.dark": "Dark",
+        "general.appearance.light": "Light",
+        "general.language": "Language",
+        "mouse": "Mouse & Trackpad",
+        "mouse.panSensitivity": "Pan sensitivity",
+        "mouse.trackpadMode": "Trackpad mode (recommended for macOS)",
+        "mouse.trackpadPanSensitivity": "Trackpad pan sensitivity",
+        "mouse.zoomSensitivity": "Zoom sensitivity",
+        "plugins": "Plugins",
+        "plugins.community": "Community",
+        "plugins.install": "Install",
+        "plugins.installed": "Installed",
+        "plugins.installFailed": "Install Failed",
+        "plugins.installing": "Installing...",
+        "plugins.noCommunityPlugins": "No community plugins available.",
+        "plugins.noOfficialPlugins": "No official plugins available.",
+        "plugins.noPlugins": "No plugins installed.",
+        "plugins.official": "Official",
+        "plugins.refreshNotice": "Please <a>reload the app</a> to update plugins.",
+        "plugins.toast.installFailed": "Failed to install plugin {pluginName}",
+        "plugins.toast.installSuccess": "Plugin {pluginName} installed successfully!",
+        "plugins.toast.uninstallFailed": "Failed to remove {pluginName}",
+        "plugins.toast.uninstallSuccess": "Plugin {pluginName} removed successfully!",
+        "plugins.uninstall": "Uninstall",
+        "plugins.uninstalled": "Removed",
+        "plugins.uninstallFailed": "Removal Failed",
+        "plugins.uninstalling": "Removing...",
+        "privacy": "Privacy",
+        "privacy.analytics": "Share usage analytics",
+        "privacy.analytics.description": "To help us improve OpenMarch, we collect analytics data, error logs, and session recordings. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
+        "privacy.analytics.description.opt_out": "You can opt out of this if you'd prefer. Just know that OpenMarch is a free tool built by volunteers, and this data really helps us understand how designers are using the app and find bugs—especially when we don't hear about them right away on Discord or Facebook :)",
+        "privacy.analytics.disabled": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please <a>submit feedback</a> so that we can address it.",
+        "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
+        "privacy.analytics.feedback.link": "submit feedback",
+        "privacy.analytics.toggle": "Enable analytics",
+        "title": "Settings"
+    },
+    "shapes": {
+        "circle": "Circle",
+        "square": "Square",
+        "triangle": "Triangle",
+        "x": "X"
+    },
+    "tempoGroup": {
+        "createBeatsError": "Error creating beats",
+        "createNewBeatsError": "Error creating new beats",
+        "deletedSuccessfully": "Tempo group deleted successfully",
+        "deleteFailed": "Failed to delete tempo group",
+        "differentBeatsError": "Tempo group has different number of beats. This should not happen. Please reach out to us!",
+        "noMeasures": "Tempo group has no measures"
+    },
+    "timeline": {
+        "audio": "Audio",
+        "controls": {
+            "label": "Playback Controls"
+        },
+        "label": "Timeline",
+        "music": {
+            "add": "Add Music"
+        },
+        "page": {
+            "contextMenu": {
+                "deletePage": "Delete",
+                "subsetToggle": "Subset",
+                "title": "Page {pageName}"
+            },
+            "deleted": "Page {pageName} deleted",
+            "deleteFailed": "Failed to delete page",
+            "firstPage": "First page",
+            "label": "Page {pageName}",
+            "subset": "Subset"
+        },
+        "pages": "Pages",
+        "perspective": {
+            "label": "Perspective"
+        }
+    },
+    "titlebar": {
+        "bugReport": "Submit bug or feedback",
+        "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
+        "databasePathError": "Database Path Error",
+        "databasePathError.description": "Failed to fetch .dots file path!\n\nPlease fully quit the app and try again.\n\nIf the issue persists, please reach out to support.",
+        "databasePathError.dismiss": "Dismiss"
+    },
+    "toolbar": {
+        "alignment": {
+            "alignMarchersAriaLabel": "Align marchers",
+            "lockMarchersAriaLabel": "Cursor movement and marcher snap",
+            "placeAllMarchers": "Place all marchers",
+            "placeSelectedMarchers": "Place selected marchers",
+            "toNextPagePositions": "...to next page positions",
+            "toPreviousPagePositions": "...to previous page positions"
+        },
+        "settings": "App Settings",
+        "view": {
+            "gridLines": "Grid lines",
+            "halfLines": "Half lines",
+            "nextPaths": "Next paths",
+            "previousPaths": "Previous paths",
+            "uiSettingsToolbar": "Ui Settings Toolbar"
+        }
+    },
+    "versionCheck": {
+        "error": {
+            "fetchFailed": "An error occurred while fetching the version.",
+            "noVersion": "Unable to fetch latest version."
+        },
+        "installLinux": "Install for Linux",
+        "installMacArm": "Install for Apple Silicon",
+        "installMacIntel": "Install for Intel Mac",
+        "installWindows": "Install for Windows",
+        "skipVersion": "Skip this version",
+        "title": "New Version Available",
+        "trigger": "New Version Available!"
+    },
+    "welcome": {
+        "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",
+        "title": "Welcome to OpenMarch"
+    }
+}

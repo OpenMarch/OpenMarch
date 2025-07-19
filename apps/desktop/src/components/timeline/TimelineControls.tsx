@@ -18,6 +18,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
 import { AudioClock } from "./Clock";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
@@ -31,7 +32,7 @@ export default function TimelineControls() {
         >
             {!isFullscreen && (
                 <div className="flex items-center justify-between gap-6">
-                    <p className="text-body text-text/60">Timeline</p>
+                    <T keyName="timeline.label" />
                     <AudioClock />
                 </div>
             )}
@@ -96,9 +97,13 @@ function PlaybackControls() {
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
     const { uiSettings } = useUiSettingsStore();
+    const { t } = useTolgee();
 
     return (
-        <div className={clsx("flex gap-12")} aria-label="Playback Controls">
+        <div
+            className={clsx("flex gap-12")}
+            aria-label={t("timeline.controls.label")}
+        >
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.firstPage}
                 disabled={

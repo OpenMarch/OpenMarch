@@ -5,6 +5,7 @@ import ViewTab from "./tabs/ViewTab";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { useEffect, useState } from "react";
 import { clsx } from "clsx";
+import { T } from "@tolgee/react";
 
 export default function Topbar() {
     const { isFullscreen } = useFullscreenStore();
@@ -41,11 +42,17 @@ export default function Topbar() {
                 )}
             >
                 <TabsList className="gap-0 border-none">
-                    <TabItem value="file">File</TabItem>
+                    <TabItem value="file">
+                        <T keyName="inspector.shape.fileTab" />
+                    </TabItem>
                     {!isFullscreen && (
-                        <TabItem value="alignment">Alignment</TabItem>
+                        <TabItem value="alignment">
+                            <T keyName="inspector.shape.alignmentTab" />
+                        </TabItem>
                     )}
-                    <TabItem value="view">View</TabItem>
+                    <TabItem value="view">
+                        <T keyName="inspector.shape.viewTab" />
+                    </TabItem>
                 </TabsList>
 
                 <TabContent value="file">
