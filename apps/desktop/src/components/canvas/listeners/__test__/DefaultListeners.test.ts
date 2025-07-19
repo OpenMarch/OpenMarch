@@ -5,6 +5,7 @@ import {
     falsyUiSettings,
     mockMarcherPageMap,
     mockMarchers,
+    mockMarcherVisualMap,
     mockPages,
 } from "../../__test__/MocksForCanvas";
 import { cleanup } from "@testing-library/react";
@@ -35,9 +36,9 @@ describe.skip("DefaultListeners", () => {
         });
         const selectedPage = mockPages[0];
         canvas.renderMarchers({
+            marcherVisuals: mockMarcherVisualMap,
             marcherPages: mockMarcherPageMap,
             pageId: selectedPage.id,
-            allMarchers: mockMarchers,
         });
         listeners = new DefaultListeners({ canvas });
     });

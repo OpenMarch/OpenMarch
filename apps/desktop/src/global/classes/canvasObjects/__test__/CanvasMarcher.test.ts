@@ -47,7 +47,7 @@ describe.skip("CanvasMarcher", () => {
         const canvas = new fabric.Canvas("test-canvas");
         const marcher = new CanvasMarcher({
             marcher: marcher1,
-            marcherPage: marcherPage1,
+            coordinate: marcherPage1,
             ...params,
         });
         marcher.canvas = canvas;

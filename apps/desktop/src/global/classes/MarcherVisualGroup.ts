@@ -107,6 +107,32 @@ export default class MarcherVisualGroup {
 }
 
 /**
+ * Creates a MarcherVisualGroup for each marcher in the receivedMarchers array.
+ * Updates existing visuals or creates new ones as needed.
+ */
+export function marcherVisualsFromMarchers(
+    receivedMarchers: Marcher[],
+    existingVisuals: Record<number, MarcherVisualGroup> = {},
+): Record<number, MarcherVisualGroup> {
+    // add new visuals for received marchers
+    for (const marcher of receivedMarchers) {
+        if (!existingVisuals[marcher.id]) {
+            existingVisuals[marcher.id] = new MarcherVisualGroup(marcher);
+        }
+    }
+
+    // remove visuals for marchers that are not received
+    const receivedIds = new Set(receivedMarchers.map((m) => m.id));
+    Object.keys(existingVisuals).forEach((id) => {
+        if (!receivedIds.has(Number(id))) {
+            delete existingVisuals[Number(id)];
+        }
+    });
+
+    return existingVisuals;
+}
+
+/**
  * Fetches marchers and their associated visuals from the store.
  */
 export async function fetchMarchersAndVisuals() {

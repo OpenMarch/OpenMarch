@@ -5,6 +5,7 @@ import {
     falsyUiSettings,
     mockMarcherPageMap,
     mockMarchers,
+    mockMarcherVisualMap,
     mockPages,
 } from "@/components/canvas/__test__/MocksForCanvas";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -38,10 +39,10 @@ describe.skip("OpenMarchCanvas", () => {
                 uiSettings: falsyUiSettings,
             });
             const selectedPage = mockPages[0];
-            await canvas.renderMarchers({
+            canvas.renderMarchers({
+                marcherVisuals: mockMarcherVisualMap,
                 marcherPages: mockMarcherPageMap,
                 pageId: selectedPage.id,
-                allMarchers: mockMarchers,
             });
             const canvasMarchers = canvas.getCanvasMarchers();
             // expect(canvasMarchers.length).toBe(mockMarchers.length);
@@ -89,10 +90,10 @@ describe.skip("OpenMarchCanvas", () => {
                     lockY: false,
                 },
             });
-            await canvas.renderMarchers({
+            canvas.renderMarchers({
+                marcherVisuals: mockMarcherVisualMap,
                 marcherPages: mockMarcherPageMap,
                 pageId: selectedPage.id,
-                allMarchers: mockMarchers,
             });
 
             expect(canvas.uiSettings.lockX).toBe(true);
@@ -118,10 +119,10 @@ describe.skip("OpenMarchCanvas", () => {
                     lockY: true,
                 },
             });
-            await canvas.renderMarchers({
+            canvas.renderMarchers({
+                marcherVisuals: mockMarcherVisualMap,
                 marcherPages: mockMarcherPageMap,
                 pageId: selectedPage.id,
-                allMarchers: mockMarchers,
             });
 
             expect(canvas.uiSettings.lockX).toBe(false);
@@ -162,10 +163,10 @@ describe.skip("OpenMarchCanvas", () => {
                     lockY: true,
                 },
             });
-            await canvas.renderMarchers({
+            canvas.renderMarchers({
+                marcherVisuals: mockMarcherVisualMap,
                 marcherPages: mockMarcherPageMap,
                 pageId: selectedPage.id,
-                allMarchers: mockMarchers,
             });
 
             expect(canvas.uiSettings.lockX).toBe(false);

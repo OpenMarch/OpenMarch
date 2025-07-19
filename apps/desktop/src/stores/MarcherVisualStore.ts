@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import Marcher from "@/global/classes/Marcher";
-import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
+import MarcherVisualGroup, {
+    marcherVisualsFromMarchers,
+} from "@/global/classes/MarcherVisualGroup";
 
 /** MarcherVisualMap is a type that maps marcher IDs to their visual groups. **/
 export type MarcherVisualMap = Record<number, MarcherVisualGroup>;
@@ -20,24 +22,7 @@ export const useMarcherVisualStore = create<MarcherVisualStoreInterface>(
                     ...state.marcherVisuals,
                 };
 
-                // add new visuals for received marchers
-                for (const marcher of receivedMarchers) {
-                    if (!newVisuals[marcher.id]) {
-                        newVisuals[marcher.id] = new MarcherVisualGroup(
-                            marcher,
-                        );
-                    }
-                }
-
-                // remove visuals for marchers that are not received
-                const receivedIds = new Set(receivedMarchers.map((m) => m.id));
-                Object.keys(newVisuals).forEach((id) => {
-                    if (!receivedIds.has(Number(id))) {
-                        delete newVisuals[Number(id)];
-                    }
-                });
-
-                return { marcherVisuals: newVisuals };
+                return marcherVisualsFromMarchers(receivedMarchers, newVisuals);
             });
         },
     }),
