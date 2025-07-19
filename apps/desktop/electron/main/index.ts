@@ -18,14 +18,15 @@ import AudioFile from "../../src/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
-import {
-    getFieldPropertiesJson,
-    updateFieldProperties,
-    updateFieldPropertiesImage,
-} from "../database/tables/FieldPropertiesTable";
+import { updateFieldPropertiesImage } from "../database/tables/FieldPropertiesTable";
 import { FIRST_PAGE_ID } from "../database/constants";
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
+import {
+    getFieldPropertiesJSON,
+    updateFieldProperties,
+    updateFieldsPropertiesJSON,
+} from "../../src/global/classes/FieldProperties";
 
 // The built directory structure
 //
@@ -679,9 +680,7 @@ export async function exportFieldPropertiesFile() {
 
     if (!win) return -1;
 
-    const jsonStr = getFieldPropertiesJson({
-        db: DatabaseServices.connect(),
-    }).data;
+    const jsonStr = await getFieldPropertiesJSON();
 
     // Save
     dialog
@@ -724,13 +723,10 @@ export async function importFieldPropertiesFile() {
                 { name: "OpenMarch Field File", extensions: ["fieldots"] },
             ],
         })
-        .then((path) => {
+        .then(async (path) => {
             const fileContents = fs.readFileSync(path.filePaths[0]);
             const jsonStr = fileContents.toString();
-            updateFieldProperties({
-                db: DatabaseServices.connect(),
-                fieldProperties: jsonStr,
-            });
+            await updateFieldsPropertiesJSON(jsonStr);
 
             // If the user cancels the dialog, and there is no previous path, return -1
             if (path.canceled || !path.filePaths[0]) return -1;
