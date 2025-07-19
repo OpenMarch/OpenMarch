@@ -561,38 +561,38 @@ export default function Canvas({
 
     // Render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        if (canvas && selectedPage && marchers && marcherPages) {
-            canvas.currentPage = selectedPage;
+        if (!canvas || !selectedPage || !marchers || !marcherPages) return;
 
-            canvas.renderMarchers({
-                marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
-                pageId: selectedPage.id,
-            });
-        }
+        canvas.currentPage = selectedPage;
+
+        canvas.renderMarchers({
+            marcherVisuals: marcherVisuals,
+            marcherPages: marcherPages,
+            pageId: selectedPage.id,
+        });
     }, [canvas, marcherPages, marchers, selectedPage]);
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
-        if (canvas && selectedPage && fieldProperties) {
-            if (uiSettings.nextPaths || uiSettings.previousPaths) {
-                canvas.renderPathVisuals({
-                    marcherVisuals: marcherVisuals,
-                    marcherPages: marcherPages,
-                    prevPageId: uiSettings.previousPaths
-                        ? selectedPage.previousPageId
-                        : null,
-                    currPageId: selectedPage.id,
-                    nextPageId: uiSettings.nextPaths
-                        ? selectedPage.nextPageId
-                        : null,
-                    marcherIds: marchers.map((m) => m.id),
-                });
-                canvas.sendCanvasMarchersToFront();
-            } else {
-                canvas.hideAllPathVisuals({ marcherVisuals: marcherVisuals });
-                canvas.requestRenderAll();
-            }
+        if (!canvas || !selectedPage || !fieldProperties) return;
+
+        if (uiSettings.nextPaths || uiSettings.previousPaths) {
+            canvas.renderPathVisuals({
+                marcherVisuals: marcherVisuals,
+                marcherPages: marcherPages,
+                prevPageId: uiSettings.previousPaths
+                    ? selectedPage.previousPageId
+                    : null,
+                currPageId: selectedPage.id,
+                nextPageId: uiSettings.nextPaths
+                    ? selectedPage.nextPageId
+                    : null,
+                marcherIds: marchers.map((m) => m.id),
+            });
+            canvas.sendCanvasMarchersToFront();
+        } else {
+            canvas.hideAllPathVisuals({ marcherVisuals: marcherVisuals });
+            canvas.requestRenderAll();
         }
     }, [
         canvas,

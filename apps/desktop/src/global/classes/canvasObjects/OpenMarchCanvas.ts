@@ -948,7 +948,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     };
 
-    // CHANGEME
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
@@ -991,7 +990,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     };
 
-    // CHANGEME
     /**
      * Brings all of the canvasMarchers to the front of the canvas
      */
@@ -1003,7 +1001,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.bringAllControlPointsTooFront();
     };
 
-    // CHANGEME
     /**
      * Brings the specified canvasMarcher to the front of the canvas
      */
@@ -1012,60 +1009,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.bringAllControlPointsTooFront();
     };
 
-    // CHANGEME
-    /**
-     * Render static marchers for the given pages
-     *
-     * @param marcherVisuals The marcher visual map
-     * @param marcherPages All of the marcher pages
-     * @param prevPageId The id of the page to render marchers for
-     * @param nextPageId The id of the next page to render marchers for
-     */
-    renderEndpoints = async ({
-        marcherVisuals,
-        marcherPages,
-        prevPageId,
-        nextPageId,
-    }: {
-        marcherVisuals: MarcherVisualMap;
-        marcherPages: MarcherPageMap;
-        prevPageId: number | null;
-        nextPageId: number | null;
-    }) => {
-        // show previous endpoint and update its coordinates, hide if no previous page
-        if (prevPageId !== null) {
-            const marchers = MarcherPage.getByPageId(marcherPages, prevPageId);
-            marchers.forEach((marcherPage) => {
-                marcherVisuals[marcherPage.marcher_id]
-                    .getPreviousEndpoint()
-                    .show();
-                marcherVisuals[marcherPage.marcher_id]
-                    .getPreviousEndpoint()
-                    .updateCoords(marcherPage);
-            });
-        } else {
-            Object.values(marcherVisuals).forEach((marcherVisual) => {
-                marcherVisual.getPreviousEndpoint().hide();
-            });
-        }
-
-        // show next endpoint and update its coordinates, hide if no next page
-        if (nextPageId !== null) {
-            const marchers = MarcherPage.getByPageId(marcherPages, nextPageId);
-            marchers.forEach((marcherPage) => {
-                marcherVisuals[marcherPage.marcher_id].getNextEndpoint().show();
-                marcherVisuals[marcherPage.marcher_id]
-                    .getNextEndpoint()
-                    .updateCoords(marcherPage);
-            });
-        } else {
-            Object.values(marcherVisuals).forEach((marcherVisual) => {
-                marcherVisual.getNextEndpoint().hide();
-            });
-        }
-    };
-
-    // CHANGEME
+    // CHANGEME - LineListeners
     /**
      * Render static marchers for the given page
      *
@@ -1109,19 +1053,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return createdStaticMarchers;
     };
 
-    // CHANGEME
-    /**
-     * Remove endpoints from the canvas
-     */
-    removeEndpoints = () => {
-        const curEndpoints = this.getEndpoints();
-
-        curEndpoints.forEach((canvasMarcher) => {
-            this.remove(canvasMarcher);
-        });
-        this.requestRenderAll();
-    };
-
     /**
      * Renders all of the provided marcher lines on the canvas. Removes all other marcher lines first
      *
@@ -1138,7 +1069,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     };
 
-    // CHANGEME
+    // CHANGEME - LineListeners & ExportCoordinatesModal
     /**
      * Render pathways from any object containing an XY coordinate
      * to another object containing an XY coordinate, including MarcherPage(s).
@@ -1302,6 +1233,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             visual.getNextEndpoint().hide();
         });
     };
+
     /**
      * Rounds an x and y coordinate to the nearest step multiple of the denominator
      *

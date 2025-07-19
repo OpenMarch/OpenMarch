@@ -39,8 +39,6 @@ export const useMarcherVisualStore = create<MarcherVisualStoreInterface>(
 
                 return { marcherVisuals: newVisuals };
             });
-
-            console.log("Marcher visuals updated:", get().marcherVisuals);
         },
     }),
 );
