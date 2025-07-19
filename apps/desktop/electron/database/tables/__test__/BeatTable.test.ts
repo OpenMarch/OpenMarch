@@ -11,7 +11,11 @@ const sorter = (a: any, b: any) => a.position - b.position;
 // Helper function to trim timestamps from beat objects for comparison
 const trimData = (data: any[]) =>
     data.map((beat: any) => {
-        const { created_at, updated_at, ...rest } = beat;
+        const {
+            created_at: _createdAt,
+            updated_at: _updatedAt,
+            ...rest
+        } = beat;
         return {
             ...rest,
             notes: rest.notes ? rest.notes : null,
@@ -287,7 +291,7 @@ describe("BeatsTable", () => {
         });
     });
 
-    it("should fail to modify the first beat", () => {
+    it("should fail to modify the first beat duration", () => {
         const updateFirstBeat = () => {
             db.prepare(
                 `UPDATE ${Constants.BeatsTableName} SET duration = 1.0 WHERE id = ?`,
@@ -509,7 +513,7 @@ describe("BeatsTable", () => {
             ).toBeTruthy();
             const shiftResult = BeatTable.shiftBeats({
                 db,
-                startingPosition: 1,
+                startingPosition: 5,
                 shiftAmount: -4,
                 useNextUndoGroup: true,
             });

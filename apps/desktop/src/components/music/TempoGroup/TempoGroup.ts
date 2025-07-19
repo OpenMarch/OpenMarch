@@ -15,9 +15,9 @@ import Beat, {
     updateBeats,
 } from "../../../global/classes/Beat";
 import { GroupFunction } from "../../../utilities/ApiFunctions";
-import { conToastError } from "../../../utilities/utils";
 import type { NewMeasureArgs } from "electron/database/tables/MeasureTable";
 import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 
 export type TempoGroup = {
     /**
@@ -415,7 +415,8 @@ export const createFromTempoGroup = async (
         useNextUndoGroup: true,
     });
     if (!createBeatsResponse.success) {
-        conToastError("Error creating beats", createBeatsResponse);
+        toast.error(tolgee.t("tempoGroup.createBeatsError"));
+        console.error("Error creating beats", createBeatsResponse);
         return { success: false };
     }
     try {
@@ -450,7 +451,8 @@ export const createFromTempoGroup = async (
 
         return { success: true };
     } catch (error) {
-        conToastError("Error creating new beats", error);
+        toast.error(tolgee.t("tempoGroup.createNewBeatsError"));
+        console.error("Error creating new beats", error);
         window.electron.undo();
         return { success: false };
     }
@@ -470,7 +472,8 @@ export const updateTempoGroup = async ({
     refreshFunction: () => Promise<void>;
 }) => {
     if (!tempoGroup.measures || !tempoGroup.measures.length) {
-        conToastError("Tempo group has no measures", tempoGroup);
+        toast.error(tolgee.t("tempoGroup.noMeasures"));
+        console.error("Tempo group has no measures", tempoGroup);
         return;
     }
 
@@ -486,8 +489,9 @@ export const updateTempoGroup = async ({
     console.log("oldBeats", oldBeats);
     console.log("newBeats", newBeats);
     if (oldBeats.length !== newBeats.length) {
-        conToastError(
-            "Tempo group has different number of beats. This should not happen. Please reach out for support",
+        toast.error(tolgee.t("tempoGroup.differentBeatsError"));
+        console.error(
+            "Tempo group has different number of beats. This should not happen. Please reach out to us!",
             tempoGroup,
             oldBeats,
             newBeats,
@@ -539,8 +543,9 @@ export const updateManualTempos = async ({
 }) => {
     const oldBeats = tempoGroup.measures?.flatMap((measure) => measure.beats);
     if (!oldBeats || oldBeats.length !== newManualTempos.length) {
-        conToastError(
-            "Tempo group has different number of beats. This should not happen. Please reach out for support",
+        toast.error(tolgee.t("tempoGroup.differentBeatsError"));
+        console.error(
+            "Tempo group has different number of beats. This should not happen.",
             tempoGroup,
             oldBeats,
             newManualTempos,
@@ -568,7 +573,8 @@ export const handleCascadeDelete = async (
     fetchTimingObjects: () => Promise<void>,
 ) => {
     if (!tempoGroup.measures || !tempoGroup.measures.length) {
-        conToastError("Tempo group has no measures", tempoGroup);
+        toast.error(tolgee.t("tempoGroup.noMeasures"));
+        console.error("Tempo group has no measures", tempoGroup);
         return;
     }
     try {
@@ -577,12 +583,14 @@ export const handleCascadeDelete = async (
             fetchTimingObjects,
         );
         if (!response) {
-            conToastError("Failed to delete tempo group", response);
+            toast.error(tolgee.t("tempoGroup.deleteFailed"));
+            console.error("Failed to delete tempo group", response);
             return;
         }
-        toast.success("Tempo group deleted successfully");
+        toast.success(tolgee.t("tempoGroup.deletedSuccessfully"));
     } catch (error) {
-        conToastError("Failed to delete tempo group", error);
+        toast.error(tolgee.t("tempoGroup.deleteFailed"));
+        console.error("Failed to delete tempo group", error);
     }
 };
 

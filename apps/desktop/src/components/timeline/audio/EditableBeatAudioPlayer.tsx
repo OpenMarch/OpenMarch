@@ -9,6 +9,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { EditableTimingMarkersPlugin } from "./EditableTimingMarkersPlugin";
+import { T } from "@tolgee/react";
 
 /**
  * An audio player with editable beat markers.
@@ -139,7 +140,7 @@ export default function EditableBeatAudioPlayer() {
     return (
         <div className="bg-red pl-[40px]">
             <div className="text-text/70 mb-2 text-sm">
-                Drag the right edge of any beat to adjust its duration
+                <T keyName="audio.editableBeatPlayer.description" />
             </div>
             {audioFileUrl && (
                 <audio

@@ -201,8 +201,12 @@ export default class CanvasMarcher
 
         // Update position with proper typing
         this.set({
-            left: roundedCanvasCoords.x,
-            top: roundedCanvasCoords.y,
+            left: canvas.uiSettings.lockX
+                ? currentCanvasCoords.x
+                : roundedCanvasCoords.x,
+            top: canvas.uiSettings.lockY
+                ? currentCanvasCoords.y
+                : roundedCanvasCoords.y,
         } as Partial<this>);
         this.updateTextLabelPosition();
     }

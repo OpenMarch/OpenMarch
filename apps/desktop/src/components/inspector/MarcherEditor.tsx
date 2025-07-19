@@ -20,6 +20,7 @@ import MarcherRotationInput from "./MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
+import { T } from "@tolgee/react";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -170,7 +171,12 @@ function MarcherEditor() {
         resetForm();
     }, [selectedMarchers, rCoords, resetForm]);
 
-    if (!selectedPage) return <>No page selected</>;
+    if (!selectedPage)
+        return (
+            <>
+                <T keyName="inspector.marcher.noPageSelected" />
+            </>
+        );
 
     return (
         <>
@@ -180,7 +186,10 @@ function MarcherEditor() {
                         // Multiple marchers selected
                         <InspectorCollapsible
                             defaultOpen
-                            title={`${selectedMarchers.length} Marchers`}
+                            translatableTitle={{
+                                keyName: "inspector.marcher.title",
+                                parameters: { count: selectedMarchers.length },
+                            }}
                             className="mt-12 flex flex-col gap-16"
                         >
                             <p className="text-sub text-text/80 w-full px-6 font-mono">
@@ -194,7 +203,7 @@ function MarcherEditor() {
                                     <div className="w-full px-6">
                                         <div className="">
                                             <p className="w-full leading-none opacity-80">
-                                                Smallest step size
+                                                <T keyName="inspector.marcher.minStepSize" />
                                             </p>
                                         </div>
                                         <div className="mt-6 flex justify-between">
@@ -214,7 +223,7 @@ function MarcherEditor() {
                                         </div>
                                         <div className="mt-12">
                                             <p className="w-full leading-none opacity-80">
-                                                Largest step size
+                                                <T keyName="inspector.marcher.maxStepSize" />
                                             </p>
                                         </div>
                                         <div className="flex justify-between pt-6">
@@ -247,7 +256,7 @@ function MarcherEditor() {
                                         "enabled:hover:text-text-invert",
                                     )}
                                 >
-                                    Swap marchers
+                                    <T keyName="inspector.marcher.swapMarchers" />
                                 </RegisteredActionButton>
                             )}
                             {selectedMarchers.length >= 3 &&
@@ -264,7 +273,7 @@ function MarcherEditor() {
                                             RegisteredActionsObjects.alignmentEventLine
                                         }
                                     >
-                                        Create Line
+                                        <T keyName="inspector.marcher.createLine" />
                                     </RegisteredActionButton>
                                 )}
                             {/* Add rotation controls */}
@@ -276,12 +285,18 @@ function MarcherEditor() {
                         // One marcher selected
                         <InspectorCollapsible
                             defaultOpen
-                            title={`Marcher ${selectedMarchers[0].drill_number}`}
+                            translatableTitle={{
+                                keyName: "inspector.marcher.titleSingle",
+                                parameters: {
+                                    drillNumber:
+                                        selectedMarchers[0].drill_number,
+                                },
+                            }}
                             className="mt-12 flex flex-col gap-24"
                         >
                             {!rCoords ? (
                                 <p className="text-body text-red">
-                                    Error loading coordinates
+                                    <T keyName="inspector.marcher.errorLoadingCoords" />
                                 </p>
                             ) : (
                                 <form
@@ -472,7 +487,7 @@ function MarcherEditor() {
                                     {stepSize !== undefined && (
                                         <div className="flex justify-between px-6">
                                             <label className="text-body leading-none opacity-80">
-                                                Step Size
+                                                <T keyName="inspector.marcher.stepSize" />
                                             </label>
 
                                             <p className="text-body bg-transparent leading-none">
@@ -480,7 +495,7 @@ function MarcherEditor() {
                                             </p>
                                         </div>
                                     )}
-                                    {/* This is here so the form submits when enter is pressed */}
+                                    {/* This is here so the form submits when enter is pressed, does NOT need to be translated */}
                                     <button
                                         type="submit"
                                         style={{ display: "none" }}
@@ -498,7 +513,7 @@ function MarcherEditor() {
                                         htmlFor="name-input"
                                         className="text-body leading-none opacity-80"
                                     >
-                                        Name
+                                        <T keyName="inspector.marcher.name" />
                                     </label>
 
                                     <span className="w-[7rem]">
@@ -524,7 +539,7 @@ function MarcherEditor() {
                                         htmlFor="section-input"
                                         className="text-body leading-none opacity-80"
                                     >
-                                        Section
+                                        <T keyName="inspector.marcher.section" />
                                     </label>
                                     <span className="w-[7rem]">
                                         <Input
@@ -540,7 +555,7 @@ function MarcherEditor() {
                                         htmlFor="drill-number-input"
                                         className="text-body leading-none opacity-80"
                                     >
-                                        Drill Number
+                                        <T keyName="inspector.marcher.drillNumber" />
                                     </label>
                                     <span className="w-[7rem]">
                                         <Input
@@ -553,7 +568,7 @@ function MarcherEditor() {
                                         />
                                     </span>
                                 </div>
-                                {/* This is here so the form submits when enter is pressed */}
+                                {/* This is here so the form submits when enter is pressed, does NOT need to be translated */}
                                 <button
                                     type="submit"
                                     style={{ display: "none" }}

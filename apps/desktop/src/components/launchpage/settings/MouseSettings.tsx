@@ -1,8 +1,10 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { Switch, Slider } from "@openmarch/ui";
+import { T, useTranslate } from "@tolgee/react";
 
 export default function MouseSettings() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const { t } = useTranslate();
 
     return (
         <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-6 border p-12">
@@ -11,7 +13,7 @@ export default function MouseSettings() {
                     htmlFor="zoomSensitivity"
                     className="text-body text-text-subtitle"
                 >
-                    Zoom sensitivity
+                    <T keyName="settings.mouse.zoomSensitivity" />
                 </label>
                 <div className="w-[200px]">
                     <Slider
@@ -28,7 +30,7 @@ export default function MouseSettings() {
                                 },
                             })
                         }
-                        aria-label="Zoom sensitivity"
+                        aria-label={`${t("settings.mouse.zoomSensitivity")}`}
                     />
                 </div>
             </div>
@@ -37,7 +39,7 @@ export default function MouseSettings() {
                     htmlFor="panSensitivity"
                     className="text-body text-text-subtitle"
                 >
-                    Pan sensitivity
+                    <T keyName="settings.mouse.panSensitivity" />
                 </label>
                 <div className="w-[200px]">
                     <Slider
@@ -54,7 +56,7 @@ export default function MouseSettings() {
                                 },
                             })
                         }
-                        aria-label="Pan sensitivity"
+                        aria-label={`${t("settings.mouse.panSensitivity")}`}
                     />
                 </div>
             </div>
@@ -63,7 +65,7 @@ export default function MouseSettings() {
                     htmlFor="trackpadPanSensitivity"
                     className="text-body text-text-subtitle"
                 >
-                    Trackpad pan sensitivity
+                    <T keyName="settings.mouse.trackpadPanSensitivity" />
                 </label>
                 <div className="w-[200px]">
                     <Slider
@@ -82,7 +84,7 @@ export default function MouseSettings() {
                                 },
                             })
                         }
-                        aria-label="Trackpad pan sensitivity"
+                        aria-label={`${t("settings.mouse.trackpadPanSensitivity")}`}
                     />
                 </div>
             </div>
@@ -91,7 +93,7 @@ export default function MouseSettings() {
                     htmlFor="trackpadMode"
                     className="text-body text-text-subtitle"
                 >
-                    Trackpad mode (recommended for macOS)
+                    <T keyName="settings.mouse.trackpadMode" />
                 </label>
                 <Switch
                     id="trackpadMode"

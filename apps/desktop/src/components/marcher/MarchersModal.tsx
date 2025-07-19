@@ -6,6 +6,7 @@ import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 import SectionAppearanceList from "./section/SectionAppearanceList";
+import { T } from "@tolgee/react";
 
 export default function MarchersModal() {
     return (
@@ -23,7 +24,9 @@ export function MarcherListContents() {
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">Marchers</h4>
+                <h4 className="text-h4 leading-none">
+                    <T keyName="marchers.title" />
+                </h4>
                 <div className="flex items-center gap-8">
                     <Button
                         onClick={() => {
@@ -32,7 +35,7 @@ export function MarcherListContents() {
                         size="compact"
                         variant="secondary"
                     >
-                        Section Styles
+                        <T keyName="marchers.sectionStyles" />
                     </Button>
                     <Button
                         onClick={() => {
@@ -40,7 +43,7 @@ export function MarcherListContents() {
                         }}
                         size="compact"
                     >
-                        Add
+                        <T keyName="marchers.addMarcher" />
                     </Button>
                     <button
                         onClick={toggleOpen}
@@ -73,7 +76,9 @@ export function MarcherNewFormContents() {
                     >
                         <CaretLeftIcon size={24} />
                     </button>
-                    <h4 className="text-h4 leading-none">Add Marchers</h4>
+                    <h4 className="text-h4 leading-none">
+                        <T keyName="marchers.addMarchers" />
+                    </h4>
                 </div>
                 <button
                     onClick={toggleOpen}

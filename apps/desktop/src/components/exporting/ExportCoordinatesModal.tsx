@@ -40,6 +40,7 @@ import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
+import { T, useTolgee } from "@tolgee/react";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
@@ -66,6 +67,7 @@ function CoordinateSheetExport() {
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
     const isCancelled = useRef(false);
+    const { t } = useTolgee();
 
     const handleExport = useCallback(async () => {
         setIsLoading(true);
@@ -73,12 +75,12 @@ function CoordinateSheetExport() {
 
         // Fun marching band phrases that rotate during export
         const funPhrases = [
-            "Get ready to march a perfect 8 to 5! 🎺",
-            "Getting the files to cover down 📋",
-            "Cleaning drill from the box 🧹",
-            "Making sure everyone's in step 👟",
-            "Painting a perfect field",
-            "Marching toward perfection! 🎯",
+            t("exportCoordinates.funPhrase.0"),
+            t("exportCoordinates.funPhrase.1"),
+            t("exportCoordinates.funPhrase.2"),
+            t("exportCoordinates.funPhrase.3"),
+            t("exportCoordinates.funPhrase.4"),
+            t("exportCoordinates.funPhrase.5"),
         ];
 
         let currentPhraseIndex = 0;
@@ -101,7 +103,7 @@ function CoordinateSheetExport() {
         };
 
         if (!fieldProperties) {
-            toast.error("Field properties are required for export");
+            toast.error(t("exportCoordinates.fieldPropertiesRequired"));
             setIsLoading(false);
             return;
         }
@@ -114,7 +116,7 @@ function CoordinateSheetExport() {
             // Simulate more granular progress updates
             await new Promise((resolve) => setTimeout(resolve, 500));
             if (isCancelled.current)
-                throw new Error("Export cancelled by user");
+                throw new Error(t("exportCoordinates.cancelledByUser"));
             setProgress(15);
 
             const processedMarchers = marchers
@@ -132,7 +134,7 @@ function CoordinateSheetExport() {
 
             await new Promise((resolve) => setTimeout(resolve, 300));
             if (isCancelled.current)
-                throw new Error("Export cancelled by user");
+                throw new Error(t("exportCoordinates.cancelledByUser"));
             setProgress(25);
 
             // More detailed progress for sheet generation
@@ -141,14 +143,14 @@ function CoordinateSheetExport() {
 
             // Check for cancellation
             if (isCancelled.current) {
-                throw new Error("Export cancelled by user");
+                throw new Error(t("exportCoordinates.cancelledByUser"));
             }
 
             // Generate coordinate sheets with progress tracking
             setProgress(35);
             await new Promise((resolve) => setTimeout(resolve, 200));
             if (isCancelled.current)
-                throw new Error("Export cancelled by user");
+                throw new Error(t("exportCoordinates.cancelledByUser"));
 
             // split to quarter sheets
             if (quarterPages) {
@@ -202,7 +204,9 @@ function CoordinateSheetExport() {
                                 return {
                                     name: marcher.name,
                                     drillNumber: marcher.drill_number,
-                                    section: marcher.section || "Unsorted",
+                                    section:
+                                        marcher.section ||
+                                        t("exportCoordinates.unsortedSection"),
                                     renderedPage: cleanedHtml,
                                 };
                             } catch (error) {
@@ -213,8 +217,10 @@ function CoordinateSheetExport() {
                                 return {
                                     name: marcher.name,
                                     drillNumber: marcher.drill_number,
-                                    section: marcher.section || "Unsorted",
-                                    renderedPage: `<div><h3>Error rendering ${marcher.drill_number}</h3><p>${error instanceof Error ? error.message : "Unknown error"}</p></div>`,
+                                    section:
+                                        marcher.section ||
+                                        t("exportCoordinates.unsortedSection"),
+                                    renderedPage: `<div><h3>${t("exportCoordinates.errorRendering", { drillNumber: marcher.drill_number })}</h3><p>${error instanceof Error ? error.message : t("exportCoordinates.unknownError")}</p></div>`,
                                 };
                             }
                         });
@@ -253,7 +259,9 @@ function CoordinateSheetExport() {
                     return {
                         name: marcher.name,
                         drillNumber: marcher.drill_number,
-                        section: marcher.section || "Unsorted",
+                        section:
+                            marcher.section ||
+                            t("exportCoordinates.unsortedSection"),
                         renderedPage: ReactDOMServer.renderToString(
                             <StaticMarcherCoordinateSheet
                                 marcher={marcher}
@@ -320,13 +328,14 @@ function CoordinateSheetExport() {
             }
 
             setProgress(100);
-            setCurrentStep("Export completed!");
+            setCurrentStep(t("exportCoordinates.exportComplete"));
 
             // Add success toast message
             toast.success(
                 <span>
-                    Successfully exported coordinate sheets for{" "}
-                    {marchers.length} marcher{marchers.length === 1 ? "" : "s"}!{" "}
+                    {t("exportCoordinates.exportSuccess", {
+                        count: marchers.length,
+                    })}
                     <button
                         type="button"
                         onClick={async () => {
@@ -336,7 +345,10 @@ function CoordinateSheetExport() {
                                 );
                             if (error) {
                                 toast.error(
-                                    "Could not open export directory: " + error,
+                                    t(
+                                        "exportCoordinates.openExportDirectoryError",
+                                        { error },
+                                    ),
                                 );
                             }
                         }}
@@ -351,15 +363,20 @@ function CoordinateSheetExport() {
                             marginLeft: "0.5em",
                         }}
                     >
-                        Click to open export
+                        <T keyName="exportCoordinates.openExportDirectory" />
                     </button>
                 </span>,
             );
         } catch (error) {
             console.error("Export error:", error);
-            setCurrentStep("Export failed");
+            setCurrentStep(t("exportCoordinates.exportFailed"));
             toast.error(
-                `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+                t("exportCoordinates.exportFailedToast", {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error",
+                }),
             );
         } finally {
             stopPhraseRotation();
@@ -381,6 +398,7 @@ function CoordinateSheetExport() {
         isTerse,
         includeMeasures,
         useXY,
+        t,
     ]);
 
     return (
@@ -399,8 +417,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        {" "}
-                        Include measures{" "}
+                        <T keyName="exportCoordinates.includeMeasures" />
                     </Form.Label>
                 </Form.Field>
 
@@ -418,8 +435,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        {" "}
-                        Abbreviate coordinate descriptions{" "}
+                        <T keyName="exportCoordinates.abbreviateCoordinateDescriptions" />
                     </Form.Label>
                 </Form.Field>
 
@@ -436,8 +452,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        {" "}
-                        Use X/Y headers{" "}
+                        <T keyName="exportCoordinates.useXYHeaders" />
                     </Form.Label>
                 </Form.Field>
 
@@ -455,8 +470,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        {" "}
-                        Quarter-page layout{" "}
+                        <T keyName="exportCoordinates.quarterPageLayout" />
                     </Form.Label>
                 </Form.Field>
 
@@ -473,8 +487,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        {" "}
-                        Organize by Section{" "}
+                        <T keyName="exportCoordinates.organizeBySection" />
                     </Form.Label>
 
                     <Tooltip.TooltipProvider>
@@ -486,15 +499,7 @@ function CoordinateSheetExport() {
                                 <Tooltip.Content
                                     className={clsx(TooltipClassName, "p-16")}
                                 >
-                                    <div>
-                                        Create PDF files for each individual
-                                        marcher organized in folders by section.
-                                    </div>
-                                    <div>
-                                        If this is not checked, one large PDF
-                                        file will be created with every
-                                        coordinate sheet in score order.
-                                    </div>
+                                    <T keyName="exportCoordinates.organizeBySectionTooltip" />
                                 </Tooltip.Content>
                             </Tooltip.Portal>
                         </Tooltip.Root>
@@ -506,7 +511,7 @@ function CoordinateSheetExport() {
                     className="flex w-full items-center justify-between gap-12"
                 >
                     <Form.Label className="text-body">
-                        Coordinate rounding:
+                        <T keyName="exportCoordinates.roundingDenominator" />
                     </Form.Label>
                     <Select
                         value={roundingDenominator.toString()}
@@ -518,7 +523,8 @@ function CoordinateSheetExport() {
                             label={
                                 coordinateRoundingOptions.find(
                                     (opt) => opt.value === roundingDenominator,
-                                )?.label || "Select rounding"
+                                )?.label ||
+                                t("exportCoordinates.selectRoundingDenominator")
                             }
                             className="w-[16rem] whitespace-nowrap"
                         />
@@ -539,7 +545,9 @@ function CoordinateSheetExport() {
             {/* Preview Section */}
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
-                    <h5 className="text-h5">Preview</h5>
+                    <h5 className="text-h5">
+                        <T keyName="exportCoordinates.preview" />
+                    </h5>
                 </div>
                 <div>
                     <div className="mx-2 bg-white text-black">
@@ -561,7 +569,11 @@ function CoordinateSheetExport() {
                     onClick={handleExport}
                     disabled={isLoading || marchers.length === 0}
                 >
-                    {isLoading ? "Exporting... Please wait" : "Export"}
+                    {isLoading ? (
+                        <T keyName="exportCoordinates.exporting" />
+                    ) : (
+                        <T keyName="exportCoordinates.export" />
+                    )}
                 </Button>
                 <DialogClose>
                     <Button
@@ -569,8 +581,7 @@ function CoordinateSheetExport() {
                         variant="secondary"
                         onClick={() => (isCancelled.current = true)}
                     >
-                        {" "}
-                        Cancel{" "}
+                        <T keyName="exportCoordinates.cancel" />
                     </Button>
                 </DialogClose>
             </div>
@@ -645,7 +656,8 @@ function DrillChartExport() {
     const isCancelled = useRef(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
-    const [funPhrase, setFunPhrase] = useState("");
+
+    const { t } = useTolgee();
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
@@ -684,7 +696,11 @@ function DrillChartExport() {
             // Generate SVGs for each page
             for (let p = 0; p < pages.length; p++) {
                 setCurrentStep(
-                    `Processing page ${p + 1} of ${pages.length}: ${exportCanvas.currentPage.name}`,
+                    t("exportCoordinates.processingPage", {
+                        pageNumber: p + 1,
+                        totalPages: pages.length,
+                        pageName: exportCanvas.currentPage.name,
+                    }),
                 );
 
                 // Render marchers for this page
@@ -815,14 +831,14 @@ function DrillChartExport() {
                 // Update progress smoothly
                 setProgress(50 * ((p + 1) / pages.length));
                 if (isCancelled.current) {
-                    throw new Error("Export cancelled by user");
+                    throw new Error(t("exportCoordinates.cancelledByUser"));
                 }
             }
 
             // Success
             return { SVGs: svgPages, coords: readableCoords };
         },
-        [fieldProperties, marchers, marcherPages, pages, individualCharts],
+        [fieldProperties, marchers, marcherPages, pages, individualCharts, t],
     );
 
     /**
@@ -856,7 +872,9 @@ function DrillChartExport() {
 
                 setProgress(50 + (50 * marcher) / svgPages.length);
                 setCurrentStep(
-                    `Generating PDF file for: ${marchers[marcher]?.drill_number ?? "MAIN"}`,
+                    t("exportCoordinates.generatingPDF", {
+                        drillNumber: marchers[marcher]?.drill_number ?? "MAIN",
+                    }),
                 );
 
                 // Individual PDF failed, log error and continue
@@ -866,15 +884,19 @@ function DrillChartExport() {
                         result.error,
                     );
                     toast.error(
-                        `SVG export for ${marchers[marcher]?.drill_number ?? "MAIN"} failed with error: ${result.error}`,
+                        t("exportCoordinates.svgExportFailed", {
+                            drillNumber:
+                                marchers[marcher]?.drill_number ?? "MAIN",
+                            error: result.error,
+                        }),
                     );
                 }
                 if (isCancelled.current) {
-                    throw new Error("Export cancelled by user");
+                    throw new Error(t("exportCoordinates.cancelledByUser"));
                 }
             }
         },
-        [individualCharts, marchers, pages],
+        [individualCharts, marchers, pages, t],
     );
 
     // Check if we have the minimum requirements for export
@@ -894,18 +916,18 @@ function DrillChartExport() {
 
         // Fun marching band phrases that rotate during export
         const funPhrases = [
-            "Get ready to march a perfect 8 to 5! 🎺",
-            "Creating the best drill ever! ✨",
-            "Getting the files to cover down 📋",
-            "Cleaning drill from the box 🧹",
-            "Tuning up those coordinates 🎵",
-            "Making sure everyone's in step 👟",
-            "Polishing those yard line markers ✨",
-            "Counting off the perfect tempo 🥁",
-            "Aligning the formation like a pro 📐",
-            "Marching toward perfection! 🎯",
-            "Setting the tempo for success 🎼",
-            "Fine-tuning every step count 🔧",
+            t("exportCoordinates.funPhrase.0"),
+            t("exportCoordinates.funPhrase.1"),
+            t("exportCoordinates.funPhrase.2"),
+            t("exportCoordinates.funPhrase.3"),
+            t("exportCoordinates.funPhrase.4"),
+            t("exportCoordinates.funPhrase.5"),
+            t("exportCoordinates.funPhrase.6"),
+            t("exportCoordinates.funPhrase.7"),
+            t("exportCoordinates.funPhrase.8"),
+            t("exportCoordinates.funPhrase.9"),
+            t("exportCoordinates.funPhrase.10"),
+            t("exportCoordinates.funPhrase.11"),
         ];
 
         let currentPhraseIndex = 0;
@@ -943,10 +965,14 @@ function DrillChartExport() {
             ({ SVGs, coords } = await generateExportSVGs(exportCanvas));
         } catch (error) {
             toast.error(
-                "SVG Generation failed: " +
-                    (error instanceof Error ? error.message : "Unknown error"),
+                t("exportCoordinates.svgGenerationFailed", {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error",
+                }),
             );
-            setCurrentStep("Export failed");
+            setCurrentStep(t("exportCoordinates.exportFailed"));
             isCancelled.current = true;
         }
 
@@ -989,12 +1015,12 @@ function DrillChartExport() {
             clearInterval(finalProgressInterval);
 
             setProgress(100);
-            setCurrentStep("Export completed!");
+            setCurrentStep(t("exportCoordinates.exportComplete"));
 
             // Prompt user to open the export directory
             toast.success(
                 <span>
-                    Successfully exported as PDF!{" "}
+                    {t("exportCoordinates.exportPDFSuccess")}{" "}
                     <button
                         type="button"
                         onClick={() =>
@@ -1010,16 +1036,20 @@ function DrillChartExport() {
                             cursor: "pointer",
                         }}
                     >
-                        Click to open folder
+                        <T keyName="exportCoordinates.openExportDirectory" />
                     </button>
                 </span>,
             );
         } catch (error) {
             toast.error(
-                "PDF Export failed: " +
-                    (error instanceof Error ? error.message : "Unknown error"),
+                t("exportCoordinates.pdfExportFailed", {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error",
+                }),
             );
-            setCurrentStep("Export failed");
+            setCurrentStep(t("exportCoordinates.exportFailed"));
         } finally {
             stopPhraseRotation();
             // Keep the completed state visible for a moment before hiding
@@ -1030,7 +1060,7 @@ function DrillChartExport() {
                 setCurrentStep("");
             }, 1500);
         }
-    }, [generateExportSVGs, exportMarcherSVGs]);
+    }, [generateExportSVGs, exportMarcherSVGs, t]);
 
     return (
         <div className="flex flex-col gap-20">
@@ -1049,7 +1079,7 @@ function DrillChartExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        Individual Drill Charts
+                        <T keyName="exportCoordinates.individualCharts" />
                     </Form.Label>
                     <Tooltip.TooltipProvider>
                         <Tooltip.Root>
@@ -1061,12 +1091,10 @@ function DrillChartExport() {
                                     className={clsx(TooltipClassName, "p-16")}
                                 >
                                     <div>
-                                        Create customized drill chart PDFs for
-                                        each individual marcher.
+                                        <T keyName="exportCoordinates.individualChartsTooltip" />
                                     </div>
                                     <div>
-                                        If this is not checked, one overview
-                                        drill chart PDF will be created.
+                                        <T keyName="exportCoordinates.individualChartsTooltipDescription" />
                                     </div>
                                 </Tooltip.Content>
                             </Tooltip.Portal>
@@ -1078,7 +1106,9 @@ function DrillChartExport() {
             {/* Preview Section */}
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
-                    <h5 className="text-h5">Preview</h5>
+                    <h5 className="text-h5">
+                        <T keyName="exportCoordinates.preview" />
+                    </h5>
                 </div>
 
                 {/* Show Demo SVGs or Error if Export Requirement Not Met */}
@@ -1102,18 +1132,27 @@ function DrillChartExport() {
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center gap-12 bg-white py-20 text-black">
-                        <h4 className="text-h4">Export Not Available</h4>
+                        <h4 className="text-h4">
+                            <T keyName="exportCoordinates.exportNotAvailable" />
+                        </h4>
                         <p className="text-body max-w-md text-center text-gray-600">
-                            Export requires field properties, at least one
-                            non-default page, and at least one marcher.
+                            <T keyName="exportCoordinates.exportNotAvailableDescription" />
                         </p>
                         <div className="text-center text-xs text-gray-500">
                             <div>
-                                Field Properties: {fieldProperties ? "✓" : "✗"}
+                                {t("exportCoordinates.fieldProperties", {
+                                    status: fieldProperties ? "✓" : "✗",
+                                })}
                             </div>
-                            <div>Page: {pages.length > 1 ? "✓" : "✗"}</div>
                             <div>
-                                Marcher: {marchers.length > 0 ? "✓" : "✗"}
+                                {t("exportCoordinates.page", {
+                                    status: pages.length > 1 ? "✓" : "✗",
+                                })}
+                            </div>
+                            <div>
+                                {t("exportCoordinates.marcher", {
+                                    status: marchers.length > 0 ? "✓" : "✗",
+                                })}
                             </div>
                         </div>
                     </div>
@@ -1127,7 +1166,9 @@ function DrillChartExport() {
                     onClick={handleExport}
                     disabled={isLoading || !canExport}
                 >
-                    {isLoading ? "Exporting... Please wait" : "Export"}
+                    {isLoading
+                        ? t("exportCoordinates.exporting")
+                        : t("exportCoordinates.export")}
                 </Button>
                 <DialogClose>
                     <Button
@@ -1135,7 +1176,7 @@ function DrillChartExport() {
                         variant="secondary"
                         onClick={() => (isCancelled.current = true)}
                     >
-                        Cancel
+                        <T keyName="exportCoordinates.cancel" />
                     </Button>
                 </DialogClose>
             </div>
@@ -1186,8 +1227,12 @@ function ExportModalContents() {
     return (
         <Tabs defaultValue="coordinate-sheets">
             <TabsList>
-                <TabItem value="coordinate-sheets">Coordinate Sheets</TabItem>
-                <TabItem value="drill-charts">Drill Charts</TabItem>
+                <TabItem value="coordinate-sheets">
+                    <T keyName="exportCoordinates.coordinateSheets" />
+                </TabItem>
+                <TabItem value="drill-charts">
+                    <T keyName="exportCoordinates.drillCharts" />
+                </TabItem>
             </TabsList>
 
             <TabContent value="coordinate-sheets">
@@ -1210,13 +1255,15 @@ export default function ExportCoordinatesModal() {
             >
                 <button type="button" className="flex items-center gap-8">
                     <ArrowSquareOutIcon size={24} />
-                    Export
+                    <T keyName="exportCoordinates.exportButton" />
                 </button>
             </DialogTrigger>
 
             {/* Dialog Setup */}
             <DialogContent className="w-[48rem]">
-                <DialogTitle>Export</DialogTitle>
+                <DialogTitle>
+                    <T keyName="exportCoordinates.title" />
+                </DialogTitle>
                 <ExportModalContents />
             </DialogContent>
         </Dialog>

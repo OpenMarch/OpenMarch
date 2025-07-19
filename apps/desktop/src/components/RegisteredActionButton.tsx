@@ -49,7 +49,7 @@ export default function RegisteredActionButton({
             )
         )
             console.error(
-                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.instructionalString}`,
+                `RegisteredActionEnum does not contain ${enumString} for ${registeredAction.descKey}`,
             );
         const registeredActionEnum =
             RegisteredActionsEnum[
@@ -63,7 +63,7 @@ export default function RegisteredActionButton({
     }, [
         linkRegisteredAction,
         registeredAction.enumString,
-        registeredAction.instructionalString,
+        registeredAction.descKey,
         removeRegisteredAction,
     ]);
 
@@ -89,7 +89,7 @@ export default function RegisteredActionButton({
                     >
                         {instructionalString
                             ? instructionalString
-                            : registeredAction.instructionalString}
+                            : registeredAction.getInstructionalString()}
                     </RadixTooltip.Content>
                 </RadixTooltip.Portal>
             </RadixTooltip.Root>

@@ -18,7 +18,11 @@ describe("PageTable", () => {
         let db: Database.Database;
         const trimData = (data: any[]) =>
             data.map((page: any) => {
-                const { created_at, updated_at, ...rest } = page;
+                const {
+                    created_at: _created_at,
+                    updated_at: _updated_at,
+                    ...rest
+                } = page;
                 return { ...rest, notes: rest.notes ? rest.notes : null };
             });
         beforeEach(async () => {
@@ -84,13 +88,15 @@ describe("PageTable", () => {
 
         const trimData = (data: any[]) =>
             data.map((page: any) => {
-                const { created_at, updated_at, ...rest } = page;
+                const {
+                    created_at: _created_at,
+                    updated_at: _updated_at,
+                    ...rest
+                } = page;
                 return { ...rest, notes: rest.notes ? rest.notes : null };
             });
 
-        function firstPage(
-            nextPageId: number | null = null,
-        ): PageTable.DatabasePage {
+        function firstPage(): PageTable.DatabasePage {
             return {
                 id: 0,
                 start_beat: FIRST_BEAT_ID,
@@ -107,7 +113,7 @@ describe("PageTable", () => {
             currentPages: PageTable.DatabasePage[],
         ): PageTable.DatabasePage[] {
             const sortedPages = trimAndSort(currentPages);
-            return [firstPage(sortedPages[0].id), ...sortedPages];
+            return [firstPage(), ...sortedPages];
         }
 
         beforeEach(async () => {
@@ -447,14 +453,22 @@ describe("PageTable", () => {
 
                 expect(createResult.success).toBe(true);
                 let trimmedCreateData = createResult.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
+                    const {
+                        created_at: _created_at,
+                        updated_at: _updated_at,
+                        ...rest
+                    } = page;
                     return {
                         ...rest,
                         notes: rest.notes ? rest.notes : null,
                     };
                 });
                 let trimmedGetData = getResult.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
+                    const {
+                        created_at: _created_at,
+                        updated_at: _updated_at,
+                        ...rest
+                    } = page;
                     return {
                         ...rest,
                         notes: rest.notes ? rest.notes : null,
@@ -521,14 +535,22 @@ describe("PageTable", () => {
 
                 expect(createResult.success).toBe(true);
                 trimmedCreateData = createResult.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
+                    const {
+                        created_at: _created_at,
+                        updated_at: _updated_at,
+                        ...rest
+                    } = page;
                     return {
                         ...rest,
                         notes: rest.notes ? rest.notes : null,
                     };
                 });
                 trimmedGetData = getResult.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
+                    const {
+                        created_at: _created_at,
+                        updated_at: _updated_at,
+                        ...rest
+                    } = page;
                     return {
                         ...rest,
                         notes: rest.notes ? rest.notes : null,
@@ -616,7 +638,11 @@ describe("PageTable", () => {
 
                 expect(createResult.success).toBe(true);
                 const trimmedCreateData = createResult.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
+                    const {
+                        created_at: _created_at,
+                        updated_at: _updated_at,
+                        ...rest
+                    } = page;
                     return {
                         ...rest,
                         notes: rest.notes ? rest.notes : null,
@@ -761,7 +787,11 @@ describe("PageTable", () => {
                 });
                 expect(updateResult.success).toBe(true);
                 const trimmedUpdateData = updateResult.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
+                    const {
+                        created_at: _created_at,
+                        updated_at: _updated_at,
+                        ...rest
+                    } = page;
                     return {
                         ...rest,
                         notes: rest.notes ? rest.notes : null,
@@ -774,7 +804,11 @@ describe("PageTable", () => {
                 const allPages = PageTable.getPages({ db });
                 expect(allPages.success).toBe(true);
                 const trimmedAllData = allPages.data.map((page: any) => {
-                    const { created_at, updated_at, ...rest } = page;
+                    const {
+                        created_at: _created_at,
+                        updated_at: _updated_at,
+                        ...rest
+                    } = page;
                     return {
                         ...rest,
                         notes: rest.notes ? rest.notes : null,
@@ -853,6 +887,30 @@ describe("PageTable", () => {
             expect(updateResult.error).toBeDefined();
         });
 
+        it("should fail to update the first page", () => {
+            const updateFirstBeat = () => {
+                db.prepare(
+                    `UPDATE ${Constants.PageTableName} SET isSubset = 1 WHERE id = ${FIRST_PAGE_ID}`,
+                ).run();
+            };
+            expect(updateFirstBeat).toThrow();
+        });
+
+        it("should not fail to update the first page's notes", () => {
+            const updateFirstBeat = () => {
+                db.prepare(
+                    `UPDATE ${Constants.PageTableName} SET "notes" = 'test' WHERE id = ${FIRST_PAGE_ID}`,
+                ).run();
+            };
+            expect(updateFirstBeat).not.toThrow();
+            const getResult = PageTable.getPages({ db });
+            expect(getResult.success).toBe(true);
+            const firstPage = getResult.data.find(
+                (page) => page.id === FIRST_PAGE_ID,
+            );
+            expect(firstPage?.notes).toBe("test");
+        });
+
         describe("deletePage", () => {
             it("should delete a page by id from the database", async () => {
                 const newPages: NewPageArgs[] = [
@@ -921,7 +979,11 @@ describe("PageTable", () => {
                 expect(deletePageResponse.success).toBe(true);
                 const trimmedDeleteData = deletePageResponse.data.map(
                     (page: any) => {
-                        const { created_at, updated_at, ...rest } = page;
+                        const {
+                            created_at: _created_at,
+                            updated_at: _updated_at,
+                            ...rest
+                        } = page;
                         return {
                             ...rest,
                             notes: rest.notes ? rest.notes : null,

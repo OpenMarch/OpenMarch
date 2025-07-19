@@ -11,9 +11,11 @@ import {
 } from "@/global/classes/Page";
 import { toast } from "sonner";
 import { GroupFunction } from "@/utilities/ApiFunctions";
+import { T, useTranslate } from "@tolgee/react";
 
 // TODO: figure out how to make this work with the new music system
 function PageEditor() {
+    const { t } = useTranslate();
     const { selectedPage } = useSelectedPage()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore()!;
     const [isFirstPage, setIsFirstPage] = useState(false);
@@ -90,7 +92,7 @@ function PageEditor() {
                     refreshFunction: fetchTimingObjects,
                     useNextUndoGroup: true,
                 });
-                toast.success("Page split successfully");
+                toast.success(t("inspector.page.split.success"));
             }
         }
     };
@@ -99,7 +101,10 @@ function PageEditor() {
         return (
             <InspectorCollapsible
                 defaultOpen
-                title={`Page ${selectedPage.name}`}
+                translatableTitle={{
+                    keyName: "inspector.page.title",
+                    parameters: { pageNumber: selectedPage.name },
+                }}
                 className="mt-12"
             >
                 <form
@@ -116,7 +121,7 @@ function PageEditor() {
                             className="text-body text-text/80 w-full"
                             htmlFor={countsInputId}
                         >
-                            Counts
+                            <T keyName="inspector.page.counts" />
                         </label>
                         <div className="w-fit min-w-0">
                             {isFirstPage ? 0 : selectedPage.counts.toString()}
@@ -127,7 +132,7 @@ function PageEditor() {
                             htmlFor={subsetInputId}
                             className="text-body text-text/80"
                         >
-                            Subset
+                            <T keyName="inspector.page.subset" />
                         </label>
                         <Switch
                             disabled={isFirstPage}
@@ -151,7 +156,7 @@ function PageEditor() {
                     </div>
                     <div className="flex w-full items-center justify-between">
                         <label className="text-body text-text/80">
-                            Measures
+                            <T keyName="inspector.page.measures" />
                         </label>
                         <p className="text-body text-text leading-none">
                             {measureRangeString(selectedPage)}
@@ -162,7 +167,7 @@ function PageEditor() {
                             htmlFor={notesInputId}
                             className="text-body text-text/80"
                         >
-                            Notes
+                            <T keyName="inspector.page.notes" />
                         </label>
                         <TextArea
                             id={notesInputId}
@@ -171,7 +176,7 @@ function PageEditor() {
                                 e: React.ChangeEvent<HTMLTextAreaElement>,
                             ) => setNotes(e.target.value)}
                             onBlur={handleNotesBlur}
-                            placeholder="Add notes for this page..."
+                            placeholder={t("inspector.page.notesPlaceholder")}
                             disabled={isFirstPage}
                         />
                     </div>
@@ -181,7 +186,7 @@ function PageEditor() {
                         onClick={handleSplitPage}
                         disabled={selectedPage?.beats.length <= 1}
                     >
-                        Split page
+                        <T keyName="inspector.page.splitPage" />
                     </Button>
                 </form>
             </InspectorCollapsible>

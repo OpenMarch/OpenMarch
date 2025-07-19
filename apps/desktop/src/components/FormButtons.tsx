@@ -6,6 +6,7 @@ import {
     AlertDialogTrigger,
     AlertDialogDescription,
 } from "@openmarch/ui";
+import { T, useTolgee } from "@tolgee/react";
 
 interface FormButtonsProps extends ButtonProps {
     isEditingProp?: boolean;
@@ -51,6 +52,10 @@ export default function FormButtons({
     alertDialogActions,
     ...rest
 }: FormButtonsProps) {
+    const { t } = useTolgee();
+    if (editButton === "Edit") {
+        editButton = t("formButtons.editButton") || "Edit";
+    }
     return (
         <>
             {!isEditingProp ? (
@@ -88,19 +93,21 @@ export default function FormButtons({
                                     onClick={handleSubmit}
                                     variant="primary"
                                 >
-                                    Save Changes
+                                    <T keyName="formButtons.saveChanges" />
                                 </Button>
                             )}
                         </>
                     ) : (
-                        <Button {...rest}>Save Changes</Button>
+                        <Button {...rest}>
+                            <T keyName="formButtons.saveChanges" />
+                        </Button>
                     )}
                     <Button
                         {...rest}
                         variant="secondary"
                         onClick={handleCancel}
                     >
-                        Cancel
+                        <T keyName="formButtons.cancel" />
                     </Button>
                 </>
             )}

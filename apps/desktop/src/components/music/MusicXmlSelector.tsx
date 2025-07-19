@@ -10,6 +10,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { deleteMeasures, createMeasures } from "@/global/classes/Measure";
 import { createBeats } from "@/global/classes/Beat";
 import { updatePages } from "@/global/classes/Page";
+import { T, useTolgee } from "@tolgee/react";
 
 // generates standard 120bpm 4/4 measures
 function generateStandardMeasures(count: number): ParserMeasure[] {
@@ -31,6 +32,7 @@ function generateStandardMeasures(count: number): ParserMeasure[] {
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState(false);
+    const { t } = useTolgee();
     const { fetchTimingObjects, measures, beats } = useTimingObjectsStore();
 
     // Reassign existing pages to start of new measures
@@ -163,10 +165,11 @@ export default function MusicXmlSelector() {
             // Refresh UI
             await fetchTimingObjects();
             toast.success(
-                "MusicXML file: '" + file.name + "' imported successfully!",
+                // "MusicXML file: '" + file.name + "' imported successfully!",
+                t("music.importSuccess", { fileName: file.name }),
             );
         } catch (err) {
-            toast.error("Failed to import MusicXML file: " + err);
+            toast.error(t("music.importError"));
             console.error("Error importing MusicXML file:", err);
         } finally {
             setImporting(false);
@@ -177,7 +180,7 @@ export default function MusicXmlSelector() {
     return (
         <div className="mt-8 flex items-center gap-8 px-12">
             <label className="text-body text-text/80 w-full">
-                MusicXML Import
+                <T keyName="music.importLabel" />
             </label>
             <input
                 ref={fileInputRef}
@@ -191,7 +194,7 @@ export default function MusicXmlSelector() {
                 disabled={importing}
                 className="whitespace-nowrap"
             >
-                {importing ? "Importing..." : "Import MusicXML File"}
+                {importing ? t("music.importing") : t("music.importButton")}
             </Button>
         </div>
     );

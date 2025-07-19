@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Marcher, NewMarcherArgs } from "@/global/classes/Marcher";
-import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
+import {
+    getSectionObjectByName,
+    SECTIONS,
+    getTranslatedSectionName,
+} from "@/global/classes/Sections";
 import * as Form from "@radix-ui/react-form";
 import {
     Select,
@@ -16,12 +20,15 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
 import FormField from "../ui/FormField";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
+import { T, useTolgee } from "@tolgee/react";
 
 interface NewMarcherFormProps {
     disabledProp?: boolean;
 }
 
-const defaultSection = "Section";
+const defaultSection = (t: (key: string) => string) =>
+    getTranslatedSectionName("Other", t) || "Other";
+
 const defaultDrillPrefix = "-";
 const defaultDrillOrder = 1;
 
@@ -29,7 +36,7 @@ const defaultDrillOrder = 1;
 const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     disabledProp = false,
 }: NewMarcherFormProps) => {
-    const [section, setSection] = useState<string>(defaultSection);
+    const [section, setSection] = useState<string>();
     const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);
     const [drillOrder, setDrillOrder] = useState<number>(defaultDrillOrder);
     const [quantity, setQuantity] = useState<number>(1);
@@ -43,8 +50,14 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const formRef = useRef<HTMLFormElement>(null);
     const { setContent } = useSidebarModalStore();
 
+    const { t } = useTolgee();
+
+    useEffect(() => {
+        setSection(defaultSection(t));
+    }, [t]);
+
     const resetForm = () => {
-        setSection(defaultSection);
+        setSection(defaultSection(t));
         setDrillPrefix(defaultDrillPrefix);
         setDrillOrder(defaultDrillOrder);
         setQuantity(1);
@@ -80,7 +93,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 existingDrillOrders.add(newDrillOrder);
 
                 newMarchers.push({
-                    section,
+                    section: section || "Other",
                     drill_prefix: drillPrefix,
                     drill_order: newDrillOrder,
                 });
@@ -92,15 +105,17 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
 
             if (response.success)
                 toast.success(
-                    `Marcher${
-                        response.data.length === 1 ? "" : "s"
-                    } ${drillNumbers.join(", ")} created successfully`,
+                    t("marchers.created", {
+                        count: response.data.length,
+                        drillNumbers: drillNumbers.join(", "),
+                    }),
                 );
             else {
                 toast.error(
-                    `Error creating marcher${
-                        response.data.length === 1 ? "" : "s"
-                    } ${drillNumbers.join(", ")}`,
+                    t("marchers.createError", {
+                        count: response.data.length,
+                        drillNumbers: drillNumbers.join(", "),
+                    }),
                 );
                 console.error(
                     `Error creating marcher${
@@ -114,7 +129,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     };
 
     const handleSectionChange = (value: string) => {
-        setSection(defaultSection);
+        setSection(defaultSection(t));
         const selectedSectionObject = getSectionObjectByName(value);
         if (selectedSectionObject) {
             setSection(selectedSectionObject.name);
@@ -122,7 +137,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             setSectionError("");
         } else {
             console.error("Section not found");
-            setSectionError("Please choose a section");
+            setSectionError(t("marchers.sectionError.chooseSection"));
         }
     };
 
@@ -147,12 +162,12 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     (marcher: Marcher) => marcher.drill_order === drillOrder,
                 )
             ) {
-                setDrillOrderError("This drill number already exists");
+                setDrillOrderError(t("marchers.drillOrderError.exists"));
             } else {
                 setDrillOrderError("");
             }
         },
-        [marchers, drillPrefix],
+        [marchers, drillPrefix, t],
     );
 
     const handleQuantityChange = (
@@ -181,17 +196,13 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     }, [marchers, drillPrefix]);
 
     function makeButtonString(quantity: number, section: string | undefined) {
-        let section_string = "Marcher";
-        let quantity_string = " ";
-        if (quantity > 1) {
-            quantity_string = quantity + " ";
-            section_string += "s";
+        if (section === t("section.other") || section === undefined) {
+            return t("marchers.createButton", { quantity });
         }
-
-        if (section !== defaultSection) {
-            section_string = section + " " + section_string;
-        }
-        return "Create " + quantity_string + section_string;
+        return t("marchers.createButtonWithSection", {
+            quantity,
+            section,
+        });
     }
 
     useEffect(() => {
@@ -209,7 +220,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
 
     useEffect(() => {
         setSubmitIsDisabled(
-            section === defaultSection ||
+            section === defaultSection(t) ||
                 section === undefined ||
                 drillPrefix === undefined ||
                 drillOrder === undefined ||
@@ -224,6 +235,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
         sectionError,
         drillPrefixError,
         drillOrderError,
+        t,
     ]);
 
     return (
@@ -234,7 +246,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             className="flex h-full flex-col gap-16"
         >
             <div className="flex flex-col gap-16">
-                <FormField label="Quantity">
+                <FormField label={t("marchers.quantity")}>
                     <Input
                         type="number"
                         defaultValue={1}
@@ -244,9 +256,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                         max={100}
                     />
                 </FormField>
-                <FormField label="Section">
+                <FormField label={t("marchers.section")}>
                     <Select onValueChange={handleSectionChange} required>
-                        <SelectTriggerButton label={section || "Section"} />
+                        <SelectTriggerButton
+                            label={section || t("marchers.section")}
+                        />
                         <SelectContent>
                             {Object.values(SECTIONS).map((section) => {
                                 return (
@@ -254,14 +268,17 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                                         key={section.name}
                                         value={section.name}
                                     >
-                                        {section.name}
+                                        {getTranslatedSectionName(
+                                            section.name,
+                                            t,
+                                        )}
                                     </SelectItem>
                                 );
                             })}
                         </SelectContent>
                     </Select>
                 </FormField>
-                <FormField label="Drill Prefix">
+                <FormField label={t("marchers.drillPrefix")}>
                     <Input
                         type="text"
                         placeholder="-"
@@ -271,7 +288,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                         maxLength={3}
                     />
                 </FormField>
-                <FormField label="Drill Number">
+                <FormField label={t("marchers.drillOrder")}>
                     <Input
                         type="number"
                         placeholder="-"
@@ -290,10 +307,13 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     aria-label="Create Marcher Button"
                     disabled={submitIsDisabled || disabledProp}
                 >
-                    {makeButtonString(quantity, section)}
+                    {makeButtonString(
+                        quantity,
+                        getTranslatedSectionName(section || "Other", t),
+                    )}
                 </Button>
                 <InfoNote>
-                    New marchers may not show up until a refresh
+                    <T keyName="marchers.createInfo" />
                 </InfoNote>
             </div>
         </Form.Root>

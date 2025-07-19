@@ -9,6 +9,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import Beat from "@/global/classes/Beat";
+import { T, useTolgee } from "@tolgee/react";
 
 const FullPageSheetColumnWidths = {
     pageNumber: "10%",
@@ -52,6 +53,8 @@ export default function MarcherCoordinateSheet({
         [],
     );
 
+    const { t } = useTolgee();
+
     useEffect(() => {
         if (!fieldProperties) {
             console.error(
@@ -87,8 +90,8 @@ export default function MarcherCoordinateSheet({
             setMarcherToUse(
                 new Marcher({
                     id: 1,
-                    name: "Example Marcher",
-                    section: "Baritone",
+                    name: t("exportCoordinates.exampleMarcherName"),
+                    section: t("exportCoordinates.exampleMarcherSection"),
                     drill_prefix: "B",
                     drill_order: 1,
                 }),
@@ -202,7 +205,7 @@ export default function MarcherCoordinateSheet({
                 MarcherPage.getByMarcherId(marcherPages, marcher?.id || -1),
             );
         }
-    }, [marcher, marcherPages, pages, example, fieldProperties]);
+    }, [marcher, marcherPages, pages, example, fieldProperties, t]);
     return (
         <StaticMarcherCoordinateSheet
             marcher={marcherToUse!}
@@ -294,6 +297,8 @@ export function StaticMarcherCoordinateSheet({
     const [terseState, setTerse] = useState<boolean>(terse);
     const [useXYState, setUseXY] = useState<boolean>(useXY);
 
+    const { t } = useTolgee();
+
     useEffect(() => {
         setMarcherState(marcher);
         setFieldPropertiesState(fieldProperties);
@@ -326,7 +331,6 @@ export function StaticMarcherCoordinateSheet({
 
     return (
         <div
-            title="Marcher Coordinate Sheet Container"
             style={{
                 fontFamily:
                     'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
@@ -337,14 +341,28 @@ export function StaticMarcherCoordinateSheet({
             pagesState.length === 0 ||
             marcherPagesState.length === 0 ? (
                 <>
-                    <h5>Error exporting coordinate sheet</h5>
+                    <h5>
+                        <T keyName="exportCoordinates.errorTitle" />
+                    </h5>
                     {!fieldPropertiesState && (
-                        <p>No field properties provided</p>
+                        <p>
+                            <T keyName="exportCoordinates.noFieldProperties" />
+                        </p>
                     )}
-                    {!marcherState && <p>No marcher provided</p>}
-                    {pagesState.length === 0 && <p>No pages provided</p>}
+                    {!marcherState && (
+                        <p>
+                            <T keyName="exportCoordinates.noMarcher" />
+                        </p>
+                    )}
+                    {pagesState.length === 0 && (
+                        <p>
+                            <T keyName="exportCoordinates.noPages" />
+                        </p>
+                    )}
                     {marcherPagesState.length === 0 && (
-                        <p>No marcher pages provided</p>
+                        <p>
+                            <T keyName="exportCoordinates.noMarcherPages" />
+                        </p>
                     )}
                 </>
             ) : (
@@ -459,7 +477,7 @@ export function StaticMarcherCoordinateSheet({
                                             fontWeight: "bold",
                                         }}
                                     >
-                                        Measure
+                                        {t("exportCoordinates.measuresHeader")}
                                     </th>
                                 )}
                                 <th
@@ -469,7 +487,11 @@ export function StaticMarcherCoordinateSheet({
                                         fontWeight: "bold",
                                     }}
                                 >
-                                    {useXYState ? "X" : "Side to Side"}
+                                    {useXYState
+                                        ? "X"
+                                        : t(
+                                              "exportCoordinates.sideToSideHeader",
+                                          )}
                                 </th>
                                 <th
                                     aria-label="y header"
@@ -478,7 +500,11 @@ export function StaticMarcherCoordinateSheet({
                                         fontWeight: "bold",
                                     }}
                                 >
-                                    {useXYState ? "Y" : "Front to Back"}
+                                    {useXYState
+                                        ? "Y"
+                                        : t(
+                                              "exportCoordinates.frontToBackHeader",
+                                          )}
                                 </th>
                             </tr>
                         </thead>
@@ -774,7 +800,7 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            Measures
+                            <T keyName="exportCoordinates.measuresHeader" />
                         </th>
                         <th
                             aria-label="side to side header"
@@ -787,7 +813,7 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            Side to Side
+                            <T keyName="exportCoordinates.sideToSideHeader" />
                         </th>
                         <th
                             aria-label="front to back header"
@@ -800,7 +826,7 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            Front to Back
+                            <T keyName="exportCoordinates.frontToBackHeader" />
                         </th>
                     </tr>
                 </thead>
@@ -830,8 +856,10 @@ export function StaticCompactMarcherSheet({
                                                 color: "red",
                                             }}
                                         >
-                                            Error: Page not found for marcher
-                                            page {marcherPage.id}
+                                            <T
+                                                keyName="exportCoordinates.pageNotFound"
+                                                params={{ id: marcherPage.id }}
+                                            />
                                         </td>
                                     </tr>
                                 );
@@ -859,9 +887,10 @@ export function StaticCompactMarcherSheet({
                                                 color: "red",
                                             }}
                                         >
-                                            Error: Could not calculate
-                                            coordinates for marcher page{" "}
-                                            {marcherPage.id}
+                                            <T
+                                                keyName="exportCoordinates.coordinatesError"
+                                                params={{ id: marcherPage.id }}
+                                            />
                                         </td>
                                     </tr>
                                 );

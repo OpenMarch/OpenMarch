@@ -15,20 +15,22 @@ import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function AlignmentTab() {
+    const { t } = useTolgee();
     const { uiSettings } = useUiSettingsStore();
     return (
         <div className="flex w-full flex-wrap gap-8">
             <CoordinateRoundingSettings />
-            <ToolbarSection aria-label="Cursor movement and marcher snap">
+            <ToolbarSection
+                aria-label={t("toolbar.alignment.lockMarchersAriaLabel")}
+            >
                 <RegisteredActionButton
                     instructionalString={
                         uiSettings.lockX
-                            ? RegisteredActionsObjects.lockX
-                                  .instructionalStringToggleOff
-                            : RegisteredActionsObjects.lockX
-                                  .instructionalStringToggleOn
+                            ? RegisteredActionsObjects.lockX.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.lockX.getInstructionalStringToggleOn()
                     }
                     registeredAction={RegisteredActionsObjects.lockX}
                     className={clsx(
@@ -41,10 +43,8 @@ export default function AlignmentTab() {
                 <RegisteredActionButton
                     instructionalString={
                         uiSettings.lockY
-                            ? RegisteredActionsObjects.lockY
-                                  .instructionalStringToggleOff
-                            : RegisteredActionsObjects.lockY
-                                  .instructionalStringToggleOn
+                            ? RegisteredActionsObjects.lockY.getInstructionalStringToggleOff()
+                            : RegisteredActionsObjects.lockY.getInstructionalStringToggleOn()
                     }
                     registeredAction={RegisteredActionsObjects.lockY}
                     className={`flex gap-6 ${uiSettings.lockY ? "text-accent" : "text-text"}`}
@@ -61,7 +61,9 @@ export default function AlignmentTab() {
                 </RegisteredActionButton>
                 {/* -- */}
             </ToolbarSection>
-            <ToolbarSection aria-label="Align marchers">
+            <ToolbarSection
+                aria-label={t("toolbar.alignment.alignMarchersAriaLabel")}
+            >
                 <RegisteredActionButton
                     registeredAction={RegisteredActionsObjects.alignVertically}
                 >
@@ -99,7 +101,8 @@ function SetMarcherPositionsDropdown() {
         <ToolbarSection aria-label="Set marcher positions">
             <Dropdown.Root>
                 <Dropdown.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    Place all marchers <CaretDownIcon size={18} />
+                    <T keyName="toolbar.alignment.placeAllMarchers" />{" "}
+                    <CaretDownIcon size={18} />
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
                     <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
@@ -110,7 +113,7 @@ function SetMarcherPositionsDropdown() {
                             className="text-text px-6 py-4"
                             tooltipPosition="left"
                         >
-                            to previous page positions
+                            <T keyName="toolbar.alignment.toPreviousPagePositions" />
                         </RegisteredActionButton>
                         <RegisteredActionButton
                             registeredAction={
@@ -119,7 +122,7 @@ function SetMarcherPositionsDropdown() {
                             className="text-text px-6 py-4"
                             tooltipPosition="left"
                         >
-                            to next page positions
+                            <T keyName="toolbar.alignment.toNextPagePositions" />
                         </RegisteredActionButton>
                     </Dropdown.Content>
                 </Dropdown.Portal>
@@ -127,7 +130,8 @@ function SetMarcherPositionsDropdown() {
 
             <Dropdown.Root>
                 <Dropdown.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    Place selected marchers <CaretDownIcon size={18} />
+                    <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
+                    <CaretDownIcon size={18} />
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
                     <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
@@ -138,7 +142,7 @@ function SetMarcherPositionsDropdown() {
                             className="text-text px-6 py-4"
                             tooltipPosition="left"
                         >
-                            to previous page positions
+                            <T keyName="toolbar.alignment.toPreviousPagePositions" />
                         </RegisteredActionButton>
                         <RegisteredActionButton
                             registeredAction={
@@ -147,7 +151,7 @@ function SetMarcherPositionsDropdown() {
                             className="text-text px-6 py-4"
                             tooltipPosition="left"
                         >
-                            to next page positions
+                            <T keyName="toolbar.alignment.toNextPagePositions" />
                         </RegisteredActionButton>
                     </Dropdown.Content>
                 </Dropdown.Portal>

@@ -20,10 +20,12 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { TrashIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function AudioSelector() {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
+    const { t } = useTolgee();
 
     const refreshAudioFiles = useCallback(() => {
         AudioFile.getAudioFilesDetails().then((audioFiles) => {
@@ -52,10 +54,17 @@ export default function AudioSelector() {
                 refreshAudioFiles();
             });
             toast.success(
-                `Successfully deleted "${selectedAudioFile?.nickname}"`,
+                t("music.deleteSuccess", {
+                    fileName: selectedAudioFile?.nickname,
+                }),
             );
         },
-        [refreshAudioFiles, selectedAudioFile?.nickname, setSelectedAudioFile],
+        [
+            refreshAudioFiles,
+            selectedAudioFile?.nickname,
+            setSelectedAudioFile,
+            t,
+        ],
     );
 
     useEffect(() => {
@@ -64,13 +73,15 @@ export default function AudioSelector() {
 
     return (
         <div className="flex flex-col gap-12">
-            <h5 className="text-h5 leading-none">Audio</h5>
+            <h5 className="text-h5 leading-none">
+                <T keyName="music.audio" />
+            </h5>
             <div className="flex items-center justify-between gap-8 px-12">
                 <label
                     htmlFor="audio-selector"
                     className="text-body text-text/80 w-full"
                 >
-                    Audio File
+                    <T keyName="music.audioFile" />
                 </label>
                 <div id="audio-selector" onClick={refreshAudioFiles}>
                     <Select
@@ -78,7 +89,9 @@ export default function AudioSelector() {
                         value={`${selectedAudioFile?.id}`}
                     >
                         <SelectTriggerButton
-                            label={selectedAudioFile?.nickname || "Import"}
+                            label={
+                                selectedAudioFile?.nickname || t("music.import")
+                            }
                             className="w-[384px] px-12"
                         />
                         <SelectContent>
@@ -89,7 +102,7 @@ export default function AudioSelector() {
                                 showTooltip={false}
                                 className="text-text"
                             >
-                                Import audio file
+                                <T keyName="music.importAudioFile" />
                             </RegisteredActionButton>
                             {audioFiles.length > 0 && <SelectSeparator />}
                             {audioFiles.map((audioFile) => (
@@ -115,14 +128,15 @@ export default function AudioSelector() {
                                 audioFiles.length === 0 || !selectedAudioFile
                             }
                         >
-                            <TrashIcon /> Delete audio file
+                            <TrashIcon /> <T keyName="music.deleteAudioFile" />
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
-                        <AlertDialogTitle>Delete Audio File</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            <T keyName="music.deleteAudioFile" />
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete this audio file?
-                            This action cannot be undone.
+                            <T keyName="music.deleteAudioFileDescription" />
                             <div className="border-border bg-bg-1 border-stroke text-text overflow-auto rounded-md border p-16 font-mono text-wrap">
                                 {selectedAudioFile?.nickname}
                             </div>
@@ -130,7 +144,7 @@ export default function AudioSelector() {
                         <div className="flex justify-end gap-8">
                             <AlertDialogCancel>
                                 <Button variant="secondary" size="compact">
-                                    Cancel
+                                    <T keyName="music.cancel" />
                                 </Button>
                             </AlertDialogCancel>
                             <AlertDialogAction>
@@ -142,7 +156,7 @@ export default function AudioSelector() {
                                             handleDelete(selectedAudioFile.id);
                                     }}
                                 >
-                                    Delete
+                                    <T keyName="music.delete" />
                                 </Button>
                             </AlertDialogAction>
                         </div>

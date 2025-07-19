@@ -13,6 +13,7 @@ import clsx from "clsx";
 import React, { useMemo } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
 import { toast } from "sonner";
+import { T, useTolgee } from "@tolgee/react";
 export const maxMixedMeterBeats = 30;
 
 interface NewTempoGroupFormProps {
@@ -34,6 +35,7 @@ const NewTempoGroupForm = React.forwardRef<
     const [tempo, setTempo] = React.useState("120");
     const [endTempo, setEndTempo] = React.useState("");
     const [repeats, setRepeats] = React.useState("4");
+    const { t } = useTolgee();
 
     const isDisabled = useMemo(() => {
         return (
@@ -98,7 +100,7 @@ const NewTempoGroupForm = React.forwardRef<
             props.startingPosition,
         );
         setName("");
-        toast.success("Tempo group created");
+        toast.success(t("music.tempoGroupCreated"));
         if (props.scrollFunc) {
             props.scrollFunc();
         }
@@ -116,11 +118,13 @@ const NewTempoGroupForm = React.forwardRef<
                     name="name"
                     className="col-span-2 flex flex-col gap-2"
                 >
-                    <Label className="text-sm select-all">Name</Label>
+                    <Label className="text-sm select-all">
+                        <T keyName="music.name" />
+                    </Label>
                     <Input
                         id="name-input"
                         name="name"
-                        placeholder="Optional"
+                        placeholder={t("music.tempoGroupNamePlaceholder")}
                         type="text"
                         className="select-all"
                         value={name}
@@ -130,14 +134,16 @@ const NewTempoGroupForm = React.forwardRef<
                         }}
                     />
                     <p className={subTextClass}>
-                        Rehearsal letter or identifier
+                        <T keyName="music.rehearsalLetterOrIdentifier" />
                     </p>
                 </FormField>
                 <FormField
                     name="tempo"
                     className="col-span-2 flex flex-col gap-2"
                 >
-                    <Label className="text-sm">Start Tempo *</Label>
+                    <Label className="text-sm">
+                        <T keyName="music.startTempo" />
+                    </Label>
                     <UnitInput
                         id="start-tempo-input"
                         name="tempo"
@@ -155,7 +161,9 @@ const NewTempoGroupForm = React.forwardRef<
                         name="beatPattern"
                         className="col-span-2 flex flex-col gap-2"
                     >
-                        <Label className="text-sm">Beat Pattern *</Label>
+                        <Label className="text-sm">
+                            <T keyName="music.beatPattern" />
+                        </Label>
                         <select
                             className="bg-bg-1 border-stroke rounded-4 border px-8 py-4"
                             required
@@ -163,7 +171,9 @@ const NewTempoGroupForm = React.forwardRef<
                             value={selectedPattern}
                             onChange={(e) => setSelectedPattern(e.target.value)}
                         >
-                            <option value="">Select a pattern</option>
+                            <option value="">
+                                <T keyName="music.selectPattern" />
+                            </option>
                             {!tooManyMixedMeterBeats &&
                                 mixedMeterPermutations(beatsPerMeasure).map(
                                     (pattern: number[], index: number) => (
@@ -184,7 +194,7 @@ const NewTempoGroupForm = React.forwardRef<
                         hidden={isMixedMeter}
                     >
                         <Label className="text-sm">
-                            End Tempo{" "}
+                            <T keyName="music.endTempo" />
                             <Tooltip.Root>
                                 <Tooltip.Trigger type="button">
                                     <InfoIcon
@@ -197,11 +207,7 @@ const NewTempoGroupForm = React.forwardRef<
                                         className={TooltipClassName}
                                         side="top"
                                     >
-                                        The new group will gradually go towards
-                                        the end tempo, but will not reach it.
-                                        <br />
-                                        This is to create a smooth transition to
-                                        a new group.
+                                        <T keyName="music.endTempoTooltip" />
                                     </Tooltip.Content>
                                 </Tooltip.Portal>
                             </Tooltip.Root>
@@ -212,7 +218,7 @@ const NewTempoGroupForm = React.forwardRef<
                             type="number"
                             min={1}
                             unit="bpm"
-                            placeholder="Optional"
+                            placeholder={t("music.endTempoPlaceholder")}
                             value={endTempo}
                             onChange={(e) => setEndTempo(e.target.value)}
                         />
@@ -228,7 +234,7 @@ const NewTempoGroupForm = React.forwardRef<
                             tooManyMixedMeterBeats ? "text-red" : "",
                         )}
                     >
-                        Beats per measure *
+                        <T keyName="music.beatsPerMeasure" />
                     </Label>
                     <Input
                         id="bpm-input"
@@ -243,16 +249,18 @@ const NewTempoGroupForm = React.forwardRef<
                     />
                     {tooManyMixedMeterBeats ? (
                         <p className={clsx("text-red text-sub")}>
-                            Mixed-meter shouldn&apos;t have more than{" "}
-                            {maxMixedMeterBeats} beats. It will make your
-                            computer sad. If you really need this, please
-                            contact us so we can hear your cool mixed-meter
-                            music that has {beatsPerMeasure} beats per measure
+                            {t("music.mixedMeterTooManyBeats", {
+                                maxBeats: maxMixedMeterBeats,
+                                beatsPerMeasure,
+                            })}
                         </p>
                     ) : (
                         <p className={subTextClass}>
-                            Time signature: {beatsPerMeasure}/
-                            {isMixedMeter ? "8" : "4"}
+                            {t("music.timeSignature", {
+                                timeSignature: `${beatsPerMeasure}/${
+                                    isMixedMeter ? "8" : "4"
+                                }`,
+                            })}
                         </p>
                     )}
                 </FormField>
@@ -260,7 +268,9 @@ const NewTempoGroupForm = React.forwardRef<
                     name="repeats"
                     className={clsx("col-span-3 flex flex-col gap-2")}
                 >
-                    <Label className="text-sm">Number of measures *</Label>
+                    <Label className="text-sm">
+                        <T keyName="music.numberOfMeasures" />
+                    </Label>
                     <Input
                         id="repeats-input"
                         name="repeats"
@@ -278,9 +288,11 @@ const NewTempoGroupForm = React.forwardRef<
                         onClick={() => setIsMixedMeter(!isMixedMeter)}
                         disabled={!isMixedMeter && beatsPerMeasure < 5}
                     >
-                        {isMixedMeter
-                            ? "Make regular meter"
-                            : "Make mixed meter"}
+                        {isMixedMeter ? (
+                            <T keyName="music.makeSimpleMeter" />
+                        ) : (
+                            <T keyName="music.makeMixedMeter" />
+                        )}
                     </Button>
                     <div className="flex-grow" />
                     {props.setSelfHidden && (
@@ -289,11 +301,11 @@ const NewTempoGroupForm = React.forwardRef<
                             variant="secondary"
                             onClick={props.setSelfHidden}
                         >
-                            Cancel
+                            <T keyName="music.cancel" />
                         </Button>
                     )}
                     <Button type="submit" disabled={isDisabled}>
-                        Create
+                        <T keyName="music.create" />
                     </Button>
                 </div>
             </Form>

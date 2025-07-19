@@ -17,6 +17,7 @@ interface StoreSchema {
 
 // Initialize the store
 const store = new Store<StoreSchema>({
+    name: "recent",
     defaults: {
         recentFiles: [],
         maxRecentFiles: 10,
