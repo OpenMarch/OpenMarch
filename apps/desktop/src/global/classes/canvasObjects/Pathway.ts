@@ -37,8 +37,9 @@ export default class Pathway extends fabric.Line {
     }) {
         super([start.x, start.y, end.x, end.y], {
             stroke: color,
-            strokeWidth,
+            strokeWidth: strokeWidth,
             strokeDashArray: dashed ? [5, 3] : [],
+            objectCaching: true,
             ...NoControls,
         });
         this.marcherId = marcherId;

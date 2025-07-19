@@ -425,11 +425,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // If it was always sharp (object caching on), it would be horrendously slow
         clearTimeout(this._zoomTimeout);
         this._zoomTimeout = setTimeout(() => {
-            if (this.staticGridRef.objectCaching) {
-                this.staticGridRef.objectCaching = false;
-                this.requestRenderAll();
-            }
-        }, 25);
+            this.getObjects().forEach((obj) => {
+                if (
+                    !(
+                        obj instanceof fabric.Text ||
+                        obj instanceof fabric.IText ||
+                        obj instanceof fabric.Textbox
+                    )
+                ) {
+                    obj.objectCaching = false;
+                }
+            });
+            this.requestRenderAll();
+        }, 75);
     }
 
     private checkCanvasBounds() {

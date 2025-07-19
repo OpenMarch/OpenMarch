@@ -66,6 +66,7 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
+    const frameRef = useRef<number | null>(null);
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -337,21 +338,30 @@ export default function Canvas({
     );
 
     /**
-     * Update paths of moving CanvasMarchers
+     * Update paths of moving CanvasMarchers.
+     * Uses animation frames to ensure smooth updates.
      */
-    const updateTemporaryPaths = useCallback(() => {
-        if (!canvas || !selectedPage || !marcherPages) return;
+    const updateMovingPaths = useCallback(() => {
+        if (frameRef.current !== null) {
+            cancelAnimationFrame(frameRef.current);
+        }
 
-        canvas.renderPathVisuals({
-            marcherVisuals: marcherVisuals,
-            marcherPages: marcherPages,
-            prevPageId: selectedPage.previousPageId,
-            currPageId: selectedPage.id,
-            nextPageId: selectedPage.nextPageId,
-            marcherIds: selectedMarchers.map((m) => m.id),
-            fromCanvasMarchers: true,
+        frameRef.current = requestAnimationFrame(() => {
+            if (!canvas || !selectedPage || !marcherPages) return;
+
+            canvas.renderPathVisuals({
+                marcherVisuals: marcherVisuals,
+                marcherPages: marcherPages,
+                prevPageId: selectedPage.previousPageId,
+                currPageId: selectedPage.id,
+                nextPageId: selectedPage.nextPageId,
+                marcherIds: selectedMarchers.map((m) => m.id),
+                fromCanvasMarchers: true,
+            });
+
+            frameRef.current = null;
         });
-    }, [canvas, marcherPages, selectedMarchers, selectedPage, uiSettings]);
+    }, [canvas, marcherPages, marcherVisuals, selectedMarchers, selectedPage]);
 
     useEffect(() => {
         if (!canvas) return;
@@ -361,9 +371,9 @@ export default function Canvas({
 
         canvas.on("object:rotating", handleRotate);
 
-        canvas.on("object:moving", updateTemporaryPaths);
-        canvas.on("object:scaling", updateTemporaryPaths);
-        canvas.on("object:rotating", updateTemporaryPaths);
+        canvas.on("object:moving", updateMovingPaths);
+        canvas.on("object:scaling", updateMovingPaths);
+        canvas.on("object:rotating", updateMovingPaths);
 
         return () => {
             canvas.off("selection:created", handleSelect);
@@ -372,17 +382,15 @@ export default function Canvas({
 
             canvas.off("object:rotating", handleRotate);
 
-            canvas.off("object:moving", updateTemporaryPaths);
-            canvas.off("object:scaling", updateTemporaryPaths);
-            canvas.off("object:rotating", updateTemporaryPaths);
+            canvas.off("object:moving", updateMovingPaths);
+            canvas.off("object:scaling", updateMovingPaths);
+            canvas.off("object:rotating", updateMovingPaths);
+
+            if (frameRef.current !== null) {
+                cancelAnimationFrame(frameRef.current);
+            }
         };
-    }, [
-        canvas,
-        handleDeselect,
-        handleRotate,
-        handleSelect,
-        updateTemporaryPaths,
-    ]);
+    }, [canvas, handleDeselect, handleRotate, handleSelect, updateMovingPaths]);
 
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {
@@ -771,6 +779,16 @@ export default function Canvas({
     /* --------------------------Animation Functions-------------------------- */
 
     useEffect(() => {
+        let animationFrameId: number | null = null;
+        let animationActive = false;
+
+        // Function to schedule a render on every animation frame while animating
+        function renderLoop() {
+            if (!animationActive || !canvas) return;
+            canvas.requestRenderAll();
+            animationFrameId = requestAnimationFrame(renderLoop);
+        }
+
         if (canvas && selectedPage && selectedPage.nextPageId) {
             if (isPlaying) {
                 const nextPageId = selectedPage.nextPageId;
@@ -798,9 +816,18 @@ export default function Canvas({
                     animationCallbacks.current.push(callback);
                 });
 
-                canvas.requestRenderAll();
+                // Start batched rendering while animating
+                animationActive = true;
+                renderLoop();
+
                 // Set the selected page after the animation is done and set isPlaying to false
                 timeoutID.current = setTimeout(() => {
+                    animationActive = false;
+                    if (animationFrameId !== null) {
+                        cancelAnimationFrame(animationFrameId);
+                    }
+                    canvas.requestRenderAll();
+
                     const isLastPage = nextPage.nextPageId === null;
                     setSelectedPage(nextPage);
                     if (isLastPage) setIsPlaying(false);
@@ -822,6 +849,14 @@ export default function Canvas({
                 });
             }
         }
+
+        // Cleanup
+        return () => {
+            animationActive = false;
+            if (animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+            }
+        };
     }, [
         canvas,
         isPlaying,

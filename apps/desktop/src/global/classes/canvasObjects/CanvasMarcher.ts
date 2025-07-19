@@ -464,7 +464,6 @@ export default class CanvasMarcher
             {
                 duration: durationMilliseconds,
                 onChange: () => {
-                    this.getCanvas().requestRenderAll();
                     // Set coords so that objects offscreen are still rendered
                     this.setCoords();
                 },

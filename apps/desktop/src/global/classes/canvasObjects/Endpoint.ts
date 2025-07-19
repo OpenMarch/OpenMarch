@@ -37,6 +37,7 @@ export default class Endpoint extends fabric.Circle {
             originY: "center",
             fill: color,
             radius: dotRadius,
+            objectCaching: true,
             ...NoControls,
         });
         this.marcherId = marcherId;
