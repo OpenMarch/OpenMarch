@@ -25,6 +25,8 @@ import clsx from "clsx";
 import MarcherVisualGroup, {
     useMarchersWithVisuals,
 } from "@/global/classes/MarcherVisualGroup";
+import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
+import { getSectionAppearance } from "@/global/classes/SectionAppearance";
 
 /**
  * The field/stage UI of OpenMarch
@@ -59,6 +61,8 @@ export default function Canvas({
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
+    const { sectionAppearances, fetchSectionAppearances } =
+        useSectionAppearanceStore();
 
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas>();
@@ -497,6 +501,11 @@ export default function Canvas({
         isFullscreen,
     ]);
 
+    // Update section appearances
+    useEffect(() => {
+        fetchSectionAppearances();
+    }, [fetchSectionAppearances]);
+
     // Initialize canvas marcher visuals
     useEffect(() => {
         if (!canvas || !marchers || !marcherVisuals || !fieldProperties) return;
@@ -519,7 +528,10 @@ export default function Canvas({
         // Add all marcher visuals to the canvas
         marchers.forEach((marcher) => {
             if (!marcherVisuals[marcher.id]) {
-                marcherVisuals[marcher.id] = new MarcherVisualGroup(marcher);
+                marcherVisuals[marcher.id] = new MarcherVisualGroup(
+                    marcher,
+                    getSectionAppearance(marcher.section, sectionAppearances),
+                );
             }
 
             canvas.add(marcherVisuals[marcher.id].getCanvasMarcher());
@@ -555,7 +567,7 @@ export default function Canvas({
 
         // Request render all to ensure the canvas is updated
         canvas.requestRenderAll();
-    }, [canvas, marchers, marcherVisuals, fieldProperties]);
+    }, [canvas, marchers, marcherVisuals, fieldProperties, sectionAppearances]);
 
     // Setters for alignmentEvent state
     useEffect(() => {

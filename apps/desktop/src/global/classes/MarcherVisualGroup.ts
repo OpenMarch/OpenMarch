@@ -6,6 +6,7 @@ import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
 import Marcher from "@/global/classes/Marcher";
+import { SectionAppearance } from "@/global/classes/SectionAppearance";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.
@@ -29,13 +30,15 @@ export default class MarcherVisualGroup {
     /**
      * Creates a new MarcherVisualGroup instance.
      * @param marcher the marcher this visual group is associated with
+     * @param sectionAppearance section appearances to apply to the visuals
      */
-    constructor(marcher: Marcher) {
+    constructor(marcher: Marcher, sectionAppearance?: SectionAppearance) {
         this.marcherId = marcher.id;
 
         this.canvasMarcher = new CanvasMarcher({
             marcher: marcher,
             coordinate: { x: 0, y: 0 },
+            sectionAppearance: sectionAppearance,
         });
 
         this.previousPathway = new Pathway({
