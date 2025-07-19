@@ -23,6 +23,7 @@ import {
 } from "@/global/classes/SectionAppearance";
 import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 import { MarcherVisualMap } from "@/stores/MarcherVisualStore";
+import { CoordinateLike } from "@/utilities/CoordinateActions";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -915,7 +916,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    // CHANGED
     /**
      * Render the given marcherPages on the canvas
      *
@@ -1009,50 +1009,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.bringAllControlPointsTooFront();
     };
 
-    // CHANGEME - LineListeners
-    /**
-     * Render static marchers for the given page
-     *
-     * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
-     * @param allMarchers All marchers in the drill
-     * @returns The Endpoint objects created
-     */
-    renderIndividualStaticMarchers = ({
-        color,
-        intendedMarcherPages,
-        allMarchers,
-    }: {
-        color: string;
-        intendedMarcherPages: MarcherPage[];
-        allMarchers: Marcher[];
-    }) => {
-        const createdStaticMarchers: Endpoint[] = [];
-        intendedMarcherPages.forEach((marcherPage) => {
-            const curMarcher = allMarchers.find(
-                (marcher) => marcher.id === marcherPage.marcher_id,
-            );
-            if (!curMarcher) {
-                console.error(
-                    "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
-                    marcherPage,
-                );
-                return;
-            }
-
-            const staticMarcher = new Endpoint({
-                coordinate: marcherPage,
-                color: color,
-            });
-
-            this.add(staticMarcher);
-            createdStaticMarchers.push(staticMarcher);
-        });
-        this.requestRenderAll();
-
-        return createdStaticMarchers;
-    };
-
     /**
      * Renders all of the provided marcher lines on the canvas. Removes all other marcher lines first
      *
@@ -1069,10 +1025,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     };
 
-    // CHANGEME - LineListeners & ExportCoordinatesModal
     /**
-     * Render pathways from any object containing an XY coordinate
-     * to another object containing an XY coordinate, including MarcherPage(s).
+     * Renders a Pathway, Midpoint, and Endpoint given the start and end coordinates.
      *
      * @param start The starting point of the pathway
      * @param end The ending point of the pathway
@@ -1081,16 +1035,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param strokeWidth The width of the pathways
      * @param dashed Whether the pathways should be dashed
      */
-    renderIndividualPathwayAndMidpoint = ({
+    renderTemporaryPathVisuals = ({
         start,
         end,
-        marcherId,
+        marcherId = -1,
         color,
         strokeWidth,
         dashed = false,
     }: {
-        start: { x: number; y: number; [key: string]: any };
-        end: { x: number; y: number; [key: string]: any };
+        start: CoordinateLike;
+        end: CoordinateLike;
         marcherId: number;
         color: string;
         strokeWidth?: number;
@@ -1099,24 +1053,30 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const pathway = new Pathway({
             start: start,
             end: end,
-            color,
-            strokeWidth,
-            dashed,
-            marcherId,
+            color: color,
+            strokeWidth: strokeWidth,
+            dashed: dashed,
+            marcherId: marcherId,
         });
         const midpoint = new Midpoint({
             start: start,
             end: end,
             innerColor: "white",
             outerColor: color,
-            marcherId,
+            marcherId: marcherId,
+        });
+        const endpoint = new Endpoint({
+            coordinate: end,
+            color: color,
+            marcherId: marcherId,
         });
 
         this.add(pathway);
         this.add(midpoint);
+        this.add(endpoint);
         this.requestRenderAll();
 
-        return [pathway, midpoint];
+        return [pathway, midpoint, endpoint];
     };
 
     /**
@@ -1219,6 +1179,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         });
     };
 
+    /**
+     * Hides all pathway visuals for all marchers.
+     *
+     * @param marcherVisuals The marcher visual map
+     */
     hideAllPathVisuals = ({
         marcherVisuals,
     }: {

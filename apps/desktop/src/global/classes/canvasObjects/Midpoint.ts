@@ -3,6 +3,7 @@ import { NoControls } from "@/components/canvas/CanvasConstants";
 import FieldProperties from "@/global/classes/FieldProperties";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { RgbaColor } from "@uiw/react-color";
+import { CoordinateLike } from "@/utilities/CoordinateActions";
 
 /**
  * A Midpoint is the object used on the canvas to represent the midpoint marker of a pathway.
@@ -30,8 +31,8 @@ export default class Midpoint extends fabric.Circle {
         radius = 3,
     }: {
         marcherId: number;
-        start: { x: number; y: number; [key: string]: any };
-        end: { x: number; y: number; [key: string]: any };
+        start: CoordinateLike;
+        end: CoordinateLike;
         innerColor: string;
         outerColor: string;
         radius?: number;
@@ -59,7 +60,7 @@ export default class Midpoint extends fabric.Circle {
     }
 
     // Sets the coordinates of a midpoint
-    updateCoords(coord: { x: number; y: number; [key: string]: any }): void {
+    updateCoords(coord: CoordinateLike): void {
         this.set("left", coord.x + Midpoint.gridOffset);
         this.set("top", coord.y + Midpoint.gridOffset);
         this.setCoords();

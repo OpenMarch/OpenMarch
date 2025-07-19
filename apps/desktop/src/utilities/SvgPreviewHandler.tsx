@@ -112,9 +112,9 @@ const SvgPreviewHandler: React.FC = () => {
                 svgCanvas = await createSvgCanvas(fieldProps, page);
 
                 await svgCanvas.renderMarchers({
+                    marcherVisuals: marcherVisuals,
                     marcherPages: marcherPages,
                     pageId: page.id,
-                    allMarchers: allMarchers,
                 });
 
                 return svgCanvas.toSVG();

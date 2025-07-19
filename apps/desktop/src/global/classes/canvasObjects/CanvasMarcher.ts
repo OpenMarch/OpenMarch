@@ -8,7 +8,10 @@ import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
 import { SectionAppearance } from "../SectionAppearance";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
+import {
+    CoordinateLike,
+    getRoundCoordinates2,
+} from "@/utilities/CoordinateActions";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -37,8 +40,8 @@ export default class CanvasMarcher
     id: number;
     /** The Marcher object the CanvasMarcher is representing */
     marcherObj: Marcher;
-    /** The MarcherPage object that this canvasMarcher is associated with */
-    coordinate: { x: number; y: number; [key: string]: any };
+    /** The coordinate object that this canvasMarcher is associated with */
+    coordinate: CoordinateLike;
 
     /**
      * @param marcher The marcher object to create the canvas object from
@@ -54,7 +57,7 @@ export default class CanvasMarcher
         color,
     }: {
         marcher: Marcher;
-        coordinate: { x: number; y: number; [key: string]: any };
+        coordinate: CoordinateLike;
         dotRadius?: number;
         color?: string;
         sectionAppearance?: SectionAppearance;
@@ -359,7 +362,7 @@ export default class CanvasMarcher
      * @param uiSettings Optional UI settings for coordinate rounding
      */
     setMarcherCoords(
-        coordinate: { x: number; y: number; [key: string]: any },
+        coordinate: CoordinateLike,
         updateMarcherPageObj = true,
         uiSettings?: UiSettings,
     ) {

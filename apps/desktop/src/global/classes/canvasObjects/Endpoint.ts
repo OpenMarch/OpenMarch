@@ -3,6 +3,7 @@ import FieldProperties from "@/global/classes/FieldProperties";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { RgbaColor } from "@uiw/react-color";
+import { CoordinateLike } from "@/utilities/CoordinateActions";
 
 /**
  * A Midpoint is the object used on the canvas to represent the endpoint marker of a pathway.
@@ -11,7 +12,7 @@ export default class Endpoint extends fabric.Circle {
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
 
     /** The id of the marcher associated with this static marcher */
-    marcherId?: number;
+    marcherId: number;
 
     /**
      * @param marcherPage The MarcherPage object to set the initial coordinates from
@@ -20,10 +21,12 @@ export default class Endpoint extends fabric.Circle {
      */
     constructor({
         coordinate,
+        marcherId,
         dotRadius = 3,
         color = "rgba(0, 0, 0, 1)",
     }: {
-        coordinate: { x: number; y: number; [key: string]: any };
+        coordinate: CoordinateLike;
+        marcherId: number;
         dotRadius?: number;
         color?: string;
     }) {
@@ -36,7 +39,7 @@ export default class Endpoint extends fabric.Circle {
             radius: dotRadius,
             ...NoControls,
         });
-        this.marcherId = coordinate.marcher_id;
+        this.marcherId = marcherId;
     }
 
     // Sets the color of the endpoint
@@ -45,7 +48,7 @@ export default class Endpoint extends fabric.Circle {
     }
 
     // Sets the coordinates of an endpoint
-    updateCoords(coord: { x: number; y: number; [key: string]: any }): void {
+    updateCoords(coord: CoordinateLike): void {
         this.set("left", coord.x + Endpoint.gridOffset);
         this.set("top", coord.y + Endpoint.gridOffset);
         this.setCoords();

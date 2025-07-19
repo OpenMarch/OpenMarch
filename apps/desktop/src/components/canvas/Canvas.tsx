@@ -66,7 +66,6 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const animationCallbacks = useRef<any>([]);
     const timeoutID = useRef<any>(null);
-    const pagePathwaysMidpoints = useRef<fabric.Object[]>([]);
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -352,8 +351,6 @@ export default function Canvas({
             marcherIds: selectedMarchers.map((m) => m.id),
             fromCanvasMarchers: true,
         });
-
-        //canvas.requestRenderAll();
     }, [canvas, marcherPages, selectedMarchers, selectedPage, uiSettings]);
 
     useEffect(() => {
@@ -379,7 +376,13 @@ export default function Canvas({
             canvas.off("object:scaling", updateTemporaryPaths);
             canvas.off("object:rotating", updateTemporaryPaths);
         };
-    }, [canvas, handleDeselect, handleSelect, updateTemporaryPaths]);
+    }, [
+        canvas,
+        handleDeselect,
+        handleRotate,
+        handleSelect,
+        updateTemporaryPaths,
+    ]);
 
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {

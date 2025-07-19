@@ -70,11 +70,13 @@ export default class MarcherVisualGroup {
 
         this.previousEndPoint = new Endpoint({
             coordinate: { x: 0, y: 0 },
+            marcherId: this.marcherId,
             dotRadius: 3,
             color: "black",
         });
         this.nextEndPoint = new Endpoint({
             coordinate: { x: 0, y: 0 },
+            marcherId: this.marcherId,
             dotRadius: 3,
             color: "black",
         });

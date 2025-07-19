@@ -3,6 +3,7 @@ import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import { rgbaToString } from "@/global/classes/FieldTheme";
 import { RgbaColor } from "@uiw/react-color";
+import { CoordinateLike } from "@/utilities/CoordinateActions";
 
 /**
  * A Pathway is the object used on the canvas to represent a pathway between two marchers.
@@ -28,8 +29,8 @@ export default class Pathway extends fabric.Line {
         dashed = false,
     }: {
         marcherId: number;
-        start: { x: number; y: number; [key: string]: any };
-        end: { x: number; y: number; [key: string]: any };
+        start: CoordinateLike;
+        end: CoordinateLike;
         color: string;
         strokeWidth?: number;
         dashed?: boolean;
@@ -59,18 +60,14 @@ export default class Pathway extends fabric.Line {
     }
 
     // Update coords of start of pathway
-    updateStartCoords(coord: {
-        x: number;
-        y: number;
-        [key: string]: any;
-    }): void {
+    updateStartCoords(coord: CoordinateLike): void {
         this.set("x1", coord.x);
         this.set("y1", coord.y);
         this.setCoords();
     }
 
     // Update coords of end of pathway
-    updateEndCoords(coord: { x: number; y: number; [key: string]: any }): void {
+    updateEndCoords(coord: CoordinateLike): void {
         this.set("x2", coord.x);
         this.set("y2", coord.y);
         this.setCoords();
