@@ -92,8 +92,6 @@ export default function SectionAppearanceList() {
             );
         }
 
-        window.location.reload();
-
         await fetchSectionAppearances();
     }
 
@@ -304,11 +302,6 @@ export default function SectionAppearanceList() {
                         </div>
                     )}
                 </div>
-                {hasPendingChanges && (
-                    <div className="bg-fg-2 text-text text-sub border-stroke rounded-full border px-8 py-4 text-center">
-                        <T keyName="marchers.list.pendingChanges" />
-                    </div>
-                )}
 
                 <div className="flex h-fit w-full min-w-0 flex-col gap-16">
                     {localAppearances && localAppearances.length > 0 ? (

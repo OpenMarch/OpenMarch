@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useSelectedPage } from "../../context/SelectedPageContext";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
@@ -14,7 +14,6 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
-import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
 import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
 
 /**
@@ -23,7 +22,6 @@ import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
  */
 function StateInitializer() {
     const { marchers, fetchMarchers } = useMarcherStore();
-    const { marcherVisuals, updateMarcherVisuals } = useMarcherVisualStore();
     const { fetchMarcherPages } = useMarcherPageStore()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;

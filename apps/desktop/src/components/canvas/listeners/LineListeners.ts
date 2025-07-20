@@ -220,9 +220,7 @@ export default class LineListeners
                 oldDots.sort((a, b) => b.y - a.y);
                 break;
         }
-        const newDots = this._activeLine.distributeMarchers(
-            oldDots,
-        ) as MarcherPage[];
+        const newDots = this._activeLine.distributeMarchers(oldDots);
         const gridOffset = this._activeLine.gridOffset;
         const offsetNewDots = newDots.map((dot) => {
             return { ...dot, x: dot.x - gridOffset, y: dot.y - gridOffset };

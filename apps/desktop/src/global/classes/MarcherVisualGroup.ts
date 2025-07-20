@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
@@ -6,7 +5,10 @@ import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
 import Marcher from "@/global/classes/Marcher";
-import { SectionAppearance } from "@/global/classes/SectionAppearance";
+import {
+    getSectionAppearance,
+    SectionAppearance,
+} from "@/global/classes/SectionAppearance";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.
@@ -115,24 +117,16 @@ export default class MarcherVisualGroup {
  */
 export function marcherVisualsFromMarchers(
     receivedMarchers: Marcher[],
-    existingVisuals: Record<number, MarcherVisualGroup> = {},
+    sectionAppearances?: SectionAppearance[],
 ): Record<number, MarcherVisualGroup> {
-    // add new visuals for received marchers
+    const newVisuals: Record<number, MarcherVisualGroup> = {};
     for (const marcher of receivedMarchers) {
-        if (!existingVisuals[marcher.id]) {
-            existingVisuals[marcher.id] = new MarcherVisualGroup(marcher);
-        }
+        const appearance = sectionAppearances
+            ? getSectionAppearance(marcher.section, sectionAppearances)
+            : undefined;
+        newVisuals[marcher.id] = new MarcherVisualGroup(marcher, appearance);
     }
-
-    // remove visuals for marchers that are not received
-    const receivedIds = new Set(receivedMarchers.map((m) => m.id));
-    Object.keys(existingVisuals).forEach((id) => {
-        if (!receivedIds.has(Number(id))) {
-            delete existingVisuals[Number(id)];
-        }
-    });
-
-    return existingVisuals;
+    return newVisuals;
 }
 
 /**
@@ -141,7 +135,10 @@ export function marcherVisualsFromMarchers(
 export async function fetchMarchersAndVisuals() {
     await useMarcherStore.getState().fetchMarchers();
     const marchers = useMarcherStore.getState().marchers;
-    await useMarcherVisualStore.getState().updateMarcherVisuals(marchers);
+    const sectionAppearances = await SectionAppearance.getSectionAppearances();
+    await useMarcherVisualStore
+        .getState()
+        .updateMarcherVisuals(marchers, sectionAppearances);
 }
 
 /**
@@ -156,11 +153,5 @@ export function useMarchersWithVisuals() {
         (state) => state.updateMarcherVisuals,
     );
 
-    useEffect(() => {
-        if (marchers) {
-            updateMarcherVisuals(marchers);
-        }
-    }, [marchers, updateMarcherVisuals]);
-
-    return { marchers, marcherVisuals };
+    return { marchers, marcherVisuals, updateMarcherVisuals };
 }

@@ -370,6 +370,8 @@ export default class CanvasMarcher
         updateMarcherPageObj = true,
         uiSettings?: UiSettings,
     ) {
+        if (!this.canvas) return;
+
         // Apply coordinate rounding if UI settings are provided
         const coordsToUse = uiSettings
             ? this.roundCoordinates(coordinate, uiSettings)

@@ -138,7 +138,7 @@ export default class MarcherLine extends fabric.Line {
      * @param coordinates The coordinates to distribute
      * @returns The coordinates distributed along the line from start to finish
      */
-    distributeMarchers = (coordinates: CoordinateLike[]): CoordinateLike[] => {
+    distributeMarchers = <T extends CoordinateLike>(coordinates: T[]): T[] => {
         if (
             this.x1 === undefined ||
             this.y1 === undefined ||
@@ -160,7 +160,7 @@ export default class MarcherLine extends fabric.Line {
             ...coordinate,
             x: x1 + xDistance * index,
             y: y1 + yDistance * index,
-        }));
+        })) as T[];
     };
 
     /**

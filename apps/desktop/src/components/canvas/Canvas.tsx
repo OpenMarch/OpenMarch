@@ -1,12 +1,11 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { fabric } from "fabric";
-import { useUiSettingsStore } from "../../stores/UiSettingsStore";
-import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useSelectedMarchers } from "../../context/SelectedMarchersContext";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import MarcherPage from "@/global/classes/MarcherPage";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
@@ -15,18 +14,13 @@ import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectabl
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
-import Pathway from "@/global/classes/canvasObjects/Pathway";
 import { CircleNotchIcon } from "@phosphor-icons/react";
-import { rgbaToString } from "@/global/classes/FieldTheme";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
-import MarcherVisualGroup, {
-    useMarchersWithVisuals,
-} from "@/global/classes/MarcherVisualGroup";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
-import { getSectionAppearance } from "@/global/classes/SectionAppearance";
 
 /**
  * The field/stage UI of OpenMarch
@@ -46,7 +40,8 @@ export default function Canvas({
     onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const { marchers, marcherVisuals, updateMarcherVisuals } =
+        useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
@@ -506,7 +501,14 @@ export default function Canvas({
         fetchSectionAppearances();
     }, [fetchSectionAppearances]);
 
-    // Initialize canvas marcher visuals
+    // Sync marcher visuals with marchers and section appearances
+    useEffect(() => {
+        if (marchers && sectionAppearances) {
+            updateMarcherVisuals(marchers, sectionAppearances);
+        }
+    }, [marchers, sectionAppearances, updateMarcherVisuals]);
+
+    // Sync canvas with marcher visuals
     useEffect(() => {
         if (!canvas || !marchers || !marcherVisuals || !fieldProperties) return;
 
@@ -527,47 +529,43 @@ export default function Canvas({
 
         // Add all marcher visuals to the canvas
         marchers.forEach((marcher) => {
-            if (!marcherVisuals[marcher.id]) {
-                marcherVisuals[marcher.id] = new MarcherVisualGroup(
-                    marcher,
-                    getSectionAppearance(marcher.section, sectionAppearances),
-                );
-            }
+            const visualGroup = marcherVisuals[marcher.id];
+            if (!visualGroup) return;
 
-            canvas.add(marcherVisuals[marcher.id].getCanvasMarcher());
-            canvas.add(marcherVisuals[marcher.id].getCanvasMarcher().textLabel);
+            canvas.add(visualGroup.getCanvasMarcher());
+            canvas.add(visualGroup.getCanvasMarcher().textLabel);
 
-            canvas.add(marcherVisuals[marcher.id].getPreviousPathway());
-            canvas.add(marcherVisuals[marcher.id].getNextPathway());
-            marcherVisuals[marcher.id]
+            canvas.add(visualGroup.getPreviousPathway());
+            canvas.add(visualGroup.getNextPathway());
+            visualGroup
                 .getPreviousPathway()
                 .setColor(fieldProperties.theme.previousPath);
-            marcherVisuals[marcher.id]
+            visualGroup
                 .getNextPathway()
                 .setColor(fieldProperties.theme.nextPath);
 
-            canvas.add(marcherVisuals[marcher.id].getPreviousMidpoint());
-            canvas.add(marcherVisuals[marcher.id].getNextMidpoint());
-            marcherVisuals[marcher.id]
+            canvas.add(visualGroup.getPreviousMidpoint());
+            canvas.add(visualGroup.getNextMidpoint());
+            visualGroup
                 .getPreviousMidpoint()
                 .setColor(fieldProperties.theme.previousPath);
-            marcherVisuals[marcher.id]
+            visualGroup
                 .getNextMidpoint()
                 .setColor(fieldProperties.theme.nextPath);
 
-            canvas.add(marcherVisuals[marcher.id].getPreviousEndpoint());
-            canvas.add(marcherVisuals[marcher.id].getNextEndpoint());
-            marcherVisuals[marcher.id]
+            canvas.add(visualGroup.getPreviousEndpoint());
+            canvas.add(visualGroup.getNextEndpoint());
+            visualGroup
                 .getPreviousEndpoint()
                 .setColor(fieldProperties.theme.previousPath);
-            marcherVisuals[marcher.id]
+            visualGroup
                 .getNextEndpoint()
                 .setColor(fieldProperties.theme.nextPath);
         });
 
         // Request render all to ensure the canvas is updated
         canvas.requestRenderAll();
-    }, [canvas, marchers, marcherVisuals, fieldProperties, sectionAppearances]);
+    }, [canvas, marchers, marcherVisuals, fieldProperties]);
 
     // Setters for alignmentEvent state
     useEffect(() => {
@@ -593,7 +591,7 @@ export default function Canvas({
             marcherPages: marcherPages,
             pageId: selectedPage.id,
         });
-    }, [canvas, marcherPages, marchers, selectedPage]);
+    }, [canvas, marcherPages, marcherVisuals, marchers, selectedPage]);
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
@@ -626,6 +624,7 @@ export default function Canvas({
         selectedPage,
         uiSettings.nextPaths,
         uiSettings.previousPaths,
+        marcherVisuals,
     ]);
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change

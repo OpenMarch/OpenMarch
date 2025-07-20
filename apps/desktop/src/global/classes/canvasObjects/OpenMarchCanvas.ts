@@ -17,10 +17,6 @@ import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import {
-    SectionAppearance,
-    getSectionAppearance,
-} from "@/global/classes/SectionAppearance";
 import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 import { MarcherVisualMap } from "@/stores/MarcherVisualStore";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
@@ -945,9 +941,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // update coordinate for every canvas marcher
         const marchers = MarcherPage.getByPageId(marcherPages, pageId);
         marchers.forEach((marcherPage) => {
-            marcherVisuals[marcherPage.marcher_id]
-                .getCanvasMarcher()
-                .setMarcherCoords(marcherPage);
+            const visual = marcherVisuals[marcherPage.marcher_id];
+            if (!visual) return;
+
+            visual.getCanvasMarcher().setMarcherCoords(marcherPage);
         });
 
         if (this._listeners && this._listeners.refreshMarchers)
@@ -1134,6 +1131,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // iterate through each marcher visual and update the pathways, midpoints, and endpoints
         marcherIds.forEach((marcherId) => {
             const visual = marcherVisuals[marcherId];
+            if (!visual) return;
 
             const prev =
                 prevPageId !== null ? prevByMarcher[marcherId] : undefined;
