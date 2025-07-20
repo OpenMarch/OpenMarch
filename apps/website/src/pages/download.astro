@@ -50,7 +50,7 @@ import DownloadCards from "@/components/download/DownloadCards.tsx";
             />
         </div>
 
-        <DownloadCards client:load />
+        <DownloadCards client:load client:only="react" />
     </section>
     <GithubReleases client:load />
 </Layout>

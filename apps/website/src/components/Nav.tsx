@@ -1,5 +1,5 @@
 import { Button } from "@openmarch/ui";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
     ArrowLineDownIcon,
     DiscordLogoIcon,
