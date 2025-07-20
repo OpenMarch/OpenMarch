@@ -16,7 +16,6 @@ import {
     DialogTrigger,
     DialogContent,
     DialogTitle,
-    DialogClose,
 } from "@openmarch/ui";
 import { LogoOpenMarchText } from "./Logos";
 import clsx from "clsx";
