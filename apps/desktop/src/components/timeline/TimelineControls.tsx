@@ -17,12 +17,12 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
+import { AudioClock } from "./Clock";
 import { T, useTolgee } from "@tolgee/react";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
     const { uiSettings } = useUiSettingsStore();
-
     return (
         <div
             className={clsx(
@@ -31,10 +31,12 @@ export default function TimelineControls() {
             )}
         >
             {!isFullscreen && (
-                <p className="text-body text-text/60">
+                <div className="flex items-center justify-between gap-6">
                     <T keyName="timeline.label" />
-                </p>
+                    <AudioClock />
+                </div>
             )}
+
             <div
                 className={clsx("flex gap-12", {
                     "flex-col": !isFullscreen,

@@ -11,6 +11,7 @@ import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
+import { useAudioStore } from "@/stores/AudioStore";
 import { useTolgee } from "@tolgee/react";
 
 export const waveColor = "rgb(180, 180, 180)";
@@ -36,12 +37,14 @@ export default function AudioPlayer() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const waveformRef = useRef<HTMLDivElement>(null);
     const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
+    const { setAudio } = useAudioStore();
     const { t } = useTolgee();
 
     useEffect(() => {
         if (!audioRef.current) return;
 
         const audio = audioRef.current;
+        setAudio(audio);
 
         if (isPlaying) {
             audio.play().catch((error) => {
@@ -54,7 +57,15 @@ export default function AudioPlayer() {
                 : 0;
             audio.pause();
         }
-    }, [audioFileUrl, isPlaying, selectedPage, selectedPage?.timestamp, t]);
+
+    }, [
+        audioFileUrl,
+        isPlaying,
+        selectedPage,
+        selectedPage?.timestamp,
+        setAudio,
+        t
+    ]);
 
     useEffect(() => {
         if (!selectedAudioFile) return;
