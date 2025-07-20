@@ -1,7 +1,13 @@
 type Coordinate = { x: number; y: number };
-type CoordinateDefinition = { x: number; y: number; svg?: string };
+export type CoordinateDefinition = { x: number; y: number; svg?: string };
 
-type MarcherTimeline = {
+/**
+ * A timeline of coordinates for a marcher.
+ *
+ * @param pathMap A map of timestamps to coordinates.
+ * @param sortedTimestamps A sorted array of timestamps. This is used to speed up the search for the surrounding timestamps.
+ */
+export type MarcherTimeline = {
     pathMap: Map<number, CoordinateDefinition>;
     sortedTimestamps: number[];
 };
@@ -9,6 +15,13 @@ type MarcherTimeline = {
 const SvgLengthCache = new Map<string, number>();
 const SvgElementCache = new Map<string, SVGPathElement>();
 
+/**
+ * Get the coordinates at a given time for a marcher.
+ *
+ * @param timestampMilliseconds The time in milliseconds.
+ * @param marcherTimeline The timeline of coordinates for the marcher.
+ * @returns The coordinates at the given time.
+ */
 export const getCoordinatesAtTime = (
     timestampMilliseconds: number,
     marcherTimeline: MarcherTimeline,
@@ -50,7 +63,7 @@ export const getCoordinatesAtTime = (
 
         let pathElement = SvgElementCache.get(previousSvg);
         if (!pathElement) {
-            const pathElement = document.createElementNS(
+            pathElement = document.createElementNS(
                 "http://www.w3.org/2000/svg",
                 "path",
             );

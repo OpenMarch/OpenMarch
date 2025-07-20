@@ -483,6 +483,22 @@ export default class CanvasMarcher
     }
 
     /**
+     * A lightweight method to update the marcher's position on the canvas during live animation.
+     * This method avoids the overhead of `setMarcherCoords` and is intended for use within an animation loop.
+     *
+     * @param coords The new coordinates (in database terms) to set the marcher to.
+     */
+    setLiveCoordinates(coords: { x: number; y: number }) {
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
+
+        this.left = newCanvasCoords.x;
+        this.top = newCanvasCoords.y;
+
+        this.updateTextLabelPosition();
+        this.setCoords();
+    }
+
+    /**
      * Sets the marcher to be selectable and have controls.
      */
     makeSelectable() {
