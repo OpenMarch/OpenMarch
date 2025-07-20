@@ -1,10 +1,9 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
-import { Button, WarningNote } from "@openmarch/ui";
-import { LogoWindows, LogoMacOS, LogoLinux } from "@/components/Logos";
-import { CURRENT_VERSION } from "@/constants";
+import { WarningNote } from "@openmarch/ui";
 import GithubReleases from "@/components/download/GithubReleases.tsx";
+import DownloadCards from "@/components/download/DownloadCards.tsx";
 ---
 
 <Layout title="Download">
@@ -51,61 +50,7 @@ import GithubReleases from "@/components/download/GithubReleases.tsx";
             />
         </div>
 
-        <div
-            class="grid h-fit w-full min-w-0 grid-cols-3 gap-8 max-[1024px]:grid-cols-2 max-[768px]:grid-cols-1"
-        >
-            <div
-                class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
-            >
-                <LogoWindows />
-                <h1 class="text-h1">Windows</h1>
-                <div class="flex flex-wrap gap-12">
-                    <a
-                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}.exe`}
-                    >
-                        <Button variant="secondary"> Download .exe </Button>
-                    </a>
-                </div>
-            </div>
-            <div
-                class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
-            >
-                <LogoMacOS />
-                <h1 class="text-h1">macOS</h1>
-                <div class="flex flex-col items-center justify-center gap-12">
-                    <a
-                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_arm64.dmg`}
-                    >
-                        <Button variant="secondary">
-                            Download for Apple Silicon
-                        </Button>
-                    </a>
-                    <a
-                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_x64.dmg`}
-                    >
-                        <Button variant="secondary">
-                            Download for Intel
-                        </Button>
-                    </a>
-                </div>
-            </div>
-            <div
-                class="flex flex-col items-center justify-center gap-24 rounded-6 border border-stroke bg-fg-1 p-48 max-[600px]:p-24"
-            >
-                <LogoLinux />
-                <h1 class="text-h1">Linux</h1>
-                <div class="flex flex-col items-center justify-center gap-12">
-                    <a
-                        href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_x86_64.AppImage`}
-                    >
-                        <Button variant="secondary"> Download AppImage </Button>
-                    </a>
-                    <a href={`https://snapcraft.io/openmarch`}>
-                        <Button variant="secondary"> Go to Snapcraft </Button>
-                    </a>
-                </div>
-            </div>
-        </div>
+        <DownloadCards client:load client:only="react" />
     </section>
     <GithubReleases client:load />
 </Layout>
