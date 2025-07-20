@@ -48,7 +48,11 @@ interface Page {
      * E.g. if the page has 7 counts and has two 4/4 measures, the beat to end on is 4 because it goes to that beat.
      */
     readonly measureBeatToEndOn: number | null;
-    /** Where the start of this page is in the music in seconds */
+    /** Where the start of this page is in the music in seconds.
+     *
+     * Note -  to find the timestamp of a marcherPage, you must use the page's timestamp PLUS it's duration.
+     * The marcherPage's definition is at the end of the page to conform to existing standards.
+     */
     readonly timestamp: number;
 }
 export default Page;

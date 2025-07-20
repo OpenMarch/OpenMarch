@@ -19,6 +19,8 @@ export default class MarcherPage {
     readonly x: number;
     /** Y coordinate of the MarcherPage */
     readonly y: number;
+    /** The SVG path of the MarcherPage */
+    readonly svg_path?: string;
     /** Any notes about the MarcherPage. Optional - currently not implemented */
     readonly notes?: string;
     /**
@@ -34,6 +36,7 @@ export default class MarcherPage {
         this.page_id = marcherPage.page_id;
         this.x = marcherPage.x;
         this.y = marcherPage.y;
+        this.svg_path = marcherPage.svg_path;
         this.notes = marcherPage.notes;
     }
 

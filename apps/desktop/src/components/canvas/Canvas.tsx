@@ -21,6 +21,7 @@ import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
+import { useAnimation } from "@/hooks/useAnimation";
 
 /**
  * The field/stage UI of OpenMarch
@@ -39,7 +40,7 @@ export default function Canvas({
     testCanvas?: OpenMarchCanvas;
     onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
-    const { isPlaying, setIsPlaying } = useIsPlaying()!;
+    const { isPlaying } = useIsPlaying()!;
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
@@ -49,7 +50,7 @@ export default function Canvas({
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
-    const { setUiSettings, uiSettings } = useUiSettingsStore()!;
+    const { uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,
         alignmentEventMarchers,
@@ -60,12 +61,19 @@ export default function Canvas({
         useSectionAppearanceStore();
 
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
-    const [canvas, setCanvas] = useState<OpenMarchCanvas>();
+    const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const animationCallbacks = useRef<any>([]);
-    const timeoutID = useRef<any>(null);
     const frameRef = useRef<number | null>(null);
+
+    useAnimation({
+        canvas,
+        pages,
+        marchers,
+        marcherPages,
+        selectedPage,
+        setSelectedPage,
+    });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -223,6 +231,7 @@ export default function Canvas({
     const handleSelect = useCallback(() => {
         if (!canvas || activeObjectsAreGloballySelected()) return;
         const newSelectedObjects: {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             [key in Selectable.SelectableClasses]: any[];
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
@@ -333,7 +342,7 @@ export default function Canvas({
 
             canvas.requestRenderAll();
         },
-        [canvas, marcherPages, selectedPage],
+        [canvas, selectedPage, marcherPages],
     );
 
     /**
@@ -640,70 +649,6 @@ export default function Canvas({
         }
     }, [canvas, selectedPage, shapePages]);
 
-    // // Refresh the selectedMarcherShapes when the ShapePages change
-    // useEffect(() => {
-    //     if (
-    //         canvas &&
-    //         selectedPage &&
-    //         shapePages &&
-    //         selectedMarcherShapes &&
-    //         selectedMarcherShapes.length > 0
-    //     ) {
-    //         const selectedMarcherShapeIds = new Set(
-    //             selectedMarcherShapes.map((ms) => ms.shapePage.id),
-    //         );
-    //         const selectedMarcherShapeMap = new Map<number, MarcherShape>(
-    //             selectedMarcherShapes.map((ms) => [ms.shapePage.id, ms]),
-    //         );
-    //         const canvasMarcherShapeMap = new Map<number, MarcherShape>(
-    //             canvas.marcherShapes.map((ms) => [ms.shapePage.id, ms]),
-    //         );
-
-    //         let newMarcherShapesAreDifferent = false;
-    //         const marcherShapesToSelect = [];
-    //         for (const shapePageIdToSelect of selectedMarcherShapeIds) {
-    //             const canvasMarcherShape =
-    //                 canvasMarcherShapeMap.get(shapePageIdToSelect);
-
-    //             if (canvasMarcherShape) {
-    //                 marcherShapesToSelect.push(canvasMarcherShape);
-
-    //                 const oldMarcherShape =
-    //                     selectedMarcherShapeMap.get(shapePageIdToSelect);
-    //                 if (!oldMarcherShape) {
-    //                     console.warn(
-    //                         `Could not find marcher shape for shape page id ${shapePageIdToSelect}`,
-    //                     );
-    //                     continue;
-    //                 }
-
-    //                 if (!newMarcherShapesAreDifferent)
-    //                     newMarcherShapesAreDifferent =
-    //                         !canvasMarcherShape.equals(oldMarcherShape);
-
-    //                 console.log(
-    //                     "marcherShapes are different",
-    //                     newMarcherShapesAreDifferent,
-    //                     oldMarcherShape.shapePath.toString(),
-    //                     canvasMarcherShape.shapePath.toString(),
-    //                 );
-    //             }
-    //         }
-
-    //         if (
-    //             newMarcherShapesAreDifferent &&
-    //             marcherShapesToSelect.length > 0
-    //         )
-    //             setSelectedMarcherShapes(marcherShapesToSelect);
-    //     }
-    // }, [
-    //     canvas,
-    //     selectedMarcherShapes,
-    //     selectedPage,
-    //     setSelectedMarcherShapes,
-    //     shapePages,
-    // ]);
-
     // Update the control points on MarcherShapes when the selectedShapePages change
     useEffect(() => {
         if (canvas && selectedMarcherShapes) {
@@ -789,94 +734,23 @@ export default function Canvas({
 
     /* --------------------------Animation Functions-------------------------- */
 
+    // This effect ensures that when the animation is paused, the marchers are
+    // rendered at their final positions for the selected page.
     useEffect(() => {
-        let animationFrameId: number | null = null;
-        let animationActive = false;
-
-        // Function to schedule a render on every animation frame while animating
-        function renderLoop() {
-            if (!animationActive || !canvas) return;
-            canvas.requestRenderAll();
-            animationFrameId = requestAnimationFrame(renderLoop);
+        if (canvas && !isPlaying && selectedPage) {
+            canvas.renderMarchers({
+                marcherPages: marcherPages,
+                pageId: selectedPage.id,
+                marcherVisuals: marcherVisuals,
+            });
         }
-
-        if (canvas && selectedPage && selectedPage.nextPageId) {
-            if (isPlaying) {
-                const nextPageId = selectedPage.nextPageId;
-                if (nextPageId === null) return;
-                const nextPage = pages.find((page) => page.id === nextPageId);
-                if (!nextPage) return;
-
-                const nextPageMarcherPages =
-                    marcherPages.marcherPagesByPage[nextPageId];
-                canvas.getCanvasMarchers().forEach((canvasMarcher) => {
-                    const marcherPageToUse =
-                        nextPageMarcherPages[canvasMarcher.marcherObj.id];
-                    if (!marcherPageToUse) {
-                        console.error(
-                            "Marcher page not found - startAnimation: Canvas.tsx",
-                            canvasMarcher,
-                        );
-                        return;
-                    }
-
-                    const callback = canvasMarcher.setNextAnimation({
-                        marcherPage: marcherPageToUse,
-                        durationMilliseconds: nextPage.duration * 1000,
-                    });
-                    animationCallbacks.current.push(callback);
-                });
-
-                // Start batched rendering while animating
-                animationActive = true;
-                renderLoop();
-
-                // Set the selected page after the animation is done and set isPlaying to false
-                timeoutID.current = setTimeout(() => {
-                    animationActive = false;
-                    if (animationFrameId !== null) {
-                        cancelAnimationFrame(animationFrameId);
-                    }
-                    canvas.requestRenderAll();
-
-                    const isLastPage = nextPage.nextPageId === null;
-                    setSelectedPage(nextPage);
-                    if (isLastPage) setIsPlaying(false);
-                }, nextPage.duration * 1000);
-            } else {
-                animationCallbacks.current.forEach((callback: any) => {
-                    // Not sure why these are two functions in Fabric.js
-                    (callback[0] as () => void)(); // Stop X animation
-                    (callback[1] as () => void)(); // Stop Y animation
-                });
-                if (timeoutID.current) {
-                    clearTimeout(timeoutID.current);
-                }
-
-                canvas.renderMarchers({
-                    marcherVisuals: marcherVisuals,
-                    marcherPages: marcherPages,
-                    pageId: selectedPage.id,
-                });
-            }
-        }
-
-        // Cleanup
-        return () => {
-            animationActive = false;
-            if (animationFrameId !== null) {
-                cancelAnimationFrame(animationFrameId);
-            }
-        };
     }, [
         canvas,
         isPlaying,
+        selectedPage,
         marcherPages,
         marchers,
-        pages,
-        selectedPage,
-        setIsPlaying,
-        setSelectedPage,
+        marcherVisuals,
     ]);
 
     return (
