@@ -71,7 +71,7 @@ export const DialogContent = ({
                 className={twMerge(
                     clsx(
                         className,
-                        "rounded-6 border-stroke bg-modal text-text shadow-modal data-[state=open]:animate-fade-in fixed top-1/2 left-1/2 z-[49] flex min-w-[18.75rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-sm",
+                        "rounded-6 border-stroke bg-modal text-text shadow-modal data-[state=open]:animate-fade-in fixed top-1/2 left-1/2 z-[99] flex min-w-[18.75rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-sm",
                     ),
                 )}
             >

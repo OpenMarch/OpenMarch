@@ -125,7 +125,7 @@ export default function DownloadCards() {
                                         className="flex w-full items-center gap-8"
                                     >
                                         <HeartIcon size={16} />
-                                        Leave a Tip
+                                        Leave a Donation
                                     </Button>
                                 </a>
                                 <DialogClose>
