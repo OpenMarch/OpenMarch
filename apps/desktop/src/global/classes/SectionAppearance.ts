@@ -66,6 +66,7 @@ export interface ModifiedSectionAppearanceArgs {
 /**
  * Get section appearance for a marcher based on section
  * @param section The section name to find appearance for
+ * @param sectionAppearances Array of SectionAppearance objects to search in
  * @returns The section appearance if found, or undefined
  */
 export function getSectionAppearance(

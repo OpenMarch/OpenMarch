@@ -506,7 +506,7 @@
             "drillNumberTitle": "#",
             "fillColor": "Fill Color",
             "nameTitle": "Name",
-            "noMarchers": "No marchers created yet. Why don't you create one?",
+            "noMarchers": "No marchers created yet. Why not create one?",
             "noSectionStyles": "No section styles defined yet. Add one to customize how each section appears.",
             "outlineColor": "Outline Color",
             "pendingChanges": "Below values may not be applied until after a refresh",

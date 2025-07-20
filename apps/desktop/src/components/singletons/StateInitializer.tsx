@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useSelectedPage } from "../../context/SelectedPageContext";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
@@ -14,6 +14,7 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
+import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
 
 /**
  * A component that initializes the state of the application.
@@ -43,7 +44,7 @@ function StateInitializer() {
      */
 
     useEffect(() => {
-        Marcher.fetchMarchers = fetchMarchers;
+        Marcher.fetchMarchers = fetchMarchersAndVisuals;
         Marcher.fetchMarchers();
     }, [fetchMarchers]);
 

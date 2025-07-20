@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher, NewMarcherArgs } from "@/global/classes/Marcher";
 import {
     getSectionObjectByName,
@@ -20,6 +19,7 @@ import { toast } from "sonner";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
 import FormField from "../ui/FormField";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { T, useTolgee } from "@tolgee/react";
 
 interface NewMarcherFormProps {
@@ -45,7 +45,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const [drillPrefixTouched, setDrillPrefixTouched] =
         useState<boolean>(false);
     const [drillOrderError, setDrillOrderError] = useState<string>("");
-    const { marchers } = useMarcherStore()!;
+    const { marchers, marcherVisuals } = useMarchersWithVisuals()!;
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
     const formRef = useRef<HTMLFormElement>(null);
     const { setContent } = useSidebarModalStore();

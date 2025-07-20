@@ -7,7 +7,6 @@ import MarcherCoordinateSheet, {
     StaticCompactMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
@@ -42,7 +41,7 @@ import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T, useTolgee } from "@tolgee/react";
-import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -60,7 +59,7 @@ function CoordinateSheetExport() {
     const [roundingDenominator, setRoundingDenominator] = useState(4);
     const [organizeBySection, setOrganizeBySection] = useState(false);
     const [quarterPages, setQuarterPages] = useState(false);
-    const { marchers } = useMarcherStore()!;
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -650,7 +649,7 @@ function DrillChartExport() {
     const { pages } = useTimingObjectsStore()!;
     const { fieldProperties } = useFieldProperties()!;
     const { marcherPages } = useMarcherPageStore()!;
-    const { marchers } = useMarcherStore()!;
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);
@@ -706,9 +705,9 @@ function DrillChartExport() {
 
                 // Render marchers for this page
                 await exportCanvas.renderMarchers({
+                    marcherVisuals: marcherVisuals,
                     marcherPages: marcherPages,
                     pageId: pages[p].id,
-                    allMarchers: marchers,
                 });
 
                 // Render pathways for individual marchers
@@ -746,32 +745,28 @@ function DrillChartExport() {
                         // Render previous pathway and midpoint
                         if (p > 0) {
                             objectsToRemove.push(
-                                ...exportCanvas.renderIndividualPathwayAndMidpoint(
-                                    {
-                                        start: prevMarcher!,
-                                        end: marcher,
-                                        marcherId: marcher.marcher_id,
-                                        color: rgbaToString(
-                                            fieldProperties!.theme.previousPath,
-                                        ),
-                                    },
-                                ),
+                                ...exportCanvas.renderTemporaryPathVisuals({
+                                    start: prevMarcher!,
+                                    end: marcher,
+                                    marcherId: marcher.marcher_id,
+                                    color: rgbaToString(
+                                        fieldProperties!.theme.previousPath,
+                                    ),
+                                }),
                             );
                         }
 
                         // Render next pathway and midpoint
                         if (p < pages.length - 1) {
                             objectsToRemove.push(
-                                ...exportCanvas.renderIndividualPathwayAndMidpoint(
-                                    {
-                                        start: marcher,
-                                        end: nextMarcher!,
-                                        marcherId: marcher.marcher_id,
-                                        color: rgbaToString(
-                                            fieldProperties!.theme.nextPath,
-                                        ),
-                                    },
-                                ),
+                                ...exportCanvas.renderTemporaryPathVisuals({
+                                    start: marcher,
+                                    end: nextMarcher!,
+                                    marcherId: marcher.marcher_id,
+                                    color: rgbaToString(
+                                        fieldProperties!.theme.nextPath,
+                                    ),
+                                }),
                             );
                         }
 

@@ -8,7 +8,10 @@ import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
 import { SectionAppearance } from "../SectionAppearance";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
+import {
+    CoordinateLike,
+    getRoundCoordinates2,
+} from "@/utilities/CoordinateActions";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -37,8 +40,8 @@ export default class CanvasMarcher
     id: number;
     /** The Marcher object the CanvasMarcher is representing */
     marcherObj: Marcher;
-    /** The MarcherPage object that this canvasMarcher is associated with */
-    marcherPage: MarcherPage;
+    /** The coordinate object that this canvasMarcher is associated with */
+    coordinate: CoordinateLike;
 
     /**
      * @param marcher The marcher object to create the canvas object from
@@ -48,13 +51,13 @@ export default class CanvasMarcher
      */
     constructor({
         marcher,
-        marcherPage,
+        coordinate,
         dotRadius = CanvasMarcher.dotRadius,
         sectionAppearance,
         color,
     }: {
         marcher: Marcher;
-        marcherPage: MarcherPage;
+        coordinate: CoordinateLike;
         dotRadius?: number;
         color?: string;
         sectionAppearance?: SectionAppearance;
@@ -78,8 +81,8 @@ export default class CanvasMarcher
         let markerShape: fabric.Object;
 
         const commonShapeProps = {
-            left: marcherPage.x,
-            top: marcherPage.y,
+            left: coordinate.x,
+            top: coordinate.y,
             originX: "center",
             originY: "center",
             stroke: outlineColor,
@@ -135,8 +138,8 @@ export default class CanvasMarcher
         this.dotObject = markerShape;
 
         this.textLabel = new fabric.Text(marcher.drill_number, {
-            left: marcherPage.x,
-            top: marcherPage.y - CanvasMarcher.dotRadius * 2.2,
+            left: coordinate.x,
+            top: coordinate.y - CanvasMarcher.dotRadius * 2.2,
             originX: "center",
             originY: "center",
             fontFamily: "courier new",
@@ -160,16 +163,14 @@ export default class CanvasMarcher
         });
         this.addWithUpdate(this.backgroundRectangle);
 
-        if (marcher.id !== marcherPage.marcher_id)
-            console.error("MarcherPage and Marcher id's do not match");
         this.id = marcher.id;
         this.objectToGloballySelect = marcher;
 
-        this.marcherPage = marcherPage;
+        this.coordinate = coordinate;
         this.marcherObj = marcher;
 
         // Set the initial coordinates to the appropriate offset
-        const newCoords = this.databaseCoordsToCanvasCoords(marcherPage);
+        const newCoords = this.databaseCoordsToCanvasCoords(coordinate);
         this.left = newCoords.x;
         this.top = newCoords.y;
 
@@ -361,18 +362,20 @@ export default class CanvasMarcher
      * Sets the coordinates of the marcher on the canvas from a MarcherPage object.
      * This adjusts the position of the fabric group object to match the MarcherPage object.
      *
-     * @param marcherPage The MarcherPage object to set the coordinates from.
+     * @param coordinate The MarcherPage object to set the coordinates from.
      * @param uiSettings Optional UI settings for coordinate rounding
      */
     setMarcherCoords(
-        marcherPage: MarcherPage,
+        coordinate: CoordinateLike,
         updateMarcherPageObj = true,
         uiSettings?: UiSettings,
     ) {
+        if (!this.canvas) return;
+
         // Apply coordinate rounding if UI settings are provided
         const coordsToUse = uiSettings
-            ? this.roundCoordinates(marcherPage, uiSettings)
-            : marcherPage;
+            ? this.roundCoordinates(coordinate, uiSettings)
+            : coordinate;
 
         // Offset the new canvas coordinates (center of the dot/label group) by the dot's position
         const newCanvasCoords = this.databaseCoordsToCanvasCoords(coordsToUse);
@@ -381,7 +384,7 @@ export default class CanvasMarcher
             throw new Error(
                 "Fabric group does not have left and/or top properties - getCoords: CanvasMarcher.ts",
             );
-        if (updateMarcherPageObj) this.marcherPage = marcherPage;
+        if (updateMarcherPageObj) this.coordinate = coordinate;
         this.left = newCanvasCoords.x;
         this.top = newCanvasCoords.y;
 
@@ -467,7 +470,6 @@ export default class CanvasMarcher
             {
                 duration: durationMilliseconds,
                 onChange: () => {
-                    this.getCanvas().requestRenderAll();
                     // Set coords so that objects offscreen are still rendered
                     this.setCoords();
                 },

@@ -9,6 +9,7 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
@@ -17,6 +18,7 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 
@@ -471,6 +473,7 @@ export const RegisteredActionsObjects: {
 function RegisteredActionsHandler() {
     const { t } = useTolgee();
     const { registeredButtonActions } = useRegisteredActionsStore()!;
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { marcherPages } = useMarcherPageStore()!;

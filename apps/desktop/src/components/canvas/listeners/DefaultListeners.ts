@@ -93,7 +93,7 @@ export default class DefaultListeners implements CanvasListeners {
                 const newCoords = activeCanvasMarcher.getMarcherCoords();
                 modifiedMarcherPages.push({
                     marcher_id: activeCanvasMarcher.marcherObj.id,
-                    page_id: activeCanvasMarcher.marcherPage.page_id,
+                    page_id: activeCanvasMarcher.coordinate.page_id,
                     x: newCoords.x,
                     y: newCoords.y,
                 });

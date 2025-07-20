@@ -1,14 +1,14 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
-import StaticCanvasMarcher from "./StaticCanvasMarcher";
-import { Pathway } from "./Pathway";
-import { Midpoint } from "./Midpoint";
+import Endpoint from "./Endpoint";
+import Pathway from "./Pathway";
+import Midpoint from "./Midpoint";
 import FieldProperties from "@/global/classes/FieldProperties";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { MarcherPageMap } from "@/global/classes/MarcherPageIndex";
-import { ActiveObjectArgs } from "../../../components/canvas/CanvasConstants";
+import MarcherPageMap from "@/global/classes/MarcherPageIndex";
+import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
@@ -17,11 +17,9 @@ import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "../FieldTheme";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import {
-    SectionAppearance,
-    getSectionAppearance,
-} from "@/global/classes/SectionAppearance";
 import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
+import { MarcherVisualMap } from "@/stores/MarcherVisualStore";
+import { CoordinateLike } from "@/utilities/CoordinateActions";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -423,11 +421,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // If it was always sharp (object caching on), it would be horrendously slow
         clearTimeout(this._zoomTimeout);
         this._zoomTimeout = setTimeout(() => {
-            if (this.staticGridRef.objectCaching) {
-                this.staticGridRef.objectCaching = false;
-                this.requestRenderAll();
-            }
-        }, 25);
+            this.getObjects().forEach((obj) => {
+                if (
+                    !(
+                        obj instanceof fabric.Text ||
+                        obj instanceof fabric.IText ||
+                        obj instanceof fabric.Textbox
+                    )
+                ) {
+                    obj.objectCaching = false;
+                }
+            });
+            this.requestRenderAll();
+        }, 75);
     }
 
     private checkCanvasBounds() {
@@ -913,84 +919,34 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
     }
+
     /**
      * Render the given marcherPages on the canvas
      *
+     * @param marcherVisuals The map of marcher visuals
      * @param marcherPages All of the marcher pages
      * @param pageId The id of the page to render marchers for
-     * @param allMarchers All marchers in the drill
      */
     renderMarchers = async ({
+        marcherVisuals,
         marcherPages,
         pageId,
-        allMarchers,
     }: {
+        marcherVisuals: MarcherVisualMap;
         marcherPages: MarcherPageMap;
         pageId: number;
-        allMarchers: Marcher[];
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
-        const sectionAppearances =
-            await SectionAppearance.getSectionAppearances();
 
-        // Get the marcher pages for the target pageId
-        const pageMarcherPageMap = MarcherPage.getByPageId(
-            marcherPages,
-            pageId,
-        );
+        // update coordinate for every canvas marcher
+        const marchers = MarcherPage.getByPageId(marcherPages, pageId);
+        marchers.forEach((marcherPage) => {
+            const visual = marcherVisuals[marcherPage.marcher_id];
+            if (!visual) return;
 
-        // Get the canvas marchers on the canvas
-        const canvasMarchersMap = new Map<number, CanvasMarcher>(
-            this.getCanvasMarchers().map((m) => [m.marcherObj.id, m]),
-        );
-        const allMarchersMap = new Map<number, Marcher>(
-            allMarchers.map((m) => [m.id, m]),
-        );
+            visual.getCanvasMarcher().setMarcherCoords(marcherPage);
+        });
 
-        // For each marcherPage in the page's marcher map
-        for (const marcherPage of Object.values(pageMarcherPageMap)) {
-            const curCanvasMarcher = canvasMarchersMap.get(
-                marcherPage.marcher_id,
-            );
-            if (!curCanvasMarcher) {
-                const curMarcher = allMarchersMap.get(marcherPage.marcher_id);
-                if (!curMarcher) {
-                    console.error(
-                        "Marcher object not found in the store for given MarcherPage  - renderMarchers: Canvas.tsx",
-                        marcherPage,
-                    );
-                    continue;
-                }
-                const sectionAppearance = getSectionAppearance(
-                    curMarcher.section,
-                    sectionAppearances,
-                );
-                const canvasMarcher = new CanvasMarcher({
-                    marcher: curMarcher,
-                    marcherPage,
-                    sectionAppearance,
-                });
-                this.add(canvasMarcher);
-                this.add(canvasMarcher.textLabel);
-            }
-            // Marcher exists on the Canvas, move it to the new location if it has changed
-            else {
-                curCanvasMarcher.setMarcherCoords(marcherPage);
-            }
-        }
-
-        const marcherPageMarcherIds: Set<number> = new Set(
-            pageMarcherPageMap.map((marcherPage) => marcherPage.marcher_id),
-        );
-
-        // Check for any canvas marchers that are no longer in the current marcher pages
-        if (marcherPageMarcherIds.size !== canvasMarchersMap.size) {
-            canvasMarchersMap.forEach((canvasMarcher, marcherId) => {
-                if (!marcherPageMarcherIds.has(marcherId)) {
-                    this.remove(canvasMarcher);
-                }
-            });
-        }
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.bringAllControlPointsTooFront();
@@ -1000,7 +956,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
-            canvasMarcher.setMarcherCoords(canvasMarcher.marcherPage);
+            canvasMarcher.setMarcherCoords(canvasMarcher.coordinate);
         });
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
@@ -1059,105 +1015,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
-     * Render static marchers for the given page
-     *
-     * @param marcherPages All marcher pages
-     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
-     * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @returns The StaticCanvasMarcher objects created
-     */
-    renderStaticMarchers = ({
-        marcherPages,
-        intendedMarcherPages,
-        color,
-    }: {
-        marcherPages: MarcherPageMap;
-        intendedMarcherPages: MarcherPage[];
-        color: string;
-    }) => {
-        const createdStaticMarchers: StaticCanvasMarcher[] = [];
-
-        intendedMarcherPages.forEach((marcherPage) => {
-            const curMarcher =
-                marcherPages.marcherPagesByMarcher[marcherPage.marcher_id];
-
-            if (!curMarcher) {
-                console.error(
-                    "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
-                    marcherPage,
-                );
-                return;
-            }
-
-            const staticMarcher = new StaticCanvasMarcher({
-                marcherPage,
-                color,
-            });
-
-            this.add(staticMarcher);
-            createdStaticMarchers.push(staticMarcher);
-        });
-        this.requestRenderAll();
-
-        return createdStaticMarchers;
-    };
-
-    /**
-     * Render static marchers for the given page
-     *
-     * @param color The color of the static marchers (use rgba for transparency, e.g. "rgba(255, 255, 255, 1)")
-     * @param intendedMarcherPages The marcher pages to render (must be filtered by the given page)
-     * @param allMarchers All marchers in the drill
-     * @returns The StaticCanvasMarcher objects created
-     */
-    renderIndividualStaticMarchers = ({
-        color,
-        intendedMarcherPages,
-        allMarchers,
-    }: {
-        color: string;
-        intendedMarcherPages: MarcherPage[];
-        allMarchers: Marcher[];
-    }) => {
-        const createdStaticMarchers: StaticCanvasMarcher[] = [];
-        intendedMarcherPages.forEach((marcherPage) => {
-            const curMarcher = allMarchers.find(
-                (marcher) => marcher.id === marcherPage.marcher_id,
-            );
-            if (!curMarcher) {
-                console.error(
-                    "Marcher object not found in the store for given MarcherPage - renderStaticMarchers: Canvas.tsx",
-                    marcherPage,
-                );
-                return;
-            }
-
-            const staticMarcher = new StaticCanvasMarcher({
-                marcherPage,
-                color,
-            });
-
-            this.add(staticMarcher);
-            createdStaticMarchers.push(staticMarcher);
-        });
-        this.requestRenderAll();
-
-        return createdStaticMarchers;
-    };
-
-    /**
-     * Remove the static canvas marchers from the canvas
-     */
-    removeStaticCanvasMarchers = () => {
-        const curStaticCanvasMarchers = this.getStaticCanvasMarchers();
-
-        curStaticCanvasMarchers.forEach((canvasMarcher) => {
-            this.remove(canvasMarcher);
-        });
-        this.requestRenderAll();
-    };
-
-    /**
      * Renders all of the provided marcher lines on the canvas. Removes all other marcher lines first
      *
      * @param marcherLines All of the marcher lines in the drill (must be filtered by the given page, i.e. "MarcherLine.getMarcherLinesForPage()")
@@ -1174,8 +1031,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
-     * Render pathways from any object containing an XY coordinate
-     * to another object containing an XY coordinate, including MarcherPage(s).
+     * Renders a Pathway, Midpoint, and Endpoint given the start and end coordinates.
      *
      * @param start The starting point of the pathway
      * @param end The ending point of the pathway
@@ -1184,16 +1040,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param strokeWidth The width of the pathways
      * @param dashed Whether the pathways should be dashed
      */
-    renderIndividualPathwayAndMidpoint = ({
+    renderTemporaryPathVisuals = ({
         start,
         end,
-        marcherId,
+        marcherId = -1,
         color,
         strokeWidth,
         dashed = false,
     }: {
-        start: { x: number; y: number; [key: string]: any };
-        end: { x: number; y: number; [key: string]: any };
+        start: CoordinateLike;
+        end: CoordinateLike;
         marcherId: number;
         color: string;
         strokeWidth?: number;
@@ -1202,106 +1058,151 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const pathway = new Pathway({
             start: start,
             end: end,
-            color,
-            strokeWidth,
-            dashed,
-            marcherId,
+            color: color,
+            strokeWidth: strokeWidth,
+            dashed: dashed,
+            marcherId: marcherId,
         });
         const midpoint = new Midpoint({
             start: start,
             end: end,
             innerColor: "white",
             outerColor: color,
-            marcherId,
+            marcherId: marcherId,
+        });
+        const endpoint = new Endpoint({
+            coordinate: end,
+            color: color,
+            marcherId: marcherId,
         });
 
         this.add(pathway);
         this.add(midpoint);
+        this.add(endpoint);
         this.requestRenderAll();
 
-        return [pathway, midpoint];
+        return [pathway, midpoint, endpoint];
     };
 
     /**
-     * Render the pathways from the selected page to the given one
+     * Renders pathways, midpoints, and endpoints for the given pages,
+     * at the coordinates in the MarcherPages of the provided pages.
+     * If any page is null, the pathway/midpoint/endpoint will be hidden.
      *
-     * @param marcherPages all marcher pages in the drill
-     * @param startPageId the selected page to render the pathway from
-     * @param endPageId the page to render the pathway to
-     * @param color color of the pathway
-     * @param strokeWidth width of the pathway
-     * @param dashed whether the pathway should be dashed
+     * @param marcherVisuals The marcher visual map
+     * @param marcherPages The marcher pages map
+     * @param prevPageId The id of the previous page
+     * @param currPageId The id of the current page
+     * @param nextPageId The id of the next page
+     * @param marcherIds The ids of the marchers to render pathways for
+     * @param fromCanvasMarchers Gets target positions from canvas marchers instead of marcher pages.
      */
-    renderPathwaysAndMidpoints = ({
+    renderPathVisuals = ({
+        marcherVisuals,
         marcherPages,
-        startPageId,
-        endPageId,
-        color,
-        strokeWidth,
-        dashed = false,
+        prevPageId,
+        currPageId,
+        nextPageId,
+        marcherIds,
+        fromCanvasMarchers = false,
     }: {
+        marcherVisuals: MarcherVisualMap;
         marcherPages: MarcherPageMap;
-        startPageId: number;
-        endPageId: number;
-        color: string;
-        strokeWidth?: number;
-        dashed?: boolean;
+        prevPageId: number | null;
+        currPageId: number | null;
+        nextPageId: number | null;
+        marcherIds: number[];
+        fromCanvasMarchers?: boolean;
     }) => {
-        const createdPathways: Pathway[] = [];
-        const createdMidpoints: Midpoint[] = [];
+        // get the marcher page maps for the previous, current, and next pages
+        const prevByMarcher =
+            prevPageId !== null
+                ? marcherPages.marcherPagesByPage[prevPageId] || {}
+                : {};
+        const currByMarcher =
+            currPageId !== null
+                ? marcherPages.marcherPagesByPage[currPageId] || {}
+                : {};
+        const nextByMarcher =
+            nextPageId !== null
+                ? marcherPages.marcherPagesByPage[nextPageId] || {}
+                : {};
 
-        // Get MarcherPages for the start and end pages
-        const endPageMarcherPages = MarcherPage.getByPageId(
-            marcherPages,
-            endPageId,
-        );
-        const startPageMarcherPages =
-            marcherPages.marcherPagesByPage[startPageId];
+        // iterate through each marcher visual and update the pathways, midpoints, and endpoints
+        marcherIds.forEach((marcherId) => {
+            const visual = marcherVisuals[marcherId];
+            if (!visual) return;
 
-        endPageMarcherPages.forEach((previousMarcherPage) => {
-            const currentMarcherPage =
-                startPageMarcherPages[previousMarcherPage.marcher_id];
+            const prev =
+                prevPageId !== null ? prevByMarcher[marcherId] : undefined;
+            const curr = fromCanvasMarchers
+                ? visual.getCanvasMarcher().getMarcherCoords()
+                : currPageId !== null
+                  ? currByMarcher[marcherId]
+                  : undefined;
+            const next =
+                nextPageId !== null ? nextByMarcher[marcherId] : undefined;
 
-            // If the marcher does not exist on the selected page, return
-            if (!currentMarcherPage) {
-                console.error(
-                    "Selected marcher page not found - renderPathways: Canvas.tsx",
-                    previousMarcherPage,
-                );
-                return;
-            }
+            // previous pathway, midpoint, endpoint
+            if (prevPageId !== null && prev && curr) {
+                visual.getPreviousPathway().show();
+                visual.getPreviousPathway().updateStartCoords(curr);
+                visual.getPreviousPathway().updateEndCoords(prev);
 
-            // Add pathways
-            const pathway = new Pathway({
-                start: previousMarcherPage,
-                end: currentMarcherPage,
-                color,
-                strokeWidth,
-                dashed,
-                marcherId: previousMarcherPage.marcher_id,
-            });
-            createdPathways.push(pathway);
-            this.add(pathway);
-
-            // Add midpoints if the marcher moves
-            if (
-                previousMarcherPage.x !== currentMarcherPage.x ||
-                previousMarcherPage.y !== currentMarcherPage.y
-            ) {
-                const midpoint = new Midpoint({
-                    start: previousMarcherPage,
-                    end: currentMarcherPage,
-                    innerColor: "white",
-                    outerColor: color,
-                    marcherId: previousMarcherPage.marcher_id,
+                visual.getPreviousMidpoint().show();
+                visual.getPreviousMidpoint().updateCoords({
+                    x: (curr.x + prev.x) / 2,
+                    y: (curr.y + prev.y) / 2,
                 });
 
-                createdMidpoints.push(midpoint);
-                this.add(midpoint);
+                visual.getPreviousEndpoint().show();
+                visual.getPreviousEndpoint().updateCoords(prev);
+            } else {
+                visual.getPreviousPathway().hide();
+                visual.getPreviousMidpoint().hide();
+                visual.getPreviousEndpoint().hide();
+            }
+
+            // next pathway, midpoint, endpoint
+            if (nextPageId !== null && next && curr) {
+                visual.getNextPathway().show();
+                visual.getNextPathway().updateStartCoords(curr);
+                visual.getNextPathway().updateEndCoords(next);
+
+                visual.getNextMidpoint().show();
+                visual.getNextMidpoint().updateCoords({
+                    x: (curr.x + next.x) / 2,
+                    y: (curr.y + next.y) / 2,
+                });
+
+                visual.getNextEndpoint().show();
+                visual.getNextEndpoint().updateCoords(next);
+            } else {
+                visual.getNextPathway().hide();
+                visual.getNextMidpoint().hide();
+                visual.getNextEndpoint().hide();
             }
         });
-        this.requestRenderAll();
-        return [createdPathways, createdMidpoints];
+    };
+
+    /**
+     * Hides all pathway visuals for all marchers.
+     *
+     * @param marcherVisuals The marcher visual map
+     */
+    hideAllPathVisuals = ({
+        marcherVisuals,
+    }: {
+        marcherVisuals: MarcherVisualMap;
+    }) => {
+        Object.values(marcherVisuals).forEach((visual) => {
+            visual.getPreviousPathway().hide();
+            visual.getPreviousMidpoint().hide();
+            visual.getPreviousEndpoint().hide();
+            visual.getNextPathway().hide();
+            visual.getNextMidpoint().hide();
+            visual.getNextEndpoint().hide();
+        });
     };
 
     /**
@@ -1993,14 +1894,22 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /**
      * @param active true if you only want to return active (selected) objects. By default, false
-     * @returns A list of all StaticCanvasMarcher objects in the canvas
+     * @returns A list of all Endpoint objects in the canvas
      */
-    getStaticCanvasMarchers({
-        active = false,
-    }: { active?: boolean } = {}): StaticCanvasMarcher[] {
+    getEndpoints({ active = false }: { active?: boolean } = {}): Endpoint[] {
         return active
-            ? this.getActiveObjectsByType(StaticCanvasMarcher)
-            : this.getObjectsByType(StaticCanvasMarcher);
+            ? this.getActiveObjectsByType(Endpoint)
+            : this.getObjectsByType(Endpoint);
+    }
+
+    /**
+     * @param active true if you only want to return active (selected) objects. By default, false
+     * @returns A list of all Midpoint objects in the canvas
+     */
+    getMidpoints({ active = false }: { active?: boolean } = {}): Midpoint[] {
+        return active
+            ? this.getActiveObjectsByType(Midpoint)
+            : this.getObjectsByType(Midpoint);
     }
 
     /**

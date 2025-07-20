@@ -3,7 +3,7 @@ import { SectionAppearance } from "@/global/classes/SectionAppearance";
 
 interface SectionAppearanceStoreInterface {
     sectionAppearances: SectionAppearance[];
-    fetchSectionAppearances: () => Promise<void>;
+    fetchSectionAppearances: () => Promise<SectionAppearance[]>;
 }
 
 export const useSectionAppearanceStore =
@@ -15,8 +15,11 @@ export const useSectionAppearanceStore =
                 const appearances =
                     await SectionAppearance.getSectionAppearances();
                 set({ sectionAppearances: appearances });
+                return appearances;
             } catch (error) {
                 console.error("Error fetching section appearances:", error);
+                set({ sectionAppearances: [] });
+                return [];
             }
         },
     }));

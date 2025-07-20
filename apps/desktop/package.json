@@ -30,7 +30,7 @@
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest",
         "test:prepare": "pnpm rebuild better-sqlite3",
-        "test:run": "vitest run",
+        "test:run": "vitest run --silent",
         "test:coverage": "pnpm test:run -- --coverage",
         "test:clearCache": "vitest --clearCache",
         "e2e": "playwright test",

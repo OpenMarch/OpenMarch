@@ -5,8 +5,8 @@ import {
     useEffect,
     useState,
 } from "react";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { Marcher } from "@/global/classes/Marcher";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {
@@ -23,7 +23,7 @@ export function SelectedMarchersProvider({
 }: {
     children: ReactNode;
 }) {
-    const { marchers } = useMarcherStore();
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
 
     // Send the selected marcher to the electron main process

@@ -11,7 +11,7 @@ import MarcherPage from "@/global/classes/MarcherPage";
  * This structure allows for efficient retrieval and management of MarcherPages
  * based on both marcher and page identifiers.
  */
-export interface MarcherPageMap {
+export default interface MarcherPageMap {
     /** Maps marcher IDs to their respective MarcherPages */
     marcherPagesByMarcher: MarcherPageNestedMap;
 

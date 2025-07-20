@@ -4,6 +4,7 @@ import FieldProperties from "../FieldProperties";
 import MarcherPage from "../MarcherPage";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { DEFAULT_FIELD_THEME, rgbaToString } from "../FieldTheme";
+import { CoordinateLike } from "@/utilities/CoordinateActions";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.
@@ -132,12 +133,12 @@ export default class MarcherLine extends fabric.Line {
     };
 
     /**
-     * Evenly distributes marcherPages along the line from start to finish. Distributes in the order of the marcherPages array.
+     * Evenly distributes coordinates along the line from start to finish. Distributes in the order of the coordinates array.
      *
-     * @param marcherPages The marcherPages to distribute
-     * @returns The marcherPages distributed along the line from start to finish
+     * @param coordinates The coordinates to distribute
+     * @returns The coordinates distributed along the line from start to finish
      */
-    distributeMarchers = (marcherPages: MarcherPage[]): MarcherPage[] => {
+    distributeMarchers = <T extends CoordinateLike>(coordinates: T[]): T[] => {
         if (
             this.x1 === undefined ||
             this.y1 === undefined ||
@@ -147,25 +148,19 @@ export default class MarcherLine extends fabric.Line {
             console.error(
                 "Line coordinates not set. Cannot distribute marchers",
             );
-            return marcherPages;
+            return coordinates;
         }
-        const xDistance = (this.x2 - this.x1) / (marcherPages.length - 1);
-        const yDistance = (this.y2 - this.y1) / (marcherPages.length - 1);
+        const xDistance = (this.x2 - this.x1) / (coordinates.length - 1);
+        const yDistance = (this.y2 - this.y1) / (coordinates.length - 1);
 
         const x1 = this.x1;
         const y1 = this.y1;
 
-        const distributedMarcherPages = marcherPages.map(
-            (marcherPage, index) => {
-                return new MarcherPage({
-                    ...marcherPage,
-                    x: x1 + xDistance * index,
-                    y: y1 + yDistance * index,
-                });
-            },
-        );
-
-        return distributedMarcherPages;
+        return coordinates.map((coordinate, index) => ({
+            ...coordinate,
+            x: x1 + xDistance * index,
+            y: y1 + yDistance * index,
+        })) as T[];
     };
 
     /**

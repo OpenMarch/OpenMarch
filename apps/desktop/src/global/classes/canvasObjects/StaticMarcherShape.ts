@@ -201,9 +201,9 @@ export class StaticMarcherShape {
         });
         this.canvasMarchers.forEach((m) => {
             const newMarcherPage = {
-                ...m.marcherPage,
-                x: m.marcherPage.x + this.moveOffset.fromInitial.x,
-                y: m.marcherPage.y + this.moveOffset.fromInitial.y,
+                ...m.coordinate,
+                x: m.coordinate.x + this.moveOffset.fromInitial.x,
+                y: m.coordinate.y + this.moveOffset.fromInitial.y,
             };
             m.setMarcherCoords(newMarcherPage, false);
         });
@@ -329,7 +329,7 @@ export class StaticMarcherShape {
             const canvasMarcher = this.canvasMarchers[i];
             const newCoordinate = newCoordinates[i];
             const newMarcherPage = new MarcherPage({
-                ...canvasMarcher.marcherPage,
+                ...(canvasMarcher.coordinate as MarcherPage),
                 x: newCoordinate.x,
                 y: newCoordinate.y,
             });

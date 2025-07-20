@@ -1,6 +1,5 @@
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useShapePageStore } from "@/stores/ShapePageStore";
@@ -8,12 +7,13 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import StoreTab from "./StoreTab";
 
 const DevTools = () => {
     const alignmentEventState = useAlignmentEventStore();
     const marcherPageState = useMarcherPageStore();
-    const marcherState = useMarcherStore();
+    const { marchers, marcherVisuals } = useMarchersWithVisuals();
     const registeredActionsState = useRegisteredActionsStore();
     const sectionAppearanceState = useSectionAppearanceStore();
     const shapePageState = useShapePageStore();
@@ -27,7 +27,7 @@ const DevTools = () => {
             <h2 className="text-h4 text-accent mt-0 mb-4">DevTools</h2>
             <StoreTab title="AlignmentEventStore" data={alignmentEventState} />
             <StoreTab title="MarcherPageStore" data={marcherPageState} />
-            <StoreTab title="MarcherStore" data={marcherState} />
+            <StoreTab title="MarcherStore" data={marchers} />
             <StoreTab
                 title="RegisteredActionsStore"
                 data={registeredActionsState}

@@ -3,6 +3,7 @@ import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 import { UiSettings } from "@/stores/UiSettingsStore";
+import { marcherVisualsFromMarchers } from "@/global/classes/MarcherVisualGroup";
 /**
  * A separate mock file than global mocks since the canvas will likely be quite large and have many mocks.
  */
@@ -227,3 +228,4 @@ export const mockMarcherPages: MarcherPage[] = [
 ] as const;
 
 export const mockMarcherPageMap = marcherPageMapFromArray(mockMarcherPages);
+export const mockMarcherVisualMap = marcherVisualsFromMarchers(mockMarchers);

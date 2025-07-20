@@ -41,7 +41,7 @@ export interface UiSettings {
 }
 
 // Default settings that will be used if no localStorage data exists
-const defaultSettings: UiSettings = {
+export const defaultSettings: UiSettings = {
     isPlaying: false,
     lockX: false,
     lockY: false,

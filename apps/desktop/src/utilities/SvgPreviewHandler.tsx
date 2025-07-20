@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 
 /**
  * Handler for generating canvas preview SVGs on app close for launch page
@@ -15,7 +15,8 @@ const SvgPreviewHandler: React.FC = () => {
     // Get current values
     const { fieldProperties } = useFieldProperties() ?? {};
     const { marcherPages = {} } = useMarcherPageStore() ?? {};
-    const { marchers = [] } = useMarcherStore() ?? {};
+    const { marchers = [], marcherVisuals = {} } =
+        useMarchersWithVisuals() ?? {};
     const { pages = [] } = useTimingObjectsStore() ?? {};
 
     // Refs to store current values for use in the IPC handler
@@ -111,9 +112,9 @@ const SvgPreviewHandler: React.FC = () => {
                 svgCanvas = await createSvgCanvas(fieldProps, page);
 
                 await svgCanvas.renderMarchers({
+                    marcherVisuals: marcherVisuals,
                     marcherPages: marcherPages,
                     pageId: page.id,
-                    allMarchers: allMarchers,
                 });
 
                 return svgCanvas.toSVG();

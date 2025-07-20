@@ -3,9 +3,11 @@ import CanvasListeners from "./CanvasListeners";
 import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { Pathway } from "@/global/classes/canvasObjects/Pathway";
-import { Midpoint } from "@/global/classes/canvasObjects/Midpoint";
+import Pathway from "@/global/classes/canvasObjects/Pathway";
+import Midpoint from "@/global/classes/canvasObjects/Midpoint";
+import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import { rgbaToString } from "@/global/classes/FieldTheme";
+import MarcherPage from "@/global/classes/MarcherPage";
 
 /**
  * LineListeners is an extension of DefaultListeners that handles the creation of lines on the canvas
@@ -20,7 +22,7 @@ export default class LineListeners
     /** All of the pathways for the active line keyed by the marcherId */
     private _pathways = new Map<number, fabric.Object>();
     private _midpoints = new Map<number, fabric.Object>();
-    private _staticMarchers = new Map<number, fabric.Object>();
+    private _endpoints = new Map<number, fabric.Object>();
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         super({ canvas });
@@ -80,10 +82,10 @@ export default class LineListeners
         this._pathways.clear();
         this._midpoints.clear();
 
-        this._staticMarchers.forEach((staticMarcher) => {
+        this._endpoints.forEach((staticMarcher) => {
             this.canvas.remove(staticMarcher);
         });
-        this._staticMarchers.clear();
+        this._endpoints.clear();
     };
 
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
@@ -166,9 +168,9 @@ export default class LineListeners
         this.clearPathwaysAndStaticMarchers();
         const oldDots = this.canvas.eventMarchers.map((canvasMarcher) => {
             return {
-                ...canvasMarcher.marcherPage,
+                ...canvasMarcher.coordinate,
                 ...canvasMarcher.getMarcherCoords(),
-            };
+            } as MarcherPage;
         });
 
         // If the line has more of a vertical slope, sort from top to bottom
@@ -182,6 +184,7 @@ export default class LineListeners
         const coordinates = this._activeLine.getCoordinates();
         let sortingDirection: SortingDirectionEnum =
             SortingDirectionEnum.leftToRight;
+
         // check first that x1 and x2 aren't the same to avoid a divide by zero error
         if (coordinates.x1 === coordinates.x2) {
             if (coordinates.y1 < coordinates.y2)
@@ -223,11 +226,14 @@ export default class LineListeners
             return { ...dot, x: dot.x - gridOffset, y: dot.y - gridOffset };
         });
 
+        // Draw temporary pathways and midpoints from marchers to the active line
         let createdPathways: Pathway[] = [];
         let createdMidpoints: Midpoint[] = [];
+        let createdEndpoints: Endpoint[] = [];
+
         for (let i = 0; i < oldDots.length; i++) {
-            const [pathway, midpoint] =
-                this.canvas.renderIndividualPathwayAndMidpoint({
+            const [pathway, midpoint, endpoint] =
+                this.canvas.renderTemporaryPathVisuals({
                     start: oldDots[i],
                     end: offsetNewDots[i],
                     marcherId: oldDots[i].marcher_id,
@@ -239,6 +245,7 @@ export default class LineListeners
                 });
             createdPathways.push(pathway as Pathway);
             createdMidpoints.push(midpoint as Midpoint);
+            createdEndpoints.push(endpoint as Endpoint);
         }
         this._pathways = new Map<number, fabric.Object>(
             createdPathways.map((pathway) => [pathway.marcherId, pathway]),
@@ -246,20 +253,8 @@ export default class LineListeners
         this._midpoints = new Map<number, fabric.Object>(
             createdMidpoints.map((midpoint) => [midpoint.marcherId, midpoint]),
         );
-
-        const createdStaticMarchers =
-            this.canvas.renderIndividualStaticMarchers({
-                color: rgbaToString(this.canvas.fieldProperties.theme.tempPath),
-                intendedMarcherPages: offsetNewDots,
-                allMarchers: this.canvas.eventMarchers.map(
-                    (canvasMarcher) => canvasMarcher.marcherObj,
-                ),
-            });
-        this._staticMarchers = new Map<number, fabric.Object>(
-            createdStaticMarchers.map((staticMarcher) => [
-                staticMarcher.marcherId || -1,
-                staticMarcher,
-            ]),
+        this._endpoints = new Map<number, fabric.Object>(
+            createdEndpoints.map((endpoint) => [endpoint.marcherId, endpoint]),
         );
 
         this.canvas.sendCanvasMarchersToFront();

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import OpenMarchCanvas from "../OpenMarchCanvas";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
-import { falsyUiSettings } from "@/components/canvas/__test__/MocksForCanvas";
 import { ShapePath } from "../ShapePath";
 import { ShapePoint } from "../ShapePoint";
 import { VanillaPoint } from "../StaticMarcherShape";
+import { defaultSettings } from "@/stores/UiSettingsStore";
 
 describe.todo("StaticMarcherShape", () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -16,7 +16,7 @@ describe.todo("StaticMarcherShape", () => {
         canvas = new OpenMarchCanvas({
             canvasRef: null,
             fieldProperties: mockFieldProperties,
-            uiSettings: falsyUiSettings,
+            uiSettings: defaultSettings,
         });
     });
 });
