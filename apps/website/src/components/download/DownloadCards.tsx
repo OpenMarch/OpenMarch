@@ -115,7 +115,7 @@ export default function DownloadCards() {
                             </div>
                             <div className="flex gap-6">
                                 <a
-                                    href="https://donate.stripe.com/eVq28jcq13RXgAlbOPfbq00"
+                                    href="https://pay.openmarch.com/b/eVq28jcq13RXgAlbOPfbq00"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-full"
