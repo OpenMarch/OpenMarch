@@ -22,6 +22,7 @@ import clsx from "clsx";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
+import { useMetronome } from "@/hooks/useMetronome";
 
 /**
  * The field/stage UI of OpenMarch
@@ -43,7 +44,7 @@ export default function Canvas({
     const { isPlaying } = useIsPlaying()!;
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
-    const { pages } = useTimingObjectsStore()!;
+    const { pages, beats } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
@@ -73,6 +74,10 @@ export default function Canvas({
         marcherPages,
         selectedPage,
         setSelectedPage,
+    });
+
+    useMetronome({
+        beats: beats,
     });
 
     // Function to center and fit the canvas to the container
