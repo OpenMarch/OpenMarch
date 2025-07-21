@@ -107,6 +107,12 @@ export const marchers = sqliteTable(
     (table) => [unique().on(table.drill_prefix, table.drill_order)],
 );
 
+export const pathways = sqliteTable("pathways", {
+    id: integer().primaryKey(),
+    svg_path: text().notNull(),
+    notes: text(),
+});
+
 export const marcher_pages = sqliteTable(
     "marcher_pages",
     {
@@ -124,10 +130,17 @@ export const marcher_pages = sqliteTable(
         updated_at: text()
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-        svg_path: text(),
+        svg_path: integer().references(() => pathways.id, {
+            onDelete: "set null",
+        }),
+        svg_position: real(),
         notes: text(),
     },
     (table) => [
+        check(
+            "marcher_pages_svg_path_position_check",
+            sql`svg_position >= 0 AND svg_position <= 1`,
+        ),
         index("index_marcher_pages_on_page_id").on(table.page_id),
         index("index_marcher_pages_on_marcher_id").on(table.marcher_id),
         unique().on(table.marcher_id, table.page_id),
@@ -149,10 +162,17 @@ export const midsets = sqliteTable(
             .default("sql`(CURRENT_TIMESTAMP)`")
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-        svg_path: text(),
+        svg_path: integer().references(() => pathways.id, {
+            onDelete: "set null",
+        }),
+        svg_position: real(),
         notes: text(),
     },
     (table) => [
+        check(
+            "midsets_svg_path_position_check",
+            sql`svg_position >= 0 AND svg_position <= 1`,
+        ),
         check("placement_check", sql`placement > 0 AND placement < 1`),
         unique().on(table.page_id, table.placement),
     ],
