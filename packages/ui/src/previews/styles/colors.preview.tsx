@@ -2,7 +2,7 @@ export const PreviewProps = {
     title: "Colors",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <div className="bg-fg-1 border-stroke rounded-6 flex w-[16rem] flex-col gap-16 border p-16">
             Colors

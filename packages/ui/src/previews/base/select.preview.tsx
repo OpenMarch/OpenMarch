@@ -14,7 +14,7 @@ export const PreviewProps = {
     title: "Select",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <div className="flex flex-col gap-32">
             <Select>

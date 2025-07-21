@@ -4,7 +4,7 @@ export const PreviewProps = {
     title: "Radio Group",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <RadioGroup>
             <RadioGroupItem value="option1">Option 1</RadioGroupItem>

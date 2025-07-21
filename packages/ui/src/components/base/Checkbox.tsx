@@ -4,7 +4,7 @@ import { CheckIcon } from "@phosphor-icons/react";
 
 export type CheckboxProps = RadixCheckboxProps;
 
-export const Checkbox = ({ ...props }: RadixCheckboxProps) => {
+export const Checkbox = ({ ..._props }: RadixCheckboxProps) => {
     return (
         <RadixCheckbox.Root
             className="rounded-6 border-stroke bg-fg-2 data-[state='checked']:bg-accent flex size-[28px] min-h-[28px] min-w-[28px] items-center justify-center border transition-colors duration-150 ease-out data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50"

@@ -11,7 +11,7 @@ export const PreviewProps = {
     title: "Dialog",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <Dialog>
             <DialogTrigger>

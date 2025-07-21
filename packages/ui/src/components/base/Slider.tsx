@@ -2,7 +2,7 @@ import React from "react";
 import * as RadixSlider from "@radix-ui/react-slider";
 import { type SliderProps } from "@radix-ui/react-slider";
 
-export function Slider({ ...props }: SliderProps) {
+export function Slider({ ..._props }: SliderProps) {
     return (
         <RadixSlider.Root
             className="relative flex h-5 w-[200px] touch-none items-center select-none"

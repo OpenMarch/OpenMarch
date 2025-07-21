@@ -4,6 +4,6 @@ export const PreviewProps = {
     title: "Skeleton",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return <Skeleton />;
 }
