@@ -4,7 +4,7 @@ export const PreviewProps = {
     title: "Toggle Group",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <ToggleGroup>
             <ToggleGroupItem value="1">Option 1</ToggleGroupItem>

@@ -2,7 +2,7 @@ export const PreviewProps = {
     title: "Materials",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <div className="w-full">
             <p>BG 1</p>
