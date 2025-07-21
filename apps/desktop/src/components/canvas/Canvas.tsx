@@ -44,7 +44,7 @@ export default function Canvas({
     const { isPlaying } = useIsPlaying()!;
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
-    const { pages, beats } = useTimingObjectsStore()!;
+    const { pages, beats, measures } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
@@ -78,6 +78,7 @@ export default function Canvas({
 
     useMetronome({
         beats: beats,
+        measures: measures,
     });
 
     // Function to center and fit the canvas to the container

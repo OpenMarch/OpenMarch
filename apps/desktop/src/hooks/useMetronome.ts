@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import Beat from "@/global/classes/Beat";
+import Measure from "@/global/classes/Measure";
 import { useAudioStore } from "@/stores/AudioStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 
 interface UseMetronomeProps {
     beats: Beat[];
+    measures: Measure[];
 }
 
 /**
@@ -43,19 +45,42 @@ function playClick(
 }
 
 /**
+ * Standard beat click sound
+ */
+function beatClick(ctx: AudioContext) {
+    playClick(ctx, "sawtooth", 0.1, 2600, 0.04);
+    playClick(ctx, "triangle", 0.3, 2600, 0.04);
+    playClick(ctx, "sine", 0.8, 2600, 0.07);
+}
+
+/**
+ * Standard measure start click sound
+ */
+function measureClick(ctx: AudioContext) {
+    playClick(ctx, "sawtooth", 0.1, 3000, 0.04);
+    playClick(ctx, "triangle", 0.3, 3000, 0.04);
+    playClick(ctx, "sine", 0.8, 3000, 0.07);
+}
+
+/**
  * useMetronome hook
  * Plays a click sound whenever a new beat is reached in the audio playback.
  */
-export const useMetronome = ({ beats }: UseMetronomeProps) => {
+export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
     const { audio } = useAudioStore();
     const { isPlaying } = useIsPlaying()!;
     const lastBeatIndexRef = useRef<number | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
 
-    // Sorted list of beats by timestamp for efficient lookup
+    // Sort list of beats and measures by timestamp
     const sortedBeats = useMemo(() => {
         return [...beats].sort((a, b) => a.timestamp - b.timestamp);
     }, [beats]);
+
+    // Get list of beat_ids that are the start of measures
+    const measureStartBeatIds = useMemo(() => {
+        return measures.map((m) => m.startBeat.id);
+    }, [measures]);
 
     /**
      * Find the current beat index given the current audio time.
@@ -101,9 +126,17 @@ export const useMetronome = ({ beats }: UseMetronomeProps) => {
                 currentBeatIndex !== lastBeatIndexRef.current &&
                 audioContextRef.current !== null
             ) {
-                playClick(audioContextRef.current, "sawtooth", 0.1, 2600, 0.04);
-                playClick(audioContextRef.current, "triangle", 0.3, 2600, 0.04);
-                playClick(audioContextRef.current, "sine", 0.8, 2600, 0.07);
+                // check if the current beat is a measure start and play click
+                if (
+                    measureStartBeatIds.includes(
+                        sortedBeats[currentBeatIndex].id,
+                    )
+                ) {
+                    measureClick(audioContextRef.current);
+                } else {
+                    beatClick(audioContextRef.current);
+                }
+
                 lastBeatIndexRef.current = currentBeatIndex;
             }
 
