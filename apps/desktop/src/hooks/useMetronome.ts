@@ -3,6 +3,9 @@ import Beat from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
 import { useAudioStore } from "@/stores/AudioStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useMetronomeStore } from "@/stores/MetronomeStore";
+
+const BEAT_TOLERANCE = 0.02; // How far past the beat timestamp we can be to still consider it the current beat
 
 interface UseMetronomeProps {
     beats: Beat[];
@@ -69,6 +72,7 @@ function measureClick(ctx: AudioContext) {
 export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
     const { audio } = useAudioStore();
     const { isPlaying } = useIsPlaying()!;
+    const isMetronomeOn = useMetronomeStore((state) => state.isMetronomeOn);
     const lastBeatIndexRef = useRef<number | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -115,7 +119,7 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
         let animationFrameId: number | null = null;
 
         const tick = () => {
-            if (!isPlaying || !audio) return;
+            if (!isPlaying || !audio || !isMetronomeOn) return;
 
             const currentTime = audio.currentTime; // seconds
             const currentBeatIndex = getCurrentBeatIndex(currentTime);
@@ -124,7 +128,9 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
             if (
                 currentBeatIndex !== -1 &&
                 currentBeatIndex !== lastBeatIndexRef.current &&
-                audioContextRef.current !== null
+                audioContextRef.current !== null &&
+                currentTime - sortedBeats[currentBeatIndex].timestamp <=
+                    BEAT_TOLERANCE
             ) {
                 // check if the current beat is a measure start and play click
                 if (
@@ -156,7 +162,14 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
                 cancelAnimationFrame(animationFrameId);
             }
         };
-    }, [isPlaying, audio, sortedBeats, getCurrentBeatIndex]);
+    }, [
+        isPlaying,
+        audio,
+        sortedBeats,
+        getCurrentBeatIndex,
+        measureStartBeatIds,
+        isMetronomeOn,
+    ]);
 
     return {};
 };
