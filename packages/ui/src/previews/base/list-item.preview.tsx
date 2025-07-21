@@ -11,6 +11,6 @@ export const PreviewProps = {
     ],
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return <ListItem {...props}>List Item</ListItem>;
 }
