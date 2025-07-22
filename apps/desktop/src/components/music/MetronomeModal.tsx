@@ -14,13 +14,8 @@ import {
 } from "@openmarch/ui";
 import { Slider } from "@openmarch/ui";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
+import { BEAT_STYLES } from "@/hooks/useMetronome";
 import { T } from "@tolgee/react";
-
-const BEAT_STYLES = [
-    { value: "default", label: "Default" },
-    { value: "sharp", label: "Sharp" },
-    { value: "smooth", label: "Smooth" },
-];
 
 export default function MetronomeModal({
     label = <MetronomeIcon size={24} />,
@@ -41,13 +36,17 @@ export default function MetronomeModal({
 
 function MetronomeModalContents() {
     const { toggleOpen } = useSidebarModalStore();
-    const { isMetronomeOn, setMetronomeOn } = useMetronomeStore();
-    // Accent first beat state (implement in store if needed)
-    const [accentFirstBeat, setAccentFirstBeat] = useState(true);
-    // Volume state (implement in store if needed)
-    const [volume, setVolume] = useState(80);
-    // Beat style state (implement in store if needed)
-    const [beatStyle, setBeatStyle] = useState("default");
+    const {
+        isMetronomeOn,
+        setMetronomeOn,
+        accentFirstBeat,
+        setAccentFirstBeat,
+        volume,
+        setVolume,
+        beatStyle,
+        setBeatStyle,
+    } = useMetronomeStore();
+    const styleKeys = Object.keys(BEAT_STYLES);
 
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
@@ -107,21 +106,15 @@ function MetronomeModalContents() {
                         <Select value={beatStyle} onValueChange={setBeatStyle}>
                             <SelectTriggerButton
                                 label={
-                                    BEAT_STYLES.find(
-                                        (s) => s.value === beatStyle,
-                                    )?.label || "Select"
+                                    BEAT_STYLES[beatStyle]?.label || "Select"
                                 }
                             >
-                                {BEAT_STYLES.find((s) => s.value === beatStyle)
-                                    ?.label || "Select"}
+                                {BEAT_STYLES[beatStyle]?.label || "Select"}
                             </SelectTriggerButton>
                             <SelectContent>
-                                {BEAT_STYLES.map((style) => (
-                                    <SelectItem
-                                        key={style.value}
-                                        value={style.value}
-                                    >
-                                        {style.label}
+                                {styleKeys.map((key) => (
+                                    <SelectItem key={key} value={key}>
+                                        {BEAT_STYLES[key].label}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

@@ -5,11 +5,80 @@ import { useAudioStore } from "@/stores/AudioStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 
-const BEAT_TOLERANCE = 0.02; // How far past the beat timestamp we can be to still consider it the current beat
+// How far past the beat timestamp we can be to still consider it the current beat
+const BEAT_TOLERANCE = 0.02;
 
-interface UseMetronomeProps {
-    beats: Beat[];
-    measures: Measure[];
+/**
+ * Available beat styles for the metronome.
+ * Currently includes:
+ * - default: Standard click sound
+ * - sharp: Sharp click sound
+ * - smooth: Smooth click sound
+ */
+export const BEAT_STYLES: Record<
+    string,
+    {
+        beat: (ctx: AudioContext, volume: number) => void;
+        measure: (ctx: AudioContext, volume: number) => void;
+        label: string;
+    }
+> = {
+    default: {
+        beat: beatClickDefault,
+        measure: measureClickDefault,
+        label: "Standard",
+    },
+    sharp: {
+        beat: sharpBeatClick,
+        measure: sharpMeasureClick,
+        label: "Sharp",
+    },
+    smooth: {
+        beat: smoothBeatClick,
+        measure: smoothMeasureClick,
+        label: "Smooth",
+    },
+};
+
+/**
+ * Standard beat and measure click sound
+ */
+function beatClickDefault(ctx: AudioContext, volume: number) {
+    playClick(ctx, "sawtooth", 0.1 * volume, 2600, 0.04);
+    playClick(ctx, "triangle", 0.3 * volume, 2600, 0.04);
+    playClick(ctx, "sine", 0.8 * volume, 2600, 0.07);
+}
+function measureClickDefault(ctx: AudioContext, volume: number) {
+    playClick(ctx, "sawtooth", 0.1 * volume, 3000, 0.04);
+    playClick(ctx, "triangle", 0.3 * volume, 3000, 0.04);
+    playClick(ctx, "sine", 0.8 * volume, 3000, 0.07);
+}
+
+/**
+ * Sharp beat and measure click sound
+ */
+function sharpBeatClick(ctx: AudioContext, volume: number) {
+    playClick(ctx, "sawtooth", 0.15 * volume, 3200, 0.02);
+    playClick(ctx, "triangle", 0.4 * volume, 3200, 0.05);
+}
+function sharpMeasureClick(ctx: AudioContext, volume: number) {
+    playClick(ctx, "sawtooth", 0.15 * volume, 3500, 0.02);
+    playClick(ctx, "triangle", 0.4 * volume, 3500, 0.05);
+}
+
+/**
+ * Smooth beat and measure click sound
+ */
+function smoothBeatClick(ctx: AudioContext, volume: number) {
+    playClick(ctx, "sine", volume, 2000, 0.1);
+}
+function smoothMeasureClick(ctx: AudioContext, volume: number) {
+    playClick(ctx, "sine", volume, 2400, 0.1);
+}
+
+// Adjust volume to a range suitable for audio context
+function volumeAdjust(volume: number): number {
+    return (volume * 2) / 100;
 }
 
 /**
@@ -48,21 +117,11 @@ function playClick(
 }
 
 /**
- * Standard beat click sound
+ * Props for the useMetronome hook
  */
-function beatClick(ctx: AudioContext) {
-    playClick(ctx, "sawtooth", 0.1, 2600, 0.04);
-    playClick(ctx, "triangle", 0.3, 2600, 0.04);
-    playClick(ctx, "sine", 0.8, 2600, 0.07);
-}
-
-/**
- * Standard measure start click sound
- */
-function measureClick(ctx: AudioContext) {
-    playClick(ctx, "sawtooth", 0.1, 3000, 0.04);
-    playClick(ctx, "triangle", 0.3, 3000, 0.04);
-    playClick(ctx, "sine", 0.8, 3000, 0.07);
+interface UseMetronomeProps {
+    beats: Beat[];
+    measures: Measure[];
 }
 
 /**
@@ -72,7 +131,12 @@ function measureClick(ctx: AudioContext) {
 export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
     const { audio } = useAudioStore();
     const { isPlaying } = useIsPlaying()!;
+
     const isMetronomeOn = useMetronomeStore((state) => state.isMetronomeOn);
+    const accentFirstBeat = useMetronomeStore((state) => state.accentFirstBeat);
+    const beatStyle = useMetronomeStore((state) => state.beatStyle);
+    const volume = volumeAdjust(useMetronomeStore((state) => state.volume));
+
     const lastBeatIndexRef = useRef<number | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
 
@@ -136,11 +200,18 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
                 if (
                     measureStartBeatIds.includes(
                         sortedBeats[currentBeatIndex].id,
-                    )
+                    ) &&
+                    accentFirstBeat
                 ) {
-                    measureClick(audioContextRef.current);
+                    BEAT_STYLES[beatStyle].measure(
+                        audioContextRef.current,
+                        volume,
+                    );
                 } else {
-                    beatClick(audioContextRef.current);
+                    BEAT_STYLES[beatStyle].beat(
+                        audioContextRef.current,
+                        volume,
+                    );
                 }
 
                 lastBeatIndexRef.current = currentBeatIndex;
@@ -169,6 +240,9 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
         getCurrentBeatIndex,
         measureStartBeatIds,
         isMetronomeOn,
+        accentFirstBeat,
+        volume,
+        beatStyle,
     ]);
 
     return {};
