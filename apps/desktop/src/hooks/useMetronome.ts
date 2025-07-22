@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Beat from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
 import { useAudioStore } from "@/stores/AudioStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 
-// How far past the beat timestamp we can be to still consider it the current beat
-const BEAT_TOLERANCE = 0.02;
+// Constants for metronome scheduling
+const SCHEDULE_AHEAD_TIME = 0.1; // s
+const SCHEDULER_INTERVAL = 25; // ms
 
 /**
  * Available beat styles for the metronome.
@@ -18,8 +19,8 @@ const BEAT_TOLERANCE = 0.02;
 export const BEAT_STYLES: Record<
     string,
     {
-        beat: (ctx: AudioContext, volume: number) => void;
-        measure: (ctx: AudioContext, volume: number) => void;
+        beat: (ctx: AudioContext, volume: number, when: number) => void;
+        measure: (ctx: AudioContext, volume: number, when: number) => void;
         labelKey: string;
     }
 > = {
@@ -43,37 +44,37 @@ export const BEAT_STYLES: Record<
 /**
  * Standard beat and measure click sound
  */
-function beatClickDefault(ctx: AudioContext, volume: number) {
-    playClick(ctx, "sawtooth", 0.1 * volume, 2600, 0.04);
-    playClick(ctx, "triangle", 0.3 * volume, 2600, 0.04);
-    playClick(ctx, "sine", 0.8 * volume, 2600, 0.07);
+function beatClickDefault(ctx: AudioContext, volume: number, when: number) {
+    playClick(ctx, "sawtooth", 0.1 * volume, 2600, 0.04, when);
+    playClick(ctx, "triangle", 0.3 * volume, 2600, 0.04, when);
+    playClick(ctx, "sine", 0.8 * volume, 2600, 0.07, when);
 }
-function measureClickDefault(ctx: AudioContext, volume: number) {
-    playClick(ctx, "sawtooth", 0.1 * volume, 3000, 0.04);
-    playClick(ctx, "triangle", 0.3 * volume, 3000, 0.04);
-    playClick(ctx, "sine", 0.8 * volume, 3000, 0.07);
+function measureClickDefault(ctx: AudioContext, volume: number, when: number) {
+    playClick(ctx, "sawtooth", 0.1 * volume, 3000, 0.04, when);
+    playClick(ctx, "triangle", 0.3 * volume, 3000, 0.04, when);
+    playClick(ctx, "sine", 0.8 * volume, 3000, 0.07, when);
 }
 
 /**
  * Sharp beat and measure click sound
  */
-function sharpBeatClick(ctx: AudioContext, volume: number) {
-    playClick(ctx, "sawtooth", 0.15 * volume, 3200, 0.02);
-    playClick(ctx, "triangle", 0.4 * volume, 3200, 0.05);
+function sharpBeatClick(ctx: AudioContext, volume: number, when: number) {
+    playClick(ctx, "sawtooth", 0.15 * volume, 3200, 0.02, when);
+    playClick(ctx, "triangle", 0.4 * volume, 3200, 0.05, when);
 }
-function sharpMeasureClick(ctx: AudioContext, volume: number) {
-    playClick(ctx, "sawtooth", 0.15 * volume, 3500, 0.02);
-    playClick(ctx, "triangle", 0.4 * volume, 3500, 0.05);
+function sharpMeasureClick(ctx: AudioContext, volume: number, when: number) {
+    playClick(ctx, "sawtooth", 0.15 * volume, 3500, 0.02, when);
+    playClick(ctx, "triangle", 0.4 * volume, 3500, 0.05, when);
 }
 
 /**
  * Smooth beat and measure click sound
  */
-function smoothBeatClick(ctx: AudioContext, volume: number) {
-    playClick(ctx, "sine", volume, 2000, 0.1);
+function smoothBeatClick(ctx: AudioContext, volume: number, when: number) {
+    playClick(ctx, "sine", volume, 2000, 0.1, when);
 }
-function smoothMeasureClick(ctx: AudioContext, volume: number) {
-    playClick(ctx, "sine", volume, 2400, 0.1);
+function smoothMeasureClick(ctx: AudioContext, volume: number, when: number) {
+    playClick(ctx, "sine", volume, 2400, 0.1, when);
 }
 
 // Adjust volume to a range suitable for audio context
@@ -88,27 +89,30 @@ function volumeAdjust(volume: number): number {
  * @param volume Volume of the click (default 1)
  * @param freq Frequency of the click (default 2715hz)
  * @param duration Duration of the click in seconds (default 0.07s)
+ * @param when Time to play the click, defaults to current time
  */
 function playClick(
     ctx: AudioContext,
-    type = "triangle",
-    volume = 1,
-    freq = 2715,
-    duration = 0.07,
+    type: OscillatorType = "triangle",
+    volume: number = 1,
+    freq: number = 2715,
+    duration: number = 0.07,
+    when: number,
 ) {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    osc.type = type as OscillatorType;
+    osc.type = type;
     osc.frequency.value = freq;
 
     // fade out
-    gain.gain.setValueAtTime(volume, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duration);
+    const startTime = when ?? ctx.currentTime;
+    gain.gain.setValueAtTime(volume, startTime);
+    gain.gain.linearRampToValueAtTime(0, startTime + duration);
 
     osc.connect(gain).connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
 
     osc.onended = () => {
         osc.disconnect();
@@ -128,7 +132,10 @@ interface UseMetronomeProps {
  * useMetronome hook
  * Plays a click sound whenever a new beat is reached in the audio playback.
  */
-export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
+export const useMetronome = ({
+    beats,
+    measures,
+}: UseMetronomeProps): Record<string, never> => {
     const { audio } = useAudioStore();
     const { isPlaying } = useIsPlaying()!;
 
@@ -138,34 +145,14 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
     const beatStyle = useMetronomeStore((state) => state.beatStyle);
     const volume = volumeAdjust(useMetronomeStore((state) => state.volume));
 
-    const lastBeatIndexRef = useRef<number | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
+    const schedulerTimerRef = useRef<number | null>(null);
+    const nextBeatIndexRef = useRef<number>(0);
+    const scheduledBeatTimestampsRef = useRef<Set<number>>(new Set());
 
-    // Sort list of beats and measures by timestamp
-    const sortedBeats = useMemo(() => {
-        return [...beats].sort((a, b) => a.timestamp - b.timestamp);
-    }, [beats]);
-
-    // Get list of beat_ids that are the start of measures
-    const measureStartBeatIds = useMemo(() => {
-        return measures.map((m) => m.startBeat.id);
-    }, [measures]);
-
-    /**
-     * Find the current beat index given the current audio time.
-     * Returns the index of the beat whose timestamp is <= current time.
-     */
-    const getCurrentBeatIndex = useCallback(
-        (currentTime: number) => {
-            for (let i = sortedBeats.length - 1; i >= 0; i--) {
-                if (currentTime >= sortedBeats[i].timestamp) {
-                    return i;
-                }
-            }
-            return -1;
-        },
-        [sortedBeats],
-    );
+    // Sort beats by timestamp once
+    const sortedBeatsRef = useRef<Beat[]>([]);
+    const measureStartBeatIdsRef = useRef<number[]>([]);
 
     // Create the audio context when the hook is mounted
     useEffect(() => {
@@ -173,85 +160,128 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
             audioContextRef.current = new (window.AudioContext ||
                 (window as any).webkitAudioContext)();
         }
+        sortedBeatsRef.current = [...beats]
+            .filter((b) => b.duration > 0)
+            .sort((a, b) => a.timestamp - b.timestamp);
+        measureStartBeatIdsRef.current = measures.map((m) => m.startBeat.id);
+
         return () => {
             audioContextRef.current?.close();
             audioContextRef.current = null;
         };
-    }, []);
+    }, [beats, measures]);
 
     // Handle playing clicks on beat
     useEffect(() => {
-        let animationFrameId: number | null = null;
-
-        const tick = () => {
-            if (!isPlaying || !audio || !isMetronomeOn) return;
-
-            const currentTime = audio.currentTime; // seconds
-            const currentBeatIndex = getCurrentBeatIndex(currentTime);
-
-            // Play click when a new beat is reached
-            if (
-                currentBeatIndex !== -1 &&
-                currentBeatIndex !== lastBeatIndexRef.current &&
-                audioContextRef.current !== null &&
-                currentTime - sortedBeats[currentBeatIndex].timestamp <=
-                    BEAT_TOLERANCE
-            ) {
-                // check if the current beat is a measure start and play click
-                if (
-                    measureStartBeatIds.includes(
-                        sortedBeats[currentBeatIndex].id,
-                    )
-                ) {
-                    if (accentFirstBeat) {
-                        BEAT_STYLES[beatStyle].measure(
-                            audioContextRef.current,
-                            volume,
-                        );
-                    } else {
-                        BEAT_STYLES[beatStyle].beat(
-                            audioContextRef.current,
-                            volume,
-                        );
-                    }
-                } else if (!firstBeatOnly) {
-                    BEAT_STYLES[beatStyle].beat(
-                        audioContextRef.current,
-                        volume,
-                    );
-                }
-
-                lastBeatIndexRef.current = currentBeatIndex;
+        if (!isPlaying || !audio || !isMetronomeOn) {
+            if (schedulerTimerRef.current) {
+                clearInterval(schedulerTimerRef.current);
+                schedulerTimerRef.current = null;
             }
-
-            animationFrameId = requestAnimationFrame(tick);
-        };
-
-        // Start the animation loop if playing
-        if (isPlaying) {
-            animationFrameId = requestAnimationFrame(tick);
-        } else {
-            lastBeatIndexRef.current = null;
+            nextBeatIndexRef.current = 0;
+            scheduledBeatTimestampsRef.current.clear();
+            return;
         }
 
-        // Cleanup function to cancel the animation frame
-        return () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
+        const beatsArr = sortedBeatsRef.current;
+        let nextIdx = beatsArr.findIndex(
+            (b) => b.timestamp >= audio.currentTime,
+        );
+        if (nextIdx === -1) nextIdx = beatsArr.length;
+        nextBeatIndexRef.current = nextIdx;
+        scheduledBeatTimestampsRef.current.clear();
+
+        // Schedule the new beat(s)
+        function scheduler() {
+            if (
+                !audioContextRef.current ||
+                !audio ||
+                !isMetronomeOn ||
+                !isPlaying
+            )
+                return;
+
+            const audioCtx = audioContextRef.current as AudioContext;
+            const ctxCurrentTime = audioCtx.currentTime;
+            const audioCurrentTime = audio.currentTime;
+            const beatsArr = sortedBeatsRef.current;
+
+            while (nextBeatIndexRef.current < beatsArr.length) {
+                const beat = beatsArr[nextBeatIndexRef.current];
+                const beatPlayTime =
+                    ctxCurrentTime + (beat.timestamp - audioCurrentTime);
+
+                if (beatPlayTime < ctxCurrentTime + SCHEDULE_AHEAD_TIME) {
+                    // Prevent beats that are too close together
+                    if (
+                        !scheduledBeatTimestampsRef.current.has(beat.timestamp)
+                    ) {
+                        const isMeasureStart =
+                            measureStartBeatIdsRef.current.includes(beat.id);
+
+                        if (isMeasureStart && accentFirstBeat) {
+                            // Measure click
+                            BEAT_STYLES[beatStyle].measure(
+                                audioCtx,
+                                volume,
+                                beatPlayTime,
+                            );
+                        } else if (!firstBeatOnly || isMeasureStart) {
+                            // Beat click
+                            BEAT_STYLES[beatStyle].beat(
+                                audioCtx,
+                                volume,
+                                beatPlayTime,
+                            );
+                        }
+
+                        scheduledBeatTimestampsRef.current.add(beat.timestamp);
+                    }
+
+                    nextBeatIndexRef.current++;
+                } else {
+                    break;
+                }
             }
+        }
+
+        // Set up the scheduler to run at regular intervals
+        schedulerTimerRef.current = window.setInterval(
+            scheduler,
+            SCHEDULER_INTERVAL,
+        );
+        scheduler();
+
+        // Cleanup function to clear the scheduler
+        return () => {
+            if (schedulerTimerRef.current) {
+                clearInterval(schedulerTimerRef.current);
+                schedulerTimerRef.current = null;
+            }
+            nextBeatIndexRef.current = 0;
+            scheduledBeatTimestampsRef.current.clear();
         };
     }, [
         isPlaying,
-        audio,
-        sortedBeats,
-        getCurrentBeatIndex,
-        measureStartBeatIds,
         isMetronomeOn,
         accentFirstBeat,
         firstBeatOnly,
-        volume,
         beatStyle,
+        volume,
+        audio,
     ]);
+
+    // Update the next beat index when the audio current time changes
+    useEffect(() => {
+        if (!audio || !isPlaying || !isMetronomeOn) return;
+        const beatsArr = sortedBeatsRef.current;
+        nextBeatIndexRef.current = beatsArr.findIndex(
+            (b) => b.timestamp >= audio.currentTime,
+        );
+        if (nextBeatIndexRef.current === -1)
+            nextBeatIndexRef.current = beatsArr.length;
+        scheduledBeatTimestampsRef.current.clear();
+    }, [audio?.currentTime]);
 
     return {};
 };
