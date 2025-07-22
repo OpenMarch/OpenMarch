@@ -20,23 +20,23 @@ export const BEAT_STYLES: Record<
     {
         beat: (ctx: AudioContext, volume: number) => void;
         measure: (ctx: AudioContext, volume: number) => void;
-        label: string;
+        labelKey: string;
     }
 > = {
     default: {
         beat: beatClickDefault,
         measure: measureClickDefault,
-        label: "Standard",
+        labelKey: "music.standard",
     },
     sharp: {
         beat: sharpBeatClick,
         measure: sharpMeasureClick,
-        label: "Sharp",
+        labelKey: "music.sharp",
     },
     smooth: {
         beat: smoothBeatClick,
         measure: smoothMeasureClick,
-        label: "Smooth",
+        labelKey: "music.smooth",
     },
 };
 
@@ -86,7 +86,7 @@ function volumeAdjust(volume: number): number {
  * @param ctx Reference to the AudioContext
  * @param type Type of oscillator to use (default "triangle")
  * @param volume Volume of the click (default 1)
- * @param freq Frequency of the click (default 2600hz)
+ * @param freq Frequency of the click (default 2715hz)
  * @param duration Duration of the click in seconds (default 0.07s)
  */
 function playClick(
@@ -134,6 +134,7 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
 
     const isMetronomeOn = useMetronomeStore((state) => state.isMetronomeOn);
     const accentFirstBeat = useMetronomeStore((state) => state.accentFirstBeat);
+    const firstBeatOnly = useMetronomeStore((state) => state.firstBeatOnly);
     const beatStyle = useMetronomeStore((state) => state.beatStyle);
     const volume = volumeAdjust(useMetronomeStore((state) => state.volume));
 
@@ -200,14 +201,20 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
                 if (
                     measureStartBeatIds.includes(
                         sortedBeats[currentBeatIndex].id,
-                    ) &&
-                    accentFirstBeat
+                    )
                 ) {
-                    BEAT_STYLES[beatStyle].measure(
-                        audioContextRef.current,
-                        volume,
-                    );
-                } else {
+                    if (accentFirstBeat) {
+                        BEAT_STYLES[beatStyle].measure(
+                            audioContextRef.current,
+                            volume,
+                        );
+                    } else {
+                        BEAT_STYLES[beatStyle].beat(
+                            audioContextRef.current,
+                            volume,
+                        );
+                    }
+                } else if (!firstBeatOnly) {
                     BEAT_STYLES[beatStyle].beat(
                         audioContextRef.current,
                         volume,
@@ -241,6 +248,7 @@ export const useMetronome = ({ beats, measures }: UseMetronomeProps) => {
         measureStartBeatIds,
         isMetronomeOn,
         accentFirstBeat,
+        firstBeatOnly,
         volume,
         beatStyle,
     ]);

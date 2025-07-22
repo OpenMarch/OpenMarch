@@ -7,6 +7,9 @@ interface MetronomeStore {
     accentFirstBeat: boolean;
     setAccentFirstBeat: (accent: boolean) => void;
 
+    firstBeatOnly: boolean;
+    setFirstBeatOnly: (firstBeatOnly: boolean) => void;
+
     volume: number;
     setVolume: (volume: number) => void;
 
@@ -18,10 +21,13 @@ interface MetronomeStore {
 
 export const useMetronomeStore = create<MetronomeStore>((set) => ({
     isMetronomeOn: true,
-    accentFirstBeat: true,
-
     setMetronomeOn: (on) => set({ isMetronomeOn: on }),
+
+    accentFirstBeat: true,
     setAccentFirstBeat: (accent) => set({ accentFirstBeat: accent }),
+
+    firstBeatOnly: false,
+    setFirstBeatOnly: (firstBeatOnly) => set({ firstBeatOnly }),
 
     volume: 50,
     setVolume: (volume) => set({ volume }),

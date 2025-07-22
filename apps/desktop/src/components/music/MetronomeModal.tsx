@@ -41,6 +41,8 @@ function MetronomeModalContents() {
         setMetronomeOn,
         accentFirstBeat,
         setAccentFirstBeat,
+        firstBeatOnly,
+        setFirstBeatOnly,
         volume,
         setVolume,
         beatStyle,
@@ -52,7 +54,9 @@ function MetronomeModalContents() {
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             {/* Header */}
             <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">Metronome</h4>
+                <h4 className="text-h4 leading-none">
+                    <T keyName="music.metronome" />
+                </h4>
                 <button
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
@@ -64,26 +68,43 @@ function MetronomeModalContents() {
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
                 {/* Controls */}
                 <div className="flex flex-col gap-10">
-                    <h5 className="text-h5">General</h5>
+                    <h5 className="text-h5">
+                        <T keyName="music.general" />
+                    </h5>
                     <div className="text-body text-text/80 flex w-full items-center justify-between">
-                        <span className="text-body">On/Off</span>
+                        <span className="text-body">
+                            <T keyName="music.onOff" />
+                        </span>
                         <Switch
                             checked={isMetronomeOn}
                             onCheckedChange={setMetronomeOn}
                         />
                     </div>
                     <div className="text-body text-text/80 flex w-full items-center justify-between">
-                        <span className="text-body">Accent first beat</span>
+                        <span className="text-body">
+                            <T keyName="music.accent" />
+                        </span>
                         <Switch
                             checked={accentFirstBeat}
                             onCheckedChange={setAccentFirstBeat}
+                        />
+                    </div>
+                    <div className="text-body text-text/80 flex w-full items-center justify-between">
+                        <span className="text-body">
+                            <T keyName="music.onlyClickOnMeasure" />
+                        </span>
+                        <Switch
+                            checked={firstBeatOnly}
+                            onCheckedChange={setFirstBeatOnly}
                         />
                     </div>
                 </div>
 
                 {/* Volume */}
                 <div className="flex flex-col gap-10">
-                    <h5 className="text-h5">Volume</h5>
+                    <h5 className="text-h5">
+                        <T keyName="music.volume" />
+                    </h5>
                     <div className="flex items-center gap-6">
                         <Slider
                             value={[volume]}
@@ -100,21 +121,40 @@ function MetronomeModalContents() {
 
                 {/* Customization */}
                 <div className="flex flex-col gap-10">
-                    <h5 className="text-h5">Customization</h5>
+                    <h5 className="text-h5">
+                        <T keyName="music.customization" />
+                    </h5>
                     <div className="text-body text-text/80 flex w-full items-center justify-between">
-                        <span className="text-body">Beat style</span>
+                        <span className="text-body">
+                            <T keyName="music.beatStyle" />
+                        </span>
                         <Select value={beatStyle} onValueChange={setBeatStyle}>
                             <SelectTriggerButton
                                 label={
-                                    BEAT_STYLES[beatStyle]?.label || "Select"
+                                    (
+                                        <T
+                                            keyName={
+                                                BEAT_STYLES[beatStyle]
+                                                    ?.labelKey ||
+                                                "music.beatStyle.select"
+                                            }
+                                        />
+                                    ) as any
                                 }
                             >
-                                {BEAT_STYLES[beatStyle]?.label || "Select"}
+                                <T
+                                    keyName={
+                                        BEAT_STYLES[beatStyle]?.labelKey ||
+                                        "music.beatStyle.select"
+                                    }
+                                />
                             </SelectTriggerButton>
                             <SelectContent>
                                 {styleKeys.map((key) => (
                                     <SelectItem key={key} value={key}>
-                                        {BEAT_STYLES[key].label}
+                                        <T
+                                            keyName={BEAT_STYLES[key].labelKey}
+                                        />
                                     </SelectItem>
                                 ))}
                             </SelectContent>
