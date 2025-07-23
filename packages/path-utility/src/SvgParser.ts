@@ -18,12 +18,20 @@ export function parseSvg(d: string): IPathSegment[] {
 
     for (const token of commandTokens) {
         let command = token[0];
-        const args = (token.substring(1).trim().match(/[-.0-9]+/g) || []).map(parseFloat);
+        const args = (
+            token
+                .substring(1)
+                .trim()
+                .match(/[-.0-9]+/g) || []
+        ).map(parseFloat);
 
         const isRelative = command === command.toLowerCase();
 
         if (command.toUpperCase() === "Z") {
-            if (currentPoint.x !== subpathStart.x || currentPoint.y !== subpathStart.y) {
+            if (
+                currentPoint.x !== subpathStart.x ||
+                currentPoint.y !== subpathStart.y
+            ) {
                 segments.push(new Line(currentPoint, subpathStart));
             }
             currentPoint = subpathStart;
@@ -45,7 +53,9 @@ export function parseSvg(d: string): IPathSegment[] {
                     // moveto
                     const x = args[i++];
                     const y = args[i++];
-                    nextPoint = isRelative ? { x: currentPoint.x + x, y: currentPoint.y + y } : { x, y };
+                    nextPoint = isRelative
+                        ? { x: currentPoint.x + x, y: currentPoint.y + y }
+                        : { x, y };
                     currentPoint = nextPoint;
                     subpathStart = nextPoint;
                     break;
@@ -54,7 +64,9 @@ export function parseSvg(d: string): IPathSegment[] {
                     // lineto
                     const x = args[i++];
                     const y = args[i++];
-                    nextPoint = isRelative ? { x: currentPoint.x + x, y: currentPoint.y + y } : { x, y };
+                    nextPoint = isRelative
+                        ? { x: currentPoint.x + x, y: currentPoint.y + y }
+                        : { x, y };
                     segments.push(new Line(currentPoint, nextPoint));
                     currentPoint = nextPoint;
                     break;
@@ -89,9 +101,13 @@ export function parseSvg(d: string): IPathSegment[] {
                     const c1 = isRelative
                         ? { x: currentPoint.x + cx, y: currentPoint.y + cy }
                         : { x: cx, y: cy };
-                    nextPoint = isRelative ? { x: currentPoint.x + x, y: currentPoint.y + y } : { x, y };
+                    nextPoint = isRelative
+                        ? { x: currentPoint.x + x, y: currentPoint.y + y }
+                        : { x, y };
 
-                    segments.push(new QuadraticCurve(currentPoint, c1, nextPoint));
+                    segments.push(
+                        new QuadraticCurve(currentPoint, c1, nextPoint),
+                    );
                     currentPoint = nextPoint;
                     break;
                 }
@@ -110,9 +126,13 @@ export function parseSvg(d: string): IPathSegment[] {
                     const c2 = isRelative
                         ? { x: currentPoint.x + cx2, y: currentPoint.y + cy2 }
                         : { x: cx2, y: cy2 };
-                    nextPoint = isRelative ? { x: currentPoint.x + x, y: currentPoint.y + y } : { x, y };
+                    nextPoint = isRelative
+                        ? { x: currentPoint.x + x, y: currentPoint.y + y }
+                        : { x, y };
 
-                    segments.push(new CubicCurve(currentPoint, c1, c2, nextPoint));
+                    segments.push(
+                        new CubicCurve(currentPoint, c1, c2, nextPoint),
+                    );
                     currentPoint = nextPoint;
                     break;
                 }
@@ -125,13 +145,26 @@ export function parseSvg(d: string): IPathSegment[] {
                     const sweepFlag = args[i++] as 0 | 1;
                     const x = args[i++];
                     const y = args[i++];
-                    nextPoint = isRelative ? { x: currentPoint.x + x, y: currentPoint.y + y } : { x, y };
+                    nextPoint = isRelative
+                        ? { x: currentPoint.x + x, y: currentPoint.y + y }
+                        : { x, y };
 
                     if (rx === 0 || ry === 0) {
                         segments.push(new Line(currentPoint, nextPoint));
-                    } else if (currentPoint.x !== nextPoint.x || currentPoint.y !== nextPoint.y) {
+                    } else if (
+                        currentPoint.x !== nextPoint.x ||
+                        currentPoint.y !== nextPoint.y
+                    ) {
                         segments.push(
-                            new Arc(currentPoint, rx, ry, xAxisRotation, largeArcFlag, sweepFlag, nextPoint),
+                            new Arc(
+                                currentPoint,
+                                rx,
+                                ry,
+                                xAxisRotation,
+                                largeArcFlag,
+                                sweepFlag,
+                                nextPoint,
+                            ),
                         );
                     }
 

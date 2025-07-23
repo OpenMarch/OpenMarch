@@ -1,4 +1,4 @@
-import { IPath, IPathSegment, Point } from "./interfaces";
+import type { IPath, IPathSegment, Point } from "./interfaces";
 import { parseSvg } from "./SvgParser";
 
 export class Path implements IPath {
@@ -42,6 +42,14 @@ export class Path implements IPath {
             return "";
         }
 
+        if (
+            !this.segments[0]?.startPoint?.x ||
+            !this.segments[0]?.startPoint?.y
+        ) {
+            throw new Error(
+                "Invalid path: first segment or start point coordinates are undefined",
+            );
+        }
         const moveto = `M ${this.segments[0].startPoint.x} ${this.segments[0].startPoint.y}`;
         const commands = this.segments.map((s) => s.toSvgCommand());
 

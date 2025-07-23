@@ -1,5 +1,9 @@
 import { IPathSegment, Point } from "../interfaces";
-import { distance, pointOnLine, pointOnQuadraticBezier } from "../geometry-utils";
+import {
+    distance,
+    pointOnLine,
+    pointOnQuadraticBezier,
+} from "../geometry-utils";
 
 export class QuadraticCurve implements IPathSegment {
     readonly startPoint: Point;
@@ -27,7 +31,12 @@ export class QuadraticCurve implements IPathSegment {
         for (let i = 1; i <= QuadraticCurve.FLATTENING_SEGMENTS; i++) {
             const t = i / QuadraticCurve.FLATTENING_SEGMENTS;
             points.push(
-                pointOnQuadraticBezier(this.startPoint, this.controlPoint, this.endPoint, t),
+                pointOnQuadraticBezier(
+                    this.startPoint,
+                    this.controlPoint,
+                    this.endPoint,
+                    t,
+                ),
             );
         }
         this._points = points;

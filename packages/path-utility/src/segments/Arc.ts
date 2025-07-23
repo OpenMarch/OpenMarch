@@ -1,5 +1,10 @@
 import { IPathSegment, Point } from "../interfaces";
-import { distance, getArcCenter, pointOnArc, pointOnLine } from "../geometry-utils";
+import {
+    distance,
+    getArcCenter,
+    pointOnArc,
+    pointOnLine,
+} from "../geometry-utils";
 
 export class Arc implements IPathSegment {
     readonly startPoint: Point;
@@ -52,7 +57,9 @@ export class Arc implements IPathSegment {
 
         for (let i = 0; i <= numSegments; i++) {
             const angle = startAngle + (sweepAngle / numSegments) * i;
-            points.push(pointOnArc(center, this.rx, this.ry, this.xAxisRotation, angle));
+            points.push(
+                pointOnArc(center, this.rx, this.ry, this.xAxisRotation, angle),
+            );
         }
 
         this._points = points;

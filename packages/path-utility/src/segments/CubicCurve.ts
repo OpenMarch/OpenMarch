@@ -13,7 +13,12 @@ export class CubicCurve implements IPathSegment {
     // The number of line segments to use when flattening the curve
     private static readonly FLATTENING_SEGMENTS = 30;
 
-    constructor(startPoint: Point, controlPoint1: Point, controlPoint2: Point, endPoint: Point) {
+    constructor(
+        startPoint: Point,
+        controlPoint1: Point,
+        controlPoint2: Point,
+        endPoint: Point,
+    ) {
         this.startPoint = startPoint;
         this.controlPoint1 = controlPoint1;
         this.controlPoint2 = controlPoint2;

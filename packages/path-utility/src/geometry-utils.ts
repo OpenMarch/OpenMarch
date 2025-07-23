@@ -11,7 +11,12 @@ export function pointOnLine(p1: Point, p2: Point, t: number): Point {
     };
 }
 
-export function pointOnQuadraticBezier(p0: Point, p1: Point, p2: Point, t: number): Point {
+export function pointOnQuadraticBezier(
+    p0: Point,
+    p1: Point,
+    p2: Point,
+    t: number,
+): Point {
     const oneMinusT = 1 - t;
     return {
         x: oneMinusT ** 2 * p0.x + 2 * oneMinusT * t * p1.x + t ** 2 * p2.x,
@@ -19,14 +24,28 @@ export function pointOnQuadraticBezier(p0: Point, p1: Point, p2: Point, t: numbe
     };
 }
 
-export function pointOnCubicBezier(p0: Point, p1: Point, p2: Point, p3: Point, t: number): Point {
+export function pointOnCubicBezier(
+    p0: Point,
+    p1: Point,
+    p2: Point,
+    p3: Point,
+    t: number,
+): Point {
     const oneMinusT = 1 - t;
     const oneMinusTSq = oneMinusT * oneMinusT;
     const tSq = t * t;
 
     return {
-        x: oneMinusTSq * oneMinusT * p0.x + 3 * oneMinusTSq * t * p1.x + 3 * oneMinusT * tSq * p2.x + tSq * t * p3.x,
-        y: oneMinusTSq * oneMinusT * p0.y + 3 * oneMinusTSq * t * p1.y + 3 * oneMinusT * tSq * p2.y + tSq * t * p3.y,
+        x:
+            oneMinusTSq * oneMinusT * p0.x +
+            3 * oneMinusTSq * t * p1.x +
+            3 * oneMinusT * tSq * p2.x +
+            tSq * t * p3.x,
+        y:
+            oneMinusTSq * oneMinusT * p0.y +
+            3 * oneMinusTSq * t * p1.y +
+            3 * oneMinusT * tSq * p2.y +
+            tSq * t * p3.y,
     };
 }
 

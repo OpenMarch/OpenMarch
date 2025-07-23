@@ -120,6 +120,7 @@ module.exports = {
         "ADDME",
         "midset",
         "midsets",
+        "Catmull",
     ],
     ignorePaths: [
         "node_modules/**",

@@ -10,7 +10,12 @@ describe("CubicCurve segment", () => {
         const controlPoint1: Point = { x: 150, y: 50 };
         const controlPoint2: Point = { x: 250, y: 150 };
         const endPoint: Point = { x: 300, y: 100 };
-        const curve = new CubicCurve(startPoint, controlPoint1, controlPoint2, endPoint);
+        const curve = new CubicCurve(
+            startPoint,
+            controlPoint1,
+            controlPoint2,
+            endPoint,
+        );
         // Known approximate length for this curve
         expect(curve.getLength()).toBeCloseTo(211.4, 1);
     });
@@ -20,7 +25,12 @@ describe("CubicCurve segment", () => {
         const controlPoint1: Point = { x: 150, y: 50 };
         const controlPoint2: Point = { x: 250, y: 150 };
         const endPoint: Point = { x: 300, y: 100 };
-        const curve = new CubicCurve(startPoint, controlPoint1, controlPoint2, endPoint);
+        const curve = new CubicCurve(
+            startPoint,
+            controlPoint1,
+            controlPoint2,
+            endPoint,
+        );
 
         const midPoint = curve.getPointAtLength(curve.getLength() / 2);
         // The midpoint of this symmetrical curve (at t=0.5) is at (200, 100)

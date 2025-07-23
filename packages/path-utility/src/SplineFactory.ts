@@ -1,5 +1,5 @@
 import { Path } from "./Path";
-import { IPathSegment, Point } from "./interfaces";
+import type { IPathSegment, Point } from "./interfaces";
 import { CubicCurve } from "./segments/CubicCurve";
 
 /**
@@ -24,6 +24,11 @@ export class SplineFactory {
             const p1 = points[i];
             const p2 = points[i + 1];
             const p3 = i < points.length - 2 ? points[i + 2] : p2;
+            if (!p0 || !p1 || !p2 || !p3) {
+                throw new Error(
+                    "Points required for spline calculation are undefined",
+                );
+            }
 
             const c1 = {
                 x: p1.x + (p2.x - p0.x) * tension,
