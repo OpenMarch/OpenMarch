@@ -7,3 +7,4 @@ export * from "./SvgParser";
 export * from "./segments/Line";
 export * from "./segments/QuadraticCurve";
 export * from "./segments/CubicCurve";
+export * from "./segments/Arc";
