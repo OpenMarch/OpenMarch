@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:otm/field_grid_painter.dart';
-import 'package:otm/models/from_desktop/field_properties.dart';
+import 'package:otm/field_canvas.dart';
 
 void main() {
   runApp(ProviderScope(child: MyApp()));
@@ -16,16 +15,14 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF6432FF),
-          title: const Text('On the Move'),
+          title: const Text(
+            'On the Move',
+            style: TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+          ),
         ),
         body: Stack(
           children: [
-            CustomPaint(
-              painter: FieldGridPainter(
-                fieldProperties: defaultFieldProperties,
-              ),
-              size: Size.infinite,
-            ),
+            const FieldCanvas(),
             // Center(child: DataViewer()),
           ],
         ),
