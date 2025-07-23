@@ -22,6 +22,20 @@
             "when": 1752789863048,
             "tag": "0002_wealthy_paibok",
             "breakpoints": true
+        },
+        {
+            "idx": 3,
+            "version": "6",
+            "when": 1753068380361,
+            "tag": "0003_fixed_shinobi_shaw",
+            "breakpoints": true
+        },
+        {
+            "idx": 4,
+            "version": "6",
+            "when": 1753474786139,
+            "tag": "0004_faithful_patriot",
+            "breakpoints": true
         }
     ]
 }

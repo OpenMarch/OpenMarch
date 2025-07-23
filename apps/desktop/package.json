@@ -40,6 +40,7 @@
     "dependencies": {
         "@fontsource/dm-mono": "^5.2.6",
         "@fontsource/dm-sans": "^5.2.6",
+        "@openmarch/path-utility": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@openmarch/core": "workspace:*",
         "@phosphor-icons/react": "^2.1.10",

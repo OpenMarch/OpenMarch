@@ -9,6 +9,7 @@ import {
     getCoordinatesAtTime,
     MarcherTimeline,
 } from "@/utilities/Keyframes";
+import { Path } from "@openmarch/path-utility";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 
@@ -57,7 +58,9 @@ export const useAnimation = ({
                     coordinateMap.set((page.timestamp + page.duration) * 1000, {
                         x: marcherPage.x,
                         y: marcherPage.y,
-                        svg: marcherPage.svg_path,
+                        path: marcherPage.svg_path
+                            ? Path.fromSvgString(marcherPage.svg_path)
+                            : undefined,
                     });
                 }
             }
