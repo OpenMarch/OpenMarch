@@ -38,6 +38,13 @@ export class Path implements IPath {
     }
 
     public toSvgString(): string {
-        return this.segments.map((s) => s.toSvgCommand()).join(" ");
+        if (this.segments.length === 0) {
+            return "";
+        }
+
+        const moveto = `M ${this.segments[0].startPoint.x} ${this.segments[0].startPoint.y}`;
+        const commands = this.segments.map((s) => s.toSvgCommand());
+
+        return [moveto, ...commands].join(" ");
     }
 }

@@ -1,0 +1,84 @@
+import { IPathSegment, Point } from "../interfaces";
+import { distance, pointOnCubicBezier, pointOnLine } from "../geometry-utils";
+
+export class CubicCurve implements IPathSegment {
+    readonly startPoint: Point;
+    readonly controlPoint1: Point;
+    readonly controlPoint2: Point;
+    readonly endPoint: Point;
+
+    private _length: number | undefined;
+    private _points: Point[] | undefined;
+
+    // The number of line segments to use when flattening the curve
+    private static readonly FLATTENING_SEGMENTS = 30;
+
+    constructor(startPoint: Point, controlPoint1: Point, controlPoint2: Point, endPoint: Point) {
+        this.startPoint = startPoint;
+        this.controlPoint1 = controlPoint1;
+        this.controlPoint2 = controlPoint2;
+        this.endPoint = endPoint;
+    }
+
+    private flatten(): Point[] {
+        if (this._points) {
+            return this._points;
+        }
+
+        const points: Point[] = [this.startPoint];
+        for (let i = 1; i <= CubicCurve.FLATTENING_SEGMENTS; i++) {
+            const t = i / CubicCurve.FLATTENING_SEGMENTS;
+            points.push(
+                pointOnCubicBezier(
+                    this.startPoint,
+                    this.controlPoint1,
+                    this.controlPoint2,
+                    this.endPoint,
+                    t,
+                ),
+            );
+        }
+        this._points = points;
+        return points;
+    }
+
+    getLength(): number {
+        if (this._length !== undefined) {
+            return this._length;
+        }
+
+        const points = this.flatten();
+        let length = 0;
+        for (let i = 0; i < points.length - 1; i++) {
+            length += distance(points[i], points[i + 1]);
+        }
+        this._length = length;
+        return length;
+    }
+
+    getPointAtLength(distance: number): Point {
+        const fullLength = this.getLength();
+        if (distance <= 0) return { ...this.startPoint };
+        if (distance >= fullLength) return { ...this.endPoint };
+
+        const points = this.flatten();
+        let traveled = 0;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const segmentLength = distance(p1, p2);
+            if (traveled + segmentLength >= distance) {
+                const remaining = distance - traveled;
+                const t = segmentLength === 0 ? 0 : remaining / segmentLength;
+                return pointOnLine(p1, p2, t);
+            }
+            traveled += segmentLength;
+        }
+
+        return { ...this.endPoint };
+    }
+
+    toSvgCommand(): string {
+        return `C ${this.controlPoint1.x} ${this.controlPoint1.y} ${this.controlPoint2.x} ${this.controlPoint2.y} ${this.endPoint.x} ${this.endPoint.y}`;
+    }
+}
