@@ -108,6 +108,7 @@ jobs:
                   appleApiKey: "~/private_keys/apple_api_key.p8"
                   appleApiKeyId: ${{ secrets.apple_api_key_id }}
                   appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
+                  CSC_IDENTITY_AUTO_DISCOVERY: "${{ steps.release.outputs.RELEASE == 'true' }}"
                   # For releasing
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
