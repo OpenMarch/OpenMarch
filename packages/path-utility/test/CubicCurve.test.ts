@@ -23,9 +23,9 @@ describe("CubicCurve segment", () => {
         const curve = new CubicCurve(startPoint, controlPoint1, controlPoint2, endPoint);
 
         const midPoint = curve.getPointAtLength(curve.getLength() / 2);
-        // The midpoint of the curve (t=0.5) is at (206.25, 112.5)
-        expect(midPoint.x).toBeCloseTo(206.25, 0);
-        expect(midPoint.y).toBeCloseTo(112.5, 0);
+        // The midpoint of this symmetrical curve (at t=0.5) is at (200, 100)
+        expect(midPoint.x).toBeCloseTo(200, 0);
+        expect(midPoint.y).toBeCloseTo(100, 0);
     });
 });
 
