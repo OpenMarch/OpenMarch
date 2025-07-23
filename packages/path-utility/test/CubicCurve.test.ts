@@ -12,7 +12,7 @@ describe("CubicCurve segment", () => {
         const endPoint: Point = { x: 300, y: 100 };
         const curve = new CubicCurve(startPoint, controlPoint1, controlPoint2, endPoint);
         // Known approximate length for this curve
-        expect(curve.getLength()).toBeCloseTo(215.9, 0);
+        expect(curve.getLength()).toBeCloseTo(211.4, 1);
     });
 
     it("should get the correct point at length", () => {

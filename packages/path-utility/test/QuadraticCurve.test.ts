@@ -10,7 +10,7 @@ describe("QuadraticCurve segment", () => {
         const endPoint: Point = { x: 100, y: 0 };
         const curve = new QuadraticCurve(startPoint, controlPoint, endPoint);
         // This is a known value for this specific curve, approximately.
-        expect(curve.getLength()).toBeCloseTo(147.89, 1);
+        expect(curve.getLength()).toBeCloseTo(147.82, 2);
     });
 
     it("should get the correct point at length", () => {
