@@ -3,6 +3,8 @@ import JSZip from "jszip";
 /**
  * Represents a beat in a musical performance or composition.
  * Provides details about the beat's position, duration, and optional notes.
+ *
+ * Includes only specific properties needed for parsing functionality.
  */
 export interface Beat {
     /** Duration from this beat to the next in seconds. This is derived from tempo */
@@ -14,6 +16,8 @@ export interface Beat {
 /**
  * Represents a musical measure in a musical composition.
  * Contains information about the structure and content of a specific measure.
+ *
+ * Includes only specific properties needed for parsing functionality.
  */
 export interface Measure {
     /** The measure's number in the piece. Unique and integer */
