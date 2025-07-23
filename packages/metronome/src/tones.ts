@@ -1,8 +1,15 @@
-import { generateOscillator, mixSamples, padSamples } from "./tone_creator.ts";
+import {
+    applyFade,
+    generateOscillator,
+    mixSamples,
+    padSamples,
+} from "./tone_creator.ts";
+
+export const FADE_DURATION = 0.05; // seconds
 
 /**
  * Memoize a tone generation function.
- * Sounds are cached at the end of the file
+ * Sounds are cached at the end of this file
  * @param fn Tone to memoize
  */
 function memoize<T extends (...args: any[]) => Float32Array>(fn: T): T {
@@ -26,11 +33,14 @@ const _beatClickDefault = (): Float32Array => {
     const s3 = generateOscillator("sine", 2600, 0.07, 0.8);
 
     const maxLen = Math.max(s1.length, s2.length, s3.length);
-    return mixSamples([
-        padSamples(s1, maxLen),
-        padSamples(s2, maxLen),
-        padSamples(s3, maxLen),
-    ]);
+    return applyFade(
+        mixSamples([
+            padSamples(s1, maxLen),
+            padSamples(s2, maxLen),
+            padSamples(s3, maxLen),
+        ]),
+        FADE_DURATION,
+    );
 };
 const _measureClickDefault = (): Float32Array => {
     const s1 = generateOscillator("sawtooth", 3000, 0.04, 0.1);
@@ -38,11 +48,14 @@ const _measureClickDefault = (): Float32Array => {
     const s3 = generateOscillator("sine", 3000, 0.07, 0.8);
 
     const maxLen = Math.max(s1.length, s2.length, s3.length);
-    return mixSamples([
-        padSamples(s1, maxLen),
-        padSamples(s2, maxLen),
-        padSamples(s3, maxLen),
-    ]);
+    return applyFade(
+        mixSamples([
+            padSamples(s1, maxLen),
+            padSamples(s2, maxLen),
+            padSamples(s3, maxLen),
+        ]),
+        FADE_DURATION,
+    );
 };
 
 /**
@@ -53,24 +66,30 @@ const _sharpBeatClick = (): Float32Array => {
     const s2 = generateOscillator("triangle", 3200, 0.05, 0.4);
 
     const maxLen = Math.max(s1.length, s2.length);
-    return mixSamples([padSamples(s1, maxLen), padSamples(s2, maxLen)]);
+    return applyFade(
+        mixSamples([padSamples(s1, maxLen), padSamples(s2, maxLen)]),
+        FADE_DURATION,
+    );
 };
 const _sharpMeasureClick = (): Float32Array => {
     const s1 = generateOscillator("sawtooth", 3500, 0.02, 0.15);
     const s2 = generateOscillator("triangle", 3500, 0.05, 0.4);
 
     const maxLen = Math.max(s1.length, s2.length);
-    return mixSamples([padSamples(s1, maxLen), padSamples(s2, maxLen)]);
+    return applyFade(
+        mixSamples([padSamples(s1, maxLen), padSamples(s2, maxLen)]),
+        FADE_DURATION,
+    );
 };
 
 /**
  * Generates smooth beat and measure click sounds.
  */
 const _smoothBeatClick = (): Float32Array => {
-    return generateOscillator("sine", 2000, 0.1, 1);
+    return applyFade(generateOscillator("sine", 2000, 0.1, 1), FADE_DURATION);
 };
 const _smoothMeasureClick = (volume = 1): Float32Array => {
-    return generateOscillator("sine", 2400, 0.1, 1);
+    return applyFade(generateOscillator("sine", 2400, 0.1, 1), FADE_DURATION);
 };
 
 /**

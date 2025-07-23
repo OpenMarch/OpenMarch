@@ -79,3 +79,24 @@ export function padSamples(
     padded.set(samples);
     return padded;
 }
+
+/**
+ * Apply fade in/out envelope to a Float32Array sample array.
+ * @param samples - The audio samples
+ * @param fadeDuration - Duration of fade (seconds)
+ */
+export function applyFade(
+    samples: Float32Array,
+    fadeDuration: number,
+): Float32Array {
+    const length = samples.length;
+    const fadeSamples = Math.floor(SAMPLE_RATE * fadeDuration);
+
+    // Fade out
+    for (let i = length - fadeSamples; i < length; i++) {
+        const fadeOutGain = (length - i) / fadeSamples;
+        samples[i]! *= fadeOutGain;
+    }
+
+    return samples;
+}

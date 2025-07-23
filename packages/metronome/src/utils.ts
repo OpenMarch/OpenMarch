@@ -47,7 +47,7 @@ export interface Measure {
  * @param samples
  * @param filename
  */
-export function saveClickWav(samples: Float32Array, filename: string) {
+export function saveWav(samples: Float32Array, filename: string) {
     const buffer = wav.encode([samples], {
         sampleRate: SAMPLE_RATE,
         float: true,
@@ -56,4 +56,20 @@ export function saveClickWav(samples: Float32Array, filename: string) {
 
     fs.writeFileSync(filename, buffer);
     console.log(`Saved ${filename}`);
+}
+
+/**
+ * Gets the current time as a string in the format YYYYMMDD_HHMMSS.
+ */
+export function getCurrentTime(): string {
+    const now = new Date();
+    return (
+        now.getFullYear().toString() +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        String(now.getDate()).padStart(2, "0") +
+        "_" +
+        String(now.getHours()).padStart(2, "0") +
+        String(now.getMinutes()).padStart(2, "0") +
+        String(now.getSeconds()).padStart(2, "0")
+    );
 }

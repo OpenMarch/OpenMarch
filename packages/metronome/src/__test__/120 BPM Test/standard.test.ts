@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { type Measure } from "../../utils";
+import { getCurrentTime, type Measure } from "../../utils";
 import { createMetronomeWav } from "../../metronome";
-import type { Beat } from "musicxml-parser";
 
 const testName = "Standard 120 BPM Test";
 
@@ -10,7 +9,7 @@ const testName = "Standard 120 BPM Test";
  */
 describe(testName, () => {
     test(`Synthesize ${testName}`, async () => {
-        createMetronomeWav(input, testName + ".wav");
+        createMetronomeWav(input, testName + "-" + getCurrentTime() + ".wav");
     });
 });
 
