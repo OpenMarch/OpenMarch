@@ -73,10 +73,10 @@ export class Arc implements IPathSegment {
         return length;
     }
 
-    getPointAtLength(distance: number): Point {
+    getPointAtLength(dist: number): Point {
         const fullLength = this.getLength();
-        if (distance <= 0) return { ...this.startPoint };
-        if (distance >= fullLength) return { ...this.endPoint };
+        if (dist <= 0) return { ...this.startPoint };
+        if (dist >= fullLength) return { ...this.endPoint };
 
         const points = this.flatten();
         let traveled = 0;
@@ -84,8 +84,8 @@ export class Arc implements IPathSegment {
             const p1 = points[i];
             const p2 = points[i + 1];
             const segmentLength = distance(p1, p2);
-            if (traveled + segmentLength >= distance) {
-                const remaining = distance - traveled;
+            if (traveled + segmentLength >= dist) {
+                const remaining = dist - traveled;
                 const t = segmentLength === 0 ? 0 : remaining / segmentLength;
                 return pointOnLine(p1, p2, t);
             }

@@ -16,7 +16,7 @@ export interface IPathSegment {
     getLength(): number;
 
     /** Returns a point at a given distance along the segment. */
-    getPointAtLength(distance: number): Point;
+    getPointAtLength(dist: number): Point;
 
     /** Returns the SVG command string for this segment (e.g., "L 100 100"). */
     toSvgCommand(): string;
@@ -32,7 +32,7 @@ export interface IPath {
     getTotalLength(): number;
 
     /** Returns a point at a given distance along the entire path. */
-    getPointAtLength(distance: number): Point;
+    getPointAtLength(dist: number): Point;
 
     /** Returns the full SVG path `d` attribute string for all segments. */
     toSvgString(): string;

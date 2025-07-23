@@ -21,8 +21,8 @@ export class Path implements IPath {
         return this.segments.reduce((sum, seg) => sum + seg.getLength(), 0);
     }
 
-    public getPointAtLength(distance: number): Point {
-        let remainingDistance = distance;
+    public getPointAtLength(dist: number): Point {
+        let remainingDistance = dist;
 
         for (const segment of this.segments) {
             const segmentLength = segment.getLength();
