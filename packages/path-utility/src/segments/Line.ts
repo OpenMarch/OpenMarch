@@ -16,9 +16,13 @@ export class Line implements IPathSegment {
 
     getPointAtLength(dist: number): Point {
         const length = this.getLength();
-        if (length === 0) {
+        if (dist <= 0) {
             return { ...this.startPoint };
         }
+        if (dist >= length) {
+            return { ...this.endPoint };
+        }
+
         const t = dist / length;
         return pointOnLine(this.startPoint, this.endPoint, t);
     }

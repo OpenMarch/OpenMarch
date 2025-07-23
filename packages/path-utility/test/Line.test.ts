@@ -26,6 +26,23 @@ describe("Line segment", () => {
         const midPoint = line.getPointAtLength(5);
         expect(midPoint).toEqual({ x: 5, y: 0 });
     });
+
+    it("should return the start point for distance <= 0", () => {
+        const startPoint: Point = { x: 0, y: 0 };
+        const endPoint: Point = { x: 10, y: 0 };
+        const line = new Line(startPoint, endPoint);
+        expect(line.getPointAtLength(0)).toEqual(startPoint);
+        expect(line.getPointAtLength(-5)).toEqual(startPoint);
+    });
+
+    it("should return the end point for distance >= length", () => {
+        const startPoint: Point = { x: 0, y: 0 };
+        const endPoint: Point = { x: 10, y: 0 };
+        const line = new Line(startPoint, endPoint);
+        const length = line.getLength();
+        expect(line.getPointAtLength(length)).toEqual(endPoint);
+        expect(line.getPointAtLength(length + 5)).toEqual(endPoint);
+    });
 });
 
 describe("SvgParser with Line commands", () => {

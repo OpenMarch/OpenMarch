@@ -139,7 +139,7 @@ export function parseSvg(d: string): IPathSegment[] {
                     break;
                 }
                 default:
-                    console.warn(`Unsupported SVG command: ${command}`);
+                    // Unsupported commands are ignored.
                     i = args.length;
             }
         }
