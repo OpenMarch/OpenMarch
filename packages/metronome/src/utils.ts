@@ -43,6 +43,52 @@ export interface Measure {
 }
 
 /**
+ * Creates a new Beat object.
+ * @param position
+ * @param duration
+ * @param index
+ * @param timestamp
+ */
+export function createBeat(
+    position: number,
+    duration: number,
+    index: number,
+    timestamp: number,
+): Beat {
+    return {
+        position,
+        duration,
+        includeInMeasure: true,
+        index,
+        timestamp,
+    };
+}
+
+/**
+ * Creates a new Measure object.
+ * @param number
+ * @param startBeat
+ * @param beats
+ * @param rehearsalMark
+ */
+export function createMeasure(
+    number: number,
+    startBeat: Beat,
+    beats: Beat[],
+    rehearsalMark?: string,
+): Measure {
+    return {
+        startBeat,
+        number,
+        duration: beats.reduce((acc, b) => acc + b.duration, 0),
+        counts: beats.length,
+        beats,
+        timestamp: startBeat.timestamp,
+        ...(rehearsalMark ? { rehearsalMark } : {}),
+    };
+}
+
+/**
  * Utility function to save a sound as a WAV file.
  * @param samples
  * @param filename
