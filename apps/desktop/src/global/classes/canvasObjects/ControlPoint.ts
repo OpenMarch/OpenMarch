@@ -1,17 +1,23 @@
 import { fabric } from "fabric";
-import { ControlPoint as IControlPoint, Point } from "@openmarch/path-utility";
+import {
+    ControlPoint as IControlPoint,
+    IControllableSegment,
+    Point,
+    Path,
+} from "@openmarch/path-utility";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { rgbaToString } from "../FieldTheme";
+import { MarcherPath } from "./MarcherPath";
 
 export class ControlPoint extends fabric.Circle {
     private _canvas: OpenMarchCanvas;
     private _controlPoint: IControlPoint;
-    private _onMove: (id: string, newPoint: Point) => void;
+    private _path: MarcherPath;
 
     constructor(
         controlPoint: IControlPoint,
+        path: MarcherPath,
         canvas: OpenMarchCanvas,
-        onMove: (id: string, newPoint: Point) => void,
     ) {
         super({
             strokeWidth: 4,
@@ -29,16 +35,46 @@ export class ControlPoint extends fabric.Circle {
 
         this._controlPoint = controlPoint;
         this._canvas = canvas;
-        this._onMove = onMove;
+        this._path = path;
 
         this.on("moving", this._onMoving);
+        this.on("mousedown", this._onMouseDown);
+        this.on("mouseup", this._onMouseUp);
+    }
+
+    private _onMouseDown() {
+        this._path.isMoving = true;
+    }
+
+    private _onMouseUp() {
+        this._path.isMoving = false;
     }
 
     private _onMoving() {
         if (!this.left || !this.top) return;
 
         const newPoint: Point = { x: this.left, y: this.top };
-        this._onMove(this._controlPoint.id, newPoint);
+
+        const currentSegment = this._path.path.segments[
+            this._controlPoint.segmentIndex
+        ] as IControllableSegment;
+
+        if (!currentSegment || !("updateControlPoint" in currentSegment)) {
+            return;
+        }
+
+        const newSegment = currentSegment.updateControlPoint(
+            this._controlPoint.type,
+            this._controlPoint.pointIndex,
+            newPoint,
+        );
+
+        const originalIndex = this._controlPoint.segmentIndex;
+
+        const newSegments = [...this._path.path.segments];
+        newSegments[originalIndex] = newSegment;
+        // This will trigger a rerender
+        this._path.path = new Path(newSegments);
     }
 
     public destroy() {

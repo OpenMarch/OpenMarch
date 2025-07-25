@@ -9,6 +9,7 @@ export class MarcherPath {
     private _segments: MarcherPathSegment[] = [];
     private _controlPoints: ControlPoint[] = [];
     private _areControlsEnabled = false;
+    private _isMoving = false;
 
     constructor(path: IPath, canvas: OpenMarchCanvas) {
         this._path = path;
@@ -17,6 +18,7 @@ export class MarcherPath {
     }
 
     private _render() {
+        console.log("PATH RENDER");
         this._destroy();
         this._segments = this._path.segments.map(
             (segment) => new MarcherPathSegment(segment, this._canvas),
@@ -29,6 +31,7 @@ export class MarcherPath {
     }
 
     private _destroy() {
+        console.log("PATH DESTROY");
         this.disableControls();
         this._segments.forEach((segment) => segment.destroy());
         this._segments = [];
@@ -45,14 +48,20 @@ export class MarcherPath {
             const segment = controllableSegments[i];
             const controlPoints = segment.getControlPoints(i);
             for (const controlPoint of controlPoints) {
-                const cp = new ControlPoint(
-                    controlPoint,
-                    this._canvas,
-                    this._onControlPointMove.bind(this),
-                );
+                const cp = new ControlPoint(controlPoint, this, this._canvas);
                 this._controlPoints.push(cp);
+                this._canvas.add(cp);
             }
         }
+        this._canvas.requestRenderAll();
+    }
+
+    public set isMoving(moving: boolean) {
+        this._isMoving = moving;
+        // if (!moving) {
+        //     // After moving, do a full re-render to sync control points
+        //     this._render();
+        // }
     }
 
     public disableControls() {
@@ -61,28 +70,9 @@ export class MarcherPath {
         this._areControlsEnabled = false;
     }
 
-    private _onControlPointMove(id: string, newPoint: Point) {
-        const controllableSegments = this.path.segments.filter(
-            (segment) => "getControlPoints" in segment,
-        ) as IControllableSegment[];
-
-        for (let i = 0; i < controllableSegments.length; i++) {
-            const segment = controllableSegments[i];
-            const controlPoints = segment.getControlPoints(i);
-            const controlPoint = controlPoints.find((cp) => cp.id === id);
-
-            if (controlPoint) {
-                const newSegment = segment.updateControlPoint(
-                    controlPoint.type,
-                    controlPoint.pointIndex,
-                    newPoint,
-                );
-                const newSegments = [...this.path.segments];
-                newSegments[i] = newSegment;
-                // This will trigger a rerender
-                this.path = { ...this.path, segments: newSegments };
-                break;
-            }
+    private _bringControlsToFront() {
+        for (const cp of this._controlPoints) {
+            cp.bringToFront();
         }
     }
 
@@ -92,7 +82,21 @@ export class MarcherPath {
 
     set path(newPath: IPath) {
         this._path = newPath;
-        this._render();
+
+        if (this._isMoving) {
+            // Soft render: only update path segments, not controls
+            this._segments.forEach((segment) => segment.destroy());
+            this._segments = this._path.segments.map(
+                (segment) => new MarcherPathSegment(segment, this._canvas),
+            );
+            this._segments.forEach((segment) => segment.render());
+            this._bringControlsToFront();
+            this._canvas.requestRenderAll();
+        }
+        // else {
+        //     // Full render: update everything
+        //     this._render();
+        // }
     }
 
     public destroy() {
