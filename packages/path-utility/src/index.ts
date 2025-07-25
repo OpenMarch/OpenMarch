@@ -2,16 +2,20 @@
 export type {
     IPath,
     IPathSegment,
+    IControllableSegment,
     Point,
     SegmentJsonData,
     PathJsonData,
+    ControlPoint,
+    ControlPointType,
+    ControlPointMoveCallback,
+    ControlPointConfig,
 } from "./interfaces";
 
-// Main Path class
+// Classes
 export { Path } from "./Path";
-
-// Segment implementations
 export { Line } from "./segments/Line";
 export { Arc } from "./segments/Arc";
 export { CubicCurve } from "./segments/CubicCurve";
 export { Spline } from "./segments/Spline";
+export { ControlPointManager } from "./ControlPointManager";

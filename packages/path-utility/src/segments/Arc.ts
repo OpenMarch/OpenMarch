@@ -1,10 +1,10 @@
-import { IPathSegment, Point, SegmentJsonData } from "../interfaces";
+import { IPathSegment, Point, SegmentJsonData, IControllableSegment, ControlPoint, ControlPointType } from "../interfaces";
 
 /**
  * Represents an SVG elliptical arc segment defined by start point, radii, flags, and end point.
  * Also supports legacy center-based constructor for backward compatibility.
  */
-export class Arc implements IPathSegment {
+export class Arc implements IControllableSegment {
     readonly type = "arc";
 
     // SVG arc parameters
@@ -290,5 +290,93 @@ export class Arc implements IPathSegment {
     static fromJson(data: SegmentJsonData): Arc {
         const instance = new Arc({ x: 0, y: 0 }, 0, 0, 0, 0, 0, { x: 0, y: 0 });
         return instance.fromJson(data) as Arc;
+    }
+
+    // IControllableSegment implementation
+    getControlPoints(segmentIndex: number): ControlPoint[] {
+        const controlPoints: ControlPoint[] = [
+            {
+                id: `cp-${segmentIndex}-start`,
+                point: { ...this.startPoint },
+                segmentIndex,
+                type: 'start' as ControlPointType,
+            },
+            {
+                id: `cp-${segmentIndex}-end`,
+                point: { ...this.endPoint },
+                segmentIndex,
+                type: 'end' as ControlPointType,
+            },
+        ];
+
+        // Add center point for legacy format or calculated center
+        const centerPoint = this.center || this.convertToCenterBased().center;
+        controlPoints.push({
+            id: `cp-${segmentIndex}-center`,
+            point: { ...centerPoint },
+            segmentIndex,
+            type: 'center' as ControlPointType,
+        });
+
+        return controlPoints;
+    }
+
+    updateControlPoint(controlPointType: ControlPointType, pointIndex: number | undefined, newPoint: Point): IControllableSegment {
+        if (this.center && this.radius !== undefined && this.startAngle !== undefined && this.endAngle !== undefined && this.clockwise !== undefined) {
+            // Legacy format - update using center-based parameters
+            switch (controlPointType) {
+                case 'start': {
+                    // Calculate new start angle based on new start point
+                    const newStartAngle = Math.atan2(
+                        newPoint.y - this.center.y,
+                        newPoint.x - this.center.x
+                    );
+                    return new Arc(this.center, this.radius, newStartAngle, this.endAngle, this.clockwise);
+                }
+                case 'end': {
+                    // Calculate new end angle based on new end point
+                    const newEndAngle = Math.atan2(
+                        newPoint.y - this.center.y,
+                        newPoint.x - this.center.x
+                    );
+                    return new Arc(this.center, this.radius, this.startAngle, newEndAngle, this.clockwise);
+                }
+                case 'center': {
+                    // Update center point, keeping the same angles
+                    return new Arc(newPoint, this.radius, this.startAngle, this.endAngle, this.clockwise);
+                }
+                default:
+                    throw new Error(`Arc segments do not support control point type: ${controlPointType}`);
+            }
+        } else {
+            // SVG format - more complex to update as we need to recalculate arc parameters
+            switch (controlPointType) {
+                case 'start':
+                    return new Arc(newPoint, this.rx, this.ry, this.xAxisRotation, this.largeArcFlag, this.sweepFlag, this.endPoint);
+                case 'end':
+                    return new Arc(this.startPoint, this.rx, this.ry, this.xAxisRotation, this.largeArcFlag, this.sweepFlag, newPoint);
+                case 'center': {
+                    // For SVG format, moving the center means we need to recalculate start and end points
+                    // This is a simplified approach - for a more accurate implementation, 
+                    // you would need to calculate the proper arc parameters
+                    const currentCenter = this.convertToCenterBased().center;
+                    const dx = newPoint.x - currentCenter.x;
+                    const dy = newPoint.y - currentCenter.y;
+                    
+                    const newStartPoint = {
+                        x: this.startPoint.x + dx,
+                        y: this.startPoint.y + dy
+                    };
+                    const newEndPoint = {
+                        x: this.endPoint.x + dx,
+                        y: this.endPoint.y + dy
+                    };
+                    
+                    return new Arc(newStartPoint, this.rx, this.ry, this.xAxisRotation, this.largeArcFlag, this.sweepFlag, newEndPoint);
+                }
+                default:
+                    throw new Error(`Arc segments do not support control point type: ${controlPointType}`);
+            }
+        }
     }
 }

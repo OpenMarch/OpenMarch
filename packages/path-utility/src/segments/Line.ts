@@ -1,9 +1,9 @@
-import { IPathSegment, Point, SegmentJsonData } from "../interfaces";
+import { IPathSegment, Point, SegmentJsonData, IControllableSegment, ControlPoint, ControlPointType } from "../interfaces";
 
 /**
  * Represents a straight line segment between two points.
  */
-export class Line implements IPathSegment {
+export class Line implements IControllableSegment {
     readonly type = "line";
 
     constructor(
@@ -54,5 +54,34 @@ export class Line implements IPathSegment {
     static fromJson(data: SegmentJsonData): Line {
         const instance = new Line({ x: 0, y: 0 }, { x: 0, y: 0 });
         return instance.fromJson(data) as Line;
+    }
+
+    // IControllableSegment implementation
+    getControlPoints(segmentIndex: number): ControlPoint[] {
+        return [
+            {
+                id: `cp-${segmentIndex}-start`,
+                point: { ...this.startPoint },
+                segmentIndex,
+                type: 'start' as ControlPointType,
+            },
+            {
+                id: `cp-${segmentIndex}-end`,
+                point: { ...this.endPoint },
+                segmentIndex,
+                type: 'end' as ControlPointType,
+            },
+        ];
+    }
+
+    updateControlPoint(controlPointType: ControlPointType, pointIndex: number | undefined, newPoint: Point): IControllableSegment {
+        switch (controlPointType) {
+            case 'start':
+                return new Line(newPoint, this.endPoint);
+            case 'end':
+                return new Line(this.startPoint, newPoint);
+            default:
+                throw new Error(`Line segments do not support control point type: ${controlPointType}`);
+        }
     }
 }

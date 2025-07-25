@@ -1,11 +1,11 @@
-import { IPathSegment, Point, SegmentJsonData } from "../interfaces";
+import { IPathSegment, Point, SegmentJsonData, IControllableSegment, ControlPoint, ControlPointType } from "../interfaces";
 
 /**
  * Represents a spline segment that preserves original spline data.
  * This segment type stores the original spline parameters and can convert to SVG
  * while maintaining the spline data in JSON serialization.
  */
-export class Spline implements IPathSegment {
+export class Spline implements IControllableSegment {
     readonly type = "spline";
 
     private _svgApproximation: string | null = null;
@@ -256,5 +256,39 @@ export class Spline implements IPathSegment {
         weights?: number[],
     ): Spline {
         return new Spline(controlPoints, degree, knots, weights);
+    }
+
+    // IControllableSegment implementation
+    getControlPoints(segmentIndex: number): ControlPoint[] {
+        return this.controlPoints.map((point, index) => ({
+            id: `cp-${segmentIndex}-spline-point-${index}`,
+            point: { ...point },
+            segmentIndex,
+            type: 'spline-point' as ControlPointType,
+            pointIndex: index,
+        }));
+    }
+
+    updateControlPoint(controlPointType: ControlPointType, pointIndex: number | undefined, newPoint: Point): IControllableSegment {
+        if (controlPointType !== 'spline-point' || pointIndex === undefined) {
+            throw new Error(`Spline segments only support 'spline-point' control points with a valid pointIndex`);
+        }
+
+        if (pointIndex < 0 || pointIndex >= this.controlPoints.length) {
+            throw new Error(`Invalid pointIndex ${pointIndex} for spline with ${this.controlPoints.length} control points`);
+        }
+
+        // Create a new array with the updated control point
+        const newControlPoints = [...this.controlPoints];
+        newControlPoints[pointIndex] = { ...newPoint };
+
+        return new Spline(
+            newControlPoints,
+            this.degree,
+            this.knots,
+            this.weights,
+            this.closed,
+            this.tension
+        );
     }
 }

@@ -1,9 +1,9 @@
-import { IPathSegment, Point, SegmentJsonData } from "../interfaces";
+import { IPathSegment, Point, SegmentJsonData, IControllableSegment, ControlPoint, ControlPointType } from "../interfaces";
 
 /**
  * Represents a cubic Bézier curve segment with start point, two control points, and end point.
  */
-export class CubicCurve implements IPathSegment {
+export class CubicCurve implements IControllableSegment {
     readonly type = "cubic-curve";
 
     constructor(
@@ -141,5 +141,50 @@ export class CubicCurve implements IPathSegment {
             { x: 0, y: 0 },
         );
         return instance.fromJson(data) as CubicCurve;
+    }
+
+    // IControllableSegment implementation
+    getControlPoints(segmentIndex: number): ControlPoint[] {
+        return [
+            {
+                id: `cp-${segmentIndex}-start`,
+                point: { ...this.startPoint },
+                segmentIndex,
+                type: 'start' as ControlPointType,
+            },
+            {
+                id: `cp-${segmentIndex}-control1`,
+                point: { ...this.controlPoint1 },
+                segmentIndex,
+                type: 'control1' as ControlPointType,
+            },
+            {
+                id: `cp-${segmentIndex}-control2`,
+                point: { ...this.controlPoint2 },
+                segmentIndex,
+                type: 'control2' as ControlPointType,
+            },
+            {
+                id: `cp-${segmentIndex}-end`,
+                point: { ...this.endPoint },
+                segmentIndex,
+                type: 'end' as ControlPointType,
+            },
+        ];
+    }
+
+    updateControlPoint(controlPointType: ControlPointType, pointIndex: number | undefined, newPoint: Point): IControllableSegment {
+        switch (controlPointType) {
+            case 'start':
+                return new CubicCurve(newPoint, this.controlPoint1, this.controlPoint2, this.endPoint);
+            case 'control1':
+                return new CubicCurve(this.startPoint, newPoint, this.controlPoint2, this.endPoint);
+            case 'control2':
+                return new CubicCurve(this.startPoint, this.controlPoint1, newPoint, this.endPoint);
+            case 'end':
+                return new CubicCurve(this.startPoint, this.controlPoint1, this.controlPoint2, newPoint);
+            default:
+                throw new Error(`CubicCurve segments do not support control point type: ${controlPointType}`);
+        }
     }
 }

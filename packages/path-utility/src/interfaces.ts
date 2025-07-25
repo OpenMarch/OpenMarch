@@ -65,3 +65,64 @@ export interface SegmentJsonData {
 export interface PathJsonData {
     segments: SegmentJsonData[];
 }
+
+/**
+ * Represents a control point that can be interactively moved.
+ */
+export interface ControlPoint {
+    /** Unique identifier for this control point */
+    id: string;
+    /** Current position of the control point */
+    point: Point;
+    /** Index of the segment this control point belongs to */
+    segmentIndex: number;
+    /** Type of control point within the segment */
+    type: ControlPointType;
+    /** Index within the segment's control points (for segments with multiple control points) */
+    pointIndex?: number;
+}
+
+/**
+ * Types of control points that different segments can have.
+ */
+export type ControlPointType = 
+    | 'start'         // Start point of segment
+    | 'end'           // End point of segment  
+    | 'control1'      // First control point (for curves)
+    | 'control2'      // Second control point (for curves)
+    | 'center'        // Center point (for arcs)
+    | 'spline-point'; // Individual point in spline control points array
+
+/**
+ * Callback function called when a control point is moved.
+ */
+export type ControlPointMoveCallback = (controlPointId: string, newPoint: Point) => void;
+
+/**
+ * Interface for segments that support control point interaction.
+ */
+export interface IControllableSegment extends IPathSegment {
+    /** Returns all control points for this segment */
+    getControlPoints(segmentIndex: number): ControlPoint[];
+    
+    /** Updates a control point and returns a new segment instance */
+    updateControlPoint(controlPointType: ControlPointType, pointIndex: number | undefined, newPoint: Point): IControllableSegment;
+}
+
+/**
+ * Configuration for control point visualization and interaction.
+ */
+export interface ControlPointConfig {
+    /** Whether to show control points */
+    visible: boolean;
+    /** Radius of control point handles in pixels */
+    handleRadius: number;
+    /** Color of control point handles */
+    handleColor: string;
+    /** Color of control point handles when selected */
+    selectedColor: string;
+    /** Whether to show control lines (for bezier curves) */
+    showControlLines: boolean;
+    /** Color of control lines */
+    controlLineColor: string;
+}

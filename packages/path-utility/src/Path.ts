@@ -4,6 +4,7 @@ import {
     Point,
     PathJsonData,
     SegmentJsonData,
+    ControlPointConfig,
 } from "./interfaces";
 import { Line } from "./segments/Line";
 import { Arc } from "./segments/Arc";
@@ -157,6 +158,15 @@ export class Path implements IPath {
     static fromJson(json: string): Path {
         const path = new Path();
         return path.fromJson(json) as Path;
+    }
+
+    /**
+     * Creates a ControlPointManager for this path to enable interactive editing.
+     * Note: This method is defined separately to avoid circular dependencies.
+     */
+    createControlPointManager(config?: Partial<ControlPointConfig>) {
+        // This will be imported at runtime when needed
+        throw new Error("ControlPointManager not available. Import and use ControlPointManager class directly.");
     }
 
     /**
