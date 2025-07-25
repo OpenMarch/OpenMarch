@@ -6,7 +6,7 @@ import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
-import { rgbaToString } from "../../../global/classes/FieldTheme";
+import { rgbaToString } from "@openmarch/core/field";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;

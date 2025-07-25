@@ -1,4 +1,4 @@
-import FieldProperties from "./FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 import Marcher from "./Marcher";
 import MarcherPage from "./MarcherPage";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";

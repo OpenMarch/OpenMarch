@@ -9,7 +9,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { Marcher } from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
-import FieldProperties from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 
 // =================================================================================================
 // PDF Layout Functions
