@@ -40,6 +40,7 @@
     "dependencies": {
         "@fontsource/dm-mono": "^5.2.6",
         "@fontsource/dm-sans": "^5.2.6",
+        "@openmarch/path-utility": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@phosphor-icons/react": "^2.1.10",
         "@radix-ui/react-alert-dialog": "^1.1.14",

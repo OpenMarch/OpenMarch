@@ -379,6 +379,10 @@ export class StaticMarcherShape {
                 ? new ShapePath(ShapePoint.fromString(svgPath))
                 : svgPath;
 
+        if (!shapePath.points || shapePath.points.length === 0) {
+            return [];
+        }
+
         const separatePaths: string[] = [];
         let activeString = "";
         const firstCoord = shapePath.points[0].coordinates[0];

@@ -25,7 +25,8 @@
         "format": "turbo run format",
         "fix": "turbo run fix",
         "spellcheck": "turbo run spellcheck",
-        "prepare": "husky"
+        "prepare": "husky",
+        "postinstall": "turbo run build --filter=@openmarch/path-utility"
     },
     "devDependencies": {
         "@types/bun": "latest",

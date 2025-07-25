@@ -1,5 +1,11 @@
+import { IPath } from "@openmarch/path-utility";
+
 type Coordinate = { x: number; y: number };
-export type CoordinateDefinition = { x: number; y: number; svg?: string };
+export type CoordinateDefinition = {
+    x: number;
+    y: number;
+    path?: IPath;
+};
 
 /**
  * A timeline of coordinates for a marcher.
@@ -12,8 +18,7 @@ export type MarcherTimeline = {
     sortedTimestamps: number[];
 };
 
-const SvgLengthCache = new Map<string, number>();
-const SvgElementCache = new Map<string, SVGPathElement>();
+const PathLengthCache = new WeakMap<IPath, number>();
 
 /**
  * Get the coordinates at a given time for a marcher.
@@ -58,29 +63,21 @@ export const getCoordinatesAtTime = (
         );
 
     let interpolatedCoordinate: Coordinate;
-    if (previousCoordinate.svg) {
-        const previousSvg = previousCoordinate.svg;
+    if (previousCoordinate.path) {
+        const previousPath = previousCoordinate.path;
 
-        let pathElement = SvgElementCache.get(previousSvg);
-        if (!pathElement) {
-            pathElement = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "path",
-            );
-            pathElement.setAttribute("d", previousSvg); // assumes `previousSvg` is just the `d` string
-            SvgElementCache.set(previousSvg, pathElement);
-        }
-        if (!pathElement)
-            throw new Error("No path element found! This shouldn't happen");
-
-        let previousSvgLength = SvgLengthCache.get(previousSvg);
-        if (!previousSvgLength) {
-            previousSvgLength = pathElement.getTotalLength();
-            SvgLengthCache.set(previousSvg, previousSvgLength);
+        let pathLength = PathLengthCache.get(previousPath);
+        if (pathLength === undefined) {
+            pathLength = previousPath.getTotalLength();
+            PathLengthCache.set(previousPath, pathLength);
         }
 
-        const interpolatedSvgLength = previousSvgLength * keyframeProgress;
-        const point = pathElement.getPointAtLength(interpolatedSvgLength);
+        if (pathLength === undefined) {
+            throw new Error("Could not calculate path length");
+        }
+
+        const interpolatedSvgLength = pathLength * keyframeProgress;
+        const point = previousPath.getPointAtLength(interpolatedSvgLength);
         interpolatedCoordinate = { x: point.x, y: point.y };
     } else {
         interpolatedCoordinate = {
