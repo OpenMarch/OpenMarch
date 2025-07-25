@@ -1,6 +1,6 @@
-import { FieldTheme, DEFAULT_FIELD_THEME } from "./FieldTheme";
+import { DEFAULT_FIELD_THEME, type FieldTheme } from "./FieldTheme";
 
-interface FieldPropertyArgs {
+export interface FieldPropertyArgs {
     name: string;
     xCheckpoints: Checkpoint[];
     yCheckpoints: Checkpoint[];
