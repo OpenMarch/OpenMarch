@@ -1,6 +1,7 @@
 import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
+import MetronomeModal from "@/components/music/MetronomeModal";
 
 export default function Sidebar() {
     return (
@@ -12,6 +13,7 @@ export default function Sidebar() {
                 <MarchersModal />
                 <MusicModal />
                 <FieldModal />
+                <MetronomeModal />
             </div>
         </div>
     );
