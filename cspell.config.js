@@ -126,6 +126,7 @@ module.exports = {
         "paperplane",
         "forwardslash",
         "Pressable",
+        "endzone",
     ],
     ignorePaths: [
         "node_modules/**",
