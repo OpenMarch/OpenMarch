@@ -109,7 +109,7 @@ export const marchers = sqliteTable(
 
 export const pathways = sqliteTable("pathways", {
     id: integer().primaryKey(),
-    svg_path: text().notNull(),
+    path_data: text().notNull(),
     notes: text(),
 });
 
@@ -130,7 +130,7 @@ export const marcher_pages = sqliteTable(
         updated_at: text()
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-        svg_path: integer().references(() => pathways.id, {
+        path_data_id: integer().references(() => pathways.id, {
             onDelete: "set null",
         }),
         svg_position: real(),
@@ -138,7 +138,7 @@ export const marcher_pages = sqliteTable(
     },
     (table) => [
         check(
-            "marcher_pages_svg_path_position_check",
+            "marcher_pages_path_data_position_check",
             sql`svg_position >= 0 AND svg_position <= 1`,
         ),
         index("index_marcher_pages_on_page_id").on(table.page_id),
@@ -162,7 +162,7 @@ export const midsets = sqliteTable(
             .default("sql`(CURRENT_TIMESTAMP)`")
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
-        svg_path: integer().references(() => pathways.id, {
+        path_data_id: integer().references(() => pathways.id, {
             onDelete: "set null",
         }),
         svg_position: real(),
@@ -170,7 +170,7 @@ export const midsets = sqliteTable(
     },
     (table) => [
         check(
-            "midsets_svg_path_position_check",
+            "midsets_path_data_position_check",
             sql`svg_position >= 0 AND svg_position <= 1`,
         ),
         check("placement_check", sql`placement > 0 AND placement < 1`),
@@ -221,7 +221,7 @@ export const shape_pages = sqliteTable(
         page_id: integer()
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
-        svg_path: text().notNull(),
+        path_data: text().notNull(),
         created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
         updated_at: text()
             .default("sql`(CURRENT_TIMESTAMP)`")
