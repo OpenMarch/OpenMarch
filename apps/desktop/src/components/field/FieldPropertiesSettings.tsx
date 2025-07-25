@@ -2,7 +2,7 @@ import FieldPropertiesSelector from "./FieldPropertiesSelector";
 import FieldPropertiesCustomizer from "./FieldPropertiesCustomizer";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldIoButtons from "./FieldIoButtons";
-import FieldProperties from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 import { Button } from "@openmarch/ui";
 import { T } from "@tolgee/react";
 

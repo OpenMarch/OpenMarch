@@ -1,8 +1,9 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import FieldProperties, {
+import {
+    FieldProperties,
     Checkpoint,
     MeasurementSystem,
-} from "@/global/classes/FieldProperties";
+} from "@openmarch/core/field";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -28,7 +29,7 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { RgbaColor } from "@uiw/react-color";
-import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
+import { DEFAULT_FIELD_THEME, FieldTheme } from "@openmarch/core/field";
 import ColorPicker from "../ui/ColorPicker";
 import FormField from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";

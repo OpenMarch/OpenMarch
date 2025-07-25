@@ -1,4 +1,6 @@
-import { RgbaColor } from "@uiw/react-color";
+import type { RgbaColor } from "@uiw/react-color";
+
+export type { RgbaColor };
 
 /** Represents a marcher’s colors. */
 export interface MarcherColor {

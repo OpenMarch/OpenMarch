@@ -1,6 +1,6 @@
-import { FieldTheme, DEFAULT_FIELD_THEME } from "./FieldTheme";
+import { DEFAULT_FIELD_THEME, type FieldTheme } from "./FieldTheme";
 
-interface FieldPropertyArgs {
+export interface FieldPropertyArgs {
     name: string;
     xCheckpoints: Checkpoint[];
     yCheckpoints: Checkpoint[];
@@ -37,7 +37,7 @@ const defaultSideDescriptions: SideDescriptions = {
  *
  * All numbers (that aren't defined as pixels) are in 8 to 5 steps, which are 22.5 inches.
  */
-export default class FieldProperties {
+export class FieldProperties {
     /*********** Constants ***********/
     /** The width of the grid lines in the UI. I can't think of a reason to change this. */
     static readonly GRID_STROKE_WIDTH = 1;
