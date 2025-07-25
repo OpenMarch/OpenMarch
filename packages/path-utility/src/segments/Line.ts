@@ -6,6 +6,7 @@ import {
     ControlPoint,
     ControlPointType,
 } from "../interfaces";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Represents a straight line segment between two points.
@@ -14,37 +15,40 @@ export class Line implements IControllableSegment {
     readonly type = "line";
 
     constructor(
-        public readonly startPoint: Point,
-        public readonly endPoint: Point,
+        public readonly start: Point,
+        public readonly end: Point,
     ) {}
 
     getLength(): number {
-        const dx = this.endPoint.x - this.startPoint.x;
-        const dy = this.endPoint.y - this.startPoint.y;
+        const dx = this.end.x - this.start.x;
+        const dy = this.end.y - this.start.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
 
     getPointAtLength(dist: number): Point {
         const totalLength = this.getLength();
-        if (totalLength === 0) return { ...this.startPoint };
+        if (totalLength === 0) return { ...this.start };
 
         const t = Math.max(0, Math.min(1, dist / totalLength));
         return {
-            x: this.startPoint.x + t * (this.endPoint.x - this.startPoint.x),
-            y: this.startPoint.y + t * (this.endPoint.y - this.startPoint.y),
+            x: this.start.x + t * (this.end.x - this.start.x),
+            y: this.start.y + t * (this.end.y - this.start.y),
         };
     }
 
-    toSvgString(): string {
-        return `M ${this.startPoint.x} ${this.startPoint.y} L ${this.endPoint.x} ${this.endPoint.y}`;
+    toSvgString(includeMoveTo = false): string {
+        const moveTo = includeMoveTo
+            ? `M ${this.start.x} ${this.start.y} `
+            : "";
+        return `${moveTo}L ${this.end.x} ${this.end.y}`;
     }
 
     toJson(): SegmentJsonData {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
-                endPoint: { ...this.endPoint },
+                start: { ...this.start },
+                end: { ...this.end },
             },
         };
     }
@@ -55,26 +59,30 @@ export class Line implements IControllableSegment {
                 `Cannot create Line from data of type ${data.type}`,
             );
         }
-        return new Line(data.data.startPoint, data.data.endPoint);
+        return new Line(data.data.start, data.data.end);
     }
 
     static fromJson(data: SegmentJsonData): Line {
-        const instance = new Line({ x: 0, y: 0 }, { x: 0, y: 0 });
-        return instance.fromJson(data) as Line;
+        if (data.type !== "line") {
+            throw new Error(
+                `Cannot create Line from data of type ${data.type}`,
+            );
+        }
+        return new Line(data.data.start, data.data.end);
     }
 
     // IControllableSegment implementation
     getControlPoints(segmentIndex: number): ControlPoint[] {
         return [
             {
-                id: `cp-${segmentIndex}-start`,
-                point: { ...this.startPoint },
+                id: uuidv4(),
+                point: { ...this.start },
                 segmentIndex,
                 type: "start" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-end`,
-                point: { ...this.endPoint },
+                id: uuidv4(),
+                point: { ...this.end },
                 segmentIndex,
                 type: "end" as ControlPointType,
             },
@@ -88,9 +96,9 @@ export class Line implements IControllableSegment {
     ): IControllableSegment {
         switch (controlPointType) {
             case "start":
-                return new Line(newPoint, this.endPoint);
+                return new Line(newPoint, this.end);
             case "end":
-                return new Line(this.startPoint, newPoint);
+                return new Line(this.start, newPoint);
             default:
                 throw new Error(
                     `Line segments do not support control point type: ${controlPointType}`,

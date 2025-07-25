@@ -7,6 +7,8 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
+import { MarcherPath } from "../../global/classes/canvasObjects/MarcherPath";
+import { Path, Line } from "@openmarch/path-utility";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
@@ -65,6 +67,7 @@ export default function Canvas({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number | null>(null);
+    const [marcherPath, setMarcherPath] = useState<MarcherPath | null>(null);
 
     useAnimation({
         canvas,
@@ -373,7 +376,15 @@ export default function Canvas({
 
             frameRef.current = null;
         });
-    }, [canvas, marcherPages, marcherVisuals, selectedMarchers, selectedPage]);
+    }, [
+        canvas,
+        marcherPages,
+        marcherVisuals,
+        selectedMarchers,
+        selectedPage,
+        uiSettings.nextPaths,
+        uiSettings.previousPaths,
+    ]);
 
     useEffect(() => {
         if (!canvas) return;
@@ -464,6 +475,15 @@ export default function Canvas({
         if (onCanvasReady) {
             onCanvasReady(newCanvasInstance);
         }
+
+        const testPath = new Path([
+            new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
+            new Line({ x: 200, y: 200 }, { x: 300, y: 100 }),
+        ]);
+
+        const marcherPath = new MarcherPath(testPath, newCanvasInstance);
+        marcherPath.enableControls();
+        setMarcherPath(marcherPath);
     }, [
         selectedPage,
         fieldProperties,

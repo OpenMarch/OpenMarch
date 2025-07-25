@@ -90,7 +90,12 @@ export class Path implements IPath {
             return "";
         }
 
-        return this._segments.map((segment) => segment.toSvgString()).join(" ");
+        const svgParts = this._segments.map((segment, index) => {
+            const includeMoveTo = index === 0;
+            return segment.toSvgString(includeMoveTo);
+        });
+
+        return svgParts.join(" ");
     }
 
     /**

@@ -34,7 +34,7 @@ export interface IPathSegment {
     getPointAtLength(dist: number): Point;
 
     /** Returns the SVG path string for this segment. */
-    toSvgString(): string;
+    toSvgString(includeMoveTo?: boolean): string;
 
     /** Returns the JSON representation of this segment, preserving original data. */
     toJson(): SegmentJsonData;

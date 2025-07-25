@@ -122,6 +122,7 @@ module.exports = {
         "midsets",
         "Catmull",
         "NURBS",
+        "uuidv",
     ],
     ignorePaths: [
         "node_modules/**",

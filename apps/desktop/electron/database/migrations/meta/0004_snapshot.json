@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "24ca489c-68b1-4679-bfb9-eaca1cc986df",
+    "id": "1672ec6b-0615-4510-8917-db98939acb2e",
     "prevId": "4809643e-a769-4f18-82d6-6399ff0f8fde",
     "tables": {
         "audio_files": {
@@ -346,8 +346,8 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "svg_position": {
-                    "name": "svg_position",
+                "path_position": {
+                    "name": "path_position",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": false,
@@ -412,7 +412,7 @@
             "checkConstraints": {
                 "marcher_pages_path_data_position_check": {
                     "name": "marcher_pages_path_data_position_check",
-                    "value": "svg_position >= 0 AND svg_position <= 1"
+                    "value": "path_position >= 0 AND path_position <= 1"
                 }
             }
         },
@@ -620,8 +620,8 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "svg_position": {
-                    "name": "svg_position",
+                "path_position": {
+                    "name": "path_position",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": false,
@@ -667,7 +667,7 @@
             "checkConstraints": {
                 "midsets_path_data_position_check": {
                     "name": "midsets_path_data_position_check",
-                    "value": "svg_position >= 0 AND svg_position <= 1"
+                    "value": "path_position >= 0 AND path_position <= 1"
                 },
                 "placement_check": {
                     "name": "placement_check",
@@ -1121,7 +1121,9 @@
         "tables": {},
         "columns": {
             "\"marcher_pages\".\"svg_path\"": "\"marcher_pages\".\"path_data_id\"",
+            "\"marcher_pages\".\"svg_position\"": "\"marcher_pages\".\"path_position\"",
             "\"midsets\".\"svg_path\"": "\"midsets\".\"path_data_id\"",
+            "\"midsets\".\"svg_position\"": "\"midsets\".\"path_position\"",
             "\"pathways\".\"svg_path\"": "\"pathways\".\"path_data\"",
             "\"shape_pages\".\"svg_path\"": "\"shape_pages\".\"path_data\""
         }
