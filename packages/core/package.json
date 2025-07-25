@@ -13,6 +13,10 @@
             "types": "./src/index.ts",
             "import": "./src/index.ts",
             "default": "./src/index.ts"
+        },
+        "./field": {
+            "types": "./src/field/index.ts",
+            "import": "./src/field/index.ts"
         }
     },
     "devDependencies": {

@@ -1,5 +1,5 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import FieldProperties from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {

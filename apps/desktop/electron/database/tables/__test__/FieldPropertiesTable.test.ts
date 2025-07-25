@@ -11,7 +11,7 @@ import {
 import Constants from "../../../../src/global/Constants";
 import FieldPropertiesTemplates from "../../../../src/global/classes/FieldProperties.templates";
 import { initTestDatabase } from "./testUtils";
-import FieldProperties from "../../../../src/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 
 const fs = await vi.importMock<typeof import("fs")>("fs");
 vi.mock("fs", () => ({

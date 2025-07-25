@@ -4,7 +4,7 @@ import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history";
 import * as Utilities from "./utilities";
-import FieldProperties from "../../src/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 import AudioFile, {
     ModifiedAudioFileArgs,
 } from "../../src/global/classes/AudioFile";

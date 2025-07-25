@@ -1,7 +1,11 @@
 import { fabric } from "fabric";
-import { FieldTheme, DEFAULT_FIELD_THEME, rgbaToString } from "../FieldTheme";
 import { ShapePoint } from "./ShapePoint";
 import { VanillaPoint } from "./StaticMarcherShape";
+import {
+    FieldTheme,
+    DEFAULT_FIELD_THEME,
+    rgbaToString,
+} from "@openmarch/core/field";
 
 /**
  * The fabric.Path object that represents the path of the shape.

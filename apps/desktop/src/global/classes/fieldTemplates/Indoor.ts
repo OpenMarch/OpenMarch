@@ -1,4 +1,4 @@
-import FieldProperties, { Checkpoint } from "../FieldProperties";
+import { Checkpoint, FieldProperties } from "@openmarch/core/field";
 
 const IndoorTemplates = {
     INDOOR_40x60_8to5: new FieldProperties({

@@ -1,4 +1,4 @@
-import FieldProperties from "../../../src/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 import Constants from "../../../src/global/Constants";
 import * as History from "../database.history";
 import Database from "better-sqlite3";

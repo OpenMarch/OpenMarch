@@ -1,10 +1,14 @@
 import { fabric } from "fabric";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
-import FieldProperties from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
-import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "../FieldTheme";
+import {
+    DEFAULT_FIELD_THEME,
+    FieldTheme,
+    rgbaToString,
+} from "@openmarch/core/field";
 import { SectionAppearance } from "../SectionAppearance";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import OpenMarchCanvas from "./OpenMarchCanvas";
