@@ -12,3 +12,7 @@ All styles are stored in [tailwind.css](mdc:packages/ui/src/tailwind.css). Do yo
 Prefer to use components in the './packages/ui/src/components/base' folder for common items like buttons and inputs.
 
 When you need to use icons, use @phosphor-icons/react
+
+## mobile
+
+The OpenMarch mobile app is built on React Native using Expo

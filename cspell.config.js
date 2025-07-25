@@ -120,6 +120,12 @@ module.exports = {
         "ADDME",
         "midset",
         "midsets",
+        "Nativewind",
+        "Tamagui",
+        "unistyles",
+        "paperplane",
+        "forwardslash",
+        "Pressable",
     ],
     ignorePaths: [
         "node_modules/**",
