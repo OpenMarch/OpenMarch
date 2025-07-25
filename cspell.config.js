@@ -120,6 +120,8 @@ module.exports = {
         "ADDME",
         "midset",
         "midsets",
+        "Rspeedy",
+        "bindtap",
     ],
     ignorePaths: [
         "node_modules/**",
@@ -139,6 +141,7 @@ module.exports = {
         "patreonMembers.json",
         "**/mock-databases/**",
         "**/_journal.json",
+        "lynx.config.ts",
     ],
     ignoreRegExpList: ["@[a-z\\-]+", "\\(#.*\\)"],
 };
