@@ -1,89 +1,145 @@
-import { IPathSegment, Point } from "../interfaces";
-import { distance, pointOnCubicBezier, pointOnLine } from "../geometry-utils";
+import { IPathSegment, Point, SegmentJsonData } from "../interfaces";
 
+/**
+ * Represents a cubic Bézier curve segment with start point, two control points, and end point.
+ */
 export class CubicCurve implements IPathSegment {
-    readonly startPoint: Point;
-    readonly controlPoint1: Point;
-    readonly controlPoint2: Point;
-    readonly endPoint: Point;
-
-    private _length: number | undefined;
-    private _points: Point[] | undefined;
-
-    // The number of line segments to use when flattening the curve
-    private static readonly FLATTENING_SEGMENTS = 30;
+    readonly type = "cubic-curve";
 
     constructor(
-        startPoint: Point,
-        controlPoint1: Point,
-        controlPoint2: Point,
-        endPoint: Point,
-    ) {
-        this.startPoint = startPoint;
-        this.controlPoint1 = controlPoint1;
-        this.controlPoint2 = controlPoint2;
-        this.endPoint = endPoint;
-    }
-
-    private flatten(): Point[] {
-        if (this._points) {
-            return this._points;
-        }
-
-        const points: Point[] = [this.startPoint];
-        for (let i = 1; i <= CubicCurve.FLATTENING_SEGMENTS; i++) {
-            const t = i / CubicCurve.FLATTENING_SEGMENTS;
-            points.push(
-                pointOnCubicBezier(
-                    this.startPoint,
-                    this.controlPoint1,
-                    this.controlPoint2,
-                    this.endPoint,
-                    t,
-                ),
-            );
-        }
-        this._points = points;
-        return points;
-    }
+        public readonly startPoint: Point,
+        public readonly controlPoint1: Point,
+        public readonly controlPoint2: Point,
+        public readonly endPoint: Point,
+    ) {}
 
     getLength(): number {
-        if (this._length !== undefined) {
-            return this._length;
+        // Use numerical integration for more accurate length calculation
+        return this.integrateLength(0, 1, 1000); // Use 1000 segments for accuracy
+    }
+
+    private integrateLength(t1: number, t2: number, segments: number): number {
+        let length = 0;
+        const dt = (t2 - t1) / segments;
+
+        for (let i = 0; i < segments; i++) {
+            const t = t1 + i * dt;
+            const nextT = t1 + (i + 1) * dt;
+
+            const p1 = this.getPointAtT(t);
+            const p2 = this.getPointAtT(nextT);
+
+            length += this.distance(p1, p2);
         }
 
-        const points = this.flatten();
-        let length = 0;
-        for (let i = 0; i < points.length - 1; i++) {
-            length += distance(points[i], points[i + 1]);
-        }
-        this._length = length;
         return length;
     }
 
-    getPointAtLength(dist: number): Point {
-        const fullLength = this.getLength();
-        if (dist <= 0) return { ...this.startPoint };
-        if (dist >= fullLength) return { ...this.endPoint };
-
-        const points = this.flatten();
-        let traveled = 0;
-        for (let i = 0; i < points.length - 1; i++) {
-            const p1 = points[i];
-            const p2 = points[i + 1];
-            const segmentLength = distance(p1, p2);
-            if (traveled + segmentLength >= dist) {
-                const remaining = dist - traveled;
-                const t = segmentLength === 0 ? 0 : remaining / segmentLength;
-                return pointOnLine(p1, p2, t);
-            }
-            traveled += segmentLength;
-        }
-
-        return { ...this.endPoint };
+    private distance(p1: Point, p2: Point): number {
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        return Math.sqrt(dx * dx + dy * dy);
     }
 
-    toSvgCommand(): string {
-        return `C ${this.controlPoint1.x} ${this.controlPoint1.y} ${this.controlPoint2.x} ${this.controlPoint2.y} ${this.endPoint.x} ${this.endPoint.y}`;
+    getPointAtLength(dist: number): Point {
+        const totalLength = this.getLength();
+        if (totalLength === 0) return { ...this.startPoint };
+
+        // Clamp distance to valid range
+        const clampedDist = Math.max(0, Math.min(totalLength, dist));
+
+        // Use binary search to find the t value that corresponds to the target distance
+        let t = this.findTForDistance(clampedDist, 0, 1, 0.001);
+        return this.getPointAtT(t);
+    }
+
+    private findTForDistance(
+        targetDist: number,
+        tMin: number,
+        tMax: number,
+        tolerance: number,
+    ): number {
+        if (tMax - tMin < tolerance) {
+            return (tMin + tMax) / 2;
+        }
+
+        const tMid = (tMin + tMax) / 2;
+        const currentDist = this.getLengthAtT(tMid);
+
+        if (Math.abs(currentDist - targetDist) < tolerance) {
+            return tMid;
+        }
+
+        if (currentDist < targetDist) {
+            return this.findTForDistance(targetDist, tMid, tMax, tolerance);
+        } else {
+            return this.findTForDistance(targetDist, tMin, tMid, tolerance);
+        }
+    }
+
+    private getLengthAtT(t: number): number {
+        return this.integrateLength(0, t, 1000);
+    }
+
+    private getPointAtT(t: number): Point {
+        // Cubic Bézier curve formula: B(t) = (1-t)³P₀ + 3(1-t)²tP₁ + 3(1-t)t²P₂ + t³P₃
+        const u = 1 - t;
+        const tt = t * t;
+        const uu = u * u;
+        const uuu = uu * u;
+        const ttt = tt * t;
+
+        return {
+            x:
+                uuu * this.startPoint.x +
+                3 * uu * t * this.controlPoint1.x +
+                3 * u * tt * this.controlPoint2.x +
+                ttt * this.endPoint.x,
+            y:
+                uuu * this.startPoint.y +
+                3 * uu * t * this.controlPoint1.y +
+                3 * u * tt * this.controlPoint2.y +
+                ttt * this.endPoint.y,
+        };
+    }
+
+    toSvgString(): string {
+        return `M ${this.startPoint.x} ${this.startPoint.y} C ${this.controlPoint1.x} ${this.controlPoint1.y} ${this.controlPoint2.x} ${this.controlPoint2.y} ${this.endPoint.x} ${this.endPoint.y}`;
+    }
+
+    toJson(): SegmentJsonData {
+        return {
+            type: this.type,
+            data: {
+                startPoint: { ...this.startPoint },
+                controlPoint1: { ...this.controlPoint1 },
+                controlPoint2: { ...this.controlPoint2 },
+                endPoint: { ...this.endPoint },
+            },
+        };
+    }
+
+    fromJson(data: SegmentJsonData): IPathSegment {
+        if (data.type !== "cubic-curve") {
+            throw new Error(
+                `Cannot create CubicCurve from data of type ${data.type}`,
+            );
+        }
+        return new CubicCurve(
+            data.data.startPoint,
+            data.data.controlPoint1,
+            data.data.controlPoint2,
+            data.data.endPoint,
+        );
+    }
+
+    static fromJson(data: SegmentJsonData): CubicCurve {
+        const instance = new CubicCurve(
+            { x: 0, y: 0 },
+            { x: 0, y: 0 },
+            { x: 0, y: 0 },
+            { x: 0, y: 0 },
+        );
+        return instance.fromJson(data) as CubicCurve;
     }
 }

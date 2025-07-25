@@ -121,6 +121,7 @@ module.exports = {
         "midset",
         "midsets",
         "Catmull",
+        "NURBS",
     ],
     ignorePaths: [
         "node_modules/**",

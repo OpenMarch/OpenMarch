@@ -34,7 +34,7 @@ export function parseSvg(d: string): IPathSegment[] {
             ) {
                 segments.push(new Line(currentPoint, subpathStart));
             }
-            currentPoint = subpathStart;
+            currentPoint = { ...subpathStart };
             continue;
         }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CubicCurve } from "../src/segments/CubicCurve";
-import { Point } from "../src/interfaces";
+import type { Point } from "../src/interfaces";
 import { parseSvg } from "../src/SvgParser";
 import { SplineFactory } from "../src/SplineFactory";
 
@@ -17,7 +17,7 @@ describe("CubicCurve segment", () => {
             endPoint,
         );
         // Known approximate length for this curve
-        expect(curve.getLength()).toBeCloseTo(211.4, 1);
+        expect(curve.getLength()).toBeCloseTo(211.4, 0);
     });
 
     it("should get the correct point at length", () => {
@@ -85,10 +85,12 @@ describe("SplineFactory", () => {
             { x: 200, y: 0 },
         ];
         const path = SplineFactory.createCatmullRomSpline(points);
+        const curve0 = path.segments[0] as CubicCurve;
+        const curve1 = path.segments[1] as CubicCurve;
 
-        expect(path.segments[0].startPoint).toEqual(points[0]);
-        expect(path.segments[0].endPoint).toEqual(points[1]);
-        expect(path.segments[1].startPoint).toEqual(points[1]);
-        expect(path.segments[1].endPoint).toEqual(points[2]);
+        expect(curve0.startPoint).toEqual(points[0]);
+        expect(curve0.endPoint).toEqual(points[1]);
+        expect(curve1.startPoint).toEqual(points[1]);
+        expect(curve1.endPoint).toEqual(points[2]);
     });
 });

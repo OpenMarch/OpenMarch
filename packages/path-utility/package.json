@@ -1,21 +1,38 @@
 {
     "name": "@openmarch/path-utility",
-    "version": "0.1.0",
-    "private": true,
-    "main": "./src/index.ts",
-    "types": "./src/index.ts",
+    "version": "1.0.0",
+    "description": "A TypeScript library for working with complex paths that preserves spline segment data in JSON serialization",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
-        "lint": "eslint . --ext ts",
-        "format": "prettier --write .",
-        "fix": "pnpm lint --fix",
-        "spellcheck": "cspell \"**/*.ts\"",
-        "test": "vitest",
-        "test:run": "vitest run"
+        "build": "tsc",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "dev": "tsc --watch"
     },
+    "keywords": [
+        "path",
+        "spline",
+        "svg",
+        "geometry",
+        "typescript"
+    ],
+    "author": "OpenMarch",
     "devDependencies": {
-        "vitest": "^1.6.0"
+        "@types/node": "^20.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^3.0.0"
     },
-    "peerDependencies": {
-        "typescript": "^5"
+    "files": [
+        "dist/",
+        "README.md",
+        "LICENSE"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.js"
+        }
     }
 }

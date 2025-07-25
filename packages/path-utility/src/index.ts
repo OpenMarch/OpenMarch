@@ -1,10 +1,17 @@
-export * from "./interfaces";
-export * from "./Path";
-export * from "./PathGroup";
-export * from "./SplineFactory";
-export * from "./SvgParser";
+// Interfaces
+export type {
+    IPath,
+    IPathSegment,
+    Point,
+    SegmentJsonData,
+    PathJsonData,
+} from "./interfaces";
 
-export * from "./segments/Line";
-export * from "./segments/QuadraticCurve";
-export * from "./segments/CubicCurve";
-export * from "./segments/Arc";
+// Main Path class
+export { Path } from "./Path";
+
+// Segment implementations
+export { Line } from "./segments/Line";
+export { Arc } from "./segments/Arc";
+export { CubicCurve } from "./segments/CubicCurve";
+export { Spline } from "./segments/Spline";
