@@ -1,11 +1,52 @@
-import { Canvas, Line, vec, Rect } from "@shopify/react-native-skia";
+import {
+    Canvas,
+    Line,
+    vec,
+    Rect,
+    Group,
+    Skia,
+} from "@shopify/react-native-skia";
 import { mockFieldProperties } from "../data/mockFieldProperties";
 import { RgbaColor } from "@openmarch/core";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import { useSharedValue } from "react-native-reanimated";
 
 const rgbaToString = (color: RgbaColor) =>
     `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a})`;
 
 export default function FieldGrid() {
+    const matrix = useSharedValue(Skia.Matrix());
+    const startMatrix = useSharedValue(Skia.Matrix());
+
+    const gesture = Gesture.Race(
+        Gesture.Pan()
+            .onBegin(() => {
+                startMatrix.value = matrix.value;
+            })
+            .onUpdate((e) => {
+                const { translationX, translationY } = e;
+                const panMatrix = Skia.Matrix();
+                panMatrix.translate(translationX, translationY);
+                matrix.value = Skia.Matrix();
+                matrix.value.concat(startMatrix.value);
+                matrix.value.concat(panMatrix);
+            }),
+        Gesture.Pinch()
+            .onBegin(() => {
+                startMatrix.value = matrix.value;
+            })
+            .onUpdate((e) => {
+                const { scale, focalX, focalY } = e;
+                const pinchMatrix = Skia.Matrix();
+                pinchMatrix.translate(focalX, focalY);
+                pinchMatrix.scale(scale, scale);
+                pinchMatrix.translate(-focalX, -focalY);
+                matrix.value = Skia.Matrix();
+                matrix.value.concat(startMatrix.value);
+                matrix.value.concat(pinchMatrix);
+            }),
+    );
+
     const fieldWidth = mockFieldProperties.width;
     const fieldHeight = mockFieldProperties.height;
     const pixelsPerStep = mockFieldProperties.pixelsPerStep;
@@ -184,18 +225,24 @@ export default function FieldGrid() {
     }
 
     return (
-        <Canvas style={{ flex: 1, width: 500, height: 300 }}>
-            <Rect
-                x={0}
-                y={0}
-                width={fieldWidth}
-                height={fieldHeight}
-                color={rgbaToString(mockFieldProperties.theme.background)}
-            />
-            {gridLines}
-            {halfLines}
-            {xCheckpoints}
-            {yCheckpoints}
-        </Canvas>
+        <GestureDetector gesture={gesture}>
+            <Canvas style={{ flex: 1, width: 500, height: 300 }}>
+                <Group matrix={matrix}>
+                    <Rect
+                        x={0}
+                        y={0}
+                        width={fieldWidth}
+                        height={fieldHeight}
+                        color={rgbaToString(
+                            mockFieldProperties.theme.background,
+                        )}
+                    />
+                    {gridLines}
+                    {halfLines}
+                    {xCheckpoints}
+                    {yCheckpoints}
+                </Group>
+            </Canvas>
+        </GestureDetector>
     );
 }
