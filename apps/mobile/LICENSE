@@ -1,0 +1,19 @@
+Business Source License 1.1
+
+Parameters
+
+Licensor: OpenMarch LLC
+Licensed Work: The OpenMarch Mobile App, located at apps/mobile-viewer/ in the OpenMarch monorepo
+Use Limitation: You may not use the Licensed Work, in whole or in part, to offer or operate any drill-writing, drill-viewing, or drill-sharing application, product, or service, whether commercial or non-commercial.
+Change Date: July 25, 2028
+Change License: GNU AGPL v3.0
+
+License Text
+
+The contents of this file are subject to the Business Source License 1.1 (“BSL”); you may not use this file except in compliance with the BSL. You may obtain a copy of the BSL at:
+
+https://mariadb.com/bsl11
+
+The Licensed Work is provided under the terms of the BSL, as provided by the Licensor under the License File included with the Licensed Work. As of the Change Date, the Licensed Work will be made available under the Change License, as provided in the License File.
+
+Unless required by applicable law or agreed to in writing, the Licensed Work is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.

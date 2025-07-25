@@ -1,3 +1,8 @@
+/**
+ * @license Business Source License 1.1
+ * See LICENSE.txt for usage restrictions and change date.
+ */
+
 import {
     Canvas,
     Line,

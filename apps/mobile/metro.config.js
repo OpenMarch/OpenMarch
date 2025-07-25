@@ -1,3 +1,8 @@
+/**
+ * @license Business Source License 1.1
+ * See LICENSE.txt for usage restrictions and change date.
+ */
+
 // Learn more https://docs.expo.io/guides/customizing-metro
 const { getDefaultConfig } = require("expo/metro-config");
 const path = require("path");
