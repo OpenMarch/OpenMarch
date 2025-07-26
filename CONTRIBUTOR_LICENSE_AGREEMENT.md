@@ -126,7 +126,7 @@ If You are submitting a Contribution on behalf of an employer or other legal ent
 
 **Questions?** Contact us at [legal@openmarch.com](mailto:legal@openmarch.com) for any questions about this CLA.
 
-**Effective Date:** [Insert Date]
+**Effective Date:** July 25, 2025
 
 **OpenMarch LLC**
 [legal@openmarch.com](mailto:legal@openmarch.com)
