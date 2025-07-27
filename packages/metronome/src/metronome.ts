@@ -1,7 +1,5 @@
-import fs from "fs";
-import wav from "node-wav";
-import { type Measure, type Beat, saveWav } from "./utils.ts";
-import { SAMPLE_RATE, padSamples } from "./tone_creator.ts";
+import { type Measure, type Beat } from "./utils.ts";
+import { SAMPLE_RATE } from "./tone_creator.ts";
 import {
     beatClickDefault,
     measureClickDefault,

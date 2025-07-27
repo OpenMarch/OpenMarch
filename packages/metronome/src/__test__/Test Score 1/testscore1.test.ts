@@ -5,8 +5,8 @@ import {
     type Beat,
     createMeasure,
     createBeat,
-    saveWav,
 } from "../../utils";
+import { saveWav } from "../../node-utils.ts";
 import { createMetronomeWav } from "../../metronome";
 
 const testName = "Test Score 1 (Complex Score)";

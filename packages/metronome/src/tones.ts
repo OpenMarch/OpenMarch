@@ -10,7 +10,7 @@ export const FADE_DURATION = 0.05; // seconds
 /**
  * Memoize a tone generation function.
  * Sounds are cached at the end of this file
- * @param fn Tone to memoize
+ * @param fn Tone generation function to memoize
  */
 function memoize<T extends (...args: any[]) => Float32Array>(fn: T): T {
     const cache = new Map<string, Float32Array>();

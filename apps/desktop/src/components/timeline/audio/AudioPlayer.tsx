@@ -13,6 +13,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
 import { useAudioStore } from "@/stores/AudioStore";
 import { useTolgee } from "@tolgee/react";
+import { createMetronomeWav, SAMPLE_RATE } from "metronome";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -23,6 +24,8 @@ export const darkProgressColor = "rgb(150, 126, 255)";
  * Controls are managed by isPlaying and selectedPage stores/contexts.
  */
 export default function AudioPlayer() {
+    // Contexts and stores
+    const { t } = useTolgee();
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
@@ -30,6 +33,7 @@ export default function AudioPlayer() {
     const { beats, measures } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
 
+    // Audio state management
     const {
         audioContext,
         setAudioContext,
@@ -37,9 +41,16 @@ export default function AudioPlayer() {
         setPlaybackTimestamp,
     } = useAudioStore();
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
-    const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+    const audioNode = useRef<AudioBufferSourceNode | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
 
+    // Metronome state management
+    const [metronomeBuffer, setMetronomeBuffer] = useState<AudioBuffer | null>(
+        null,
+    );
+    const metroNode = useRef<AudioBufferSourceNode | null>(null);
+
+    // Refs for WaveSurfer and timing markers
     const waveformRef = useRef<HTMLDivElement>(null);
     const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
     const [waveSurfer, setWaveSurfer] = useState<WaveSurfer | null>(null);
@@ -47,18 +58,37 @@ export default function AudioPlayer() {
         null,
     );
 
-    const { t } = useTolgee();
-
     // Set up AudioContext on first mount
     useEffect(() => {
         if (!audioContext) {
             try {
-                setAudioContext(new window.AudioContext());
+                setAudioContext(
+                    new window.AudioContext({ sampleRate: SAMPLE_RATE }),
+                );
             } catch (e) {
                 toast.error(t("audio.context.error"));
             }
         }
     }, [audioContext, setAudioContext, t]);
+
+    // Populate metronome audio track when beats or measures change
+    useEffect(() => {
+        if (!audioContext || !beats.length || !measures.length) return;
+
+        // Generate metronome .wav data
+        const float32Array = createMetronomeWav(measures, true, false);
+
+        // Convert to AudioBuffer
+        const newBuffer = audioContext.createBuffer(
+            1,
+            float32Array.length,
+            audioContext.sampleRate,
+        );
+        newBuffer.copyToChannel(float32Array, 0);
+
+        // Set the metronome buffer in state
+        setMetronomeBuffer(newBuffer);
+    }, [audioContext, beats, measures]);
 
     // Populate audio data when selectedAudioFile changes
     useEffect(() => {
@@ -104,18 +134,27 @@ export default function AudioPlayer() {
 
     // Play/pause audio when isPlaying changes
     useEffect(() => {
-        if (!audioContext || !audioBuffer) return;
+        if (!audioContext || !audioBuffer || !metronomeBuffer) return;
 
         // Helper to stop playback
         const stopPlayback = () => {
-            if (sourceNodeRef.current) {
+            if (audioNode.current) {
                 try {
-                    sourceNodeRef.current.stop();
+                    audioNode.current.stop();
                 } catch (e) {
                     // Audio already stopped or not playing, ignore
                 }
-                sourceNodeRef.current.disconnect();
-                sourceNodeRef.current = null;
+                audioNode.current.disconnect();
+                audioNode.current = null;
+            }
+            if (metroNode.current) {
+                try {
+                    metroNode.current.stop();
+                } catch (e) {
+                    // Metronome already stopped or not playing, ignore
+                }
+                metroNode.current.disconnect();
+                metroNode.current = null;
             }
         };
 
@@ -123,16 +162,28 @@ export default function AudioPlayer() {
         if (isPlaying) {
             stopPlayback();
 
-            const source = audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(audioContext.destination);
+            const startAt = audioContext.currentTime + 0.1;
 
-            source.onended = () => {
-                sourceNodeRef.current = null;
+            const audioSource = audioContext.createBufferSource();
+            audioSource.buffer = audioBuffer;
+            audioSource.connect(audioContext.destination);
+
+            const metroSource = audioContext.createBufferSource();
+            metroSource.buffer = metronomeBuffer;
+            metroSource.connect(audioContext.destination);
+
+            audioSource.onended = () => {
+                audioNode.current = null;
+            };
+            metroSource.onended = () => {
+                metroNode.current = null;
             };
 
-            source.start(0, playbackTimestamp);
-            sourceNodeRef.current = source;
+            audioSource.start(startAt, playbackTimestamp);
+            metroSource.start(startAt, playbackTimestamp);
+
+            audioNode.current = audioSource;
+            metroNode.current = metroSource;
             // If not playing, stop any existing playback
         } else {
             stopPlayback();
@@ -188,7 +239,7 @@ export default function AudioPlayer() {
             waveColor: waveColor,
             progressColor:
                 theme === "dark" ? darkProgressColor : lightProgressColor,
-            interact: false, // disables seeking and interaction
+            interact: false,
             hideScrollbar: true,
             autoScroll: false,
         });

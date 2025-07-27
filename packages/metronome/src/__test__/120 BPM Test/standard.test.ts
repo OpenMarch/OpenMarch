@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { getCurrentTime, type Measure, saveWav } from "../../utils";
+import { getCurrentTime, type Measure } from "../../utils";
+import { saveWav } from "../../node-utils.ts";
 import { createMetronomeWav } from "../../metronome";
 
 const testName = "Standard 120 BPM Test";

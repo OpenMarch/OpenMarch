@@ -1,7 +1,3 @@
-import fs from "fs";
-import wav from "node-wav";
-import { SAMPLE_RATE } from "./tone_creator.ts";
-
 /**
  * A Beat represents a specific point in time in the show.
  * It has a duration until the next beat and can be included in measures.
@@ -86,22 +82,6 @@ export function createMeasure(
         timestamp: startBeat.timestamp,
         ...(rehearsalMark ? { rehearsalMark } : {}),
     };
-}
-
-/**
- * Utility function to save a sound as a WAV file.
- * @param samples
- * @param filename
- */
-export function saveWav(samples: Float32Array, filename: string) {
-    const buffer = wav.encode([samples], {
-        sampleRate: SAMPLE_RATE,
-        float: true,
-        bitDepth: 32,
-    });
-
-    fs.writeFileSync(filename, buffer);
-    console.log(`Saved ${filename}`);
 }
 
 /**
