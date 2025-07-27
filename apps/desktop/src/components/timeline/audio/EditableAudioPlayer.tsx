@@ -75,19 +75,19 @@ export default function EditableAudioPlayer() {
         setIsAudioPlaying(!isAudioPlaying);
     }, [waveSurfer, isAudioPlaying]);
 
-    // useEffect(() => {
-    //     if (!selectedAudioFile) return;
-    //     AudioFile.getSelectedAudioFile().then((audioFile) => {
-    //         if (!audioFile || !audioFile.data) return;
-    //         const blob = new Blob([audioFile.data], { type: "audio/wav" });
-    //         const url = URL.createObjectURL(blob);
-    //         setAudioFileUrl(url);
-    //     });
-    //     return () => {
-    //         if (audioFileUrl) window.URL.revokeObjectURL(audioFileUrl);
-    //     };
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [selectedAudioFile]);
+    useEffect(() => {
+        if (!selectedAudioFile) return;
+        AudioFile.getSelectedAudioFile().then((audioFile) => {
+            if (!audioFile || !audioFile.data) return;
+            const blob = new Blob([audioFile.data], { type: "audio/wav" });
+            const url = URL.createObjectURL(blob);
+            setAudioFileUrl(url);
+        });
+        return () => {
+            if (audioFileUrl) window.URL.revokeObjectURL(audioFileUrl);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedAudioFile]);
 
     useEffect(() => {
         if (audioRef.current && waveformRef.current && waveSurfer == null) {

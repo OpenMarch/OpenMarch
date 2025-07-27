@@ -38,6 +38,7 @@ export default function AudioPlayer() {
     } = useAudioStore();
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+    const [audioDuration, setAudioDuration] = useState<number>(0);
 
     const waveformRef = useRef<HTMLDivElement>(null);
     const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
@@ -67,12 +68,15 @@ export default function AudioPlayer() {
         AudioFile.getSelectedAudioFile().then((audioFile) => {
             if (!audioFile || !audioFile.data) return;
 
-            setWaveformBuffer(audioFile.data);
+            setWaveformBuffer(audioFile.data.slice(0));
 
             audioContext.decodeAudioData(
-                audioFile.data,
+                audioFile.data.slice(0),
                 (buffer) => {
-                    if (!isCancelled) setAudioBuffer(buffer);
+                    if (!isCancelled) {
+                        setAudioBuffer(buffer);
+                        setAudioDuration(buffer.duration);
+                    }
                 },
 
                 (error) => {
@@ -164,32 +168,75 @@ export default function AudioPlayer() {
         };
     }, [isPlaying, audioContext, selectedPage, setPlaybackTimestamp]);
 
-    // WaveSurfer for waveform/regions only (not playback)
-    useEffect(() => {}, [
-        waveformRef,
-        waveformBuffer,
-        uiSettings.timelinePixelsPerSecond,
-        theme,
-        beats,
-        measures,
-    ]);
+    // WaveSurfer initialization
+    useEffect(() => {
+        if (!waveformRef.current || !waveformBuffer) return;
+
+        // Clean up previous instance
+        if (waveSurfer) {
+            waveSurfer.destroy();
+            setWaveSurfer(null);
+        }
+
+        // Create WaveSurfer instance
+        const ws = WaveSurfer.create({
+            container: waveformRef.current,
+            height: 60,
+            barWidth: 2,
+            barGap: 1,
+            barRadius: 2,
+            waveColor: waveColor,
+            progressColor:
+                theme === "dark" ? darkProgressColor : lightProgressColor,
+            interact: false, // disables seeking and interaction
+            hideScrollbar: true,
+            autoScroll: false,
+        });
+
+        // Load the audio data for visualization
+        const blob = new Blob([waveformBuffer], { type: "audio/wav" });
+        ws.loadBlob(blob);
+
+        // Initialize regions plugin
+        const regions = ws.registerPlugin(RegionsPlugin.create());
+        const timelineMarkersPlugin = new TimingMarkersPlugin(
+            regions,
+            beats,
+            measures,
+        );
+        timingMarkersPlugin.current = timelineMarkersPlugin;
+
+        // Create regions when the audio is decoded
+        ws.on("decode", () => {
+            timelineMarkersPlugin.createTimingMarkers();
+        });
+
+        setWaveSurfer(ws);
+
+        return () => {
+            ws.destroy();
+            setWaveSurfer(null);
+            timingMarkersPlugin.current = null;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [waveformRef, waveformBuffer, theme]);
 
     // Update markers if beats/measures change
     useEffect(() => {
         if (timingMarkersPlugin.current) {
             timingMarkersPlugin.current.updateTimingMarkers(beats, measures);
         }
-    }, [beats, measures]);
+    }, [beats, measures, audioDuration]);
 
     // Update WaveSurfer options if duration/pixels per second changes
     useEffect(() => {
         if (waveSurfer) {
             waveSurfer.setOptions({
                 minPxPerSec: uiSettings.timelinePixelsPerSecond,
-                width: uiSettings.timelinePixelsPerSecond,
+                width: audioDuration * uiSettings.timelinePixelsPerSecond,
             });
         }
-    }, [waveSurfer, uiSettings.timelinePixelsPerSecond]);
+    }, [waveSurfer, audioDuration, uiSettings.timelinePixelsPerSecond]);
 
     return (
         <div className="w-fit pl-[40px]">
