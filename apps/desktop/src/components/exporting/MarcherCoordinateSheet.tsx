@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core/field";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
@@ -202,7 +202,7 @@ export default function MarcherCoordinateSheet({
             setMarcherToUse(marcher);
             setPagesToUse(pages);
             setMarcherPagesToUse(
-                MarcherPage.getByMarcherId(marcherPages, marcher?.id || -1),
+                getByMarcherId(marcherPages, marcher?.id || -1),
             );
         }
     }, [marcher, marcherPages, pages, example, fieldProperties, t]);
@@ -318,12 +318,6 @@ export function StaticMarcherCoordinateSheet({
         terse,
         useXY,
     ]);
-
-    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
-        const pageA = pagesState.find((page) => page.id === a.page_id);
-        const pageB = pagesState.find((page) => page.id === b.page_id);
-        return pageA && pageB ? pageA.order - pageB.order : 0;
-    };
 
     // Ensure ReadableCoords has the field properties
     if (!ReadableCoords.getFieldProperties())

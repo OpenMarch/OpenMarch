@@ -5,7 +5,6 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import Marcher from "../../global/classes/Marcher";
-import MarcherPage from "../../global/classes/MarcherPage";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import type { HistoryResponse } from "electron/database/database.services";
@@ -49,8 +48,7 @@ function StateInitializer() {
     }, [fetchMarchers]);
 
     useEffect(() => {
-        MarcherPage.fetchMarcherPages = fetchMarcherPages;
-        MarcherPage.fetchMarcherPages();
+        fetchMarcherPages();
     }, [fetchMarcherPages, pages, marchers]);
 
     useEffect(() => {
@@ -194,6 +192,7 @@ function StateInitializer() {
         fetchShapePages,
         fetchFieldProperties,
         fetchTimingObjects,
+        updateUndoRedo,
     ]);
 
     // Listen for fetch actions from the main process
