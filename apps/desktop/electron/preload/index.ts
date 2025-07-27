@@ -5,6 +5,7 @@ import {
     NewMarcherArgs,
 } from "@/global/classes/Marcher";
 import MarcherPage, {
+    DatabaseMarcherPage,
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
@@ -327,15 +328,15 @@ const APP_API = {
     // MarcherPage
     getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
         ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            DatabaseResponse<MarcherPage[]>
+            DatabaseResponse<DatabaseMarcherPage[]>
         >,
     getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
         ipcRenderer.invoke("marcher_page:get", id) as Promise<
-            DatabaseResponse<MarcherPage>
+            DatabaseResponse<DatabaseMarcherPage>
         >,
     updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
         ipcRenderer.invoke("marcher_page:update", args) as Promise<
-            DatabaseResponse<MarcherPage>
+            DatabaseResponse<DatabaseMarcherPage>
         >,
 
     // **** Timing Objects ****

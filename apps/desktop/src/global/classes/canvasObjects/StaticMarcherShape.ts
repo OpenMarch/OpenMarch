@@ -328,11 +328,11 @@ export class StaticMarcherShape {
         for (let i = 0; i < newCoordinates.length; i++) {
             const canvasMarcher = this.canvasMarchers[i];
             const newCoordinate = newCoordinates[i];
-            const newMarcherPage = new MarcherPage({
+            const newMarcherPage: MarcherPage = {
                 ...(canvasMarcher.coordinate as MarcherPage),
                 x: newCoordinate.x,
                 y: newCoordinate.y,
-            });
+            };
             this.canvasMarchers[i].setMarcherCoords(newMarcherPage);
         }
         if (this.canvas) {

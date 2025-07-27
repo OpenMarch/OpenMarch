@@ -1,6 +1,6 @@
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import type { ShapePage } from "electron/database/tables/ShapePageTable";
-import MarcherPage from "@/global/classes/MarcherPage";
+import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import type { ModifiedShapePageMarcherArgs } from "electron/database/tables/ShapePageMarcherTable";
 import { ShapePath } from "./ShapePath";
 import { ShapePoint } from "./ShapePoint";
@@ -327,7 +327,7 @@ export class MarcherShape extends StaticMarcherShape {
         }
         this.checkForFetchShapePages();
         this.fetchShapePages();
-        MarcherPage.fetchMarcherPages();
+        useMarcherPageStore.getState().fetchMarcherPages();
     }
 
     /**
@@ -397,7 +397,7 @@ export class MarcherShape extends StaticMarcherShape {
             );
         this.checkForFetchShapePages();
         this.fetchShapePages();
-        MarcherPage.fetchMarcherPages();
+        useMarcherPageStore.getState().fetchMarcherPages();
         return updateResponse;
     }
 
@@ -419,7 +419,7 @@ export class MarcherShape extends StaticMarcherShape {
             );
         this.checkForFetchShapePages();
         this.fetchShapePages();
-        MarcherPage.fetchMarcherPages();
+        useMarcherPageStore.getState().fetchMarcherPages();
         return response;
     }
 

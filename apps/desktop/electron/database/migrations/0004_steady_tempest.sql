@@ -1,13 +1,12 @@
 ALTER TABLE `pathways` RENAME COLUMN "svg_path" TO "path_data";--> statement-breakpoint
-ALTER TABLE `shape_pages` RENAME COLUMN "svg_path" TO "path_data";--> statement-breakpoint
 PRAGMA foreign_keys=OFF;--> statement-breakpoint
 CREATE TABLE `__new_marcher_pages` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`id_for_html` text,
 	`marcher_id` integer NOT NULL,
 	`page_id` integer NOT NULL,
-	`x` real,
-	`y` real,
+	`x` real NOT NULL,
+	`y` real NOT NULL,
 	`created_at` text NOT NULL,
 	`updated_at` text NOT NULL,
 	`path_data_id` integer,

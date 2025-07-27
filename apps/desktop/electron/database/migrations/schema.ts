@@ -136,8 +136,8 @@ export const marcher_pages = sqliteTable(
         page_id: integer()
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
-        x: real(),
-        y: real(),
+        x: real().notNull(),
+        y: real().notNull(),
         created_at: text().notNull(),
         updated_at: text()
             .notNull()
@@ -233,7 +233,7 @@ export const shape_pages = sqliteTable(
         page_id: integer()
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
-        path_data: text().notNull(),
+        svg_path: text().notNull(),
         created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
         updated_at: text()
             .default("sql`(CURRENT_TIMESTAMP)`")

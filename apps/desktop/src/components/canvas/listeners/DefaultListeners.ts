@@ -3,9 +3,11 @@ import { fabric } from "fabric";
 import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
-import MarcherPage, {
+import {
     ModifiedMarcherPageArgs,
+    updateMarcherPages,
 } from "@/global/classes/MarcherPage";
+import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { rgbaToString } from "@openmarch/core/field";
 
 export default class DefaultListeners implements CanvasListeners {
@@ -99,7 +101,10 @@ export default class DefaultListeners implements CanvasListeners {
                 });
             });
 
-        MarcherPage.updateMarcherPages(modifiedMarcherPages);
+        updateMarcherPages(
+            modifiedMarcherPages,
+            useMarcherPageStore.getState().fetchMarcherPages,
+        );
     }
 
     /**

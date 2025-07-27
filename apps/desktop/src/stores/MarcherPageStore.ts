@@ -1,7 +1,10 @@
 import MarcherPageMap, {
     marcherPageMapFromArray,
 } from "@/global/classes/MarcherPageIndex";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, {
+    databaseMarcherPagesToMarcherPages,
+    getMarcherPages,
+} from "@/global/classes/MarcherPage";
 import { create } from "zustand";
 
 interface MarcherPageStoreInterface {
@@ -16,11 +19,13 @@ export const useMarcherPageStore = create<MarcherPageStoreInterface>((set) => ({
 
     fetchMarcherPages: async () => {
         // Fetch all marcherPages from the DB
-        const rawMarcherPages = await MarcherPage.getMarcherPages();
+        const rawMarcherPages = await getMarcherPages();
 
         // Update the store with the new maps
         set({
-            marcherPages: marcherPageMapFromArray(rawMarcherPages),
+            marcherPages: marcherPageMapFromArray(
+                databaseMarcherPagesToMarcherPages(rawMarcherPages),
+            ),
             marcherPagesAreLoading: false,
         });
     },

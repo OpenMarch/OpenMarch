@@ -6,7 +6,7 @@ import Midpoint from "./Midpoint";
 import { FieldProperties } from "@openmarch/core/field";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, { getByPageId } from "@/global/classes/MarcherPage";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
@@ -940,7 +940,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
         // update coordinate for every canvas marcher
-        const marchers = MarcherPage.getByPageId(marcherPages, pageId);
+        const marchers = getByPageId(marcherPages, pageId);
         marchers.forEach((marcherPage) => {
             const visual = marcherVisuals[marcherPage.marcher_id];
             if (!visual) return;
