@@ -10,7 +10,7 @@ import {
     MarcherTimeline,
 } from "@/utilities/Keyframes";
 import { Path } from "@openmarch/path-utility";
-import MarcherPage from "@/global/classes/MarcherPage";
+import { getByMarcherId } from "@/global/classes/MarcherPage";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 
 interface UseAnimationProps {
@@ -47,7 +47,7 @@ export const useAnimation = ({
 
         for (const marcher of marchers) {
             const coordinateMap = new Map<number, CoordinateDefinition>();
-            const marcherPagesForMarcher = MarcherPage.getByMarcherId(
+            const marcherPagesForMarcher = getByMarcherId(
                 marcherPages,
                 marcher.id,
             );
