@@ -15,16 +15,15 @@ import {
  * Generate a metronome .wav file for a given list of Measure objects.
  *
  * @param measures Array of Measure objects
- * @param filename Output WAV file path
  * @param accentMeasure Whether to use an accented click for the first beat of each measure
  * @param onlyMeasuresClicks Whether to play clicks only for the first beat of each measure
+ * @returns
  */
 export function createMetronomeWav(
     measures: Measure[],
-    filename: string,
     accentMeasure: boolean = true,
     onlyMeasuresClicks: boolean = false,
-) {
+): Float32Array<ArrayBuffer> {
     const beats: Beat[] = measures.flatMap((m) => m.beats);
     if (beats.length === 0) throw new Error("No beats provided.");
 
@@ -81,7 +80,6 @@ export function createMetronomeWav(
         }
     }
 
-    // Encode to WAV and write to disk
-    saveWav(output, filename);
-    console.log(`Metronome .wav created: ${filename}`);
+    // Encode to WAV
+    return output;
 }

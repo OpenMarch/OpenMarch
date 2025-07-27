@@ -19,7 +19,16 @@ export default class AudioFile {
 
     constructor({ id, data, path, nickname, selected }: AudioFile) {
         this.id = id;
-        this.data = data;
+
+        if (data instanceof Uint8Array) {
+            this.data = data.buffer.slice(
+                data.byteOffset,
+                data.byteOffset + data.byteLength,
+            ) as ArrayBuffer;
+        } else if (data instanceof ArrayBuffer) {
+            this.data = data;
+        }
+
         this.path = path;
         // TODO split this to just be the last string of the file
         this.nickname = nickname || path.replace(/^.*[\\/]/, "");

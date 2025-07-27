@@ -5,6 +5,7 @@ import {
     type Beat,
     createMeasure,
     createBeat,
+    saveWav,
 } from "../../utils";
 import { createMetronomeWav } from "../../metronome";
 
@@ -15,7 +16,10 @@ const testName = "Test Score 1 (Complex Score)";
  */
 describe(testName, () => {
     test(`Synthesize ${testName}`, async () => {
-        createMetronomeWav(input, testName + "-" + getCurrentTime() + ".wav");
+        saveWav(
+            createMetronomeWav(input),
+            testName + "-" + getCurrentTime() + ".wav",
+        );
     });
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { getCurrentTime, type Measure } from "../../utils";
+import { getCurrentTime, type Measure, saveWav } from "../../utils";
 import { createMetronomeWav } from "../../metronome";
 
 const testName = "Standard 120 BPM Test";
@@ -9,7 +9,10 @@ const testName = "Standard 120 BPM Test";
  */
 describe(testName, () => {
     test(`Synthesize ${testName}`, async () => {
-        createMetronomeWav(input, testName + "-" + getCurrentTime() + ".wav");
+        saveWav(
+            createMetronomeWav(input),
+            testName + "-" + getCurrentTime() + ".wav",
+        );
     });
 });
 

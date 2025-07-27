@@ -1,14 +1,18 @@
 import { create } from "zustand";
 
 interface AudioStoreInterface {
-    audio: HTMLAudioElement;
-    setAudio: (audio: HTMLAudioElement) => void;
+    audioContext: AudioContext | null;
+    setAudioContext: (ctx: AudioContext) => void;
+
+    playbackTimestamp: number; // in seconds
+    setPlaybackTimestamp: (timestamp: number) => void;
 }
 
 export const useAudioStore = create<AudioStoreInterface>((set) => ({
-    audio: new Audio(),
+    audioContext: null,
+    setAudioContext: (ctx: AudioContext) => set({ audioContext: ctx }),
 
-    setAudio: (audio: HTMLAudioElement) => {
-        set({ audio });
-    },
+    playbackTimestamp: 0,
+    setPlaybackTimestamp: (timestamp: number) =>
+        set({ playbackTimestamp: timestamp }),
 }));

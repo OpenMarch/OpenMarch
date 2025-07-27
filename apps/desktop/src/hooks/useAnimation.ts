@@ -29,9 +29,10 @@ export const useAnimation = ({
     selectedPage,
     setSelectedPage,
 }: UseAnimationProps) => {
-    const { audio } = useAudioStore();
+    const playbackTimestamp = useAudioStore((state) => state.playbackTimestamp);
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const animationFrameRef = useRef<number | null>(null);
+    const currentPlayback = useRef(playbackTimestamp);
 
     const marcherTimelines = useMemo(() => {
         const pagesMap = pages.reduce(
@@ -77,11 +78,13 @@ export const useAnimation = ({
     const setMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
+
             const canvasMarchers = canvas.getCanvasMarchers();
             for (const canvasMarcher of canvasMarchers) {
                 const timeline = marcherTimelines.get(
                     canvasMarcher.marcherObj.id,
                 );
+
                 if (timeline) {
                     try {
                         const coords = getCoordinatesAtTime(
@@ -94,43 +97,24 @@ export const useAnimation = ({
                     }
                 }
             }
+
             canvas.requestRenderAll();
         },
         [canvas, marcherTimelines],
     );
 
+    // Update the playback timestamp reference
+    useEffect(() => {
+        currentPlayback.current = playbackTimestamp;
+    }, [playbackTimestamp]);
+
+    // Animate the canvas based on playback timestamp
     useEffect(() => {
         const animate = () => {
             if (!isPlaying || !canvas) return;
 
-            const currentTime = audio.currentTime * 1000;
+            const currentTime = currentPlayback.current * 1000; // Convert seconds to milliseconds
             setMarcherPositionsAtTime(currentTime);
-
-            const currentPage = pages.find(
-                (p) =>
-                    currentTime >= p.timestamp * 1000 &&
-                    currentTime < (p.timestamp + p.duration) * 1000,
-            );
-            if (!currentPage) {
-                // We're past the end, set the selected page to the last one and stop playing
-                setSelectedPage(pages[pages.length - 1]);
-                setIsPlaying(false);
-            } else {
-                const previousPage =
-                    (currentPage &&
-                        currentPage.previousPageId != null &&
-                        pages.find(
-                            (p) => p.id === currentPage?.previousPageId,
-                        )) ??
-                    pages[0];
-                if (!previousPage)
-                    throw new Error(
-                        "Could not find any page to select. This should not happen",
-                    );
-
-                setSelectedPage(previousPage);
-            }
-
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 
@@ -150,7 +134,6 @@ export const useAnimation = ({
     }, [
         isPlaying,
         canvas,
-        audio,
         pages,
         selectedPage,
         setSelectedPage,

@@ -76,10 +76,10 @@ export default function Canvas({
         setSelectedPage,
     });
 
-    useMetronome({
-        beats: beats,
-        measures: measures,
-    });
+    // useMetronome({
+    //     beats: beats,
+    //     measures: measures,
+    // });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {

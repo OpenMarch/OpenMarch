@@ -1,12 +1,12 @@
 import WaveSurfer from "wavesurfer.js";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { SyntheticEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-// @ts-ignore - Importing the regions plugin
+// @ts-ignore
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { useTheme } from "@/context/ThemeContext";
@@ -19,154 +19,175 @@ export const lightProgressColor = "rgb(100, 66, 255)";
 export const darkProgressColor = "rgb(150, 126, 255)";
 
 /**
- * The audio player handles the playback of the audio file.
- * There are no controls here for the audio player, it is controlled by isPlaying and selectedPage stores/contexts.
- *
+ * The audio player handles playback via Web Audio API.
+ * Controls are managed by isPlaying and selectedPage stores/contexts.
  */
 export default function AudioPlayer() {
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
-    // We'll use beats later for creating regions based on timing objects
     const { beats, measures } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
-    const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
-    const [audioDuration, setAudioDuration] = useState<number>(0);
-    const [waveSurfer, setWaveSurfer] = useState<WaveSurfer | null>(null);
-    const audioRef = useRef<HTMLAudioElement>(null);
+
+    const { audioContext, setAudioContext, setPlaybackTimestamp } =
+        useAudioStore();
+    const [startTimestamp, setStartTimestamp] = useState(0);
+    const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
+    const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+
     const waveformRef = useRef<HTMLDivElement>(null);
     const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
-    const { setAudio } = useAudioStore();
+    const [waveSurfer, setWaveSurfer] = useState<WaveSurfer | null>(null);
+    const [waveformBuffer, setWaveformBuffer] = useState<ArrayBuffer | null>(
+        null,
+    );
+
     const { t } = useTolgee();
 
+    // Set up AudioContext on first mount
     useEffect(() => {
-        if (!audioRef.current) return;
-
-        const audio = audioRef.current;
-        setAudio(audio);
-
-        if (isPlaying) {
-            audio.play().catch((error) => {
-                toast.error(t("audio.play.error"));
-                console.error("Error playing audio:", error);
-            });
-        } else {
-            audio.currentTime = selectedPage
-                ? selectedPage.timestamp + selectedPage.duration
-                : 0;
-            audio.pause();
+        if (!audioContext) {
+            try {
+                setAudioContext(new window.AudioContext());
+            } catch (e) {
+                toast.error(t("audio.context.error"));
+            }
         }
+    }, [audioContext, setAudioContext, t]);
 
-    }, [
-        audioFileUrl,
-        isPlaying,
-        selectedPage,
-        selectedPage?.timestamp,
-        setAudio,
-        t
-    ]);
-
+    // Populate audio data when selectedAudioFile changes
     useEffect(() => {
-        if (!selectedAudioFile) return;
+        if (!audioContext || !selectedAudioFile) return;
+        let isCancelled = false;
+
         AudioFile.getSelectedAudioFile().then((audioFile) => {
             if (!audioFile || !audioFile.data) return;
-            const blob = new Blob([audioFile.data], { type: "audio/wav" });
-            const url = URL.createObjectURL(blob);
-            setAudioFileUrl(url);
-        });
-        return () => {
-            if (audioFileUrl) window.URL.revokeObjectURL(audioFileUrl);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedAudioFile]);
 
-    useEffect(() => {
-        if (audioRef.current && waveformRef.current && waveSurfer == null) {
-            const ws = WaveSurfer.create({
-                // sync with the main audio element
-                media: audioRef.current,
-                container: waveformRef.current,
+            setWaveformBuffer(audioFile.data);
 
-                // this should be dynamic, but the parent is given height through tailwind currently
-                height: 60,
-                width: audioDuration * 40,
+            audioContext.decodeAudioData(
+                audioFile.data,
+                (buffer) => {
+                    if (!isCancelled) setAudioBuffer(buffer);
+                },
 
-                // hide the default cursor
-                cursorWidth: 0,
-
-                // this should be dynamic, and not hardcoded in the parent. this probably belongs in a store
-                minPxPerSec: 40,
-
-                // pretty up the waveform
-                barWidth: 2,
-                barGap: 1,
-                barRadius: 2,
-                barHeight: 1.2,
-                waveColor,
-                progressColor:
-                    theme === "dark" ? darkProgressColor : lightProgressColor,
-
-                // make it dumb
-                interact: false,
-                hideScrollbar: true,
-                autoScroll: false,
-            });
-
-            // Initialize regions plugin
-            const regions = ws.registerPlugin(RegionsPlugin.create());
-
-            const timelineMarkersPlugin = new TimingMarkersPlugin(
-                regions,
-                beats,
-                measures,
+                (error) => {
+                    toast.error(t("audio.decode.error"));
+                    console.error("Audio decode error", error);
+                },
             );
-            timingMarkersPlugin.current = timelineMarkersPlugin;
-            // Create regions when the audio is decoded
-            ws.on("decode", () => {
-                timelineMarkersPlugin.createTimingMarkers();
-            });
+        });
 
-            setWaveSurfer(ws);
-        }
+        // Cleanup
         return () => {
-            waveSurfer?.destroy();
+            isCancelled = true;
+        };
+    }, [audioContext, selectedAudioFile, t]);
+
+    // Sync audio and store playback position with the selected page
+    useEffect(() => {
+        if (!selectedPage) return;
+        if (!isPlaying) {
+            setStartTimestamp(selectedPage.timestamp);
+            setPlaybackTimestamp(selectedPage.timestamp);
+        }
+    }, [selectedPage, isPlaying, setPlaybackTimestamp]);
+
+    // Play/pause audio when isPlaying changes
+    useEffect(() => {
+        if (!audioContext || !audioBuffer) return;
+
+        // Helper to stop playback
+        const stopPlayback = () => {
+            if (sourceNodeRef.current) {
+                try {
+                    sourceNodeRef.current.stop();
+                } catch (e) {
+                    // Audio already stopped or not playing, ignore
+                }
+                sourceNodeRef.current.disconnect();
+                sourceNodeRef.current = null;
+            }
         };
 
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [audioRef, waveformRef, audioDuration]);
+        // If started playback, create a new source node
+        if (isPlaying) {
+            stopPlayback();
 
-    // Update measures and beats when they change
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+
+            source.onended = () => {
+                sourceNodeRef.current = null;
+            };
+
+            source.start(0, startTimestamp);
+            sourceNodeRef.current = source;
+            // If not playing, stop any existing playback
+        } else {
+            stopPlayback();
+        }
+
+        return () => {
+            stopPlayback();
+        };
+    }, [isPlaying, audioBuffer, audioContext, startTimestamp]);
+
+    // Update the current playback timestamp in the store when playing
     useEffect(() => {
-        if (timingMarkersPlugin.current == null) return;
-        timingMarkersPlugin.current.updateTimingMarkers(beats, measures);
+        if (!isPlaying || !audioContext || !selectedPage) return;
+
+        let rafId: number;
+        const startTimestamp = selectedPage.timestamp;
+        const playStartTime = audioContext.currentTime;
+
+        // Helper to update playback timestamp
+        const update = () => {
+            const currentPlayback =
+                startTimestamp + (audioContext.currentTime - playStartTime);
+            setPlaybackTimestamp(currentPlayback);
+            rafId = requestAnimationFrame(update);
+        };
+
+        update();
+
+        return () => {
+            cancelAnimationFrame(rafId);
+            setPlaybackTimestamp(selectedPage.timestamp);
+        };
+    }, [isPlaying, audioContext, selectedPage, setPlaybackTimestamp]);
+
+    // WaveSurfer for waveform/regions only (not playback)
+    useEffect(() => {}, [
+        waveformRef,
+        waveformBuffer,
+        uiSettings.timelinePixelsPerSecond,
+        theme,
+        beats,
+        measures,
+    ]);
+
+    // Update markers if beats/measures change
+    useEffect(() => {
+        if (timingMarkersPlugin.current) {
+            timingMarkersPlugin.current.updateTimingMarkers(beats, measures);
+        }
     }, [beats, measures]);
 
+    // Update WaveSurfer options if duration/pixels per second changes
     useEffect(() => {
-        if (waveSurfer == null) return;
-
-        waveSurfer.setOptions({
-            minPxPerSec: uiSettings.timelinePixelsPerSecond,
-            width: audioDuration * uiSettings.timelinePixelsPerSecond,
-        });
-    }, [audioDuration, waveSurfer, uiSettings.timelinePixelsPerSecond]);
-
-    const handleAudioLoaded = (event: SyntheticEvent<HTMLAudioElement>) => {
-        let audioElement = event.target as HTMLAudioElement;
-        setAudioDuration(audioElement.duration);
-    };
+        if (waveSurfer) {
+            waveSurfer.setOptions({
+                minPxPerSec: uiSettings.timelinePixelsPerSecond,
+                width: uiSettings.timelinePixelsPerSecond,
+            });
+        }
+    }, [waveSurfer, uiSettings.timelinePixelsPerSecond]);
 
     return (
         <div className="w-fit pl-[40px]">
-            {audioFileUrl && (
-                <audio
-                    ref={audioRef}
-                    src={audioFileUrl}
-                    preload="auto"
-                    onLoadedMetadata={(event) => handleAudioLoaded(event)}
-                />
-            )}
-
             <div id="waveform" ref={waveformRef}></div>
         </div>
     );
