@@ -103,6 +103,39 @@ export const useAnimation = ({
         [canvas, marcherTimelines],
     );
 
+    // Update the selected page based on playback timestamp
+    const updateSelectedPage = useCallback(
+        (currentTime: number) => {
+            if (!pages.length || !canvas) return;
+
+            const currentPage = pages.find(
+                (p) =>
+                    currentTime >= p.timestamp * 1000 &&
+                    currentTime < (p.timestamp + p.duration) * 1000,
+            );
+            if (!currentPage) {
+                // We're past the end, set the selected page to the last one and stop playing
+                setSelectedPage(pages[pages.length - 1]);
+                setIsPlaying(false);
+            } else {
+                const previousPage =
+                    (currentPage &&
+                        currentPage.previousPageId != null &&
+                        pages.find(
+                            (p) => p.id === currentPage?.previousPageId,
+                        )) ??
+                    pages[0];
+                if (!previousPage)
+                    throw new Error(
+                        "Could not find any page to select. This should not happen",
+                    );
+
+                setSelectedPage(previousPage);
+            }
+        },
+        [pages, canvas, setSelectedPage, setIsPlaying],
+    );
+
     // Update the playback timestamp reference
     useEffect(() => {
         currentPlayback.current = playbackTimestamp;
@@ -113,8 +146,9 @@ export const useAnimation = ({
         const animate = () => {
             if (!isPlaying || !canvas) return;
 
-            const currentTime = currentPlayback.current * 1000; // Convert seconds to milliseconds
+            const currentTime = currentPlayback.current * 1000; // s to ms
             setMarcherPositionsAtTime(currentTime);
+            updateSelectedPage(currentTime);
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 
@@ -139,6 +173,7 @@ export const useAnimation = ({
         setSelectedPage,
         marcherTimelines,
         setMarcherPositionsAtTime,
+        updateSelectedPage,
         setIsPlaying,
     ]);
 

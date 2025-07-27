@@ -30,9 +30,12 @@ export default function AudioPlayer() {
     const { beats, measures } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
 
-    const { audioContext, setAudioContext, setPlaybackTimestamp } =
-        useAudioStore();
-    const [startTimestamp, setStartTimestamp] = useState(0);
+    const {
+        audioContext,
+        setAudioContext,
+        playbackTimestamp,
+        setPlaybackTimestamp,
+    } = useAudioStore();
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
     const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
 
@@ -89,8 +92,9 @@ export default function AudioPlayer() {
     useEffect(() => {
         if (!selectedPage) return;
         if (!isPlaying) {
-            setStartTimestamp(selectedPage.timestamp);
-            setPlaybackTimestamp(selectedPage.timestamp);
+            setPlaybackTimestamp(
+                selectedPage.timestamp + selectedPage.duration,
+            );
         }
     }, [selectedPage, isPlaying, setPlaybackTimestamp]);
 
@@ -123,7 +127,7 @@ export default function AudioPlayer() {
                 sourceNodeRef.current = null;
             };
 
-            source.start(0, startTimestamp);
+            source.start(0, playbackTimestamp);
             sourceNodeRef.current = source;
             // If not playing, stop any existing playback
         } else {
@@ -133,7 +137,8 @@ export default function AudioPlayer() {
         return () => {
             stopPlayback();
         };
-    }, [isPlaying, audioBuffer, audioContext, startTimestamp]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isPlaying, audioBuffer, audioContext]);
 
     // Update the current playback timestamp in the store when playing
     useEffect(() => {
@@ -147,7 +152,7 @@ export default function AudioPlayer() {
         const update = () => {
             const currentPlayback =
                 startTimestamp + (audioContext.currentTime - playStartTime);
-            setPlaybackTimestamp(currentPlayback);
+            setPlaybackTimestamp(currentPlayback + selectedPage.duration);
             rafId = requestAnimationFrame(update);
         };
 
