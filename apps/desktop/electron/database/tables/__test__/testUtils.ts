@@ -1,5 +1,5 @@
 import Database from "better-sqlite3";
-import { getOrm, schema } from "electron/database/db";
+import { getOrm, schema } from "../../db";
 import { DrizzleMigrationService } from "electron/database/services/DrizzleMigrationService";
 
 export const initTestDatabase = async (): Promise<Database.Database> => {
