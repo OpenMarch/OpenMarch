@@ -127,6 +127,8 @@ module.exports = {
         "forwardslash",
         "Pressable",
         "endzone",
+        "Dhruva",
+        "Chakravarthi",
     ],
     ignorePaths: [
         "node_modules/**",
