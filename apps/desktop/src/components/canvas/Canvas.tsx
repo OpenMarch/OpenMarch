@@ -7,15 +7,6 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
-import { MarcherPath } from "../../global/classes/canvasObjects/MarcherPath";
-import {
-    Path,
-    Line,
-    Arc,
-    CubicCurve,
-    Spline,
-    QuadraticCurve,
-} from "@openmarch/path-utility";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
@@ -74,7 +65,6 @@ export default function Canvas({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number | null>(null);
-    const [marcherPath, setMarcherPath] = useState<MarcherPath | null>(null);
 
     useAnimation({
         canvas,
@@ -482,32 +472,6 @@ export default function Canvas({
         if (onCanvasReady) {
             onCanvasReady(newCanvasInstance);
         }
-
-        const testPath = new Path([
-            // new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
-            // new Line({ x: 200, y: 300 }, { x: 300, y: 100 }),
-            new Arc({ x: 300, y: 500 }, 1, 1, 0, 0, 1, { x: 700, y: 500 }),
-            // new CubicCurve(
-            //     { x: 700, y: 100 },
-            //     { x: 800, y: 200 },
-            //     { x: 900, y: 100 },
-            //     { x: 1000, y: 200 },
-            // ),
-            // new QuadraticCurve(
-            //     { x: 1000, y: 200 },
-            //     { x: 1100, y: 300 },
-            //     { x: 1200, y: 200 },
-            // ),
-            // new Spline([
-            //     { x: 1200, y: 200 },
-            //     { x: 1300, y: 300 },
-            //     { x: 1400, y: 200 },
-            // ]),
-        ]);
-
-        const marcherPath = new MarcherPath(testPath, newCanvasInstance);
-        marcherPath.enableControls();
-        setMarcherPath(marcherPath);
     }, [
         selectedPage,
         fieldProperties,
