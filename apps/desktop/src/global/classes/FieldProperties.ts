@@ -47,3 +47,39 @@ export async function updateFieldProperties(
     const result = await updateFieldsPropertiesJSON(fieldPropertiesJson);
     return new FieldProperties(JSON.parse(result));
 }
+
+export async function updateFieldPropertiesImage(
+    image: Uint8Array,
+): Promise<void> {
+    await db.transaction(async (tx) => {
+        await incrementUndoGroup(tx);
+
+        return await tx
+            .update(field_properties)
+            .set({ image: image })
+            .where(eq(field_properties.id, 1))
+            .run();
+    });
+}
+
+export async function getFieldPropertiesImage(): Promise<Uint8Array | null> {
+    const result = await db
+        .select({ image: field_properties.image })
+        .from(field_properties)
+        .where(eq(field_properties.id, 1))
+        .prepare()
+        .get();
+    return result?.image ?? null;
+}
+
+export async function deleteFieldPropertiesImage(): Promise<void> {
+    await db.transaction(async (tx) => {
+        await incrementUndoGroup(tx);
+
+        return await tx
+            .update(field_properties)
+            .set({ image: null })
+            .where(eq(field_properties.id, 1))
+            .run();
+    });
+}
